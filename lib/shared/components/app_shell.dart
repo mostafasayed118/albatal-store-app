@@ -1,5 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../features/storefront/presentation/cubit/storefront_cubits.dart';
-final class AppShell extends StatelessWidget{const AppShell({super.key,required this.child});final Widget child;@override Widget build(BuildContext context)=>Scaffold(body:child,bottomNavigationBar:BlocBuilder<CartCubit,CartState>(builder:(_,cart)=>NavigationBar(selectedIndex:_index(GoRouterState.of(context).uri.path),onDestinationSelected:(i)=>context.go(['/home','/categories','/cart','/wishlist','/profile'][i]),destinations:[const NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),const NavigationDestination(icon:Icon(Icons.grid_view_outlined),selectedIcon:Icon(Icons.grid_view),label:'Categories'),NavigationDestination(icon:Badge(isLabelVisible:cart.count>0,label:Text('${cart.count}'),child:const Icon(Icons.shopping_bag_outlined)),selectedIcon:Badge(isLabelVisible:cart.count>0,label:Text('${cart.count}'),child:const Icon(Icons.shopping_bag)),label:'Cart'),const NavigationDestination(icon:Icon(Icons.favorite_border),selectedIcon:Icon(Icons.favorite),label:'Wishlist'),const NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile')])));int _index(String p){if(p.startsWith('/categories'))return 1;if(p.startsWith('/cart'))return 2;if(p.startsWith('/wishlist'))return 3;if(p.startsWith('/profile'))return 4;return 0;}}
+
+final class AppShell extends StatelessWidget {
+  const AppShell({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      body: child,
+      bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
+          builder: (_, cart) => NavigationBar(
+                  selectedIndex: _index(GoRouterState.of(context).uri.path),
+                  onDestinationSelected: (i) => context.go([
+                        '/home',
+                        '/categories',
+                        '/cart',
+                        '/wishlist',
+                        '/profile'
+                      ][i]),
+                  destinations: [
+                    const NavigationDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: 'Home'),
+                    const NavigationDestination(
+                        icon: Icon(Icons.grid_view_outlined),
+                        selectedIcon: Icon(Icons.grid_view),
+                        label: 'Categories'),
+                    NavigationDestination(
+                        icon: Badge(
+                            isLabelVisible: cart.count > 0,
+                            label: Text('${cart.count}'),
+                            child: const Icon(Icons.shopping_bag_outlined)),
+                        selectedIcon: Badge(
+                            isLabelVisible: cart.count > 0,
+                            label: Text('${cart.count}'),
+                            child: const Icon(Icons.shopping_bag)),
+                        label: 'Cart'),
+                    const NavigationDestination(
+                        icon: Icon(Icons.favorite_border),
+                        selectedIcon: Icon(Icons.favorite),
+                        label: 'Wishlist'),
+                    const NavigationDestination(
+                        icon: Icon(Icons.person_outline),
+                        selectedIcon: Icon(Icons.person),
+                        label: 'Profile')
+                  ])));
+  int _index(String p) {
+    if (p.startsWith('/categories')) return 1;
+    if (p.startsWith('/cart')) return 2;
+    if (p.startsWith('/wishlist')) return 3;
+    if (p.startsWith('/profile')) return 4;
+    return 0;
+  }
+}
