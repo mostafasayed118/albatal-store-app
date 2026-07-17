@@ -10,7 +10,8 @@ final class CartState extends Equatable {
 
   final List<CartItem> items;
 
-  double get subtotal => items.fold(0, (value, item) => value + item.product.price * item.quantity);
+  double get subtotal => items.fold(
+      0, (value, item) => value + item.product.price * item.quantity);
   double get shipping => items.isEmpty ? 0 : 75;
   double get total => subtotal + shipping;
   int get count => items.fold(0, (value, item) => value + item.quantity);
@@ -31,9 +32,12 @@ final class CartCubit extends Cubit<CartState> {
     emit(CartState(restored));
   }
 
-  void add(Product product, {String color = 'Emerald', String length = '2m', int quantity = 1}) {
-    final item = CartItem(product: product, color: color, length: length, quantity: quantity);
-    final old = state.items.where((existing) => existing.key == item.key).firstOrNull;
+  void add(Product product,
+      {String color = 'Emerald', String length = '2m', int quantity = 1}) {
+    final item = CartItem(
+        product: product, color: color, length: length, quantity: quantity);
+    final old =
+        state.items.where((existing) => existing.key == item.key).firstOrNull;
     if (old == null) {
       _emitAndPersist(CartState([...state.items, item]));
     } else {
@@ -42,10 +46,15 @@ final class CartCubit extends Cubit<CartState> {
   }
 
   void update(String key, int quantity) => _emitAndPersist(CartState(
-        state.items.map((item) => item.key == key ? item.copyWith(quantity: quantity.clamp(1, 99).toInt()) : item).toList(),
+        state.items
+            .map((item) => item.key == key
+                ? item.copyWith(quantity: quantity.clamp(1, 99).toInt())
+                : item)
+            .toList(),
       ));
 
-  void remove(String key) => _emitAndPersist(CartState(state.items.where((item) => item.key != key).toList()));
+  void remove(String key) => _emitAndPersist(
+      CartState(state.items.where((item) => item.key != key).toList()));
 
   void clear() => _emitAndPersist(const CartState([]));
 

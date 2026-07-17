@@ -28,7 +28,8 @@ class CartSummary extends StatelessWidget {
           children: [
             Text(label),
             const Spacer(),
-            Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : null)),
+            Text(value,
+                style: TextStyle(fontWeight: bold ? FontWeight.bold : null)),
           ],
         ),
       );

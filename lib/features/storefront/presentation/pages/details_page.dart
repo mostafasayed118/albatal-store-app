@@ -1,10 +1,15 @@
+import 'package:al_batal_elite/features/storefront/presentation/widgets/bottom_action_button.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/price_text.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/product_image_placeholder.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/quantity_stepper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../cubit/product_details_cubit.dart';
-import '../cubit/wishlist_cubit.dart';
 import '../cubit/cart_cubit.dart';
+import '../cubit/product_details_cubit.dart';
 import '../cubit/products_data.dart';
+import '../cubit/wishlist_cubit.dart';
+
 
 class DetailsPage extends StatelessWidget {
   const DetailsPage({super.key, required this.id});
@@ -34,24 +39,23 @@ class DetailsPage extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Container(
-                height: 300,
-                decoration: BoxDecoration(color: Color(p.imageColor), borderRadius: BorderRadius.circular(16)),
-                child: const Center(child: Icon(Icons.texture, color: Colors.white, size: 100)),
+              ProductImagePlaceholder(
+                imageColor: p.imageColor,
+                constraints: const BoxConstraints.expand(height: 300),
+                size: 100,
               ),
               const SizedBox(height: 20),
               Text(p.name, style: Theme.of(context).textTheme.headlineMedium),
-              Row(
-                children: [
-                  Text(money(p.price), style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                  if (p.oldPrice != null) ...[
-                    const SizedBox(width: 8),
-                    Text(money(p.oldPrice!), style: const TextStyle(decoration: TextDecoration.lineThrough)),
-                    const SizedBox(width: 8),
-                    const Chip(label: Text('-15%')),
-                  ],
-                ],
+              PriceText(
+                p.price,
+                style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                showStrikeThrough: p.oldPrice != null,
+                strikeThroughAmount: p.oldPrice,
               ),
+              if (p.oldPrice != null) ...[
+                const SizedBox(width: 8),
+                const Chip(label: Text('-15%')),
+              ],
               const SizedBox(height: 20),
               const Text('Color'),
               Wrap(
@@ -81,9 +85,10 @@ class DetailsPage extends StatelessWidget {
                 children: [
                   const Text('Quantity'),
                   const Spacer(),
-                  IconButton(onPressed: () => context.read<ProductDetailsCubit>().quantity(s.quantity - 1), icon: const Icon(Icons.remove_circle_outline)),
-                  Text('${s.quantity}'),
-                  IconButton(onPressed: () => context.read<ProductDetailsCubit>().quantity(s.quantity + 1), icon: const Icon(Icons.add_circle_outline)),
+                  QuantityStepper(
+                    quantity: s.quantity,
+                    onChanged: (v) => context.read<ProductDetailsCubit>().quantity(v),
+                  ),
                 ],
               ),
               Card(
@@ -96,16 +101,14 @@ class DetailsPage extends StatelessWidget {
               ),
             ],
           ),
-          bottomNavigationBar: Padding(
-            padding: const EdgeInsets.all(16),
-            child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD97706)),
-              onPressed: () {
-                context.read<CartCubit>().add(p, color: s.color, length: s.length, quantity: s.quantity);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to your cart')));
-              },
-              child: const Text('Add to Cart'),
-            ),
+          bottomNavigationBar: BottomActionButton(
+            label: 'Add to Cart',
+            icon: Icons.shopping_bag_outlined,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            onPressed: () {
+              context.read<CartCubit>().add(p, color: s.color, length: s.length, quantity: s.quantity);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to your cart')));
+            },
           ),
         ),
       ),

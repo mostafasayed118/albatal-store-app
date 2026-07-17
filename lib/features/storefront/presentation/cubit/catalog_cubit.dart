@@ -32,7 +32,8 @@ final class CatalogState extends Equatable {
   final int carouselIndex;
   final int saleSeconds;
 
-  bool get hasActiveFilters => category != 'All' || query.isNotEmpty || sort != CatalogSort.featured;
+  bool get hasActiveFilters =>
+      category != 'All' || query.isNotEmpty || sort != CatalogSort.featured;
 
   List<Product> get visible {
     final normalizedQuery = query.trim().toLowerCase();
@@ -73,14 +74,16 @@ final class CatalogState extends Equatable {
       );
 
   @override
-  List<Object?> get props => [category, query, sort, carouselIndex, saleSeconds];
+  List<Object?> get props =>
+      [category, query, sort, carouselIndex, saleSeconds];
 }
 
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit() : super(const CatalogState()) {
     _timer = Timer.periodic(
       const Duration(seconds: 1),
-      (_) => emit(state.copyWith(saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt())),
+      (_) => emit(state.copyWith(
+          saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt())),
     );
   }
 
@@ -89,7 +92,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void select(String category) => emit(state.copyWith(category: category));
   void updateQuery(String query) => emit(state.copyWith(query: query));
   void selectSort(CatalogSort sort) => emit(state.copyWith(sort: sort));
-  void clearFilters() => emit(state.copyWith(category: 'All', query: '', sort: CatalogSort.featured));
+  void clearFilters() => emit(
+      state.copyWith(category: 'All', query: '', sort: CatalogSort.featured));
   void carousel(int index) => emit(state.copyWith(carouselIndex: index));
 
   @override

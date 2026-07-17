@@ -1,10 +1,12 @@
+import 'package:al_batal_elite/features/storefront/presentation/widgets/empty_state_view.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/product_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../cubit/wishlist_cubit.dart';
 import '../cubit/products_data.dart';
-import '../widgets/product_tile.dart';
+import '../cubit/wishlist_cubit.dart';
+
 
 class WishlistPage extends StatelessWidget {
   const WishlistPage({super.key});
@@ -16,23 +18,21 @@ class WishlistPage extends StatelessWidget {
           builder: (context, ids) {
             final p = products.where((x) => ids.contains(x.id)).toList();
             if (p.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.inventory_2_outlined, size: 72),
-                    const SizedBox(height: 16),
-                    Text('No items found', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 8),
-                    OutlinedButton(onPressed: () => context.go('/categories'), child: const Text('Explore Categories')),
-                  ],
-                ),
+              return EmptyStateView(
+                icon: Icons.inventory_2_outlined,
+                title: 'No items found',
+                actionLabel: 'Explore Categories',
+                onAction: () => context.go('/categories'),
               );
             }
             return GridView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: p.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: .68, crossAxisSpacing: 12, mainAxisSpacing: 12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: .68,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12),
               itemBuilder: (_, i) => ProductTile(p[i]),
             );
           },

@@ -37,15 +37,22 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Good morning, Ahmed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              Text('Good morning, Ahmed',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
               Text(
                 'AL BATAL ELITE',
-                style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 1.15),
+                style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.15),
               ),
             ],
           ),
           actions: [
-            IconButton(onPressed: () => context.push('/settings'), icon: const Icon(Icons.dark_mode_outlined)),
+            IconButton(
+                onPressed: () => context.push('/settings'),
+                icon: const Icon(Icons.dark_mode_outlined)),
           ],
         ),
         body: BlocBuilder<CatalogCubit, CatalogState>(
@@ -73,7 +80,9 @@ class _HomePageState extends State<HomePage> {
                           ),
                     filled: true,
                     fillColor: Theme.of(context).cardColor,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -81,7 +90,8 @@ class _HomePageState extends State<HomePage> {
                   height: 170,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF064E3B), Color(0xFF16735B)]),
+                    gradient: const LinearGradient(
+                        colors: [Color(0xFF064E3B), Color(0xFF16735B)]),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -89,16 +99,27 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Text(
                         'NEW SILK COLLECTION',
-                        style: TextStyle(color: Color(0xFFFFD58E), fontFamily: 'Montserrat', fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.05),
+                        style: TextStyle(
+                            color: Color(0xFFFFD58E),
+                            fontFamily: 'Montserrat',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.05),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'Woven for distinction',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Montserrat', fontSize: 24, fontWeight: FontWeight.w700, height: 1.15),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Montserrat',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            height: 1.15),
                       ),
                       const Spacer(),
                       FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD97706)),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706)),
                         onPressed: () => context.go('/categories'),
                         child: const Text('Explore collection'),
                       ),
@@ -124,13 +145,16 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Text('Flash Sale', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Flash Sale',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const Spacer(),
                     Text(
                       '${(state.saleSeconds ~/ 3600).toString().padLeft(2, '0')}:'
                       '${((state.saleSeconds % 3600) ~/ 60).toString().padLeft(2, '0')}:'
                       '${(state.saleSeconds % 60).toString().padLeft(2, '0')}',
-                      style: const TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          color: Color(0xFFD97706),
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -139,13 +163,16 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 24),
                 Row(
                   children: [
-                    Expanded(child: Text('Popular products', style: Theme.of(context).textTheme.titleLarge)),
+                    Expanded(
+                        child: Text('Popular products',
+                            style: Theme.of(context).textTheme.titleLarge)),
                     PopupMenuButton<CatalogSort>(
                       tooltip: 'Sort products',
                       initialValue: state.sort,
                       onSelected: catalog.selectSort,
                       itemBuilder: (_) => CatalogSort.values
-                          .map((sort) => PopupMenuItem(value: sort, child: Text(sort.label)))
+                          .map((sort) => PopupMenuItem(
+                              value: sort, child: Text(sort.label)))
                           .toList(),
                       child: Chip(
                         avatar: const Icon(Icons.sort, size: 18),
@@ -155,7 +182,8 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('${state.visible.length} fabric${state.visible.length == 1 ? '' : 's'} found'),
+                Text(
+                    '${state.visible.length} fabric${state.visible.length == 1 ? '' : 's'} found'),
                 const SizedBox(height: 12),
                 if (state.visible.isEmpty)
                   CatalogEmptyState(
@@ -169,13 +197,15 @@ class _HomePageState extends State<HomePage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: state.visible.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: .68,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemBuilder: (_, index) => ProductTile(state.visible[index]),
+                    itemBuilder: (_, index) =>
+                        ProductTile(state.visible[index]),
                   ),
               ],
             );

@@ -23,7 +23,8 @@ class OrdersPage extends StatelessWidget {
                       ButtonSegment(value: 2, label: Text('Cancelled')),
                     ],
                     selected: {tab},
-                    onSelectionChanged: (x) => context.read<OrdersCubit>().tab(x.first),
+                    onSelectionChanged: (x) =>
+                        context.read<OrdersCubit>().tab(x.first),
                   ),
                 ),
                 Expanded(
@@ -38,13 +39,28 @@ class OrdersPage extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(tab == 0 ? '#ORD-2023-8472' : '#ORD-2023-8391', style: Theme.of(context).textTheme.titleLarge),
+                                    Text(
+                                        tab == 0
+                                            ? '#ORD-2023-8472'
+                                            : '#ORD-2023-8391',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge),
                                     const Text('Royal Emerald Silk · 2 items'),
                                     const SizedBox(height: 12),
                                     if (tab == 0)
-                                      const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('● Placed'), Text('● Shipped'), Text('○ Delivered')])
+                                      const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('● Placed'),
+                                            Text('● Shipped'),
+                                            Text('○ Delivered')
+                                          ])
                                     else
-                                      const Text('Delivered · 12 July 2026', style: TextStyle(color: Color(0xFF064E3B))),
+                                      const Text('Delivered · 12 July 2026',
+                                          style: TextStyle(
+                                              color: Color(0xFF064E3B))),
                                   ],
                                 ),
                               ),

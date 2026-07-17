@@ -29,15 +29,23 @@ class CategoriesPage extends StatelessWidget {
                 context.go('/home');
               },
               child: Container(
-                decoration: BoxDecoration(color: Color(p.imageColor), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                    color: Color(p.imageColor),
+                    borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.texture, color: Colors.white, size: 36),
                     const Spacer(),
-                    Text(c, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                    Text('${products.where((x) => x.category == c).length} curated fabrics', style: const TextStyle(color: Colors.white70)),
+                    Text(c,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold)),
+                    Text(
+                        '${products.where((x) => x.category == c).length} curated fabrics',
+                        style: const TextStyle(color: Colors.white70)),
                   ],
                 ),
               ),

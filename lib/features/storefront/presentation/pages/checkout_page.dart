@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
+import '../widgets/bottom_action_button.dart';
 import '../widgets/cart_summary.dart';
 
 class CheckoutPage extends StatelessWidget {
@@ -81,14 +82,11 @@ class CheckoutPage extends StatelessWidget {
                 BlocBuilder<CartCubit, CartState>(builder: (_, cart) => CartSummary(cart)),
               ],
             ),
-            bottomNavigationBar: Padding(
-              padding: const EdgeInsets.all(16),
-              child: FilledButton(
-                onPressed: s.placing ? null : () => context.read<CheckoutCubit>().place(),
-                child: s.placing
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.lock_outline), SizedBox(width: 8), Text('Place Order')]),
-              ),
+            bottomNavigationBar: BottomActionButton(
+              label: 'Place Order',
+              icon: Icons.lock_outline,
+              isLoading: s.placing,
+              onPressed: () => context.read<CheckoutCubit>().place(),
             ),
           ),
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widgets/menu_list_tile.dart';
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
@@ -20,17 +22,11 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            ...[
-              (Icons.receipt_long_outlined, 'My Orders', () => context.push('/profile/orders')),
-              (Icons.favorite_border, 'Wishlist', () => context.go('/wishlist')),
-              (Icons.location_on_outlined, 'Shipping Addresses', () {}),
-              (Icons.credit_card_outlined, 'Payment Methods', () {}),
-              (Icons.settings_outlined, 'Account Settings', () => context.push('/settings')),
-            ].map(
-              (x) => Card(
-                child: ListTile(leading: Icon(x.$1), title: Text(x.$2), trailing: const Icon(Icons.chevron_right), onTap: x.$3),
-              ),
-            ),
+            MenuListTile(icon: Icons.receipt_long_outlined, title: 'My Orders', onTap: () => context.push('/profile/orders')),
+            MenuListTile(icon: Icons.favorite_border, title: 'Wishlist', onTap: () => context.go('/wishlist')),
+            MenuListTile(icon: Icons.location_on_outlined, title: 'Shipping Addresses'),
+            MenuListTile(icon: Icons.credit_card_outlined, title: 'Payment Methods'),
+            MenuListTile(icon: Icons.settings_outlined, title: 'Account Settings', onTap: () => context.push('/settings')),
             TextButton.icon(onPressed: () {}, icon: const Icon(Icons.logout), label: const Text('Log out')),
           ],
         ),

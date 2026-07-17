@@ -1,15 +1,15 @@
-import 'package:al_batal_elite/features/storefront/presentation/pages/cart_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/checkout_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/order_success_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/profile_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/wishlist_page.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/storefront/presentation/pages/cart_page.dart';
+import '../../features/storefront/presentation/pages/categories_page.dart';
+import '../../features/storefront/presentation/pages/checkout_page.dart';
+import '../../features/storefront/presentation/pages/details_page.dart';
+import '../../features/storefront/presentation/pages/home_page.dart';
+import '../../features/storefront/presentation/pages/order_success_page.dart';
+import '../../features/storefront/presentation/pages/orders_page.dart';
+import '../../features/storefront/presentation/pages/profile_page.dart';
+import '../../features/storefront/presentation/pages/wishlist_page.dart';
 import '../components/app_shell.dart';
 
 final appRouter = GoRouter(initialLocation: '/home', routes: [
@@ -18,7 +18,7 @@ final appRouter = GoRouter(initialLocation: '/home', routes: [
     GoRoute(path: '/categories', builder: (_, __) => const CategoriesPage()),
     GoRoute(path: '/wishlist', builder: (_, __) => const WishlistPage()),
     GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
-    GoRoute(path: '/profile', builder: (_, __) => const ProfilePage())
+    GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
   ]),
   GoRoute(
       path: '/product/:id',
@@ -26,5 +26,5 @@ final appRouter = GoRouter(initialLocation: '/home', routes: [
   GoRoute(path: '/checkout', builder: (_, __) => const CheckoutPage()),
   GoRoute(path: '/order-success', builder: (_, __) => const OrderSuccessPage()),
   GoRoute(path: '/profile/orders', builder: (_, __) => const OrdersPage()),
-  GoRoute(path: '/settings', builder: (_, __) => const SettingsPage())
+  GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
 ]);
