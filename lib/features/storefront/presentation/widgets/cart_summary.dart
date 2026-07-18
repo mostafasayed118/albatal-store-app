@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/products_data.dart';
 
@@ -8,19 +9,22 @@ class CartSummary extends StatelessWidget {
   final CartState state;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _row('Subtotal', money(state.subtotal)),
-              _row('Shipping', money(state.shipping)),
-              const Divider(),
-              _row('Total', money(state.total), bold: true),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _row(l.subtotal, money(state.subtotal)),
+            _row(l.shipping, money(state.shipping)),
+            const Divider(),
+            _row(l.total, money(state.total), bold: true),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   Widget _row(String label, String value, {bool bold = false}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -29,7 +33,8 @@ class CartSummary extends StatelessWidget {
             Text(label),
             const Spacer(),
             Text(value,
-                style: TextStyle(fontWeight: bold ? FontWeight.bold : null)),
+                style: TextStyle(
+                    fontWeight: bold ? FontWeight.bold : null)),
           ],
         ),
       );

@@ -379,6 +379,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quantity'**
   String get quantity;
+
+  /// No description provided for @brandName.
+  ///
+  /// In en, this message translates to:
+  /// **'AL BATAL ELITE'**
+  String get brandName;
+
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, {name}'**
+  String goodMorning(String name);
+
+  /// No description provided for @searchFabrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Search exquisite fabrics'**
+  String get searchFabrics;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @voiceSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice search'**
+  String get voiceSearch;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @sortProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort products'**
+  String get sortProducts;
+
+  /// No description provided for @newSilkCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW SILK COLLECTION'**
+  String get newSilkCollection;
+
+  /// No description provided for @wovenForDistinction.
+  ///
+  /// In en, this message translates to:
+  /// **'Woven for distinction'**
+  String get wovenForDistinction;
+
+  /// No description provided for @exploreCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore collection'**
+  String get exploreCollection;
+
+  /// No description provided for @flashSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash Sale'**
+  String get flashSale;
+
+  /// No description provided for @popularProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular products'**
+  String get popularProducts;
+
+  /// No description provided for @fabricsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} fabric found} other{{count} fabrics found}}'**
+  String fabricsFound(int count);
+
+  /// No description provided for @curatedFabrics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} curated fabric} other{{count} curated fabrics}}'**
+  String curatedFabrics(int count);
+
+  /// No description provided for @noFabricsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No fabrics found'**
+  String get noFabricsFound;
+
+  /// No description provided for @tryAnotherSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another search or clear your filters.'**
+  String get tryAnotherSearch;
+
+  /// No description provided for @viewAllFabrics.
+  ///
+  /// In en, this message translates to:
+  /// **'View all fabrics'**
+  String get viewAllFabrics;
+
+  /// No description provided for @myCart.
+  ///
+  /// In en, this message translates to:
+  /// **'My Cart'**
+  String get myCart;
+
+  /// No description provided for @cartEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cart is waiting for something exquisite.'**
+  String get cartEmptyTitle;
+
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
+  /// No description provided for @proceedToCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to Checkout'**
+  String get proceedToCheckout;
+
+  /// No description provided for @subtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get subtotal;
+
+  /// No description provided for @shipping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping'**
+  String get shipping;
+
+  /// No description provided for @expressDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Express Delivery'**
+  String get expressDelivery;
+
+  /// No description provided for @expressDeliveryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered within 24–48 hours'**
+  String get expressDeliveryBody;
+
+  /// No description provided for @addToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Cart'**
+  String get addToCart;
+
+  /// No description provided for @shareLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link copied'**
+  String get shareLinkCopied;
+
+  /// No description provided for @addedToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to your cart'**
+  String get addedToCart;
+
+  /// No description provided for @discountPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'-{percent}%'**
+  String discountPercent(int percent);
+
+  /// No description provided for @shareProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Share product'**
+  String get shareProduct;
+
+  /// No description provided for @addToWishlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to wishlist'**
+  String get addToWishlist;
+
+  /// No description provided for @removeFromWishlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from wishlist'**
+  String get removeFromWishlist;
+
+  /// No description provided for @decreaseQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease quantity'**
+  String get decreaseQuantity;
+
+  /// No description provided for @increaseQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase quantity'**
+  String get increaseQuantity;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfile;
+
+  /// No description provided for @fabricCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Fabric Categories'**
+  String get fabricCategories;
+
+  /// No description provided for @confirmStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmStep;
+
+  /// No description provided for @mockCustomerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Ahmed Mansour'**
+  String get mockCustomerName;
+
+  /// No description provided for @mockAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'12 El Tahrir Street, Cairo, Egypt'**
+  String get mockAddress;
+
+  /// No description provided for @mockAddressDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Address entry is simulated in this local mock.'**
+  String get mockAddressDialogBody;
+
+  /// No description provided for @myProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'My Profile'**
+  String get myProfile;
+
+  /// No description provided for @premiumMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium Member'**
+  String get premiumMember;
+
+  /// No description provided for @myOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'My Orders'**
+  String get myOrders;
+
+  /// No description provided for @shippingAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping Addresses'**
+  String get shippingAddresses;
+
+  /// No description provided for @paymentMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Methods'**
+  String get paymentMethods;
+
+  /// No description provided for @accountSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Settings'**
+  String get accountSettings;
+
+  /// No description provided for @logOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logOut;
+
+  /// No description provided for @noCancelledOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'No cancelled orders'**
+  String get noCancelledOrders;
+
+  /// No description provided for @orderItemsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Royal Emerald Silk · 2 items'**
+  String get orderItemsSummary;
+
+  /// No description provided for @deliveredOnDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered · 12 July 2026'**
+  String get deliveredOnDate;
+
+  /// No description provided for @successTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successTitle;
+
+  /// No description provided for @orderPlacedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your order #ORD-2023-8472 has been placed. We will keep you updated.'**
+  String get orderPlacedBody;
 }
 
 class _AppLocalizationsDelegate

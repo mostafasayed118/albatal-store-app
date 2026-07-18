@@ -1,15 +1,15 @@
-import 'package:al_batal_elite/features/storefront/presentation/widgets/bottom_action_button.dart';
-import 'package:al_batal_elite/features/storefront/presentation/widgets/price_text.dart';
-import 'package:al_batal_elite/features/storefront/presentation/widgets/product_image_placeholder.dart';
-import 'package:al_batal_elite/features/storefront/presentation/widgets/quantity_stepper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/extensions/build_context_x.dart';
+import '../widgets/bottom_action_button.dart';
+import '../widgets/price_text.dart';
+import '../widgets/product_image_placeholder.dart';
+import '../widgets/quantity_stepper.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../cubit/products_data.dart';
 import '../cubit/wishlist_cubit.dart';
-
 
 class DetailsPage extends StatelessWidget {
   const DetailsPage({super.key, required this.id});
@@ -17,6 +17,7 @@ class DetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final p = products.firstWhere((x) => x.id == id, orElse: () => products.first);
     return BlocProvider(
       create: (_) => ProductDetailsCubit(),
@@ -25,13 +26,20 @@ class DetailsPage extends StatelessWidget {
           appBar: AppBar(
             actions: [
               BlocBuilder<WishlistCubit, Set<String>>(
-                builder: (_, w) => IconButton(
-                  onPressed: () => context.read<WishlistCubit>().toggle(p.id),
-                  icon: Icon(w.contains(p.id) ? Icons.favorite : Icons.favorite_border),
-                ),
+                builder: (_, w) {
+                  final saved = w.contains(p.id);
+                  return IconButton(
+                    tooltip: saved ? l.removeFromWishlist : l.addToWishlist,
+                    onPressed: () => context.read<WishlistCubit>().toggle(p.id),
+                    icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
+                    color: saved ? Theme.of(context).colorScheme.error : null,
+                  );
+                },
               ),
               IconButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share link copied'))),
+                tooltip: l.shareProduct,
+                onPressed: () => ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text(l.shareLinkCopied))),
                 icon: const Icon(Icons.share_outlined),
               ),
             ],
@@ -48,16 +56,20 @@ class DetailsPage extends StatelessWidget {
               Text(p.name, style: Theme.of(context).textTheme.headlineMedium),
               PriceText(
                 p.price,
-                style: TextStyle(fontSize: 22, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 22,
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold),
                 showStrikeThrough: p.oldPrice != null,
                 strikeThroughAmount: p.oldPrice,
               ),
               if (p.oldPrice != null) ...[
-                const SizedBox(width: 8),
-                const Chip(label: Text('-15%')),
+                const SizedBox(height: 8),
+                Chip(label: Text(l.discountPercent(
+                    ((p.oldPrice! - p.price) / p.oldPrice! * 100).round()))),
               ],
               const SizedBox(height: 20),
-              const Text('Color'),
+              Text(l.color),
               Wrap(
                 spacing: 8,
                 children: ['Emerald', 'Gold', 'Ivory']
@@ -69,7 +81,7 @@ class DetailsPage extends StatelessWidget {
                     .toList(),
               ),
               const SizedBox(height: 16),
-              const Text('Length'),
+              Text(l.length),
               Wrap(
                 spacing: 8,
                 children: ['1m', '2m', '5m']
@@ -83,7 +95,7 @@ class DetailsPage extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Text('Quantity'),
+                  Text(l.quantity),
                   const Spacer(),
                   QuantityStepper(
                     quantity: s.quantity,
@@ -93,21 +105,22 @@ class DetailsPage extends StatelessWidget {
               ),
               Card(
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: .08),
-                child: const ListTile(
-                  leading: Icon(Icons.local_shipping_outlined),
-                  title: Text('Express Delivery'),
-                  subtitle: Text('Delivered within 24–48 hours'),
+                child: ListTile(
+                  leading: const Icon(Icons.local_shipping_outlined),
+                  title: Text(l.expressDelivery),
+                  subtitle: Text(l.expressDeliveryBody),
                 ),
               ),
             ],
           ),
           bottomNavigationBar: BottomActionButton(
-            label: 'Add to Cart',
+            label: l.addToCart,
             icon: Icons.shopping_bag_outlined,
             backgroundColor: Theme.of(context).colorScheme.secondary,
             onPressed: () {
               context.read<CartCubit>().add(p, color: s.color, length: s.length, quantity: s.quantity);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to your cart')));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(l.addedToCart)));
             },
           ),
         ),

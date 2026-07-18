@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/components/app_button.dart';
+
 class EmptyStateView extends StatelessWidget {
   const EmptyStateView({
     super.key,
@@ -37,7 +39,11 @@ class EmptyStateView extends StatelessWidget {
               ],
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: 24),
-                OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+                AppButton(
+                  label: actionLabel!,
+                  style: AppButtonStyle.outline,
+                  onPressed: onAction,
+                ),
               ],
             ],
           ),
