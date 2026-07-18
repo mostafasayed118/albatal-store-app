@@ -180,8 +180,9 @@ extension OrderCodec on Order {
                     'name': i.product.name,
                     'category': i.product.category,
                     'price': i.product.price,
-                    'imageColor': i.product.imageColor,
-                    'oldPrice': i.product.oldPrice,
+                  'imageColor': i.product.imageColor,
+                  'imageAsset': i.product.imageAsset,
+                  'oldPrice': i.product.oldPrice,
                   },
                   'color': i.color,
                   'length': i.length,
@@ -211,6 +212,7 @@ extension OrderCodec on Order {
               category: pRaw['category'] as String,
               price: (pRaw['price'] as num).toDouble(),
               imageColor: (pRaw['imageColor'] as num).toInt(),
+              imageAsset: pRaw['imageAsset'] as String?,
               oldPrice: pRaw['oldPrice'] == null
                   ? null
                   : (pRaw['oldPrice'] as num).toDouble(),

@@ -112,7 +112,6 @@ final class CatalogCubit extends Cubit<CatalogState> {
       (_) => emit(state.copyWith(
           saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt())),
     );
-    load();
   }
 
   final CatalogRepository _repository;
@@ -166,6 +165,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void _recordRecentQuery(String q) {
     final updated = [q, ...state.recentQueries.where((r) => r != q)].take(5).toList();
     emit(state.copyWith(recentQueries: updated));
+  }
+
+  void deleteRecentQuery(String q) {
+    emit(state.copyWith(
+        recentQueries: state.recentQueries.where((r) => r != q).toList()));
   }
 
   @override

@@ -24,7 +24,10 @@ class ProductTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProductImagePlaceholder(imageColor: product.imageColor),
+              ProductImagePlaceholder(
+                imageColor: product.imageColor,
+                imageAsset: product.imageAsset,
+              ),
               const SizedBox(height: 10),
               Text(product.name,
                   maxLines: 1,

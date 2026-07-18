@@ -160,3 +160,125 @@ Tooltips were chosen over inline `Semantics(label:)` because the controls are al
 3. Why are `fabricsFound` and `curatedFabrics` declared with ICU plural messages instead of two separate keys like `oneFabricFound` / `manyFabricsFound`?
 4. If the discount chip were still hardcoded to `-15%`, which kind of product data change would silently produce a wrong badge?
 5. Why does the accessibility test assert `TextDirection.rtl` rather than checking an Arabic string substring?
+
+## Order persistence and functional orders loop
+
+### Problem and approach
+
+Checkout completed by clearing the cart and navigating to a static "Success!" page. No order was persisted. The orders page showed a hardcoded `#ORD-2023-8472` with a fixed progress bar. The cart → checkout → orders loop didn't close — users had no way to see what they'd actually ordered.
+
+This slice adds an `Order` value object that snapshots the cart at confirmation time (items, totals, payment method, timestamp), persists orders through `SharedPreferences` (same pattern as cart/wishlist), rewrites `OrdersCubit` with `place()` / `restore()` / `advance()` intents, rewrites the orders page with real `TabBar` + per-tab empty states, and wires the checkout to call `OrdersCubit.place()` before clearing the cart. The success page receives the order ID via `GoRouterState.extra`.
+
+```mermaid
+flowchart LR
+  Checkout -->|place(cart, payment)| OrdersCubit
+  OrdersCubit -->|snapshot + persist| Persistence
+  OrdersCubit -->|emit List<Order>| OrdersPage
+  OrdersPage -->|tab: active / completed / cancelled| UI
+```
+
+### Why snapshot the full Product, not just an ID?
+
+A cart stores a product reference, because the live product is always available. An order stores a frozen copy, because a real receipt must survive catalog changes — a product rename, price edit, or removal must not rewrite historical orders. The `OrderCodec` serializes the full `Product` fields (id, name, category, price, imageColor, oldPrice) alongside each `CartItem`, so restored orders are self-contained.
+
+### Ownership
+
+- `core/entities/order.dart`: framework-free `Order` and `OrderStatus` value objects.
+- `storefront_persistence.dart`: extended with `readOrders()` / `writeOrders()` and a shared `OrderCodec` for both `LocalStorefrontPersistence` and `MemoryStorefrontPersistence`.
+- `orders_cubit.dart`: rewritten to own `OrdersState { orders, status }`, with `place()`, `restore()`, and `advance()` intents. Orders are sorted most-recent-first in each tab.
+- `checkout_page.dart`: calls `OrdersCubit.place()` before `CartCubit.clear()`, passes `order.id` via `GoRouterState.extra`.
+- `orders_page.dart`: rewritten with `DefaultTabController` + `TabBar` (Active / Completed / Cancelled), each tab rendering its filtered list with a `_StatusProgress` indicator and an "Advance order" button for demo purposes.
+- `orders_cubit_test.dart`: 3 tests — place, advance lifecycle, persistence across cubit recreation.
+
+### Added verification
+
+- `flutter analyze` clean.
+- 15 → 20 tests passing (3 order cubit tests + 2 new catalog tests for debounce/recent queries).
+
+### Self-check
+
+1. Why does `Order.items` contain full `CartItem` objects rather than just product IDs + quantities?
+2. What would happen if `OrdersCubit.place()` cleared the cart instead of letting the checkout listener own that decision?
+3. The orders page uses `DefaultTabController` instead of the earlier `SegmentedButton`. Why is a `TabBar` a better fit when each tab needs its own scrolling list?
+
+## Catalog repository abstraction
+
+### Problem and approach
+
+`CatalogCubit` previously read a hardcoded `products` constant directly, with no data layer between the entity and the Cubit. This meant there was no place to swap in a remote API, no `Result<T>` error contract, and no `loading` / `ready` / `error` status lifecycle — the Cubit just "had" products from construction.
+
+This slice extracts a `CatalogRepository` interface (returning `Result<List<Product>>`), implements it as `LocalCatalogRepository` backed by the fixed product list, registers it in `GetIt`, and rewrites `CatalogCubit` with a `load()` intent that transitions through `CatalogStatus.initial → loading → ready | error`. The Cubit no longer auto-loads from its constructor — `AlBatalApp` calls `..load()` explicitly, matching the `CartCubit..restore()` pattern.
+
+```mermaid
+flowchart LR
+  App -->|create + load| CatalogCubit
+  CatalogCubit -->|fetchProducts / fetchCategories| CatalogRepository
+  CatalogRepository -->|Result<List>| CatalogCubit
+  CatalogCubit -->|CatalogState| UI
+  UI -->|empty / grid / error retry| CatalogCubit
+```
+
+### Why this abstraction is not ceremony
+
+The repository is thin — it returns `List.of(products)` — but it earns its keep in three ways: (a) the Cubit is now testable with both a `StubCatalogRepository` (happy path) and a `FailingCatalogRepository` (error path) without touching the UI; (b) swapping in a remote API later means changing one file (`remote_catalog_repository.dart`) not the Cubit or every widget; (c) the `Result<T>` error contract forces explicit handling — the Cubit cannot silently swallow a failure because the state must transition to `CatalogStatus.error`.
+
+### Ownership
+
+- `domain/repositories/catalog_repository.dart`: abstract interface + `CatalogData` value class.
+- `data/local_catalog_repository.dart`: local in-memory implementation.
+- `service_locator.dart`: registers `CatalogRepository` as `LazySingleton`.
+- `app.dart`: `CatalogCubit(getIt<CatalogRepository>())..load()`.
+- `catalog_cubit.dart`: rewritten with `CatalogStatus`, `load()`, debounced `updateQuery`, recent queries, and `deleteRecentQuery`.
+- `catalog_cubit_test.dart`: rewritten with `StubCatalogRepository` / `FailingCatalogRepository`, covering load, filtering, sorting, debounce, and error retry — 8 tests.
+
+### Self-check
+
+1. What would change in `RemoteCatalogRepository` that would NOT require touching `CatalogCubit`?
+2. Why does `CatalogCubit.load()` emit `loading` before the `await` rather than after?
+3. If `fetchProducts()` returned an empty list (success but no data), how would the current Cubit handle it — and what should the UI show?
+
+## Search refinement — debounce, recent queries, in-place category filtering
+
+### Problem and approach
+
+Search was instant on every keystroke (no debounce), queries were not remembered, and the categories page redirected to home on tap. This slice adds a 350ms debounce to `updateQuery` (preventing grid rebuild on every character), records the 5 most recent successful queries, shows them as deletable chips below the search bar, and rewrites the categories page to show a filtered product grid in-place when a category is selected (with a back button to return to the tile view).
+
+### Why debounce matters
+
+With 5 products the instant rebuild is invisible. With a real catalog of hundreds, every keystroke would trigger a full filter + sort + grid rebuild. The 350ms debounce is a standard mobile search interval — fast enough to feel instant, slow enough to skip intermediate states. The debounce timer is stored as `_debounce` on the Cubit and cancelled on each new keystroke, so only the final query triggers a `recentQueries` record.
+
+### Ownership
+
+- `catalog_cubit.dart`: `_debounce` timer, `_recordRecentQuery`, `deleteRecentQuery`.
+- `home_page.dart`: recent queries chips rendered via `Wrap` below the search field when `query.isEmpty && recentQueries.isNotEmpty`.
+- `categories_page.dart`: rewritten with `_CategoryGrid` (reads `CatalogCubit` state) and `_FilteredCategoryView` (shows filtered `GridView` with a back button). The page no longer calls `context.go('/home')`.
+- `catalog_cubit_test.dart`: two new tests for debounce behavior and recent query recording.
+
+### Self-check
+
+1. Why does the debounce record the query in a separate timer rather than immediately in `updateQuery`?
+2. What problem would occur if recent queries were stored in `SharedPreferences` instead of Cubit state?
+3. When a user taps a category chip on the categories page, what state transition occurs, and how does the page re-render without a navigation event?
+
+## Procedural fabric-weave imagery
+
+### Problem and approach
+
+Product swatches were flat color blocks with a centered texture icon — visually functional but the biggest "mock" tell in the app. Real fabric photography requires supplied assets that don't exist yet. This slice adds a `FabricWeavePainter` (a `CustomPainter`) that renders a subtle cross-hatch weave pattern over the product's base color, giving each swatch a more tactile, cloth-like appearance without pretending to be a photograph.
+
+The painter draws horizontal and vertical "threads" with a slight per-line wobble for organic feel, plus a faint diagonal highlight that reinforces the woven texture. The pattern scales to any container size and adapts to the product's color. When real photography is supplied later, the painter is removed and `Image.asset` takes its place — the rest of the widget tree is unchanged.
+
+### Why CustomPainter instead of an SVG or raster texture
+
+A `CustomPainter` is framework-native, requires no asset pipeline, scales to any resolution without aliasing, and composes directly with `Container`'s box shadow and border radius. An SVG texture would need asset bundling and a rendering wrapper; a raster texture would need multiple resolutions for different screen densities. The painter is the simplest honest placeholder that adds visual interest without inventing infrastructure.
+
+### Ownership
+
+- `fabric_weave_painter.dart`: the `CustomPainter` — `baseColor`, `threadCount`, optional `threadColor`.
+- `product_image_placeholder.dart`: now wraps its content in `CustomPaint(painter: FabricWeavePainter(...))` with `Clip.antiAlias` for clean corner rounding.
+
+### Self-check
+
+1. Why does `shouldRepaint` compare `baseColor` and `threadCount` rather than always returning `true`?
+2. If the painter drew 50 threads instead of 12, what performance concern would arise on low-end devices?
+3. When real product photos arrive, what is the minimal change to `product_image_placeholder.dart` — and which files are NOT touched?

@@ -22,7 +22,7 @@ final class AlBatalApp extends StatelessWidget {
               create: (_) =>
                   SettingsCubit(getIt<SettingsRepository>())..load()),
           BlocProvider(
-              create: (_) => CatalogCubit(getIt<CatalogRepository>())),
+              create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
           BlocProvider(
               create: (_) =>
                   CartCubit(LocalStorefrontPersistence(getIt()))..restore()),

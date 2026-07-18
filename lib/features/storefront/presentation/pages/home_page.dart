@@ -100,6 +100,25 @@ class _HomePageState extends State<HomePage> {
                       borderSide: BorderSide.none),
                 ),
               ),
+              if (state.query.isEmpty && state.recentQueries.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final q in state.recentQueries)
+                      Chip(
+                        label: Text(q),
+                        avatar: const Icon(Icons.history, size: 16),
+                        onDeleted: () => catalog.deleteRecentQuery(q),
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
               Container(
                 height: 170,

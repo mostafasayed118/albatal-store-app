@@ -49,6 +49,7 @@ class DetailsPage extends StatelessWidget {
             children: [
               ProductImagePlaceholder(
                 imageColor: p.imageColor,
+                imageAsset: p.imageAsset,
                 constraints: const BoxConstraints.expand(height: 300),
                 size: 100,
               ),

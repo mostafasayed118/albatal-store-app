@@ -28,12 +28,21 @@ final class FailingCatalogRepository implements CatalogRepository {
       Failure(AppError('Catalog unavailable'));
 }
 
+/// Pre-seeded state with products loaded — avoids testing load() in every test.
+CatalogState seededState([CatalogSort sort = CatalogSort.featured]) =>
+    CatalogState(
+      status: CatalogStatus.ready,
+      allProducts: products,
+      categories: categories,
+      sort: sort,
+    );
+
 void main() {
-  group('CatalogCubit — happy path', () {
+  group('CatalogCubit — load', () {
     blocTest<CatalogCubit, CatalogState>(
-      'loads products via repository and transitions to ready',
+      'loads products via repository and transitions loading → ready',
       build: () => CatalogCubit(StubCatalogRepository()),
-      wait: const Duration(milliseconds: 400),
+      act: (cubit) => cubit.load(),
       expect: () => [
         const CatalogState(status: CatalogStatus.loading),
         isA<CatalogState>()
@@ -44,84 +53,9 @@ void main() {
     );
 
     blocTest<CatalogCubit, CatalogState>(
-      'filters catalog results by a case-insensitive product query',
-      build: () => CatalogCubit(StubCatalogRepository()),
-      wait: const Duration(milliseconds: 400),
-      seed: () => const CatalogState(
-          status: CatalogStatus.ready,
-          allProducts: products,
-          categories: categories),
-      act: (cubit) => cubit.updateQuery('VELVET'),
-      expect: () => [isA<CatalogState>().having((s) => s.query, 'query', 'VELVET')],
-      verify: (cubit) {
-        expect(cubit.state.visible, hasLength(1));
-        expect(cubit.state.visible.single.name, 'Midnight Velvet');
-      },
-    );
-
-    blocTest<CatalogCubit, CatalogState>(
-      'orders the full catalog by descending price',
-      build: () => CatalogCubit(StubCatalogRepository()),
-      wait: const Duration(milliseconds: 400),
-      seed: () => const CatalogState(
-          status: CatalogStatus.ready,
-          allProducts: products,
-          categories: categories),
-      act: (cubit) => cubit.selectSort(CatalogSort.priceHighToLow),
-      verify: (cubit) => expect(
-        cubit.state.visible.map((product) => product.price),
-        [1290, 980, 820, 690, 540],
-      ),
-    );
-
-    blocTest<CatalogCubit, CatalogState>(
-      'clears query, category, and sorting together',
-      build: () => CatalogCubit(StubCatalogRepository()),
-      wait: const Duration(milliseconds: 400),
-      seed: () => const CatalogState(
-          status: CatalogStatus.ready,
-          allProducts: products,
-          categories: categories),
-      act: (cubit) {
-        cubit.updateQuery('silk');
-        cubit.select('Silk');
-        cubit.selectSort(CatalogSort.name);
-        cubit.clearFilters();
-      },
-      expect: () => [
-        isA<CatalogState>(),
-        isA<CatalogState>(),
-        isA<CatalogState>(),
-        isA<CatalogState>()
-            .having((s) => s.category, 'category', 'All')
-            .having((s) => s.query, 'query', '')
-            .having((s) => s.sort, 'sort', CatalogSort.featured),
-      ],
-    );
-
-    blocTest<CatalogCubit, CatalogState>(
-      'records recent queries after debounce settles',
-      build: () => CatalogCubit(StubCatalogRepository()),
-      seed: () => const CatalogState(
-          status: CatalogStatus.ready,
-          allProducts: products,
-          categories: categories),
-      act: (cubit) {
-        cubit.updateQuery('silk');
-        cubit.updateQuery('velvet');
-      },
-      wait: const Duration(milliseconds: 500),
-      verify: (cubit) {
-        expect(cubit.state.recentQueries, contains('silk'));
-        expect(cubit.state.recentQueries, contains('velvet'));
-      },
-    );
-  });
-
-  group('CatalogCubit — error path', () {
-    blocTest<CatalogCubit, CatalogState>(
       'transitions to error when the repository fails',
       build: () => CatalogCubit(FailingCatalogRepository()),
+      act: (cubit) => cubit.load(),
       expect: () => [
         const CatalogState(status: CatalogStatus.loading),
         const CatalogState(status: CatalogStatus.error),
@@ -141,6 +75,80 @@ void main() {
         const CatalogState(status: CatalogStatus.loading),
         const CatalogState(status: CatalogStatus.error),
       ],
+    );
+  });
+
+  group('CatalogCubit — filtering', () {
+    blocTest<CatalogCubit, CatalogState>(
+      'filters catalog results by a case-insensitive product query',
+      build: () => CatalogCubit(StubCatalogRepository()),
+      seed: seededState,
+      act: (cubit) => cubit.updateQuery('VELVET'),
+      wait: const Duration(milliseconds: 400),
+      verify: (cubit) {
+        expect(cubit.state.query, 'VELVET');
+        expect(cubit.state.visible, hasLength(1));
+        expect(cubit.state.visible.single.name, 'Midnight Velvet');
+      },
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'orders the full catalog by descending price',
+      build: () => CatalogCubit(StubCatalogRepository()),
+      seed: seededState,
+      act: (cubit) => cubit.selectSort(CatalogSort.priceHighToLow),
+      verify: (cubit) => expect(
+        cubit.state.visible.map((product) => product.price),
+        [1290, 980, 820, 690, 540],
+      ),
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'clears query, category, and sorting together',
+      build: () => CatalogCubit(StubCatalogRepository()),
+      seed: seededState,
+      act: (cubit) {
+        cubit.updateQuery('silk');
+        cubit.select('Silk');
+        cubit.selectSort(CatalogSort.name);
+        cubit.clearFilters();
+      },
+      wait: const Duration(milliseconds: 400),
+      verify: (cubit) {
+        expect(cubit.state.category, 'All');
+        expect(cubit.state.query, '');
+        expect(cubit.state.sort, CatalogSort.featured);
+      },
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'records recent queries after debounce settles',
+      build: () => CatalogCubit(StubCatalogRepository()),
+      seed: seededState,
+      act: (cubit) {
+        cubit.updateQuery('silk');
+        cubit.updateQuery('velvet');
+      },
+      wait: const Duration(milliseconds: 500),
+      verify: (cubit) {
+        // Only 'velvet' is recorded — the debounce cancels the earlier 'silk' timer.
+        expect(cubit.state.recentQueries, ['velvet']);
+      },
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'debounces rapid queries — only the last triggers a recent record',
+      build: () => CatalogCubit(StubCatalogRepository()),
+      seed: seededState,
+      act: (cubit) {
+        cubit.updateQuery('s');
+        cubit.updateQuery('si');
+        cubit.updateQuery('silk');
+      },
+      wait: const Duration(milliseconds: 500),
+      verify: (cubit) {
+        expect(cubit.state.recentQueries, ['silk']);
+      },
     );
   });
 }

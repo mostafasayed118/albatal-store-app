@@ -38,6 +38,7 @@ class CartPage extends StatelessWidget {
                       children: [
                         ProductImagePlaceholder(
                           imageColor: i.product.imageColor,
+                          imageAsset: i.product.imageAsset,
                           constraints: const BoxConstraints.tightFor(
                               width: 72, height: 72),
                         ),
