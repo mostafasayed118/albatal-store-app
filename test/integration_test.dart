@@ -1,6 +1,8 @@
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/storefront_cubits.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +14,6 @@ void main() {
       (WidgetTester tester) async {
     final store = MemoryStorefrontPersistence();
     final orders = OrdersCubit(store);
-    // Place a test order directly.
     orders.place(
       CartState([
         CartItem(
@@ -34,7 +35,6 @@ void main() {
     ));
     await tester.pump();
 
-    // The order should appear in the Active tab.
     expect(find.text('My Orders'), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
     expect(find.textContaining('#ORD-'), findsOneWidget);

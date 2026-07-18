@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l.goodMorning('Ahmed'),
+            Text(l.goodMorning,
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

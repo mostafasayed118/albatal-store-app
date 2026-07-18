@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appTitle": "Al Batal Elite",
+  "brandName": "Al Batal Elite",
   "home": "Home",
   "categories": "Categories",
   "wishlist": "Wishlist",
@@ -28,12 +29,17 @@
   "errorTitle": "Something went wrong",
   "loading": "Loading",
   "cart": "Cart",
+  "myCart": "My Cart",
+  "cartEmptyTitle": "Your cart is waiting for something exquisite.",
   "checkout": "Checkout",
   "shippingAddress": "Shipping Address",
   "paymentMethod": "Payment Method",
   "addNewAddress": "Add New Address",
   "placeOrder": "Place Order",
+  "proceedToCheckout": "Proceed to Checkout",
   "total": "Total",
+  "subtotal": "Subtotal",
+  "shipping": "Shipping",
   "trackMyOrder": "Track My Order",
   "continueShopping": "Continue Shopping",
   "active": "Active",
@@ -49,5 +55,84 @@
   "quantity": "Quantity",
   "creditCard": "Credit Card",
   "digitalWallet": "Digital Wallet",
-  "cashOnDelivery": "Cash on Delivery"
+  "cashOnDelivery": "Cash on Delivery",
+  "myOrders": "My Orders",
+  "myProfile": "My Profile",
+  "mockCustomerName": "Ahmed Mansour",
+  "premiumMember": "Premium Member",
+  "editProfile": "Edit Profile",
+  "shippingAddresses": "Shipping Addresses",
+  "paymentMethods": "Payment Methods",
+  "accountSettings": "Account Settings",
+  "logOut": "Log Out",
+  "noActiveOrders": "No active orders",
+  "noCompletedOrders": "No completed orders",
+  "noCancelledOrders": "No cancelled orders",
+  "advanceOrder": "Advance Order",
+  "addToCart": "Add to Cart",
+  "addedToCart": "Added to your cart",
+  "movedToCart": "Moved to cart",
+  "moveToCart": "Move to Cart",
+  "remove": "Remove",
+  "undo": "Undo",
+  "saveForLater": "Save for Later",
+  "noFabricsFound": "No fabrics found",
+  "tryAnotherSearch": "Try another search",
+  "viewAllFabrics": "View all fabrics",
+  "flashSale": "Flash Sale",
+  "searchFabrics": "Search fabrics",
+  "voiceSearch": "Voice search",
+  "clearSearch": "Clear search",
+  "popularProducts": "Popular products",
+  "sortProducts": "Sort products",
+  "fabricsFound": "{count} fabrics found",
+  "@fabricsFound": {
+    "description": "Number of fabrics found",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "newSilkCollection": "NEW SILK COLLECTION",
+  "wovenForDistinction": "Woven for distinction",
+  "exploreCollection": "Explore collection",
+  "decreaseQuantity": "Decrease quantity",
+  "increaseQuantity": "Increase quantity",
+  "removeFromWishlist": "Removed from wishlist",
+  "addToWishlist": "Add to wishlist",
+  "fabricCategories": "Fabric Categories",
+  "curatedFabrics": "{count} curated fabrics",
+  "@curatedFabrics": {
+    "description": "Number of curated fabrics in a category",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "confirmStep": "Confirm",
+  "shareProduct": "Share product",
+  "shareLinkCopied": "Share link copied",
+  "discountPercent": "{percent}% OFF",
+  "@discountPercent": {
+    "description": "Discount percentage label",
+    "placeholders": {
+      "percent": {"type": "int"}
+    }
+  },
+  "expressDelivery": "Express Delivery",
+  "expressDeliveryBody": "Delivered within 24–48 hours",
+  "description": "Description",
+  "details": "Details",
+  "composition": "Composition",
+  "origin": "Origin",
+  "care": "Care",
+  "goodMorning": "Good morning, Ahmed",
+  "openSettings": "Open settings",
+  "successTitle": "Success!",
+  "orderPlacedBody": "Your order has been placed. We will keep you updated.",
+  "itemsCount": "{count} items",
+  "@itemsCount": {
+    "description": "Number of items in an order",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

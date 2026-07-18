@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Al Batal Elite';
 
   @override
+  String get brandName => 'Al Batal Elite';
+
+  @override
   String get home => 'Home';
 
   @override
@@ -91,4 +94,262 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loading => 'Loading';
+
+  @override
+  String get cart => 'Cart';
+
+  @override
+  String get myCart => 'My Cart';
+
+  @override
+  String get cartEmptyTitle => 'Your cart is waiting for something exquisite.';
+
+  @override
+  String get checkout => 'Checkout';
+
+  @override
+  String get shippingAddress => 'Shipping Address';
+
+  @override
+  String get paymentMethod => 'Payment Method';
+
+  @override
+  String get addNewAddress => 'Add New Address';
+
+  @override
+  String get placeOrder => 'Place Order';
+
+  @override
+  String get proceedToCheckout => 'Proceed to Checkout';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get subtotal => 'Subtotal';
+
+  @override
+  String get shipping => 'Shipping';
+
+  @override
+  String get trackMyOrder => 'Track My Order';
+
+  @override
+  String get continueShopping => 'Continue Shopping';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get placed => 'Placed';
+
+  @override
+  String get shipped => 'Shipped';
+
+  @override
+  String get delivered => 'Delivered';
+
+  @override
+  String get noItemsFound => 'No items found';
+
+  @override
+  String get exploreCategories => 'Explore Categories';
+
+  @override
+  String get length => 'Length';
+
+  @override
+  String get color => 'Color';
+
+  @override
+  String get quantity => 'Quantity';
+
+  @override
+  String get creditCard => 'Credit Card';
+
+  @override
+  String get digitalWallet => 'Digital Wallet';
+
+  @override
+  String get cashOnDelivery => 'Cash on Delivery';
+
+  @override
+  String get myOrders => 'My Orders';
+
+  @override
+  String get myProfile => 'My Profile';
+
+  @override
+  String get mockCustomerName => 'Ahmed Mansour';
+
+  @override
+  String get premiumMember => 'Premium Member';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
+  String get shippingAddresses => 'Shipping Addresses';
+
+  @override
+  String get paymentMethods => 'Payment Methods';
+
+  @override
+  String get accountSettings => 'Account Settings';
+
+  @override
+  String get logOut => 'Log Out';
+
+  @override
+  String get noActiveOrders => 'No active orders';
+
+  @override
+  String get noCompletedOrders => 'No completed orders';
+
+  @override
+  String get noCancelledOrders => 'No cancelled orders';
+
+  @override
+  String get advanceOrder => 'Advance Order';
+
+  @override
+  String get addToCart => 'Add to Cart';
+
+  @override
+  String get addedToCart => 'Added to your cart';
+
+  @override
+  String get movedToCart => 'Moved to cart';
+
+  @override
+  String get moveToCart => 'Move to Cart';
+
+  @override
+  String get remove => 'Remove';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get saveForLater => 'Save for Later';
+
+  @override
+  String get noFabricsFound => 'No fabrics found';
+
+  @override
+  String get tryAnotherSearch => 'Try another search';
+
+  @override
+  String get viewAllFabrics => 'View all fabrics';
+
+  @override
+  String get flashSale => 'Flash Sale';
+
+  @override
+  String get searchFabrics => 'Search fabrics';
+
+  @override
+  String get voiceSearch => 'Voice search';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get popularProducts => 'Popular products';
+
+  @override
+  String get sortProducts => 'Sort products';
+
+  @override
+  String fabricsFound(int count) {
+    return '$count fabrics found';
+  }
+
+  @override
+  String get newSilkCollection => 'NEW SILK COLLECTION';
+
+  @override
+  String get wovenForDistinction => 'Woven for distinction';
+
+  @override
+  String get exploreCollection => 'Explore collection';
+
+  @override
+  String get decreaseQuantity => 'Decrease quantity';
+
+  @override
+  String get increaseQuantity => 'Increase quantity';
+
+  @override
+  String get removeFromWishlist => 'Removed from wishlist';
+
+  @override
+  String get addToWishlist => 'Add to wishlist';
+
+  @override
+  String get fabricCategories => 'Fabric Categories';
+
+  @override
+  String curatedFabrics(int count) {
+    return '$count curated fabrics';
+  }
+
+  @override
+  String get confirmStep => 'Confirm';
+
+  @override
+  String get shareProduct => 'Share product';
+
+  @override
+  String get shareLinkCopied => 'Share link copied';
+
+  @override
+  String discountPercent(int percent) {
+    return '$percent% OFF';
+  }
+
+  @override
+  String get expressDelivery => 'Express Delivery';
+
+  @override
+  String get expressDeliveryBody => 'Delivered within 24–48 hours';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get composition => 'Composition';
+
+  @override
+  String get origin => 'Origin';
+
+  @override
+  String get care => 'Care';
+
+  @override
+  String get goodMorning => 'Good morning, Ahmed';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get successTitle => 'Success!';
+
+  @override
+  String get orderPlacedBody =>
+      'Your order has been placed. We will keep you updated.';
+
+  @override
+  String itemsCount(int count) {
+    return '$count items';
+  }
 }

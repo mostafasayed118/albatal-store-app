@@ -1,6 +1,8 @@
-import 'package:al_batal_elite/features/storefront/presentation/cubit/storefront_cubits.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/shared/extensions/build_context_x.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,13 +37,10 @@ void main() {
   testWidgets('home search clear and settings buttons expose localized tooltips',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
-    // Advance past the async load() and the 1s countdown timer.
     await tester.pump(const Duration(seconds: 1));
 
-    // Settings tooltip is always visible in the app bar.
     expect(find.byTooltip('Open settings'), findsOneWidget);
 
-    // Type a query so the clear button replaces the mic button.
     await tester.enterText(find.byType(TextField), 'silk');
     await tester.pump();
 
@@ -61,7 +60,6 @@ void main() {
     expect(context.l10n.brandName, 'البطل إيليت');
     expect(context.l10n.addToCart, 'أضف إلى السلة');
 
-    // Arabic tooltip resolves too, proving the icon button labels localize.
     expect(find.byTooltip('فتح الإعدادات'), findsOneWidget);
   });
 

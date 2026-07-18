@@ -2,7 +2,8 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/storefront_cubits.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -132,7 +133,6 @@ void main() {
       },
       wait: const Duration(milliseconds: 500),
       verify: (cubit) {
-        // Only 'velvet' is recorded — the debounce cancels the earlier 'silk' timer.
         expect(cubit.state.recentQueries, ['velvet']);
       },
     );

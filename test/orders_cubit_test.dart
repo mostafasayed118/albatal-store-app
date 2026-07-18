@@ -1,6 +1,8 @@
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/storefront_cubits.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
