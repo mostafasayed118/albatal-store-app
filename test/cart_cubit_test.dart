@@ -15,15 +15,22 @@ void main() {
       cubit.add(products.first, color: 'Emerald', length: '2m');
     },
     expect: () => [
-      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m')],
+      CartState(
+          [CartItem(product: products.first, color: 'Emerald', length: '2m')],
           status: CartStatus.ready),
-      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2)],
-          status: CartStatus.ready),
+      CartState([
+        CartItem(
+            product: products.first,
+            color: 'Emerald',
+            length: '2m',
+            quantity: 2)
+      ], status: CartStatus.ready),
     ],
     verify: (cubit) => expect(cubit.state.total, 2655),
   );
 
-  test('restores configured cart lines and wishlist ids from local storage', () async {
+  test('restores configured cart lines and wishlist ids from local storage',
+      () async {
     final storage = MemoryStorefrontPersistence();
     final sourceCart = CartCubit(storage);
     final sourceWishlist = WishlistCubit(storage);
@@ -36,7 +43,10 @@ void main() {
     await restoredCart.restore();
     await restoredWishlist.restore();
 
-    expect(restoredCart.state.items, [CartItem(product: products.first, color: 'Emerald', length: '3m', quantity: 2)]);
+    expect(restoredCart.state.items, [
+      CartItem(
+          product: products.first, color: 'Emerald', length: '3m', quantity: 2)
+    ]);
     expect(restoredWishlist.state.ids, {products.last.id});
     await sourceCart.close();
     await sourceWishlist.close();

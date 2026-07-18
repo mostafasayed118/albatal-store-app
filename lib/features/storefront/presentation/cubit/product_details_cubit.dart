@@ -47,8 +47,8 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
 
   /// Load a product and compute related products from the full catalog.
   void loadProduct(String id, List<Product> allProducts) {
-    final product =
-        allProducts.firstWhere((x) => x.id == id, orElse: () => allProducts.first);
+    final product = allProducts.firstWhere((x) => x.id == id,
+        orElse: () => allProducts.first);
     final related = allProducts
         .where((x) => x.category == product.category && x.id != product.id)
         .toList();

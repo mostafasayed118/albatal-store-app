@@ -24,25 +24,37 @@ void main() {
   group('SettingsCubit', () {
     blocTest<SettingsCubit, SettingsState>(
       'loads persisted settings into ready state',
-      build: () => SettingsCubit(FakeSettingsRepository(readResult: const Success(AppSettings(themeMode: ThemeMode.dark, locale: Locale('ar'))))),
+      build: () => SettingsCubit(FakeSettingsRepository(
+          readResult: const Success(
+              AppSettings(themeMode: ThemeMode.dark, locale: Locale('ar'))))),
       act: (cubit) => cubit.load(),
       expect: () => [
         const SettingsState(status: SettingsStatus.loading),
-        const SettingsState(status: SettingsStatus.ready, themeMode: ThemeMode.dark, locale: Locale('ar')),
+        const SettingsState(
+            status: SettingsStatus.ready,
+            themeMode: ThemeMode.dark,
+            locale: Locale('ar')),
       ],
     );
 
     blocTest<SettingsCubit, SettingsState>(
       'retains the optimistic locale and exposes a repository failure',
       build: () {
-        final repository = FakeSettingsRepository(readResult: const Success(AppSettings(themeMode: ThemeMode.system, locale: Locale('en'))))
-          ..saveResult = const Failure(AppError('Unable to save app preferences.'));
+        final repository = FakeSettingsRepository(
+            readResult: const Success(
+                AppSettings(themeMode: ThemeMode.system, locale: Locale('en'))))
+          ..saveResult =
+              const Failure(AppError('Unable to save app preferences.'));
         return SettingsCubit(repository);
       },
       act: (cubit) => cubit.changeLocale(const Locale('ar')),
       expect: () => [
-        const SettingsState(status: SettingsStatus.saving, locale: Locale('ar')),
-        const SettingsState(status: SettingsStatus.failure, locale: Locale('ar'), errorMessage: 'Unable to save app preferences.'),
+        const SettingsState(
+            status: SettingsStatus.saving, locale: Locale('ar')),
+        const SettingsState(
+            status: SettingsStatus.failure,
+            locale: Locale('ar'),
+            errorMessage: 'Unable to save app preferences.'),
       ],
     );
   });

@@ -114,7 +114,8 @@ class _CatalogPageState extends State<CatalogPage> {
 
               // Sort bar + count
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     Text(l.fabricsFound(state.visible.length),
@@ -125,8 +126,8 @@ class _CatalogPageState extends State<CatalogPage> {
                       initialValue: state.sort,
                       onSelected: catalog.selectSort,
                       itemBuilder: (_) => CatalogSort.values
-                          .map((s) => PopupMenuItem(
-                              value: s, child: Text(s.label)))
+                          .map((s) =>
+                              PopupMenuItem(value: s, child: Text(s.label)))
                           .toList(),
                       child: Chip(
                         avatar: const Icon(Icons.sort, size: 18),
@@ -219,7 +220,8 @@ class _ActiveFiltersBar extends StatelessWidget {
     }
     if (state.priceMin > 0 || state.priceMax < 999999) {
       chips.add(_filterChip(
-        label: '${money(state.priceMin.toInt().toDouble())} – ${money(state.priceMax.toInt().toDouble())}',
+        label:
+            '${money(state.priceMin.toInt().toDouble())} – ${money(state.priceMax.toInt().toDouble())}',
         onDeleted: () => catalog.setPriceRange(0, 999999),
       ));
     }
@@ -266,7 +268,8 @@ class _FilterSheet extends StatefulWidget {
   });
 
   final CatalogState state;
-  final void Function(String category, String color, double priceMin, double priceMax) onApply;
+  final void Function(
+      String category, String color, double priceMin, double priceMax) onApply;
 
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
@@ -321,7 +324,9 @@ class _FilterSheetState extends State<_FilterSheet> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: Text(l.filter, style: Theme.of(context).textTheme.titleLarge)),
+                Expanded(
+                    child: Text(l.filter,
+                        style: Theme.of(context).textTheme.titleLarge)),
                 TextButton(
                   onPressed: () {
                     setState(() {

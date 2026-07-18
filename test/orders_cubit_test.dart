@@ -10,8 +10,8 @@ void main() {
   group('OrdersCubit', () {
     blocTest<OrdersCubit, OrdersState>(
       'places an order that snapshots the cart and prepends to the list',
-      build: () =>
-          OrdersCubit(MemoryStorefrontPersistence(), generateId: () => 'ORD-TEST-1'),
+      build: () => OrdersCubit(MemoryStorefrontPersistence(),
+          generateId: () => 'ORD-TEST-1'),
       act: (cubit) => cubit.place(
         CartState([
           CartItem(
@@ -37,14 +37,13 @@ void main() {
 
     blocTest<OrdersCubit, OrdersState>(
       'advances an active order placed -> shipped -> delivered',
-      build: () =>
-          OrdersCubit(MemoryStorefrontPersistence(), generateId: () => 'ORD-TEST-2'),
+      build: () => OrdersCubit(MemoryStorefrontPersistence(),
+          generateId: () => 'ORD-TEST-2'),
       act: (cubit) {
         cubit.place(
-          CartState([CartItem(
-              product: products.first,
-              color: 'Emerald',
-              length: '2m')]),
+          CartState([
+            CartItem(product: products.first, color: 'Emerald', length: '2m')
+          ]),
           paymentMethod: 'Cash on Delivery',
         );
         cubit.advance('ORD-TEST-2');
@@ -67,11 +66,10 @@ void main() {
       final store = MemoryStorefrontPersistence();
       final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
       a.place(
-        CartState([CartItem(
-            product: products.last,
-            color: 'Ivory',
-            length: '5m',
-            quantity: 3)]),
+        CartState([
+          CartItem(
+              product: products.last, color: 'Ivory', length: '5m', quantity: 3)
+        ]),
         paymentMethod: 'Digital Wallet',
       );
 

@@ -16,6 +16,5 @@ final class LocalCartRepository implements CartRepository {
       _persistence.readCart(productForId);
 
   @override
-  Future<void> writeCart(List<CartItem> items) =>
-      _persistence.writeCart(items);
+  Future<void> writeCart(List<CartItem> items) => _persistence.writeCart(items);
 }

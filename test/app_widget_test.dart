@@ -9,15 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 final class TestSettingsRepository implements SettingsRepository {
   @override
-  Future<Result<AppSettings>> read() async => const Success(AppSettings(themeMode: ThemeMode.system, locale: Locale('en')));
+  Future<Result<AppSettings>> read() async => const Success(
+      AppSettings(themeMode: ThemeMode.system, locale: Locale('en')));
   @override
   Future<Result<void>> saveLocale(Locale locale) async => const Success(null);
   @override
-  Future<Result<void>> saveThemeMode(ThemeMode themeMode) async => const Success(null);
+  Future<Result<void>> saveThemeMode(ThemeMode themeMode) async =>
+      const Success(null);
 }
 
 void main() {
-  testWidgets('Arabic directionality mirrors a directional action icon', (tester) async {
+  testWidgets('Arabic directionality mirrors a directional action icon',
+      (tester) async {
     await tester.pumpWidget(MaterialApp(
       theme: AppTheme.light(),
       locale: const Locale('ar'),
@@ -25,13 +28,15 @@ void main() {
         textDirection: TextDirection.rtl,
         child: BlocProvider(
           create: (_) => SettingsCubit(TestSettingsRepository()),
-          child: const AppButton(label: 'متابعة', icon: Icons.arrow_forward, onPressed: null),
+          child: const AppButton(
+              label: 'متابعة', icon: Icons.arrow_forward, onPressed: null),
         ),
       ),
     ));
 
     final icon = tester.widget<Icon>(find.byIcon(Icons.arrow_forward));
     expect(icon.textDirection, isNull);
-    expect(Directionality.of(tester.element(find.byType(AppButton))), TextDirection.rtl);
+    expect(Directionality.of(tester.element(find.byType(AppButton))),
+        TextDirection.rtl);
   });
 }

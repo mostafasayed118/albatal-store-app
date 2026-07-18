@@ -20,10 +20,10 @@ Widget _harness({required Locale locale}) {
     supportedLocales: AppLocalizations.supportedLocales,
     home: MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
         BlocProvider(
-            create: (_) =>
-                CartCubit(MemoryStorefrontPersistence())..restore()),
+            create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
+        BlocProvider(
+            create: (_) => CartCubit(MemoryStorefrontPersistence())..restore()),
         BlocProvider(
             create: (_) =>
                 WishlistCubit(MemoryStorefrontPersistence())..restore()),
@@ -34,7 +34,8 @@ Widget _harness({required Locale locale}) {
 }
 
 void main() {
-  testWidgets('home search clear and settings buttons expose localized tooltips',
+  testWidgets(
+      'home search clear and settings buttons expose localized tooltips',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
     await tester.pump(const Duration(seconds: 1));

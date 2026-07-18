@@ -37,16 +37,29 @@ final class Product extends Equatable {
       oldPrice == null ? null : ((1 - price / oldPrice!) * 100).round();
 
   /// Stock for a specific variant key like "Emerald-2m".
-  int stockFor(String color, String length) =>
-      stock['$color-$length'] ?? 0;
+  int stockFor(String color, String length) => stock['$color-$length'] ?? 0;
 
   bool get inStock => stock.values.any((v) => v > 0);
 
   @override
   List<Object?> get props => [
-        id, name, category, price, imageColor, oldPrice, imageAsset,
-        images, description, composition, care, origin,
-        sizes, colors, stock, rating, reviewCount,
+        id,
+        name,
+        category,
+        price,
+        imageColor,
+        oldPrice,
+        imageAsset,
+        images,
+        description,
+        composition,
+        care,
+        origin,
+        sizes,
+        colors,
+        stock,
+        rating,
+        reviewCount,
       ];
 }
 

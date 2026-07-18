@@ -81,14 +81,13 @@ class CheckoutPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge),
                 RadioGroup<String>(
                   groupValue: s.payment,
-                  onChanged: (v) =>
-                      context.read<CheckoutCubit>().payment(v!),
+                  onChanged: (v) => context.read<CheckoutCubit>().payment(v!),
                   child: Column(
                     children: [
                       _paymentTile(l.creditCard, 'Credit Card', s.payment,
                           scheme, context),
-                      _paymentTile(l.digitalWallet, 'Digital Wallet',
-                          s.payment, scheme, context),
+                      _paymentTile(l.digitalWallet, 'Digital Wallet', s.payment,
+                          scheme, context),
                       _paymentTile(l.cashOnDelivery, 'Cash on Delivery',
                           s.payment, scheme, context),
                     ],
@@ -153,8 +152,7 @@ class _StepIndicator extends StatelessWidget {
                 radius: 14,
                 backgroundColor:
                     active ? scheme.primary : scheme.surfaceContainerHighest,
-                foregroundColor:
-                    active ? scheme.onPrimary : scheme.onSurface,
+                foregroundColor: active ? scheme.onPrimary : scheme.onSurface,
                 child: Text('${e.key + 1}'),
               ),
               const SizedBox(height: 4),
@@ -237,13 +235,15 @@ class _AddressPicker extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   leading: Icon(
                     a.isDefault ? Icons.home : Icons.location_on_outlined,
-                    color: isSelected ? scheme.primary : scheme.onSurfaceVariant,
+                    color:
+                        isSelected ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                   title: Row(
                     children: [
                       Expanded(
                         child: Text(a.recipient,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                       ),
                       if (a.isDefault)
                         Container(

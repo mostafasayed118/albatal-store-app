@@ -18,9 +18,11 @@ final appRouter = GoRouter(initialLocation: '/home', routes: [
   ShellRoute(builder: (_, __, child) => AppShell(child: child), routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomePage()),
     GoRoute(path: '/categories', builder: (_, __) => const CategoriesPage()),
-    GoRoute(path: '/catalog', builder: (_, s) => CatalogPage(
-      initialQuery: s.uri.queryParameters['q'],
-    )),
+    GoRoute(
+        path: '/catalog',
+        builder: (_, s) => CatalogPage(
+              initialQuery: s.uri.queryParameters['q'],
+            )),
     GoRoute(path: '/wishlist', builder: (_, __) => const WishlistPage()),
     GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
     GoRoute(path: '/profile', builder: (_, __) => const ProfilePage())

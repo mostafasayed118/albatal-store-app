@@ -62,11 +62,9 @@ void main() {
 
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Full name'), 'Sara Ahmed');
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'Street address'),
+    await tester.enterText(find.widgetWithText(TextFormField, 'Street address'),
         '45 Nile Corniche');
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'City'), 'Cairo');
+    await tester.enterText(find.widgetWithText(TextFormField, 'City'), 'Cairo');
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Phone number'), '01012345678');
     await tester.pumpAndSettle();

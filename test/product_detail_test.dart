@@ -93,7 +93,8 @@ void main() {
         price: 100,
         imageColor: 0xFF000000,
       );
-      const item = CartItem(product: p, color: 'Gold', length: '5m', quantity: 3);
+      const item =
+          CartItem(product: p, color: 'Gold', length: '5m', quantity: 3);
       final copy = item.copyWith(quantity: 5);
       expect(copy.product, p);
       expect(copy.color, 'Gold');

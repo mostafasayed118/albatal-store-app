@@ -42,8 +42,8 @@ class DetailsPage extends StatelessWidget {
                 WishlistToggleIcon(productId: p.id),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.shareLinkCopied))),
+                  onPressed: () => ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(l.shareLinkCopied))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],
@@ -84,9 +84,7 @@ class DetailsPage extends StatelessWidget {
                       ...List.generate(
                         5,
                         (i) => Icon(
-                          i < p.rating.round()
-                              ? Icons.star
-                              : Icons.star_border,
+                          i < p.rating.round() ? Icons.star : Icons.star_border,
                           size: 18,
                           color: scheme.secondary,
                         ),
@@ -127,8 +125,7 @@ class DetailsPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(l.length,
-                              style:
-                                  Theme.of(context).textTheme.titleMedium),
+                              style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -212,8 +209,7 @@ class DetailsPage extends StatelessWidget {
                 // ── Care ──
                 if (p.care != null) ...[
                   const SizedBox(height: 20),
-                  Text(l.care,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(l.care, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 6),
                   Text(p.care!),
                 ],
@@ -259,8 +255,8 @@ class DetailsPage extends StatelessWidget {
                           color: s.color,
                           length: s.length,
                           quantity: s.quantity);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l.addedToCart)));
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(l.addedToCart)));
                     }
                   : null,
             ),
@@ -294,12 +290,14 @@ class DetailsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text(l.sizeGuide,
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(l.sizeGuide, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Table(
               border: TableBorder.all(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: .3)),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: .3)),
               columnWidths: const {
                 0: FlexColumnWidth(1.5),
                 1: FlexColumnWidth(2),
@@ -500,7 +498,9 @@ class _StockBadge extends StatelessWidget {
         color: color.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+      child: Text(text,
+          style: TextStyle(
+              color: color, fontWeight: FontWeight.w600, fontSize: 13)),
     );
   }
 }
@@ -606,8 +606,10 @@ class _RelatedCard extends StatelessWidget {
                     Text(product.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
                     Text(money(product.price),
                         style: TextStyle(
                             fontSize: 13,
@@ -629,8 +631,13 @@ class _RelatedCard extends StatelessWidget {
 TableRow _tableHeader(String c1, String c2, String c3, BuildContext ctx) =>
     TableRow(
       decoration: BoxDecoration(
-          color: Theme.of(ctx).colorScheme.primaryContainer.withValues(alpha: .3)),
-      children: [_cell(c1, bold: true), _cell(c2, bold: true), _cell(c3, bold: true)],
+          color:
+              Theme.of(ctx).colorScheme.primaryContainer.withValues(alpha: .3)),
+      children: [
+        _cell(c1, bold: true),
+        _cell(c2, bold: true),
+        _cell(c3, bold: true)
+      ],
     );
 
 TableRow _tableRow(String c1, String c2, String c3, BuildContext ctx) =>
@@ -639,5 +646,6 @@ TableRow _tableRow(String c1, String c2, String c3, BuildContext ctx) =>
 Widget _cell(String text, {bool bold = false}) => Padding(
       padding: const EdgeInsets.all(10),
       child: Text(text,
-          style: TextStyle(fontWeight: bold ? FontWeight.w600 : FontWeight.normal)),
+          style: TextStyle(
+              fontWeight: bold ? FontWeight.w600 : FontWeight.normal)),
     );

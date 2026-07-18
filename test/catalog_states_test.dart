@@ -47,8 +47,7 @@ void main() {
     expect(find.byType(FeedbackView), findsOneWidget);
   });
 
-  testWidgets('home shows loading state on initial build',
-      (tester) async {
+  testWidgets('home shows loading state on initial build', (tester) async {
     await tester.pumpWidget(_harness(_NeverCompletesRepository()));
     await tester.pump();
 

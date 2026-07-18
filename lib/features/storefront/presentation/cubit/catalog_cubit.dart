@@ -67,10 +67,12 @@ final class CatalogState extends Equatable {
   }
 
   /// Price bounds computed from the full catalog.
-  double get catalogPriceMin =>
-      allProducts.isEmpty ? 0 : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
-  double get catalogPriceMax =>
-      allProducts.isEmpty ? 999999 : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+  double get catalogPriceMin => allProducts.isEmpty
+      ? 0
+      : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
+  double get catalogPriceMax => allProducts.isEmpty
+      ? 999999
+      : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
 
   /// Products in a specific category (excluding "All").
   List<Product> productsInCategory(String category) =>
@@ -92,10 +94,12 @@ final class CatalogState extends Equatable {
       final matchesQuery = normalizedQuery.isEmpty ||
           product.name.toLowerCase().contains(normalizedQuery) ||
           product.category.toLowerCase().contains(normalizedQuery) ||
-          (product.description?.toLowerCase().contains(normalizedQuery) ?? false);
-      final matchesColor = colorFilter.isEmpty ||
-          _colorName(product.imageColor) == colorFilter;
-      final matchesPrice = product.price >= priceMin && product.price <= priceMax;
+          (product.description?.toLowerCase().contains(normalizedQuery) ??
+              false);
+      final matchesColor =
+          colorFilter.isEmpty || _colorName(product.imageColor) == colorFilter;
+      final matchesPrice =
+          product.price >= priceMin && product.price <= priceMax;
       return matchesCategory && matchesQuery && matchesColor && matchesPrice;
     }).toList();
 
@@ -220,8 +224,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void setPriceRange(double min, double max) =>
       emit(state.copyWith(priceMin: min, priceMax: max));
 
-  void clearFilters() => emit(
-      state.copyWith(
+  void clearFilters() => emit(state.copyWith(
         category: 'All',
         query: '',
         sort: CatalogSort.featured,

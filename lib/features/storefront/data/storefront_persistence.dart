@@ -119,7 +119,12 @@ final class LocalStorefrontPersistence implements StorefrontPersistence {
   }
 }
 
-final class MemoryStorefrontPersistence implements StorefrontPersistence, CartRepository, WishlistRepository, OrdersRepository {
+final class MemoryStorefrontPersistence
+    implements
+        StorefrontPersistence,
+        CartRepository,
+        WishlistRepository,
+        OrdersRepository {
   List<Map<String, Object>> cartLines = [];
   Set<String> wishlistIds = {};
   List<Map<String, Object?>> orderRecords = [];

@@ -120,10 +120,9 @@ void main() {
       final store = MemoryStorefrontPersistence();
       final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
       a.place(
-        CartState([CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m')]),
+        CartState([
+          CartItem(product: products.first, color: 'Emerald', length: '2m')
+        ]),
         paymentMethod: 'Credit Card',
         address: testAddress,
       );

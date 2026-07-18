@@ -34,14 +34,12 @@ final class OrdersState extends Equatable {
       .where((o) =>
           o.status == OrderStatus.placed || o.status == OrderStatus.shipped)
       .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get completed =>
+      orders.where((o) => o.status == OrderStatus.delivered).toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get completed => orders
-      .where((o) => o.status == OrderStatus.delivered)
-      .toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get cancelled => orders
-      .where((o) => o.status == OrderStatus.cancelled)
-      .toList()
+  List<Order> get cancelled =>
+      orders.where((o) => o.status == OrderStatus.cancelled).toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
 
   OrdersState copyWith({
@@ -74,8 +72,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
       emit(OrdersState(orders: stored, status: OrdersStatus.ready));
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error,
-          errorMessage: 'Failed to load orders'));
+          status: OrdersStatus.error, errorMessage: 'Failed to load orders'));
     }
   }
 
@@ -112,8 +109,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
       _repository.writeOrders(updated);
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error,
-          errorMessage: 'Failed to update order'));
+          status: OrdersStatus.error, errorMessage: 'Failed to update order'));
     }
   }
 }
