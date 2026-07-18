@@ -18,7 +18,8 @@ class ProfilePage extends StatelessWidget {
           Card(
             child: ListTile(
               contentPadding: const EdgeInsets.all(16),
-              leading: CircleAvatar(radius: 30, child: Text(l.mockCustomerName.characters.first)),
+              leading: CircleAvatar(
+                  radius: 30, child: Text(l.mockCustomerName.characters.first)),
               title: Text(l.mockCustomerName),
               subtitle: Text(l.premiumMember),
               trailing: IconButton(
@@ -29,12 +30,30 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          MenuListTile(icon: Icons.receipt_long_outlined, title: l.myOrders, onTap: () => context.push('/profile/orders')),
-          MenuListTile(icon: Icons.favorite_border, title: l.wishlist, onTap: () => context.go('/wishlist')),
-          MenuListTile(icon: Icons.location_on_outlined, title: l.shippingAddresses),
-          MenuListTile(icon: Icons.credit_card_outlined, title: l.paymentMethods),
-          MenuListTile(icon: Icons.settings_outlined, title: l.accountSettings, onTap: () => context.push('/settings')),
-          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.logout), label: Text(l.logOut)),
+          MenuListTile(
+              icon: Icons.receipt_long_outlined,
+              title: l.myOrders,
+              onTap: () => context.push('/profile/orders')),
+          const SizedBox(height: 12),
+          MenuListTile(
+              icon: Icons.favorite_border,
+              title: l.wishlist,
+              onTap: () => context.go('/wishlist')),
+          const SizedBox(height: 12),
+          MenuListTile(
+              icon: Icons.location_on_outlined, title: l.shippingAddresses),
+          const SizedBox(height: 12),
+          MenuListTile(
+              icon: Icons.credit_card_outlined, title: l.paymentMethods),
+          const SizedBox(height: 12),
+          MenuListTile(
+              icon: Icons.settings_outlined,
+              title: l.accountSettings,
+              onTap: () => context.push('/settings')),
+          TextButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.logout),
+              label: Text(l.logOut)),
         ],
       ),
     );

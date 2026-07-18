@@ -689,8 +689,32 @@ abstract class AppLocalizations {
   /// No description provided for @orderPlacedBody.
   ///
   /// In en, this message translates to:
-  /// **'Your order #ORD-2023-8472 has been placed. We will keep you updated.'**
+  /// **'Your order has been placed. We will keep you updated.'**
   String get orderPlacedBody;
+
+  /// No description provided for @itemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String itemsCount(int count);
+
+  /// No description provided for @noActiveOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'No active orders'**
+  String get noActiveOrders;
+
+  /// No description provided for @noCompletedOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed orders'**
+  String get noCompletedOrders;
+
+  /// No description provided for @advanceOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance order status'**
+  String get advanceOrder;
 }
 
 class _AppLocalizationsDelegate

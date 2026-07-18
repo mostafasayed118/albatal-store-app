@@ -24,7 +24,10 @@ final appRouter = GoRouter(initialLocation: '/home', routes: [
       path: '/product/:id',
       builder: (_, s) => DetailsPage(id: s.pathParameters['id']!)),
   GoRoute(path: '/checkout', builder: (_, __) => const CheckoutPage()),
-  GoRoute(path: '/order-success', builder: (_, __) => const OrderSuccessPage()),
+  GoRoute(
+      path: '/order-success',
+      builder: (_, state) =>
+          OrderSuccessPage(orderId: state.extra as String?)),
   GoRoute(path: '/profile/orders', builder: (_, __) => const OrdersPage()),
   GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
 ]);

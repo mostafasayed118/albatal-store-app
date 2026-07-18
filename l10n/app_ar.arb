@@ -118,5 +118,14 @@
   "orderItemsSummary": "حرير الزمردي الملكي · قطعتان",
   "deliveredOnDate": "تم التوصيل · ١٢ يوليو ٢٠٢٦",
   "successTitle": "تم بنجاح!",
-  "orderPlacedBody": "تم تسجيل طلبك رقم #ORD-2023-8472. سنبقيك على اطّلاع."
+  "orderPlacedBody": "تم تسجيل طلبك. سنبقيك على اطّلاع.",
+  "itemsCount": "{count, plural, =1{قطعة واحدة} other{{count} قطعة}}",
+  "@itemsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noActiveOrders": "لا توجد طلبات نشطة",
+  "noCompletedOrders": "لا توجد طلبات مكتملة",
+  "advanceOrder": "تقديم حالة الطلب"
 }

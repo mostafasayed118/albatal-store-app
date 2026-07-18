@@ -5,12 +5,14 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
 class OrderSuccessPage extends StatelessWidget {
-  const OrderSuccessPage({super.key});
+  const OrderSuccessPage({super.key, this.orderId});
+  final String? orderId;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final id = orderId ?? '#ORD-2023-8472';
     return Scaffold(
       body: Center(
         child: Padding(
@@ -28,6 +30,10 @@ class OrderSuccessPage extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 8),
               Text(l.orderPlacedBody, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text('#$id',
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(color: scheme.primary)),
               const SizedBox(height: 32),
               AppButton(
                 label: l.trackMyOrder,

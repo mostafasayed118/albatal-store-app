@@ -27,6 +27,9 @@ final class AlBatalApp extends StatelessWidget {
           BlocProvider(
               create: (_) => WishlistCubit(LocalStorefrontPersistence(getIt()))
                 ..restore()),
+          BlocProvider(
+              create: (_) =>
+                  OrdersCubit(LocalStorefrontPersistence(getIt()))..restore()),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
           buildWhen: (a, b) =>

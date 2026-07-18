@@ -328,5 +328,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderPlacedBody =>
-      'Your order #ORD-2023-8472 has been placed. We will keep you updated.';
+      'Your order has been placed. We will keep you updated.';
+
+  @override
+  String itemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noActiveOrders => 'No active orders';
+
+  @override
+  String get noCompletedOrders => 'No completed orders';
+
+  @override
+  String get advanceOrder => 'Advance order status';
 }

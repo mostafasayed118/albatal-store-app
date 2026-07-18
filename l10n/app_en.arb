@@ -118,5 +118,14 @@
   "orderItemsSummary": "Royal Emerald Silk · 2 items",
   "deliveredOnDate": "Delivered · 12 July 2026",
   "successTitle": "Success!",
-  "orderPlacedBody": "Your order #ORD-2023-8472 has been placed. We will keep you updated."
+  "orderPlacedBody": "Your order has been placed. We will keep you updated.",
+  "itemsCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@itemsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noActiveOrders": "No active orders",
+  "noCompletedOrders": "No completed orders",
+  "advanceOrder": "Advance order status"
 }

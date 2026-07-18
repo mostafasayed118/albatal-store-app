@@ -1,6 +1,8 @@
 # Al Batal Elite — Foundation
 
-A portable Flutter source foundation for the Al Batal Elite fabric-commerce application. It implements the cross-cutting system first: visual tokens, light/dark/system appearance, English/Arabic localization with RTL, local preference persistence, GoRouter navigation, focused reusable components, and testable Cubit state.
+A portable Flutter source foundation for the **Al Batal Elite** premium fabric-commerce application. It implements the cross-cutting system first: visual tokens, light/dark/system appearance, English/Arabic localization with RTL, local preference persistence, GoRouter navigation, focused reusable components, and testable Cubit state.
+
+> This repository follows the [DESIGN.md](https://stitch.withgoogle.com/docs/design-md/overview/) convention popularized by the [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) collection — a plain-text design system document that AI agents read to generate consistent UI. See [`DESIGN.md`](./DESIGN.md) for the full design language.
 
 ## Scope of this branch
 
@@ -14,6 +16,24 @@ Included:
 - A bottom-navigation shell and temporary foundation placeholders.
 
 Intentionally deferred: catalog data, images, remote APIs, authentication, payments, analytics, Sentry configuration, and platform shells. Adding those before their contracts exist would create speculative architecture.
+
+## What's inside `DESIGN.md`
+
+`DESIGN.md` is the single source of truth for how this app should *look and feel*. AI coding agents (and human collaborators) read it before building any UI.
+
+| Section | What it captures |
+| --- | --- |
+| Visual Theme & Atmosphere | Tactile, textile-inspired premium mood |
+| Color Palette & Roles | Emerald `#064E3B`, Gold `#D97706`, Charcoal `#121212`, Slate `#1E293B` + semantic roles |
+| Typography Rules | Montserrat display headings + Inter body, full hierarchy table |
+| Component Stylings | Buttons, cards, inputs, navigation with states |
+| Layout Principles | Spacing scale, grid, whitespace philosophy |
+| Depth & Elevation | Shadow system, surface hierarchy |
+| Do's and Don'ts | Design guardrails and anti-patterns |
+| Responsive Behavior | Breakpoints, touch targets, collapsing strategy |
+| Agent Prompt Guide | Quick color reference, ready-to-use prompts |
+
+To regenerate or extend any surface, point your AI agent at `DESIGN.md` and ask: *"Build me a page in the Al Batal Elite design language."*
 
 ## Local setup
 
@@ -39,7 +59,7 @@ Intentionally deferred: catalog data, images, remote APIs, authentication, payme
 
 ## Fonts
 
-The supplied design specifies Montserrat for headings and Inter for body text. The theme names those families and falls back safely to the device sans-serif fonts until licensed font files are added. Add them under `assets/fonts/`, declare them in `pubspec.yaml`, then Flutter will use them without network access at runtime.
+The supplied design specifies **Montserrat** for headings and **Inter** for body text. The theme names those families and falls back safely to the device sans-serif fonts until licensed font files are added. Add them under `assets/fonts/`, declare them in `pubspec.yaml`, then Flutter will use them without network access at runtime.
 
 ## Architecture and data flow
 
@@ -65,6 +85,23 @@ The Cubit does not know `SharedPreferences`; the repository catches storage fail
 - `bloc_test` / `mocktail`: deterministic state tests; `mocktail` is ready for interaction tests as repository behavior expands.
 
 Versions are constrained to stable releases compatible with Flutter 3.19+/Dart 3.3+. Run `flutter pub outdated` locally before the first production commit to confirm the newest compatible stable patch versions for your SDK.
+
+## Project structure
+
+```
+albatal_store/
+├── DESIGN.md            # Design system (read by AI agents before building UI)
+├── INSTRUCTIONS.md      # Build/handoff instructions
+├── README.md            # This file
+├── l10n/                # ARB message catalogs (en, ar)
+├── lib/
+│   ├── app/             # App root, router, theme composition
+│   ├── core/            # Cross-cutting tokens, theme, localization, DI
+│   └── features/        # Feature-first Clean Architecture
+│       └── settings/     # presentation → domain → data
+├── test/                # Cubit + widget tests with fake repository
+└── assets/fonts/        # Montserrat + Inter (licensed fonts go here)
+```
 
 ## Branch safety
 

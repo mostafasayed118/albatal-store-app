@@ -327,6 +327,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get successTitle => 'تم بنجاح!';
 
   @override
-  String get orderPlacedBody =>
-      'تم تسجيل طلبك رقم #ORD-2023-8472. سنبقيك على اطّلاع.';
+  String get orderPlacedBody => 'تم تسجيل طلبك. سنبقيك على اطّلاع.';
+
+  @override
+  String itemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قطعة',
+      one: 'قطعة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noActiveOrders => 'لا توجد طلبات نشطة';
+
+  @override
+  String get noCompletedOrders => 'لا توجد طلبات مكتملة';
+
+  @override
+  String get advanceOrder => 'تقديم حالة الطلب';
 }

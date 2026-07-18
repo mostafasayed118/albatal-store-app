@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
+import '../cubit/orders_cubit.dart';
 import '../widgets/bottom_action_button.dart';
 import '../widgets/cart_summary.dart';
 
@@ -20,8 +21,13 @@ class CheckoutPage extends StatelessWidget {
       child: BlocConsumer<CheckoutCubit, CheckoutState>(
         listener: (context, s) {
           if (s.step == 2) {
+            // Snapshot the cart into an order BEFORE clearing it.
+            final cart = context.read<CartCubit>().state;
+            final order = context
+                .read<OrdersCubit>()
+                .place(cart, paymentMethod: s.payment);
             context.read<CartCubit>().clear();
-            context.go('/order-success');
+            context.go('/order-success', extra: order.id);
           }
         },
         builder: (context, s) => Scaffold(
