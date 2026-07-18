@@ -35,24 +35,25 @@ class _AddressFormState extends State<AddressForm> {
   final _nameCtrl = TextEditingController();
   final _streetCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _countryCtrl = TextEditingController();
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _streetCtrl.dispose();
     _cityCtrl.dispose();
-    _phoneCtrl.dispose();
+    _countryCtrl.dispose();
     super.dispose();
   }
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
       Navigator.of(context).pop(Address(
-        name: _nameCtrl.text.trim(),
-        street: _streetCtrl.text.trim(),
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        recipient: _nameCtrl.text.trim(),
+        line: _streetCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
-        phone: _phoneCtrl.text.trim(),
+        country: '',
       ));
     }
   }
@@ -76,8 +77,9 @@ class _AddressFormState extends State<AddressForm> {
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Full name'),
               textInputAction: TextInputAction.next,
-              validator: (v) =>
-                  (v == null || v.trim().length < 2) ? 'Name is required' : null,
+              validator: (v) => (v == null || v.trim().length < 2)
+                  ? 'Name is required'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -98,16 +100,13 @@ class _AddressFormState extends State<AddressForm> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Phone number'),
-              keyboardType: TextInputType.phone,
+              controller: _countryCtrl,
+              decoration: const InputDecoration(labelText: 'Country'),
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Phone is required';
-                final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-                return digits.length < 7 ? 'Enter a valid phone number' : null;
-              },
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Country is required'
+                  : null,
             ),
             const SizedBox(height: 24),
             FilledButton(onPressed: _submit, child: Text(l.continueLabel)),

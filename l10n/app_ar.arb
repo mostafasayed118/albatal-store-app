@@ -134,5 +134,53 @@
     "placeholders": {
       "count": {"type": "int"}
     }
-  }
+  },
+  "reviewOrder": "مراجعة الطلب",
+  "shippingTo": "الشحن إلى",
+  "paymentSummary": "ملخص الدفع",
+  "selectAddress": "اختر العنوان",
+  "noAddressesSaved": "لا توجد عناوين محفوظة",
+  "addAddress": "إضافة عنوان",
+  "useThisAddress": "استخدم هذا العنوان",
+  "defaultLabel": "افتراضي",
+  "orderSummary": "ملخص الطلب",
+  "itemsInCart": "{count} عناصر في السلة",
+  "@itemsInCart": {
+    "description": "عدد العناصر في السلة لمراجعة الطلب",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "confirmAndPay": "تأكيد والدفع",
+  "changingAddress": "تغيير",
+  "validationSelectAddress": "يرجى اختيار عنوان الشحن",
+  "back": "رجوع",
+  "filter": "تصفية",
+  "filters": "التصفيات",
+  "applyFilters": "تطبيق التصفيات",
+  "resetFilters": "إعادة تعيين التصفيات",
+  "clearAll": "مسح الكل",
+  "priceRange": "نطاق السعر",
+  "noResultsFound": "لم يتم العثور على نتائج",
+  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
+  "category": "الفئة",
+  "sizeGuide": "دليل المقاسات",
+  "relatedProducts": "منتجات مشابهة",
+  "outOfStock": "نفذ من المخزون",
+  "inStock": "متوفر",
+  "onlyLeft": "بقي {count} فقط",
+  "@onlyLeft": {
+    "description": "تحذير مخزون منخفض",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "returns": "المرتجعات",
+  "returnsBody": "مرتجعات مجانية خلال 30 يوماً من الشراء",
+  "width": "العرض",
+  "bestFor": "الأفضل لـ",
+  "sizeGuide1m": "مشاريع صغيرة، عينات",
+  "sizeGuide2m": "ملابس، فساتين",
+  "sizeGuide5m": "بدلات كاملة، تنجيد",
+  "gotIt": "فهمت"
 }

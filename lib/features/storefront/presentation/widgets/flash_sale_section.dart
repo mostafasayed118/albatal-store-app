@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
-import '../widgets/flash_sale_card.dart';
 import '../cubit/products_data.dart';
+import '../widgets/flash_sale_card.dart';
 
 /// Flash sale section with countdown timer and product card.
 class FlashSaleSection extends StatelessWidget {
@@ -18,8 +18,7 @@ class FlashSaleSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(l.flashSale,
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(l.flashSale, style: Theme.of(context).textTheme.titleLarge),
             const Spacer(),
             Text(
               '${(state.saleSeconds ~/ 3600).toString().padLeft(2, '0')}:'

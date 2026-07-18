@@ -63,7 +63,8 @@ class CartItemTile extends StatelessWidget {
               ProductImagePlaceholder(
                 imageColor: item.product.imageColor,
                 imageAsset: item.product.imageAsset,
-                constraints: const BoxConstraints.tightFor(width: 72, height: 72),
+                constraints:
+                    const BoxConstraints.tightFor(width: 72, height: 72),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -92,7 +93,9 @@ class CartItemTile extends StatelessWidget {
                         const SizedBox(width: 8),
                         TextButton.icon(
                           onPressed: () {
-                            context.read<WishlistCubit>().toggle(item.product.id);
+                            context
+                                .read<WishlistCubit>()
+                                .toggle(item.product.id);
                             context.read<CartCubit>().remove(item.key);
                           },
                           icon: const Icon(Icons.bookmark_border, size: 16),

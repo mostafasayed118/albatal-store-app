@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import 'address.dart';
 import 'product.dart';
 
 /// Status of a placed order. Maps to the orders page tabs:
@@ -19,10 +20,8 @@ extension OrderStatusLabel on OrderStatus {
 
 /// An immutable snapshot of a successfully placed order.
 ///
-/// The [items] and money fields are copies taken at placement time, so a later
-/// change to the catalog (price edit, product removal) never rewrites history.
-/// This is the same ownership reasoning as a real receipt: the line items are
-/// frozen the moment the order is confirmed.
+/// The [items], [address], and money fields are copies taken at placement time,
+/// so a later change to the catalog or address book never rewrites history.
 final class Order extends Equatable {
   const Order({
     required this.id,
@@ -33,6 +32,7 @@ final class Order extends Equatable {
     required this.status,
     required this.placedAt,
     required this.paymentMethod,
+    this.address,
   });
 
   final String id;
@@ -43,10 +43,11 @@ final class Order extends Equatable {
   final OrderStatus status;
   final DateTime placedAt;
   final String paymentMethod;
+  final Address? address;
 
   int get itemCount => items.fold(0, (v, i) => v + i.quantity);
 
-  Order copyWith({OrderStatus? status}) => Order(
+  Order copyWith({OrderStatus? status, Address? address}) => Order(
         id: id,
         items: items,
         subtotal: subtotal,
@@ -55,9 +56,19 @@ final class Order extends Equatable {
         status: status ?? this.status,
         placedAt: placedAt,
         paymentMethod: paymentMethod,
+        address: address ?? this.address,
       );
 
   @override
-  List<Object?> get props =>
-      [id, items, subtotal, shipping, total, status, placedAt, paymentMethod];
+  List<Object?> get props => [
+        id,
+        items,
+        subtotal,
+        shipping,
+        total,
+        status,
+        placedAt,
+        paymentMethod,
+        address
+      ];
 }

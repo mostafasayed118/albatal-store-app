@@ -19,9 +19,15 @@ final class LocalSettingsRepository implements SettingsRepository {
     try {
       final savedTheme = _preferences.getString(_themeModeKey);
       final savedLanguage = _preferences.getString(_localeKey);
-      final themeMode = ThemeMode.values.where((mode) => mode.name == savedTheme).firstOrNull ?? ThemeMode.system;
-      final languageCode = _supportedLanguageCodes.contains(savedLanguage) ? savedLanguage! : 'en';
-      return Success(AppSettings(themeMode: themeMode, locale: Locale(languageCode)));
+      final themeMode = ThemeMode.values
+              .where((mode) => mode.name == savedTheme)
+              .firstOrNull ??
+          ThemeMode.system;
+      final languageCode = _supportedLanguageCodes.contains(savedLanguage)
+          ? savedLanguage!
+          : 'en';
+      return Success(
+          AppSettings(themeMode: themeMode, locale: Locale(languageCode)));
     } catch (error) {
       return Failure(AppError('Unable to read app preferences.', cause: error));
     }
@@ -37,7 +43,8 @@ final class LocalSettingsRepository implements SettingsRepository {
     if (!_supportedLanguageCodes.contains(locale.languageCode)) {
       return Future.value(const Failure(AppError('Unsupported language.')));
     }
-    return _write(() => _preferences.setString(_localeKey, locale.languageCode));
+    return _write(
+        () => _preferences.setString(_localeKey, locale.languageCode));
   }
 
   Future<Result<void>> _write(Future<bool> Function() operation) async {

@@ -352,4 +352,116 @@ class AppLocalizationsEn extends AppLocalizations {
   String itemsCount(int count) {
     return '$count items';
   }
+
+  @override
+  String get reviewOrder => 'Review Order';
+
+  @override
+  String get shippingTo => 'Shipping to';
+
+  @override
+  String get paymentSummary => 'Payment Summary';
+
+  @override
+  String get selectAddress => 'Select Address';
+
+  @override
+  String get noAddressesSaved => 'No addresses saved yet';
+
+  @override
+  String get addAddress => 'Add Address';
+
+  @override
+  String get useThisAddress => 'Use this address';
+
+  @override
+  String get defaultLabel => 'Default';
+
+  @override
+  String get orderSummary => 'Order Summary';
+
+  @override
+  String itemsInCart(int count) {
+    return '$count items in cart';
+  }
+
+  @override
+  String get confirmAndPay => 'Confirm & Pay';
+
+  @override
+  String get changingAddress => 'Change';
+
+  @override
+  String get validationSelectAddress => 'Please select a shipping address';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get filters => 'Filters';
+
+  @override
+  String get applyFilters => 'Apply Filters';
+
+  @override
+  String get resetFilters => 'Reset Filters';
+
+  @override
+  String get clearAll => 'Clear all';
+
+  @override
+  String get priceRange => 'Price Range';
+
+  @override
+  String get noResultsFound => 'No results found';
+
+  @override
+  String get tryAdjustingFilters => 'Try adjusting your search or filters';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get sizeGuide => 'Size Guide';
+
+  @override
+  String get relatedProducts => 'Related Products';
+
+  @override
+  String get outOfStock => 'Out of Stock';
+
+  @override
+  String get inStock => 'In Stock';
+
+  @override
+  String onlyLeft(int count) {
+    return 'Only $count left';
+  }
+
+  @override
+  String get returns => 'Returns';
+
+  @override
+  String get returnsBody => 'Free returns within 30 days of purchase';
+
+  @override
+  String get width => 'Width';
+
+  @override
+  String get bestFor => 'Best For';
+
+  @override
+  String get sizeGuide1m => 'Small projects, swatches';
+
+  @override
+  String get sizeGuide2m => 'Garments, dresses';
+
+  @override
+  String get sizeGuide5m => 'Full suits, upholstery';
+
+  @override
+  String get gotIt => 'Got it';
 }

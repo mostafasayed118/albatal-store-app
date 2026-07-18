@@ -22,12 +22,13 @@ final class SettingsState extends Equatable {
     Locale? locale,
     String? errorMessage,
     bool clearError = false,
-  }) => SettingsState(
-    status: status ?? this.status,
-    themeMode: themeMode ?? this.themeMode,
-    locale: locale ?? this.locale,
-    errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
-  );
+  }) =>
+      SettingsState(
+        status: status ?? this.status,
+        themeMode: themeMode ?? this.themeMode,
+        locale: locale ?? this.locale,
+        errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      );
 
   @override
   List<Object?> get props => [status, themeMode, locale, errorMessage];

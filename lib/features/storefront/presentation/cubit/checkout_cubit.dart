@@ -9,20 +9,16 @@ final class CheckoutState extends Equatable {
   const CheckoutState({
     this.status = CheckoutStatus.initial,
     this.payment = 'Credit Card',
-    this.address,
+    this.selectedAddress,
     this.errorMessage,
   });
 
   final CheckoutStatus status;
   final String payment;
-  final Address? address;
+  final Address? selectedAddress;
   final String? errorMessage;
 
-  String get addressName => address?.name ?? 'Ahmed Mansour';
-  String get addressLine =>
-      address != null
-          ? '${address!.street}, ${address!.city}'
-          : '12 El Tahrir Street, Cairo, Egypt';
+  bool get hasAddress => selectedAddress != null;
 
   /// Step index for the checkout progress indicator (0=Shipping, 1=Payment, 2=Confirm).
   int get step => switch (status) {
@@ -35,18 +31,20 @@ final class CheckoutState extends Equatable {
   CheckoutState copyWith({
     CheckoutStatus? status,
     String? payment,
-    Address? address,
+    Address? selectedAddress,
+    bool clearAddress = false,
     String? errorMessage,
   }) =>
       CheckoutState(
         status: status ?? this.status,
         payment: payment ?? this.payment,
-        address: address ?? this.address,
+        selectedAddress:
+            clearAddress ? null : (selectedAddress ?? this.selectedAddress),
         errorMessage: errorMessage,
       );
 
   @override
-  List<Object?> get props => [status, payment, address, errorMessage];
+  List<Object?> get props => [status, payment, selectedAddress, errorMessage];
 }
 
 final class CheckoutCubit extends Cubit<CheckoutState> {
@@ -54,7 +52,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   void payment(String value) => emit(state.copyWith(payment: value));
 
-  void setAddress(Address address) => emit(state.copyWith(address: address));
+  void selectAddress(Address address) =>
+      emit(state.copyWith(selectedAddress: address));
+
+  void clearAddress() => emit(state.copyWith(clearAddress: true));
 
   Future<void> place() async {
     emit(state.copyWith(status: CheckoutStatus.placing));
@@ -63,8 +64,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(status: CheckoutStatus.success));
     } catch (e) {
       emit(state.copyWith(
-          status: CheckoutStatus.error,
-          errorMessage: 'Failed to place order'));
+          status: CheckoutStatus.error, errorMessage: 'Failed to place order'));
     }
   }
 }

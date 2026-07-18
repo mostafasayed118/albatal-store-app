@@ -32,7 +32,9 @@ class OrderSuccessPage extends StatelessWidget {
               Text(l.orderPlacedBody, textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Text('#$id',
-                  style: Theme.of(context).textTheme.titleMedium
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
                       ?.copyWith(color: scheme.primary)),
               const SizedBox(height: 32),
               AppButton(

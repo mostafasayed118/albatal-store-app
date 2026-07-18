@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 
 /// Search bar with voice/clear suffix icons.
 ///
-/// The controller lives in the parent [HomePage] because it owns the
-/// text editing lifecycle (clear on filter reset). The cubit receives
-/// query updates via [CatalogCubit.updateQuery].
+/// Tapping search or submitting navigates to the full [/catalog] page
+/// with the query pre-filled. The controller lives in the parent [HomePage].
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({
     super.key,
@@ -22,11 +22,16 @@ class HomeSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final catalog = context.read<CatalogCubit>();
     return TextField(
       controller: controller,
-      onChanged: catalog.updateQuery,
       textInputAction: TextInputAction.search,
+      onSubmitted: (value) {
+        if (value.trim().isNotEmpty) {
+          context.go('/catalog?q=${Uri.encodeComponent(value.trim())}');
+        } else {
+          context.go('/catalog');
+        }
+      },
       decoration: InputDecoration(
         hintText: l.searchFabrics,
         prefixIcon: const Icon(Icons.search),
@@ -40,7 +45,7 @@ class HomeSearchBar extends StatelessWidget {
                 tooltip: l.clearSearch,
                 onPressed: () {
                   controller.clear();
-                  catalog.updateQuery('');
+                  context.read<CatalogCubit>().updateQuery('');
                 },
                 icon: const Icon(Icons.close),
               ),

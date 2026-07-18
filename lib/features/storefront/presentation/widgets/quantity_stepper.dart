@@ -27,8 +27,7 @@ class QuantityStepper extends StatelessWidget {
           onPressed: quantity > min ? () => onChanged(quantity - 1) : null,
           icon: const Icon(Icons.remove_circle_outline),
         ),
-        Text('$quantity',
-            style: Theme.of(context).textTheme.titleMedium),
+        Text('$quantity', style: Theme.of(context).textTheme.titleMedium),
         IconButton(
           tooltip: l.increaseQuantity,
           onPressed: quantity < max ? () => onChanged(quantity + 1) : null,

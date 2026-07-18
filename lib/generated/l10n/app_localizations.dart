@@ -763,6 +763,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} items'**
   String itemsCount(int count);
+
+  /// No description provided for @reviewOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Order'**
+  String get reviewOrder;
+
+  /// No description provided for @shippingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping to'**
+  String get shippingTo;
+
+  /// No description provided for @paymentSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Summary'**
+  String get paymentSummary;
+
+  /// No description provided for @selectAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Address'**
+  String get selectAddress;
+
+  /// No description provided for @noAddressesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No addresses saved yet'**
+  String get noAddressesSaved;
+
+  /// No description provided for @addAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Address'**
+  String get addAddress;
+
+  /// No description provided for @useThisAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this address'**
+  String get useThisAddress;
+
+  /// No description provided for @defaultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get defaultLabel;
+
+  /// No description provided for @orderSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Summary'**
+  String get orderSummary;
+
+  /// Number of items in the cart for checkout review
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items in cart'**
+  String itemsInCart(int count);
+
+  /// No description provided for @confirmAndPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm & Pay'**
+  String get confirmAndPay;
+
+  /// No description provided for @changingAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get changingAddress;
+
+  /// No description provided for @validationSelectAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a shipping address'**
+  String get validationSelectAddress;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// No description provided for @applyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters'**
+  String get applyFilters;
+
+  /// No description provided for @resetFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Filters'**
+  String get resetFilters;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAll;
+
+  /// No description provided for @priceRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Price Range'**
+  String get priceRange;
+
+  /// No description provided for @noResultsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get noResultsFound;
+
+  /// No description provided for @tryAdjustingFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your search or filters'**
+  String get tryAdjustingFilters;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @sizeGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Size Guide'**
+  String get sizeGuide;
+
+  /// No description provided for @relatedProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Related Products'**
+  String get relatedProducts;
+
+  /// No description provided for @outOfStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of Stock'**
+  String get outOfStock;
+
+  /// No description provided for @inStock.
+  ///
+  /// In en, this message translates to:
+  /// **'In Stock'**
+  String get inStock;
+
+  /// Low stock warning
+  ///
+  /// In en, this message translates to:
+  /// **'Only {count} left'**
+  String onlyLeft(int count);
+
+  /// No description provided for @returns.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns'**
+  String get returns;
+
+  /// No description provided for @returnsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Free returns within 30 days of purchase'**
+  String get returnsBody;
+
+  /// No description provided for @width.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get width;
+
+  /// No description provided for @bestFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Best For'**
+  String get bestFor;
+
+  /// No description provided for @sizeGuide1m.
+  ///
+  /// In en, this message translates to:
+  /// **'Small projects, swatches'**
+  String get sizeGuide1m;
+
+  /// No description provided for @sizeGuide2m.
+  ///
+  /// In en, this message translates to:
+  /// **'Garments, dresses'**
+  String get sizeGuide2m;
+
+  /// No description provided for @sizeGuide5m.
+  ///
+  /// In en, this message translates to:
+  /// **'Full suits, upholstery'**
+  String get sizeGuide5m;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
 }
 
 class _AppLocalizationsDelegate

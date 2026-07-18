@@ -65,8 +65,8 @@ final class CartCubit extends Cubit<CartState> {
     final old =
         state.items.where((existing) => existing.key == item.key).firstOrNull;
     if (old == null) {
-      _emitAndPersist(CartState([...state.items, item],
-          status: CartStatus.ready));
+      _emitAndPersist(
+          CartState([...state.items, item], status: CartStatus.ready));
     } else {
       update(item.key, old.quantity + quantity);
     }
@@ -85,8 +85,8 @@ final class CartCubit extends Cubit<CartState> {
       state.items.where((item) => item.key != key).toList(),
       status: CartStatus.ready));
 
-  void clear() => _emitAndPersist(
-      const CartState([], status: CartStatus.ready));
+  void clear() =>
+      _emitAndPersist(const CartState([], status: CartStatus.ready));
 
   void _emitAndPersist(CartState next) {
     emit(next);

@@ -351,4 +351,116 @@ class AppLocalizationsAr extends AppLocalizations {
   String itemsCount(int count) {
     return '$count عناصر';
   }
+
+  @override
+  String get reviewOrder => 'مراجعة الطلب';
+
+  @override
+  String get shippingTo => 'الشحن إلى';
+
+  @override
+  String get paymentSummary => 'ملخص الدفع';
+
+  @override
+  String get selectAddress => 'اختر العنوان';
+
+  @override
+  String get noAddressesSaved => 'لا توجد عناوين محفوظة';
+
+  @override
+  String get addAddress => 'إضافة عنوان';
+
+  @override
+  String get useThisAddress => 'استخدم هذا العنوان';
+
+  @override
+  String get defaultLabel => 'افتراضي';
+
+  @override
+  String get orderSummary => 'ملخص الطلب';
+
+  @override
+  String itemsInCart(int count) {
+    return '$count عناصر في السلة';
+  }
+
+  @override
+  String get confirmAndPay => 'تأكيد والدفع';
+
+  @override
+  String get changingAddress => 'تغيير';
+
+  @override
+  String get validationSelectAddress => 'يرجى اختيار عنوان الشحن';
+
+  @override
+  String get back => 'رجوع';
+
+  @override
+  String get filter => 'تصفية';
+
+  @override
+  String get filters => 'التصفيات';
+
+  @override
+  String get applyFilters => 'تطبيق التصفيات';
+
+  @override
+  String get resetFilters => 'إعادة تعيين التصفيات';
+
+  @override
+  String get clearAll => 'مسح الكل';
+
+  @override
+  String get priceRange => 'نطاق السعر';
+
+  @override
+  String get noResultsFound => 'لم يتم العثور على نتائج';
+
+  @override
+  String get tryAdjustingFilters => 'حاول تعديل البحث أو التصفيات';
+
+  @override
+  String get category => 'الفئة';
+
+  @override
+  String get sizeGuide => 'دليل المقاسات';
+
+  @override
+  String get relatedProducts => 'منتجات مشابهة';
+
+  @override
+  String get outOfStock => 'نفذ من المخزون';
+
+  @override
+  String get inStock => 'متوفر';
+
+  @override
+  String onlyLeft(int count) {
+    return 'بقي $count فقط';
+  }
+
+  @override
+  String get returns => 'المرتجعات';
+
+  @override
+  String get returnsBody => 'مرتجعات مجانية خلال 30 يوماً من الشراء';
+
+  @override
+  String get width => 'العرض';
+
+  @override
+  String get bestFor => 'الأفضل لـ';
+
+  @override
+  String get sizeGuide1m => 'مشاريع صغيرة، عينات';
+
+  @override
+  String get sizeGuide2m => 'ملابس، فساتين';
+
+  @override
+  String get sizeGuide5m => 'بدلات كاملة، تنجيد';
+
+  @override
+  String get gotIt => 'فهمت';
 }

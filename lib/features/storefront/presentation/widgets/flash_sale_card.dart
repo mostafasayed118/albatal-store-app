@@ -22,8 +22,7 @@ class FlashSaleCard extends StatelessWidget {
             ProductImagePlaceholder(
               imageColor: product.imageColor,
               imageAsset: product.imageAsset,
-              constraints:
-                  const BoxConstraints.tightFor(width: 90, height: 90),
+              constraints: const BoxConstraints.tightFor(width: 90, height: 90),
             ),
             const SizedBox(width: 12),
             Expanded(

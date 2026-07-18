@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/products_data.dart';
-import '../widgets/product_tile.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -44,16 +43,6 @@ class _CategoryGrid extends StatelessWidget {
       );
     }
 
-    // If a specific category is selected (not "All"), show the filtered product grid.
-    if (state.status == CatalogStatus.ready && state.category != 'All') {
-      return _FilteredCategoryView(
-        category: state.category,
-        l10n: l,
-        onBack: () => catalog.select('All'),
-      );
-    }
-
-    // Default: show category tiles.
     final cats = state.categories.length > 1
         ? state.categories.sublist(1)
         : categories.sublist(1);
@@ -75,7 +64,10 @@ class _CategoryGrid extends StatelessWidget {
         final count = products.where((x) => x.category == c).length;
         return InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => catalog.select(c),
+          onTap: () {
+            catalog.select(c);
+            context.go('/catalog');
+          },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Container(
@@ -119,56 +111,6 @@ class _CategoryGrid extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _FilteredCategoryView extends StatelessWidget {
-  const _FilteredCategoryView({
-    required this.category,
-    required this.l10n,
-    required this.onBack,
-  });
-
-  final String category;
-  final AppLocalizations l10n;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered = products.where((p) => p.category == category).toList();
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: 'Back to categories',
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(category,
-                    style: Theme.of(context).textTheme.headlineMedium),
-              ),
-              Text(l10n.fabricsFound(filtered.length)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(child: Text(l10n.noFabricsFound))
-              : GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filtered.length,
-                  gridDelegate: productGridDelegate,
-                  itemBuilder: (_, i) => ProductTile(filtered[i]),
-                ),
-        ),
-      ],
     );
   }
 }

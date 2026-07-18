@@ -134,5 +134,53 @@
     "placeholders": {
       "count": {"type": "int"}
     }
-  }
+  },
+  "reviewOrder": "Review Order",
+  "shippingTo": "Shipping to",
+  "paymentSummary": "Payment Summary",
+  "selectAddress": "Select Address",
+  "noAddressesSaved": "No addresses saved yet",
+  "addAddress": "Add Address",
+  "useThisAddress": "Use this address",
+  "defaultLabel": "Default",
+  "orderSummary": "Order Summary",
+  "itemsInCart": "{count} items in cart",
+  "@itemsInCart": {
+    "description": "Number of items in the cart for checkout review",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "confirmAndPay": "Confirm & Pay",
+  "changingAddress": "Change",
+  "validationSelectAddress": "Please select a shipping address",
+  "back": "Back",
+  "filter": "Filter",
+  "filters": "Filters",
+  "applyFilters": "Apply Filters",
+  "resetFilters": "Reset Filters",
+  "clearAll": "Clear all",
+  "priceRange": "Price Range",
+  "noResultsFound": "No results found",
+  "tryAdjustingFilters": "Try adjusting your search or filters",
+  "category": "Category",
+  "sizeGuide": "Size Guide",
+  "relatedProducts": "Related Products",
+  "outOfStock": "Out of Stock",
+  "inStock": "In Stock",
+  "onlyLeft": "Only {count} left",
+  "@onlyLeft": {
+    "description": "Low stock warning",
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "returns": "Returns",
+  "returnsBody": "Free returns within 30 days of purchase",
+  "width": "Width",
+  "bestFor": "Best For",
+  "sizeGuide1m": "Small projects, swatches",
+  "sizeGuide2m": "Garments, dresses",
+  "sizeGuide5m": "Full suits, upholstery",
+  "gotIt": "Got it"
 }

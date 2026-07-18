@@ -11,36 +11,39 @@ class ProductTile extends StatelessWidget {
   final Product product;
 
   @override
-  Widget build(BuildContext context) => Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/product/${product.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ProductImagePlaceholder(
-                imageColor: product.imageColor,
-                imageAsset: product.imageAsset,
-              ),
-              const SizedBox(height: 10),
-              Text(product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Row(
+  Widget build(BuildContext context) => Semantics(
+        label: '${product.name}, ${product.price.toStringAsFixed(0)} EGY',
+        button: true,
+        child: Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => context.push('/product/${product.id}'),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PriceText(product.price),
-                  const Spacer(),
-                  WishlistToggleIcon(productId: product.id),
+                  ProductImagePlaceholder(
+                    imageColor: product.imageColor,
+                    imageAsset: product.imageAsset,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      PriceText(product.price),
+                      const Spacer(),
+                      WishlistToggleIcon(productId: product.id),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
 }
-

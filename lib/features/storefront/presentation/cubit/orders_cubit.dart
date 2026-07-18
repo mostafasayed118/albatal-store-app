@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/entities/address.dart';
 import '../../../../core/entities/order.dart';
 import '../../data/storefront_persistence.dart';
 import '../cubit/cart_cubit.dart';
@@ -11,7 +12,8 @@ typedef OrderIdGenerator = String Function();
 
 String _defaultOrderId() {
   final now = DateTime.now();
-  final suffix = now.millisecondsSinceEpoch.remainder(10000).toString().padLeft(4, '0');
+  final suffix =
+      now.millisecondsSinceEpoch.remainder(10000).toString().padLeft(4, '0');
   return 'ORD-${now.year}-$suffix';
 }
 
@@ -28,9 +30,11 @@ final class OrdersState extends Equatable {
   final OrdersStatus status;
   final String? errorMessage;
 
-  List<Order> get active =>
-      orders.where((o) => o.status == OrderStatus.placed || o.status == OrderStatus.shipped).toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get active => orders
+      .where((o) =>
+          o.status == OrderStatus.placed || o.status == OrderStatus.shipped)
+      .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
   List<Order> get completed =>
       orders.where((o) => o.status == OrderStatus.delivered).toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
@@ -54,7 +58,8 @@ final class OrdersState extends Equatable {
 }
 
 final class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit(this._persistence, {OrderIdGenerator generateId = _defaultOrderId})
+  OrdersCubit(this._persistence,
+      {OrderIdGenerator generateId = _defaultOrderId})
       : _generateId = generateId,
         super(const OrdersState(status: OrdersStatus.initial));
 
@@ -68,12 +73,12 @@ final class OrdersCubit extends Cubit<OrdersState> {
       emit(OrdersState(orders: stored, status: OrdersStatus.ready));
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error,
-          errorMessage: 'Failed to load orders'));
+          status: OrdersStatus.error, errorMessage: 'Failed to load orders'));
     }
   }
 
-  Order place(CartState cart, {required String paymentMethod}) {
+  Order place(CartState cart,
+      {required String paymentMethod, Address? address}) {
     final order = Order(
       id: _generateId(),
       items: List.of(cart.items),
@@ -83,6 +88,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
       status: OrderStatus.placed,
       placedAt: DateTime.now(),
       paymentMethod: paymentMethod,
+      address: address,
     );
     final next = [order, ...state.orders];
     emit(OrdersState(orders: next, status: OrdersStatus.ready));
@@ -104,8 +110,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
       _persistence.writeOrders(updated);
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error,
-          errorMessage: 'Failed to update order'));
+          status: OrdersStatus.error, errorMessage: 'Failed to update order'));
     }
   }
 }
