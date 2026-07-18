@@ -6,6 +6,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../cubit/orders_cubit.dart';
+import '../widgets/address_form.dart';
 import '../widgets/bottom_action_button.dart';
 import '../widgets/cart_summary.dart';
 
@@ -21,7 +22,6 @@ class CheckoutPage extends StatelessWidget {
       child: BlocConsumer<CheckoutCubit, CheckoutState>(
         listener: (context, s) {
           if (s.step == 2) {
-            // Snapshot the cart into an order BEFORE clearing it.
             final cart = context.read<CartCubit>().state;
             final order = context
                 .read<OrdersCubit>()
@@ -65,19 +65,18 @@ class CheckoutPage extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.location_on_outlined),
-                  title: Text(l.mockCustomerName),
-                  subtitle: Text(l.mockAddress),
+                  title: Text(s.addressName),
+                  subtitle: Text(s.addressLine),
                   trailing: Icon(Icons.check_circle, color: scheme.primary),
                 ),
               ),
               OutlinedButton(
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: Text(l.addNewAddress),
-                    content: Text(l.mockAddressDialogBody),
-                  ),
-                ),
+                onPressed: () async {
+                  final address = await AddressForm.show(context);
+                  if (address != null && context.mounted) {
+                    context.read<CheckoutCubit>().setAddress(address);
+                  }
+                },
                 child: Text(l.addNewAddress),
               ),
               const SizedBox(height: 24),

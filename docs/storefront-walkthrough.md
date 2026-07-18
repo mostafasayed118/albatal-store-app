@@ -282,3 +282,111 @@ A `CustomPainter` is framework-native, requires no asset pipeline, scales to any
 1. Why does `shouldRepaint` compare `baseColor` and `threadCount` rather than always returning `true`?
 2. If the painter drew 50 threads instead of 12, what performance concern would arise on low-end devices?
 3. When real product photos arrive, what is the minimal change to `product_image_placeholder.dart` — and which files are NOT touched?
+
+## UI state handling — loading / error / empty
+
+### Problem and approach
+
+Slice 2 added `CatalogStatus.loading` and `CatalogStatus.error` to `CatalogCubit`, but the home and categories pages did not handle them. If the repository failed, users saw an empty grid with no feedback. This is the most common cause of user confusion in data-driven apps — a silent failure looks like missing data.
+
+This slice adds explicit state handling: `FeedbackView(loading)` during load, `FeedbackView(error)` with a retry button on failure, and the current grid only when `ready`. The same pattern applies to both the home page (`BlocBuilder`) and the categories page (`BlocBuilder`).
+
+### Why retry is a button, not auto-retry
+
+An auto-retry loop (exponential backoff) is appropriate for transient network failures. But this is a local repository — if it fails, it's a hard error, not a timeout. A manual retry button gives the user control and avoids infinite loops. The button calls `catalog.load()` directly, which re-emits `loading` → `ready | error`.
+
+### Ownership
+
+- `home_page.dart`: switches on `state.status` before rendering the `ListView`.
+- `categories_page.dart`: same treatment in `_CategoryGrid`.
+- `feedback_view.dart`: already supports `onAction` for the error type — no changes needed.
+- `catalog_states_test.dart`: 2 tests — error+retry, loading-on-initial-build.
+
+### Self-check
+
+1. Why does the loading check include `CatalogStatus.initial` alongside `CatalogStatus.loading`?
+2. What would happen if the retry button called `catalog.load()` without emitting `loading` first?
+3. If the home page showed the search field during loading, would that be wrong — and why?
+
+## Product detail enrichment
+
+### Problem and approach
+
+The `Product` entity had only id, name, category, price, imageColor, oldPrice, and imageAsset. Real fabric commerce requires description, composition, care instructions, and origin. This slice extends the entity, populates all 9 products with realistic mock data, and adds expandable sections to the details page.
+
+### Why this matters for Clean Architecture
+
+Adding fields to `Product` tests the entire data flow: the entity change propagates to `products_data.dart` (the fixed catalog), the `OrderCodec` (order snapshots), and the `details_page.dart` (presentation). If any layer is missed, the compile error reveals the gap. This is the architectural payoff — the layers are forced to acknowledge the data model change.
+
+### Ownership
+
+- `core/entities/product.dart`: added `description`, `composition`, `care`, `origin` (all nullable `String?`).
+- `products_data.dart`: populated with realistic fabric descriptions, compositions, care instructions, and origins.
+- `storefront_persistence.dart`: `OrderCodec` extended to serialize/deserialize the new fields.
+- `details_page.dart`: added Description, Details (composition + origin via `_InfoRow`), and Care sections below the express delivery card.
+
+### Self-check
+
+1. Why are the new fields nullable rather than required with empty defaults?
+2. If a serialized order is from before this slice (missing `description`), what does the `OrderCodec.decode` do — and why?
+3. Why is `_InfoRow` a private widget in `details_page.dart` rather than a shared component?
+
+## Orders page renders real orders
+
+### Problem and approach
+
+The orders page previously showed a hardcoded `#ORD-2023-8472` with a fixed progress bar. With Slice 1's order persistence, the page now renders real orders from `OrdersCubit`. The page uses `DefaultTabController` + `TabBar` (Active / Completed / Cancelled) instead of the earlier `SegmentedButton`, because each tab needs its own scrolling list and the `TabBar` pattern handles this more naturally.
+
+An "Advance order" button lets users demo the status lifecycle: placed → shipped → delivered. This is useful for testing the tab filtering without needing a real backend.
+
+### Ownership
+
+- `orders_page.dart`: rewritten with `TabBar` + per-tab `_OrderList` widgets. Each order card shows the order ID, first product name + item count, status progress indicator, and an advance button for active orders.
+
+### Self-check
+
+1. Why does `_OrderList` receive `List<Order>` as a parameter instead of reading from `OrdersCubit` directly?
+2. What would change if orders could be cancelled from the UI — which state transitions and tab filters are affected?
+
+## Checkout address form with validation
+
+### Problem and approach
+
+The checkout address was a static `Card` with a mock "Add New Address" dialog. This slice replaces it with a real `Form` bottom sheet using `TextFormField` + field-level validators. The form demonstrates the canonical Flutter form pattern: `GlobalKey<FormState>`, per-field `validator`, and `FormState.validate()` on submit.
+
+### Why a bottom sheet instead of a full page
+
+A full-page form would require a new route, navigation state, and back button handling. A `showModalBottomSheet` is a single overlay that returns its result via `Navigator.pop`, keeping the checkout page as the sole owner of address state. The form is self-contained — it knows nothing about the checkout flow.
+
+### Ownership
+
+- `widgets/address_form.dart`: the `AddressForm` widget with `_formKey`, 4 `TextFormField`s, field validators, and `Address` value object returned via `Navigator.pop`.
+- `checkout_page.dart`: replaced the mock dialog with `AddressForm.show(context)`. The entered address is stored in `CheckoutState` and displayed dynamically.
+- `checkout_cubit.dart`: added `Address? address` to state and `setAddress(Address)` intent. Also added `addressName` / `addressLine` getters with fallback to the mock default.
+- `address_form_test.dart`: 3 tests — field presence, empty-submission validation errors, valid-submission pop with `Address`.
+
+### Self-check
+
+1. Why does `AddressForm.show` use `Navigator.pop(Address)` instead of returning a `Future` from the form directly?
+2. What happens if the user submits the form, then the checkout cubit's `place()` fails — is the address still saved?
+3. The phone validator strips non-digits before checking length. Why is this better than a regex that expects a specific format?
+
+## Integration test — orders page renders real orders
+
+### Problem and approach
+
+Unit tests cover each Cubit in isolation. No test proves that `OrdersCubit.place()` → persistence → `OrdersCubit.restore()` → orders page rendering works as a composed flow. This test places an order directly on the cubit and verifies the orders page renders it correctly with the right status and product summary.
+
+### Why test the orders page directly instead of the full checkout flow
+
+The checkout page uses `GoRouter` for navigation (`context.go('/order-success')`), which requires a full `MaterialApp.router` with route definitions. Testing through GoRouter adds infrastructure complexity without teaching new concepts. The orders page test proves the critical composition: cubit → persistence → cubit → UI.
+
+### Ownership
+
+- `integration_test.dart`: places an order via `OrdersCubit.place()`, renders `OrdersPage` with `BlocProvider.value`, and asserts the order appears in the Active tab with correct status and product summary.
+
+### Self-check
+
+1. Why does the test use `BlocProvider.value` instead of `BlocProvider(create: ...)`?
+2. What additional test would prove the persistence round-trip (place → restore → render)?
+3. If the orders page tab switching were broken, which test would catch it — and which wouldn't?

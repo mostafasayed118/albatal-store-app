@@ -112,6 +112,30 @@ class DetailsPage extends StatelessWidget {
                   subtitle: Text(l.expressDeliveryBody),
                 ),
               ),
+              if (p.description != null) ...[
+                const SizedBox(height: 20),
+                Text('Description',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Text(p.description!),
+              ],
+              if (p.composition != null || p.origin != null) ...[
+                const SizedBox(height: 20),
+                Text('Details',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                if (p.composition != null)
+                  _InfoRow(icon: Icons.science_outlined, label: 'Composition', value: p.composition!),
+                if (p.origin != null)
+                  _InfoRow(icon: Icons.place_outlined, label: 'Origin', value: p.origin!),
+              ],
+              if (p.care != null) ...[
+                const SizedBox(height: 20),
+                Text('Care',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Text(p.care!),
+              ],
             ],
           ),
           bottomNavigationBar: BottomActionButton(
@@ -128,4 +152,44 @@ class DetailsPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  text: '$label: ',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface),
+                  children: [
+                    TextSpan(
+                      text: value,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 }

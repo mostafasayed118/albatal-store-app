@@ -180,9 +180,13 @@ extension OrderCodec on Order {
                     'name': i.product.name,
                     'category': i.product.category,
                     'price': i.product.price,
-                  'imageColor': i.product.imageColor,
-                  'imageAsset': i.product.imageAsset,
-                  'oldPrice': i.product.oldPrice,
+                    'imageColor': i.product.imageColor,
+                    'imageAsset': i.product.imageAsset,
+                    'oldPrice': i.product.oldPrice,
+                    'description': i.product.description,
+                    'composition': i.product.composition,
+                    'care': i.product.care,
+                    'origin': i.product.origin,
                   },
                   'color': i.color,
                   'length': i.length,
@@ -216,6 +220,10 @@ extension OrderCodec on Order {
               oldPrice: pRaw['oldPrice'] == null
                   ? null
                   : (pRaw['oldPrice'] as num).toDouble(),
+              description: pRaw['description'] as String?,
+              composition: pRaw['composition'] as String?,
+              care: pRaw['care'] as String?,
+              origin: pRaw['origin'] as String?,
             );
             return CartItem(
               product: product,

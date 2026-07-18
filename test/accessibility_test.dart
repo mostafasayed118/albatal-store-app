@@ -18,7 +18,7 @@ Widget _harness({required Locale locale}) {
     supportedLocales: AppLocalizations.supportedLocales,
     home: MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => CatalogCubit(LocalCatalogRepository())),
+        BlocProvider(create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
         BlocProvider(
             create: (_) =>
                 CartCubit(MemoryStorefrontPersistence())..restore()),
@@ -35,7 +35,8 @@ void main() {
   testWidgets('home search clear and settings buttons expose localized tooltips',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
-    await tester.pumpAndSettle();
+    // Advance past the async load() and the 1s countdown timer.
+    await tester.pump(const Duration(seconds: 1));
 
     // Settings tooltip is always visible in the app bar.
     expect(find.byTooltip('Open settings'), findsOneWidget);
@@ -51,7 +52,7 @@ void main() {
   testWidgets('app boots in Arabic and resolves RTL directionality',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('ar')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(Directionality.of(tester.element(find.byType(HomePage))),
         TextDirection.rtl);
@@ -67,7 +68,7 @@ void main() {
   testWidgets('AppLocalizations delegate is registered for the home tree',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
 
     final context = tester.element(find.byType(HomePage));
     expect(AppLocalizations.of(context), isNotNull);

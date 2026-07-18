@@ -47,7 +47,7 @@ void main() {
         const CatalogState(status: CatalogStatus.loading),
         isA<CatalogState>()
             .having((s) => s.status, 'status', CatalogStatus.ready)
-            .having((s) => s.allProducts.length, 'products', 5)
+            .having((s) => s.allProducts.length, 'products', 9)
             .having((s) => s.categories.length, 'categories', 6),
       ],
     );
@@ -87,8 +87,9 @@ void main() {
       wait: const Duration(milliseconds: 400),
       verify: (cubit) {
         expect(cubit.state.query, 'VELVET');
-        expect(cubit.state.visible, hasLength(1));
-        expect(cubit.state.visible.single.name, 'Midnight Velvet');
+        expect(cubit.state.visible, hasLength(2));
+        expect(cubit.state.visible.every((p) => p.name.contains('Velvet')),
+            isTrue);
       },
     );
 
@@ -99,7 +100,7 @@ void main() {
       act: (cubit) => cubit.selectSort(CatalogSort.priceHighToLow),
       verify: (cubit) => expect(
         cubit.state.visible.map((product) => product.price),
-        [1290, 980, 820, 690, 540],
+        [1340, 1290, 1050, 980, 820, 720, 690, 580, 540],
       ),
     );
 
