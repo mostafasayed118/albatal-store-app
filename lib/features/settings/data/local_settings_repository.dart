@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
-import '../../../shared/extensions/iterable_x.dart';
 import '../domain/repositories/settings_repository.dart';
 
 final class LocalSettingsRepository implements SettingsRepository {
