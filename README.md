@@ -1,65 +1,116 @@
-# Al Batal Elite — Foundation
+# Al Batal Elite
 
-A portable Flutter source foundation for the **Al Batal Elite** premium fabric-commerce application. It implements the cross-cutting system first: visual tokens, light/dark/system appearance, English/Arabic localization with RTL, local preference persistence, GoRouter navigation, focused reusable components, and testable Cubit state.
+A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
 
-> This repository follows the [DESIGN.md](https://stitch.withgoogle.com/docs/design-md/overview/) convention popularized by the [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) collection — a plain-text design system document that AI agents read to generate consistent UI. See [`DESIGN.md`](./DESIGN.md) for the full design language.
+---
 
-## Scope of this branch
+## What is `DESIGN.md`?
 
-Included:
-- Emerald/Gold light mode and intentional Charcoal/Slate dark mode.
-- `ThemeMode.system`, light, and dark modes persisted locally.
-- English and Arabic generated localization; Flutter supplies RTL directionality from the `ar` locale.
-- Direction-safe layout APIs (`EdgeInsetsDirectional`) and Material directional icons.
-- Feature-first Clean Architecture for Settings: presentation → domain repository contract → data implementation.
-- Explicit loading, ready, saving, and failure state in `SettingsCubit`.
-- A bottom-navigation shell and temporary foundation placeholders.
+> *"A plain-text design system document that AI agents read to generate consistent UI. No Figma exports, no JSON schemas, no special tooling. Drop it into your project root and any AI coding agent instantly understands how your UI should look."*
+> — [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
 
-Intentionally deferred: catalog data, images, remote APIs, authentication, payments, analytics, Sentry configuration, and platform shells. Adding those before their contracts exist would create speculative architecture.
+| File | Who reads it | What it defines |
+| --- | --- | --- |
+| `AGENTS.md` | Coding agents | How to build the project |
+| `DESIGN.md` | Design agents | How the project should look and feel |
 
-## What's inside `DESIGN.md`
+This repository ships its own [`DESIGN.md`](./DESIGN.md) — a complete, tokenized design system covering color, typography, spacing, components, elevation, and guardrails. Tell your AI agent: *"Build me a page in the Al Batal Elite design language"* and it will generate consistent UI from the tokens.
 
-`DESIGN.md` is the single source of truth for how this app should *look and feel*. AI coding agents (and human collaborators) read it before building any UI.
+---
 
-| Section | What it captures |
-| --- | --- |
-| Visual Theme & Atmosphere | Tactile, textile-inspired premium mood |
-| Color Palette & Roles | Emerald `#064E3B`, Gold `#D97706`, Charcoal `#121212`, Slate `#1E293B` + semantic roles |
-| Typography Rules | Montserrat display headings + Inter body, full hierarchy table |
-| Component Stylings | Buttons, cards, inputs, navigation with states |
-| Layout Principles | Spacing scale, grid, whitespace philosophy |
-| Depth & Elevation | Shadow system, surface hierarchy |
-| Do's and Don'ts | Design guardrails and anti-patterns |
-| Responsive Behavior | Breakpoints, touch targets, collapsing strategy |
-| Agent Prompt Guide | Quick color reference, ready-to-use prompts |
+## Features
 
-To regenerate or extend any surface, point your AI agent at `DESIGN.md` and ask: *"Build me a page in the Al Batal Elite design language."*
+- **Two intentional themes** — Emerald/Gold light mode and hand-tuned Charcoal/Slate dark mode (not a simple inversion).
+- **Montserrat + Inter typography** — display headings and body copy, split across two families with disciplined weight and tracking.
+- **English & Arabic localization** — RTL mirrors automatically via directional insets and Material directional icons.
+- **9 product swatches** — real fabric imagery across Silk, Cotton, Velvet, Linen, and Wool categories.
+- **Feature-first Clean Architecture** — `settings` and `storefront` features with presentation → domain → data layers.
+- **Cubit state management** — deterministic, testable state via `flutter_bloc` with fake repository seams.
+- **Persistent preferences** — theme mode, wishlist, cart, and orders stored locally with `SharedPreferences`.
+- **GoRouter navigation** — declarative routing with a bottom-navigation shell (Home, Categories, Cart, Wishlist, Profile).
+- **InkSparkle ripple** — tactile splash on every tap that reinforces the premium feel.
+
+---
+
+## Design system at a glance
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `colors.emerald` | `#064E3B` | Primary brand — buttons, indicators, focus rings |
+| `colors.gold` | `#D97706` | Warm accent — prices, promotions, secondary CTA |
+| `colors.charcoal` | `#121212` | Dark scaffold background |
+| `colors.slate` | `#1E293B` | Dark cards and navigation |
+| `rounded.card` | 16px | Product cards, dialogs, summary cards |
+| `rounded.control` | 8px | Buttons, inputs, FABs |
+| `rounded.chip` | 4px | Chips, tags, badges |
+| `typography.display-lg` | 48px / 700 / -0.96px | Hero headlines |
+| `typography.body-md` | 16px / 400 / 0px | Default body text |
+
+Full spec lives in [`DESIGN.md`](./DESIGN.md).
+
+---
+
+## Project structure
+
+```
+albatal_store/
+├── DESIGN.md                         # Design system (AI agents read this)
+├── INSTRUCTIONS.md                   # Build / handoff instructions
+├── README.md                         # This file
+├── l10n/                             # ARB message catalogs (en, ar)
+├── lib/
+│   ├── app.dart                      # App root + router + theme composition
+│   ├── main.dart                     # Entry point
+│   ├── core/
+│   │   ├── entities/                 # Product, Order value objects
+│   │   └── error/                    # AppError, Result<T> monad
+│   ├── features/
+│   │   ├── settings/                 # Theme / prefs feature
+│   │   │   ├── data/                 # LocalSettingsRepository
+│   │   │   ├── domain/repositories/  # SettingsRepository contract
+│   │   │   └── presentation/         # SettingsCubit + SettingsPage
+│   │   └── storefront/              # Commerce feature
+│   │       ├── data/                 # LocalCatalogRepository, persistence
+│   │       ├── domain/repositories/  # CatalogRepository contract
+│   │       └── presentation/
+│   │           ├── cubit/            # Cart, Catalog, Checkout, Orders, Wishlist
+│   │           ├── pages/            # Home, Categories, Cart, Details, Orders, …
+│   │           └── widgets/          # ProductTile, FlashSaleCard, PriceText, …
+│   ├── generated/l10n/               # Generated localizations
+│   └── shared/
+│       ├── components/               # AppButton, AppShell, FeedbackView
+│       ├── extensions/               # BuildContextX
+│       ├── routing/                  # GoRouter config
+│       ├── services/                 # Service locator (get_it)
+│       └── theme/                    # AppTheme (Material 3, tokens)
+├── assets/
+│   ├── fonts/                        # Montserrat + Inter variable fonts
+│   └── images/                       # 9 product fabric swatches (1.png – 9.png)
+├── test/                             # Cubit + widget tests
+└── pubspec.yaml
+```
+
+---
 
 ## Local setup
 
-1. Install a stable Flutter 3.x SDK (Dart 3.x).
-2. From this project directory, generate platform folders if they do not already exist:
-   ```bash
-   flutter create .
-   ```
-   This preserves `lib/`, `test/`, and the project configuration.
-3. Fetch packages and generate localizations:
-   ```bash
-   flutter pub get
-   flutter gen-l10n
-   ```
-4. Verify and run:
-   ```bash
-   flutter analyze
-   flutter test
-   flutter run
-   ```
+```bash
+# 1. Generate platform folders if needed
+flutter create .
 
-> These commands were not run in this handoff environment because Flutter was intentionally not installed here.
+# 2. Fetch dependencies and localizations
+flutter pub get
+flutter gen-l10n
 
-## Fonts
+# 3. Verify
+flutter analyze
+flutter test
 
-The supplied design specifies **Montserrat** for headings and **Inter** for body text. The theme names those families and falls back safely to the device sans-serif fonts until licensed font files are added. Add them under `assets/fonts/`, declare them in `pubspec.yaml`, then Flutter will use them without network access at runtime.
+# 4. Run
+flutter run
+```
+
+---
 
 ## Architecture and data flow
 
@@ -72,37 +123,37 @@ flowchart LR
   Cubit -->|immutable SettingsState| UI
 ```
 
-The Cubit does not know `SharedPreferences`; the repository catches storage failures and turns them into `Result` values. This keeps state transitions deterministic and makes the presentation layer testable with a fake repository.
+The Cubit never touches `SharedPreferences` directly. The repository catches storage failures and folds them into `Result` values, keeping state transitions deterministic and the presentation layer testable with a fake repository.
 
-## Dependency decisions
+---
 
-- `flutter_bloc` / `bloc`: the requested Cubit state-management model; widgets observe state rather than own logic.
-- `equatable`: concise, value-based immutable state equality.
-- `get_it`: narrow composition root for concrete implementations.
-- `go_router`: maintained declarative navigation, appropriate once nested commerce flows arrive.
-- `shared_preferences`: light local persistence for user preferences only—not product, cart, or order storage.
-- `intl` + Flutter localization generation: Flutter-native generated messages and RTL support.
-- `bloc_test` / `mocktail`: deterministic state tests; `mocktail` is ready for interaction tests as repository behavior expands.
+## Dependencies
 
-Versions are constrained to stable releases compatible with Flutter 3.19+/Dart 3.3+. Run `flutter pub outdated` locally before the first production commit to confirm the newest compatible stable patch versions for your SDK.
+| Package | Role |
+| --- | --- |
+| `flutter_bloc` / `bloc` | Cubit state management — widgets observe, never own logic |
+| `equatable` | Value-based immutable state equality |
+| `get_it` | Narrow composition root for concrete implementations |
+| `go_router` | Declarative routing, ready for nested commerce flows |
+| `shared_preferences` | Local persistence for preferences, cart, wishlist, orders |
+| `intl` + `flutter gen-l10n` | Generated messages and RTL support |
+| `bloc_test` / `mocktail` | Deterministic state tests with fake repositories |
 
-## Project structure
+Flutter ≥ 3.19 / Dart ≥ 3.3 required. Run `flutter pub outdated` before the first production commit.
 
-```
-albatal_store/
-├── DESIGN.md            # Design system (read by AI agents before building UI)
-├── INSTRUCTIONS.md      # Build/handoff instructions
-├── README.md            # This file
-├── l10n/                # ARB message catalogs (en, ar)
-├── lib/
-│   ├── app/             # App root, router, theme composition
-│   ├── core/            # Cross-cutting tokens, theme, localization, DI
-│   └── features/        # Feature-first Clean Architecture
-│       └── settings/     # presentation → domain → data
-├── test/                # Cubit + widget tests with fake repository
-└── assets/fonts/        # Montserrat + Inter (licensed fonts go here)
-```
+---
 
-## Branch safety
+## How to extend
 
-A local branch named `feat/al-batal-foundation` was initialized. No commit was created and nothing was pushed.
+1. Open `DESIGN.md` — it is the single source of truth.
+2. Add new tokens under `colors:`, `typography:`, `rounded:`, or `components:`.
+3. Tell your AI agent: *"Build me a [component] using the Al Batal Elite design tokens."*
+4. Reference tokens directly: `{colors.emerald}`, `{rounded.card}`, `{typography.title-lg}`.
+
+> **Rule:** Headings stay in Montserrat, body stays in Inter. Round everything. No hard shadows. No terracotta outside destructive actions.
+
+---
+
+## License
+
+Private — Al Batal Elite. Not for redistribution.

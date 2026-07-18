@@ -63,25 +63,45 @@ class _CategoryGrid extends StatelessWidget {
         return InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => catalog.select(c),
-          child: Container(
-            decoration: BoxDecoration(
-                color: Color(p.imageColor),
-                borderRadius: BorderRadius.circular(16)),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.texture, color: scheme.onPrimary, size: 36),
-                const Spacer(),
-                Text(c,
-                    style: TextStyle(
-                        color: scheme.onPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                Text(l.curatedFabrics(count),
-                    style: TextStyle(
-                        color: scheme.onPrimary.withValues(alpha: .7))),
-              ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              decoration: BoxDecoration(color: Color(p.imageColor)),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (p.imageAsset != null)
+                    Image.asset(p.imageAsset!, fit: BoxFit.cover),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: .15),
+                          Colors.black.withValues(alpha: .55),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(c,
+                            style: TextStyle(
+                                color: scheme.onPrimary,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold)),
+                        Text(l.curatedFabrics(count),
+                            style: TextStyle(
+                                color: scheme.onPrimary.withValues(alpha: .7))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
