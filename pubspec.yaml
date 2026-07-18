@@ -35,6 +35,7 @@ flutter:
   generate: true
   assets:
     - assets/images/
+    - .env
   fonts:
     - family: Montserrat
       fonts:

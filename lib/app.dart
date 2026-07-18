@@ -58,8 +58,7 @@ final class AlBatalApp extends StatelessWidget {
         child: BlocBuilder<SettingsCubit, SettingsState>(
             buildWhen: (a, b) =>
                 a.themeMode != b.themeMode || a.locale != b.locale,
-            builder: (_, s) => EnvironmentBanner(
-                  child: MaterialApp.router(
+            builder: (_, s) => MaterialApp.router(
                       title: 'Al Batal Elite',
                       debugShowCheckedModeBanner: false,
                       theme: AppTheme.light(),
@@ -69,7 +68,9 @@ final class AlBatalApp extends StatelessWidget {
                       localizationsDelegates:
                           AppLocalizations.localizationsDelegates,
                       supportedLocales: AppLocalizations.supportedLocales,
-                      routerConfig: appRouter),
+                      routerConfig: appRouter,
+                      builder: (context, child) =>
+                          EnvironmentBanner(child: child!),
                 )));
   }
 }
