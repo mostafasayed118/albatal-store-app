@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/entities/product.dart';
-import 'product_image_placeholder.dart';
-
 /// Full-screen zoom gallery with page view and interactive viewer.
 class ZoomGallery extends StatefulWidget {
   const ZoomGallery({

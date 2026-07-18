@@ -463,4 +463,96 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gotIt => 'فهمت';
+
+  @override
+  String get signIn => 'تسجيل الدخول';
+
+  @override
+  String get signUp => 'إنشاء حساب';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get email => 'البريد الإلكتروني';
+
+  @override
+  String get password => 'كلمة المرور';
+
+  @override
+  String get confirmPassword => 'تأكيد كلمة المرور';
+
+  @override
+  String get fullName => 'الاسم الكامل';
+
+  @override
+  String get welcomeBack => 'مرحباً بعودتك';
+
+  @override
+  String get signInSubtitle => 'سجل الدخول للوصول إلى حسابك';
+
+  @override
+  String get createAccount => 'إنشاء حساب';
+
+  @override
+  String get forgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get forgotPasswordTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get forgotPasswordBody =>
+      'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.';
+
+  @override
+  String get sendResetLink => 'إرسال رابط إعادة التعيين';
+
+  @override
+  String get resetEmailSent =>
+      'تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين';
+
+  @override
+  String get resetPassword => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get newPassword => 'كلمة المرور الجديدة';
+
+  @override
+  String get updatePassword => 'تحديث كلمة المرور';
+
+  @override
+  String get passwordUpdated => 'تم تحديث كلمة المرور بنجاح';
+
+  @override
+  String get checkEmailToVerify => 'تحقق من بريدك الإلكتروني للتحقق من حسابك';
+
+  @override
+  String get invalidEmail => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get passwordTooShort => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+
+  @override
+  String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get nameRequired => 'الاسم مطلوب';
+
+  @override
+  String get dontHaveAccount => 'ليس لديك حساب؟';
+
+  @override
+  String get alreadyHaveAccount => 'لديك حساب بالفعل؟';
+
+  @override
+  String get continueAsGuest => 'المتابعة كضيف';
+
+  @override
+  String get signInToViewProfile => 'سجل الدخول لعرض ملفك الشخصي وطلباتك';
+
+  @override
+  String get unknownUser => 'مستخدم ضيف';
+
+  @override
+  String get authError => 'خطأ في المصادقة';
 }

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'features/addresses/domain/repositories/address_repository.dart';
 import 'features/addresses/presentation/cubit/addresses_cubit.dart';
+import 'features/auth/data/supabase_profile_repository.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
@@ -19,7 +21,9 @@ import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/services/service_locator.dart';
+import 'shared/services/supabase_config.dart';
 import 'shared/theme/app_theme.dart';
+import 'shared/widgets/environment_banner.dart';
 
 final class AlBatalApp extends StatelessWidget {
   const AlBatalApp({super.key});
@@ -29,6 +33,9 @@ final class AlBatalApp extends StatelessWidget {
     final cartRepo = LocalCartRepository(persistence);
     final wishlistRepo = LocalWishlistRepository(persistence);
     final ordersRepo = LocalOrdersRepository(persistence);
+    final profileRepo = SupabaseProfileRepository();
+    final client = SupabaseConfig.client;
+
     return MultiBlocProvider(
         providers: [
           BlocProvider(
@@ -40,20 +47,29 @@ final class AlBatalApp extends StatelessWidget {
           BlocProvider(create: (_) => WishlistCubit(wishlistRepo)..restore()),
           BlocProvider(create: (_) => OrdersCubit(ordersRepo)..restore()),
           BlocProvider(
-              create: (_) => AddressesCubit(getIt<AddressRepository>())..load())
+              create: (_) =>
+                  AddressesCubit(getIt<AddressRepository>())..load()),
+          BlocProvider(
+              create: (_) => AuthCubit(
+                    client: client,
+                    profileRepository: profileRepo,
+                  )..checkSession()),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
             buildWhen: (a, b) =>
                 a.themeMode != b.themeMode || a.locale != b.locale,
-            builder: (_, s) => MaterialApp.router(
-                title: 'Al Batal Elite',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.light(),
-                darkTheme: AppTheme.dark(),
-                themeMode: s.themeMode,
-                locale: s.locale,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                supportedLocales: AppLocalizations.supportedLocales,
-                routerConfig: appRouter)));
+            builder: (_, s) => EnvironmentBanner(
+                  child: MaterialApp.router(
+                      title: 'Al Batal Elite',
+                      debugShowCheckedModeBanner: false,
+                      theme: AppTheme.light(),
+                      darkTheme: AppTheme.dark(),
+                      themeMode: s.themeMode,
+                      locale: s.locale,
+                      localizationsDelegates:
+                          AppLocalizations.localizationsDelegates,
+                      supportedLocales: AppLocalizations.supportedLocales,
+                      routerConfig: appRouter),
+                )));
   }
 }
