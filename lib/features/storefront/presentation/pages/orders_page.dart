@@ -118,7 +118,7 @@ class _OrderList extends StatelessWidget {
                 if (!isCompleted && o.status != OrderStatus.cancelled)
                   _StatusProgress(status: o.status, scheme: scheme)
                 else
-                  Text('${l.delivered} · ${o.placedAt.formatted}',
+                  Text('${l.delivered} · ${_fmtDate(o.placedAt)}',
                       style: TextStyle(color: scheme.primary)),
                 if (!isCompleted && o.status != OrderStatus.cancelled) ...[
                   const SizedBox(height: 8),
@@ -179,3 +179,19 @@ class _StatusProgress extends StatelessWidget {
     );
   }
 }
+
+const _months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
+];
+String _fmtDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';

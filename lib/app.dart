@@ -11,6 +11,7 @@ import 'features/storefront/data/local_catalog_repository.dart';
 import 'features/storefront/data/storefront_persistence.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'features/storefront/presentation/cubit/orders_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
@@ -31,6 +32,7 @@ final class AlBatalApp extends StatelessWidget {
               create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
           BlocProvider(create: (_) => CartCubit(persistence)..restore()),
           BlocProvider(create: (_) => WishlistCubit(persistence)..restore()),
+          BlocProvider(create: (_) => OrdersCubit(persistence)..restore()),
           BlocProvider(
               create: (_) => AddressesCubit(getIt<AddressRepository>())..load())
         ],
