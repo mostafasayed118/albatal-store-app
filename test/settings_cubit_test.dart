@@ -35,7 +35,7 @@ void main() {
     blocTest<SettingsCubit, SettingsState>(
       'retains the optimistic locale and exposes a repository failure',
       build: () {
-        final repository = FakeSettingsRepository(readResult: const Success(AppSettings.defaults))
+        final repository = FakeSettingsRepository(readResult: const Success(AppSettings(themeMode: ThemeMode.system, locale: Locale('en'))))
           ..saveResult = const Failure(AppError('Unable to save app preferences.'));
         return SettingsCubit(repository);
       },

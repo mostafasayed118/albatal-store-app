@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 
 class CartSummary extends StatelessWidget {
   const CartSummary(this.state, {super.key});

@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/order.dart';
-import '../../data/storefront_persistence.dart';
+import '../../domain/repositories/orders_repository.dart';
 import '../cubit/cart_cubit.dart';
 
 export '../../../../core/entities/order.dart';
@@ -34,12 +34,14 @@ final class OrdersState extends Equatable {
       .where((o) =>
           o.status == OrderStatus.placed || o.status == OrderStatus.shipped)
       .toList()
-    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get completed =>
-      orders.where((o) => o.status == OrderStatus.delivered).toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get cancelled =>
-      orders.where((o) => o.status == OrderStatus.cancelled).toList()
+  List<Order> get completed => orders
+      .where((o) => o.status == OrderStatus.delivered)
+      .toList()
+        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get cancelled => orders
+      .where((o) => o.status == OrderStatus.cancelled)
+      .toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
 
   OrdersState copyWith({
@@ -58,22 +60,22 @@ final class OrdersState extends Equatable {
 }
 
 final class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit(this._persistence,
-      {OrderIdGenerator generateId = _defaultOrderId})
+  OrdersCubit(this._repository, {OrderIdGenerator generateId = _defaultOrderId})
       : _generateId = generateId,
         super(const OrdersState(status: OrdersStatus.initial));
 
-  final StorefrontPersistence _persistence;
+  final OrdersRepository _repository;
   final OrderIdGenerator _generateId;
 
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
     try {
-      final stored = await _persistence.readOrders();
+      final stored = await _repository.readOrders();
       emit(OrdersState(orders: stored, status: OrdersStatus.ready));
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error, errorMessage: 'Failed to load orders'));
+          status: OrdersStatus.error,
+          errorMessage: 'Failed to load orders'));
     }
   }
 
@@ -92,7 +94,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
     );
     final next = [order, ...state.orders];
     emit(OrdersState(orders: next, status: OrdersStatus.ready));
-    _persistence.writeOrders(next);
+    _repository.writeOrders(next);
     return order;
   }
 
@@ -107,10 +109,11 @@ final class OrdersCubit extends Cubit<OrdersState> {
         };
       }).toList();
       emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-      _persistence.writeOrders(updated);
+      _repository.writeOrders(updated);
     } catch (e) {
       emit(state.copyWith(
-          status: OrdersStatus.error, errorMessage: 'Failed to update order'));
+          status: OrdersStatus.error,
+          errorMessage: 'Failed to update order'));
     }
   }
 }

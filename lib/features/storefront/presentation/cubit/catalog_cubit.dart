@@ -72,6 +72,19 @@ final class CatalogState extends Equatable {
   double get catalogPriceMax =>
       allProducts.isEmpty ? 999999 : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
 
+  /// Products in a specific category (excluding "All").
+  List<Product> productsInCategory(String category) =>
+      allProducts.where((p) => p.category == category).toList();
+
+  /// Product count per category (excluding "All").
+  Map<String, int> get categoryProductCount {
+    final map = <String, int>{};
+    for (final p in allProducts) {
+      map[p.category] = (map[p.category] ?? 0) + 1;
+    }
+    return map;
+  }
+
   List<Product> get visible {
     final normalizedQuery = query.trim().toLowerCase();
     final filtered = allProducts.where((product) {

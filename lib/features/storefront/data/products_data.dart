@@ -214,5 +214,3 @@ const products = <Product>[
 ];
 
 const categories = ['All', 'Silk', 'Cotton', 'Velvet', 'Linen', 'Wool'];
-
-String money(double n) => '${n.toStringAsFixed(0)} EGY';

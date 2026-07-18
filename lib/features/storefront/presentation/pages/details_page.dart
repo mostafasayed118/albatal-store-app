@@ -7,7 +7,7 @@ import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 import '../widgets/bottom_action_button.dart';
 import '../widgets/price_text.dart';
 import '../widgets/product_image_placeholder.dart';
@@ -22,17 +22,19 @@ class DetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final p =
-        products.firstWhere((x) => x.id == id, orElse: () => products.first);
-    final related = products
-        .where((x) => x.category == p.category && x.id != p.id)
-        .toList();
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(),
+      create: (_) => ProductDetailsCubit()..loadProduct(id, products),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
-          final stock = p.stockFor(s.color, s.length);
+          final p = s.product;
+          if (p == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
+          final stock = s.stock;
           return Scaffold(
             appBar: AppBar(
               title: Text(p.category),
@@ -225,7 +227,7 @@ class DetailsPage extends StatelessWidget {
                 ),
 
                 // ── Related Products ──
-                if (related.isNotEmpty) ...[
+                if (s.relatedProducts.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(l.relatedProducts,
                       style: Theme.of(context).textTheme.titleLarge),
@@ -234,12 +236,12 @@ class DetailsPage extends StatelessWidget {
                     height: 200,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: related.length,
+                      itemCount: s.relatedProducts.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (_, i) => _RelatedCard(
-                        product: related[i],
+                        product: s.relatedProducts[i],
                         onTap: () =>
-                            context.push('/product/${related[i].id}'),
+                            context.push('/product/${s.relatedProducts[i].id}'),
                       ),
                     ),
                   ),

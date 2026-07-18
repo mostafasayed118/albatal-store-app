@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../cubit/catalog_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 
 /// Horizontal scrollable category chips.
 class CategoryChips extends StatelessWidget {

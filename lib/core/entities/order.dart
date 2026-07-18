@@ -9,15 +9,6 @@ import 'product.dart';
 /// - [cancelled] → "Cancelled" tab
 enum OrderStatus { placed, shipped, delivered, cancelled }
 
-extension OrderStatusLabel on OrderStatus {
-  String get name => switch (this) {
-        OrderStatus.placed => 'Placed',
-        OrderStatus.shipped => 'Shipped',
-        OrderStatus.delivered => 'Delivered',
-        OrderStatus.cancelled => 'Cancelled',
-      };
-}
-
 /// An immutable snapshot of a successfully placed order.
 ///
 /// The [items], [address], and money fields are copies taken at placement time,

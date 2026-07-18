@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 import 'product_image_placeholder.dart';
 
 class FlashSaleCard extends StatelessWidget {

@@ -7,7 +7,10 @@ import 'features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
+import 'features/storefront/data/local_cart_repository.dart';
 import 'features/storefront/data/local_catalog_repository.dart';
+import 'features/storefront/data/local_orders_repository.dart';
+import 'features/storefront/data/local_wishlist_repository.dart';
 import 'features/storefront/data/storefront_persistence.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -23,6 +26,9 @@ final class AlBatalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final persistence = LocalStorefrontPersistence(getIt<SharedPreferences>());
+    final cartRepo = LocalCartRepository(persistence);
+    final wishlistRepo = LocalWishlistRepository(persistence);
+    final ordersRepo = LocalOrdersRepository(persistence);
     return MultiBlocProvider(
         providers: [
           BlocProvider(
@@ -30,9 +36,9 @@ final class AlBatalApp extends StatelessWidget {
                   SettingsCubit(getIt<SettingsRepository>())..load()),
           BlocProvider(
               create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
-          BlocProvider(create: (_) => CartCubit(persistence)..restore()),
-          BlocProvider(create: (_) => WishlistCubit(persistence)..restore()),
-          BlocProvider(create: (_) => OrdersCubit(persistence)..restore()),
+          BlocProvider(create: (_) => CartCubit(cartRepo)..restore()),
+          BlocProvider(create: (_) => WishlistCubit(wishlistRepo)..restore()),
+          BlocProvider(create: (_) => OrdersCubit(ordersRepo)..restore()),
           BlocProvider(
               create: (_) => AddressesCubit(getIt<AddressRepository>())..load())
         ],

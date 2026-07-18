@@ -1,7 +1,7 @@
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
 import '../domain/repositories/catalog_repository.dart';
-import '../presentation/cubit/products_data.dart';
+import 'products_data.dart';
 
 /// Local in-memory catalog repository backed by the fixed [products] constant.
 ///

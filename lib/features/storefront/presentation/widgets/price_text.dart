@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 
 class PriceText extends StatelessWidget {
   const PriceText(

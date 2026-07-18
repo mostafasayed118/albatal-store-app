@@ -5,8 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../shared/extensions/iterable_x.dart';
-
-typedef ProductLookup = Product? Function(String id);
+import '../domain/repositories/cart_repository.dart';
+import '../domain/repositories/orders_repository.dart';
+import '../domain/repositories/wishlist_repository.dart';
 
 abstract interface class StorefrontPersistence {
   Future<List<CartItem>> readCart(ProductLookup productForId);
@@ -118,7 +119,7 @@ final class LocalStorefrontPersistence implements StorefrontPersistence {
   }
 }
 
-final class MemoryStorefrontPersistence implements StorefrontPersistence {
+final class MemoryStorefrontPersistence implements StorefrontPersistence, CartRepository, WishlistRepository, OrdersRepository {
   List<Map<String, Object>> cartLines = [];
   Set<String> wishlistIds = {};
   List<Map<String, Object?>> orderRecords = [];

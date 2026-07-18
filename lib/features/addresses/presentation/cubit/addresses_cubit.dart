@@ -14,9 +14,6 @@ final class AddressesState extends Equatable {
   final AddressesStatus status;
   final List<Address> addresses;
   final String? errorMessage;
-  Address? get defaultAddress => addresses.where((a) => a.isDefault).isEmpty
-      ? null
-      : addresses.where((a) => a.isDefault).first;
   @override
   List<Object?> get props => [status, addresses, errorMessage];
 }

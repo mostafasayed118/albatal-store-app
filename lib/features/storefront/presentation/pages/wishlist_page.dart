@@ -6,7 +6,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/cart_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/price_text.dart';
@@ -22,8 +22,13 @@ class WishlistPage extends StatelessWidget {
       appBar: AppBar(title: Text(l.wishlist)),
       body: BlocBuilder<WishlistCubit, WishlistState>(
         builder: (context, ws) {
-          final p = products.where((x) => ws.ids.contains(x.id)).toList();
-          if (p.isEmpty) {
+          // Resolve products on first build if not already resolved.
+          if (ws.products.isEmpty && ws.ids.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.read<WishlistCubit>().resolveProducts(products);
+            });
+          }
+          if (ws.products.isEmpty) {
             return EmptyStateView(
               icon: Icons.inventory_2_outlined,
               title: l.noItemsFound,
@@ -33,9 +38,9 @@ class WishlistPage extends StatelessWidget {
           }
           return GridView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: p.length,
+            itemCount: ws.products.length,
             gridDelegate: productGridDelegate,
-            itemBuilder: (_, i) => _WishlistTile(product: p[i]),
+            itemBuilder: (_, i) => _WishlistTile(product: ws.products[i]),
           );
         },
       ),

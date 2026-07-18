@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/product_tile.dart';
 

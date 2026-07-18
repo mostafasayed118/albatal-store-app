@@ -11,10 +11,3 @@ abstract interface class CatalogRepository {
   Future<Result<List<Product>>> fetchProducts();
   Future<Result<List<String>>> fetchCategories();
 }
-
-/// A pair of catalog data returned together to avoid two round-trips.
-final class CatalogData {
-  const CatalogData({required this.products, required this.categories});
-  final List<Product> products;
-  final List<String> categories;
-}

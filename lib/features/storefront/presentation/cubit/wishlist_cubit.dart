@@ -1,7 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../data/storefront_persistence.dart';
+import '../../../../core/entities/product.dart';
+import '../../domain/repositories/wishlist_repository.dart';
 
 enum WishlistStatus { initial, loading, ready, error }
 
@@ -9,11 +10,13 @@ final class WishlistState extends Equatable {
   const WishlistState({
     this.status = WishlistStatus.initial,
     this.ids = const {},
+    this.products = const [],
     this.errorMessage,
   });
 
   final WishlistStatus status;
   final Set<String> ids;
+  final List<Product> products;
   final String? errorMessage;
 
   bool contains(String id) => ids.contains(id);
@@ -21,27 +24,29 @@ final class WishlistState extends Equatable {
   WishlistState copyWith({
     WishlistStatus? status,
     Set<String>? ids,
+    List<Product>? products,
     String? errorMessage,
   }) =>
       WishlistState(
         status: status ?? this.status,
         ids: ids ?? this.ids,
+        products: products ?? this.products,
         errorMessage: errorMessage,
       );
 
   @override
-  List<Object?> get props => [status, ids, errorMessage];
+  List<Object?> get props => [status, ids, products, errorMessage];
 }
 
 final class WishlistCubit extends Cubit<WishlistState> {
-  WishlistCubit(this._persistence) : super(const WishlistState());
+  WishlistCubit(this._repository) : super(const WishlistState());
 
-  final StorefrontPersistence _persistence;
+  final WishlistRepository _repository;
 
   Future<void> restore() async {
     emit(state.copyWith(status: WishlistStatus.loading));
     try {
-      final restored = await _persistence.readWishlist();
+      final restored = await _repository.readWishlist();
       emit(WishlistState(ids: restored, status: WishlistStatus.ready));
     } catch (e) {
       emit(state.copyWith(
@@ -50,10 +55,16 @@ final class WishlistCubit extends Cubit<WishlistState> {
     }
   }
 
+  /// Resolve wishlist IDs against the product catalog.
+  void resolveProducts(List<Product> allProducts) {
+    final matched = allProducts.where((p) => state.ids.contains(p.id)).toList();
+    emit(state.copyWith(products: matched));
+  }
+
   void toggle(String id) {
     final next = {...state.ids}..toggle(id);
     emit(WishlistState(ids: next, status: WishlistStatus.ready));
-    _persistence.writeWishlist(next);
+    _repository.writeWishlist(next);
   }
 }
 

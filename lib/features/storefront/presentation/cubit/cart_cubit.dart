@@ -3,8 +3,8 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/iterable_x.dart';
-import '../../data/storefront_persistence.dart';
-import 'products_data.dart';
+import '../../domain/repositories/cart_repository.dart';
+import '../../data/products_data.dart';
 
 enum CartStatus { initial, loading, ready, error }
 
@@ -41,14 +41,14 @@ final class CartState extends Equatable {
 }
 
 final class CartCubit extends Cubit<CartState> {
-  CartCubit(this._persistence) : super(const CartState([]));
+  CartCubit(this._repository) : super(const CartState([]));
 
-  final StorefrontPersistence _persistence;
+  final CartRepository _repository;
 
   Future<void> restore() async {
     emit(state.copyWith(status: CartStatus.loading));
     try {
-      final restored = await _persistence.readCart(
+      final restored = await _repository.readCart(
         (id) => products.where((product) => product.id == id).firstOrNull,
       );
       emit(CartState(restored, status: CartStatus.ready));
@@ -90,6 +90,6 @@ final class CartCubit extends Cubit<CartState> {
 
   void _emitAndPersist(CartState next) {
     emit(next);
-    _persistence.writeCart(next.items);
+    _repository.writeCart(next.items);
   }
 }

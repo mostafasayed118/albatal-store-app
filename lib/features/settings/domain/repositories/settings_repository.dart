@@ -13,9 +13,4 @@ final class AppSettings {
 
   final ThemeMode themeMode;
   final Locale locale;
-
-  static const defaults = AppSettings(
-    themeMode: ThemeMode.system,
-    locale: Locale('en'),
-  );
 }

@@ -6,7 +6,7 @@ import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
@@ -46,6 +46,7 @@ class _CategoryGrid extends StatelessWidget {
     final cats = state.categories.length > 1
         ? state.categories.sublist(1)
         : categories.sublist(1);
+    final catCounts = state.categoryProductCount;
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: cats.length,
@@ -61,7 +62,7 @@ class _CategoryGrid extends StatelessWidget {
           (x) => x.category == c,
           orElse: () => products.first,
         );
-        final count = products.where((x) => x.category == c).length;
+        final count = catCounts[c] ?? 0;
         return InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {

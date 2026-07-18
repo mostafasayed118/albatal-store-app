@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
-import '../cubit/products_data.dart';
+import '../../data/products_data.dart';
 import '../widgets/flash_sale_card.dart';
 
 /// Flash sale section with countdown timer and product card.
