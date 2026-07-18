@@ -127,5 +127,8 @@
   },
   "noActiveOrders": "لا توجد طلبات نشطة",
   "noCompletedOrders": "لا توجد طلبات مكتملة",
-  "advanceOrder": "تقديم حالة الطلب"
+  "advanceOrder": "تقديم حالة الطلب",
+  "moveToCart": "نقل إلى السلة",
+  "saveForLater": "حفظ لوقت لاحق",
+  "movedToCart": "تم النقل إلى السلة"
 }

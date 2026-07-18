@@ -715,6 +715,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Advance order status'**
   String get advanceOrder;
+
+  /// No description provided for @moveToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Cart'**
+  String get moveToCart;
+
+  /// No description provided for @saveForLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Save for Later'**
+  String get saveForLater;
+
+  /// No description provided for @movedToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to cart'**
+  String get movedToCart;
 }
 
 class _AppLocalizationsDelegate

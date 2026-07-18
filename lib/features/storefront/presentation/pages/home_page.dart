@@ -123,8 +123,7 @@ class _HomePageState extends State<HomePage> {
                         avatar: const Icon(Icons.history, size: 16),
                         onDeleted: () => catalog.deleteRecentQuery(q),
                         deleteIcon: const Icon(Icons.close, size: 14),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       ),
                   ],
@@ -199,8 +198,7 @@ class _HomePageState extends State<HomePage> {
                     '${((state.saleSeconds % 3600) ~/ 60).toString().padLeft(2, '0')}:'
                     '${(state.saleSeconds % 60).toString().padLeft(2, '0')}',
                     style: TextStyle(
-                        color: scheme.secondary,
-                        fontWeight: FontWeight.bold),
+                        color: scheme.secondary, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -217,8 +215,8 @@ class _HomePageState extends State<HomePage> {
                     initialValue: state.sort,
                     onSelected: catalog.selectSort,
                     itemBuilder: (_) => CatalogSort.values
-                        .map((sort) => PopupMenuItem(
-                            value: sort, child: Text(sort.label)))
+                        .map((sort) =>
+                            PopupMenuItem(value: sort, child: Text(sort.label)))
                         .toList(),
                     child: Chip(
                       avatar: const Icon(Icons.sort, size: 18),
@@ -242,15 +240,13 @@ class _HomePageState extends State<HomePage> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: state.visible.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: .68,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
-                  itemBuilder: (_, index) =>
-                      ProductTile(state.visible[index]),
+                  itemBuilder: (_, index) => ProductTile(state.visible[index]),
                 ),
             ],
           );

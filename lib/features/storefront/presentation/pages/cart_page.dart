@@ -6,6 +6,7 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/products_data.dart';
+import '../cubit/wishlist_cubit.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/product_image_placeholder.dart';
@@ -58,14 +59,34 @@ class CartPage extends StatelessWidget {
                                     .read<CartCubit>()
                                     .update(i.key, q),
                               ),
-                              TextButton(
-                                onPressed: () =>
-                                    context.read<CartCubit>().remove(i.key),
-                                style: TextButton.styleFrom(
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.error,
-                                ),
-                                child: Text(l.remove),
+                              Row(
+                                children: [
+                                  TextButton(
+                                    onPressed: () => context
+                                        .read<CartCubit>()
+                                        .remove(i.key),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor:
+                                          Theme.of(context).colorScheme.error,
+                                    ),
+                                    child: Text(l.remove),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      context
+                                          .read<WishlistCubit>()
+                                          .toggle(i.product.id);
+                                      context
+                                          .read<CartCubit>()
+                                          .remove(i.key);
+                                    },
+                                    icon: const Icon(Icons.bookmark_border,
+                                        size: 16),
+                                    label: Text(l.saveForLater,
+                                        style: const TextStyle(fontSize: 12)),
+                                  ),
+                                ],
                               ),
                             ],
                           ),

@@ -348,4 +348,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get advanceOrder => 'تقديم حالة الطلب';
+
+  @override
+  String get moveToCart => 'نقل إلى السلة';
+
+  @override
+  String get saveForLater => 'حفظ لوقت لاحق';
+
+  @override
+  String get movedToCart => 'تم النقل إلى السلة';
 }

@@ -127,5 +127,8 @@
   },
   "noActiveOrders": "No active orders",
   "noCompletedOrders": "No completed orders",
-  "advanceOrder": "Advance order status"
+  "advanceOrder": "Advance order status",
+  "moveToCart": "Move to Cart",
+  "saveForLater": "Save for Later",
+  "movedToCart": "Moved to cart"
 }

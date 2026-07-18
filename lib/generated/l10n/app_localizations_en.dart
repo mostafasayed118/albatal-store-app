@@ -349,4 +349,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advanceOrder => 'Advance order status';
+
+  @override
+  String get moveToCart => 'Move to Cart';
+
+  @override
+  String get saveForLater => 'Save for Later';
+
+  @override
+  String get movedToCart => 'Moved to cart';
 }
