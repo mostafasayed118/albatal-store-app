@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/storefront/data/local_catalog_repository.dart';
+import '../../features/storefront/domain/repositories/catalog_repository.dart';
 
 final getIt = GetIt.instance;
 
@@ -12,5 +14,8 @@ Future<void> configureDependencies() async {
     ..registerSingleton<SharedPreferences>(preferences)
     ..registerLazySingleton<SettingsRepository>(
       () => LocalSettingsRepository(getIt<SharedPreferences>()),
+    )
+    ..registerLazySingleton<CatalogRepository>(
+      () => LocalCatalogRepository(),
     );
 }

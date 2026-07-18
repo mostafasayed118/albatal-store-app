@@ -87,8 +87,7 @@ class _OrderList extends StatelessWidget {
             Icon(Icons.receipt_long_outlined,
                 size: 56, color: scheme.primary.withValues(alpha: .5)),
             const SizedBox(height: 12),
-            Text(emptyMessage,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(emptyMessage, style: Theme.of(context).textTheme.titleMedium),
           ],
         ),
       );
@@ -120,17 +119,14 @@ class _OrderList extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                    '$firstProductName · ${l.itemsCount(o.itemCount)}'),
+                Text('$firstProductName · ${l.itemsCount(o.itemCount)}'),
                 const SizedBox(height: 12),
                 if (!isCompleted && o.status != OrderStatus.cancelled)
                   _StatusProgress(status: o.status, scheme: scheme)
                 else
-                  Text(
-                      '${l.delivered} · ${_formatDate(o.placedAt)}',
+                  Text('${l.delivered} · ${_formatDate(o.placedAt)}',
                       style: TextStyle(color: scheme.primary)),
-                if (!isCompleted &&
-                    o.status != OrderStatus.cancelled) ...[
+                if (!isCompleted && o.status != OrderStatus.cancelled) ...[
                   const SizedBox(height: 8),
                   Align(
                     alignment: AlignmentDirectional.centerEnd,
@@ -157,8 +153,7 @@ class _OrderList extends StatelessWidget {
         OrderStatus.cancelled => l.cancelled,
       };
 
-  String _formatDate(DateTime d) =>
-      '${d.day} ${_month(d.month)} ${d.year}';
+  String _formatDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
 
   String _month(int m) => switch (m) {
         1 => 'Jan',

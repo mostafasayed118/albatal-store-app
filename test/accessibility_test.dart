@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/features/storefront/presentation/cubit/storefront_cubits.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
+import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
 import 'package:al_batal_elite/shared/extensions/build_context_x.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +18,7 @@ Widget _harness({required Locale locale}) {
     supportedLocales: AppLocalizations.supportedLocales,
     home: MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => CatalogCubit()),
+        BlocProvider(create: (_) => CatalogCubit(LocalCatalogRepository())),
         BlocProvider(
             create: (_) =>
                 CartCubit(MemoryStorefrontPersistence())..restore()),
