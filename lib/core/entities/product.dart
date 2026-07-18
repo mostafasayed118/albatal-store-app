@@ -25,6 +25,10 @@ final class Product extends Equatable {
   final String? care;
   final String? origin;
 
+  /// Discount percentage computed from [oldPrice], or `null` if no old price.
+  int? get discountPercent =>
+      oldPrice != null ? ((oldPrice! - price) / oldPrice! * 100).round() : null;
+
   @override
   List<Object?> get props => [
         id, name, category, price, imageColor, oldPrice,

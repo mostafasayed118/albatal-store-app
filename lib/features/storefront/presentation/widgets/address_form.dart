@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/address.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
 /// A bottom-sheet address form with field-level validation.
@@ -115,19 +116,4 @@ class _AddressFormState extends State<AddressForm> {
       ),
     );
   }
-}
-
-/// Immutable address value object returned by [AddressForm].
-class Address {
-  const Address({
-    required this.name,
-    required this.street,
-    required this.city,
-    required this.phone,
-  });
-
-  final String name, street, city, phone;
-
-  @override
-  String toString() => '$name, $street, $city';
 }

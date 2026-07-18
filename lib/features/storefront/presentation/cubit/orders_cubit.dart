@@ -15,11 +15,18 @@ String _defaultOrderId() {
   return 'ORD-${now.year}-$suffix';
 }
 
+enum OrdersStatus { initial, loading, ready, error }
+
 final class OrdersState extends Equatable {
-  const OrdersState({this.orders = const [], this.status = OrdersStatus.ready});
+  const OrdersState({
+    this.orders = const [],
+    this.status = OrdersStatus.ready,
+    this.errorMessage,
+  });
 
   final List<Order> orders;
   final OrdersStatus status;
+  final String? errorMessage;
 
   List<Order> get active =>
       orders.where((o) => o.status == OrderStatus.placed || o.status == OrderStatus.shipped).toList()
@@ -31,14 +38,20 @@ final class OrdersState extends Equatable {
       orders.where((o) => o.status == OrderStatus.cancelled).toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
 
-  OrdersState copyWith({List<Order>? orders, OrdersStatus? status}) =>
-      OrdersState(orders: orders ?? this.orders, status: status ?? this.status);
+  OrdersState copyWith({
+    List<Order>? orders,
+    OrdersStatus? status,
+    String? errorMessage,
+  }) =>
+      OrdersState(
+        orders: orders ?? this.orders,
+        status: status ?? this.status,
+        errorMessage: errorMessage,
+      );
 
   @override
-  List<Object?> get props => [orders, status];
+  List<Object?> get props => [orders, status, errorMessage];
 }
-
-enum OrdersStatus { initial, loading, ready }
 
 final class OrdersCubit extends Cubit<OrdersState> {
   OrdersCubit(this._persistence, {OrderIdGenerator generateId = _defaultOrderId})
@@ -50,12 +63,16 @@ final class OrdersCubit extends Cubit<OrdersState> {
 
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
-    final stored = await _persistence.readOrders();
-    emit(OrdersState(orders: stored, status: OrdersStatus.ready));
+    try {
+      final stored = await _persistence.readOrders();
+      emit(OrdersState(orders: stored, status: OrdersStatus.ready));
+    } catch (e) {
+      emit(state.copyWith(
+          status: OrdersStatus.error,
+          errorMessage: 'Failed to load orders'));
+    }
   }
 
-  /// Snapshots the current cart into a new [Order], persists it, and emits.
-  /// Does NOT clear the cart — the caller (checkout flow) owns that decision.
   Order place(CartState cart, {required String paymentMethod}) {
     final order = Order(
       id: _generateId(),
@@ -73,18 +90,22 @@ final class OrdersCubit extends Cubit<OrdersState> {
     return order;
   }
 
-  /// Advance an active order one step: placed → shipped → delivered.
-  /// No-op for completed or cancelled orders.
   void advance(String orderId) {
-    final updated = state.orders.map((o) {
-      if (o.id != orderId) return o;
-      return switch (o.status) {
-        OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
-        OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
-        _ => o,
-      };
-    }).toList();
-    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    _persistence.writeOrders(updated);
+    try {
+      final updated = state.orders.map((o) {
+        if (o.id != orderId) return o;
+        return switch (o.status) {
+          OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
+          OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
+          _ => o,
+        };
+      }).toList();
+      emit(OrdersState(orders: updated, status: OrdersStatus.ready));
+      _persistence.writeOrders(updated);
+    } catch (e) {
+      emit(state.copyWith(
+          status: OrdersStatus.error,
+          errorMessage: 'Failed to update order'));
+    }
   }
 }

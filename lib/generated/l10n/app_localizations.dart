@@ -733,6 +733,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moved to cart'**
   String get movedToCart;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get description;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @care.
+  ///
+  /// In en, this message translates to:
+  /// **'Care'**
+  String get care;
+
+  /// No description provided for @composition.
+  ///
+  /// In en, this message translates to:
+  /// **'Composition'**
+  String get composition;
+
+  /// No description provided for @origin.
+  ///
+  /// In en, this message translates to:
+  /// **'Origin'**
+  String get origin;
 }
 
 class _AppLocalizationsDelegate

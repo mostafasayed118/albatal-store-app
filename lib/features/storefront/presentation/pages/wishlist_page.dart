@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/products_data.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -18,9 +20,9 @@ class WishlistPage extends StatelessWidget {
     final l = context.l10n;
     return Scaffold(
       appBar: AppBar(title: Text(l.wishlist)),
-      body: BlocBuilder<WishlistCubit, Set<String>>(
-        builder: (context, ids) {
-          final p = products.where((x) => ids.contains(x.id)).toList();
+      body: BlocBuilder<WishlistCubit, WishlistState>(
+        builder: (context, ws) {
+          final p = products.where((x) => ws.ids.contains(x.id)).toList();
           if (p.isEmpty) {
             return EmptyStateView(
               icon: Icons.inventory_2_outlined,
@@ -32,11 +34,7 @@ class WishlistPage extends StatelessWidget {
           return GridView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: p.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: .68,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12),
+            gridDelegate: productGridDelegate,
             itemBuilder: (_, i) => _WishlistTile(product: p[i]),
           );
         },
@@ -47,12 +45,11 @@ class WishlistPage extends StatelessWidget {
 
 class _WishlistTile extends StatelessWidget {
   const _WishlistTile({required this.product});
-  final dynamic product;
+  final Product product;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -83,8 +80,8 @@ class _WishlistTile extends StatelessWidget {
                         .showSnackBar(SnackBar(content: Text(l.movedToCart)));
                   },
                   icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                  label: Text(l.moveToCart,
-                      style: const TextStyle(fontSize: 12)),
+                  label:
+                      Text(l.moveToCart, style: const TextStyle(fontSize: 12)),
                 ),
               ),
             ],

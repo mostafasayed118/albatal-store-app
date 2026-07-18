@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/extensions/date_x.dart';
 import '../cubit/orders_cubit.dart';
+import '../widgets/empty_state_view.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -80,16 +82,9 @@ class _OrderList extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 56, color: scheme.primary.withValues(alpha: .5)),
-            const SizedBox(height: 12),
-            Text(emptyMessage, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
+      return EmptyStateView(
+        icon: Icons.receipt_long_outlined,
+        title: emptyMessage,
       );
     }
     return ListView.builder(
@@ -124,7 +119,7 @@ class _OrderList extends StatelessWidget {
                 if (!isCompleted && o.status != OrderStatus.cancelled)
                   _StatusProgress(status: o.status, scheme: scheme)
                 else
-                  Text('${l.delivered} · ${_formatDate(o.placedAt)}',
+                  Text('${l.delivered} · ${o.placedAt.formatted}',
                       style: TextStyle(color: scheme.primary)),
                 if (!isCompleted && o.status != OrderStatus.cancelled) ...[
                   const SizedBox(height: 8),
@@ -151,24 +146,6 @@ class _OrderList extends StatelessWidget {
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
-      };
-
-  String _formatDate(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
-
-  String _month(int m) => switch (m) {
-        1 => 'Jan',
-        2 => 'Feb',
-        3 => 'Mar',
-        4 => 'Apr',
-        5 => 'May',
-        6 => 'Jun',
-        7 => 'Jul',
-        8 => 'Aug',
-        9 => 'Sep',
-        10 => 'Oct',
-        11 => 'Nov',
-        12 => 'Dec',
-        _ => '',
       };
 }
 

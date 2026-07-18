@@ -33,14 +33,8 @@ final class AppShell extends StatelessWidget {
                           selectedIcon: const Icon(Icons.grid_view),
                           label: l.categories),
                       NavigationDestination(
-                          icon: Badge(
-                              isLabelVisible: cart.count > 0,
-                              label: Text('${cart.count}'),
-                              child: const Icon(Icons.shopping_bag_outlined)),
-                          selectedIcon: Badge(
-                              isLabelVisible: cart.count > 0,
-                              label: Text('${cart.count}'),
-                              child: const Icon(Icons.shopping_bag)),
+                          icon: _cartIcon(Icons.shopping_bag_outlined, cart),
+                          selectedIcon: _cartIcon(Icons.shopping_bag, cart),
                           label: l.cart),
                       NavigationDestination(
                           icon: const Icon(Icons.favorite_border),
@@ -59,4 +53,10 @@ final class AppShell extends StatelessWidget {
     if (p.startsWith('/profile')) return 4;
     return 0;
   }
+
+  Widget _cartIcon(IconData icon, CartState cart) => Badge(
+        isLabelVisible: cart.count > 0,
+        label: Text('${cart.count}'),
+        child: Icon(icon),
+      );
 }

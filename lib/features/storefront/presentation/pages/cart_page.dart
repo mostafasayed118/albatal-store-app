@@ -5,12 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
-import '../cubit/products_data.dart';
-import '../cubit/wishlist_cubit.dart';
+import '../widgets/cart_item_tile.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/empty_state_view.dart';
-import '../widgets/product_image_placeholder.dart';
-import '../widgets/quantity_stepper.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -31,71 +28,7 @@ class CartPage extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              ...s.items.map(
-                (i) => Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        ProductImagePlaceholder(
-                          imageColor: i.product.imageColor,
-                          imageAsset: i.product.imageAsset,
-                          constraints: const BoxConstraints.tightFor(
-                              width: 72, height: 72),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(i.product.name,
-                                  style:
-                                      Theme.of(context).textTheme.titleSmall),
-                              Text('${i.color} · ${i.length}'),
-                              Text(money(i.product.price * i.quantity)),
-                              QuantityStepper(
-                                quantity: i.quantity,
-                                onChanged: (q) => context
-                                    .read<CartCubit>()
-                                    .update(i.key, q),
-                              ),
-                              Row(
-                                children: [
-                                  TextButton(
-                                    onPressed: () => context
-                                        .read<CartCubit>()
-                                        .remove(i.key),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                                    child: Text(l.remove),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextButton.icon(
-                                    onPressed: () {
-                                      context
-                                          .read<WishlistCubit>()
-                                          .toggle(i.product.id);
-                                      context
-                                          .read<CartCubit>()
-                                          .remove(i.key);
-                                    },
-                                    icon: const Icon(Icons.bookmark_border,
-                                        size: 16),
-                                    label: Text(l.saveForLater,
-                                        style: const TextStyle(fontSize: 12)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              ...s.items.map((i) => CartItemTile(item: i)),
               const SizedBox(height: 16),
               CartSummary(s),
               const SizedBox(height: 16),

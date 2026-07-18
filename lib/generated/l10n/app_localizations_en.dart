@@ -358,4 +358,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movedToCart => 'Moved to cart';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get care => 'Care';
+
+  @override
+  String get composition => 'Composition';
+
+  @override
+  String get origin => 'Origin';
 }

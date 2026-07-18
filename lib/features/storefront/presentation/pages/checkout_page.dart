@@ -21,7 +21,7 @@ class CheckoutPage extends StatelessWidget {
       create: (_) => CheckoutCubit(),
       child: BlocConsumer<CheckoutCubit, CheckoutState>(
         listener: (context, s) {
-          if (s.step == 2) {
+          if (s.status == CheckoutStatus.success) {
             final cart = context.read<CartCubit>().state;
             final order = context
                 .read<OrdersCubit>()
@@ -105,7 +105,7 @@ class CheckoutPage extends StatelessWidget {
           bottomNavigationBar: BottomActionButton(
             label: l.placeOrder,
             icon: Icons.lock_outline,
-            isLoading: s.placing,
+            isLoading: s.status == CheckoutStatus.placing,
             onPressed: () => context.read<CheckoutCubit>().place(),
           ),
         ),

@@ -1,43 +1,52 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../widgets/address_form.dart';
+import '../../../../core/entities/address.dart';
+
+enum CheckoutStatus { initial, placing, success, error }
 
 final class CheckoutState extends Equatable {
   const CheckoutState({
-    this.step = 0,
+    this.status = CheckoutStatus.initial,
     this.payment = 'Credit Card',
-    this.placing = false,
     this.address,
+    this.errorMessage,
   });
 
-  final int step;
+  final CheckoutStatus status;
   final String payment;
-  final bool placing;
   final Address? address;
+  final String? errorMessage;
 
-  /// Returns the display address, falling back to the mock default.
   String get addressName => address?.name ?? 'Ahmed Mansour';
   String get addressLine =>
       address != null
           ? '${address!.street}, ${address!.city}'
           : '12 El Tahrir Street, Cairo, Egypt';
 
+  /// Step index for the checkout progress indicator (0=Shipping, 1=Payment, 2=Confirm).
+  int get step => switch (status) {
+        CheckoutStatus.initial => 0,
+        CheckoutStatus.placing => 2,
+        CheckoutStatus.success => 2,
+        CheckoutStatus.error => 1,
+      };
+
   CheckoutState copyWith({
-    int? step,
+    CheckoutStatus? status,
     String? payment,
-    bool? placing,
     Address? address,
+    String? errorMessage,
   }) =>
       CheckoutState(
-        step: step ?? this.step,
+        status: status ?? this.status,
         payment: payment ?? this.payment,
-        placing: placing ?? this.placing,
         address: address ?? this.address,
+        errorMessage: errorMessage,
       );
 
   @override
-  List<Object?> get props => [step, payment, placing, address];
+  List<Object?> get props => [status, payment, address, errorMessage];
 }
 
 final class CheckoutCubit extends Cubit<CheckoutState> {
@@ -48,8 +57,14 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   void setAddress(Address address) => emit(state.copyWith(address: address));
 
   Future<void> place() async {
-    emit(state.copyWith(placing: true));
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
-    emit(state.copyWith(placing: false, step: 2));
+    emit(state.copyWith(status: CheckoutStatus.placing));
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      emit(state.copyWith(status: CheckoutStatus.success));
+    } catch (e) {
+      emit(state.copyWith(
+          status: CheckoutStatus.error,
+          errorMessage: 'Failed to place order'));
+    }
   }
 }

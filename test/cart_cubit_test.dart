@@ -13,8 +13,10 @@ void main() {
       cubit.add(products.first, color: 'Emerald', length: '2m');
     },
     expect: () => [
-      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m')]),
-      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2)]),
+      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m')],
+          status: CartStatus.ready),
+      CartState([CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2)],
+          status: CartStatus.ready),
     ],
     verify: (cubit) => expect(cubit.state.total, 2655),
   );
@@ -33,7 +35,7 @@ void main() {
     await restoredWishlist.restore();
 
     expect(restoredCart.state.items, [CartItem(product: products.first, color: 'Emerald', length: '3m', quantity: 2)]);
-    expect(restoredWishlist.state, {products.last.id});
+    expect(restoredWishlist.state.ids, {products.last.id});
     await sourceCart.close();
     await sourceWishlist.close();
     await restoredCart.close();

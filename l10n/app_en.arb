@@ -130,5 +130,11 @@
   "advanceOrder": "Advance order status",
   "moveToCart": "Move to Cart",
   "saveForLater": "Save for Later",
-  "movedToCart": "Moved to cart"
+  "movedToCart": "Moved to cart",
+  "undo": "Undo",
+  "description": "Description",
+  "details": "Details",
+  "care": "Care",
+  "composition": "Composition",
+  "origin": "Origin"
 }

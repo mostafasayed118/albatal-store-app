@@ -11,9 +11,9 @@ double _relativeLuminance(Color c) {
     v /= 255;
     return v <= 0.03928 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
   }
-  return 0.2126 * channel(c.red.toDouble()) +
-      0.7152 * channel(c.green.toDouble()) +
-      0.0722 * channel(c.blue.toDouble());
+  return 0.2126 * channel(c.r * 255.0) +
+      0.7152 * channel(c.g * 255.0) +
+      0.0722 * channel(c.b * 255.0);
 }
 
 /// WCAG contrast ratio between two colors.

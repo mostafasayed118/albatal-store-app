@@ -130,5 +130,11 @@
   "advanceOrder": "تقديم حالة الطلب",
   "moveToCart": "نقل إلى السلة",
   "saveForLater": "حفظ لوقت لاحق",
-  "movedToCart": "تم النقل إلى السلة"
+  "movedToCart": "تم النقل إلى السلة",
+  "undo": "تراجع",
+  "description": "الوصف",
+  "details": "التفاصيل",
+  "care": "العناية",
+  "composition": "التركيب",
+  "origin": "المنشأ"
 }

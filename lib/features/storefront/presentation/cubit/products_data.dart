@@ -1,5 +1,7 @@
 import '../../../../core/entities/product.dart';
 
+export '../../../../core/utils/currency.dart';
+
 const products = <Product>[
   Product(
       id: 'silk-01',

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
+import '../../../shared/extensions/iterable_x.dart';
 
 typedef ProductLookup = Product? Function(String id);
 
@@ -251,8 +252,4 @@ extension OrderCodec on Order {
       return null;
     }
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

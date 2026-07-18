@@ -6,10 +6,10 @@ import '../widgets/bottom_action_button.dart';
 import '../widgets/price_text.dart';
 import '../widgets/product_image_placeholder.dart';
 import '../widgets/quantity_stepper.dart';
+import '../widgets/wishlist_toggle_icon.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../cubit/products_data.dart';
-import '../cubit/wishlist_cubit.dart';
 
 class DetailsPage extends StatelessWidget {
   const DetailsPage({super.key, required this.id});
@@ -25,17 +25,7 @@ class DetailsPage extends StatelessWidget {
         builder: (context, s) => Scaffold(
           appBar: AppBar(
             actions: [
-              BlocBuilder<WishlistCubit, Set<String>>(
-                builder: (_, w) {
-                  final saved = w.contains(p.id);
-                  return IconButton(
-                    tooltip: saved ? l.removeFromWishlist : l.addToWishlist,
-                    onPressed: () => context.read<WishlistCubit>().toggle(p.id),
-                    icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
-                    color: saved ? Theme.of(context).colorScheme.error : null,
-                  );
-                },
-              ),
+              WishlistToggleIcon(productId: p.id),
               IconButton(
                 tooltip: l.shareProduct,
                 onPressed: () => ScaffoldMessenger.of(context)
@@ -64,10 +54,9 @@ class DetailsPage extends StatelessWidget {
                 showStrikeThrough: p.oldPrice != null,
                 strikeThroughAmount: p.oldPrice,
               ),
-              if (p.oldPrice != null) ...[
+              if (p.discountPercent != null) ...[
                 const SizedBox(height: 8),
-                Chip(label: Text(l.discountPercent(
-                    ((p.oldPrice! - p.price) / p.oldPrice! * 100).round()))),
+                Chip(label: Text(l.discountPercent(p.discountPercent!))),
               ],
               const SizedBox(height: 20),
               Text(l.color),
@@ -114,24 +103,24 @@ class DetailsPage extends StatelessWidget {
               ),
               if (p.description != null) ...[
                 const SizedBox(height: 20),
-                Text('Description',
+                Text(l.description,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 6),
                 Text(p.description!),
               ],
               if (p.composition != null || p.origin != null) ...[
                 const SizedBox(height: 20),
-                Text('Details',
+                Text(l.details,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 6),
                 if (p.composition != null)
-                  _InfoRow(icon: Icons.science_outlined, label: 'Composition', value: p.composition!),
+                  _InfoRow(icon: Icons.science_outlined, label: l.composition, value: p.composition!),
                 if (p.origin != null)
-                  _InfoRow(icon: Icons.place_outlined, label: 'Origin', value: p.origin!),
+                  _InfoRow(icon: Icons.place_outlined, label: l.origin, value: p.origin!),
               ],
               if (p.care != null) ...[
                 const SizedBox(height: 20),
-                Text('Care',
+                Text(l.care,
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 6),
                 Text(p.care!),

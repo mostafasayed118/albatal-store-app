@@ -357,4 +357,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get movedToCart => 'تم النقل إلى السلة';
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get description => 'الوصف';
+
+  @override
+  String get details => 'التفاصيل';
+
+  @override
+  String get care => 'العناية';
+
+  @override
+  String get composition => 'التركيب';
+
+  @override
+  String get origin => 'المنشأ';
 }

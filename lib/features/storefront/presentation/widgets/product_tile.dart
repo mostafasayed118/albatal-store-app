@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/product.dart';
-import '../../../../shared/extensions/build_context_x.dart';
-import '../cubit/wishlist_cubit.dart';
 import 'price_text.dart';
 import 'product_image_placeholder.dart';
+import 'wishlist_toggle_icon.dart';
 
 class ProductTile extends StatelessWidget {
   const ProductTile(this.product, {super.key});
   final Product product;
 
   @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    return Card(
+  Widget build(BuildContext context) => Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/product/${product.id}'),
@@ -38,26 +34,7 @@ class ProductTile extends StatelessWidget {
                 children: [
                   PriceText(product.price),
                   const Spacer(),
-                  BlocBuilder<WishlistCubit, Set<String>>(
-                    builder: (_, ids) {
-                      final saved = ids.contains(product.id);
-                      return IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        tooltip: saved
-                            ? l.removeFromWishlist
-                            : l.addToWishlist,
-                        onPressed: () =>
-                            context.read<WishlistCubit>().toggle(product.id),
-                        icon: Icon(
-                          saved ? Icons.favorite : Icons.favorite_border,
-                          color: saved
-                              ? Theme.of(context).colorScheme.error
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
+                  WishlistToggleIcon(productId: product.id),
                 ],
               ),
             ],
@@ -65,5 +42,5 @@ class ProductTile extends StatelessWidget {
         ),
       ),
     );
-  }
 }
+

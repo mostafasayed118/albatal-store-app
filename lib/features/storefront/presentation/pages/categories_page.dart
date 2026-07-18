@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/products_data.dart';
 import '../widgets/product_tile.dart';
@@ -163,12 +164,7 @@ class _FilteredCategoryView extends StatelessWidget {
               : GridView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: .68,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
+                  gridDelegate: productGridDelegate,
                   itemBuilder: (_, i) => ProductTile(filtered[i]),
                 ),
         ),
