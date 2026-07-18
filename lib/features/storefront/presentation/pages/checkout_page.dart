@@ -11,6 +11,7 @@ import '../widgets/address_picker.dart';
 import '../widgets/bottom_action_button.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/order_review.dart';
+import '../widgets/payment_section.dart';
 import '../widgets/step_indicator.dart';
 
 class CheckoutPage extends StatelessWidget {
@@ -74,7 +75,7 @@ class CheckoutPage extends StatelessWidget {
                 const SizedBox(height: 24),
                 Text(l.paymentMethod,
                     style: Theme.of(context).textTheme.titleLarge),
-                _PaymentSection(payment: s.payment, l: l),
+                PaymentSection(payment: s.payment, l: l),
                 const SizedBox(height: 16),
                 if (s.hasAddress) ...[
                   Text(l.reviewOrder,
@@ -98,36 +99,6 @@ class CheckoutPage extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _PaymentSection extends StatelessWidget {
-  const _PaymentSection({required this.payment, required this.l});
-  final String payment;
-  final dynamic l;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _paymentTile(l.creditCard, 'Credit Card', payment, context),
-        _paymentTile(l.digitalWallet, 'Digital Wallet', payment, context),
-        _paymentTile(l.cashOnDelivery, 'Cash on Delivery', payment, context),
-      ],
-    );
-  }
-
-  Widget _paymentTile(
-      String label, String value, String groupValue, BuildContext context) {
-    return ListTile(
-      leading: Radio<String>(
-        value: value,
-        groupValue: groupValue,
-        onChanged: (v) => context.read<CheckoutCubit>().payment(v!),
-      ),
-      title: Text(label),
-      onTap: () => context.read<CheckoutCubit>().payment(value),
     );
   }
 }
