@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/products_data.dart';
@@ -30,6 +31,17 @@ class _CategoryGrid extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final catalog = context.watch<CatalogCubit>();
     final state = catalog.state;
+
+    if (state.status == CatalogStatus.loading ||
+        state.status == CatalogStatus.initial) {
+      return const FeedbackView(type: FeedbackViewType.loading);
+    }
+    if (state.status == CatalogStatus.error) {
+      return FeedbackView(
+        type: FeedbackViewType.error,
+        onAction: catalog.load,
+      );
+    }
 
     // If a specific category is selected (not "All"), show the filtered product grid.
     if (state.status == CatalogStatus.ready && state.category != 'All') {

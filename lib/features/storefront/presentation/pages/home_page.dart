@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/products_data.dart';
@@ -69,6 +70,16 @@ class _HomePageState extends State<HomePage> {
       body: BlocBuilder<CatalogCubit, CatalogState>(
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
+          if (state.status == CatalogStatus.loading ||
+              state.status == CatalogStatus.initial) {
+            return const FeedbackView(type: FeedbackViewType.loading);
+          }
+          if (state.status == CatalogStatus.error) {
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: catalog.load,
+            );
+          }
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
