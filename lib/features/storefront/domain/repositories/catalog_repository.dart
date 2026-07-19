@@ -10,4 +10,13 @@ import '../../../../core/error/result.dart';
 abstract interface class CatalogRepository {
   Future<Result<List<Product>>> fetchProducts();
   Future<Result<List<String>>> fetchCategories();
+
+  /// Synchronous lookup used by hydration paths (cart restore, wishlist
+  /// resolve) that need a [Product] from its id without awaiting a fetch.
+  /// Returns `null` when the id is not in the catalog.
+  Product? findProductById(String id);
+
+  /// Synchronous access to the category list used as a fallback when
+  /// the cubit hasn't loaded yet (e.g. first-frame render).
+  List<String> get defaultCategories;
 }

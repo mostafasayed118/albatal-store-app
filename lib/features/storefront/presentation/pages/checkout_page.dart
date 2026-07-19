@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/supabase_config.dart';
-import '../../data/checkout_service.dart';
+import '../../../../shared/services/service_locator.dart';
+import '../../domain/repositories/checkout_repository.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../widgets/address_form.dart';
@@ -18,17 +19,17 @@ import '../widgets/step_indicator.dart';
 /// then creates a pending server-side order and navigates to
 /// PaymentMethodPage with the real orderId + server-computed total.
 class CheckoutPage extends StatelessWidget {
-  const CheckoutPage({super.key, CheckoutService? checkoutService})
-      : _checkoutService = checkoutService;
+  const CheckoutPage({super.key, CheckoutRepository? checkoutRepository})
+      : _checkoutRepository = checkoutRepository;
 
-  final CheckoutService? _checkoutService;
+  final CheckoutRepository? _checkoutRepository;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider(
-      create: (_) => CheckoutCubit(_checkoutService ?? CheckoutService()),
+      create: (_) => CheckoutCubit(_checkoutRepository ?? getIt<CheckoutRepository>()),
       child: BlocConsumer<CheckoutCubit, CheckoutState>(
         listener: (context, s) {
           // When the pending order is created, navigate to payment with

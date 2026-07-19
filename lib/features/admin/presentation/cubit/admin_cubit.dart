@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../../shared/services/admin_service.dart';
+import '../../domain/repositories/admin_repository.dart';
 
 // ─── States ────────────────────────────────────────────────
 
@@ -62,13 +62,13 @@ final class AdminState extends Equatable {
 // ─── Cubit ─────────────────────────────────────────────────
 
 class AdminCubit extends Cubit<AdminState> {
-  AdminCubit(this._adminService) : super(const AdminState());
+  AdminCubit(this._adminRepository) : super(const AdminState());
 
-  final AdminService _adminService;
+  final AdminRepository _adminRepository;
 
   /// Check if current user is admin.
   Future<void> checkAdmin() async {
-    final isAdmin = await _adminService.isCurrentUserAdmin();
+    final isAdmin = await _adminRepository.isCurrentUserAdmin();
     if (!isAdmin) {
       emit(state.copyWith(
         status: AdminStatus.error,
@@ -81,7 +81,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> loadOrders({String? status}) async {
     emit(state.copyWith(status: AdminStatus.loading, statusFilter: status));
     try {
-      final orders = await _adminService.getAllOrders(status: status);
+      final orders = await _adminRepository.getAllOrders(status: status);
       emit(state.copyWith(status: AdminStatus.ready, orders: orders));
     } catch (e) {
       emit(state.copyWith(
@@ -93,7 +93,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> loadOrderDetails(String orderId) async {
     emit(state.copyWith(status: AdminStatus.loading));
     try {
-      final details = await _adminService.getOrderDetails(orderId);
+      final details = await _adminRepository.getOrderDetails(orderId);
       emit(state.copyWith(
           status: AdminStatus.ready, selectedOrder: details));
     } catch (e) {
@@ -106,7 +106,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> updateOrderStatus(String orderId, String status,
       {String? trackingNumber}) async {
     try {
-      await _adminService.updateOrderStatus(orderId, status,
+      await _adminRepository.updateOrderStatus(orderId, status,
           trackingNumber: trackingNumber);
       // Reload orders after status update
       await loadOrders(status: state.statusFilter);
@@ -120,7 +120,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> loadLowStockProducts({int threshold = 5}) async {
     try {
       final products =
-          await _adminService.getLowStockProducts(threshold: threshold);
+          await _adminRepository.getLowStockProducts(threshold: threshold);
       emit(state.copyWith(lowStockProducts: products));
     } catch (e) {
       emit(state.copyWith(
@@ -132,7 +132,7 @@ class AdminCubit extends Cubit<AdminState> {
   /// Update variant stock.
   Future<void> updateStock(String variantId, int newStock) async {
     try {
-      await _adminService.updateStock(variantId, newStock);
+      await _adminRepository.updateStock(variantId, newStock);
       await loadLowStockProducts();
     } catch (e) {
       emit(state.copyWith(

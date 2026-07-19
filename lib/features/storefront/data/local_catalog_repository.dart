@@ -17,4 +17,11 @@ final class LocalCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Success(List.of(categories));
+
+  @override
+  Product? findProductById(String id) =>
+      products.where((p) => p.id == id).firstOrNull;
+
+  @override
+  List<String> get defaultCategories => categories;
 }

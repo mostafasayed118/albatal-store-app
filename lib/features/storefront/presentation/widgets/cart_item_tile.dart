@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../core/utils/currency.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
-import '../../data/products_data.dart';
 import '../cubit/wishlist_cubit.dart';
 import 'product_image_placeholder.dart';
 import 'quantity_stepper.dart';

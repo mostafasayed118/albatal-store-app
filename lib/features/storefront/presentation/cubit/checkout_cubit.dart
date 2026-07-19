@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
-import '../../../storefront/data/checkout_service.dart';
+import '../../domain/repositories/checkout_repository.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
 
@@ -73,9 +73,9 @@ final class CheckoutState extends Equatable {
 }
 
 final class CheckoutCubit extends Cubit<CheckoutState> {
-  CheckoutCubit(this._checkoutService) : super(const CheckoutState());
+  CheckoutCubit(this._checkoutRepository) : super(const CheckoutState());
 
-  final CheckoutService _checkoutService;
+  final CheckoutRepository _checkoutRepository;
 
   void payment(String value) => emit(state.copyWith(payment: value));
 
@@ -99,7 +99,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   }) async {
     emit(state.copyWith(status: CheckoutStatus.creatingOrder));
     try {
-      final result = await _checkoutService.placeOrder(
+      final result = await _checkoutRepository.placeOrder(
         items: cartItems,
         paymentMethod: state.payment,
         addressSnapshot: state.selectedAddress != null

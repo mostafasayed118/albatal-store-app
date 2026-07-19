@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../data/products_data.dart';
+import '../../../../shared/services/service_locator.dart';
+import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
@@ -17,8 +18,11 @@ import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
 
 class DetailsPage extends StatelessWidget {
-  const DetailsPage({super.key, required this.id});
+  const DetailsPage({super.key, required this.id, CatalogRepository? catalogRepository})
+      : _catalogRepository = catalogRepository;
+
   final String id;
+  final CatalogRepository? _catalogRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +30,7 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit()..loadProduct(id, products),
+      create: (_) => ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())..loadProduct(id),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
           final p = s.product;

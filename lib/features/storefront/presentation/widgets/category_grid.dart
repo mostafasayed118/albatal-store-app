@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../cubit/catalog_cubit.dart';
-import '../../data/products_data.dart';
 
 /// Grid of category tiles with image backgrounds.
 class CategoryGrid extends StatelessWidget {
@@ -32,7 +31,7 @@ class CategoryGrid extends StatelessWidget {
 
     final cats = state.categories.length > 1
         ? state.categories.sublist(1)
-        : categories.sublist(1);
+        : const <String>['Silk', 'Cotton', 'Velvet', 'Linen', 'Wool'];
     final catCounts = state.categoryProductCount;
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -45,10 +44,9 @@ class CategoryGrid extends StatelessWidget {
       ),
       itemBuilder: (_, i) {
         final c = cats[i];
-        final p = products.firstWhere(
-          (x) => x.category == c,
-          orElse: () => products.first,
-        );
+        final matching = state.allProducts.where((x) => x.category == c);
+        if (matching.isEmpty) return const SizedBox.shrink();
+        final p = matching.first;
         final count = catCounts[c] ?? 0;
         return InkWell(
           borderRadius: BorderRadius.circular(16),

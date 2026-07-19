@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../domain/repositories/catalog_repository.dart';
 
 final class DetailsState extends Equatable {
   const DetailsState({
@@ -43,21 +44,30 @@ final class DetailsState extends Equatable {
 }
 
 final class ProductDetailsCubit extends Cubit<DetailsState> {
-  ProductDetailsCubit() : super(const DetailsState());
+  ProductDetailsCubit(this._catalogRepository) : super(const DetailsState());
 
-  /// Load a product and compute related products from the full catalog.
-  void loadProduct(String id, List<Product> allProducts) {
-    final product = allProducts.firstWhere((x) => x.id == id,
-        orElse: () => allProducts.first);
-    final related = allProducts
-        .where((x) => x.category == product.category && x.id != product.id)
-        .toList();
-    emit(state.copyWith(
-      product: product,
-      relatedProducts: related,
-      color: product.colors.isNotEmpty ? product.colors.first : '',
-      length: product.sizes.isNotEmpty ? product.sizes.first : '',
-    ));
+  final CatalogRepository _catalogRepository;
+
+  /// Load a product by id from the catalog repository.
+  void loadProduct(String id) async {
+    final result = await _catalogRepository.fetchProducts();
+    result.when(
+      success: (allProducts) {
+        if (allProducts.isEmpty) return;
+        final product = allProducts.firstWhere((x) => x.id == id,
+            orElse: () => allProducts.first);
+        final related = allProducts
+            .where((x) => x.category == product.category && x.id != product.id)
+            .toList();
+        emit(state.copyWith(
+          product: product,
+          relatedProducts: related,
+          color: product.colors.isNotEmpty ? product.colors.first : '',
+          length: product.sizes.isNotEmpty ? product.sizes.first : '',
+        ));
+      },
+      failure: (_) {},
+    );
   }
 
   void color(String value) => emit(state.copyWith(color: value));

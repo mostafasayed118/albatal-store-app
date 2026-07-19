@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
-import '../../data/products_data.dart';
 import '../widgets/flash_sale_card.dart';
 
 /// Flash sale section with countdown timer and product card.
@@ -14,6 +13,9 @@ class FlashSaleSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final flashProduct = state.allProducts.isNotEmpty
+        ? state.allProducts.first
+        : null;
     return Column(
       children: [
         Row(
@@ -30,7 +32,8 @@ class FlashSaleSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        FlashSaleCard(product: products.first),
+        if (flashProduct != null)
+          FlashSaleCard(product: flashProduct),
       ],
     );
   }

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
-import '../../data/products_data.dart';
+import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/wishlist_tile.dart';
@@ -21,7 +21,8 @@ class WishlistPage extends StatelessWidget {
         builder: (context, ws) {
           if (ws.products.isEmpty && ws.ids.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<WishlistCubit>().resolveProducts(products);
+              context.read<WishlistCubit>().resolveProducts(
+                  context.read<CatalogCubit>().state.allProducts);
             });
           }
           if (ws.products.isEmpty) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/money.dart';
-import '../../data/products_data.dart';
+import '../../../../core/utils/currency.dart';
 
 class PriceText extends StatelessWidget {
   const PriceText(

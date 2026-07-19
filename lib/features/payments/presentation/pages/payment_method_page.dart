@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
 import '../../../storefront/presentation/cubit/orders_cubit.dart';
-import '../../data/paymob_payment_service.dart';
 import '../../domain/entities/payment.dart';
+import '../../domain/repositories/payment_service.dart';
 import '../cubit/payment_cubit.dart';
 
 /// Payment method selection page.
@@ -31,7 +32,7 @@ class PaymentMethodPage extends StatelessWidget {
 
     return BlocProvider(
       create: (_) => PaymentCubit(
-        PaymobPaymentService(),
+        getIt<PaymentService>(),
       )..initPayment(
           amount: total,
           orderId: orderId,
