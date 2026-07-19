@@ -62,7 +62,7 @@ This project is Flutter-first. Do not suggest or implement:
 - **DI:** GetIt
 - **Routing:** GoRouter
 - **Testing:** flutter_test, bloc_test, mocktail
-- **Crash Reporting:** Sentry
+- **Crash Reporting:** Sentry (planned — currently logs to Supabase `error_logs` table)
 
 > **Note:** Adapt the stack to the specific project. Core principles remain the same regardless of domain.
 

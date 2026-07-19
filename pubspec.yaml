@@ -8,7 +8,6 @@ environment:
   flutter: ">=3.19.0"
 
 dependencies:
-  flutter_skill: ^0.2.6
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -23,7 +22,6 @@ dependencies:
   supabase_flutter: ^2.8.4
   flutter_dotenv: ^5.2.1
   webview_flutter: ^4.10.0
-  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
