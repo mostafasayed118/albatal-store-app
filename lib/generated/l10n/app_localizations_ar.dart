@@ -761,4 +761,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noAddressProvided => 'لم يتم توفير عنوان';
+
+  @override
+  String get comingSoon => 'قريباً';
 }

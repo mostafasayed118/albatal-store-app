@@ -284,5 +284,6 @@
   "items": "items",
   "noAddressProvided": "No address provided",
   "noResultsFound": "No results found",
-  "tryAdjustingFilters": "Try adjusting your search or filters"
+  "tryAdjustingFilters": "Try adjusting your search or filters",
+  "comingSoon": "Coming Soon"
 }

@@ -765,4 +765,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noAddressProvided => 'No address provided';
+
+  @override
+  String get comingSoon => 'Coming Soon';
 }
