@@ -4,153 +4,183 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 
 ---
 
-## What is `DESIGN.md`?
-
-> *"A plain-text design system document that AI agents read to generate consistent UI. No Figma exports, no JSON schemas, no special tooling. Drop it into your project root and any AI coding agent instantly understands how your UI should look."*
-> — [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)
-
-| File | Who reads it | What it defines |
-| --- | --- | --- |
-| `AGENTS.md` | Coding agents | How to build the project |
-| `DESIGN.md` | Design agents | How the project should look and feel |
-
-This repository ships its own [`DESIGN.md`](./DESIGN.md) — a complete, tokenized design system covering color, typography, spacing, components, elevation, and guardrails. Tell your AI agent: *"Build me a page in the Al Batal Elite design language"* and it will generate consistent UI from the tokens.
-
----
-
 ## Features
 
-- **Two intentional themes** — Emerald/Gold light mode and hand-tuned Charcoal/Slate dark mode (not a simple inversion).
-- **Montserrat + Inter typography** — display headings and body copy, split across two families with disciplined weight and tracking.
-- **English & Arabic localization** — RTL mirrors automatically via directional insets and Material directional icons.
-- **9 product swatches** — real fabric imagery across Silk, Cotton, Velvet, Linen, and Wool categories.
-- **Feature-first Clean Architecture** — `settings` and `storefront` features with presentation → domain → data layers.
-- **Cubit state management** — deterministic, testable state via `flutter_bloc` with fake repository seams.
-- **Persistent preferences** — theme mode, wishlist, cart, and orders stored locally with `SharedPreferences`.
-- **GoRouter navigation** — declarative routing with a bottom-navigation shell (Home, Categories, Cart, Wishlist, Profile).
-- **InkSparkle ripple** — tactile splash on every tap that reinforces the premium feel.
+### Customer App
+- **Product catalog** — 9 fabric swatches across Silk, Cotton, Velvet, Linen, and Wool categories
+- **Product search** — real-time search with debounce, category/color/price filters, 5 sort options
+- **Product details** — image gallery with zoom, size guide, stock per variant, related products, delivery/returns info, star ratings
+- **Cart** — add/remove/update items, quantity stepper, subtotal/shipping/total
+- **Checkout** — address picker from saved addresses, payment method selection, order review, confirmation
+- **Wishlist** — save products, move to cart
+- **Orders** — order history with status tracking (placed → shipped → delivered)
+- **Authentication** — email/password sign up, sign in, password reset, email verification
+- **Profiles** — display name, phone, order history
+- **Guest shopping** — browse and add to cart without sign-in; sign-in required for wishlist, addresses, checkout
+- **English & Arabic** — full RTL support with 200+ localized strings
+- **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode
+
+### Cloud Backend (Supabase)
+- **Remote catalog** — products, categories, variants, images stored in Supabase
+- **Authentication** — Supabase Auth with email/password, session restore
+- **User data** — cart, wishlist, addresses, orders synced per customer
+- **Row Level Security** — users can only access their own data
+- **Server-side checkout** — Edge Function validates prices, stock, creates orders atomically
+- **Storage** — product images (public) and avatars (private)
+- **Admin support** — admin role for catalog/order management
 
 ---
 
-## Design system at a glance
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `colors.emerald` | `#064E3B` | Primary brand — buttons, indicators, focus rings |
-| `colors.gold` | `#D97706` | Warm accent — prices, promotions, secondary CTA |
-| `colors.charcoal` | `#121212` | Dark scaffold background |
-| `colors.slate` | `#1E293B` | Dark cards and navigation |
-| `rounded.card` | 16px | Product cards, dialogs, summary cards |
-| `rounded.control` | 8px | Buttons, inputs, FABs |
-| `rounded.chip` | 4px | Chips, tags, badges |
-| `typography.display-lg` | 48px / 700 / -0.96px | Hero headlines |
-| `typography.body-md` | 16px / 400 / 0px | Default body text |
-
-Full spec lives in [`DESIGN.md`](./DESIGN.md).
-
----
-
-## Project structure
+## Architecture
 
 ```
-albatal_store/
-├── DESIGN.md                         # Design system (AI agents read this)
-├── INSTRUCTIONS.md                   # Build / handoff instructions
-├── README.md                         # This file
-├── l10n/                             # ARB message catalogs (en, ar)
-├── lib/
-│   ├── app.dart                      # App root + router + theme composition
-│   ├── main.dart                     # Entry point
-│   ├── core/
-│   │   ├── entities/                 # Product, Order value objects
-│   │   └── error/                    # AppError, Result<T> monad
-│   ├── features/
-│   │   ├── settings/                 # Theme / prefs feature
-│   │   │   ├── data/                 # LocalSettingsRepository
-│   │   │   ├── domain/repositories/  # SettingsRepository contract
-│   │   │   └── presentation/         # SettingsCubit + SettingsPage
-│   │   └── storefront/              # Commerce feature
-│   │       ├── data/                 # LocalCatalogRepository, persistence
-│   │       ├── domain/repositories/  # CatalogRepository contract
-│   │       └── presentation/
-│   │           ├── cubit/            # Cart, Catalog, Checkout, Orders, Wishlist
-│   │           ├── pages/            # Home, Categories, Cart, Details, Orders, …
-│   │           └── widgets/          # ProductTile, FlashSaleCard, PriceText, …
-│   ├── generated/l10n/               # Generated localizations
-│   └── shared/
-│       ├── components/               # AppButton, AppShell, FeedbackView
-│       ├── extensions/               # BuildContextX
-│       ├── routing/                  # GoRouter config
-│       ├── services/                 # Service locator (get_it)
-│       └── theme/                    # AppTheme (Material 3, tokens)
-├── assets/
-│   ├── fonts/                        # Montserrat + Inter variable fonts
-│   └── images/                       # 9 product fabric swatches (1.png – 9.png)
-├── test/                             # Cubit + widget tests
-└── pubspec.yaml
+lib/
+├── core/
+│   ├── entities/          # Product, Order, Address, Profile
+│   ├── error/             # Result<T>, AppError
+│   └── utils/             # Currency formatting
+├── features/
+│   ├── auth/              # Authentication & profile
+│   │   ├── data/          # SupabaseProfileRepository
+│   │   ├── domain/        # ProfileRepository interface
+│   │   └── presentation/  # AuthCubit, sign-in/up pages
+│   ├── addresses/         # Shipping addresses
+│   │   ├── data/          # Local + Supabase repositories
+│   │   ├── domain/        # AddressRepository interface
+│   │   └── presentation/  # AddressesCubit, addresses page
+│   ├── settings/          # Theme & language preferences
+│   └── storefront/        # Commerce feature
+│       ├── data/          # Repositories, persistence, Supabase impls
+│       ├── domain/        # Repository interfaces
+│       └── presentation/
+│           ├── cubit/     # Cart, Catalog, Checkout, Orders, Wishlist, Details
+│           ├── pages/     # Home, Categories, Catalog, Cart, Details, Checkout, Orders
+│           └── widgets/   # 30+ focused widget files (one public widget per file)
+├── generated/l10n/        # Generated localizations
+└── shared/
+    ├── components/        # AppButton, AppShell, FeedbackView
+    ├── extensions/        # BuildContextX
+    ├── providers/         # Repository providers
+    ├── routing/           # GoRouter config
+    ├── services/          # SupabaseConfig, StorageService, AdminService
+    ├── widgets/           # EnvironmentBanner
+    └── theme/             # AppTheme (Material 3)
 ```
+
+### Data Flow
+
+```
+UI (Widget)
+  → observes state via BlocBuilder/BlocListener
+    → Cubit (owns screen state, emits via StateStream)
+      → Repository interface (domain layer)
+        → Supabase or Local implementation (data layer)
+          → Supabase API or SharedPreferences
+```
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| One public widget per file | Discoverability, single responsibility, easier code review |
+| Domain repository interfaces | Swappable implementations (local ↔ Supabase) without changing Cubits |
+| Money as integer minor units | Avoids decimal rounding errors in price calculations |
+| Order items snapshot product details | Past orders remain accurate after catalog changes |
+| Server-side checkout | Client never trusted for price/stock validation |
+| Guest-first browsing | Reduces friction; sign-in only when persistence needed |
 
 ---
 
-## Local setup
+## Local Setup
 
 ```bash
-# 1. Generate platform folders if needed
-flutter create .
-
-# 2. Fetch dependencies and localizations
+# 1. Install dependencies
 flutter pub get
 flutter gen-l10n
 
-# 3. Verify
+# 2. Configure Supabase
+cp .env.example .env
+# Edit .env with your Supabase URL and anon key
+
+# 3. Run SQL migrations in Supabase dashboard
+# supabase/migrations/001_initial_schema.sql
+# supabase/migrations/002_rls_policies.sql
+# supabase/migrations/003_auth_profiles_and_hardening.sql
+# supabase/migrations/004_stock_function.sql
+# supabase/migrations/005_storage_buckets.sql
+
+# 4. Deploy Edge Function
+supabase functions deploy checkout
+
+# 5. Verify
 flutter analyze
 flutter test
 
-# 4. Run
+# 6. Run
 flutter run
 ```
 
 ---
 
-## Architecture and data flow
+## Supabase Setup
 
-```mermaid
-flowchart LR
-  UI[SettingsPage] -->|intent| Cubit[SettingsCubit]
-  Cubit -->|SettingsRepository contract| Repo[LocalSettingsRepository]
-  Repo -->|read/write| Preferences[SharedPreferences]
-  Repo -->|Result success/failure| Cubit
-  Cubit -->|immutable SettingsState| UI
+### Required Steps
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy Project URL and anon key to `.env`
+3. Run the 5 SQL migrations in order via SQL Editor
+4. Enable Email provider in Authentication → Providers
+5. Deploy the `checkout` Edge Function
+
+### Environment Variables
+
+```bash
+# .env (never commit this file)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key-here
 ```
-
-The Cubit never touches `SharedPreferences` directly. The repository catches storage failures and folds them into `Result` values, keeping state transitions deterministic and the presentation layer testable with a fake repository.
 
 ---
 
 ## Dependencies
 
 | Package | Role |
-| --- | --- |
-| `flutter_bloc` / `bloc` | Cubit state management — widgets observe, never own logic |
+|---------|------|
+| `flutter_bloc` / `bloc` | Cubit state management |
 | `equatable` | Value-based immutable state equality |
-| `get_it` | Narrow composition root for concrete implementations |
-| `go_router` | Declarative routing, ready for nested commerce flows |
-| `shared_preferences` | Local persistence for preferences, cart, wishlist, orders |
-| `intl` + `flutter gen-l10n` | Generated messages and RTL support |
-| `bloc_test` / `mocktail` | Deterministic state tests with fake repositories |
-
-Flutter ≥ 3.19 / Dart ≥ 3.3 required. Run `flutter pub outdated` before the first production commit.
+| `get_it` | Service locator for DI |
+| `go_router` | Declarative routing |
+| `shared_preferences` | Local persistence |
+| `supabase_flutter` | Cloud backend (auth, database, storage) |
+| `flutter_dotenv` | Environment variable loading |
+| `intl` + `flutter gen-l10n` | Localization and RTL |
+| `bloc_test` / `mocktail` | Testing |
 
 ---
 
-## How to extend
+## Testing
 
-1. Open `DESIGN.md` — it is the single source of truth.
-2. Add new tokens under `colors:`, `typography:`, `rounded:`, or `components:`.
-3. Tell your AI agent: *"Build me a [component] using the Al Batal Elite design tokens."*
-4. Reference tokens directly: `{colors.emerald}`, `{rounded.card}`, `{typography.title-lg}`.
+```bash
+flutter test
+```
 
-> **Rule:** Headings stay in Montserrat, body stays in Inter. Round everything. No hard shadows. No terracotta outside destructive actions.
+Tests cover:
+- Cubit state transitions (Cart, Catalog, Orders, Auth)
+- Product entity logic (stock, discount, inStock)
+- Cross-cubit interactions (wishlist ↔ cart)
+- Auth state properties and Profile entity
+
+---
+
+## Key Files
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `supabase/migrations/001_initial_schema.sql` | ~120 | Database tables and indexes |
+| `supabase/migrations/002_rls_policies.sql` | ~100 | Row Level Security policies |
+| `supabase/migrations/003_auth_profiles_and_hardening.sql` | ~80 | Auth triggers, admin role, order protection |
+| `supabase/functions/checkout/index.ts` | ~130 | Server-side checkout Edge Function |
+| `lib/shared/services/supabase_config.dart` | ~45 | Supabase initialization |
+| `lib/features/auth/presentation/cubit/auth_cubit.dart` | ~230 | Auth state machine |
 
 ---
 

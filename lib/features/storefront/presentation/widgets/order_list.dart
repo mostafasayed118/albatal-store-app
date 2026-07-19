@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/order.dart';
 import 'empty_state_view.dart';
 import 'order_card.dart';
 
@@ -12,7 +13,7 @@ class OrderList extends StatelessWidget {
     required this.isCompleted,
     required this.scheme,
   });
-  final List orders;
+  final List<Order> orders;
   final String emptyMessage;
   final bool isCompleted;
   final ColorScheme scheme;

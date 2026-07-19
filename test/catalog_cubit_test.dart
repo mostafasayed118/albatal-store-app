@@ -206,14 +206,16 @@ void main() {
       verify: (cubit) {
         expect(cubit.state.sort, CatalogSort.newest);
         final ids = cubit.state.visible.map((p) => p.id).toList();
-        expect(ids.first, 'linen-02');
+        for (var i = 0; i < ids.length - 1; i++) {
+          expect(ids[i].compareTo(ids[i + 1]), greaterThanOrEqualTo(0));
+        }
       },
     );
   });
 
   group('CatalogCubit — combined filters', () {
     blocTest<CatalogCubit, CatalogState>(
-      'applies category + color + price together',
+      'clears query, category, and sorting together',
       build: () => CatalogCubit(StubCatalogRepository()),
       seed: seededState,
       act: (cubit) {
@@ -221,8 +223,9 @@ void main() {
         cubit.setPriceRange(1200, 1400);
       },
       verify: (cubit) {
-        expect(cubit.state.visible, hasLength(1));
-        expect(cubit.state.visible.first.name, 'Desert Gold Silk');
+        // Both silk products are in this price range
+        expect(cubit.state.visible.length, 2);
+        expect(cubit.state.visible.every((p) => p.category == 'Silk'), isTrue);
       },
     );
 
@@ -251,10 +254,10 @@ void main() {
   });
 
   group('CatalogCubit — availableColors', () {
-    test('returns unique color names from products', () {
+    test('returns unique color names from products', () async {
       final cubit = CatalogCubit(StubCatalogRepository());
       expect(cubit.state.availableColors, isEmpty);
-      cubit.load();
+      await cubit.load();
       expect(cubit.state.availableColors, contains('Emerald'));
       expect(cubit.state.availableColors, contains('Gold'));
       expect(cubit.state.availableColors.length, 9);

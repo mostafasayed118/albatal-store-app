@@ -555,4 +555,210 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authError => 'خطأ في المصادقة';
+
+  @override
+  String get selectPaymentMethod => 'اختر طريقة الدفع';
+
+  @override
+  String get payWithCard => 'الدفع بالبطاقة';
+
+  @override
+  String get payWithCardDescription => 'بطاقة ائتمان أو خصم عبر Paymob';
+
+  @override
+  String get payWithVodafoneCash => 'الدفع بفودافون كاش';
+
+  @override
+  String get payWithVodafoneCashDescription => 'دفع عبر المحفظة الإلكترونية';
+
+  @override
+  String get cashOnDeliveryDescription => 'ادفع عند وصول طلبك';
+
+  @override
+  String get payNow => 'ادفع الآن';
+
+  @override
+  String get completePayment => 'إكمال الدفع';
+
+  @override
+  String get paymentSuccess => 'تم الدفع بنجاح!';
+
+  @override
+  String get paymentFailed => 'فشل الدفع';
+
+  @override
+  String get paymentCancelled => 'تم إلغاء الدفع';
+
+  @override
+  String get vodafoneCash => 'فودافون كاش';
+
+  @override
+  String get vodafoneCashDescription =>
+      'أدخل رقم هاتف فودافون كاش لإكمال الدفع.';
+
+  @override
+  String get vodafoneCashNote =>
+      'ستتلقى تأكيداً على هاتفك. وافق على الدفع لإكمال العملية.';
+
+  @override
+  String get phoneNumber => 'رقم الهاتف';
+
+  @override
+  String get phoneNumberRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get invalidPhoneNumber => 'يرجى إدخال رقم هاتف صالح';
+
+  @override
+  String get paymentProcessing => 'جارٍ معالجة الدفع...';
+
+  @override
+  String get proceedToPayment => 'المتابعة إلى الدفع';
+
+  @override
+  String get adminDashboard => 'لوحة التحكم';
+
+  @override
+  String get totalOrders => 'إجمالي الطلبات';
+
+  @override
+  String get pendingOrders => 'الطلبات المعلقة';
+
+  @override
+  String get lowStock => 'مخزون منخفض';
+
+  @override
+  String get quickActions => 'إجراءات سريعة';
+
+  @override
+  String get orderQueue => 'قائمة الطلبات';
+
+  @override
+  String get viewAllOrders => 'عرض جميع الطلبات';
+
+  @override
+  String get inventory => 'المخزون';
+
+  @override
+  String get manageStock => 'إدارة المخزون';
+
+  @override
+  String get catalog => 'الكتالوج';
+
+  @override
+  String get manageProducts => 'إدارة المنتجات';
+
+  @override
+  String get orderNotFound => 'الطلب غير موجود';
+
+  @override
+  String get orderDetails => 'تفاصيل الطلب';
+
+  @override
+  String get placedAt => 'تاريخ الطلب';
+
+  @override
+  String get fulfillmentActions => 'إجراءات التنفيذ';
+
+  @override
+  String get confirmOrder => 'تأكيد الطلب';
+
+  @override
+  String get cancelOrder => 'إلغاء الطلب';
+
+  @override
+  String get markAsShipped => 'تحديد كمشحون';
+
+  @override
+  String get markAsDelivered => 'تحديد كمسلم';
+
+  @override
+  String get noActionsAvailable => 'لا توجد إجراءات لهذا الحالة';
+
+  @override
+  String get allOrders => 'جميع الطلبات';
+
+  @override
+  String get noOrdersFound => 'لا توجد طلبات';
+
+  @override
+  String get processing => 'قيد المعالجة';
+
+  @override
+  String get allStockLevelsHealthy => 'جميع مستويات المخزون سليمة';
+
+  @override
+  String get catalogManagement => 'إدارة الكتالوج';
+
+  @override
+  String get manageCategories => 'إدارة الفئات';
+
+  @override
+  String get productImages => 'صور المنتجات';
+
+  @override
+  String get manageProductImages => 'إدارة صور المنتجات';
+
+  @override
+  String get variants => 'الأحجام والألوان';
+
+  @override
+  String get manageVariantsAndStock => 'إدارة الأحجام والمخزون';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get privacyPolicyContent => 'سيتم إضافة محتوى سياسة الخصوصية هنا.';
+
+  @override
+  String get termsOfService => 'شروط الخدمة';
+
+  @override
+  String get termsOfServiceContent => 'سيتم إضافة شروط الخدمة هنا.';
+
+  @override
+  String get shippingPolicy => 'سياسة الشحن';
+
+  @override
+  String get shippingPolicyContent => 'سيتم إضافة سياسة الشحن هنا.';
+
+  @override
+  String get returnsPolicy => 'سياسة المرتجعات والتبادل';
+
+  @override
+  String get returnsPolicyContent => 'سيتم إضافة سياسة المرتجعات هنا.';
+
+  @override
+  String get customerSupport => 'دعم العملاء';
+
+  @override
+  String get whatsappSupport => 'دعم واتساب';
+
+  @override
+  String get whatsappSupportDescription => 'تحدث معنا عبر واتساب';
+
+  @override
+  String get emailSupport => 'دعم البريد الإلكتروني';
+
+  @override
+  String get emailSupportAddress => 'support@albatal.com';
+
+  @override
+  String get faq => 'الأسئلة الشائعة';
+
+  @override
+  String get faqDescription => 'ابحث عن إجابات للأسئلة الشائعة';
+
+  @override
+  String get products => 'المنتجات';
+
+  @override
+  String get order => 'الطلب';
+
+  @override
+  String get items => 'عناصر';
+
+  @override
+  String get noAddressProvided => 'لم يتم توفير عنوان';
 }

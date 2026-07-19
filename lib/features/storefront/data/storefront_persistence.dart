@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/entities/address.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../shared/extensions/iterable_x.dart';
@@ -206,6 +207,15 @@ extension OrderCodec on Order {
         'status': o.status.name,
         'placedAt': o.placedAt.toIso8601String(),
         'paymentMethod': o.paymentMethod,
+        if (o.address != null)
+          'address': {
+            'id': o.address!.id,
+            'recipient': o.address!.recipient,
+            'line': o.address!.line,
+            'city': o.address!.city,
+            'country': o.address!.country,
+            'isDefault': o.address!.isDefault,
+          },
       };
 
   static Order? decode(Map<Object?, Object?> raw) {
@@ -253,6 +263,16 @@ extension OrderCodec on Order {
         status: status,
         placedAt: DateTime.parse(raw['placedAt'] as String),
         paymentMethod: raw['paymentMethod'] as String,
+        address: raw['address'] != null
+            ? Address(
+                id: (raw['address'] as Map)['id'] as String,
+                recipient: (raw['address'] as Map)['recipient'] as String,
+                line: (raw['address'] as Map)['line'] as String,
+                city: (raw['address'] as Map)['city'] as String,
+                country: (raw['address'] as Map)['country'] as String? ?? '',
+                isDefault: (raw['address'] as Map)['isDefault'] as bool? ?? false,
+              )
+            : null,
       );
     } catch (_) {
       return null;

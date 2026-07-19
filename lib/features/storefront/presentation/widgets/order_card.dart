@@ -14,7 +14,7 @@ class OrderCard extends StatelessWidget {
     required this.isCompleted,
     required this.scheme,
   });
-  final dynamic order;
+  final Order order;
   final bool isCompleted;
   final ColorScheme scheme;
 

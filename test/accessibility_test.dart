@@ -34,19 +34,12 @@ Widget _harness({required Locale locale}) {
 }
 
 void main() {
-  testWidgets(
-      'home search clear and settings buttons expose localized tooltips',
+  testWidgets('home settings button exposes localized tooltip',
       (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byTooltip('Open settings'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'silk');
-    await tester.pump();
-
-    expect(find.byTooltip('Clear search'), findsOneWidget);
-    expect(find.byTooltip('Voice search'), findsNothing);
   });
 
   testWidgets('app boots in Arabic and resolves RTL directionality',

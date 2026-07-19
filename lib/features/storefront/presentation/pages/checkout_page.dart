@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
-import '../cubit/orders_cubit.dart';
 import '../widgets/address_form.dart';
 import '../widgets/address_picker.dart';
 import '../widgets/bottom_action_button.dart';
@@ -23,19 +22,7 @@ class CheckoutPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider(
       create: (_) => CheckoutCubit(),
-      child: BlocConsumer<CheckoutCubit, CheckoutState>(
-        listener: (context, s) {
-          if (s.status == CheckoutStatus.success) {
-            final cart = context.read<CartCubit>().state;
-            final order = context.read<OrdersCubit>().place(
-                  cart,
-                  paymentMethod: s.payment,
-                  address: s.selectedAddress,
-                );
-            context.read<CartCubit>().clear();
-            context.go('/order-success', extra: order.id);
-          }
-        },
+      child: BlocBuilder<CheckoutCubit, CheckoutState>(
         builder: (context, s) {
           final addressError =
               s.status == CheckoutStatus.error && !s.hasAddress;
@@ -89,11 +76,12 @@ class CheckoutPage extends StatelessWidget {
               ],
             ),
             bottomNavigationBar: BottomActionButton(
-              label: l.confirmAndPay,
-              icon: Icons.lock_outline,
-              isLoading: s.status == CheckoutStatus.placing,
+              label: l.proceedToPayment,
+              icon: Icons.arrow_forward,
+              isLoading: false,
               onPressed: s.hasAddress
-                  ? () => context.read<CheckoutCubit>().place()
+                  ? () => context.push('/payment-method',
+                      extra: context.read<CartCubit>().state.total)
                   : null,
             ),
           );

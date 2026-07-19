@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -27,7 +28,7 @@ class ProfilePage extends StatelessWidget {
 
 class _GuestProfile extends StatelessWidget {
   const _GuestProfile({required this.l});
-  final dynamic l;
+  final AppLocalizations l;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +64,7 @@ class _GuestProfile extends StatelessWidget {
 class _AuthenticatedProfile extends StatelessWidget {
   const _AuthenticatedProfile({required this.state, required this.l});
   final AuthState state;
-  final dynamic l;
+  final AppLocalizations l;
 
   @override
   Widget build(BuildContext context) {

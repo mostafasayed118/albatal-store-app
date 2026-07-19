@@ -34,7 +34,7 @@ void main() {
     expect(find.text('Full name'), findsOneWidget);
     expect(find.text('Street address'), findsOneWidget);
     expect(find.text('City'), findsOneWidget);
-    expect(find.text('Phone number'), findsOneWidget);
+    expect(find.text('Country'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
   });
 
@@ -44,14 +44,13 @@ void main() {
     await tester.tap(find.text('Open Form'));
     await tester.pumpAndSettle();
 
-    // Tap submit with all fields empty.
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     expect(find.text('Name is required'), findsOneWidget);
     expect(find.text('Enter a valid street address'), findsOneWidget);
     expect(find.text('City is required'), findsOneWidget);
-    expect(find.text('Phone is required'), findsOneWidget);
+    expect(find.text('Country is required'), findsOneWidget);
   });
 
   testWidgets('valid submission pops with Address',
@@ -66,13 +65,14 @@ void main() {
         '45 Nile Corniche');
     await tester.enterText(find.widgetWithText(TextFormField, 'City'), 'Cairo');
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Phone number'), '01012345678');
+        find.widgetWithText(TextFormField, 'Country'), 'Egypt');
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
     // Should show the snackbar with the address string.
-    expect(find.text('Sara Ahmed, 45 Nile Corniche, Cairo'), findsOneWidget);
+    expect(find.textContaining('Sara Ahmed'), findsOneWidget);
+    expect(find.textContaining('45 Nile Corniche'), findsOneWidget);
   });
 }

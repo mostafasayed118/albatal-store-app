@@ -555,4 +555,214 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authError => 'Authentication error';
+
+  @override
+  String get selectPaymentMethod => 'Select Payment Method';
+
+  @override
+  String get payWithCard => 'Pay with Card';
+
+  @override
+  String get payWithCardDescription => 'Credit or Debit Card via Paymob';
+
+  @override
+  String get payWithVodafoneCash => 'Pay with Vodafone Cash';
+
+  @override
+  String get payWithVodafoneCashDescription => 'Mobile Wallet Payment';
+
+  @override
+  String get cashOnDeliveryDescription => 'Pay when your order arrives';
+
+  @override
+  String get payNow => 'Pay Now';
+
+  @override
+  String get completePayment => 'Complete Payment';
+
+  @override
+  String get paymentSuccess => 'Payment Successful!';
+
+  @override
+  String get paymentFailed => 'Payment Failed';
+
+  @override
+  String get paymentCancelled => 'Payment Cancelled';
+
+  @override
+  String get vodafoneCash => 'Vodafone Cash';
+
+  @override
+  String get vodafoneCashDescription =>
+      'Enter your Vodafone Cash phone number to complete the payment.';
+
+  @override
+  String get vodafoneCashNote =>
+      'You will receive a confirmation on your phone. Approve the payment to complete.';
+
+  @override
+  String get phoneNumber => 'Phone Number';
+
+  @override
+  String get phoneNumberRequired => 'Phone number is required';
+
+  @override
+  String get invalidPhoneNumber => 'Please enter a valid phone number';
+
+  @override
+  String get paymentProcessing => 'Processing payment...';
+
+  @override
+  String get proceedToPayment => 'Proceed to Payment';
+
+  @override
+  String get adminDashboard => 'Admin Dashboard';
+
+  @override
+  String get totalOrders => 'Total Orders';
+
+  @override
+  String get pendingOrders => 'Pending Orders';
+
+  @override
+  String get lowStock => 'Low Stock';
+
+  @override
+  String get quickActions => 'Quick Actions';
+
+  @override
+  String get orderQueue => 'Order Queue';
+
+  @override
+  String get viewAllOrders => 'View All Orders';
+
+  @override
+  String get inventory => 'Inventory';
+
+  @override
+  String get manageStock => 'Manage Stock';
+
+  @override
+  String get catalog => 'Catalog';
+
+  @override
+  String get manageProducts => 'Manage Products';
+
+  @override
+  String get orderNotFound => 'Order not found';
+
+  @override
+  String get orderDetails => 'Order Details';
+
+  @override
+  String get placedAt => 'Placed At';
+
+  @override
+  String get fulfillmentActions => 'Fulfillment Actions';
+
+  @override
+  String get confirmOrder => 'Confirm Order';
+
+  @override
+  String get cancelOrder => 'Cancel Order';
+
+  @override
+  String get markAsShipped => 'Mark as Shipped';
+
+  @override
+  String get markAsDelivered => 'Mark as Delivered';
+
+  @override
+  String get noActionsAvailable => 'No actions available for this status';
+
+  @override
+  String get allOrders => 'All Orders';
+
+  @override
+  String get noOrdersFound => 'No orders found';
+
+  @override
+  String get processing => 'Processing';
+
+  @override
+  String get allStockLevelsHealthy => 'All stock levels are healthy';
+
+  @override
+  String get catalogManagement => 'Catalog Management';
+
+  @override
+  String get manageCategories => 'Manage Categories';
+
+  @override
+  String get productImages => 'Product Images';
+
+  @override
+  String get manageProductImages => 'Manage Product Images';
+
+  @override
+  String get variants => 'Variants';
+
+  @override
+  String get manageVariantsAndStock => 'Manage Variants & Stock';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get privacyPolicyContent =>
+      'Privacy Policy content will be added here.';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get termsOfServiceContent =>
+      'Terms of Service content will be added here.';
+
+  @override
+  String get shippingPolicy => 'Shipping Policy';
+
+  @override
+  String get shippingPolicyContent =>
+      'Shipping Policy content will be added here.';
+
+  @override
+  String get returnsPolicy => 'Returns & Exchange Policy';
+
+  @override
+  String get returnsPolicyContent =>
+      'Returns & Exchange Policy content will be added here.';
+
+  @override
+  String get customerSupport => 'Customer Support';
+
+  @override
+  String get whatsappSupport => 'WhatsApp Support';
+
+  @override
+  String get whatsappSupportDescription => 'Chat with us on WhatsApp';
+
+  @override
+  String get emailSupport => 'Email Support';
+
+  @override
+  String get emailSupportAddress => 'support@albatal.com';
+
+  @override
+  String get faq => 'Frequently Asked Questions';
+
+  @override
+  String get faqDescription => 'Find answers to common questions';
+
+  @override
+  String get products => 'Products';
+
+  @override
+  String get order => 'Order';
+
+  @override
+  String get items => 'items';
+
+  @override
+  String get noAddressProvided => 'No address provided';
 }

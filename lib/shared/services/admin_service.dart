@@ -1,12 +1,13 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Admin operations for product and order management.
+/// Admin operations for product, order, and fulfillment management.
 class AdminService {
   AdminService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
+  /// Check if the current user is an admin.
   Future<bool> isCurrentUserAdmin() async {
     final user = _client.auth.currentUser;
     if (user == null) return false;
@@ -19,6 +20,55 @@ class AdminService {
 
     return response['is_admin'] as bool? ?? false;
   }
+
+  // ─── Order Fulfillment ──────────────────────────────────
+
+  /// Get all orders with customer info.
+  Future<List<Map<String, dynamic>>> getAllOrders({
+    String? status,
+    int limit = 50,
+  }) async {
+    final query = _client.from('orders').select('*, profiles(full_name)');
+
+    final filtered = status != null
+        ? query.eq('status', status)
+        : query;
+
+    final result = await filtered
+        .order('placed_at', ascending: false)
+        .limit(limit);
+
+    return (result as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Get order details with items.
+  Future<Map<String, dynamic>?> getOrderDetails(String orderId) async {
+    final response = await _client
+        .from('orders')
+        .select('*, order_items(*), profiles(full_name)')
+        .eq('id', orderId)
+        .single();
+    return response;
+  }
+
+  /// Update order status with validation.
+  Future<void> updateOrderStatus(String orderId, String status,
+      {String? trackingNumber}) async {
+    await _client.rpc('update_order_status', params: {
+      'p_order_id': orderId,
+      'p_new_status': status,
+      'p_tracking_number': trackingNumber,
+    });
+  }
+
+  /// Get low stock products.
+  Future<List<Map<String, dynamic>>> getLowStockProducts({int threshold = 5}) async {
+    final response = await _client
+        .rpc('get_low_stock_products', params: {'p_threshold': threshold});
+    return (response as List).cast<Map<String, dynamic>>();
+  }
+
+  // ─── Product Management ─────────────────────────────────
 
   Future<Map<String, dynamic>?> createProduct({
     required String name,
@@ -46,6 +96,8 @@ class AdminService {
         .update({'is_active': isActive}).eq('id', productId);
   }
 
+  // ─── Variant Management ─────────────────────────────────
+
   Future<Map<String, dynamic>?> addVariant({
     required String productId,
     required String size,
@@ -67,28 +119,7 @@ class AdminService {
         .update({'stock': newStock}).eq('id', variantId);
   }
 
-  Future<List<Map<String, dynamic>>> getAllOrders({
-    String? status,
-    int limit = 50,
-  }) async {
-    final query = _client.from('orders').select('*, profiles(full_name)');
-
-    final filtered = status != null
-        ? query.eq('status', status)
-        : query;
-
-    final result = await filtered
-        .order('placed_at', ascending: false)
-        .limit(limit);
-
-    return (result as List).cast<Map<String, dynamic>>();
-  }
-
-  Future<void> updateOrderStatus(String orderId, String status) async {
-    await _client
-        .from('orders')
-        .update({'status': status}).eq('id', orderId);
-  }
+  // ─── Category Management ────────────────────────────────
 
   Future<Map<String, dynamic>?> createCategory({
     required String name,

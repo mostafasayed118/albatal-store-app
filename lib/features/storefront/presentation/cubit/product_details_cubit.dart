@@ -62,6 +62,8 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
 
   void color(String value) => emit(state.copyWith(color: value));
   void length(String value) => emit(state.copyWith(length: value));
-  void quantity(int value) =>
-      emit(state.copyWith(quantity: value.clamp(1, state.stock).toInt()));
+  void quantity(int value) {
+    final maxStock = state.stock > 0 ? state.stock : 99;
+    emit(state.copyWith(quantity: value.clamp(1, maxStock).toInt()));
+  }
 }

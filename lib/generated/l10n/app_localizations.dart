@@ -1159,6 +1159,414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Authentication error'**
   String get authError;
+
+  /// No description provided for @selectPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Payment Method'**
+  String get selectPaymentMethod;
+
+  /// No description provided for @payWithCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay with Card'**
+  String get payWithCard;
+
+  /// No description provided for @payWithCardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit or Debit Card via Paymob'**
+  String get payWithCardDescription;
+
+  /// No description provided for @payWithVodafoneCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay with Vodafone Cash'**
+  String get payWithVodafoneCash;
+
+  /// No description provided for @payWithVodafoneCashDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Wallet Payment'**
+  String get payWithVodafoneCashDescription;
+
+  /// No description provided for @cashOnDeliveryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay when your order arrives'**
+  String get cashOnDeliveryDescription;
+
+  /// No description provided for @payNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay Now'**
+  String get payNow;
+
+  /// No description provided for @completePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Payment'**
+  String get completePayment;
+
+  /// No description provided for @paymentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Successful!'**
+  String get paymentSuccess;
+
+  /// No description provided for @paymentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Failed'**
+  String get paymentFailed;
+
+  /// No description provided for @paymentCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Cancelled'**
+  String get paymentCancelled;
+
+  /// No description provided for @vodafoneCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Vodafone Cash'**
+  String get vodafoneCash;
+
+  /// No description provided for @vodafoneCashDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your Vodafone Cash phone number to complete the payment.'**
+  String get vodafoneCashDescription;
+
+  /// No description provided for @vodafoneCashNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You will receive a confirmation on your phone. Approve the payment to complete.'**
+  String get vodafoneCashNote;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneNumber;
+
+  /// No description provided for @phoneNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneNumberRequired;
+
+  /// No description provided for @invalidPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number'**
+  String get invalidPhoneNumber;
+
+  /// No description provided for @paymentProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing payment...'**
+  String get paymentProcessing;
+
+  /// No description provided for @proceedToPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to Payment'**
+  String get proceedToPayment;
+
+  /// No description provided for @adminDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Dashboard'**
+  String get adminDashboard;
+
+  /// No description provided for @totalOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Orders'**
+  String get totalOrders;
+
+  /// No description provided for @pendingOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Orders'**
+  String get pendingOrders;
+
+  /// No description provided for @lowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Stock'**
+  String get lowStock;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActions;
+
+  /// No description provided for @orderQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Queue'**
+  String get orderQueue;
+
+  /// No description provided for @viewAllOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'View All Orders'**
+  String get viewAllOrders;
+
+  /// No description provided for @inventory.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory'**
+  String get inventory;
+
+  /// No description provided for @manageStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Stock'**
+  String get manageStock;
+
+  /// No description provided for @catalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog'**
+  String get catalog;
+
+  /// No description provided for @manageProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Products'**
+  String get manageProducts;
+
+  /// No description provided for @orderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Order not found'**
+  String get orderNotFound;
+
+  /// No description provided for @orderDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Details'**
+  String get orderDetails;
+
+  /// No description provided for @placedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Placed At'**
+  String get placedAt;
+
+  /// No description provided for @fulfillmentActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Fulfillment Actions'**
+  String get fulfillmentActions;
+
+  /// No description provided for @confirmOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Order'**
+  String get confirmOrder;
+
+  /// No description provided for @cancelOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Order'**
+  String get cancelOrder;
+
+  /// No description provided for @markAsShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Shipped'**
+  String get markAsShipped;
+
+  /// No description provided for @markAsDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Delivered'**
+  String get markAsDelivered;
+
+  /// No description provided for @noActionsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No actions available for this status'**
+  String get noActionsAvailable;
+
+  /// No description provided for @allOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'All Orders'**
+  String get allOrders;
+
+  /// No description provided for @noOrdersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders found'**
+  String get noOrdersFound;
+
+  /// No description provided for @processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get processing;
+
+  /// No description provided for @allStockLevelsHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'All stock levels are healthy'**
+  String get allStockLevelsHealthy;
+
+  /// No description provided for @catalogManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog Management'**
+  String get catalogManagement;
+
+  /// No description provided for @manageCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Categories'**
+  String get manageCategories;
+
+  /// No description provided for @productImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Images'**
+  String get productImages;
+
+  /// No description provided for @manageProductImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Product Images'**
+  String get manageProductImages;
+
+  /// No description provided for @variants.
+  ///
+  /// In en, this message translates to:
+  /// **'Variants'**
+  String get variants;
+
+  /// No description provided for @manageVariantsAndStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Variants & Stock'**
+  String get manageVariantsAndStock;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicyContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy content will be added here.'**
+  String get privacyPolicyContent;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @termsOfServiceContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service content will be added here.'**
+  String get termsOfServiceContent;
+
+  /// No description provided for @shippingPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping Policy'**
+  String get shippingPolicy;
+
+  /// No description provided for @shippingPolicyContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping Policy content will be added here.'**
+  String get shippingPolicyContent;
+
+  /// No description provided for @returnsPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns & Exchange Policy'**
+  String get returnsPolicy;
+
+  /// No description provided for @returnsPolicyContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns & Exchange Policy content will be added here.'**
+  String get returnsPolicyContent;
+
+  /// No description provided for @customerSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Support'**
+  String get customerSupport;
+
+  /// No description provided for @whatsappSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp Support'**
+  String get whatsappSupport;
+
+  /// No description provided for @whatsappSupportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with us on WhatsApp'**
+  String get whatsappSupportDescription;
+
+  /// No description provided for @emailSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Support'**
+  String get emailSupport;
+
+  /// No description provided for @emailSupportAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'support@albatal.com'**
+  String get emailSupportAddress;
+
+  /// No description provided for @faq.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently Asked Questions'**
+  String get faq;
+
+  /// No description provided for @faqDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Find answers to common questions'**
+  String get faqDescription;
+
+  /// No description provided for @products.
+  ///
+  /// In en, this message translates to:
+  /// **'Products'**
+  String get products;
+
+  /// No description provided for @order.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get order;
+
+  /// No description provided for @items.
+  ///
+  /// In en, this message translates to:
+  /// **'items'**
+  String get items;
+
+  /// No description provided for @noAddressProvided.
+  ///
+  /// In en, this message translates to:
+  /// **'No address provided'**
+  String get noAddressProvided;
 }
 
 class _AppLocalizationsDelegate
