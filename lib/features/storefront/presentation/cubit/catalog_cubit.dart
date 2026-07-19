@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../domain/repositories/catalog_repository.dart';
 
@@ -20,6 +21,10 @@ extension CatalogSortLabel on CatalogSort {
 
 enum CatalogStatus { initial, loading, ready, error }
 
+/// Upper bound used when no max-price filter is applied.
+/// Large enough to cover any plausible fabric price.
+final _unboundedMax = Money.egp(999999);
+
 final class CatalogState extends Equatable {
   const CatalogState({
     this.status = CatalogStatus.initial,
@@ -32,8 +37,8 @@ final class CatalogState extends Equatable {
     this.saleSeconds = 14362,
     this.recentQueries = const [],
     this.colorFilter = '',
-    this.priceMin = 0.0,
-    this.priceMax = 999999.0,
+    this.priceMin = Money.zero,
+    this.priceMax = const Money.egp(999999),
   });
 
   final CatalogStatus status;
@@ -46,16 +51,16 @@ final class CatalogState extends Equatable {
   final int saleSeconds;
   final List<String> recentQueries;
   final String colorFilter;
-  final double priceMin;
-  final double priceMax;
+  final Money priceMin;
+  final Money priceMax;
 
   bool get hasActiveFilters =>
       category != 'All' ||
       query.isNotEmpty ||
       sort != CatalogSort.featured ||
       colorFilter.isNotEmpty ||
-      priceMin > 0 ||
-      priceMax < 999999;
+      priceMin > Money.zero ||
+      priceMax < _unboundedMax;
 
   /// Unique colors extracted from all products (by name derived from imageColor).
   List<String> get availableColors {
@@ -67,12 +72,16 @@ final class CatalogState extends Equatable {
   }
 
   /// Price bounds computed from the full catalog.
-  double get catalogPriceMin => allProducts.isEmpty
-      ? 0
-      : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
-  double get catalogPriceMax => allProducts.isEmpty
-      ? 999999
-      : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+  Money get catalogPriceMin => allProducts.isEmpty
+      ? Money.zero
+      : allProducts
+          .map((p) => p.price)
+          .reduce((a, b) => a < b ? a : b);
+  Money get catalogPriceMax => allProducts.isEmpty
+      ? _unboundedMax
+      : allProducts
+          .map((p) => p.price)
+          .reduce((a, b) => a > b ? a : b);
 
   /// Products in a specific category (excluding "All").
   List<Product> productsInCategory(String category) =>
@@ -129,8 +138,8 @@ final class CatalogState extends Equatable {
     int? saleSeconds,
     List<String>? recentQueries,
     String? colorFilter,
-    double? priceMin,
-    double? priceMax,
+    Money? priceMin,
+    Money? priceMax,
     bool clearColorFilter = false,
     bool resetPrice = false,
   }) =>
@@ -145,8 +154,9 @@ final class CatalogState extends Equatable {
         saleSeconds: saleSeconds ?? this.saleSeconds,
         recentQueries: recentQueries ?? this.recentQueries,
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
-        priceMin: resetPrice ? 0 : (priceMin ?? this.priceMin),
-        priceMax: resetPrice ? 999999 : (priceMax ?? this.priceMax),
+        priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
+        priceMax:
+            resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
       );
 
   @override
@@ -221,7 +231,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
     }
   }
 
-  void setPriceRange(double min, double max) =>
+  void setPriceRange(Money min, Money max) =>
       emit(state.copyWith(priceMin: min, priceMax: max));
 
   void clearFilters() => emit(state.copyWith(

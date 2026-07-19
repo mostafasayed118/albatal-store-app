@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 
@@ -33,11 +34,13 @@ class ActiveFiltersBar extends StatelessWidget {
         onDeleted: () => catalog.setColorFilter(state.colorFilter),
       ));
     }
-    if (state.priceMin > 0 || state.priceMax < 999999) {
+    if (state.priceMin > Money.zero ||
+        state.priceMax < const Money.egp(999999)) {
       chips.add(_filterChip(
         label:
-            '${state.priceMin.toStringAsFixed(0)} – ${state.priceMax.toStringAsFixed(0)}',
-        onDeleted: () => catalog.setPriceRange(0, 999999),
+            '${state.priceMin.format()} – ${state.priceMax.format()}',
+        onDeleted: () =>
+            catalog.setPriceRange(Money.zero, const Money.egp(999999)),
       ));
     }
 

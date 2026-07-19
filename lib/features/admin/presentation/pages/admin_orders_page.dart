@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -82,7 +83,7 @@ class _OrderTile extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final status = order['status'] as String? ?? 'unknown';
-    final total = ((order['total'] as int? ?? 0) / 100).toStringAsFixed(0);
+    final total = Money(order['total'] as int? ?? 0).format();
     final customerName = order['profiles']?['full_name'] as String? ?? 'Unknown';
     final itemCount = (order['order_items'] as List?)?.length ?? 0;
 

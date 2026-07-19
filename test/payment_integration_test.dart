@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/payments/domain/repositories/payment_service.dart';
 import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
@@ -12,7 +13,7 @@ class StubPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> initiatePayment({
-    required double amount,
+    required Money amount,
     required PaymentMethod method,
     required String orderId,
     required String customerEmail,
@@ -29,7 +30,7 @@ class StubPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> processVodafoneCash({
-    required double amount,
+    required Money amount,
     required String phoneNumber,
     required String orderId,
   }) async {
@@ -55,21 +56,21 @@ void main() {
     });
 
     test('initPayment sets selectingMethod status', () {
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       expect(cubit.state.status, PaymentStatus.selectingMethod);
-      expect(cubit.state.amount, 1500);
+      expect(cubit.state.amount, Money.egp(1500));
       expect(cubit.state.orderId, 'ORD-1');
     });
 
     test('selectMethod updates selected method', () {
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       expect(cubit.state.selectedMethod, PaymentMethod.paymobCard);
       expect(cubit.state.canProceed, isTrue);
     });
 
     test('processPayment with Cash on Delivery goes to success', () async {
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
@@ -80,7 +81,7 @@ void main() {
 
     test('processPayment with failure sets error', () async {
       service.setResult(const PaymentFailed(message: 'Insufficient funds'));
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
@@ -90,24 +91,28 @@ void main() {
     });
 
     test('processPayment with pending sets awaitingVerification', () async {
-      service.setResult(const PaymentPending(paymentKey: 'KEY-1'));
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      service.setResult(const PaymentPending(
+        paymentKey: 'KEY-1',
+        checkoutUrl: 'https://example.com/checkout',
+      ));
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
 
       expect(cubit.state.status, PaymentStatus.awaitingVerification);
       expect(cubit.state.transactionId, 'KEY-1');
+      expect(cubit.state.checkoutUrl, 'https://example.com/checkout');
     });
 
     test('cancel sets cancelled status', () {
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.cancel();
       expect(cubit.state.status, PaymentStatus.cancelled);
     });
 
     test('reset returns to initial state', () {
-      cubit.initPayment(amount: 1500, orderId: 'ORD-1');
+      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       cubit.reset();
       expect(cubit.state.status, PaymentStatus.initial);

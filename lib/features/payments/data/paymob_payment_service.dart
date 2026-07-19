@@ -1,66 +1,55 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/entities/money.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
 
-/// Paymob integration using server-side Edge Functions.
+/// Paymob integration using a single server-side Edge Function.
 ///
 /// All sensitive operations (API key, auth token, order registration,
-/// payment key generation) run through Edge Functions — never exposed
-/// to the client.
+/// payment key generation) run through [paymob-initiate] — never
+/// exposed to the client. The checkout URL is returned so the client
+/// can open it in a WebView.
 class PaymobPaymentService implements PaymentService {
   PaymobPaymentService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
+  /// Initiates a Paymob payment via a single Edge Function call.
+  ///
+  /// [amount] must match the server-computed total_cents — the Edge
+  /// Function rejects mismatches. [orderId] is the internal order ID
+  /// returned by the `/checkout` Edge Function.
   @override
   Future<PaymentResult> initiatePayment({
-    required double amount,
+    required Money amount,
     required PaymentMethod method,
     required String orderId,
     required String customerEmail,
   }) async {
     try {
-      final amountCents = (amount * 100).round();
-
-      // Step 1: Get auth token via Edge Function
-      final authResponse = await _client.functions.invoke('paymob-auth');
-      if (authResponse.status != 200) {
-        return PaymentFailed(message: 'Failed to initialize payment');
-      }
-      final authToken = authResponse.data['token'] as String;
-
-      // Step 2: Register order via Edge Function
-      final orderResponse = await _client.functions.invoke(
-        'paymob-order',
+      final response = await _client.functions.invoke(
+        'paymob-initiate',
         body: {
-          'auth_token': authToken,
-          'amount_cents': amountCents,
-          'items': [],
+          'order_id': orderId,
+          'amount_cents': amount.minorUnits,
+          'customer_email': customerEmail,
         },
       );
-      if (orderResponse.status != 200) {
-        return PaymentFailed(message: 'Failed to register order');
-      }
-      final paymobOrderId = orderResponse.data['order_id'].toString();
 
-      // Step 3: Get payment key via Edge Function
-      final keyResponse = await _client.functions.invoke(
-        'paymob-payment-key',
-        body: {
-          'auth_token': authToken,
-          'order_id': paymobOrderId,
-          'amount_cents': amountCents,
-          'email': customerEmail,
-        },
-      );
-      if (keyResponse.status != 200) {
-        return PaymentFailed(message: 'Failed to get payment key');
+      if (response.status != 200) {
+        final data = response.data;
+        return PaymentFailed(
+          message: data['message'] ?? 'Payment initiation failed',
+        );
       }
-      final paymentKey = keyResponse.data['payment_key'] as String;
 
-      return PaymentPending(paymentKey: paymentKey);
+      final data = response.data;
+      final checkoutUrl = data['checkout_url'] as String;
+      final paymentKey = data['payment_key'] as String;
+
+      return PaymentPending(paymentKey: paymentKey, checkoutUrl: checkoutUrl);
     } catch (e) {
       return PaymentFailed(message: 'Payment initialization failed: $e');
     }
@@ -74,7 +63,10 @@ class PaymobPaymentService implements PaymentService {
       final transactionId = data['id'] ?? '';
 
       if (success) {
-        return PaymentSuccess(transactionId: transactionId, amount: 0);
+        return PaymentSuccess(
+          transactionId: transactionId,
+          amount: Money.zero,
+        );
       } else {
         return PaymentFailed(
           message: data['message'] ?? 'Payment failed',
@@ -88,15 +80,12 @@ class PaymobPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> processVodafoneCash({
-    required double amount,
+    required Money amount,
     required String phoneNumber,
     required String orderId,
   }) async {
     return PaymentFailed(
-        message: 'Use VodafoneCashPaymentService for mobile wallet payments');
+      message: 'Vodafone Cash is not supported by PaymobPaymentService',
+    );
   }
-
-  /// Paymob checkout URL for web view.
-  String getCheckoutUrl(String paymentKey) =>
-      'https://accept.paymob.com/api/acceptance/iframes/85679?payment_token=$paymentKey';
 }

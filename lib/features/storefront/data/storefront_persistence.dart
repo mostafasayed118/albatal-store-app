@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/entities/address.dart';
+import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../shared/extensions/iterable_x.dart';
@@ -187,10 +188,10 @@ extension OrderCodec on Order {
                     'id': i.product.id,
                     'name': i.product.name,
                     'category': i.product.category,
-                    'price': i.product.price,
+                    'price': i.product.price.minorUnits,
                     'imageColor': i.product.imageColor,
                     'imageAsset': i.product.imageAsset,
-                    'oldPrice': i.product.oldPrice,
+                    'oldPrice': i.product.oldPrice?.minorUnits,
                     'description': i.product.description,
                     'composition': i.product.composition,
                     'care': i.product.care,
@@ -201,9 +202,9 @@ extension OrderCodec on Order {
                   'quantity': i.quantity,
                 })
             .toList(),
-        'subtotal': o.subtotal,
-        'shipping': o.shipping,
-        'total': o.total,
+        'subtotal': o.subtotal.minorUnits,
+        'shipping': o.shipping.minorUnits,
+        'total': o.total.minorUnits,
         'status': o.status.name,
         'placedAt': o.placedAt.toIso8601String(),
         'paymentMethod': o.paymentMethod,
@@ -231,12 +232,12 @@ extension OrderCodec on Order {
               id: pRaw['id'] as String,
               name: pRaw['name'] as String,
               category: pRaw['category'] as String,
-              price: (pRaw['price'] as num).toDouble(),
+              price: Money((pRaw['price'] as num).toInt()),
               imageColor: (pRaw['imageColor'] as num).toInt(),
               imageAsset: pRaw['imageAsset'] as String?,
               oldPrice: pRaw['oldPrice'] == null
                   ? null
-                  : (pRaw['oldPrice'] as num).toDouble(),
+                  : Money((pRaw['oldPrice'] as num).toInt()),
               description: pRaw['description'] as String?,
               composition: pRaw['composition'] as String?,
               care: pRaw['care'] as String?,
@@ -257,9 +258,9 @@ extension OrderCodec on Order {
       return Order(
         id: raw['id'] as String,
         items: items,
-        subtotal: (raw['subtotal'] as num).toDouble(),
-        shipping: (raw['shipping'] as num).toDouble(),
-        total: (raw['total'] as num).toDouble(),
+        subtotal: Money((raw['subtotal'] as num).toInt()),
+        shipping: Money((raw['shipping'] as num).toInt()),
+        total: Money((raw['total'] as num).toInt()),
         status: status,
         placedAt: DateTime.parse(raw['placedAt'] as String),
         paymentMethod: raw['paymentMethod'] as String,

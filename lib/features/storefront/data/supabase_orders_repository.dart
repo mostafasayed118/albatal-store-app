@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/orders_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,7 +32,7 @@ class SupabaseOrdersRepository implements OrdersRepository {
             id: item['product_id'] as String,
             name: item['product_name'] as String,
             category: '',
-            price: (item['unit_price'] as int) / 100,
+            price: Money(item['unit_price'] as int),
             imageColor: 0xFF176B57,
           ),
           color: item['color'] as String,
@@ -43,9 +44,9 @@ class SupabaseOrdersRepository implements OrdersRepository {
       return Order(
         id: row['id'] as String,
         items: items,
-        subtotal: (row['subtotal'] as int) / 100,
-        shipping: (row['shipping'] as int) / 100,
-        total: (row['total'] as int) / 100,
+        subtotal: Money(row['subtotal'] as int),
+        shipping: Money(row['shipping'] as int),
+        total: Money(row['total'] as int),
         status: OrderStatus.values.firstWhere(
           (s) => s.name == row['status'],
           orElse: () => OrderStatus.placed,

@@ -1,7 +1,13 @@
 // ============================================================
 // Supabase Edge Function: paymob-callback
-// Handles Paymob webhook/callback — verifies payment server-side.
+// Handles Paymob webhook — verifies payment server-side.
 // Idempotent: duplicate callbacks return the same result.
+//
+// Flow:
+//   1. Verify HMAC signature (if PAYMOB_HMAC_SECRET is set)
+//   2. Check if payment already processed (idempotent)
+//   3. On success: update payment to "success", promote order to "paid"
+//   4. On failure: update payment to "failed", cancel order, restore stock
 // ============================================================
 
 import "https://deno.land/std@0.177.0/http/server.ts";
@@ -10,7 +16,8 @@ import { createHmac } from "https://deno.land/std@0.177.0/hash/sha256.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -28,7 +35,7 @@ Deno.serve(async (req) => {
     const body = await req.text();
     const params = new URLSearchParams(body);
 
-    // Verify HMAC signature
+    // ─── HMAC verification ────────────────────────────────────
     if (hmacSecret) {
       const receivedHmac = params.get("hmac") || "";
       const hmacData = params.toString().replace(/&hmac=[^&]*/, "");
@@ -56,7 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Idempotent: check if payment already processed
+    // ─── Idempotent: check if payment already processed ───────
     const { data: existingPayment } = await supabase
       .from("payments")
       .select("id, status")
@@ -64,14 +71,16 @@ Deno.serve(async (req) => {
       .single();
 
     if (existingPayment && existingPayment.status === "success") {
-      // Already processed — return OK without duplicate work
       return new Response(
-        JSON.stringify({ message: "Payment already processed", id: existingPayment.id }),
+        JSON.stringify({
+          message: "Payment already processed",
+          id: existingPayment.id,
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get the payment record
+    // ─── Get the payment record ──────────────────────────────
     const { data: payment, error: payError } = await supabase
       .from("payments")
       .select("*")
@@ -79,8 +88,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (payError || !payment) {
-      // Payment record doesn't exist — this might be a direct callback
-      // Store it
+      // Payment record doesn't exist — store it
       await supabase.from("payments").insert({
         order_id: orderId,
         user_id: "00000000-0000-0000-0000-000000000000",
@@ -97,18 +105,19 @@ Deno.serve(async (req) => {
         .eq("transaction_id", transactionId);
     }
 
-    // Update order status
+    // ─── Update order status ──────────────────────────────────
     if (success) {
+      // Payment succeeded — promote order from "pending" to "paid"
       await supabase
         .from("orders")
         .update({
-          status: "placed",
+          status: "paid",
           payment_id: transactionId,
         })
         .eq("id", orderId)
         .eq("status", "pending"); // Only update if still pending
     } else {
-      // Payment failed — restore stock
+      // Payment failed — cancel order and restore stock
       const { data: orderItems } = await supabase
         .from("order_items")
         .select("*")
@@ -129,7 +138,7 @@ Deno.serve(async (req) => {
         .from("orders")
         .update({ status: "cancelled" })
         .eq("id", orderId)
-        .eq("status", "pending");
+        .eq("status", "pending"); // Only cancel if still pending
     }
 
     return new Response(

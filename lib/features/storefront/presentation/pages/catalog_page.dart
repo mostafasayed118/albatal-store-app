@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 import '../widgets/active_filters_bar.dart';
@@ -109,9 +110,16 @@ class _CatalogPageState extends State<CatalogPage> {
 
   int _activeFilterCount(CatalogState state) {
     var count = 0;
-    if (state.category != 'All') count++;
-    if (state.colorFilter.isNotEmpty) count++;
-    if (state.priceMin > 0 || state.priceMax < 999999) count++;
+    if (state.category != 'All') {
+      count++;
+    }
+    if (state.colorFilter.isNotEmpty) {
+      count++;
+    }
+    if (state.priceMin > Money.zero ||
+        state.priceMax < const Money.egp(999999)) {
+      count++;
+    }
     return count;
   }
 

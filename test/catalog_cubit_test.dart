@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -100,8 +101,18 @@ void main() {
       seed: seededState,
       act: (cubit) => cubit.selectSort(CatalogSort.priceHighToLow),
       verify: (cubit) => expect(
-        cubit.state.visible.map((product) => product.price),
-        [1340, 1290, 1050, 980, 820, 720, 690, 580, 540],
+        cubit.state.visible.map((product) => product.price.minorUnits),
+        [
+          Money.egp(1340).minorUnits,
+          Money.egp(1290).minorUnits,
+          Money.egp(1050).minorUnits,
+          Money.egp(980).minorUnits,
+          Money.egp(820).minorUnits,
+          Money.egp(720).minorUnits,
+          Money.egp(690).minorUnits,
+          Money.egp(580).minorUnits,
+          Money.egp(540).minorUnits,
+        ],
       ),
     );
 
@@ -186,12 +197,13 @@ void main() {
       'filters products by price range',
       build: () => CatalogCubit(StubCatalogRepository()),
       seed: seededState,
-      act: (cubit) => cubit.setPriceRange(500, 800),
+      act: (cubit) => cubit.setPriceRange(const Money.egp(500), const Money.egp(800)),
       verify: (cubit) {
-        expect(cubit.state.priceMin, 500);
-        expect(cubit.state.priceMax, 800);
+        expect(cubit.state.priceMin, const Money.egp(500));
+        expect(cubit.state.priceMax, const Money.egp(800));
         for (final p in cubit.state.visible) {
-          expect(p.price, inInclusiveRange(500, 800));
+          expect(p.price.minorUnits,
+              inInclusiveRange(Money.egp(500).minorUnits, Money.egp(800).minorUnits));
         }
       },
     );
@@ -220,7 +232,7 @@ void main() {
       seed: seededState,
       act: (cubit) {
         cubit.select('Silk');
-        cubit.setPriceRange(1200, 1400);
+        cubit.setPriceRange(const Money.egp(1200), const Money.egp(1400));
       },
       verify: (cubit) {
         // Both silk products are in this price range
@@ -236,7 +248,7 @@ void main() {
       act: (cubit) {
         cubit.select('Silk');
         cubit.setColorFilter('Emerald');
-        cubit.setPriceRange(500, 1000);
+        cubit.setPriceRange(const Money.egp(500), const Money.egp(1000));
         cubit.updateQuery('silk');
         cubit.clearFilters();
       },
@@ -244,8 +256,8 @@ void main() {
       verify: (cubit) {
         expect(cubit.state.category, 'All');
         expect(cubit.state.colorFilter, isEmpty);
-        expect(cubit.state.priceMin, 0);
-        expect(cubit.state.priceMax, 999999);
+        expect(cubit.state.priceMin, Money.zero);
+        expect(cubit.state.priceMax, const Money.egp(999999));
         expect(cubit.state.query, isEmpty);
         expect(cubit.state.sort, CatalogSort.featured);
         expect(cubit.state.visible.length, 9);

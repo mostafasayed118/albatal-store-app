@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/utils/currency.dart';
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
 
 /// Bottom sheet with category, color, and price range filters.
+///
+/// The price range slider operates in major units (EGP) because
+/// [RangeSlider] requires `double` values. Conversion to [Money]
+/// happens at the boundary when [onApply] fires.
 class FilterSheet extends StatefulWidget {
   const FilterSheet({
     super.key,
@@ -14,7 +18,7 @@ class FilterSheet extends StatefulWidget {
 
   final CatalogState state;
   final void Function(
-      String category, String color, double priceMin, double priceMax) onApply;
+      String category, String color, Money priceMin, Money priceMax) onApply;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
@@ -30,11 +34,11 @@ class _FilterSheetState extends State<FilterSheet> {
     super.initState();
     _selectedCategory = widget.state.category;
     _selectedColor = widget.state.colorFilter;
-    final min = widget.state.catalogPriceMin;
-    final max = widget.state.catalogPriceMax;
+    final min = widget.state.catalogPriceMin.majorUnits;
+    final max = widget.state.catalogPriceMax.majorUnits;
     _priceRange = RangeValues(
-      widget.state.priceMin.clamp(min, max),
-      widget.state.priceMax.clamp(min, max),
+      widget.state.priceMin.majorUnits.clamp(min, max),
+      widget.state.priceMax.majorUnits.clamp(min, max),
     );
   }
 
@@ -43,8 +47,8 @@ class _FilterSheetState extends State<FilterSheet> {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final state = widget.state;
-    final min = state.catalogPriceMin;
-    final max = state.catalogPriceMax;
+    final min = state.catalogPriceMin.majorUnits;
+    final max = state.catalogPriceMax.majorUnits;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -127,17 +131,17 @@ class _FilterSheetState extends State<FilterSheet> {
               max: max,
               divisions: 20,
               labels: RangeLabels(
-                money(_priceRange.start.round().toDouble()),
-                money(_priceRange.end.round().toDouble()),
+                Money.egp(_priceRange.start.round()).format(),
+                Money.egp(_priceRange.end.round()).format(),
               ),
               onChanged: (v) => setState(() => _priceRange = v),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(money(_priceRange.start.round().toDouble()),
+                Text(Money.egp(_priceRange.start.round()).format(),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
-                Text(money(_priceRange.end.round().toDouble()),
+                Text(Money.egp(_priceRange.end.round()).format(),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
               ],
             ),
@@ -147,8 +151,8 @@ class _FilterSheetState extends State<FilterSheet> {
                 widget.onApply(
                   _selectedCategory,
                   _selectedColor,
-                  _priceRange.start,
-                  _priceRange.end,
+                  Money.egp(_priceRange.start.round()),
+                  Money.egp(_priceRange.end.round()),
                 );
                 Navigator.pop(context);
               },

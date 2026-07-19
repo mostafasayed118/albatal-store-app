@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'money.dart';
+
 final class Product extends Equatable {
   const Product({
     required this.id,
@@ -22,9 +24,9 @@ final class Product extends Equatable {
   });
 
   final String id, name, category;
-  final double price;
+  final Money price;
   final int imageColor;
-  final double? oldPrice;
+  final Money? oldPrice;
   final String? imageAsset, description, composition, care, origin;
   final List<String> images;
   final List<String> sizes;
@@ -33,8 +35,9 @@ final class Product extends Equatable {
   final double rating;
   final int reviewCount;
 
-  int? get discountPercent =>
-      oldPrice == null ? null : ((1 - price / oldPrice!) * 100).round();
+  int? get discountPercent => oldPrice == null
+      ? null
+      : ((1 - price.minorUnits / oldPrice!.minorUnits) * 100).round();
 
   /// Stock for a specific variant key like "Emerald-2m".
   int stockFor(String color, String length) => stock['$color-$length'] ?? 0;
@@ -82,6 +85,9 @@ final class CartItem extends Equatable {
       quantity: quantity ?? this.quantity);
 
   String get key => '${product.id}-$color-$length';
+
+  /// Line total = unit price × quantity.
+  Money get lineTotal => product.price * quantity;
 
   @override
   List<Object?> get props => [product, color, length, quantity];

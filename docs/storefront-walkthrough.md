@@ -30,12 +30,27 @@ The storefront is the core commerce feature — it handles product discovery, ca
 
 | File | Owns |
 |------|------|
-| `catalog_cubit.dart` | Search, filter, sort state; product list |
-| `cart_cubit.dart` | Cart items, add/remove/update, totals |
+| `core/entities/money.dart` | `Money` value object — integer minor units (cents), arithmetic, comparison, `format()` |
+| `catalog_cubit.dart` | Search, filter, sort state; product list; price-range filter is `Money`-typed |
+| `cart_cubit.dart` | Cart items, add/remove/update, totals computed as `Money` |
 | `checkout_cubit.dart` | Address selection, payment, order placement |
 | `orders_cubit.dart` | Order history, status advancement |
 | `wishlist_cubit.dart` | Saved product IDs, product resolution |
 | `product_details_cubit.dart` | Product lookup, variant selection, related products |
+
+## Money model
+
+All prices, subtotals, shipping fees, and order totals are `Money` — an immutable
+value object storing integer **minor units** (cents). `Money.egp(1290)` and
+`Money(129000)` are equal. The database already stores money as `INTEGER` cents
+(`base_price`, `old_price`, `subtotal`, `shipping`, `total`, `unit_price`), so
+repositories map rows to `Money` with no `/ 100` conversion, and widgets call
+`state.total.format()` (or the `money(...)` helper) for display only.
+
+Arithmetic uses the `+`, `-`, `*` operators (no `/` — division would lose
+precision). Comparisons use `<`, `<=`, `>`, `>=`. `Money.zero` is the neutral
+element for empty carts and free shipping. Never convert `Money` to `double` for
+computation; `majorUnits` (a `double`) exists for display only.
 
 ## State transitions
 

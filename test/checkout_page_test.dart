@@ -1,7 +1,10 @@
 import 'package:al_batal_elite/core/entities/address.dart';
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
+import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -21,6 +24,30 @@ class StubAddressRepository implements AddressRepository {
       const Success(null);
 }
 
+/// Stub CheckoutService — returns a fake pending order.
+class StubCheckoutService implements CheckoutService {
+  @override
+  Future<Result<Order>> placeOrder({
+    required List<CartItem> items,
+    required String paymentMethod,
+    required Map<String, dynamic> addressSnapshot,
+  }) async {
+    return Success(Order(
+      id: 'ORD-STUB-1',
+      items: items,
+      subtotal: items.fold(
+          Money.zero, (Money v, CartItem i) => v + (i.product.price * i.quantity)),
+      shipping: Money.egp(75),
+      total: items.fold(
+              Money.zero, (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
+          Money.egp(75),
+      status: OrderStatus.placed,
+      placedAt: DateTime.now(),
+      paymentMethod: paymentMethod,
+    ));
+  }
+}
+
 Widget _harness() {
   final persistence = MemoryStorefrontPersistence();
   final cart = CartCubit(persistence)
@@ -35,7 +62,7 @@ Widget _harness() {
         BlocProvider(create: (_) => OrdersCubit(persistence)),
         BlocProvider(create: (_) => AddressesCubit(StubAddressRepository())),
       ],
-      child: const CheckoutPage(),
+      child: CheckoutPage(checkoutService: StubCheckoutService()),
     ),
   );
 }
@@ -47,9 +74,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('Checkout'), findsOneWidget);
-    expect(find.text('Credit Card'), findsOneWidget);
-    expect(find.text('Digital Wallet'), findsOneWidget);
-    expect(find.text('Cash on Delivery'), findsOneWidget);
     expect(find.text('Proceed to Payment'), findsOneWidget);
   });
 

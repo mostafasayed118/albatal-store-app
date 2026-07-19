@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
-import '../../data/products_data.dart';
 import 'product_image_placeholder.dart';
 
 class FlashSaleCard extends StatelessWidget {
@@ -31,7 +30,7 @@ class FlashSaleCard extends StatelessWidget {
                 children: [
                   Text(product.name,
                       style: Theme.of(context).textTheme.titleMedium),
-                  Text('20% OFF · ${money(product.price)}'),
+                  Text('20% OFF · ${product.price.format()}'),
                   const SizedBox(height: 8),
                   FilledButton(
                     onPressed: () => context.read<CartCubit>().add(product),

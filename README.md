@@ -36,9 +36,9 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 ```
 lib/
 ├── core/
-│   ├── entities/          # Product, Order, Address, Profile
+│   ├── entities/          # Product, Order, Address, Profile, Money
 │   ├── error/             # Result<T>, AppError
-│   └── utils/             # Currency formatting
+│   ├── utils/             # Currency formatting (`money()` helper)
 ├── features/
 │   ├── auth/              # Authentication & profile
 │   │   ├── data/          # SupabaseProfileRepository
@@ -84,7 +84,7 @@ UI (Widget)
 |----------|-----------|
 | One public widget per file | Discoverability, single responsibility, easier code review |
 | Domain repository interfaces | Swappable implementations (local ↔ Supabase) without changing Cubits |
-| Money as integer minor units | Avoids decimal rounding errors in price calculations |
+| `Money` value object (integer minor units) | Avoids decimal rounding errors; matches the `INTEGER` cents columns in Postgres so no `* 100` / `/ 100` leaks across layers |
 | Order items snapshot product details | Past orders remain accurate after catalog changes |
 | Server-side checkout | Client never trusted for price/stock validation |
 | Guest-first browsing | Reduces friction; sign-in only when persistence needed |
@@ -154,6 +154,22 @@ SUPABASE_ANON_KEY=your-anon-key-here
 | `flutter_dotenv` | Environment variable loading |
 | `intl` + `flutter gen-l10n` | Localization and RTL |
 | `bloc_test` / `mocktail` | Testing |
+
+---
+
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| `DESIGN.md` | Design system tokens and component spec |
+| `INSTRUCTIONS.md` | Engineering contract for AI agents and contributors |
+| `docs/foundation-walkthrough.md` | Settings/theme/locale foundation walkthrough |
+| `docs/storefront-walkthrough.md` | Commerce feature architecture and cubit ownership |
+| `docs/money-walkthrough.md` | `Money` value object (integer minor units) walkthrough |
+| `docs/supabase-integration.md` | Supabase setup and table-to-entity mapping |
+| `docs/staging-verification.md` | Pre/post-deploy verification checklist |
+| `docs/release-readiness.md` | Release readiness checklist |
+| `docs/acceptance-checklist.md` | Manual acceptance test cases |
 
 ---
 
