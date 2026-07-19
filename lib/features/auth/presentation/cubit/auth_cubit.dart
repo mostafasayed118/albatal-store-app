@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthState;
 
 import 'package:al_batal_elite/core/entities/profile.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
+import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
+import 'package:al_batal_elite/shared/services/logger.dart';
 
 enum AuthStatus {
   initial,
@@ -56,26 +58,34 @@ final class AuthState extends Equatable {
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
-    required SupabaseClient client,
+    required AuthRepository authRepository,
     required ProfileRepository profileRepository,
-  })  : _client = client,
+  })  : _authRepository = authRepository,
         _profileRepository = profileRepository,
         super(const AuthState()) {
     _listenToAuthChanges();
   }
 
-  final SupabaseClient _client;
+  final AuthRepository _authRepository;
   final ProfileRepository _profileRepository;
-  StreamSubscription<supabase.AuthState>? _authSubscription;
+  StreamSubscription<Authenticated?>? _authSubscription;
 
   /// Check for an existing session on app launch.
   Future<void> checkSession() async {
     emit(state.copyWith(status: AuthStatus.checkingSession));
-    final session = _client.auth.currentSession;
-    if (session != null) {
-      await _loadProfile(session.user.id);
-    } else {
-      emit(state.copyWith(status: AuthStatus.unauthenticated));
+    final result = await _authRepository.checkSession();
+    switch (result) {
+      case Success(:final value):
+        if (value != null) {
+          await _loadProfile(value.userId);
+        } else {
+          emit(state.copyWith(status: AuthStatus.unauthenticated));
+        }
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: error.message,
+        ));
     }
   }
 
@@ -86,25 +96,12 @@ class AuthCubit extends Cubit<AuthState> {
     String? fullName,
   }) async {
     emit(state.copyWith(status: AuthStatus.authenticating));
-    try {
-      final response = await _client.auth.signUp(
-        email: email,
-        password: password,
-        data: {'full_name': fullName ?? ''},
-      );
-      if (response.user != null && response.session == null) {
-        // Email confirmation required — user is created but not yet signed in
-        emit(state.copyWith(status: AuthStatus.unauthenticated));
-      } else if (response.session != null) {
-        await _loadProfile(response.user!.id);
-      }
-    } on AuthException catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: _mapAuthError(e)));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: 'An unexpected error occurred'));
-    }
+    final result = await _authRepository.signUp(
+      email: email,
+      password: password,
+      fullName: fullName,
+    );
+    await _applyAuthResult(result);
   }
 
   /// Sign in with email and password.
@@ -113,50 +110,40 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
   }) async {
     emit(state.copyWith(status: AuthStatus.authenticating));
-    try {
-      final response = await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      if (response.session != null && response.user != null) {
-        await _loadProfile(response.user!.id);
-      }
-    } on AuthException catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: _mapAuthError(e)));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: 'An unexpected error occurred'));
-    }
+    final result = await _authRepository.signIn(
+      email: email,
+      password: password,
+    );
+    await _applyAuthResult(result);
   }
 
   /// Send password reset email.
   Future<void> resetPassword(String email) async {
     emit(state.copyWith(status: AuthStatus.authenticating));
-    try {
-      await _client.auth.resetPasswordForEmail(email);
-      emit(state.copyWith(status: AuthStatus.passwordRecovery));
-    } on AuthException catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: _mapAuthError(e)));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: 'An unexpected error occurred'));
+    final result = await _authRepository.resetPassword(email);
+    switch (result) {
+      case Success():
+        emit(state.copyWith(status: AuthStatus.passwordRecovery));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: error.message,
+        ));
     }
   }
 
   /// Update password (called from reset-password screen).
   Future<void> updatePassword(String newPassword) async {
     emit(state.copyWith(status: AuthStatus.authenticating));
-    try {
-      await _client.auth.updateUser(UserAttributes(password: newPassword));
-      emit(state.copyWith(status: AuthStatus.authenticated));
-    } on AuthException catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: _mapAuthError(e)));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AuthStatus.failure, errorMessage: 'An unexpected error occurred'));
+    final result = await _authRepository.updatePassword(newPassword);
+    switch (result) {
+      case Success():
+        emit(state.copyWith(status: AuthStatus.authenticated));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: error.message,
+        ));
     }
   }
 
@@ -167,13 +154,23 @@ class AuthCubit extends Cubit<AuthState> {
       fullName: fullName,
       phone: phone,
     );
-    await _profileRepository.upsertProfile(updated);
-    emit(state.copyWith(profile: updated));
+    final result = await _profileRepository.upsertProfile(updated);
+    switch (result) {
+      case Success():
+        emit(state.copyWith(profile: updated));
+      case Failure(:final error):
+        Log.w('Profile save failed: ${error.message}',
+            category: LogCategory.auth);
+        // Don't change the in-memory profile — the user's edit is preserved
+        // locally even if the server write failed. A future read will
+        // reconcile. Surfacing this as a hard error would lose the user's
+        // input on a transient network blip.
+    }
   }
 
   /// Sign out and clear all account state.
   Future<void> signOut() async {
-    await _client.auth.signOut();
+    await _authRepository.signOut();
     emit(state.copyWith(
       status: AuthStatus.unauthenticated,
       clearProfile: true,
@@ -190,11 +187,11 @@ class AuthCubit extends Cubit<AuthState> {
   // ─── Private helpers ───────────────────────────────────
 
   void _listenToAuthChanges() {
-    _authSubscription = _client.auth.onAuthStateChange.listen((data) async {
-      final session = data.session;
-      if (session != null) {
-        await _loadProfile(session.user.id);
-      } else if (data.event == AuthChangeEvent.signedOut) {
+    _authSubscription = _authRepository.authStateChanges.listen((outcome) async {
+      if (outcome != null) {
+        await _loadProfile(outcome.userId);
+      } else {
+        // signedOut — clear local state.
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,
@@ -203,31 +200,39 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  Future<void> _loadProfile(String userId) async {
-    try {
-      final profile = await _profileRepository.readProfile(userId);
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        profile: profile,
-      ));
-    } catch (e) {
-      // Profile may not exist yet (race with trigger) — still authenticated
-      emit(state.copyWith(status: AuthStatus.authenticated));
+  Future<void> _applyAuthResult(Result<AuthOutcome> result) async {
+    switch (result) {
+      case Success(:final value):
+        switch (value) {
+          case Authenticated(:final userId):
+            await _loadProfile(userId);
+          case ConfirmationRequired():
+            // Account created, email confirmation pending — not signed in.
+            emit(state.copyWith(status: AuthStatus.unauthenticated));
+        }
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: error.message,
+        ));
     }
   }
 
-  String _mapAuthError(AuthException e) {
-    switch (e.message) {
-      case 'Invalid login credentials':
-        return 'Invalid email or password';
-      case 'Email not confirmed':
-        return 'Please verify your email address first';
-      case 'User already registered':
-        return 'An account with this email already exists';
-      case 'Password should be at least 6 characters':
-        return 'Password must be at least 6 characters';
-      default:
-        return e.message;
+  Future<void> _loadProfile(String userId) async {
+    final result = await _profileRepository.readProfile(userId);
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+          profile: value,
+        ));
+      case Failure(:final error):
+        // Profile may not exist yet (race with the database trigger) or
+        // the read failed. Either way the session is valid — authenticate
+        // without a profile so the user isn't stuck. Log for diagnosis.
+        Log.w('Profile load failed: ${error.message}',
+            category: LogCategory.auth);
+        emit(state.copyWith(status: AuthStatus.authenticated));
     }
   }
 

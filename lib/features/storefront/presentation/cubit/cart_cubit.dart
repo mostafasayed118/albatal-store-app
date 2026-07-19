@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../core/error/result.dart';
 import '../../../../shared/extensions/iterable_x.dart';
 import '../../domain/repositories/cart_repository.dart';
 
@@ -55,14 +56,15 @@ final class CartCubit extends Cubit<CartState> {
 
   Future<void> restore() async {
     emit(state.copyWith(status: CartStatus.loading));
-    try {
-      final restored = await _repository.readCart(
-        _productLookup ?? (_) => null,
-      );
-      emit(CartState(restored, status: CartStatus.ready));
-    } catch (e) {
-      emit(state.copyWith(
-          status: CartStatus.error, errorMessage: 'Failed to load cart'));
+    final result = await _repository.readCart(_productLookup ?? (_) => null);
+    switch (result) {
+      case Success(:final value):
+        emit(CartState(value, status: CartStatus.ready));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: CartStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 

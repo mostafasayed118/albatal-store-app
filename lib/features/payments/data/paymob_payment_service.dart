@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
@@ -10,6 +12,11 @@ import '../domain/repositories/payment_service.dart';
 /// payment key generation) run through [paymob-initiate] — never
 /// exposed to the client. The checkout URL is returned so the client
 /// can open it in a WebView.
+///
+/// Also owns the Supabase Realtime subscription that watches the
+/// `payments` table for server-side status updates (written by the
+/// `/paymob-callback` webhook). DB row parsing lives here, not in
+/// the presentation layer.
 class PaymobPaymentService implements PaymentService {
   PaymobPaymentService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -76,5 +83,60 @@ class PaymobPaymentService implements PaymentService {
     } catch (e) {
       return PaymentFailed(message: 'Payment verification failed: $e');
     }
+  }
+
+  /// Subscribe to the `payments` row for [orderId] via Supabase Realtime.
+  ///
+  /// The `/paymob-callback` webhook updates the row server-side; this
+  /// stream observes those updates and emits a terminal [PaymentResult]
+  /// when `status` becomes `success` or `failed`. The returned stream
+  /// is single-subscription — the cubit owns its subscription and
+  /// cancels it on terminal status or [close]. Cancelling the
+  /// subscription also unsubscribes the Realtime channel so we don't
+  /// leak DB listeners.
+  @override
+  Stream<PaymentResult> watchPaymentStatus(String orderId) {
+    final controller = StreamController<PaymentResult>();
+    RealtimeChannel? channel;
+
+    controller.onListen = () {
+      channel = _client
+          .channel('payment-$orderId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'payments',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'order_id',
+              value: orderId,
+            ),
+            callback: (payload) {
+              final newRecord = payload.newRecord;
+              final status = newRecord['status'] as String?;
+              if (status == 'success') {
+                final transactionId =
+                    newRecord['transaction_id'] as String? ?? '';
+                controller.add(PaymentSuccess(
+                  transactionId: transactionId,
+                  amount: Money.zero,
+                ));
+              } else if (status == 'failed') {
+                controller.add(const PaymentFailed(
+                  message: 'Payment was declined by the gateway',
+                ));
+              }
+              // Other status values (e.g. 'pending') are ignored — the
+              // webhook will update the row again when terminal.
+            },
+          )
+          .subscribe();
+    };
+
+    controller.onCancel = () {
+      channel?.unsubscribe();
+    };
+
+    return controller.stream;
   }
 }

@@ -42,5 +42,11 @@ lib/generated/
 *.g.dart
 *.freezed.dart
 
+# Local snapshots / archives (never commit one-off zips of source)
+lib_files.zip
+
 # Supabase
 supabase/.temp/
+
+# Local agent config (never commit local settings)
+.claude/

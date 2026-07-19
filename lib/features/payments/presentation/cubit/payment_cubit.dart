@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -75,6 +77,7 @@ class PaymentCubit extends Cubit<PaymentState> {
   PaymentCubit(this._paymentService) : super(const PaymentState());
 
   final PaymentService _paymentService;
+  StreamSubscription<PaymentResult>? _watchSubscription;
 
   /// Initialize payment for an order.
   void initPayment({required Money amount, required String orderId}) {
@@ -121,6 +124,10 @@ class PaymentCubit extends Cubit<PaymentState> {
           checkoutUrl: checkoutUrl,
           transactionId: paymentKey,
         ));
+        // The Paymob hosted checkout is now open in a WebView. Subscribe
+        // to the server-side payment status so we detect the webhook's
+        // update without parsing the callback URL (which can be spoofed).
+        startWatching(state.orderId);
       case PaymentSuccess(:final transactionId):
         emit(state.copyWith(
           status: PaymentStatus.success,
@@ -161,4 +168,42 @@ class PaymentCubit extends Cubit<PaymentState> {
 
   /// Reset to initial state.
   void reset() => emit(const PaymentState());
+
+  /// Subscribe to server-side payment status updates via Realtime.
+  ///
+  /// The repository ([PaymentService.watchPaymentStatus]) owns the
+  /// Supabase Realtime channel and DB row parsing; the cubit only
+  /// consumes the typed [PaymentResult] stream and translates terminal
+  /// outcomes into [PaymentStatus.success] / [PaymentStatus.failed].
+  /// The subscription is cancelled on terminal events or in [close].
+  Future<void> startWatching(String orderId) async {
+    await _watchSubscription?.cancel();
+    _watchSubscription = _paymentService.watchPaymentStatus(orderId).listen(
+      (result) {
+        switch (result) {
+          case PaymentSuccess(:final transactionId):
+            emit(state.copyWith(
+              status: PaymentStatus.success,
+              transactionId: transactionId,
+            ));
+            _watchSubscription?.cancel();
+          case PaymentFailed(:final message):
+            emit(state.copyWith(
+              status: PaymentStatus.failed,
+              errorMessage: message,
+            ));
+            _watchSubscription?.cancel();
+          case PaymentPending():
+          case PaymentCancelled():
+            break;
+        }
+      },
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _watchSubscription?.cancel();
+    return super.close();
+  }
 }

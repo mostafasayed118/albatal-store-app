@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../core/error/result.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 
 enum WishlistStatus { initial, loading, ready, error }
@@ -45,13 +46,15 @@ final class WishlistCubit extends Cubit<WishlistState> {
 
   Future<void> restore() async {
     emit(state.copyWith(status: WishlistStatus.loading));
-    try {
-      final restored = await _repository.readWishlist();
-      emit(WishlistState(ids: restored, status: WishlistStatus.ready));
-    } catch (e) {
-      emit(state.copyWith(
+    final result = await _repository.readWishlist();
+    switch (result) {
+      case Success(:final value):
+        emit(WishlistState(ids: value, status: WishlistStatus.ready));
+      case Failure(:final error):
+        emit(state.copyWith(
           status: WishlistStatus.error,
-          errorMessage: 'Failed to load wishlist'));
+          errorMessage: error.message,
+        ));
     }
   }
 

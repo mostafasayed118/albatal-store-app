@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/order.dart';
+import '../../../../core/error/result.dart';
 import '../../domain/repositories/orders_repository.dart';
 import '../cubit/cart_cubit.dart';
 
@@ -70,12 +71,15 @@ final class OrdersCubit extends Cubit<OrdersState> {
 
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
-    try {
-      final stored = await _repository.readOrders();
-      emit(OrdersState(orders: stored, status: OrdersStatus.ready));
-    } catch (e) {
-      emit(state.copyWith(
-          status: OrdersStatus.error, errorMessage: 'Failed to load orders'));
+    final result = await _repository.readOrders();
+    switch (result) {
+      case Success(:final value):
+        emit(OrdersState(orders: value, status: OrdersStatus.ready));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: OrdersStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 
@@ -99,20 +103,15 @@ final class OrdersCubit extends Cubit<OrdersState> {
   }
 
   void advance(String orderId) {
-    try {
-      final updated = state.orders.map((o) {
-        if (o.id != orderId) return o;
-        return switch (o.status) {
-          OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
-          OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
-          _ => o,
-        };
-      }).toList();
-      emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-      _repository.writeOrders(updated);
-    } catch (e) {
-      emit(state.copyWith(
-          status: OrdersStatus.error, errorMessage: 'Failed to update order'));
-    }
+    final updated = state.orders.map((o) {
+      if (o.id != orderId) return o;
+      return switch (o.status) {
+        OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
+        OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
+        _ => o,
+      };
+    }).toList();
+    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
+    _repository.writeOrders(updated);
   }
 }
