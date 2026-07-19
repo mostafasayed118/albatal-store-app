@@ -32,7 +32,10 @@ final class OrdersState extends Equatable {
 
   List<Order> get active => orders
       .where((o) =>
-          o.status == OrderStatus.placed || o.status == OrderStatus.shipped)
+          o.status == OrderStatus.pending ||
+          o.status == OrderStatus.placed ||
+          o.status == OrderStatus.processing ||
+          o.status == OrderStatus.shipped)
       .toList()
     ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
   List<Order> get completed =>

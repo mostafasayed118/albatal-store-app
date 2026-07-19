@@ -5,10 +5,14 @@ import 'money.dart';
 import 'product.dart';
 
 /// Status of a placed order. Maps to the orders page tabs:
-/// - [placed] / [shipped] → "Active" tab
+/// - [pending] / [placed] / [processing] / [shipped] → "Active" tab
 /// - [delivered] → "Completed" tab
 /// - [cancelled] → "Cancelled" tab
-enum OrderStatus { placed, shipped, delivered, cancelled }
+///
+/// [pending] = created but not yet paid (server-side checkout flow).
+/// [paid] = payment confirmed by webhook (transitions to [placed] or
+/// [processing] for fulfillment).
+enum OrderStatus { pending, placed, paid, processing, shipped, delivered, cancelled, refunded }
 
 /// An immutable snapshot of a successfully placed order.
 ///
