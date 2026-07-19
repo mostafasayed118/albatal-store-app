@@ -1567,6 +1567,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No address provided'**
   String get noAddressProvided;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming Soon'**
+  String get comingSoon;
 }
 
 class _AppLocalizationsDelegate

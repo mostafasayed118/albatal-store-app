@@ -284,5 +284,6 @@
   "items": "عناصر",
   "noAddressProvided": "لم يتم توفير عنوان",
   "noResultsFound": "لم يتم العثور على نتائج",
-  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات"
+  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
+  "comingSoon": "قريباً"
 }

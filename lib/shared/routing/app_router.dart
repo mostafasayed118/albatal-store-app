@@ -14,7 +14,6 @@ import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/payments/presentation/pages/payment_method_page.dart';
 import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
-import '../../features/payments/presentation/pages/vodafone_cash_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/storefront/presentation/pages/cart_page.dart';
 import '../../features/storefront/presentation/pages/catalog_page.dart';
@@ -58,9 +57,8 @@ final appRouter = GoRouter(
   GoRoute(path: '/forgot-password', builder: (_, __) => const ForgotPasswordPage()),
   GoRoute(path: '/reset-password', builder: (_, __) => const ResetPasswordPage()),
   // Payment routes
-  GoRoute(path: '/payment-method', builder: (_, s) => PaymentMethodPage(amount: s.extra as double? ?? 0)),
+  GoRoute(path: '/payment-method', builder: (_, s) => PaymentMethodPage(args: s.extra as Map<String, dynamic>? ?? {})),
   GoRoute(path: '/paymob-checkout', builder: (_, s) => PaymobCheckoutPage(checkoutUrl: s.extra as String? ?? '')),
-  GoRoute(path: '/vodafone-cash', builder: (_, __) => const VodafoneCashPage()),
   // Admin routes
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
