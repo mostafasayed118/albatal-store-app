@@ -23,11 +23,17 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 ### Cloud Backend (Supabase)
 - **Remote catalog** — products, categories, variants, images stored in Supabase
 - **Authentication** — Supabase Auth with email/password, session restore
-- **User data** — cart, wishlist, addresses, orders synced per customer
+- **User profiles** — profile data (name, phone, avatar) synced per customer
 - **Row Level Security** — users can only access their own data
-- **Server-side checkout** — Edge Function validates prices, stock, creates orders atomically
+- **Server-side checkout** — Edge Function validates prices, stock, creates orders atomically (used for card payments; cash-on-delivery places orders locally)
 - **Storage** — product images (public) and avatars (private)
 - **Admin support** — admin role for catalog/order management
+
+> **Note on local persistence:** Cart, wishlist, addresses, and orders are
+> currently persisted locally on-device via SharedPreferences (offline-first).
+> Cloud sync for these collections is planned but not yet wired — the
+> Supabase repository implementations were removed in favor of shipping a
+> reliable local-first experience first.
 
 ---
 
@@ -44,13 +50,13 @@ lib/
 │   │   ├── data/          # SupabaseProfileRepository
 │   │   ├── domain/        # ProfileRepository interface
 │   │   └── presentation/  # AuthCubit, sign-in/up pages
-│   ├── addresses/         # Shipping addresses
-│   │   ├── data/          # Local + Supabase repositories
+│   ├── addresses/         # Shipping addresses (local persistence)
+│   │   ├── data/          # LocalAddressRepository
 │   │   ├── domain/        # AddressRepository interface
 │   │   └── presentation/  # AddressesCubit, addresses page
 │   ├── settings/          # Theme & language preferences
-│   └── storefront/        # Commerce feature
-│       ├── data/          # Repositories, persistence, Supabase impls
+│   └── storefront/        # Commerce feature (local persistence)
+│       ├── data/          # Repositories, persistence
 │       ├── domain/        # Repository interfaces
 │       └── presentation/
 │           ├── cubit/     # Cart, Catalog, Checkout, Orders, Wishlist, Details
@@ -83,7 +89,7 @@ UI (Widget)
 | Decision | Rationale |
 |----------|-----------|
 | One public widget per file | Discoverability, single responsibility, easier code review |
-| Domain repository interfaces | Swappable implementations (local ↔ Supabase) without changing Cubits |
+| Domain repository interfaces | Local-first implementations; cloud sync planned (interfaces keep Cubits unchanged when Supabase repos are wired) |
 | `Money` value object (integer minor units) | Avoids decimal rounding errors; matches the `INTEGER` cents columns in Postgres so no `* 100` / `/ 100` leaks across layers |
 | Order items snapshot product details | Past orders remain accurate after catalog changes |
 | Server-side checkout | Client never trusted for price/stock validation |
