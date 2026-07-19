@@ -157,6 +157,22 @@ SUPABASE_ANON_KEY=your-anon-key-here
 
 ---
 
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| `DESIGN.md` | Design system tokens and component spec |
+| `INSTRUCTIONS.md` | Engineering contract for AI agents and contributors |
+| `docs/foundation-walkthrough.md` | Settings/theme/locale foundation walkthrough |
+| `docs/storefront-walkthrough.md` | Commerce feature architecture and cubit ownership |
+| `docs/money-walkthrough.md` | `Money` value object (integer minor units) walkthrough |
+| `docs/supabase-integration.md` | Supabase setup and table-to-entity mapping |
+| `docs/staging-verification.md` | Pre/post-deploy verification checklist |
+| `docs/release-readiness.md` | Release readiness checklist |
+| `docs/acceptance-checklist.md` | Manual acceptance test cases |
+
+---
+
 ## Testing
 
 ```bash

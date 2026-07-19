@@ -65,14 +65,14 @@ conversion.
 | Supabase Table | Flutter Entity | Repository |
 |----------------|---------------|------------|
 | `profiles` | `Profile` | `SupabaseProfileRepository` |
-| `products` | `Product` | `SupabaseCatalogRepository` |
+| `products` | `Product` (price: `Money`) | `SupabaseCatalogRepository` |
 | `categories` | `String` | `SupabaseCatalogRepository` |
 | `product_variants` | `Product.stock`, `sizes`, `colors` | `SupabaseCatalogRepository` |
 | `addresses` | `Address` | `SupabaseAddressRepository` |
 | `wishlists` | `WishlistState.ids` | `SupabaseWishlistRepository` |
 | `cart_items` | `CartState.items` | `SupabaseCartRepository` |
-| `orders` | `Order` | `SupabaseOrdersRepository` |
-| `order_items` | `Order.items` | `SupabaseOrdersRepository` |
+| `orders` | `Order` (subtotal/shipping/total: `Money`) | `SupabaseOrdersRepository` |
+| `order_items` | `Order.items` (unit price: `Money`) | `SupabaseOrdersRepository` |
 
 ## SQL migrations
 
