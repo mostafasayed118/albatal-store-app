@@ -93,6 +93,23 @@ class PaymentCubit extends Cubit<PaymentState> {
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
 
+    // Vodafone Cash navigates to its own page
+    if (state.selectedMethod == PaymentMethod.vodafoneCash) {
+      emit(state.copyWith(status: PaymentStatus.processing));
+      return;
+    }
+
+    // Cash on Delivery — direct success
+    if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
+      emit(state.copyWith(status: PaymentStatus.processing));
+      emit(state.copyWith(
+        status: PaymentStatus.success,
+        transactionId: 'COD-${DateTime.now().millisecondsSinceEpoch}',
+      ));
+      return;
+    }
+
+    // Paymob Card — initiate payment
     emit(state.copyWith(status: PaymentStatus.processing));
 
     final result = await _paymentService.initiatePayment(

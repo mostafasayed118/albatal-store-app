@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../services/navigation_observer.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
@@ -27,7 +28,10 @@ import '../../features/storefront/presentation/pages/wishlist_page.dart';
 import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
 
-final appRouter = GoRouter(initialLocation: '/home', routes: [
+final appRouter = GoRouter(
+  initialLocation: '/home',
+  observers: [NavigationObserver()],
+  routes: [
   ShellRoute(builder: (_, __, child) => AppShell(child: child), routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomePage()),
     GoRoute(path: '/categories', builder: (_, __) => const CategoriesPage()),

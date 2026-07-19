@@ -69,16 +69,13 @@ void main() {
     });
 
     test('processPayment with Cash on Delivery goes to success', () async {
-      service.setResult(const PaymentSuccess(
-          transactionId: 'COD-1', amount: 1500));
       cubit.initPayment(amount: 1500, orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
 
       expect(cubit.state.status, PaymentStatus.success);
-      expect(cubit.state.transactionId, 'COD-1');
-      expect(service.callCount, 1);
+      expect(cubit.state.transactionId, startsWith('COD-'));
     });
 
     test('processPayment with failure sets error', () async {

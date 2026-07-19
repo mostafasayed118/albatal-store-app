@@ -80,17 +80,19 @@ class CartItemTile extends StatelessWidget {
                       onChanged: (q) =>
                           context.read<CartCubit>().update(item.key, q),
                     ),
-                    Row(
+                    Wrap(
+                      spacing: 4,
                       children: [
                         TextButton(
                           onPressed: () =>
                               context.read<CartCubit>().remove(item.key),
                           style: TextButton.styleFrom(
                             foregroundColor: scheme.error,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
                           ),
-                          child: Text(l.remove),
+                          child: Text(l.remove, style: const TextStyle(fontSize: 12)),
                         ),
-                        const SizedBox(width: 8),
                         TextButton.icon(
                           onPressed: () {
                             context
@@ -98,7 +100,7 @@ class CartItemTile extends StatelessWidget {
                                 .toggle(item.product.id);
                             context.read<CartCubit>().remove(item.key);
                           },
-                          icon: const Icon(Icons.bookmark_border, size: 16),
+                          icon: const Icon(Icons.bookmark_border, size: 14),
                           label: Text(l.saveForLater,
                               style: const TextStyle(fontSize: 12)),
                         ),
