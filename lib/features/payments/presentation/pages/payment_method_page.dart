@@ -21,13 +21,21 @@ class PaymentMethodPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final total = (args['total'] as Money?) ?? Money.zero;
     final address = args['address'];
+    // Real server-created order id from the checkout Edge Function.
+    // Fallback to a local-only id for cash-on-delivery if the server
+    // flow was skipped (e.g. legacy path or COD-only test).
+    final orderId = (args['orderId'] as String?) ??
+        'ORD-${DateTime.now().millisecondsSinceEpoch}';
+    final customerEmail = (args['customerEmail'] as String?) ??
+        'customer@example.com';
 
     return BlocProvider(
       create: (_) => PaymentCubit(
         PaymobPaymentService(),
       )..initPayment(
           amount: total,
-          orderId: 'ORD-${DateTime.now().millisecondsSinceEpoch}'),
+          orderId: orderId,
+        ),
       child: BlocConsumer<PaymentCubit, PaymentState>(
         listener: (context, state) {
           if (state.status == PaymentStatus.success) {
@@ -87,7 +95,7 @@ class PaymentMethodPage extends StatelessWidget {
                       onPressed: state.canProceed &&
                               state.status != PaymentStatus.processing
                           ? () => context.read<PaymentCubit>().processPayment(
-                                customerEmail: 'customer@example.com',
+                                customerEmail: customerEmail,
                               )
                           : null,
                       child: state.status == PaymentStatus.processing

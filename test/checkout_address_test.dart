@@ -14,23 +14,18 @@ import 'package:flutter_test/flutter_test.dart';
 /// Stub CheckoutService that returns a fake pending order.
 class StubCheckoutService implements CheckoutService {
   @override
-  Future<Result<Order>> placeOrder({
+  Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required String paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+    String? idempotencyKey,
   }) async {
-    return Success(Order(
-      id: 'ORD-STUB-1',
-      items: items,
-      subtotal: items.fold(
-          Money.zero, (Money v, CartItem i) => v + (i.product.price * i.quantity)),
-      shipping: Money.egp(75),
-      total: items.fold(
-              Money.zero, (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
+    return Success(PendingOrder(
+      orderId: 'ORD-STUB-1',
+      total: items.fold(Money.zero,
+              (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
           Money.egp(75),
-      status: OrderStatus.placed,
-      placedAt: DateTime.now(),
-      paymentMethod: paymentMethod,
+      expiresAt: DateTime.now().add(const Duration(minutes: 15)),
     ));
   }
 }

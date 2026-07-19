@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/supabase_config.dart';
 import '../../data/checkout_service.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
@@ -14,10 +15,8 @@ import '../widgets/order_review.dart';
 import '../widgets/step_indicator.dart';
 
 /// Checkout page — reviews cart, selects shipping address,
-/// then navigates to PaymentMethodPage for payment selection.
-///
-/// Payment method selection lives on PaymentMethodPage (not here)
-/// to avoid the user having to select it twice.
+/// then creates a pending server-side order and navigates to
+/// PaymentMethodPage with the real orderId + server-computed total.
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key, CheckoutService? checkoutService})
       : _checkoutService = checkoutService;
@@ -30,10 +29,29 @@ class CheckoutPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider(
       create: (_) => CheckoutCubit(_checkoutService ?? CheckoutService()),
-      child: BlocBuilder<CheckoutCubit, CheckoutState>(
+      child: BlocConsumer<CheckoutCubit, CheckoutState>(
+        listener: (context, s) {
+          // When the pending order is created, navigate to payment with
+          // the real orderId and server-computed total.
+          if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
+            final email = SupabaseConfig.currentUser?.email ??
+                'customer@example.com';
+            context.push('/payment-method', extra: {
+              'total': s.serverTotal,
+              'address': s.selectedAddress,
+              'orderId': s.pendingOrderId,
+              'customerEmail': email,
+            });
+          } else if (s.status == CheckoutStatus.error &&
+              s.errorMessage != null) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(s.errorMessage!)));
+          }
+        },
         builder: (context, s) {
           final addressError =
               s.status == CheckoutStatus.error && !s.hasAddress;
+          final isCreating = s.status == CheckoutStatus.creatingOrder;
           return Scaffold(
             appBar: AppBar(title: Text(l.checkout)),
             body: ListView(
@@ -82,12 +100,16 @@ class CheckoutPage extends StatelessWidget {
             bottomNavigationBar: BottomActionButton(
               label: l.proceedToPayment,
               icon: Icons.arrow_forward,
-              isLoading: false,
-              onPressed: s.hasAddress
-                  ? () => context.push('/payment-method', extra: {
-                        'total': context.read<CartCubit>().state.total,
-                        'address': s.selectedAddress,
-                      })
+              isLoading: isCreating,
+              onPressed: s.hasAddress && !isCreating
+                  ? () {
+                      final cart = context.read<CartCubit>().state;
+                      context.read<CheckoutCubit>().createPendingOrder(
+                            cartItems: cart.items,
+                            idempotencyKey:
+                                'ck-${DateTime.now().millisecondsSinceEpoch}',
+                          );
+                    }
                   : null,
             ),
           );
