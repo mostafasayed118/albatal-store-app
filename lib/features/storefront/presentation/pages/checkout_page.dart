@@ -80,8 +80,10 @@ class CheckoutPage extends StatelessWidget {
               icon: Icons.arrow_forward,
               isLoading: false,
               onPressed: s.hasAddress
-                  ? () => context.push('/payment-method',
-                      extra: context.read<CartCubit>().state.total)
+                  ? () => context.push('/payment-method', extra: {
+                        'total': context.read<CartCubit>().state.total,
+                        'address': s.selectedAddress,
+                      })
                   : null,
             ),
           );

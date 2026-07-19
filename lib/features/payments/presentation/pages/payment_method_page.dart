@@ -3,47 +3,45 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../domain/entities/payment.dart';
-import '../../data/vodafone_cash_payment_service.dart';
-import '../cubit/payment_cubit.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
-import '../../../storefront/presentation/cubit/checkout_cubit.dart';
 import '../../../storefront/presentation/cubit/orders_cubit.dart';
+import '../../data/paymob_payment_service.dart';
+import '../../domain/entities/payment.dart';
+import '../cubit/payment_cubit.dart';
 
 /// Payment method selection page.
 class PaymentMethodPage extends StatelessWidget {
-  const PaymentMethodPage({super.key, required this.amount});
-  final double amount;
+  const PaymentMethodPage({super.key, required this.args});
+  final Map<String, dynamic> args;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final total = args['total'] as double? ?? 0;
+    final address = args['address'];
 
     return BlocProvider(
       create: (_) => PaymentCubit(
-        VodafoneCashPaymentService(
-          merchantCode: const String.fromEnvironment('VODAFONE_CASH_MERCHANT_CODE', defaultValue: ''),
-          apiKey: const String.fromEnvironment('VODAFONE_CASH_API_KEY', defaultValue: ''),
-        ),
-      )..initPayment(amount: amount, orderId: 'ORD-${DateTime.now().millisecondsSinceEpoch}'),
+        PaymobPaymentService(),
+      )..initPayment(
+          amount: total,
+          orderId: 'ORD-${DateTime.now().millisecondsSinceEpoch}'),
       child: BlocConsumer<PaymentCubit, PaymentState>(
         listener: (context, state) {
           if (state.status == PaymentStatus.success) {
-            // Create order from cart
             final cart = context.read<CartCubit>().state;
-            final checkoutState = context.read<CheckoutCubit>().state;
             context.read<OrdersCubit>().place(
                   cart,
                   paymentMethod: state.selectedMethod?.name ?? 'unknown',
-                  address: checkoutState.selectedAddress,
+                  address: address,
                 );
             context.read<CartCubit>().clear();
             context.go('/order-success');
           } else if (state.status == PaymentStatus.failed &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
         },
         builder: (context, state) {
@@ -74,12 +72,13 @@ class PaymentMethodPage extends StatelessWidget {
                 _PaymentOption(
                   icon: Icons.phone_android,
                   title: l.payWithVodafoneCash,
-                  subtitle: l.payWithVodafoneCashDescription,
-                  isSelected:
-                      state.selectedMethod == PaymentMethod.vodafoneCash,
-                  onTap: () => context
-                      .read<PaymentCubit>()
-                      .selectMethod(PaymentMethod.vodafoneCash),
+                  subtitle: l.comingSoon,
+                  isSelected: false,
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l.comingSoon)),
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
                 _PaymentOption(
@@ -138,13 +137,13 @@ class _PaymentOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
-      color: isSelected
-          ? scheme.primaryContainer.withValues(alpha: .3)
-          : null,
+      color: isSelected ? scheme.primaryContainer.withValues(alpha: .3) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected ? scheme.primary : scheme.outline.withValues(alpha: .3),
+          color: isSelected
+              ? scheme.primary
+              : scheme.outline.withValues(alpha: .3),
           width: isSelected ? 2 : 1,
         ),
       ),
