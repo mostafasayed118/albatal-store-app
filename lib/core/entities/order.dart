@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'address.dart';
+import 'money.dart';
 import 'product.dart';
 
 /// Status of a placed order. Maps to the orders page tabs:
@@ -28,9 +29,9 @@ final class Order extends Equatable {
 
   final String id;
   final List<CartItem> items;
-  final double subtotal;
-  final double shipping;
-  final double total;
+  final Money subtotal;
+  final Money shipping;
+  final Money total;
   final OrderStatus status;
   final DateTime placedAt;
   final String paymentMethod;

@@ -1,10 +1,11 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/iterable_x.dart';
-import '../../domain/repositories/cart_repository.dart';
 import '../../data/products_data.dart';
+import '../../domain/repositories/cart_repository.dart';
 
 enum CartStatus { initial, loading, ready, error }
 
@@ -19,10 +20,10 @@ final class CartState extends Equatable {
   final CartStatus status;
   final String? errorMessage;
 
-  double get subtotal => items.fold(
-      0, (value, item) => value + item.product.price * item.quantity);
-  double get shipping => items.isEmpty ? 0 : 75;
-  double get total => subtotal + shipping;
+  Money get subtotal =>
+      items.fold(Money.zero, (value, item) => value + item.lineTotal);
+  Money get shipping => items.isEmpty ? Money.zero : Money.egp(75);
+  Money get total => subtotal + shipping;
   int get count => items.fold(0, (value, item) => value + item.quantity);
 
   CartState copyWith({

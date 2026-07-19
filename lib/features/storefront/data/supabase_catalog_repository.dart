@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
@@ -8,8 +9,8 @@ import '../../../../core/error/result.dart';
 /// Supabase-backed catalog repository.
 ///
 /// Maps database rows to domain entities. The database stores money as
-/// integer minor units; this class converts to the double price used
-/// by the presentation layer.
+/// integer minor units (cents); [Money] carries that representation
+/// through the domain and presentation layers without conversion.
 class SupabaseCatalogRepository implements CatalogRepository {
   SupabaseCatalogRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -52,9 +53,9 @@ class SupabaseCatalogRepository implements CatalogRepository {
           id: row['id'] as String,
           name: row['name'] as String,
           category: categoryName,
-          price: (row['base_price'] as int) / 100,
+          price: Money(row['base_price'] as int),
           oldPrice: row['old_price'] != null
-              ? (row['old_price'] as int) / 100
+              ? Money(row['old_price'] as int)
               : null,
           imageColor: _colorHash(categoryName),
           imageAsset: primaryImage,

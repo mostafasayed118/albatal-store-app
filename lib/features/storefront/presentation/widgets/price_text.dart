@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../data/products_data.dart';
 
 class PriceText extends StatelessWidget {
@@ -11,10 +12,10 @@ class PriceText extends StatelessWidget {
     this.strikeThroughAmount,
   });
 
-  final double amount;
+  final Money amount;
   final TextStyle? style;
   final bool showStrikeThrough;
-  final double? strikeThroughAmount;
+  final Money? strikeThroughAmount;
 
   @override
   Widget build(BuildContext context) {

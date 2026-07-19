@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -60,7 +61,7 @@ class _OrderStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final status = order['status'] as String? ?? 'unknown';
-    final total = ((order['total'] as int? ?? 0) / 100).toStringAsFixed(0);
+    final total = Money(order['total'] as int? ?? 0).format();
     final paymentMethod = order['payment_method'] as String? ?? 'Unknown';
 
     return Card(
@@ -122,7 +123,7 @@ class _OrderItemsCard extends StatelessWidget {
                   title: Text(item['product_name'] ?? 'Unknown'),
                   subtitle: Text('${item['size']} / ${item['color']}'),
                   trailing: Text(
-                      '×${item['quantity']} · ${((item['unit_price'] as int? ?? 0) / 100).toStringAsFixed(0)} EGY'),
+                      '×${item['quantity']} · ${Money(item['unit_price'] as int? ?? 0).format()}'),
                 )),
           ],
         ),

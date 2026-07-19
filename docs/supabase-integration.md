@@ -36,9 +36,29 @@ Catalog is always remote (public data). Personal data switches based on auth sta
 | Database | RLS policies on every table |
 | Auth | Supabase Auth with email/password |
 | Orders | Created via Edge Function only (client cannot insert) |
-| Prices | Validated server-side in checkout function |
+| Prices | Stored as `INTEGER` minor units (cents); validated server-side in checkout function |
 | Stock | Decremented atomically in checkout function |
 | Keys | Only anon key in Flutter app; service-role stays server-side |
+
+## Money representation
+
+The database and the Flutter app share a single money representation: **integer
+minor units (cents)**. All money columns — `base_price`, `old_price`,
+`unit_price`, `subtotal`, `shipping`, `total` — are `INTEGER` storing cents.
+
+Repositories map rows directly to the [`Money`](../lib/core/entities/money.dart)
+value object with no `/ 100` conversion:
+
+```dart
+price: Money(row['base_price'] as int),
+subtotal: Money(row['subtotal'] as int),
+```
+
+`Money` carries the same integer-cents representation through the domain and
+presentation layers. The only place a `double` appears is `Money.majorUnits`,
+which is intended for **display only** — never for arithmetic. Paymob's API
+expects cents too, so `PaymobPaymentService` passes `amount.minorUnits` with no
+conversion.
 
 ## File mapping
 

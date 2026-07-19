@@ -41,7 +41,7 @@ class RelatedCard extends StatelessWidget {
                             .textTheme
                             .bodySmall
                             ?.copyWith(fontWeight: FontWeight.w600)),
-                    Text('${product.price.toStringAsFixed(0)} EGY',
+                    Text(product.price.format(),
                         style: TextStyle(
                             fontSize: 13,
                             color: scheme.primary,

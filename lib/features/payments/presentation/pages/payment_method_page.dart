@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
 import '../../../storefront/presentation/cubit/orders_cubit.dart';
@@ -18,7 +19,7 @@ class PaymentMethodPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final total = args['total'] as double? ?? 0;
+    final total = (args['total'] as Money?) ?? Money.zero;
     final address = args['address'];
 
     return BlocProvider(
@@ -53,7 +54,7 @@ class PaymentMethodPage extends StatelessWidget {
                 Text(l.selectPaymentMethod,
                     style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text('${l.total}: ${state.amount.toStringAsFixed(0)} EGY',
+                Text('${l.total}: ${state.amount.format()}',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -26,7 +27,7 @@ void main() {
             quantity: 2)
       ], status: CartStatus.ready),
     ],
-    verify: (cubit) => expect(cubit.state.total, 2655),
+    verify: (cubit) => expect(cubit.state.total, Money.egp(2655)),
   );
 
   test('restores configured cart lines and wishlist ids from local storage',

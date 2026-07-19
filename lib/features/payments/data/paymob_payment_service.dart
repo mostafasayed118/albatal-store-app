@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/entities/money.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
 
@@ -16,13 +17,15 @@ class PaymobPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> initiatePayment({
-    required double amount,
+    required Money amount,
     required PaymentMethod method,
     required String orderId,
     required String customerEmail,
   }) async {
     try {
-      final amountCents = (amount * 100).round();
+      // Money already carries minor units (cents) — Paymob's API expects
+      // the same representation, so no conversion is needed here.
+      final amountCents = amount.minorUnits;
 
       // Step 1: Get auth token via Edge Function
       final authResponse = await _client.functions.invoke('paymob-auth');
@@ -74,7 +77,7 @@ class PaymobPaymentService implements PaymentService {
       final transactionId = data['id'] ?? '';
 
       if (success) {
-        return PaymentSuccess(transactionId: transactionId, amount: 0);
+        return PaymentSuccess(transactionId: transactionId, amount: Money.zero);
       } else {
         return PaymentFailed(
           message: data['message'] ?? 'Payment failed',
@@ -88,12 +91,12 @@ class PaymobPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> processVodafoneCash({
-    required double amount,
+    required Money amount,
     required String phoneNumber,
     required String orderId,
   }) async {
     return PaymentFailed(
-        message: 'Use VodafoneCashPaymentService for mobile wallet payments');
+        message: 'Vodafone Cash is not supported by PaymobPaymentService');
   }
 
   /// Paymob checkout URL for web view.
