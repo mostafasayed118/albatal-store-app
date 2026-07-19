@@ -1,5 +1,7 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../services/navigation_observer.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
@@ -30,6 +32,36 @@ import '../components/app_shell.dart';
 final appRouter = GoRouter(
   initialLocation: '/home',
   observers: [NavigationObserver()],
+  redirect: (context, state) {
+    final auth = context.read<AuthCubit>().state;
+    final path = state.uri.path;
+
+    // Auth pages are public — never redirect away from them.
+    const publicRoutes = {
+      '/sign-in', '/sign-up', '/forgot-password', '/reset-password',
+      '/home', '/categories', '/catalog', '/product',
+      '/support', '/privacy-policy', '/terms', '/shipping-policy', '/returns-policy',
+    };
+    final isPublic = publicRoutes.any((p) => path.startsWith(p));
+
+    // Admin routes require admin flag.
+    if (path.startsWith('/admin')) {
+      if (!auth.isAuthenticated) return '/sign-in?redirect=$path';
+      if (auth.profile?.isAdmin != true) return '/home';
+      return null;
+    }
+
+    // Auth-required routes: checkout, orders, addresses, wishlist, cart.
+    const authRequired = ['/checkout', '/profile/orders', '/profile/addresses',
+                          '/wishlist', '/cart', '/payment-method', '/paymob-checkout',
+                          '/order-success'];
+    final needsAuth = authRequired.any((p) => path.startsWith(p));
+
+    if (needsAuth && !auth.isAuthenticated && !isPublic) {
+      return '/sign-in?redirect=$path';
+    }
+    return null;
+  },
   routes: [
   ShellRoute(builder: (_, __, child) => AppShell(child: child), routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomePage()),

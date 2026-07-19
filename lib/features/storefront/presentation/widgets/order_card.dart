@@ -70,10 +70,14 @@ class OrderCard extends StatelessWidget {
   }
 
   String _statusLabel(OrderStatus s, AppLocalizations l) => switch (s) {
+        OrderStatus.pending => l.placed,
         OrderStatus.placed => l.placed,
+        OrderStatus.paid => l.placed,
+        OrderStatus.processing => l.placed,
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
+        OrderStatus.refunded => l.cancelled,
       };
 }
 
