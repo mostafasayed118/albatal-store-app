@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/address.dart';
 import '../cubit/addresses_cubit.dart';
 
@@ -8,8 +9,10 @@ class AddressesPage extends StatelessWidget {
   const AddressesPage({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Shipping Addresses')),
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Scaffold(
+      appBar: AppBar(title: Text(l.shippingAddresses)),
       body: BlocBuilder<AddressesCubit, AddressesState>(
         builder: (context, s) {
           if (s.status == AddressesStatus.loading) {
@@ -19,7 +22,7 @@ class AddressesPage extends StatelessWidget {
             return Center(child: Text(s.errorMessage!));
           }
           if (s.addresses.isEmpty) {
-            return const Center(child: Text('No saved addresses yet.'));
+            return Center(child: Text(l.noAddressesSaved));
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -53,7 +56,8 @@ class AddressesPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _edit(context, null),
           icon: const Icon(Icons.add),
-          label: const Text('Add address')));
+          label: Text(l.addAddress)));
+  }
 }
 
 void _edit(BuildContext context, Address? a) {
