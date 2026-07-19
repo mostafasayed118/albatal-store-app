@@ -21,6 +21,12 @@ final class FailingCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Failure(AppError('Categories unavailable'));
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const ['All'];
 }
 
 Widget _harness(CatalogRepository repo) => MaterialApp(
@@ -64,4 +70,10 @@ class _NeverCompletesRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() =>
       Completer<Result<List<String>>>().future;
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const ['All'];
 }

@@ -2,7 +2,8 @@ import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
@@ -11,8 +12,8 @@ import 'package:al_batal_elite/features/storefront/data/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Stub CheckoutService that returns a fake pending order.
-class StubCheckoutService implements CheckoutService {
+/// Stub CheckoutRepository that returns a fake pending order.
+class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
@@ -43,7 +44,7 @@ void main() {
   group('CheckoutCubit — address selection', () {
     blocTest<CheckoutCubit, CheckoutState>(
       'selectAddress stores the chosen address',
-      build: () => CheckoutCubit(StubCheckoutService()),
+      build: () => CheckoutCubit(StubCheckoutRepository()),
       act: (cubit) => cubit.selectAddress(testAddress),
       verify: (cubit) {
         expect(cubit.state.selectedAddress, testAddress);
@@ -53,7 +54,7 @@ void main() {
 
     blocTest<CheckoutCubit, CheckoutState>(
       'clearAddress removes the selected address',
-      build: () => CheckoutCubit(StubCheckoutService()),
+      build: () => CheckoutCubit(StubCheckoutRepository()),
       act: (cubit) {
         cubit.selectAddress(testAddress);
         cubit.clearAddress();
@@ -66,7 +67,7 @@ void main() {
 
     blocTest<CheckoutCubit, CheckoutState>(
       'selectAddress replaces previously selected address',
-      build: () => CheckoutCubit(StubCheckoutService()),
+      build: () => CheckoutCubit(StubCheckoutRepository()),
       act: (cubit) {
         cubit.selectAddress(testAddress);
         cubit.selectAddress(const Address(
@@ -84,7 +85,7 @@ void main() {
 
     blocTest<CheckoutCubit, CheckoutState>(
       'payment changes payment method',
-      build: () => CheckoutCubit(StubCheckoutService()),
+      build: () => CheckoutCubit(StubCheckoutRepository()),
       act: (cubit) => cubit.payment('Cash on Delivery'),
       verify: (cubit) => expect(cubit.state.payment, 'Cash on Delivery'),
     );

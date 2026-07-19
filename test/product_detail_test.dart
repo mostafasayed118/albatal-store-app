@@ -1,8 +1,23 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/product_details_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Stub catalog for cubit tests that don't need real product data.
+class _StubCatalogRepository implements CatalogRepository {
+  @override
+  Future<Result<List<Product>>> fetchProducts() async => const Success([]);
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All']);
+  @override
+  Product? findProductById(String id) => null;
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
 
 void main() {
   group('Product', () {
@@ -107,21 +122,21 @@ void main() {
   group('ProductDetailsCubit', () {
     blocTest<ProductDetailsCubit, DetailsState>(
       'changes color',
-      build: () => ProductDetailsCubit(),
+      build: () => ProductDetailsCubit(_StubCatalogRepository()),
       act: (cubit) => cubit.color('Gold'),
       verify: (cubit) => expect(cubit.state.color, 'Gold'),
     );
 
     blocTest<ProductDetailsCubit, DetailsState>(
       'changes length',
-      build: () => ProductDetailsCubit(),
+      build: () => ProductDetailsCubit(_StubCatalogRepository()),
       act: (cubit) => cubit.length('5m'),
       verify: (cubit) => expect(cubit.state.length, '5m'),
     );
 
     blocTest<ProductDetailsCubit, DetailsState>(
       'changes quantity with clamping',
-      build: () => ProductDetailsCubit(),
+      build: () => ProductDetailsCubit(_StubCatalogRepository()),
       act: (cubit) {
         cubit.quantity(0);
         cubit.quantity(100);

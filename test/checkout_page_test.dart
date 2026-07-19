@@ -4,7 +4,8 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -24,8 +25,8 @@ class StubAddressRepository implements AddressRepository {
       const Success(null);
 }
 
-/// Stub CheckoutService — returns a fake pending order.
-class StubCheckoutService implements CheckoutService {
+/// Stub CheckoutRepository — returns a fake pending order.
+class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
@@ -57,7 +58,7 @@ Widget _harness() {
         BlocProvider(create: (_) => OrdersCubit(persistence)),
         BlocProvider(create: (_) => AddressesCubit(StubAddressRepository())),
       ],
-      child: CheckoutPage(checkoutService: StubCheckoutService()),
+      child: CheckoutPage(checkoutRepository: StubCheckoutRepository()),
     ),
   );
 }

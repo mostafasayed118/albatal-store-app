@@ -17,6 +17,13 @@ final class StubCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Success(List.of(categories));
+
+  @override
+  Product? findProductById(String id) =>
+      products.where((p) => p.id == id).firstOrNull;
+
+  @override
+  List<String> get defaultCategories => categories;
 }
 
 /// Stub repository that always fails.
@@ -28,6 +35,12 @@ final class FailingCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Failure(AppError('Catalog unavailable'));
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const ['All'];
 }
 
 /// Pre-seeded state with products loaded — avoids testing load() in every test.

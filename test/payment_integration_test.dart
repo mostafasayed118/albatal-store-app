@@ -27,6 +27,10 @@ class StubPaymentService implements PaymentService {
     callCount++;
     return _resultToReturn ?? const PaymentFailed(message: 'No result set');
   }
+
+  @override
+  Stream<PaymentResult> watchPaymentStatus(String orderId) =>
+      const Stream<PaymentResult>.empty();
 }
 
 void main() {
