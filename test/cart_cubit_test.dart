@@ -33,13 +33,15 @@ void main() {
   test('restores configured cart lines and wishlist ids from local storage',
       () async {
     final storage = MemoryStorefrontPersistence();
-    final sourceCart = CartCubit(storage);
+    final lookup = (String id) =>
+        products.where((p) => p.id == id).firstOrNull;
+    final sourceCart = CartCubit(storage, productLookup: lookup);
     final sourceWishlist = WishlistCubit(storage);
 
     sourceCart.add(products.first, color: 'Emerald', length: '3m', quantity: 2);
     sourceWishlist.toggle(products.last.id);
 
-    final restoredCart = CartCubit(storage);
+    final restoredCart = CartCubit(storage, productLookup: lookup);
     final restoredWishlist = WishlistCubit(storage);
     await restoredCart.restore();
     await restoredWishlist.restore();

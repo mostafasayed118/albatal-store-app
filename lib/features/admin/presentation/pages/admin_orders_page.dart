@@ -101,7 +101,7 @@ class _OrderTile extends StatelessWidget {
               child: Text('#${order['id'].toString().substring(0, 8)}...',
                   style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
-            Text('$total EGY',
+            Text(total,
                 style: TextStyle(
                     fontWeight: FontWeight.bold, color: scheme.primary)),
           ],

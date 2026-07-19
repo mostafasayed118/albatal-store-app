@@ -90,7 +90,7 @@ class _OrderStatusCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            _DetailRow(l.total, '$total EGY'),
+            _DetailRow(l.total, total),
             _DetailRow(l.paymentMethod, paymentMethod),
             _DetailRow(l.placedAt,
                 order['placed_at']?.toString().substring(0, 19) ?? ''),
