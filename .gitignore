@@ -1,16 +1,46 @@
+# Dependencies
 .dart_tool/
 .packages
 .pub/
 build/
 coverage/
+
+# IDE
 .idea/
 .vscode/
 *.iml
+
+# Environment files (NEVER commit these)
 .env
+.env.*
+!.env.example
+
+# Android
 android/local.properties
 android/key.properties
 *.keystore
-.env.development
-.env.production
-.env.staging
+*.jks
 
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# macOS
+macos/Pods/
+macos/Flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Windows
+windows/flutter/ephemeral/
+
+# Generated
+lib/generated/
+*.g.dart
+*.freezed.dart
+
+# Supabase
+supabase/.temp/
