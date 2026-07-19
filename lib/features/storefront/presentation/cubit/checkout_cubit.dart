@@ -14,18 +14,21 @@ final class CheckoutState extends Equatable {
     this.payment = 'Credit Card',
     this.selectedAddress,
     this.errorMessage,
-    this.orderId,
-    this.totalCents,
+    this.pendingOrderId,
+    this.serverTotal,
+    this.expiresAt,
   });
 
   final CheckoutStatus status;
   final String payment;
   final Address? selectedAddress;
   final String? errorMessage;
-  final String? orderId;
-  final Money? totalCents;
+  final String? pendingOrderId;
+  final Money? serverTotal;
+  final DateTime? expiresAt;
 
   bool get hasAddress => selectedAddress != null;
+  bool get hasPendingOrder => pendingOrderId != null && serverTotal != null;
 
   /// Step index for the checkout progress indicator (0=Shipping, 1=Payment, 2=Confirm).
   int get step => switch (status) {
@@ -42,8 +45,9 @@ final class CheckoutState extends Equatable {
     Address? selectedAddress,
     bool clearAddress = false,
     String? errorMessage,
-    String? orderId,
-    Money? totalCents,
+    String? pendingOrderId,
+    Money? serverTotal,
+    DateTime? expiresAt,
   }) =>
       CheckoutState(
         status: status ?? this.status,
@@ -51,8 +55,9 @@ final class CheckoutState extends Equatable {
         selectedAddress:
             clearAddress ? null : (selectedAddress ?? this.selectedAddress),
         errorMessage: errorMessage,
-        orderId: orderId ?? this.orderId,
-        totalCents: totalCents ?? this.totalCents,
+        pendingOrderId: pendingOrderId ?? this.pendingOrderId,
+        serverTotal: serverTotal ?? this.serverTotal,
+        expiresAt: expiresAt ?? this.expiresAt,
       );
 
   @override
@@ -61,8 +66,9 @@ final class CheckoutState extends Equatable {
         payment,
         selectedAddress,
         errorMessage,
-        orderId,
-        totalCents,
+        pendingOrderId,
+        serverTotal,
+        expiresAt,
       ];
 }
 
@@ -80,13 +86,16 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   /// Create a pending order via the server-side checkout Edge Function.
   ///
-  /// Returns the order_id and total_cents so the payment layer can
-  /// initiate Paymob payment. The order is created as "pending" —
-  /// it will be promoted to "paid" by the webhook on success, or
-  /// cancelled + stock restored on failure.
+  /// Returns the order_id and the server-computed total so the payment layer
+  /// can initiate Paymob with the real order id and amount. The order is
+  /// created as "pending" — the paymob-callback webhook promotes it to
+  /// "paid" on success, or cancels + restores stock on failure.
+  ///
+  /// For cash-on-delivery, the order remains "pending" until an admin
+  /// advances it (or it expires after 15 minutes).
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
-    required Money cartTotal,
+    String? idempotencyKey,
   }) async {
     emit(state.copyWith(status: CheckoutStatus.creatingOrder));
     try {
@@ -102,13 +111,15 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
                 'country': state.selectedAddress!.country,
               }
             : {},
+        idempotencyKey: idempotencyKey,
       );
 
       result.when(
-        success: (order) => emit(state.copyWith(
+        success: (pending) => emit(state.copyWith(
           status: CheckoutStatus.placing,
-          orderId: order.id,
-          totalCents: order.total,
+          pendingOrderId: pending.orderId,
+          serverTotal: pending.total,
+          expiresAt: pending.expiresAt,
         )),
         failure: (error) => emit(state.copyWith(
           status: CheckoutStatus.error,
