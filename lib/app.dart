@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'features/addresses/domain/repositories/address_repository.dart';
 import 'features/addresses/presentation/cubit/addresses_cubit.dart';
+import 'features/admin/presentation/cubit/admin_cubit.dart';
 import 'features/auth/data/supabase_profile_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
@@ -21,6 +22,7 @@ import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/services/service_locator.dart';
+import 'shared/services/admin_service.dart';
 import 'shared/services/supabase_config.dart';
 import 'shared/theme/app_theme.dart';
 import 'shared/widgets/environment_banner.dart';
@@ -54,6 +56,7 @@ final class AlBatalApp extends StatelessWidget {
                     client: client,
                     profileRepository: profileRepo,
                   )..checkSession()),
+          BlocProvider(create: (_) => AdminCubit(getIt<AdminService>())),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
             buildWhen: (a, b) =>

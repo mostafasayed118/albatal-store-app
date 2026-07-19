@@ -5,6 +5,7 @@ import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
 import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
+import 'admin_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -15,5 +16,6 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<SettingsRepository>(
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AddressRepository>(
-        () => LocalAddressRepository(getIt<SharedPreferences>()));
+        () => LocalAddressRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<AdminService>(AdminService.new);
 }
