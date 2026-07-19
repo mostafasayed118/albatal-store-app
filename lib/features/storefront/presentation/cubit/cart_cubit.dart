@@ -4,7 +4,6 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/iterable_x.dart';
-import '../../data/products_data.dart';
 import '../../domain/repositories/cart_repository.dart';
 
 enum CartStatus { initial, loading, ready, error }
@@ -42,15 +41,23 @@ final class CartState extends Equatable {
 }
 
 final class CartCubit extends Cubit<CartState> {
-  CartCubit(this._repository) : super(const CartState([]));
+  CartCubit(this._repository, {ProductLookup? productLookup})
+      : _productLookup = productLookup,
+        super(const CartState([]));
 
   final CartRepository _repository;
+
+  /// Resolves a product id to a [Product] when restoring the cart.
+  /// Injected from outside (e.g. the catalog) so this presentation cubit
+  /// never imports a data file directly. May be null when the catalog
+  /// isn't available yet (e.g. tests); restore then loads items as-is.
+  final ProductLookup? _productLookup;
 
   Future<void> restore() async {
     emit(state.copyWith(status: CartStatus.loading));
     try {
       final restored = await _repository.readCart(
-        (id) => products.where((product) => product.id == id).firstOrNull,
+        _productLookup ?? (_) => null,
       );
       emit(CartState(restored, status: CartStatus.ready));
     } catch (e) {
