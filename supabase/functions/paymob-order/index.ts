@@ -1,6 +1,10 @@
 // ============================================================
 // Supabase Edge Function: paymob-order
 // Server-side Paymob order registration.
+//
+// ⚠️ DEPRECATED: Use /paymob-initiate instead. This function is
+// retained for backward compatibility during the transition period.
+// It will be removed in the next release.
 // ============================================================
 
 import "https://deno.land/std@0.177.0/http/server.ts";

@@ -64,6 +64,7 @@
 ## Documentation
 - [x] README.md updated with full setup guide
 - [x] `docs/storefront-walkthrough.md` — architecture docs
+- [x] `docs/money-walkthrough.md` — `Money` minor-units value object
 - [x] `docs/supabase-integration.md` — Supabase setup
 - [x] `docs/staging-verification.md` — verification checklist
 - [x] `docs/acceptance-checklist.md` — test cases
