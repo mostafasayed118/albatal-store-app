@@ -71,18 +71,6 @@ class PaymentMethodPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _PaymentOption(
-                  icon: Icons.phone_android,
-                  title: l.payWithVodafoneCash,
-                  subtitle: l.comingSoon,
-                  isSelected: false,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.comingSoon)),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                _PaymentOption(
                   icon: Icons.money,
                   title: l.cashOnDelivery,
                   subtitle: l.cashOnDeliveryDescription,

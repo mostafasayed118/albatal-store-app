@@ -13,11 +13,4 @@ abstract interface class PaymentService {
 
   /// Verify a payment callback from the payment gateway.
   Future<PaymentResult> verifyPayment(String callbackData);
-
-  /// Process Vodafone Cash payment with phone number.
-  Future<PaymentResult> processVodafoneCash({
-    required Money amount,
-    required String phoneNumber,
-    required String orderId,
-  });
 }

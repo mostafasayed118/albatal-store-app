@@ -94,12 +94,6 @@ class PaymentCubit extends Cubit<PaymentState> {
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
 
-    // Vodafone Cash navigates to its own page
-    if (state.selectedMethod == PaymentMethod.vodafoneCash) {
-      emit(state.copyWith(status: PaymentStatus.processing));
-      return;
-    }
-
     // Cash on Delivery — direct success
     if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
       emit(state.copyWith(status: PaymentStatus.processing));
@@ -125,37 +119,6 @@ class PaymentCubit extends Cubit<PaymentState> {
         emit(state.copyWith(
           status: PaymentStatus.awaitingVerification,
           checkoutUrl: checkoutUrl,
-          transactionId: paymentKey,
-        ));
-      case PaymentSuccess(:final transactionId):
-        emit(state.copyWith(
-          status: PaymentStatus.success,
-          transactionId: transactionId,
-        ));
-      case PaymentFailed(:final message):
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: message,
-        ));
-      case PaymentCancelled():
-        emit(state.copyWith(status: PaymentStatus.cancelled));
-    }
-  }
-
-  /// Process Vodafone Cash with phone number.
-  Future<void> processVodafoneCash({required String phoneNumber}) async {
-    emit(state.copyWith(status: PaymentStatus.processing));
-
-    final result = await _paymentService.processVodafoneCash(
-      amount: state.amount,
-      phoneNumber: phoneNumber,
-      orderId: state.orderId,
-    );
-
-    switch (result) {
-      case PaymentPending(:final paymentKey):
-        emit(state.copyWith(
-          status: PaymentStatus.awaitingVerification,
           transactionId: paymentKey,
         ));
       case PaymentSuccess(:final transactionId):

@@ -21,14 +21,14 @@ void main() {
     test('copyWith preserves all fields', () {
       const state = PaymentState(
         status: PaymentStatus.processing,
-        selectedMethod: PaymentMethod.vodafoneCash,
+        selectedMethod: PaymentMethod.paymobCard,
         amount: Money.egp(1500),
         orderId: 'ORD-1',
       );
       final updated = state.copyWith(transactionId: 'TXN-1');
       expect(updated.transactionId, 'TXN-1');
       expect(updated.amount, Money.egp(1500));
-      expect(updated.selectedMethod, PaymentMethod.vodafoneCash);
+      expect(updated.selectedMethod, PaymentMethod.paymobCard);
     });
   });
 
@@ -64,7 +64,6 @@ void main() {
   group('PaymentMethod', () {
     test('has correct labels', () {
       expect(PaymentMethod.paymobCard.label, 'Paymob Card');
-      expect(PaymentMethod.vodafoneCash.label, 'Vodafone Cash');
       expect(PaymentMethod.cashOnDelivery.label, 'Cash on Delivery');
     });
   });

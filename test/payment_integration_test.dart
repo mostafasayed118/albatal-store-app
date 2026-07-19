@@ -27,16 +27,6 @@ class StubPaymentService implements PaymentService {
     callCount++;
     return _resultToReturn ?? const PaymentFailed(message: 'No result set');
   }
-
-  @override
-  Future<PaymentResult> processVodafoneCash({
-    required Money amount,
-    required String phoneNumber,
-    required String orderId,
-  }) async {
-    callCount++;
-    return _resultToReturn ?? const PaymentFailed(message: 'No result set');
-  }
 }
 
 void main() {

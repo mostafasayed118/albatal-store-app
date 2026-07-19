@@ -77,15 +77,4 @@ class PaymobPaymentService implements PaymentService {
       return PaymentFailed(message: 'Payment verification failed: $e');
     }
   }
-
-  @override
-  Future<PaymentResult> processVodafoneCash({
-    required Money amount,
-    required String phoneNumber,
-    required String orderId,
-  }) async {
-    return PaymentFailed(
-      message: 'Vodafone Cash is not supported by PaymobPaymentService',
-    );
-  }
 }

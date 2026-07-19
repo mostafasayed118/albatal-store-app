@@ -3,10 +3,6 @@ import '../../../../core/entities/money.dart';
 /// Supported payment methods for the Egyptian market.
 enum PaymentMethod {
   paymobCard('Paymob Card', 'Credit/Debit Card via Paymob'),
-  // TODO(phase-2): implement real Vodafone Cash integration.
-  // Stubs removed in chore/remove-vodafone-cash-stubs — re-add service + page
-  // + edge functions when integrating the Vodafone Cash API.
-  vodafoneCash('Vodafone Cash', 'Mobile Wallet'),
   cashOnDelivery('Cash on Delivery', 'Pay on delivery');
 
   const PaymentMethod(this.label, this.description);
