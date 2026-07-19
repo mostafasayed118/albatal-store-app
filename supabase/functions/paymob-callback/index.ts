@@ -12,7 +12,6 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.177.0/hash/sha256.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,9 +38,20 @@ Deno.serve(async (req) => {
     if (hmacSecret) {
       const receivedHmac = params.get("hmac") || "";
       const hmacData = params.toString().replace(/&hmac=[^&]*/, "");
-      const computedHmac = createHmac("sha256", hmacSecret)
-        .update(hmacData)
-        .digest("hex");
+
+      // Verify HMAC using Web Crypto API (built into Deno)
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(hmacSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(hmacData));
+      const computedHmac = Array.from(new Uint8Array(signature))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
 
       if (receivedHmac !== computedHmac) {
         console.error("HMAC verification failed");
