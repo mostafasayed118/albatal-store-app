@@ -1,6 +1,15 @@
 // ============================================================
 // Supabase Edge Function: checkout
 // Creates orders server-side — never trusts client prices.
+//
+// Flow: client calls /checkout first to create a pending order,
+// then calls /paymob-initiate with the returned order_id and
+// total_cents to initiate payment. The webhook (/paymob-callback)
+// promotes the order to "paid" on success.
+//
+// Accepts optional idempotency_key to prevent duplicate orders
+// on network retry. Orders expire after 15 minutes if payment
+// is not completed.
 // ============================================================
 
 import "https://deno.land/std@0.177.0/http/server.ts";
@@ -11,6 +20,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+const ORDER_EXPIRY_MINUTES = 15;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -45,13 +56,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { payment_method, address_snapshot, items } = await req.json();
+    const { payment_method, address_snapshot, items, idempotency_key } =
+      await req.json();
 
     if (!items || items.length === 0) {
       return new Response(
         JSON.stringify({ message: "Cart is empty" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // ─── Idempotency check ────────────────────────────────────
+    if (idempotency_key) {
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("id, status, total")
+        .eq("idempotency_key", idempotency_key)
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingOrder) {
+        // Return the existing order — duplicate request, safe to ignore
+        return new Response(
+          JSON.stringify({
+            order_id: existingOrder.id,
+            total_cents: existingOrder.total,
+            status: existingOrder.status,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Server-side price lookup and stock validation
@@ -101,17 +135,24 @@ Deno.serve(async (req) => {
     const shipping = subtotal > 50000 ? 0 : 7500; // Free shipping over 500 EGY
     const total = subtotal + shipping;
 
-    // Create order in a transaction
+    // ─── Compute expiry ────────────────────────────────────────
+    const expiresAt = new Date(
+      Date.now() + ORDER_EXPIRY_MINUTES * 60 * 1000
+    ).toISOString();
+
+    // Create order as "pending" — payment webhook will promote to "paid"
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
-        status: "placed",
+        status: "pending",
         subtotal,
         shipping,
         total,
         payment_method,
         address_snapshot,
+        idempotency_key: idempotency_key || null,
+        expires_at: expiresAt,
       })
       .select()
       .single();
@@ -159,13 +200,13 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         order_id: order.id,
-        subtotal,
-        shipping,
-        total,
+        total_cents: total,
+        expires_at: expiresAt,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("checkout error:", error);
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

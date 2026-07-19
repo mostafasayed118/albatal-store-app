@@ -83,6 +83,7 @@ This project is Flutter-first. Do not suggest or implement:
 - Widgets render and dispatch events — no direct database access
 - Repositories abstract data sources — mapping logic belongs in the data layer
 - Every layer must carry real responsibility — architecture should be educational, not ceremonial
+- Load **flutter-apply-architecture-best-practices** or **flutter-architecting-apps** (Section H) when designing new features
 
 ## 2) Package Structure
 ```
@@ -151,12 +152,14 @@ lib/
 - After meaningful code changes, run: `flutter test` for tests
 - Do not claim code works unless it was verified
 - If verification was not run, state that explicitly
+- Load **flutter-add-widget-test** or **flutter-add-integration-test** (Section H) when writing new tests
 
 ## 7) Widget Discipline
 - Keep widgets small and focused
 - Extract sub-widgets when a widget grows beyond a single responsibility
 - No business logic inside widgets — delegate to Cubit
 - Prefer stateless widgets that receive state and emit events
+- Load **flutter-building-layouts** or **flutter-build-responsive-layout** (Section H) for layout questions; **flutter-fix-layout-issues** when diagnosing overflow/constraint errors
 
 ---
 
@@ -169,6 +172,7 @@ lib/
 - Tests must be deterministic — no flaky or timing-dependent tests
 - Do not demand tests for trivial UI widgets or framework behavior
 - Testing is for learning and correctness, not for coverage metrics
+- Load **flutter-add-widget-test** for widget test scaffolding, **flutter-add-integration-test** for end-to-end tests (Section H)
 
 ---
 
@@ -196,3 +200,67 @@ lib/
 - "Clever" code that is hard to teach or maintain
 - Giant widgets or god-Cubits
 - AI-generated code that I cannot explain
+
+---
+
+# Section H — Referenced Skills (skills.sh)
+
+These skills are available for on-demand use. Load the relevant skill when the
+task matches its description. Do not load skills speculatively — only when the
+current task actually benefits from it.
+
+## Architecture & Code Quality
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 1 | flutter-apply-architecture-best-practices | [link](https://www.skills.sh/flutter/skills/flutter-apply-architecture-best-practices) | Enforcing layer separation (UI / Logic / Data), MVVM with ChangeViewModels, constructor-injected Repositories |
+| 2 | flutter-architecting-apps | [link](https://www.skills.sh/flutter/skills/flutter-architecting-apps) | Designing layered architecture with unidirectional data flow, SSOT in the Data layer, lean Views |
+| 3 | flutter-dart-code-review | [link](https://www.skills.sh/affaan-m/everything-claude-code/flutter-dart-code-review) | Library-agnostic code review checklist: folder structure, lint config, generated files, platform isolation |
+
+## Layout & Responsive Design
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 4 | flutter-building-layouts | [link](https://www.skills.sh/flutter/skills/flutter-building-layouts) | Constraint-based layout building: Row/Column/Stack, Expanded/Flexible, LayoutBuilder, four-phase workflow |
+| 5 | flutter-build-responsive-layout | [link](https://www.skills.sh/flutter/skills/flutter-build-responsive-layout) | Adaptive layouts using `MediaQuery.sizeOf`, `LayoutBuilder`, constraint-based decisions (not hardware checks) |
+| 6 | flutter-fix-layout-issues | [link](https://www.skills.sh/flutter/skills/flutter-fix-layout-issues) | Diagnosing overflow, infinite height, RenderBox-not-laid-out, and constraint-violation errors |
+
+## Testing
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 7 | flutter-add-widget-test | [link](https://www.skills.sh/flutter/skills/flutter-add-widget-test) | Writing widget tests: testWidgets, find, expect, interaction and state-management testing |
+| 8 | flutter-add-integration-test | [link](https://www.skills.sh/flutter/skills/flutter-add-integration-test) | End-to-end integration tests: Flutter Driver setup, MCP exploration, profiling |
+
+## Routing & Navigation
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 9 | flutter-setup-declarative-routing | [link](https://www.skills.sh/flutter/skills/flutter-setup-declarative-routing) | go_router declarative routing: GoRoute, ShellRoute/StatefulShellRoute, deep linking, Path URL Strategy |
+
+## Data & Networking
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 10 | flutter-implement-json-serialization | [link](https://www.skills.sh/flutter/skills/flutter-implement-json-serialization) | Manual JSON with dart:convert: fromJson/toJson, `compute()` for large payloads, error handling |
+| 11 | flutter-use-http-package | [link](https://www.skills.sh/flutter/skills/flutter-use-http-package) | HTTP networking: request execution, response handling, background parsing for large responses |
+
+## UI & Polish
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 12 | flutter-animations | [link](https://www.skills.sh/madteacher/mad-agents-skills/flutter-animations) | Five animation approaches: implicit, explicit, hero, staggered, physics-based; controller disposal, AnimatedBuilder |
+| 13 | flutter-add-widget-preview | [link](https://www.skills.sh/flutter/skills/flutter-add-widget-preview) | `@Preview` annotation for isolated widget previews outside the full app context |
+
+## Localization & Internationalization
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 14 | flutter-setup-localization | [link](https://www.skills.sh/flutter/skills/flutter-setup-localization) | i18n/l10n with flutter_localizations + intl, .arb files, AppLocalizations type-safe access |
+
+## Performance & Optimization
+
+| # | Skill | URL | When to use |
+|---|-------|-----|-------------|
+| 15 | flutter-reducing-app-size | [link](https://www.skills.sh/flutter/skills/flutter-reducing-app-size) | App size analysis (`--analyze-size`), symbol splitting, unused resource removal, media compression |
+| 16 | flutter-performance | [link](https://www.skills.sh/flutter/skills/flutter-performance) | Profiling jank: UI-thread vs GPU-thread, const constructors, saveLayer/Opacity minimization, 16ms target |

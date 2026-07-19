@@ -121,8 +121,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     );
 
     switch (result) {
-      case PaymentPending(:final paymentKey):
-        final checkoutUrl = _getCheckoutUrl(result);
+      case PaymentPending(:final paymentKey, :final checkoutUrl):
         emit(state.copyWith(
           status: PaymentStatus.awaitingVerification,
           checkoutUrl: checkoutUrl,
@@ -199,11 +198,4 @@ class PaymentCubit extends Cubit<PaymentState> {
 
   /// Reset to initial state.
   void reset() => emit(const PaymentState());
-
-  String _getCheckoutUrl(PaymentPending result) {
-    if (state.selectedMethod == PaymentMethod.paymobCard) {
-      return 'https://accept.paymob.com/api/acceptance/iframes/85679?payment_token=${result.paymentKey}';
-    }
-    return '';
-  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../data/checkout_service.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../widgets/address_form.dart';
@@ -10,18 +11,25 @@ import '../widgets/address_picker.dart';
 import '../widgets/bottom_action_button.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/order_review.dart';
-import '../widgets/payment_section.dart';
 import '../widgets/step_indicator.dart';
 
+/// Checkout page — reviews cart, selects shipping address,
+/// then navigates to PaymentMethodPage for payment selection.
+///
+/// Payment method selection lives on PaymentMethodPage (not here)
+/// to avoid the user having to select it twice.
 class CheckoutPage extends StatelessWidget {
-  const CheckoutPage({super.key});
+  const CheckoutPage({super.key, CheckoutService? checkoutService})
+      : _checkoutService = checkoutService;
+
+  final CheckoutService? _checkoutService;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider(
-      create: (_) => CheckoutCubit(),
+      create: (_) => CheckoutCubit(_checkoutService ?? CheckoutService()),
       child: BlocBuilder<CheckoutCubit, CheckoutState>(
         builder: (context, s) {
           final addressError =
@@ -32,8 +40,8 @@ class CheckoutPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 StepIndicator(
-                  steps: [l.shippingAddress, l.paymentMethod, l.confirmStep],
-                  currentStep: s.step,
+                  steps: [l.shippingAddress, l.reviewOrder],
+                  currentStep: s.hasAddress ? 1 : 0,
                   scheme: scheme,
                 ),
                 const SizedBox(height: 24),
@@ -60,10 +68,6 @@ class CheckoutPage extends StatelessWidget {
                       style: TextStyle(color: scheme.error, fontSize: 12)),
                 ],
                 const SizedBox(height: 24),
-                Text(l.paymentMethod,
-                    style: Theme.of(context).textTheme.titleLarge),
-                PaymentSection(payment: s.payment, l: l),
-                const SizedBox(height: 16),
                 if (s.hasAddress) ...[
                   Text(l.reviewOrder,
                       style: Theme.of(context).textTheme.titleLarge),
