@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
 
@@ -20,7 +21,7 @@ final class PaymentState extends Equatable {
   const PaymentState({
     this.status = PaymentStatus.initial,
     this.selectedMethod,
-    this.amount = 0,
+    this.amount = Money.zero,
     this.orderId = '',
     this.transactionId,
     this.errorMessage,
@@ -29,7 +30,7 @@ final class PaymentState extends Equatable {
 
   final PaymentStatus status;
   final PaymentMethod? selectedMethod;
-  final double amount;
+  final Money amount;
   final String orderId;
   final String? transactionId;
   final String? errorMessage;
@@ -40,7 +41,7 @@ final class PaymentState extends Equatable {
   PaymentState copyWith({
     PaymentStatus? status,
     PaymentMethod? selectedMethod,
-    double? amount,
+    Money? amount,
     String? orderId,
     String? transactionId,
     String? errorMessage,
@@ -76,7 +77,7 @@ class PaymentCubit extends Cubit<PaymentState> {
   final PaymentService _paymentService;
 
   /// Initialize payment for an order.
-  void initPayment({required double amount, required String orderId}) {
+  void initPayment({required Money amount, required String orderId}) {
     emit(PaymentState(
       status: PaymentStatus.selectingMethod,
       amount: amount,

@@ -1,10 +1,11 @@
+import '../../../../core/entities/money.dart';
 import '../entities/payment.dart';
 
 /// Abstraction for payment processing.
 abstract interface class PaymentService {
   /// Initialize payment with the given amount and method.
   Future<PaymentResult> initiatePayment({
-    required double amount,
+    required Money amount,
     required PaymentMethod method,
     required String orderId,
     required String customerEmail,
@@ -15,7 +16,7 @@ abstract interface class PaymentService {
 
   /// Process Vodafone Cash payment with phone number.
   Future<PaymentResult> processVodafoneCash({
-    required double amount,
+    required Money amount,
     required String phoneNumber,
     required String orderId,
   });

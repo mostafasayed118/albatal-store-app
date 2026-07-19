@@ -12,7 +12,7 @@ class ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: '${product.name}, ${product.price.toStringAsFixed(0)} EGY',
+        label: '${product.name}, ${product.price.format()}',
         button: true,
         child: Card(
           child: InkWell(

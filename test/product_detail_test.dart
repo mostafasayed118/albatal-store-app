@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/product_details_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -10,7 +11,7 @@ void main() {
         id: 'test',
         name: 'Test',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
         stock: {
           'Emerald-1m': 10,
@@ -29,7 +30,7 @@ void main() {
         id: 'test',
         name: 'Test',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
         stock: {'A-1m': 0, 'B-1m': 5},
       );
@@ -41,7 +42,7 @@ void main() {
         id: 'test',
         name: 'Test',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
         stock: {'A-1m': 0, 'B-1m': 0},
       );
@@ -53,9 +54,9 @@ void main() {
         id: 'test',
         name: 'Test',
         category: 'Silk',
-        price: 850,
+        price: Money.egp(850),
         imageColor: 0xFF000000,
-        oldPrice: 1000,
+        oldPrice: Money.egp(1000),
       );
       expect(p.discountPercent, 15);
     });
@@ -65,7 +66,7 @@ void main() {
         id: 'test',
         name: 'Test',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
       );
       expect(p.discountPercent, isNull);
@@ -78,7 +79,7 @@ void main() {
         id: 'silk-01',
         name: 'Silk',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
       );
       const item = CartItem(product: p, color: 'Emerald', length: '2m');
@@ -90,7 +91,7 @@ void main() {
         id: 'silk-01',
         name: 'Silk',
         category: 'Silk',
-        price: 100,
+        price: Money.egp(100),
         imageColor: 0xFF000000,
       );
       const item =
@@ -130,3 +131,4 @@ void main() {
     );
   });
 }
+

@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,21 +22,22 @@ void main() {
       const state = PaymentState(
         status: PaymentStatus.processing,
         selectedMethod: PaymentMethod.vodafoneCash,
-        amount: 1500,
+        amount: Money.egp(1500),
         orderId: 'ORD-1',
       );
       final updated = state.copyWith(transactionId: 'TXN-1');
       expect(updated.transactionId, 'TXN-1');
-      expect(updated.amount, 1500);
+      expect(updated.amount, Money.egp(1500));
       expect(updated.selectedMethod, PaymentMethod.vodafoneCash);
     });
   });
 
   group('PaymentResult', () {
     test('PaymentSuccess holds transactionId and amount', () {
-      const result = PaymentSuccess(transactionId: 'TXN-1', amount: 1500);
+      const result =
+          PaymentSuccess(transactionId: 'TXN-1', amount: Money.egp(1500));
       expect(result.transactionId, 'TXN-1');
-      expect(result.amount, 1500);
+      expect(result.amount, Money.egp(1500));
     });
 
     test('PaymentFailed holds message and optional code', () {
@@ -63,3 +65,4 @@ void main() {
     });
   });
 }
+

@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/features/storefront/domain/repositories/cart_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 
 /// Supabase-backed cart repository.
@@ -30,9 +31,8 @@ class SupabaseCartRepository implements CartRepository {
           id: product['id'] as String,
           name: product['name'] as String,
           category: '',
-          price: ((variant['price_override'] as int?) ??
-                  product['base_price'] as int) /
-              100,
+          price: Money((variant['price_override'] as int?) ??
+              (product['base_price'] as int)),
           imageColor: 0xFF176B57,
         ),
         color: variant['color'] as String,

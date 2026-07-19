@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/entities/order.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
@@ -40,12 +41,14 @@ class CheckoutService {
       }
 
       final data = response.data;
+      // Server returns money as integer minor units (cents);
+      // Money carries the same representation — no conversion needed.
       return Success(Order(
         id: data['order_id'] as String,
         items: items,
-        subtotal: (data['subtotal'] as int) / 100,
-        shipping: (data['shipping'] as int) / 100,
-        total: (data['total'] as int) / 100,
+        subtotal: Money(data['subtotal'] as int),
+        shipping: Money(data['shipping'] as int),
+        total: Money(data['total'] as int),
         status: OrderStatus.placed,
         placedAt: DateTime.now(),
         paymentMethod: paymentMethod,
