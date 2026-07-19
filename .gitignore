@@ -10,3 +10,7 @@ coverage/
 android/local.properties
 android/key.properties
 *.keystore
+.env.development
+.env.production
+.env.staging
+

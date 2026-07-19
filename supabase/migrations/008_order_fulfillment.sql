@@ -1,6 +1,6 @@
-# ============================================================
-# Order fulfillment SQL functions
-# ============================================================
+-- ============================================================
+-- Order fulfillment SQL functions
+-- ============================================================
 
 -- Update order status with validation
 CREATE OR REPLACE FUNCTION update_order_status(
