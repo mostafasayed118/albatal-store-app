@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase show AuthState;
 
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
@@ -65,7 +66,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   final SupabaseClient _client;
   final ProfileRepository _profileRepository;
-  StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<supabase.AuthState>? _authSubscription;
 
   /// Check for an existing session on app launch.
   Future<void> checkSession() async {
@@ -189,7 +190,7 @@ class AuthCubit extends Cubit<AuthState> {
   // ─── Private helpers ───────────────────────────────────
 
   void _listenToAuthChanges() {
-    _client.auth.onAuthStateChange.listen((data) async {
+    _authSubscription = _client.auth.onAuthStateChange.listen((data) async {
       final session = data.session;
       if (session != null) {
         await _loadProfile(session.user.id);
