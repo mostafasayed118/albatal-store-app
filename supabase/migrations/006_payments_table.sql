@@ -1,9 +1,11 @@
 -- ============================================================
 -- Payments table for tracking payment transactions
 -- Run AFTER 005_storage_buckets.sql
+--
+-- Idempotent: CREATE TABLE IF NOT EXISTS, DROP POLICY IF EXISTS.
 -- ============================================================
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -16,26 +18,27 @@ CREATE TABLE payments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Indexes
-CREATE INDEX idx_payments_order ON payments(order_id);
-CREATE INDEX idx_payments_user ON payments(user_id);
-CREATE INDEX idx_payments_transaction ON payments(transaction_id);
-CREATE INDEX idx_payments_status ON payments(status);
+-- Indexes (safe — IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_transaction ON payments(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 
--- RLS policies
+-- RLS
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
--- Users can read only their own payments
+DROP POLICY IF EXISTS "payments_select_own" ON payments;
 CREATE POLICY "payments_select_own"
   ON payments FOR SELECT
   USING (auth.uid() = user_id);
 
--- Users can insert their own payments
+DROP POLICY IF EXISTS "payments_insert_own" ON payments;
 CREATE POLICY "payments_insert_own"
   ON payments FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Updated_at trigger
+-- Updated_at trigger (drop + create to ensure it points to latest function)
+DROP TRIGGER IF EXISTS set_payments_updated_at ON payments;
 CREATE TRIGGER set_payments_updated_at
   BEFORE UPDATE ON payments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

@@ -1,15 +1,20 @@
 // ============================================================
 // Supabase Edge Function: checkout
-// Creates orders server-side — never trusts client prices.
 //
-// Flow: client calls /checkout first to create a pending order,
-// then calls /paymob-initiate with the returned order_id and
-// total_cents to initiate payment. The webhook (/paymob-callback)
-// promotes the order to "paid" on success.
+// Thin wrapper around the `create_checkout_order` PostgreSQL RPC
+// (migration 013). The RPC is SECURITY DEFINER and runs the entire
+// order creation in a single atomic transaction:
+//   - authenticates via auth.uid()
+//   - validates items, stock, and address
+//   - reads DB prices (never trusts client prices)
+//   - calculates shipping via calculate_shipping_fee()
+//   - inserts order + order_items
+//   - decrements stock atomically
+//   - handles idempotency
 //
-// Accepts optional idempotency_key to prevent duplicate orders
-// on network retry. Orders expire after 15 minutes if payment
-// is not completed.
+// This edge function exists for backward compatibility. The Flutter
+// client calls the RPC directly via `supabase.rpc()`, but this
+// function can be used by other callers or for testing.
 // ============================================================
 
 import "https://deno.land/std@0.177.0/http/server.ts";
@@ -21,15 +26,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const ORDER_EXPIRY_MINUTES = 15;
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Auth check — only authenticated users can place orders
+    // ─── Auth check ──────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -38,6 +41,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create a client with the user's JWT so the RPC can
+    // resolve auth.uid() for authentication and authorization.
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -59,149 +64,36 @@ Deno.serve(async (req) => {
     const { payment_method, address_snapshot, items, idempotency_key } =
       await req.json();
 
-    if (!items || items.length === 0) {
+    // ─── Call the atomic RPC ─────────────────────────────────
+    // The RPC handles all validation, price lookup, stock
+    // decrement, and order creation in one transaction.
+    const { data, error } = await supabase.rpc("create_checkout_order", {
+      p_payment_method: payment_method,
+      p_address: address_snapshot,
+      p_items: items,
+      p_idempotency_key: idempotency_key ?? null,
+    });
+
+    if (error) {
+      // The RPC raised an exception — map it to an HTTP error.
+      // PostgREST returns the exception message in error.message.
+      const status = error.code === "PGRST301" ? 400 : 400;
       return new Response(
-        JSON.stringify({ message: "Cart is empty" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ message: error.message ?? "Checkout failed" }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // ─── Idempotency check ────────────────────────────────────
-    if (idempotency_key) {
-      const { data: existingOrder } = await supabase
-        .from("orders")
-        .select("id, status, total")
-        .eq("idempotency_key", idempotency_key)
-        .eq("user_id", user.id)
-        .single();
-
-      if (existingOrder) {
-        // Return the existing order — duplicate request, safe to ignore
-        return new Response(
-          JSON.stringify({
-            order_id: existingOrder.id,
-            total_cents: existingOrder.total,
-            status: existingOrder.status,
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    // Server-side price lookup and stock validation
-    let subtotal = 0;
-    const validatedItems = [];
-
-    for (const item of items) {
-      // Look up current price and stock from database
-      const { data: variant, error: vError } = await supabase
-        .from("product_variants")
-        .select("stock, price_override, products(base_price, name)")
-        .eq("product_id", item.product_id)
-        .eq("size", item.size)
-        .eq("color", item.color)
-        .single();
-
-      if (vError || !variant) {
-        return new Response(
-          JSON.stringify({ message: `Variant not found: ${item.size}/${item.color}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      if (variant.stock < item.quantity) {
-        return new Response(
-          JSON.stringify({
-            message: `Insufficient stock for ${variant.products.name} (${item.size}/${item.color}). Available: ${variant.stock}`,
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const unitPrice = variant.price_override ?? variant.products.base_price;
-      subtotal += unitPrice * item.quantity;
-
-      validatedItems.push({
-        product_id: item.product_id,
-        variant_id: null, // Will be resolved
-        product_name: variant.products.name,
-        size: item.size,
-        color: item.color,
-        unit_price: unitPrice,
-        quantity: item.quantity,
-      });
-    }
-
-    const shipping = subtotal > 50000 ? 0 : 7500; // Free shipping over 500 EGY
-    const total = subtotal + shipping;
-
-    // ─── Compute expiry ────────────────────────────────────────
-    const expiresAt = new Date(
-      Date.now() + ORDER_EXPIRY_MINUTES * 60 * 1000
-    ).toISOString();
-
-    // Create order as "pending" — payment webhook will promote to "paid"
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        status: "pending",
-        subtotal,
-        shipping,
-        total,
-        payment_method,
-        address_snapshot,
-        idempotency_key: idempotency_key || null,
-        expires_at: expiresAt,
-      })
-      .select()
-      .single();
-
-    if (orderError) {
-      return new Response(
-        JSON.stringify({ message: "Failed to create order" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create order items
-    const orderItems = validatedItems.map((item) => ({
-      order_id: order.id,
-      ...item,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
-    if (itemsError) {
-      return new Response(
-        JSON.stringify({ message: "Failed to create order items" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Decrement stock for each variant
-    for (const item of items) {
-      await supabase.rpc("decrement_stock", {
-        p_product_id: item.product_id,
-        p_size: item.size,
-        p_color: item.color,
-        p_quantity: item.quantity,
-      });
-    }
-
-    // Clear user's cart
-    await supabase
-      .from("cart_items")
-      .delete()
-      .eq("user_id", user.id);
-
+    // ─── Return the canonical order data ────────────────────
     return new Response(
       JSON.stringify({
-        order_id: order.id,
-        total_cents: total,
-        expires_at: expiresAt,
+        order_id: data.order_id,
+        subtotal: data.subtotal,
+        shipping: data.shipping,
+        total_cents: data.total,
+        status: data.status,
+        expires_at: data.expires_at,
+        idempotent: data.idempotent,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

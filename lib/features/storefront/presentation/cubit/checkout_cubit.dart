@@ -15,8 +15,11 @@ final class CheckoutState extends Equatable {
     this.selectedAddress,
     this.errorMessage,
     this.pendingOrderId,
+    this.serverSubtotal,
+    this.serverShipping,
     this.serverTotal,
     this.expiresAt,
+    this.idempotencyKey,
   });
 
   final CheckoutStatus status;
@@ -24,8 +27,11 @@ final class CheckoutState extends Equatable {
   final Address? selectedAddress;
   final String? errorMessage;
   final String? pendingOrderId;
+  final Money? serverSubtotal;
+  final Money? serverShipping;
   final Money? serverTotal;
   final DateTime? expiresAt;
+  final String? idempotencyKey;
 
   bool get hasAddress => selectedAddress != null;
   bool get hasPendingOrder => pendingOrderId != null && serverTotal != null;
@@ -46,8 +52,11 @@ final class CheckoutState extends Equatable {
     bool clearAddress = false,
     String? errorMessage,
     String? pendingOrderId,
+    Money? serverSubtotal,
+    Money? serverShipping,
     Money? serverTotal,
     DateTime? expiresAt,
+    String? idempotencyKey,
   }) =>
       CheckoutState(
         status: status ?? this.status,
@@ -56,8 +65,11 @@ final class CheckoutState extends Equatable {
             clearAddress ? null : (selectedAddress ?? this.selectedAddress),
         errorMessage: errorMessage,
         pendingOrderId: pendingOrderId ?? this.pendingOrderId,
+        serverSubtotal: serverSubtotal ?? this.serverSubtotal,
+        serverShipping: serverShipping ?? this.serverShipping,
         serverTotal: serverTotal ?? this.serverTotal,
         expiresAt: expiresAt ?? this.expiresAt,
+        idempotencyKey: idempotencyKey ?? this.idempotencyKey,
       );
 
   @override
@@ -67,8 +79,11 @@ final class CheckoutState extends Equatable {
         selectedAddress,
         errorMessage,
         pendingOrderId,
+        serverSubtotal,
+        serverShipping,
         serverTotal,
         expiresAt,
+        idempotencyKey,
       ];
 }
 
@@ -76,6 +91,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit(this._checkoutRepository) : super(const CheckoutState());
 
   final CheckoutRepository _checkoutRepository;
+  int _attemptCounter = 0;
 
   void payment(String value) => emit(state.copyWith(payment: value));
 
@@ -84,20 +100,40 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   void clearAddress() => emit(state.copyWith(clearAddress: true));
 
-  /// Create a pending order via the server-side checkout Edge Function.
+  /// Generate a stable idempotency key for this checkout attempt.
   ///
-  /// Returns the order_id and the server-computed total so the payment layer
-  /// can initiate Paymob with the real order id and amount. The order is
-  /// created as "pending" — the paymob-callback webhook promotes it to
-  /// "paid" on success, or cancels + restores stock on failure.
+  /// The key is created once when the user first submits checkout and
+  /// retained in the cubit state. On retry (network failure, user
+  /// taps again) the same key is reused so the server returns the
+  /// original order instead of creating a duplicate. When the user
+  /// navigates away and starts a new checkout, a new cubit (and thus
+  /// a new key) is created.
+  String _generateIdempotencyKey() {
+    _attemptCounter++;
+    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-${identityHashCode(this)}';
+  }
+
+  /// Create a pending order via the server-side checkout RPC.
   ///
-  /// For cash-on-delivery, the order remains "pending" until an admin
-  /// advances it (or it expires after 15 minutes).
+  /// Returns the order_id and the server-computed totals so the
+  /// payment layer can initiate Paymob with the real order id and
+  /// amount. The order is created as "pending" — the paymob-callback
+  /// webhook promotes it to "paid" on success, or cancels + restores
+  /// stock on failure.
+  ///
+  /// The idempotency key is generated on the first call and reused
+  /// on subsequent calls (retries) for the same checkout attempt.
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
-    String? idempotencyKey,
   }) async {
-    emit(state.copyWith(status: CheckoutStatus.creatingOrder));
+    // Use the existing idempotency key if this is a retry, or
+    // generate a new one for a fresh checkout attempt.
+    final key = state.idempotencyKey ?? _generateIdempotencyKey();
+    emit(state.copyWith(
+      status: CheckoutStatus.creatingOrder,
+      idempotencyKey: key,
+    ));
+
     try {
       final result = await _checkoutRepository.placeOrder(
         items: cartItems,
@@ -111,13 +147,15 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
                 'country': state.selectedAddress!.country,
               }
             : {},
-        idempotencyKey: idempotencyKey,
+        idempotencyKey: key,
       );
 
       result.when(
         success: (pending) => emit(state.copyWith(
           status: CheckoutStatus.placing,
           pendingOrderId: pending.orderId,
+          serverSubtotal: pending.subtotal,
+          serverShipping: pending.shipping,
           serverTotal: pending.total,
           expiresAt: pending.expiresAt,
         )),
@@ -132,6 +170,15 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         errorMessage: 'Failed to create order: $e',
       ));
     }
+  }
+
+  /// Reset the checkout state for a new attempt, clearing the
+  /// idempotency key so the next [createPendingOrder] gets a new one.
+  void resetForNewAttempt() {
+    emit(CheckoutState(
+      payment: state.payment,
+      selectedAddress: state.selectedAddress,
+    ));
   }
 
   void markSuccess() => emit(state.copyWith(status: CheckoutStatus.success));

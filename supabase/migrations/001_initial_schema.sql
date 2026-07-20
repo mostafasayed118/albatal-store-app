@@ -1,13 +1,15 @@
 -- ============================================================
 -- Al Batal Elite — Initial Schema
 -- Run this in Supabase SQL Editor or via `supabase db push`
+--
+-- Idempotent: IF NOT EXISTS on all CREATE statements.
+-- Safe to re-run on existing databases.
 -- ============================================================
 
--- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ─── PROFILES ──────────────────────────────────────────────
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL DEFAULT '',
   avatar_url TEXT,
@@ -17,7 +19,7 @@ CREATE TABLE profiles (
 );
 
 -- ─── CATEGORIES ────────────────────────────────────────────
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL UNIQUE,
   slug TEXT NOT NULL UNIQUE,
@@ -28,7 +30,7 @@ CREATE TABLE categories (
 );
 
 -- ─── PRODUCTS ──────────────────────────────────────────────
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
   name TEXT NOT NULL,
@@ -47,8 +49,7 @@ CREATE TABLE products (
 );
 
 -- ─── PRODUCT VARIANTS ─────────────────────────────────────
--- Each combination of size × color is a variant with its own stock.
-CREATE TABLE product_variants (
+CREATE TABLE IF NOT EXISTS product_variants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   size TEXT NOT NULL,
@@ -62,7 +63,7 @@ CREATE TABLE product_variants (
 );
 
 -- ─── PRODUCT IMAGES ───────────────────────────────────────
-CREATE TABLE product_images (
+CREATE TABLE IF NOT EXISTS product_images (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   storage_path TEXT NOT NULL,
@@ -73,7 +74,7 @@ CREATE TABLE product_images (
 );
 
 -- ─── ADDRESSES ────────────────────────────────────────────
-CREATE TABLE addresses (
+CREATE TABLE IF NOT EXISTS addresses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   recipient TEXT NOT NULL,
@@ -86,7 +87,7 @@ CREATE TABLE addresses (
 );
 
 -- ─── WISHLISTS ────────────────────────────────────────────
-CREATE TABLE wishlists (
+CREATE TABLE IF NOT EXISTS wishlists (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -95,7 +96,7 @@ CREATE TABLE wishlists (
 );
 
 -- ─── CART ITEMS ───────────────────────────────────────────
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
@@ -106,9 +107,12 @@ CREATE TABLE cart_items (
 );
 
 -- ─── ORDERS ───────────────────────────────────────────────
-CREATE TYPE order_status AS ENUM ('placed', 'shipped', 'delivered', 'cancelled', 'refunded');
+DO $$ BEGIN
+  CREATE TYPE order_status AS ENUM ('placed', 'shipped', 'delivered', 'cancelled', 'refunded');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
   status order_status NOT NULL DEFAULT 'placed',
@@ -117,20 +121,17 @@ CREATE TABLE orders (
   total INTEGER NOT NULL CHECK (total >= 0),
   payment_method TEXT NOT NULL,
   payment_id TEXT,
-  -- Snapshot of delivery address at time of order
   address_snapshot JSONB NOT NULL,
   placed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ─── ORDER ITEMS ──────────────────────────────────────────
--- Price and product details are snapshotted at order time.
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
   variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
-  -- Snapshot fields — frozen at order time
   product_name TEXT NOT NULL,
   product_image_url TEXT,
   size TEXT NOT NULL,
@@ -141,17 +142,17 @@ CREATE TABLE order_items (
 );
 
 -- ─── INDEXES ──────────────────────────────────────────────
-CREATE INDEX idx_products_category ON products(category_id);
-CREATE INDEX idx_products_active ON products(is_active) WHERE is_active = true;
-CREATE INDEX idx_variants_product ON product_variants(product_id);
-CREATE INDEX idx_variants_stock ON product_variants(stock) WHERE stock > 0;
-CREATE INDEX idx_product_images_product ON product_images(product_id);
-CREATE INDEX idx_addresses_user ON addresses(user_id);
-CREATE INDEX idx_wishlists_user ON wishlists(user_id);
-CREATE INDEX idx_cart_items_user ON cart_items(user_id);
-CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_variants_stock ON product_variants(stock) WHERE stock > 0;
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
+CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_user ON cart_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
 -- ─── UPDATED_AT TRIGGERS ──────────────────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -162,22 +163,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_profiles_updated_at ON profiles;
 CREATE TRIGGER set_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS set_products_updated_at ON products;
 CREATE TRIGGER set_products_updated_at
   BEFORE UPDATE ON products
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS set_addresses_updated_at ON addresses;
 CREATE TRIGGER set_addresses_updated_at
   BEFORE UPDATE ON addresses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS set_cart_items_updated_at ON cart_items;
 CREATE TRIGGER set_cart_items_updated_at
   BEFORE UPDATE ON cart_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS set_orders_updated_at ON orders;
 CREATE TRIGGER set_orders_updated_at
   BEFORE UPDATE ON orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

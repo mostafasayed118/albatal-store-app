@@ -23,6 +23,9 @@ class StubCheckoutRepository implements CheckoutRepository {
   }) async {
     return Success(PendingOrder(
       orderId: 'ORD-STUB-1',
+      subtotal: items.fold(Money.zero,
+              (Money v, CartItem i) => v + (i.product.price * i.quantity)),
+      shipping: Money.egp(75),
       total: items.fold(Money.zero,
               (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
           Money.egp(75),

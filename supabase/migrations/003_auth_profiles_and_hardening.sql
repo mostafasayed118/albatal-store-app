@@ -1,12 +1,12 @@
 -- ============================================================
 -- Al Batal Elite — Auth, Profiles & Admin Role
 -- Run AFTER 002_rls_policies.sql
+--
+-- Idempotent: CREATE OR REPLACE for functions/triggers,
+-- DROP POLICY IF EXISTS before each CREATE POLICY.
 -- ============================================================
 
 -- ─── PROFILE AUTO-CREATION TRIGGER ────────────────────────
--- Creates a profile row automatically when a new user signs up.
--- This prevents missing profiles if the app closes after registration.
-
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -20,18 +20,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger on auth.users inserts
-CREATE OR REPLACE TRIGGER on_auth_user_created
+-- Trigger on auth.users inserts (drop + create to ensure it points to the latest function)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- ─── ADMIN ROLE ───────────────────────────────────────────
--- Uses a simple is_admin column on profiles for future staff access.
--- Admin operations use the service-role key, not the anon key.
-
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
 
--- Admins can read all orders (for future admin dashboard)
+DROP POLICY IF EXISTS "admin_select_all_orders" ON orders;
 CREATE POLICY "admin_select_all_orders"
   ON orders FOR SELECT
   USING (
@@ -42,7 +40,7 @@ CREATE POLICY "admin_select_all_orders"
     )
   );
 
--- Admins can update order status
+DROP POLICY IF EXISTS "admin_update_orders" ON orders;
 CREATE POLICY "admin_update_orders"
   ON orders FOR UPDATE
   USING (
@@ -53,7 +51,7 @@ CREATE POLICY "admin_update_orders"
     )
   );
 
--- Admins can manage products
+DROP POLICY IF EXISTS "admin_manage_products" ON products;
 CREATE POLICY "admin_manage_products"
   ON products FOR ALL
   USING (
@@ -64,7 +62,7 @@ CREATE POLICY "admin_manage_products"
     )
   );
 
--- Admins can manage categories
+DROP POLICY IF EXISTS "admin_manage_categories" ON categories;
 CREATE POLICY "admin_manage_categories"
   ON categories FOR ALL
   USING (
@@ -75,7 +73,7 @@ CREATE POLICY "admin_manage_categories"
     )
   );
 
--- Admins can manage variants
+DROP POLICY IF EXISTS "admin_manage_variants" ON product_variants;
 CREATE POLICY "admin_manage_variants"
   ON product_variants FOR ALL
   USING (
@@ -87,9 +85,7 @@ CREATE POLICY "admin_manage_variants"
   );
 
 -- ─── PROFILE UPDATE PROTECTION ────────────────────────────
--- Users can only update their own non-sensitive profile fields.
--- is_admin and id cannot be changed by the user.
-
+DROP POLICY IF EXISTS "profiles_update_own_safe" ON profiles;
 CREATE POLICY "profiles_update_own_safe"
   ON profiles FOR UPDATE
   USING (auth.uid() = id)
@@ -99,15 +95,12 @@ CREATE POLICY "profiles_update_own_safe"
   );
 
 -- ─── ORDER CREATION PROTECTION ────────────────────────────
--- Orders cannot be created directly from the client.
--- They must go through a server-side function (Phase 8).
--- This policy denies all INSERT from the anon/authenticated role.
-
+DROP POLICY IF EXISTS "orders_insert_denied" ON orders;
 CREATE POLICY "orders_insert_denied"
   ON orders FOR INSERT
   WITH CHECK (false);
 
--- Order items also cannot be created directly.
+DROP POLICY IF EXISTS "order_items_insert_denied" ON order_items;
 CREATE POLICY "order_items_insert_denied"
   ON order_items FOR INSERT
   WITH CHECK (false);

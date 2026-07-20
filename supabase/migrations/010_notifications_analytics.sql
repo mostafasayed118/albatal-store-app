@@ -1,10 +1,11 @@
 -- ============================================================
 -- Notifications and Analytics tables
 -- Run AFTER 009_shipping_zones.sql
+--
+-- Idempotent: CREATE TABLE IF NOT EXISTS, DROP POLICY IF EXISTS.
 -- ============================================================
 
--- Notifications table
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   type TEXT NOT NULL,
@@ -16,11 +17,10 @@ CREATE TABLE notifications (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_notifications_order ON notifications(order_id);
-CREATE INDEX idx_notifications_type ON notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_order ON notifications(order_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
 
--- Analytics events table
-CREATE TABLE analytics_events (
+CREATE TABLE IF NOT EXISTS analytics_events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   event TEXT NOT NULL,
   properties JSONB DEFAULT '{}',
@@ -28,12 +28,11 @@ CREATE TABLE analytics_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_analytics_event ON analytics_events(event);
-CREATE INDEX idx_analytics_user ON analytics_events(user_id);
-CREATE INDEX idx_analytics_created ON analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_analytics_event ON analytics_events(event);
+CREATE INDEX IF NOT EXISTS idx_analytics_user ON analytics_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_created ON analytics_events(created_at);
 
--- Error logs table
-CREATE TABLE error_logs (
+CREATE TABLE IF NOT EXISTS error_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   message TEXT NOT NULL,
   context TEXT,
@@ -44,37 +43,37 @@ CREATE TABLE error_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_error_logs_created ON error_logs(created_at);
-CREATE INDEX idx_error_logs_environment ON error_logs(environment);
+CREATE INDEX IF NOT EXISTS idx_error_logs_created ON error_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_error_logs_environment ON error_logs(environment);
 
--- RLS policies
+-- RLS
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
 
--- Users can read their own notifications
+DROP POLICY IF EXISTS "notifications_select_own" ON notifications;
 CREATE POLICY "notifications_select_own"
   ON notifications FOR SELECT
   USING (auth.uid() = (
     SELECT user_id FROM orders WHERE id = notifications.order_id
   ));
 
--- Service role can insert notifications
+DROP POLICY IF EXISTS "notifications_insert_service" ON notifications;
 CREATE POLICY "notifications_insert_service"
   ON notifications FOR INSERT
   WITH CHECK (true);
 
--- Service role can insert analytics events
+DROP POLICY IF EXISTS "analytics_insert_service" ON analytics_events;
 CREATE POLICY "analytics_insert_service"
   ON analytics_events FOR INSERT
   WITH CHECK (true);
 
--- Service role can insert error logs
+DROP POLICY IF EXISTS "error_logs_insert_service" ON error_logs;
 CREATE POLICY "error_logs_insert_service"
   ON error_logs FOR INSERT
   WITH CHECK (true);
 
--- Admins can read all analytics and error logs
+DROP POLICY IF EXISTS "admin_select_analytics" ON analytics_events;
 CREATE POLICY "admin_select_analytics"
   ON analytics_events FOR SELECT
   USING (
@@ -85,6 +84,7 @@ CREATE POLICY "admin_select_analytics"
     )
   );
 
+DROP POLICY IF EXISTS "admin_select_errors" ON error_logs;
 CREATE POLICY "admin_select_errors"
   ON error_logs FOR SELECT
   USING (

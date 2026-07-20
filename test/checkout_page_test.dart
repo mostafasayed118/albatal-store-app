@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
@@ -25,8 +26,13 @@ class StubAddressRepository implements AddressRepository {
       const Success(null);
 }
 
-/// Stub CheckoutRepository — returns a fake pending order.
+/// Stub CheckoutRepository — returns a fake pending order with
+/// server-computed totals (subtotal, shipping, total).
 class StubCheckoutRepository implements CheckoutRepository {
+  StubCheckoutRepository({this.shouldFail = false, this.errorMessage});
+  final bool shouldFail;
+  final String? errorMessage;
+
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
@@ -34,17 +40,23 @@ class StubCheckoutRepository implements CheckoutRepository {
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
+    if (shouldFail) {
+      return Failure(AppError(errorMessage ?? 'Checkout failed'));
+    }
+    final subtotal =
+        items.fold(Money.zero, (Money v, CartItem i) => v + i.product.price * i.quantity);
+    const shipping = Money.egp(75);
     return Success(PendingOrder(
       orderId: 'ORD-STUB-1',
-      total: items.fold(Money.zero,
-              (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
-          Money.egp(75),
+      subtotal: subtotal,
+      shipping: shipping,
+      total: subtotal + shipping,
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
     ));
   }
 }
 
-Widget _harness() {
+Widget _harness({StubCheckoutRepository? checkoutRepo}) {
   final persistence = MemoryStorefrontPersistence();
   final cart = CartCubit(persistence)
     ..add(products.first, color: 'Emerald', length: '2m', quantity: 2);
@@ -58,7 +70,7 @@ Widget _harness() {
         BlocProvider(create: (_) => OrdersCubit(persistence)),
         BlocProvider(create: (_) => AddressesCubit(StubAddressRepository())),
       ],
-      child: CheckoutPage(checkoutRepository: StubCheckoutRepository()),
+      child: CheckoutPage(checkoutRepository: checkoutRepo ?? StubCheckoutRepository()),
     ),
   );
 }
