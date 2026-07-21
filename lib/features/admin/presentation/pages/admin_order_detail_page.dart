@@ -181,7 +181,19 @@ class _FulfillmentActions extends StatelessWidget {
             Text(l.fulfillmentActions,
                 style: Theme.of(context).textTheme.titleMedium),
             const Divider(),
-            if (status == 'placed') ...[
+            if (status == 'paid') ...[
+              _ActionTile(
+                icon: Icons.autorenew,
+                title: l.confirmOrder,
+                onTap: () => _updateStatus(context, 'processing'),
+              ),
+              _ActionTile(
+                icon: Icons.cancel,
+                title: l.cancelOrder,
+                color: Theme.of(context).colorScheme.error,
+                onTap: () => _updateStatus(context, 'cancelled'),
+              ),
+            ] else if (status == 'placed') ...[
               _ActionTile(
                 icon: Icons.autorenew,
                 title: l.confirmOrder,

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
-import '../cubit/payment_cubit.dart';
+import '../../domain/paymob_url_guard.dart';
 
 /// Web view for Paymob hosted checkout.
 ///
@@ -14,26 +13,55 @@ import '../cubit/payment_cubit.dart';
 /// (`/paymob-callback`) updates the payment status server-side; the
 /// cubit detects the update and emits a terminal [PaymentStatus].
 ///
-/// This page only renders the WebView and reacts to cubit state via
-/// [BlocListener]. It does NOT subscribe to Supabase Realtime directly
-/// — DB access lives in the data layer (Clean Architecture §1).
+/// This page intentionally does NOT depend on [PaymentCubit]: the cubit
+/// is scoped to `/payment-method` (which stays alive underneath this
+/// pushed route). [PaymentMethodPage]'s `BlocConsumer` reacts to
+/// terminal states — popping this WebView on failure/cancel/timeout
+/// and navigating to order-success on success — so the checkout page
+/// never needs to read the cubit from its own (sibling) route context.
+/// This keeps the trust boundary explicit and avoids a
+/// `ProviderNotFoundException` after `context.push`.
 class PaymobCheckoutPage extends StatelessWidget {
   const PaymobCheckoutPage({super.key, required this.checkoutUrl});
   final String checkoutUrl;
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<PaymentCubit, PaymentState>(
-      listenWhen: (previous, current) =>
-          previous.status != current.status &&
-          (current.status == PaymentStatus.success ||
-              current.status == PaymentStatus.failed),
-      listener: (context, state) {
-        // The cubit's stream listener already emitted the terminal state.
-        // Pop back to the previous screen so the user sees the result.
-        if (context.canPop()) context.pop();
-      },
-      child: _CheckoutBody(checkoutUrl: checkoutUrl),
+    final isSafeUrl = PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl);
+    return isSafeUrl
+        ? _CheckoutBody(checkoutUrl: checkoutUrl)
+        : const _InvalidCheckoutBody();
+  }
+}
+
+class _InvalidCheckoutBody extends StatelessWidget {
+  const _InvalidCheckoutBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(context.l10n.completePayment)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 56),
+              const SizedBox(height: 16),
+              const Text(
+                'The payment checkout link is invalid. Please return and retry.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.pop(),
+                child: const Text('Return to payment'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -42,6 +70,11 @@ class PaymobCheckoutPage extends StatelessWidget {
 ///
 /// Extracted from [PaymobCheckoutPage] so the outer widget can remain
 /// stateless and own only the side-effect listener.
+///
+/// On platforms where no [WebViewPlatform] is registered (e.g. widget
+/// tests, desktop builds), the WebView is gracefully replaced with a
+/// placeholder so the surrounding payment flow can be exercised
+/// without an assertion failure in [WebViewController].
 class _CheckoutBody extends StatefulWidget {
   const _CheckoutBody({required this.checkoutUrl});
   final String checkoutUrl;
@@ -51,42 +84,71 @@ class _CheckoutBody extends StatefulWidget {
 }
 
 class _CheckoutBodyState extends State<_CheckoutBody> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    assert(PaymobUrlGuard.isSafePaymobCheckoutUrl(widget.checkoutUrl));
+    // Guard: [WebViewController] asserts that a [WebViewPlatform]
+    // has been registered. In widget tests (and desktop builds) no
+    // platform plugin is available — skip construction and render a
+    // safe placeholder so the payment flow remains testable.
+    if (WebViewPlatform.instance == null) return;
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (_) => setState(() => _isLoading = true),
-          onPageFinished: (_) => setState(() => _isLoading = false),
-        ),
+           onPageStarted: (_) {
+             if (mounted) setState(() => _isLoading = true);
+           },
+           onPageFinished: (_) {
+             if (mounted) setState(() => _isLoading = false);
+           },
+           onNavigationRequest: (request) {
+             final uri = Uri.tryParse(request.url);
+             if (uri == null || !uri.isScheme('https')) {
+               return NavigationDecision.prevent;
+             }
+             final host = uri.host.toLowerCase();
+             final isPaymobHost = host == 'accept.paymob.com' ||
+                 host == 'secure-egypt.paymob.com' ||
+                 host.endsWith('.paymob.com') ||
+                 host.endsWith('.paymobsolutions.com');
+             return isPaymobHost
+                 ? NavigationDecision.navigate
+                 : NavigationDecision.prevent;
+           },
+         ),
       )
       ..loadRequest(Uri.parse(widget.checkoutUrl));
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.completePayment),
         leading: IconButton(
-          onPressed: () {
-            context.read<PaymentCubit>().cancel();
-            context.pop();
-          },
+          onPressed: () => context.pop(),
           icon: const Icon(Icons.close),
         ),
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
-        ],
-      ),
+      body: controller == null
+          ? Center(
+              child: Text(
+                context.l10n.completePayment,
+                textAlign: TextAlign.center,
+              ),
+            )
+          : Stack(
+              children: [
+                WebViewWidget(controller: controller),
+                if (_isLoading) const Center(child: CircularProgressIndicator()),
+              ],
+            ),
     );
   }
 }

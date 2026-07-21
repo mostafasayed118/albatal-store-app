@@ -21,11 +21,11 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode
 
 ### Cloud Backend (Supabase)
-- **Remote catalog** — products, categories, variants, images stored in Supabase
 - **Authentication** — Supabase Auth with email/password, session restore
 - **User profiles** — profile data (name, phone, avatar) synced per customer
 - **Row Level Security** — users can only access their own data
-- **Server-side checkout** — Edge Function validates prices, stock, creates orders atomically (used for card payments; cash-on-delivery places orders locally)
+- **Server-side checkout** — the `create_checkout_order` RPC validates prices and stock, calculates totals, and creates orders atomically
+- **Payments** — Paymob orchestration and callback verification through Edge Functions
 - **Storage** — product images (public) and avatars (private)
 - **Admin support** — admin role for catalog/order management
 
@@ -34,6 +34,10 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 > Cloud sync for these collections is planned but not yet wired — the
 > Supabase repository implementations were removed in favor of shipping a
 > reliable local-first experience first.
+>
+> Catalog data shown in the app is also local mock seed data. Supabase remains
+> the authority for authentication, profiles, admin operations, checkout, and
+> Paymob payment processing.
 
 ---
 
@@ -55,6 +59,9 @@ lib/
 │   │   ├── domain/        # AddressRepository interface
 │   │   └── presentation/  # AddressesCubit, addresses page
 │   ├── settings/          # Theme & language preferences
+│   ├── admin/             # Supabase-backed order and inventory operations
+│   ├── payments/          # Paymob payment service and payment UI
+│   ├── support/           # Local support requests and contact flows
 │   └── storefront/        # Commerce feature (local persistence)
 │       ├── data/          # Repositories, persistence
 │       ├── domain/        # Repository interfaces
@@ -66,9 +73,8 @@ lib/
 └── shared/
     ├── components/        # AppButton, AppShell, FeedbackView
     ├── extensions/        # BuildContextX
-    ├── providers/         # Repository providers
     ├── routing/           # GoRouter config
-    ├── services/          # SupabaseConfig, StorageService, AdminService
+    ├── services/          # DI, Supabase config, storage, logging, environment
     ├── widgets/           # EnvironmentBanner
     └── theme/             # AppTheme (Material 3)
 ```
@@ -80,8 +86,8 @@ UI (Widget)
   → observes state via BlocBuilder/BlocListener
     → Cubit (owns screen state, emits via StateStream)
       → Repository interface (domain layer)
-        → Supabase or Local implementation (data layer)
-          → Supabase API or SharedPreferences
+        → Local repository or server-backed service (data layer)
+          → SharedPreferences, Supabase API/RPC, or Edge Function
 ```
 
 ### Key Design Decisions
@@ -108,15 +114,15 @@ flutter gen-l10n
 cp .env.example .env
 # Edit .env with your Supabase URL and anon key
 
-# 3. Run SQL migrations in Supabase dashboard
-# supabase/migrations/001_initial_schema.sql
-# supabase/migrations/002_rls_policies.sql
-# supabase/migrations/003_auth_profiles_and_hardening.sql
-# supabase/migrations/004_stock_function.sql
-# supabase/migrations/005_storage_buckets.sql
+# 3. Run all 14 numbered migrations in Supabase SQL Editor, in order.
+# See docs/supabase-integration.md for the migration list and helper scripts.
 
-# 4. Deploy Edge Function
+# 4. Deploy the Edge Functions used by the configured flows.
 supabase functions deploy checkout
+supabase functions deploy paymob-initiate
+supabase functions deploy paymob-callback
+supabase functions deploy cancel-expired-orders
+supabase functions deploy send-order-notification
 
 # 5. Verify
 flutter analyze
@@ -133,9 +139,9 @@ flutter run
 ### Required Steps
 1. Create a project at [supabase.com](https://supabase.com)
 2. Copy Project URL and anon key to `.env`
-3. Run the 5 SQL migrations in order via SQL Editor
+3. Run the 14 numbered SQL migrations in order via SQL Editor
 4. Enable Email provider in Authentication → Providers
-5. Deploy the `checkout` Edge Function
+5. Deploy the Edge Functions required by the enabled payment and notification flows
 
 ### Environment Variables
 
@@ -158,6 +164,7 @@ SUPABASE_ANON_KEY=your-anon-key-here
 | `shared_preferences` | Local persistence |
 | `supabase_flutter` | Cloud backend (auth, database, storage) |
 | `flutter_dotenv` | Environment variable loading |
+| `webview_flutter` | Paymob hosted checkout page |
 | `intl` + `flutter gen-l10n` | Localization and RTL |
 | `bloc_test` / `mocktail` | Testing |
 

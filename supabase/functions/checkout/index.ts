@@ -19,12 +19,7 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -75,12 +70,14 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      // The RPC raised an exception — map it to an HTTP error.
-      // PostgREST returns the exception message in error.message.
+      // SECURITY: Never expose raw PostgREST/RPC error messages to
+      // clients — they may contain SQL details, table names, or
+      // constraint names. Log server-side, return generic message.
+      console.error("checkout: RPC error", error.code, error.message);
       const status = error.code === "PGRST301" ? 400 : 400;
       return new Response(
-        JSON.stringify({ message: error.message ?? "Checkout failed" }),
-        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Checkout failed. Please try again." }),
+        { status, headers: jsonHeaders() }
       );
     }
 
@@ -97,11 +94,11 @@ Deno.serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("checkout error:", error);
+  } catch (_error) {
+    console.error("checkout: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders() }
     );
   }
 });

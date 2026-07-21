@@ -38,10 +38,10 @@
 | # | Test Case | Expected | Actual | Pass |
 |---|-----------|----------|--------|------|
 | 3.1 | Add to cart (guest) | Item stored locally | | |
-| 3.2 | Add to cart (signed in) | Item synced to Supabase | | |
+| 3.2 | Add to cart (signed in) | Item stored locally on the device | | |
 | 3.3 | Update quantity | Total recalculated | | |
 | 3.4 | Remove from cart | Item removed | | |
-| 3.5 | Add to wishlist (signed in) | Product saved | | |
+| 3.5 | Add to wishlist (signed in) | Product saved locally on the device | | |
 | 3.6 | Move to cart from wishlist | Item added, removed from wishlist | | |
 
 ## 4. Checkout
@@ -62,9 +62,7 @@
 |---|-----------|----------|--------|------|
 | 5.1 | Paymob card success | Payment completed, order confirmed | | |
 | 5.2 | Paymob card decline | Error shown, stock restored | | |
-| 5.3 | Vodafone Cash success | Payment completed | | |
-| 5.4 | Vodafone Cash failure | Error shown | | |
-| 5.5 | Duplicate callback | No duplicate order created | | |
+| 5.3 | Duplicate Paymob callback | No duplicate order created | | |
 
 ## 6. Admin
 

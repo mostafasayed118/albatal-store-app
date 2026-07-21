@@ -23,12 +23,6 @@ class StubPaymentService implements PaymentService {
   }
 
   @override
-  Future<PaymentResult> verifyPayment(String callbackData) async {
-    callCount++;
-    return _resultToReturn ?? const PaymentFailed(message: 'No result set');
-  }
-
-  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
@@ -86,7 +80,6 @@ void main() {
 
     test('processPayment with pending sets awaitingVerification', () async {
       service.setResult(const PaymentPending(
-        paymentKey: 'KEY-1',
         checkoutUrl: 'https://example.com/checkout',
       ));
       cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
@@ -95,7 +88,7 @@ void main() {
       await cubit.processPayment(customerEmail: 'test@test.com');
 
       expect(cubit.state.status, PaymentStatus.awaitingVerification);
-      expect(cubit.state.transactionId, 'KEY-1');
+      expect(cubit.state.transactionId, isNull);
       expect(cubit.state.checkoutUrl, 'https://example.com/checkout');
     });
 

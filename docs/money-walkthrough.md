@@ -33,10 +33,13 @@ factory for readable mock data.
   `n.format()` for ergonomic call sites in widget trees.
 - `lib/features/storefront/data/products_data.dart` — mock seed data uses
   `Money.egp(1290)` instead of `1290`.
-- `lib/features/storefront/data/supabase_catalog_repository.dart`,
-  `supabase_orders_repository.dart`, `supabase_cart_repository.dart`,
-  `checkout_service.dart`, `storefront_persistence.dart` — repositories map
-  rows and JSON to `Money` with no `/ 100`.
+- `lib/features/storefront/data/checkout_service.dart` — maps the
+  server-authoritative `create_checkout_order` RPC response to `Money` with no
+  `/ 100` conversion.
+- `lib/features/storefront/data/storefront_persistence.dart` — persists local
+  cart, wishlist, and order-history values without converting their `Money`
+  fields. Catalog data is local mock seed data; there are no Supabase catalog,
+  cart, or orders repository implementations.
 - `lib/features/storefront/presentation/cubit/cart_cubit.dart` —
   `CartState.subtotal` / `shipping` / `total` are `Money`. Fold starts at
   `Money.zero` and uses `item.lineTotal`.

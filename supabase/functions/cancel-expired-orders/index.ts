@@ -12,12 +12,7 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,6 +20,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // This worker changes order/payment/stock state. It is intended for a
+    // scheduler only, never an unauthenticated browser request.
+    const schedulerSecret = Deno.env.get("CANCEL_EXPIRED_ORDERS_SECRET");
+    const receivedSecret = req.headers.get("x-scheduler-secret");
+    if (!schedulerSecret || receivedSecret !== schedulerSecret) {
+      return new Response(
+        JSON.stringify({ message: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -54,54 +60,35 @@ Deno.serve(async (req) => {
     }
 
     let cancelledCount = 0;
-    let stockRestoredCount = 0;
-
     for (const order of expiredOrders) {
-      // ─── Restore stock for order items ──────────────────────
-      const { data: orderItems } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
-
-      if (orderItems) {
-        for (const item of orderItems) {
-          await supabase.rpc("increment_stock", {
-            p_product_id: item.product_id,
-            p_size: item.size,
-            p_color: item.color,
-            p_quantity: item.quantity,
-          });
-          stockRestoredCount++;
-        }
+      // `expire_pending_order` locks the order and updates order, payment,
+      // and inventory restoration in one transaction. It is idempotent.
+      const { data, error } = await supabase.rpc("expire_pending_order", {
+        p_order_id: order.id,
+      });
+      if (error) {
+        console.error("cancel-expired-orders: expiry RPC failed", error.message);
+        continue;
       }
-
-      // ─── Cancel the order ──────────────────────────────────
-      await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", order.id)
-        .eq("status", "pending");
-
-      cancelledCount++;
+      if (data?.ok && data.code === "expired") cancelledCount++;
     }
 
     console.log(
-      `Cancelled ${cancelledCount} expired orders, restored stock for ${stockRestoredCount} items`
+      `Cancelled ${cancelledCount} expired orders`
     );
 
     return new Response(
       JSON.stringify({
         message: "Expired orders cancelled",
         cancelled: cancelledCount,
-        stockItemsRestored: stockRestoredCount,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("cancel-expired-orders error:", error);
+  } catch (_error) {
+    console.error("cancel-expired-orders: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders() }
     );
   }
 });

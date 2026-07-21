@@ -18,10 +18,13 @@ A single `SettingsCubit` owns user-visible settings state. Its repository contra
 The Cubit test covers successful hydration and a save failure. The widget test asserts that an Arabic subtree has RTL directionality. It does not attempt to test Flutter framework behavior or pixel-match the design.
 
 ## Limitations
-- No platform folders or test run were possible in this environment.
-- Font files are not bundled; fallbacks apply until they are added locally.
 - Persistence initialization is required before `runApp`; a later production hardening slice can add a controlled startup failure screen.
 - Sentry is intentionally deferred: adding the SDK before a DSN, release strategy, and PII policy would be configuration without operational value.
+
+## Current project state
+- Platform folders are present for Android, iOS, web, macOS, Linux, and Windows.
+- Montserrat and Inter variable font files are bundled under `assets/fonts/` and
+  declared in `pubspec.yaml`.
 
 ## Self-check
 1. Why does `SettingsCubit` depend on `SettingsRepository` instead of `SharedPreferences`?

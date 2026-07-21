@@ -15,10 +15,10 @@ import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
-import '../../features/storefront/data/local_catalog_repository.dart';
 import '../../features/storefront/data/local_orders_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
+import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
@@ -59,5 +59,5 @@ Future<void> configureDependencies() async {
         () => LocalWishlistRepository(getIt<LocalStorefrontPersistence>()))
     ..registerLazySingleton<OrdersRepository>(
         () => LocalOrdersRepository(getIt<LocalStorefrontPersistence>()))
-    ..registerLazySingleton<CatalogRepository>(LocalCatalogRepository.new);
+    ..registerLazySingleton<CatalogRepository>(SupabaseCatalogRepository.new);
 }

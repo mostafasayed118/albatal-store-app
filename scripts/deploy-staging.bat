@@ -27,24 +27,36 @@ REM Apply migrations
 echo [2/4] Applying migrations...
 supabase db push --linked
 
-REM Deploy Edge Functions
+REM Deploy Edge Functions (only active, non-deprecated functions)
 echo [3/4] Deploying Edge Functions...
 supabase functions deploy checkout
-supabase functions deploy paymob-auth
-supabase functions deploy paymob-order
-supabase functions deploy paymob-payment-key
+supabase functions deploy paymob-initiate
 supabase functions deploy paymob-callback
-supabase functions deploy vodafone-cash-payment
-supabase functions deploy vodafone-cash-verify
+supabase functions deploy cancel-expired-orders
 supabase functions deploy send-order-notification
 
 REM Done
 echo.
 echo [4/4] Deployment complete!
 echo.
+echo Deployed functions:
+echo   - checkout
+echo   - paymob-initiate
+echo   - paymob-callback
+echo   - cancel-expired-orders
+echo   - send-order-notification
+echo.
+echo REMOVED (deprecated/insecure):
+echo   - paymob-order (leaked auth tokens)
+echo   - paymob-auth (leaked auth tokens)
+echo   - paymob-payment-key (accepted client auth_token)
+echo   - vodafone-cash-payment (obsolete)
+echo   - vodafone-cash-verify (obsolete)
+echo.
 echo Next steps:
-echo 1. Set Edge Function secrets in Supabase dashboard
-echo 2. Update .env.staging with your project URL and anon key
-echo 3. Run: flutter run
-echo 4. Execute verify_rls.sql in SQL Editor
-echo 5. Complete docs/acceptance-checklist.md
+echo 1. Undeploy removed functions: supabase functions delete ^<name^>
+echo 2. Set Edge Function secrets in Supabase dashboard
+echo 3. Update .env.staging with your project URL and anon key
+echo 4. Run: flutter run
+echo 5. Execute verify_rls.sql in SQL Editor
+echo 6. Complete docs/acceptance-checklist.md

@@ -6,55 +6,130 @@ import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
-import '../../../storefront/presentation/cubit/orders_cubit.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
+import '../../domain/paymob_url_guard.dart';
 import '../cubit/payment_cubit.dart';
 
 /// Payment method selection page.
-class PaymentMethodPage extends StatelessWidget {
-  const PaymentMethodPage({super.key, required this.args});
+///
+/// SECURITY NOTE: on payment success this page navigates to
+/// the order-success screen and clears the local cart. It
+/// does NOT call `OrdersCubit.place()` — the canonical order
+/// was already created server-side by the `create_checkout_order`
+/// RPC before payment initiation, and the customer's order
+/// history is read from the server, not from a local
+/// SharedPreferences duplicate.
+class PaymentMethodPage extends StatefulWidget {
+  const PaymentMethodPage({
+    super.key,
+    required this.args,
+    this.paymentCubit,
+    this.paymentService,
+  });
   final Map<String, dynamic> args;
+
+  /// Optional injected cubit — used by widget tests to drive
+  /// deterministic state transitions. When null (production),
+  /// the page creates its own cubit from [paymentService] or
+  /// the GetIt-registered [PaymentService]. This mirrors the
+  /// optional-dependency convention used by [CheckoutPage].
+  final PaymentCubit? paymentCubit;
+
+  /// Optional [PaymentService] for production dependency
+  /// injection. Defaults to the GetIt-registered instance.
+  /// Ignored when [paymentCubit] is provided.
+  final PaymentService? paymentService;
+
+  @override
+  State<PaymentMethodPage> createState() => _PaymentMethodPageState();
+}
+
+class _PaymentMethodPageState extends State<PaymentMethodPage> {
+  bool _checkoutOpened = false;
+  bool _successNavigated = false;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final total = (args['total'] as Money?) ?? Money.zero;
-    final address = args['address'];
-    // Real server-created order id from the checkout Edge Function.
-    // Fallback to a local-only id for cash-on-delivery if the server
-    // flow was skipped (e.g. legacy path or COD-only test).
-    final orderId = (args['orderId'] as String?) ??
-        'ORD-${DateTime.now().millisecondsSinceEpoch}';
-    final customerEmail = (args['customerEmail'] as String?) ??
+    final total = (widget.args['total'] as Money?) ?? Money.zero;
+    final orderId = (widget.args['orderId'] as String?)?.trim() ?? '';
+    final customerEmail = (widget.args['customerEmail'] as String?) ??
         'customer@example.com';
 
-    return BlocProvider(
-      create: (_) => PaymentCubit(
-        getIt<PaymentService>(),
-      )..initPayment(
-          amount: total,
-          orderId: orderId,
-        ),
-      child: BlocConsumer<PaymentCubit, PaymentState>(
+    // Production: create a PaymentCubit from the registered
+    // [PaymentService] (or an injected [paymentService]) and
+    // initialize it for this order. Tests: inject a preconfigured
+    // cubit via [widget.paymentCubit] so they can drive state
+    // transitions deterministically — the page must not shadow
+    // it with its own GetIt lookup.
+    final consumer = BlocConsumer<PaymentCubit, PaymentState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.checkoutUrl != current.checkoutUrl,
         listener: (context, state) {
-          if (state.status == PaymentStatus.success) {
-            final cart = context.read<CartCubit>().state;
-            context.read<OrdersCubit>().place(
-                  cart,
-                  paymentMethod: state.selectedMethod?.name ?? 'unknown',
-                  address: address,
-                );
+          if (state.status == PaymentStatus.awaitingVerification &&
+              !_checkoutOpened) {
+            final checkoutUrl = state.checkoutUrl;
+            if (checkoutUrl == null ||
+                !PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
+              context.read<PaymentCubit>().cancel();
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('The payment checkout link is invalid. Please retry.'),
+              ));
+              return;
+            }
+            _checkoutOpened = true;
+            context.push('/paymob-checkout', extra: checkoutUrl);
+          } else if (state.status == PaymentStatus.success &&
+              !_successNavigated) {
+            final successOrderId = state.orderId.trim();
+            if (successOrderId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Payment succeeded but the order reference is missing.'),
+              ));
+              return;
+            }
+            _successNavigated = true;
+            // Clear the local cart only. The canonical order
+            // lives on the server; order history is fetched
+            // from there, not duplicated locally.
             context.read<CartCubit>().clear();
-            context.go('/order-success');
-          } else if (state.status == PaymentStatus.failed &&
-              state.errorMessage != null) {
+            context.go('/order-success', extra: successOrderId);
+          } else if (state.status == PaymentStatus.failed ||
+              state.status == PaymentStatus.cancelled ||
+              state.status == PaymentStatus.expired ||
+              state.status == PaymentStatus.timedOut) {
+            // Pop the hosted-checkout WebView if it is still on top so
+            // the user lands back on this page and can read the
+            // recoverable error + retry. Only pop when we actually
+            // opened the checkout, so a failure that happens before
+            // navigation (e.g. initiation error) does not pop an
+            // unrelated route.
+            final checkoutWasOpen = _checkoutOpened;
+            _checkoutOpened = false;
+            if (checkoutWasOpen && context.canPop()) context.pop();
+            final message = state.errorMessage ?? switch (state.status) {
+              PaymentStatus.cancelled => 'Payment cancelled. You can retry.',
+              PaymentStatus.expired => 'Payment expired. You can retry.',
+              PaymentStatus.timedOut =>
+                'Payment verification timed out. Please check your orders before retrying.',
+              _ => 'Payment failed. You can retry.',
+            };
             ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+                .showSnackBar(SnackBar(content: Text(message)));
           }
         },
         builder: (context, state) {
+          if (orderId.isEmpty) {
+            return Scaffold(
+              appBar: AppBar(title: Text(l.selectPaymentMethod)),
+              body: Center(
+                child: Text('Unable to continue: the order reference is missing.'),
+              ),
+            );
+          }
           return Scaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
             body: ListView(
@@ -112,7 +187,24 @@ class PaymentMethodPage extends StatelessWidget {
             ),
           );
         },
+    );
+
+    if (widget.paymentCubit != null) {
+      // Test path: the caller owns the cubit's lifecycle.
+      return BlocProvider<PaymentCubit>.value(
+        value: widget.paymentCubit!,
+        child: consumer,
+      );
+    }
+    // Production path: BlocProvider owns and disposes the cubit.
+    return BlocProvider<PaymentCubit>(
+      create: (_) => PaymentCubit(
+        widget.paymentService ?? getIt<PaymentService>(),
+      )..initPayment(
+        amount: total,
+        orderId: orderId,
       ),
+      child: consumer,
     );
   }
 }

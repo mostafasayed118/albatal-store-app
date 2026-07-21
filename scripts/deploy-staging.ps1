@@ -24,16 +24,13 @@ supabase link
 Write-Host "`n[2/4] Applying migrations..." -ForegroundColor Yellow
 supabase db push --linked
 
-# Step 3: Deploy Edge Functions
+# Step 3: Deploy Edge Functions (only active, non-deprecated functions)
 Write-Host "`n[3/4] Deploying Edge Functions..." -ForegroundColor Yellow
 $functions = @(
     "checkout",
-    "paymob-auth",
-    "paymob-order",
-    "paymob-payment-key",
+    "paymob-initiate",
     "paymob-callback",
-    "vodafone-cash-payment",
-    "vodafone-cash-verify",
+    "cancel-expired-orders",
     "send-order-notification"
 )
 
@@ -45,9 +42,22 @@ foreach ($func in $functions) {
 # Step 4: Done
 Write-Host "`n[4/4] Deployment complete!" -ForegroundColor Green
 Write-Host ""
+Write-Host "Deployed functions:" -ForegroundColor Cyan
+foreach ($func in $functions) {
+    Write-Host "  - $func" -ForegroundColor Gray
+}
+Write-Host ""
+Write-Host "REMOVED (deprecated/insecure):" -ForegroundColor Red
+Write-Host "  - paymob-order (leaked auth tokens)" -ForegroundColor Gray
+Write-Host "  - paymob-auth (leaked auth tokens)" -ForegroundColor Gray
+Write-Host "  - paymob-payment-key (accepted client auth_token)" -ForegroundColor Gray
+Write-Host "  - vodafone-cash-payment (obsolete)" -ForegroundColor Gray
+Write-Host "  - vodafone-cash-verify (obsolete)" -ForegroundColor Gray
+Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Set Edge Function secrets in Supabase dashboard"
-Write-Host "  2. Update .env.staging with your project URL and anon key"
-Write-Host "  3. Run: flutter run"
-Write-Host "  4. Execute verify_rls.sql in SQL Editor"
-Write-Host "  5. Complete docs/acceptance-checklist.md"
+Write-Host "  2. Undeploy removed functions: supabase functions delete <name>"
+Write-Host "  3. Update .env.staging with your project URL and anon key"
+Write-Host "  4. Run: flutter run"
+Write-Host "  5. Execute verify_rls.sql in SQL Editor"
+Write-Host "  6. Complete docs/acceptance-checklist.md"

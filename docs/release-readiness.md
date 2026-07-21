@@ -2,24 +2,23 @@
 
 ## Code Quality
 - [x] `flutter analyze` — 0 errors, 0 warnings
-- [x] `flutter test` — 92/92 tests passing
+- [x] `flutter test` — test suite across 22 test files passing
 - [x] No hardcoded secrets in source code
 - [x] `.env` files gitignored (verified via `git log`)
 - [x] All widgets follow one-public-widget-per-file rule
 - [x] Clean Architecture maintained (presentation → domain → data)
 
 ## Database
-- [x] 10 SQL migrations created and ordered
+- [x] 14 SQL migrations created and ordered (001–014)
 - [x] RLS policies on all user-facing tables
 - [x] Admin role for catalog/order management
-- [x] Order creation protected (server-side only)
+- [x] Order creation protected (server-side RPC `create_checkout_order`, migration 013)
 - [x] Stock functions (decrement, increment) with transaction safety
 - [x] Shipping zones for Egyptian governorates
 
 ## Payments
 - [x] Paymob: server-side auth, order, payment key (Edge Functions)
 - [x] Paymob: webhook with HMAC verification, idempotent
-- [x] Vodafone Cash: server-side initiation and verification
 - [x] Cash on Delivery: order creation flow
 - [x] Payment failure restores stock
 - [x] Duplicate callback protection
@@ -51,7 +50,7 @@
 - [x] Payment failure reporting
 
 ## Localization
-- [x] 250+ keys in English and Arabic
+- [x] 260+ keys in English and Arabic
 - [x] RTL support verified
 - [x] All checkout/auth/payment strings translated
 
@@ -63,6 +62,8 @@
 
 ## Documentation
 - [x] README.md updated with full setup guide
+- [x] DESIGN.md design system reference
+- [x] `docs/foundation-walkthrough.md` — settings, theme, and locale foundation
 - [x] `docs/storefront-walkthrough.md` — architecture docs
 - [x] `docs/money-walkthrough.md` — `Money` minor-units value object
 - [x] `docs/supabase-integration.md` — Supabase setup
@@ -72,8 +73,8 @@
 
 ## Pre-Launch Manual Steps
 1. Create staging Supabase project
-2. Run all 10 SQL migrations
-3. Deploy 7 Edge Functions
+2. Run all 14 numbered SQL migrations in order
+3. Deploy the 8 Edge Functions required by the enabled payment and notification flows
 4. Fill in `.env.staging` with real credentials
 5. Run RLS verification queries as non-admin
 6. Execute acceptance checklist on real devices

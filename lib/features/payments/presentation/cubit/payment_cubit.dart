@@ -17,6 +17,8 @@ enum PaymentStatus {
   success,
   failed,
   cancelled,
+  expired,
+  timedOut,
 }
 
 final class PaymentState extends Equatable {
@@ -74,10 +76,23 @@ final class PaymentState extends Equatable {
 // ─── Cubit ─────────────────────────────────────────────────
 
 class PaymentCubit extends Cubit<PaymentState> {
-  PaymentCubit(this._paymentService) : super(const PaymentState());
+  PaymentCubit(this._paymentService, {Duration watchTimeout = _defaultWatchTimeout})
+      : _watchTimeout = watchTimeout,
+        super(const PaymentState());
+
+  /// How long the client waits for the server-authoritative payment
+  /// status before declaring [PaymentStatus.timedOut]. The order
+  /// itself expires server-side after 15 minutes (migration 011),
+  /// so the client watch is capped at the same horizon. A timeout
+  /// never declares success — it only surfaces a recoverable
+  /// "still processing / please retry" state.
+  static const _defaultWatchTimeout = Duration(minutes: 15);
+
+  final Duration _watchTimeout;
 
   final PaymentService _paymentService;
   StreamSubscription<PaymentResult>? _watchSubscription;
+  Timer? _watchTimeoutTimer;
 
   /// Initialize payment for an order.
   void initPayment({required Money amount, required String orderId}) {
@@ -118,16 +133,15 @@ class PaymentCubit extends Cubit<PaymentState> {
     );
 
     switch (result) {
-      case PaymentPending(:final paymentKey, :final checkoutUrl):
+      case PaymentPending(:final checkoutUrl):
         emit(state.copyWith(
           status: PaymentStatus.awaitingVerification,
           checkoutUrl: checkoutUrl,
-          transactionId: paymentKey,
         ));
         // The Paymob hosted checkout is now open in a WebView. Subscribe
         // to the server-side payment status so we detect the webhook's
         // update without parsing the callback URL (which can be spoofed).
-        startWatching(state.orderId);
+        await startWatching(state.orderId);
       case PaymentSuccess(:final transactionId):
         emit(state.copyWith(
           status: PaymentStatus.success,
@@ -143,67 +157,112 @@ class PaymentCubit extends Cubit<PaymentState> {
     }
   }
 
-  /// Handle payment callback from web view.
-  Future<void> handleCallback(String callbackData) async {
-    final result = await _paymentService.verifyPayment(callbackData);
-
-    switch (result) {
-      case PaymentSuccess(:final transactionId):
-        emit(state.copyWith(
-          status: PaymentStatus.success,
-          transactionId: transactionId,
-        ));
-      case PaymentFailed(:final message):
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: message,
-        ));
-      default:
-        break;
-    }
+  /// Mark payment as cancelled by user.
+  ///
+  /// This only ends the client wait. It never changes the provider or server
+  /// payment state; Paymob's verified callback remains authoritative.
+  void cancel() {
+    unawaited(_stopWatching());
+    emit(state.copyWith(status: PaymentStatus.cancelled));
   }
 
-  /// Mark payment as cancelled by user.
-  void cancel() => emit(state.copyWith(status: PaymentStatus.cancelled));
-
   /// Reset to initial state.
-  void reset() => emit(const PaymentState());
+  void reset() {
+    unawaited(_stopWatching());
+    emit(const PaymentState());
+  }
 
   /// Subscribe to server-side payment status updates via Realtime.
   ///
   /// The repository ([PaymentService.watchPaymentStatus]) owns the
   /// Supabase Realtime channel and DB row parsing; the cubit only
   /// consumes the typed [PaymentResult] stream and translates terminal
-  /// outcomes into [PaymentStatus.success] / [PaymentStatus.failed].
-  /// The subscription is cancelled on terminal events or in [close].
+  /// outcomes into terminal [PaymentStatus] values. The subscription and
+  /// timeout are cancelled on terminal events or in [close].
   Future<void> startWatching(String orderId) async {
-    await _watchSubscription?.cancel();
+    await _stopWatching();
+    if (orderId.trim().isEmpty) {
+      emit(state.copyWith(
+        status: PaymentStatus.failed,
+        errorMessage: 'A valid order reference is required to verify payment.',
+      ));
+      return;
+    }
+
+    _watchTimeoutTimer = Timer(_watchTimeout, _handleWatchTimeout);
+
     _watchSubscription = _paymentService.watchPaymentStatus(orderId).listen(
       (result) {
+        if (isClosed || state.status != PaymentStatus.awaitingVerification) {
+          return;
+        }
         switch (result) {
           case PaymentSuccess(:final transactionId):
-            emit(state.copyWith(
+            _complete(state.copyWith(
               status: PaymentStatus.success,
               transactionId: transactionId,
             ));
-            _watchSubscription?.cancel();
           case PaymentFailed(:final message):
-            emit(state.copyWith(
+            _complete(state.copyWith(
               status: PaymentStatus.failed,
               errorMessage: message,
             ));
-            _watchSubscription?.cancel();
           case PaymentPending():
           case PaymentCancelled():
             break;
         }
       },
+      onError: (_, __) {
+        if (isClosed || state.status != PaymentStatus.awaitingVerification) {
+          return;
+        }
+        _complete(state.copyWith(
+          status: PaymentStatus.failed,
+          errorMessage: 'Unable to verify payment status. Please try again.',
+        ));
+      },
     );
   }
 
+  /// Fires the verification timeout without waiting fifteen minutes.
+  ///
+  /// This is intentionally public for deterministic Flutter tests; production
+  /// code relies on the timer created by [startWatching].
+  Future<void> fireWatchTimeoutForTest() async {
+    _handleWatchTimeout();
+  }
+
+  void _handleWatchTimeout() {
+    if (isClosed || state.status != PaymentStatus.awaitingVerification) {
+      return;
+    }
+    _complete(state.copyWith(
+      status: PaymentStatus.timedOut,
+      errorMessage:
+          'Payment verification timed out. Please check your orders before retrying.',
+    ));
+  }
+
+  void _complete(PaymentState nextState) {
+    _watchTimeoutTimer?.cancel();
+    _watchTimeoutTimer = null;
+    final subscription = _watchSubscription;
+    _watchSubscription = null;
+    if (subscription != null) unawaited(subscription.cancel());
+    emit(nextState);
+  }
+
+  Future<void> _stopWatching() async {
+    _watchTimeoutTimer?.cancel();
+    _watchTimeoutTimer = null;
+    final subscription = _watchSubscription;
+    _watchSubscription = null;
+    await subscription?.cancel();
+  }
+
   @override
-  Future<void> close() {
-    _watchSubscription?.cancel();
+  Future<void> close() async {
+    await _stopWatching();
     return super.close();
   }
 }

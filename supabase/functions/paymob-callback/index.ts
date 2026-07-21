@@ -1,165 +1,197 @@
 // ============================================================
 // Supabase Edge Function: paymob-callback
-// Handles Paymob webhook — verifies payment server-side.
-// Idempotent: duplicate callbacks return the same result.
 //
-// Flow:
-//   1. Verify HMAC signature (if PAYMOB_HMAC_SECRET is set)
-//   2. Check if payment already processed (idempotent)
-//   3. On success: update payment to "success", promote order to "paid"
-//   4. On failure: update payment to "failed", cancel order, restore stock
+// SECURITY REPAIR (CRIT-01..04, HIGH-01..05):
+//
+//   1. Reject if the request method/body/content is invalid.
+//   2. Fail CLOSED: if PAYMOB_HMAC_SECRET is missing or
+//      malformed, return HTTP 503 WITHOUT touching any
+//      payment/order/stock state. (CRIT-03)
+//   3. Build the canonical HMAC payload from Paymob's
+//      documented callback fields, in the exact documented
+//      order, and compare in constant time. (HIGH-01, HIGH-02)
+//   4. After HMAC verification, locate the existing payment
+//      by `paymob_order_id` — never by provider order id on
+//      `orders.id`. (CRIT-01, CRIT-04, HIGH-03)
+//   5. NEVER insert an orphan/fallback payment. (CRIT-02)
+//   6. Validate callback amount/currency against the internal
+//      order total.
+//   7. Delegate the state transition to the atomic
+//      `process_paymob_callback` RPC so payment + order +
+//      stock are mutated in one transaction. (HIGH-05)
+//   8. A duplicate valid callback returns 2xx no-op.
+//   9. Record only safe audit metadata; never log secrets or
+//      card/customer data.
+//
+// HTTP results:
+//   200 — valid first delivery OR valid duplicate no-op
+//   400 — malformed/unmapped/invalid payload (no state change)
+//   401 — invalid HMAC (no state change)
+//   503 — server HMAC configuration unavailable
 // ============================================================
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import {
+  PAYMOB_HMAC_FIELDS,
+  buildHmacPayload,
+  verifyHmac,
+} from "./hmac.ts";
+import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  // ─── 1. Reject non-POST / invalid content ──────────────
+  // Paymob delivers the standard redirect callback as a
+  // form-urlencoded POST. A GET or empty body is malformed.
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ message: "Method not allowed" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+  }
 
-    const hmacSecret = Deno.env.get("PAYMOB_HMAC_SECRET");
+  try {
     const body = await req.text();
+    if (!body || body.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ message: "Empty callback body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const params = new URLSearchParams(body);
 
-    // ─── HMAC verification ────────────────────────────────────
-    if (hmacSecret) {
-      const receivedHmac = params.get("hmac") || "";
-      const hmacData = params.toString().replace(/&hmac=[^&]*/, "");
-
-      // Verify HMAC using Web Crypto API (built into Deno)
-      const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        "raw",
-        encoder.encode(hmacSecret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
+    // ─── 2. Fail closed on missing/malformed HMAC secret ──
+    // CRIT-03: the secret MUST be present and non-empty. If
+    // it is not, the server cannot verify any callback, so we
+    // return 503 and change NO state.
+    const hmacSecret = Deno.env.get("PAYMOB_HMAC_SECRET");
+    if (!hmacSecret || hmacSecret.trim().length === 0) {
+      console.error(
+        "paymob-callback: PAYMOB_HMAC_SECRET is not configured — rejecting callback (503)",
       );
-      const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(hmacData));
-      const computedHmac = Array.from(new Uint8Array(signature))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
-      if (receivedHmac !== computedHmac) {
-        console.error("HMAC verification failed");
-        return new Response(
-          JSON.stringify({ message: "Invalid signature" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    const transactionId = params.get("id");
-    const success = params.get("success") === "true";
-    const orderId = params.get("order");
-
-    if (!transactionId || !orderId) {
       return new Response(
-        JSON.stringify({ message: "Missing required parameters" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ message: "HMAC configuration unavailable" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ─── Idempotent: check if payment already processed ───────
-    const { data: existingPayment } = await supabase
-      .from("payments")
-      .select("id, status")
-      .eq("transaction_id", transactionId)
-      .single();
+    // ─── 3. Build canonical HMAC payload + verify ─────────
+    // HIGH-02: build the payload from the documented fields
+    // in the exact documented order, NOT from the raw query
+    // string. The `hmac` field itself is never part of the
+    // signed payload.
+    const receivedHmac = params.get("hmac") ?? "";
 
-    if (existingPayment && existingPayment.status === "success") {
+    // Collect the canonical field values from the callback.
+    // `source_data_pan` / `source_data_sub_type` /
+    // `source_data_type` are flat fields in the
+    // form-urlencoded body.
+    const values: Record<string, string> = {};
+    for (const field of PAYMOB_HMAC_FIELDS) {
+      values[field] = params.get(field) ?? "";
+    }
+
+    // HIGH-01: constant-time comparison.
+    const ok = await verifyHmac(values, hmacSecret, receivedHmac);
+    if (!ok) {
+      // 401 — invalid signature. No state change.
+      console.error("paymob-callback: HMAC verification failed");
       return new Response(
-        JSON.stringify({
-          message: "Payment already processed",
-          id: existingPayment.id,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Invalid signature" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ─── Get the payment record ──────────────────────────────
-    const { data: payment, error: payError } = await supabase
-      .from("payments")
-      .select("*")
-      .eq("transaction_id", transactionId)
-      .single();
+    // ─── 4. Extract callback fields (now trusted) ─────────
+    const paymobOrderId = values["order"];
+    const paymobTxnId = values["id"];
+    const amountCentsRaw = values["amount_cents"];
+    const currency = values["currency"] || "EGP";
+    const successStr = values["success"];
+    const success = successStr === "true";
 
-    if (payError || !payment) {
-      // Payment record doesn't exist — store it
-      await supabase.from("payments").insert({
-        order_id: orderId,
-        user_id: "00000000-0000-0000-0000-000000000000",
-        method: "paymob_card",
-        amount: parseInt(params.get("amount_cents") || "0"),
-        transaction_id: transactionId,
-        status: success ? "success" : "failed",
-      });
-    } else {
-      // Update existing payment
-      await supabase
-        .from("payments")
-        .update({ status: success ? "success" : "failed" })
-        .eq("transaction_id", transactionId);
+    if (!paymobOrderId || !paymobTxnId || !amountCentsRaw) {
+      return new Response(
+        JSON.stringify({ message: "Missing required callback fields" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    // ─── Update order status ──────────────────────────────────
-    if (success) {
-      // Payment succeeded — promote order from "pending" to "paid"
-      await supabase
-        .from("orders")
-        .update({
-          status: "paid",
-          payment_id: transactionId,
-        })
-        .eq("id", orderId)
-        .eq("status", "pending"); // Only update if still pending
-    } else {
-      // Payment failed — cancel order and restore stock
-      const { data: orderItems } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", orderId);
-
-      if (orderItems) {
-        for (const item of orderItems) {
-          await supabase.rpc("increment_stock", {
-            p_product_id: item.product_id,
-            p_size: item.size,
-            p_color: item.color,
-            p_quantity: item.quantity,
-          });
-        }
-      }
-
-      await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", orderId)
-        .eq("status", "pending"); // Only cancel if still pending
+    const amountCents = parseInt(amountCentsRaw, 10);
+    if (Number.isNaN(amountCents)) {
+      return new Response(
+        JSON.stringify({ message: "Malformed amount_cents" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    return new Response(
-      JSON.stringify({ message: "Callback processed", success }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // ─── 5. Delegate the state transition to the RPC ──────
+    // The RPC runs as SECURITY DEFINER and performs the
+    // payment/order/stock mutation in one transaction. It
+    // locates the payment by paymob_order_id, validates
+    // amount/currency, and is idempotent. We use the
+    // service-role client because the callback is an
+    // unauthenticated webhook from Paymob (HMAC is the auth).
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
-  } catch (error) {
-    console.error("Callback error:", error);
+
+    const { data, error } = await supabase.rpc("process_paymob_callback", {
+      p_paymob_order_id: paymobOrderId,
+      p_paymob_txn_id: paymobTxnId,
+      p_amount_cents: amountCents,
+      p_currency: currency,
+      p_success: success,
+    });
+
+    if (error) {
+      console.error("paymob-callback: RPC error", error.message);
+      return new Response(
+        JSON.stringify({ message: "Callback processing failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const code = (data && data.code) ?? "unknown";
+    const ok2 = Boolean(data && data.ok);
+
+    // ─── 6. Map RPC result to HTTP ────────────────────────
+    //   200 — valid first delivery OR valid duplicate no-op
+    //   400 — unmapped payment / amount mismatch / order not
+    //         found (no state change happened)
+    if (ok2 && (code === "success" || code === "failed" || code === "already_processed")) {
+      // Safe audit log — no secrets, no card data, no PII.
+      console.log(
+        `paymob-callback: processed order=${paymobOrderId} code=${code}`,
+      );
+      return new Response(
+        JSON.stringify({ message: "Callback processed", code }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // 400 — unmapped_payment / amount_mismatch / currency_mismatch / order_not_found
+    console.log(
+      `paymob-callback: rejected order=${paymobOrderId} code=${code}`,
+    );
+    return new Response(
+      JSON.stringify({ message: "Callback rejected", code }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (_error) {
+    console.error("paymob-callback: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders() }
     );
   }
 });
+
+// Exported for unit tests.
+export { buildHmacPayload, PAYMOB_HMAC_FIELDS };

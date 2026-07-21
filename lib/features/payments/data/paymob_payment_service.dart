@@ -53,35 +53,16 @@ class PaymobPaymentService implements PaymentService {
       }
 
       final data = response.data;
-      final checkoutUrl = data['checkout_url'] as String;
-      final paymentKey = data['payment_key'] as String;
-
-      return PaymentPending(paymentKey: paymentKey, checkoutUrl: checkoutUrl);
-    } catch (e) {
-      return PaymentFailed(message: 'Payment initialization failed: $e');
-    }
-  }
-
-  @override
-  Future<PaymentResult> verifyPayment(String callbackData) async {
-    try {
-      final data = Uri.splitQueryString(callbackData);
-      final success = data['success'] == 'true';
-      final transactionId = data['id'] ?? '';
-
-      if (success) {
-        return PaymentSuccess(
-          transactionId: transactionId,
-          amount: Money.zero,
-        );
-      } else {
-        return PaymentFailed(
-          message: data['message'] ?? 'Payment failed',
-          code: data['code'],
+      final checkoutUrl = data['checkout_url'] as String?;
+      if (checkoutUrl == null || checkoutUrl.trim().isEmpty) {
+        return const PaymentFailed(
+          message: 'Payment provider returned an invalid checkout session.',
         );
       }
+
+      return PaymentPending(checkoutUrl: checkoutUrl);
     } catch (e) {
-      return PaymentFailed(message: 'Payment verification failed: $e');
+      return PaymentFailed(message: 'Payment initialization failed: $e');
     }
   }
 

@@ -5,14 +5,40 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
 class OrderSuccessPage extends StatelessWidget {
-  const OrderSuccessPage({super.key, this.orderId});
-  final String? orderId;
+  const OrderSuccessPage({super.key, required this.orderId});
+  final String orderId;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final id = orderId ?? '#ORD-2023-8472';
+    final id = orderId.trim();
+    if (id.isEmpty) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 60, color: scheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'Order reference is missing. Please check your order history.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                AppButton(
+                  label: l.trackMyOrder,
+                  onPressed: () => context.go('/profile/orders'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       body: Center(
         child: Padding(

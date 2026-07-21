@@ -1,0 +1,89 @@
+name: Daily Loop Triage
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Triage mode'
+        required: false
+        default: 'report-only'
+        type: choice
+        options:
+          - report-only
+          - full-scan
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  triage:
+    name: Loop Triage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.x'
+          channel: stable
+
+      - name: Flutter analyze
+        run: flutter analyze --no-pub 2> analyze-output.txt || true
+
+      - name: Flutter test
+        run: flutter test --no-pub 2> test-output.txt || true
+
+      - name: Check pub outdated
+        run: flutter pub outdated --json > outdated-output.json 2>&1 || true
+
+      - name: Summarize findings
+        run: |
+          echo "## Daily Triage Report" > triage-report.md
+          echo "" >> triage-report.md
+          echo "### Flutter Analyze" >> triage-report.md
+          if [ -s analyze-output.txt ]; then
+            echo '```' >> triage-report.md
+            cat analyze-output.txt >> triage-report.md
+            echo '```' >> triage-report.md
+          else
+            echo "No issues found." >> triage-report.md
+          fi
+          echo "" >> triage-report.md
+          echo "### Flutter Test" >> triage-report.md
+          if [ -s test-output.txt ]; then
+            echo '```' >> triage-report.md
+            cat test-output.txt >> triage-report.md
+            echo '```' >> triage-report.md
+          else
+            echo "All tests passed." >> triage-report.md
+          fi
+
+      - name: Upload triage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: triage-report-${{ github.run_id }}
+          path: triage-report.md
+          retention-days: 7
+
+      - name: Post summary to PR (if on PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('triage-report.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: report
+            });

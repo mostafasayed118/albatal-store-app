@@ -7,8 +7,14 @@ The storefront is the core commerce feature — it handles product discovery, ca
 1. **Phase 1**: Local mock data with hardcoded products, in-memory cart/wishlist/orders
 2. **Phase 2**: Search, filters (category, color, price), sort (featured, price, name, newest)
 3. **Phase 3**: Product details with image gallery, size guide, stock, related products
-4. **Phase 4**: Supabase integration — remote catalog, auth, cloud cart/wishlist/orders
-5. **Phase 5**: Server-side checkout with stock validation
+4. **Phase 4**: Server-authoritative checkout via the `create_checkout_order` RPC (migration 013) — prices, stock, and totals computed server-side
+5. **Phase 5**: Paymob payments via server-side Edge Functions
+
+> **Scope note.** Catalog browsing, cart, wishlist, addresses, and order
+> history are stored **locally** (`SharedPreferences` via
+> `LocalStorefrontPersistence`). The Supabase repository implementations for
+> those surfaces were removed; only checkout and payment remain server-backed.
+> See `docs/supabase-integration.md` for the full split.
 
 ## Data flow
 
@@ -18,13 +24,18 @@ The storefront is the core commerce feature — it handles product discovery, ca
 │ (observes)   │     │ (owns state) │     │  (interface)    │
 └─────────────┘     └──────────────┘     └────────┬────────┘
                                                    │
-                              ┌─────────────────────┼─────────────────────┐
-                              │                     │                     │
-                    ┌─────────▼─────────┐ ┌────────▼────────┐ ┌─────────▼─────────┐
-                    │ LocalRepository   │ │ SupabaseRepo    │ │ CheckoutService   │
-                    │ (SharedPreferences│ │ (Supabase API)  │ │ (Edge Function)   │
-                    └───────────────────┘ └─────────────────┘ └───────────────────┘
+                               ┌─────────────────────┼─────────────────────┐
+                               │                     │                     │
+                     ┌─────────▼─────────┐ ┌────────▼────────┐ ┌─────────▼─────────┐
+                     │ LocalRepository   │ │ CheckoutService │ │ PaymobPaymentSvc  │
+                     │ (SharedPreferences│ │ (RPC: 013)      │ │ (Edge Functions)  │
+                     └───────────────────┘ └─────────────────┘ └───────────────────┘
 ```
+
+The `LocalRepository` branch covers catalog, cart, wishlist, addresses, and
+orders history. `CheckoutService` calls the `create_checkout_order` PostgreSQL
+RPC (server-authoritative) and `PaymobPaymentService` drives the Paymob Edge
+Functions. There is no per-auth Supabase repository swap for storefront data.
 
 ## Key files
 

@@ -2,14 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Environment configuration for dev/staging/production.
+///
+/// SECURITY NOTE: this class intentionally does NOT expose
+/// any Paymob or Vodafone Cash server secrets. Payment
+/// provider keys (`PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`,
+/// `PAYMOB_HMAC_SECRET`, `VODAFONE_CASH_MERCHANT_CODE`,
+/// `VODAFONE_CASH_API_KEY`) live ONLY in Edge Function
+/// environment variables and must never be shipped to the
+/// Flutter client.
 class EnvConfig {
   const EnvConfig._();
 
   static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-  static String get paymobApiKey => dotenv.env['PAYMOB_API_KEY'] ?? '';
-  static String get paymobIntegrationId => dotenv.env['PAYMOB_INTEGRATION_ID'] ?? '';
-  static String get vodafoneCashMerchantCode => dotenv.env['VODAFONE_CASH_MERCHANT_CODE'] ?? '';
 
   /// Current environment name.
   static String get environment => kDebugMode ? 'development' : 'production';

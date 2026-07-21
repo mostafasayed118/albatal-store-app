@@ -21,16 +21,21 @@
 - [ ] `008_order_fulfillment.sql` — Status validation, low stock
 - [ ] `009_shipping_zones.sql` — 7 Egyptian zones, fee calculation
 - [ ] `010_notifications_analytics.sql` — Notifications, analytics, errors
+- [ ] `011_orders_idempotency_and_expiry.sql` — idempotency key, order expiry
+- [ ] `012_add_order_statuses.sql` — order status enum values for edge functions
+- [ ] `013_atomic_checkout_rpc.sql` — `create_checkout_order` SECURITY DEFINER RPC
+- [ ] `014_paymob_security_repair.sql` — Paymob callback hardening
 
 ### 3. Edge Functions ✅
-- [ ] `checkout` — Server-side order creation
-- [ ] `paymob-auth` — Paymob auth token (server-only)
-- [ ] `paymob-order` — Paymob order registration (server-only)
-- [ ] `paymob-payment-key` — Paymob payment key (server-only)
-- [ ] `paymob-callback` — Webhook with HMAC verification
-- [ ] `vodafone-cash-payment` — Vodafone Cash initiation
-- [ ] `vodafone-cash-verify` — Vodafone Cash verification (idempotent)
+- [ ] `checkout` — Legacy server-side order creation (superseded by the 013 RPC for new flows)
+- [ ] `paymob-initiate` — Single-call Paymob payment initiation (server-side only)
+- [ ] `paymob-callback` — Webhook with HMAC verification, idempotent
+- [ ] `cancel-expired-orders` — Cancels orders past their `expires_at`
 - [ ] `send-order-notification` — Email notifications
+
+> **Removed (security):** `paymob-auth`, `paymob-order`, `paymob-payment-key` —
+> permanently deleted. Verify they are undeployed:
+> `supabase functions list` should NOT show them.
 
 ### 4. Storage Rules
 - [ ] `product-images` bucket is public read
@@ -44,7 +49,6 @@
 - [ ] Staging Supabase URL loads correctly
 - [ ] Staging anon key authenticates
 - [ ] Paymob test credentials work
-- [ ] Vodafone Cash test credentials work
 
 ### 6. Authentication Flow
 - [ ] Sign up with email → verification email sent
@@ -54,7 +58,7 @@
 - [ ] Profile created automatically on sign up
 
 ### 7. Catalog
-- [ ] Products load from Supabase
+- [ ] Products load (local mock seed data)
 - [ ] Categories display correctly
 - [ ] Search returns relevant results
 - [ ] Filters (category, color, price) work
@@ -64,8 +68,8 @@
 
 ### 8. Cart & Wishlist
 - [ ] Add to cart (guest) → stored locally
-- [ ] Sign in → cart persists across devices
-- [ ] Wishlist syncs per user
+- [ ] Add to cart (signed in) → stored locally (storefront data is local-only)
+- [ ] Wishlist stored locally (no per-user cloud sync)
 - [ ] Quantity update works
 - [ ] Remove from cart works
 
@@ -80,7 +84,6 @@
 ### 10. Payments
 - [ ] Paymob card: success flow
 - [ ] Paymob card: decline handling
-- [ ] Vodafone Cash: phone input → verification
 - [ ] Cash on Delivery: order placed
 - [ ] Payment callback updates order status
 - [ ] Failed payment restores stock

@@ -28,9 +28,8 @@ class PaymentFailed extends PaymentResult {
 }
 
 class PaymentPending extends PaymentResult {
-  const PaymentPending({required this.paymentKey, this.checkoutUrl});
-  final String paymentKey;
-  final String? checkoutUrl;
+  const PaymentPending({required this.checkoutUrl});
+  final String checkoutUrl;
 }
 
 class PaymentCancelled extends PaymentResult {

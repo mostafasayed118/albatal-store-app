@@ -46,12 +46,10 @@ void main() {
       expect(result.code, 'E001');
     });
 
-    test('PaymentPending holds paymentKey and optional checkoutUrl', () {
+    test('PaymentPending holds the hosted checkout URL', () {
       const result = PaymentPending(
-        paymentKey: 'KEY-1',
         checkoutUrl: 'https://example.com/checkout',
       );
-      expect(result.paymentKey, 'KEY-1');
       expect(result.checkoutUrl, 'https://example.com/checkout');
     });
 
