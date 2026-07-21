@@ -566,12 +566,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get payWithCardDescription => 'بطاقة ائتمان أو خصم عبر Paymob';
 
   @override
-  String get payWithVodafoneCash => 'الدفع بفودافون كاش';
-
-  @override
-  String get payWithVodafoneCashDescription => 'دفع عبر المحفظة الإلكترونية';
-
-  @override
   String get cashOnDeliveryDescription => 'ادفع عند وصول طلبك';
 
   @override
@@ -588,26 +582,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentCancelled => 'تم إلغاء الدفع';
-
-  @override
-  String get vodafoneCash => 'فودافون كاش';
-
-  @override
-  String get vodafoneCashDescription =>
-      'أدخل رقم هاتف فودافون كاش لإكمال الدفع.';
-
-  @override
-  String get vodafoneCashNote =>
-      'ستتلقى تأكيداً على هاتفك. وافق على الدفع لإكمال العملية.';
-
-  @override
-  String get phoneNumber => 'رقم الهاتف';
-
-  @override
-  String get phoneNumberRequired => 'رقم الهاتف مطلوب';
-
-  @override
-  String get invalidPhoneNumber => 'يرجى إدخال رقم هاتف صالح';
 
   @override
   String get paymentProcessing => 'جارٍ معالجة الدفع...';

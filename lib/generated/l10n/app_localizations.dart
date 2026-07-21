@@ -1178,18 +1178,6 @@ abstract class AppLocalizations {
   /// **'Credit or Debit Card via Paymob'**
   String get payWithCardDescription;
 
-  /// No description provided for @payWithVodafoneCash.
-  ///
-  /// In en, this message translates to:
-  /// **'Pay with Vodafone Cash'**
-  String get payWithVodafoneCash;
-
-  /// No description provided for @payWithVodafoneCashDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Mobile Wallet Payment'**
-  String get payWithVodafoneCashDescription;
-
   /// No description provided for @cashOnDeliveryDescription.
   ///
   /// In en, this message translates to:
@@ -1225,42 +1213,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment Cancelled'**
   String get paymentCancelled;
-
-  /// No description provided for @vodafoneCash.
-  ///
-  /// In en, this message translates to:
-  /// **'Vodafone Cash'**
-  String get vodafoneCash;
-
-  /// No description provided for @vodafoneCashDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your Vodafone Cash phone number to complete the payment.'**
-  String get vodafoneCashDescription;
-
-  /// No description provided for @vodafoneCashNote.
-  ///
-  /// In en, this message translates to:
-  /// **'You will receive a confirmation on your phone. Approve the payment to complete.'**
-  String get vodafoneCashNote;
-
-  /// No description provided for @phoneNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone Number'**
-  String get phoneNumber;
-
-  /// No description provided for @phoneNumberRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Phone number is required'**
-  String get phoneNumberRequired;
-
-  /// No description provided for @invalidPhoneNumber.
-  ///
-  /// In en, this message translates to:
-  /// **'Please enter a valid phone number'**
-  String get invalidPhoneNumber;
 
   /// No description provided for @paymentProcessing.
   ///

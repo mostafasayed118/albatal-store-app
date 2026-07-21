@@ -47,12 +47,7 @@ foreach ($func in $functions) {
     Write-Host "  - $func" -ForegroundColor Gray
 }
 Write-Host ""
-Write-Host "REMOVED (deprecated/insecure):" -ForegroundColor Red
-Write-Host "  - paymob-order (leaked auth tokens)" -ForegroundColor Gray
-Write-Host "  - paymob-auth (leaked auth tokens)" -ForegroundColor Gray
-Write-Host "  - paymob-payment-key (accepted client auth_token)" -ForegroundColor Gray
-Write-Host "  - vodafone-cash-payment (obsolete)" -ForegroundColor Gray
-Write-Host "  - vodafone-cash-verify (obsolete)" -ForegroundColor Gray
+Write-Host "Deprecated functions enforced by CI deploy-check job." -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Set Edge Function secrets in Supabase dashboard"

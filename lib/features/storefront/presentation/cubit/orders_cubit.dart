@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -83,8 +85,8 @@ final class OrdersCubit extends Cubit<OrdersState> {
     }
   }
 
-  Order place(CartState cart,
-      {required String paymentMethod, Address? address}) {
+  Future<Order> place(CartState cart,
+      {required String paymentMethod, Address? address}) async {
     final order = Order(
       id: _generateId(),
       items: List.of(cart.items),
@@ -98,11 +100,19 @@ final class OrdersCubit extends Cubit<OrdersState> {
     );
     final next = [order, ...state.orders];
     emit(OrdersState(orders: next, status: OrdersStatus.ready));
-    _repository.writeOrders(next);
+    final result = await _repository.writeOrders(next);
+    if (result case Failure(:final error)) {
+      // Persistence failed — surface to the UI but keep the order in
+      // memory so the session is not corrupted.
+      emit(state.copyWith(
+        status: OrdersStatus.error,
+        errorMessage: error.message,
+      ));
+    }
     return order;
   }
 
-  void advance(String orderId) {
+  Future<void> advance(String orderId) async {
     final updated = state.orders.map((o) {
       if (o.id != orderId) return o;
       return switch (o.status) {
@@ -112,6 +122,38 @@ final class OrdersCubit extends Cubit<OrdersState> {
       };
     }).toList();
     emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    _repository.writeOrders(updated);
+    final result = await _repository.writeOrders(updated);
+    if (result case Failure(:final error)) {
+      emit(state.copyWith(
+        status: OrdersStatus.error,
+        errorMessage: error.message,
+      ));
+    }
+  }
+
+  /// Idempotently merge a server-created order into local history.
+  ///
+  /// Matches by [Order.id]. If an order with the same ID already
+  /// exists, it is replaced (upsert). If not, the order is
+  /// appended. This satisfies spec 02 req 5: "reconcile
+  /// callback/webhook-confirmed orders into local order history
+  /// idempotently."
+  Future<void> reconcile(Order serverOrder) async {
+    final updated = <Order>[
+      for (final o in state.orders)
+        if (o.id == serverOrder.id) serverOrder else o,
+    ];
+    // If no existing order matched, append the server order.
+    if (!updated.any((o) => o.id == serverOrder.id)) {
+      updated.add(serverOrder);
+    }
+    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
+    final result = await _repository.writeOrders(updated);
+    if (result case Failure(:final error)) {
+      emit(state.copyWith(
+        status: OrdersStatus.error,
+        errorMessage: error.message,
+      ));
+    }
   }
 }

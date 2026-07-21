@@ -107,29 +107,29 @@ INSERT INTO payments (
   '88888888-8888-8888-8888-888888888888',
   '66666666-6666-6666-6666-666666666666',
   '55555555-5555-5555-5555-555555555555',
-  'paymob_card', 1000, 'paymob-order-123', 'pending'
+  'paymob_card', 1000, 'test-provider-order-1', 'pending'
 )
   ON CONFLICT (id) DO NOTHING;
 
 -- ─── Test 7: valid success callback updates payment+order ─
 SELECT 'T7 valid callback', p.status AS pay_status, o.status AS order_status
   FROM payments p JOIN orders o ON o.id = p.order_id
-  WHERE p.paymob_order_id = 'paymob-order-123';
+  WHERE p.paymob_order_id = 'test-provider-order-1';
 
-SELECT process_paymob_callback('paymob-order-123', 'txn-real-1', 1000, 'EGP', true);
+SELECT process_paymob_callback('test-provider-order-1', 'txn-real-1', 1000, 'EGP', true);
 
 SELECT 'T7 after callback', p.status AS pay_status, p.transaction_id, o.status AS order_status
   FROM payments p JOIN orders o ON o.id = p.order_id
-  WHERE p.paymob_order_id = 'paymob-order-123';
+  WHERE p.paymob_order_id = 'test-provider-order-1';
 -- Expected: pay_status='success', transaction_id='txn-real-1',
 --           order_status='paid'
 
 -- ─── Test 9: duplicate valid callback is a no-op ─────────
-SELECT process_paymob_callback('paymob-order-123', 'txn-real-1', 1000, 'EGP', true);
+SELECT process_paymob_callback('test-provider-order-1', 'txn-real-1', 1000, 'EGP', true);
 -- Expected: ok=true, code='already_processed'
 
 -- ─── Test 10: a late failure cannot downgrade a paid order
-SELECT process_paymob_callback('paymob-order-123', 'txn-real-2', 1000, 'EGP', false);
+SELECT process_paymob_callback('test-provider-order-1', 'txn-real-2', 1000, 'EGP', false);
 -- Expected: ok=true, code='already_processed' (order stays paid)
 
 -- ─── Test 8: amount mismatch is rejected ──────────────────
@@ -151,19 +151,19 @@ INSERT INTO payments (
   '88888888-8888-8888-8888-888888889999',
   '66666666-6666-6666-6666-666666677777',
   '55555555-5555-5555-5555-555555555555',
-  'paymob_card', 1000, 'paymob-order-mismatch', 'pending'
+  'paymob_card', 1000, 'test-provider-order-mismatch', 'pending'
 )
   ON CONFLICT (id) DO NOTHING;
 
-SELECT process_paymob_callback('paymob-order-mismatch', 'txn-x', 999, 'EGP', true);
+SELECT process_paymob_callback('test-provider-order-mismatch', 'txn-x', 999, 'EGP', true);
 -- Expected: ok=false, code='amount_mismatch'
 
 -- ─── Test 11: unmapped provider order returns, no insert ──
-SELECT process_paymob_callback('paymob-order-unknown', 'txn-y', 1000, 'EGP', true);
+SELECT process_paymob_callback('test-provider-order-unknown', 'txn-y', 1000, 'EGP', true);
 -- Expected: ok=false, code='unmapped_payment'
 -- Verify no orphan payment was created:
 SELECT count(*) AS orphan_count FROM payments
-  WHERE paymob_order_id = 'paymob-order-unknown';
+  WHERE paymob_order_id = 'test-provider-order-unknown';
 -- Expected: 0
 
 -- ─── Test 12: failure restores stock exactly once ─────────
@@ -196,7 +196,7 @@ INSERT INTO payments (
   '88888888-8888-8888-8888-88888888000',
   '66666666-6666-6666-6666-66666660000',
   '55555555-5555-5555-5555-555555555555',
-  'paymob_card', 1000, 'paymob-fail-1', 'pending'
+  'paymob_card', 1000, 'test-provider-fail-1', 'pending'
 )
   ON CONFLICT (id) DO NOTHING;
 
@@ -205,8 +205,8 @@ INSERT INTO payments (
 -- by this fixture (not by checkout RPC which decrements). So
 -- stock is still 10 here. The failure callback will restore 1,
 -- bringing it to 11. A duplicate failure must NOT bring it to 12.
-SELECT process_paymob_callback('paymob-fail-1', 'txn-fail-1', 1000, 'EGP', false);
-SELECT process_paymob_callback('paymob-fail-1', 'txn-fail-1', 1000, 'EGP', false);
+SELECT process_paymob_callback('test-provider-fail-1', 'txn-fail-1', 1000, 'EGP', false);
+SELECT process_paymob_callback('test-provider-fail-1', 'txn-fail-1', 1000, 'EGP', false);
 -- Second call is already_processed (no-op)
 
 SELECT 'T12 stock after duplicate failure', stock

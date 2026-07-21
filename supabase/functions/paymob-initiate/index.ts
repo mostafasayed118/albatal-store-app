@@ -33,6 +33,33 @@ import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
 
+/// Maximum time (ms) to wait for a single Paymob HTTP call.
+const PAYMOB_TIMEOUT_MS = 10_000;
+
+/// Maximum allowed response body size (bytes) from Paymob.
+/// Prevents memory exhaustion from malformed upstream payloads.
+const MAX_RESPONSE_BYTES = 64 * 1024; // 64 KB
+
+/// Fetch with a timeout and response size guard.
+async function fetchWithGuard(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PAYMOB_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    // Check Content-Length before consuming the body.
+    const contentLength = Number(response.headers.get("content-length") ?? 0);
+    if (contentLength > MAX_RESPONSE_BYTES) {
+      throw new Error(`Response too large: ${contentLength} bytes`);
+    }
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -92,7 +119,7 @@ Deno.serve(async (req) => {
     // authoritative total + payment method.
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, status, total, payment_method, user_id")
+      .select("id, status, total, payment_method, user_id, address_snapshot")
       .eq("id", order_id)
       .eq("user_id", user.id)
       .single();
@@ -114,6 +141,29 @@ Deno.serve(async (req) => {
     // The server-computed total is the source of truth.
     const amountCents = order.total as number;
     const currency = "EGP";
+
+    // Build billing_data from the order's address snapshot.
+    // Falls back to generic placeholders only when a field is
+    // genuinely absent — never leaks real customer data.
+    const addr = order.address_snapshot as Record<string, string> | null;
+    const recipientParts = (addr?.recipient ?? "Customer").split(" ");
+    const firstName = recipientParts[0] || "Customer";
+    const lastName = recipientParts.slice(1).join(" ") || "Customer";
+    const billingData = {
+      apartment: addr?.apartment ?? "NA",
+      email: user.email ?? "customer@example.com",
+      floor: addr?.floor ?? "NA",
+      first_name: firstName,
+      street: addr?.line ?? "NA",
+      building: addr?.building ?? "NA",
+      phone_number: addr?.phone ?? "+201000000000",
+      shipping_method: "NA",
+      postal_code: addr?.postalCode ?? "NA",
+      city: addr?.city ?? "Cairo",
+      country: addr?.country ?? "EG",
+      last_name: lastName,
+      state: addr?.city ?? "Cairo",
+    };
 
     // ─── Get Paymob credentials ──────────────────────────────
     const apiKey = Deno.env.get("PAYMOB_API_KEY");
@@ -158,6 +208,7 @@ Deno.serve(async (req) => {
           existingPayment.paymob_order_id as string,
           amountCents,
           user.email ?? "customer@example.com",
+          billingData,
         );
         if (!reused.ok) {
           return new Response(
@@ -198,7 +249,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Step 1: Paymob auth token ──────────────────────────
-    const authResponse = await fetch("https://accept.paymob.com/api/auth/tokens", {
+    const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ api_key: apiKey }),
@@ -212,7 +263,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Step 2: Register Paymob provider order ─────────────
-    const paymobOrderResponse = await fetch(
+    const paymobOrderResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/ecommerce/orders",
       {
         method: "POST",
@@ -259,7 +310,7 @@ Deno.serve(async (req) => {
     }
 
     // ─── Step 3: Payment key ─────────────────────────────────
-    const keyResponse = await fetch(
+    const keyResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/acceptance/payment_keys",
       {
         method: "POST",
@@ -272,21 +323,7 @@ Deno.serve(async (req) => {
           amount_cents: amountCents,
           expiration: 3600,
           order_id: paymobOrderId,
-          billing_data: {
-            apartment: "NA",
-            email: user.email ?? "customer@example.com",
-            floor: "NA",
-            first_name: "Customer",
-            street: "NA",
-            building: "NA",
-            phone_number: "+201000000000",
-            shipping_method: "NA",
-            postal_code: "NA",
-            city: "Cairo",
-            country: "EG",
-            last_name: "Customer",
-            state: "Cairo",
-          },
+          billing_data: billingData,
           integration_id: integrationId,
         }),
       },
@@ -328,8 +365,9 @@ async function reissuePaymentKey(
   paymobOrderId: string,
   amountCents: number,
   email: string,
+  billingData: Record<string, string>,
 ): Promise<{ ok: boolean; token?: string; message?: string }> {
-  const authResponse = await fetch("https://accept.paymob.com/api/auth/tokens", {
+  const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ api_key: apiKey }),
@@ -338,7 +376,7 @@ async function reissuePaymentKey(
   if (!authData.token) {
     return { ok: false, message: "Failed to get Paymob auth token" };
   }
-  const keyResponse = await fetch(
+  const keyResponse = await fetchWithGuard(
     "https://accept.paymob.com/api/acceptance/payment_keys",
     {
       method: "POST",
@@ -351,21 +389,7 @@ async function reissuePaymentKey(
         amount_cents: amountCents,
         expiration: 3600,
         order_id: paymobOrderId,
-        billing_data: {
-          apartment: "NA",
-          email,
-          floor: "NA",
-          first_name: "Customer",
-          street: "NA",
-          building: "NA",
-          phone_number: "+201000000000",
-          shipping_method: "NA",
-          postal_code: "NA",
-          city: "Cairo",
-          country: "EG",
-          last_name: "Customer",
-          state: "Cairo",
-        },
+        billing_data: billingData,
         integration_id: integrationId,
       }),
     },

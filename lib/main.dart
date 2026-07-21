@@ -8,6 +8,8 @@ import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
 
+import 'core/services/crash_reporting_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -30,6 +32,29 @@ Future<void> main() async {
     Log.i('Configuring dependencies...', category: LogCategory.app);
     await configureDependencies();
     Log.i('Dependencies ready', category: LogCategory.app);
+
+    // Initialize crash reporting after DI is ready so Sentry is
+    // configured before runApp. If no DSN is configured the service
+    // silently degrades to a no-op.
+    final crashReporter = getIt<CrashReportingService>();
+    crashReporter.init();
+
+    // Capture Flutter framework errors.
+    FlutterError.onError = (details) {
+      Log.e('Flutter error', error: details.exception, stackTrace: details.stack);
+      crashReporter.captureError(
+        details.exception,
+        details.stack,
+        context: {'library': details.library},
+      );
+    };
+
+    // Capture uncaught async errors.
+    PlatformDispatcher.instance.onError = (error, stackTrace) {
+      Log.e('Uncaught async error', error: error, stackTrace: stackTrace);
+      crashReporter.captureError(error, stackTrace);
+      return true;
+    };
   } catch (error, stackTrace) {
     Log.e('Bootstrap failed', error: error, stackTrace: stackTrace);
     runApp(_BootstrapErrorApp(error: error));

@@ -1,4 +1,4 @@
-package com.example.albatal_store
+package com.albatal.elite
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -566,12 +566,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payWithCardDescription => 'Credit or Debit Card via Paymob';
 
   @override
-  String get payWithVodafoneCash => 'Pay with Vodafone Cash';
-
-  @override
-  String get payWithVodafoneCashDescription => 'Mobile Wallet Payment';
-
-  @override
   String get cashOnDeliveryDescription => 'Pay when your order arrives';
 
   @override
@@ -588,26 +582,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentCancelled => 'Payment Cancelled';
-
-  @override
-  String get vodafoneCash => 'Vodafone Cash';
-
-  @override
-  String get vodafoneCashDescription =>
-      'Enter your Vodafone Cash phone number to complete the payment.';
-
-  @override
-  String get vodafoneCashNote =>
-      'You will receive a confirmation on your phone. Approve the payment to complete.';
-
-  @override
-  String get phoneNumber => 'Phone Number';
-
-  @override
-  String get phoneNumberRequired => 'Phone number is required';
-
-  @override
-  String get invalidPhoneNumber => 'Please enter a valid phone number';
 
   @override
   String get paymentProcessing => 'Processing payment...';

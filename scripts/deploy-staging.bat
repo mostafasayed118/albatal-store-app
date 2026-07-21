@@ -46,12 +46,7 @@ echo   - paymob-callback
 echo   - cancel-expired-orders
 echo   - send-order-notification
 echo.
-echo REMOVED (deprecated/insecure):
-echo   - paymob-order (leaked auth tokens)
-echo   - paymob-auth (leaked auth tokens)
-echo   - paymob-payment-key (accepted client auth_token)
-echo   - vodafone-cash-payment (obsolete)
-echo   - vodafone-cash-verify (obsolete)
+echo Deprecated functions enforced by CI deploy-check job.
 echo.
 echo Next steps:
 echo 1. Undeploy removed functions: supabase functions delete ^<name^>

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
@@ -12,57 +15,85 @@ import '../domain/repositories/catalog_repository.dart';
 /// [Product.id] is always a real UUID — required by the server-side
 /// `create_checkout_order` RPC which casts `product_id` to `UUID`.
 ///
-/// This replaces [LocalCatalogRepository] (slug-based mock data) for
-/// any environment where the Supabase `products` / `product_variants`
-/// tables are seeded.
+/// Maintains both an in-memory cache (for synchronous [findProductById])
+/// and a persistent SharedPreferences cache (for offline fallback when
+/// the app restarts without network).
 final class SupabaseCatalogRepository implements CatalogRepository {
-  SupabaseCatalogRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseCatalogRepository({
+    SupabaseClient? client,
+    SharedPreferences? preferences,
+  })  : _client = client ?? Supabase.instance.client,
+        _preferences = preferences;
 
   final SupabaseClient _client;
+  final SharedPreferences? _preferences;
 
   /// In-memory cache of the full product list so that [findProductById]
   /// is synchronous (required by the hydration path that restores the
   /// cart from SharedPreferences without awaiting a network call).
   List<Product>? _cache;
 
+  /// Timestamp of the last successful [fetchProducts] call. Used with
+  /// [_cacheTTL] to invalidate stale data.
+  DateTime? _cacheTimestamp;
+
+  /// How long the in-memory catalog cache is considered fresh.
+  static const _cacheTTL = Duration(minutes: 5);
+
+  /// SharedPreferences key for the persistent catalog cache.
+  static const _persistentCacheKey = 'catalog_products_cache_v1';
+
+  /// Whether the cached data is still within the TTL window.
+  bool get _cacheIsFresh =>
+      _cache != null &&
+      _cacheTimestamp != null &&
+      DateTime.now().difference(_cacheTimestamp!) < _cacheTTL;
+
   @override
   Future<Result<List<Product>>> fetchProducts() async {
+    // Return cached data if still fresh — avoids redundant network calls
+    // while keeping the in-memory cache warm for synchronous findProductById.
+    if (_cacheIsFresh) return Success(_cache!);
+
     try {
-      // ── 1. Fetch active products with their category name ──────
-      final productRows = await _client
-          .from('products')
-          .select('id, name, slug, description, composition, care, origin, '
-              'base_price, old_price, rating, review_count, '
-              'categories!inner(name)')
-          .eq('is_active', true)
-          .order('name');
+      // Single query with embedded variant relation. Supabase PostgREST
+      // returns variants as an array inside each product row, eliminating
+      // the second round-trip that previously fetched all variants and
+      // grouped them in Dart.
+      final rows = await _client.from('products').select('''
+            id, name, slug, description, composition, care, origin,
+            base_price, old_price, rating, review_count,
+            categories!inner(name),
+            product_variants(product_id, size, color, stock, price_override)
+          ''').eq('is_active', true).order('name');
 
-      // ── 2. Fetch all active variants in one query ──────────────
-      final variantRows = await _client
-          .from('product_variants')
-          .select('product_id, size, color, stock, price_override')
-          .eq('is_active', true);
-
-      // ── 3. Group variants by product_id ────────────────────────
-      final variantsByProduct = <String, List<Map<String, dynamic>>>{};
-      for (final v in variantRows) {
-        final pid = v['product_id'] as String;
-        variantsByProduct.putIfAbsent(pid, () => []).add(v);
-      }
-
-      // ── 4. Map rows to Product entities ────────────────────────
       final result = <Product>[];
-      for (final row in productRows) {
-        final pid = row['id'] as String;
-        final variants = variantsByProduct[pid] ?? [];
-
+      for (final row in rows) {
+        final variantsRaw = row['product_variants'];
+        final variants = variantsRaw is List
+            ? variantsRaw.whereType<Map<String, dynamic>>().toList()
+            : <Map<String, dynamic>>[];
         result.add(_mapProduct(row, variants));
       }
 
       _cache = result;
+      _cacheTimestamp = DateTime.now();
+
+      // Persist to SharedPreferences for offline fallback.
+      _persistCache(result);
+
       return Success(result);
     } on Exception catch (e) {
+      // On network failure, try persistent cache first (survives app restart),
+      // then fall back to in-memory cache (same session only).
+      final persistentCache = _restorePersistentCache();
+      if (persistentCache != null) {
+        _cache = persistentCache;
+        _cacheTimestamp = DateTime.now();
+        return Success(persistentCache);
+      }
+      final stale = _cache;
+      if (stale != null) return Success(stale);
       return Failure(AppError('Failed to load products', cause: e));
     }
   }
@@ -110,6 +141,76 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         'Linen',
         'Wool',
       ];
+
+  // ─── Persistent cache helpers ──────────────────────────────
+
+  void _persistCache(List<Product> products) {
+    final prefs = _preferences;
+    if (prefs == null) return;
+    try {
+      final encoded = products
+          .map((p) => {
+                'id': p.id,
+                'name': p.name,
+                'category': p.category,
+                'price': p.price.minorUnits,
+                'oldPrice': p.oldPrice?.minorUnits,
+                'description': p.description,
+                'composition': p.composition,
+                'care': p.care,
+                'origin': p.origin,
+                'sizes': p.sizes,
+                'colors': p.colors,
+                'stock': p.stock,
+                'rating': p.rating,
+                'reviewCount': p.reviewCount,
+                'imageColor': p.imageColor,
+                'imageAsset': p.imageAsset,
+              })
+          .toList();
+      prefs.setString(_persistentCacheKey, jsonEncode(encoded));
+    } catch (_) {
+      // Best-effort persistence — never crash the app over a cache write.
+    }
+  }
+
+  List<Product>? _restorePersistentCache() {
+    final prefs = _preferences;
+    if (prefs == null) return null;
+    try {
+      final raw = prefs.getString(_persistentCacheKey);
+      if (raw == null) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return null;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map((m) => Product(
+                id: m['id'] as String,
+                name: m['name'] as String,
+                category: m['category'] as String? ?? '',
+                price: Money((m['price'] as num).toInt()),
+                oldPrice: m['oldPrice'] != null
+                    ? Money((m['oldPrice'] as num).toInt())
+                    : null,
+                imageColor: (m['imageColor'] as num?)?.toInt() ?? 0xFF888888,
+                imageAsset: m['imageAsset'] as String?,
+                description: m['description'] as String?,
+                composition: m['composition'] as String?,
+                care: m['care'] as String?,
+                origin: m['origin'] as String?,
+                sizes: (m['sizes'] as List?)?.cast<String>() ?? const [],
+                colors: (m['colors'] as List?)?.cast<String>() ?? const [],
+                stock: (m['stock'] as Map<String, dynamic>?)
+                        ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
+                    const {},
+                rating: (m['rating'] as num?)?.toDouble() ?? 0.0,
+                reviewCount: (m['reviewCount'] as num?)?.toInt() ?? 0,
+              ))
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
 
   // ─── Mapping helpers ────────────────────────────────────────
 

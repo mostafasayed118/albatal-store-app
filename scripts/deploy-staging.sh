@@ -34,8 +34,6 @@ for migration in supabase/migrations/*.sql; do
 done
 
 # Deploy Edge Functions (only active, non-deprecated functions)
-# SECURITY: Do NOT deploy paymob-order, paymob-auth, paymob-payment-key,
-# vodafone-cash-payment, or vodafone-cash-verify — they are removed.
 echo "Deploying Edge Functions..."
 ACTIVE_FUNCTIONS=(
     "checkout"
@@ -68,12 +66,7 @@ for funcname in "${ACTIVE_FUNCTIONS[@]}"; do
     echo "  - $funcname"
 done
 echo ""
-echo "REMOVED (deprecated/insecure):"
-echo "  - paymob-order (leaked auth tokens)"
-echo "  - paymob-auth (leaked auth tokens)"
-echo "  - paymob-payment-key (accepted client auth_token)"
-echo "  - vodafone-cash-payment (obsolete)"
-echo "  - vodafone-cash-verify (obsolete)"
+echo "Deprecated functions enforced by CI deploy-check job."
 echo ""
 echo "Next steps:"
 echo "1. Undeploy removed functions: supabase functions delete <name>"
