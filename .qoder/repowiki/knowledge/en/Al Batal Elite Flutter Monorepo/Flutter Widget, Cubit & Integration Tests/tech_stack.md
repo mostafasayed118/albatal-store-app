@@ -1,0 +1,1 @@
+flutter_test + flutter_bloc for widget/cubit testing; shared_preferences mock and a real-but-test Supabase instance initialized to `https://test.supabase.co`; Paymob checkout URLs are asserted as literals inside payment flow stubs.

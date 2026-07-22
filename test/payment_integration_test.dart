@@ -7,9 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// Stub payment service for testing.
 class StubPaymentService implements PaymentService {
   PaymentResult? _resultToReturn;
+  PaymentResult? _codResult;
   int callCount = 0;
+  int codCallCount = 0;
 
   void setResult(PaymentResult result) => _resultToReturn = result;
+  void setCodResult(PaymentResult result) => _codResult = result;
 
   @override
   Future<PaymentResult> initiatePayment({
@@ -20,6 +23,14 @@ class StubPaymentService implements PaymentService {
   }) async {
     callCount++;
     return _resultToReturn ?? const PaymentFailed(message: 'No result set');
+  }
+
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async {
+    codCallCount++;
+    return _codResult ??
+        const PaymentSuccess(
+            transactionId: 'COD-test-server-txn', amount: Money.zero);
   }
 
   @override
@@ -57,14 +68,15 @@ void main() {
       expect(cubit.state.canProceed, isTrue);
     });
 
-    test('processPayment with Cash on Delivery goes to success', () async {
+    test('processPayment with Cash on Delivery calls server RPC', () async {
       cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
 
       expect(cubit.state.status, PaymentStatus.success);
-      expect(cubit.state.transactionId, startsWith('COD-'));
+      expect(cubit.state.transactionId, 'COD-test-server-txn');
+      expect(service.codCallCount, 1);
     });
 
     test('processPayment with failure sets error', () async {

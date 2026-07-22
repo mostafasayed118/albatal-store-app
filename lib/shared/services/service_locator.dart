@@ -51,7 +51,8 @@ Future<void> configureDependencies() async {
         () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())
     ..registerLazySingleton<AuthRepository>(() => SupabaseAuthRepository())
-    ..registerLazySingleton<ProfileRepository>(() => SupabaseProfileRepository())
+    ..registerLazySingleton<ProfileRepository>(
+        () => SupabaseProfileRepository())
     ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
     ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
     ..registerLazySingleton<SupportRepository>(() => LocalSupportRepository())
@@ -65,8 +66,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<OrdersRepository>(() => kDebugMode
         ? LocalOrdersRepository(getIt<LocalStorefrontPersistence>())
         : SupabaseOrdersRepository())
-    ..registerLazySingleton<CatalogRepository>(
-        () => SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
+    ..registerLazySingleton<CatalogRepository>(() =>
+        SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
     // Crash reporting: Sentry when DSN is configured, NoOp otherwise.
     ..registerLazySingleton<CrashReportingService>(
         () => const SentryCrashReportingService());

@@ -17,8 +17,13 @@ class MockCheckoutRepository implements CheckoutRepository {
 
   Result<PendingOrder>? result;
   int callCount = 0;
-  List<({List<CartItem> items, String paymentMethod, Map<String, dynamic> address, String? idempotencyKey})>
-      calls = [];
+  List<
+      ({
+        List<CartItem> items,
+        String paymentMethod,
+        Map<String, dynamic> address,
+        String? idempotencyKey
+      })> calls = [];
 
   @override
   Future<Result<PendingOrder>> placeOrder({
@@ -93,7 +98,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
 
@@ -116,13 +125,16 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 5),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 5),
         ],
       );
 
       expect(cubit.state.status, CheckoutStatus.error);
-      expect(cubit.state.errorMessage,
-          contains('Insufficient stock'));
+      expect(cubit.state.errorMessage, contains('Insufficient stock'));
       expect(cubit.state.pendingOrderId, isNull);
     });
 
@@ -133,7 +145,11 @@ void main() {
       cubit.selectAddress(_testAddress);
 
       final items = [
-        CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+        CartItem(
+            product: products.first,
+            color: 'Emerald',
+            length: '2m',
+            quantity: 2),
       ];
 
       // First call — generates the key
@@ -161,7 +177,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
       expect(cubit.state.status, CheckoutStatus.placing);
@@ -181,7 +201,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
       expect(cubit.state.status, CheckoutStatus.placing);
@@ -196,7 +220,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
 
@@ -209,7 +237,8 @@ void main() {
 
     // ─── Test 5: Server price differs from client ─────────────
 
-    test('server price differs from client — cubit uses server totals', () async {
+    test('server price differs from client — cubit uses server totals',
+        () async {
       // The client thinks the product costs 1000 EGP (products.first.price)
       // but the server returns 500 EGP subtotal (different from client).
       // The cubit must use the server's totals, not the client's.
@@ -218,7 +247,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
 
@@ -232,7 +265,8 @@ void main() {
 
     // ─── Test 6: Server shipping differs from client ──────────
 
-    test('server shipping differs from client — cubit uses server shipping', () async {
+    test('server shipping differs from client — cubit uses server shipping',
+        () async {
       // The client cart computes shipping as Money.egp(75) (hardcoded
       // in CartState.shipping). The server may compute a different
       // shipping fee based on the address's governorate.
@@ -247,7 +281,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
 
@@ -265,7 +303,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 2),
         ],
       );
 
@@ -276,12 +318,17 @@ void main() {
 
     // ─── Additional: idempotency key uniqueness ───────────────
 
-    test('different checkout attempts get different idempotency keys', () async {
+    test('different checkout attempts get different idempotency keys',
+        () async {
       repo.result = Success(_serverPendingOrder);
       cubit.selectAddress(_testAddress);
 
       final items = [
-        CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 2),
+        CartItem(
+            product: products.first,
+            color: 'Emerald',
+            length: '2m',
+            quantity: 2),
       ];
 
       // First checkout attempt
@@ -305,7 +352,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 1),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 1),
         ],
       );
 
@@ -324,7 +375,11 @@ void main() {
 
       await cubit.createPendingOrder(
         cartItems: [
-          CartItem(product: products.first, color: 'Emerald', length: '2m', quantity: 3),
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 3),
         ],
       );
 

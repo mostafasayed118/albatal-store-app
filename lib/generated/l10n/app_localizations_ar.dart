@@ -267,6 +267,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sortProducts => 'ترتيب المنتجات';
 
   @override
+  String get sortFeatured => 'مميّز';
+
+  @override
+  String get sortPriceLowToHigh => 'السعر: من الأقل إلى الأعلى';
+
+  @override
+  String get sortPriceHighToLow => 'السعر: من الأعلى إلى الأقل';
+
+  @override
+  String get sortNameAToZ => 'الاسم: أ إلى ي';
+
+  @override
+  String get sortNewest => 'الأحدث';
+
+  @override
   String fabricsFound(int count) {
     return '$count أقمشة موجودة';
   }
@@ -345,7 +360,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get successTitle => 'نجاح!';
 
   @override
-  String get orderPlacedBody => 'تم placed طلبك. سن informك بالتحديثات.';
+  String get orderPlacedBody => 'تم تقديم طلبك. سنبقيك على اطلاع بالتحديثات.';
 
   @override
   String itemsCount(int count) {
@@ -725,6 +740,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get faqDescription => 'ابحث عن إجابات للأسئلة الشائعة';
 
   @override
+  String copiedToClipboard(String label) {
+    return 'تم نسخ $label إلى الحافظة';
+  }
+
+  @override
+  String get faqShippingQuestion => 'كم يستغرق الشحن؟';
+
+  @override
+  String get faqShippingAnswer =>
+      'تتم معالجة الطلبات خلال يوم إلى يومين عمل، وعادةً ما يتم التوصيل خلال ٣ إلى ٧ أيام عمل حسب موقعك.';
+
+  @override
+  String get faqReturnsQuestion => 'ما هي سياسة الإرجاع لديكم؟';
+
+  @override
+  String get faqReturnsAnswer =>
+      'يمكن إرجاع المنتجات غير المستخدمة بحالتها الأصلية خلال ١٤ يوماً من الاستلام. راجع سياسة المرتجعات والتبادل للتفاصيل الكاملة.';
+
+  @override
+  String get faqPaymentQuestion => 'ما هي طرق الدفع المقبولة؟';
+
+  @override
+  String get faqPaymentAnswer =>
+      'نقبل البطاقات الرئيسية والمحافظ الإلكترونية عبر بوابة Paymob الآمنة، بالإضافة إلى الدفع عند الاستلام حيثما توفر.';
+
+  @override
+  String get faqOrderTrackingQuestion => 'كيف أتتبع طلبي؟';
+
+  @override
+  String get faqOrderTrackingAnswer =>
+      'بمجرد شحن طلبك ستصلك تفاصيل التتبع، ويمكنك متابعة الحالة في أي وقت من قسم الطلبات في ملفك الشخصي.';
+
+  @override
   String get products => 'المنتجات';
 
   @override
@@ -738,4 +786,271 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get comingSoon => 'قريباً';
+
+  @override
+  String get setAsDefault => 'تعيين كافتراضي';
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get addAddressTitle => 'إضافة عنوان';
+
+  @override
+  String get editAddressTitle => 'تعديل العنوان';
+
+  @override
+  String get recipientLabel => 'المستلم';
+
+  @override
+  String get streetAddressLabel => 'العنوان';
+
+  @override
+  String get cityLabel => 'المدينة';
+
+  @override
+  String get countryLabel => 'الدولة';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get invalidCheckoutLink => 'رابط الدفع غير صالح. يرجى إعادة المحاولة.';
+
+  @override
+  String get paymentSuccessOrderMissing =>
+      'تم الدفع بنجاح لكن مرجع الطلب مفقود.';
+
+  @override
+  String get paymentCancelledRetry => 'تم إلغاء الدفع. يمكنك إعادة المحاولة.';
+
+  @override
+  String get paymentExpiredRetry => 'انتهت صلاحية الدفع. يمكنك إعادة المحاولة.';
+
+  @override
+  String get paymentTimedOut =>
+      'انتهت مهلة التحقق من الدفع. يرجى التحقق من طلباتك قبل إعادة المحاولة.';
+
+  @override
+  String get paymentFailedRetry => 'فشل الدفع. يمكنك إعادة المحاولة.';
+
+  @override
+  String get unableToContinueOrderMissing =>
+      'لا يمكن المتابعة: مرجع الطلب مفقود.';
+
+  @override
+  String get invalidCheckoutLinkFull =>
+      'رابط الدفع غير صالح. يرجى العودة وإعادة المحاولة.';
+
+  @override
+  String get returnToPayment => 'العودة للدفع';
+
+  @override
+  String orderStatusUpdatedTo(String status) {
+    return 'تم تحديث حالة الطلب إلى $status';
+  }
+
+  @override
+  String get addTrackingDetails => 'إضافة تفاصيل التتبع';
+
+  @override
+  String get courierNameLabel => 'اسم الشركة الموصلة';
+
+  @override
+  String get trackingNumberLabel => 'رقم التتبع';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get orderMarkedAsShipped => 'تم تحديد الطلب كمشحون';
+
+  @override
+  String get failedToUpdateStatus =>
+      'فشل تحديث الحالة. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get trackingNumberRequired => 'رقم التتبع مطلوب';
+
+  @override
+  String get updateStock => 'تحديث المخزون';
+
+  @override
+  String get newStockLevelLabel => 'مستوى المخزون الجديد';
+
+  @override
+  String get update => 'تحديث';
+
+  @override
+  String get serverConfirmedTotals => 'المبالغ المؤكدة من الخادم';
+
+  @override
+  String get subtotalLabel => 'المجموع الفرعي';
+
+  @override
+  String get shippingLabel => 'الشحن';
+
+  @override
+  String get totalLabel => 'الإجمالي';
+
+  @override
+  String get fullNameLabel => 'الاسم الكامل';
+
+  @override
+  String get streetAddressFormLabel => 'العنوان';
+
+  @override
+  String get cityFormLabel => 'المدينة';
+
+  @override
+  String get countryFormLabel => 'الدولة';
+
+  @override
+  String get nameRequiredValidation => 'الاسم مطلوب';
+
+  @override
+  String get validStreetAddressRequired => 'يرجى إدخال عنوان صحيح';
+
+  @override
+  String get cityRequiredValidation => 'المدينة مطلوبة';
+
+  @override
+  String get countryRequiredValidation => 'الدولة مطلوبة';
+
+  @override
+  String get orderReferenceMissing =>
+      'مرجع الطلب مفقود. يرجى التحقق من سجل طلباتك.';
+
+  @override
+  String get unknownLabel => 'غير معروف';
+
+  @override
+  String get paid => 'مدفوع';
+
+  @override
+  String orderNumber(String id) {
+    return 'طلب #$id';
+  }
+
+  @override
+  String get currencyCode => 'ج.م.';
+
+  @override
+  String get categoryAll => 'الكل';
+
+  @override
+  String get categorySilk => 'حرير';
+
+  @override
+  String get categoryCotton => 'قطن';
+
+  @override
+  String get categoryVelvet => 'مخمل';
+
+  @override
+  String get categoryLinen => 'كتان';
+
+  @override
+  String get categoryWool => 'صوف';
+
+  @override
+  String flashSalePriceLine(String discount, String price) {
+    return '$discount · $price';
+  }
+
+  @override
+  String get compositionMulberrySilk => '١٠٠٪ حرير التوت';
+
+  @override
+  String get compositionEgyptianGizaCotton => '١٠٠٪ قطن جيزة مصري';
+
+  @override
+  String get compositionCottonSilkBlend => '٨٥٪ قطن، ١٥٪ حرير';
+
+  @override
+  String get compositionEuropeanFlaxLinen => '١٠٠٪ كتان كتاني أوروبي';
+
+  @override
+  String get compositionMerinoWool => '١٠٠٪ صوف ميرينو';
+
+  @override
+  String get compositionMulberrySilkCharmeuse => '١٠٠٪ حرير التوت شارموز';
+
+  @override
+  String get compositionCombedCotton => '١٠٠٪ قطن ممشط';
+
+  @override
+  String get compositionSilkViscoseBlend => '٧٠٪ حرير، ٣٠٪ فيسكوز';
+
+  @override
+  String get compositionIrishLinen => '١٠٠٪ كتان أيرلندي';
+
+  @override
+  String get careDryCleanSilk =>
+      'تنظيف جاف فقط. كي بارد من الخلف. يُخزَّن مطوياً في قطن قابل للتنفس.';
+
+  @override
+  String get careMachineWashCotton =>
+      'غسيل آلي بارد بلطف. تجفيف منخفض. كي وهو رطب قليلاً.';
+
+  @override
+  String get careDryCleanVelvet =>
+      'تنظيف جاف فقط. بخار لإزالة التجاعيد. فرّش الوبرة برفق باتجاه واحد.';
+
+  @override
+  String get careMachineWashLinen =>
+      'غسيل آلي بارد. تجفيف معلّق. اقبل التجاعيد الطبيعية أو اكيِ على حرارة عالية وهو رطب.';
+
+  @override
+  String get careDryCleanWool =>
+      'يُفضَّل التنظيف الجاف. تنظيف موضعي بماء بارد. يُخزَّن مع خشب الأرز لطرد العث.';
+
+  @override
+  String get careDryCleanSilkCharmeuse =>
+      'تنظيف جاف فقط. كي بارد من الخلف. علّقه على شماعة مبطنة لمنع التجعد.';
+
+  @override
+  String get careMachineWashCombedCotton =>
+      'غسيل آلي دافئ. تجفيف منخفض. كي على حرارة متوسطة.';
+
+  @override
+  String get careDryCleanCrushedVelvet =>
+      'تنظيف جاف فقط. بخار من مسافة. لا تضغط مباشرة.';
+
+  @override
+  String get careMachineWashIrishLinen =>
+      'غسيل آلي بارد. تجفيف على الحبل لأفضل نتيجة. كي وهو رطب لمظهر أنيق.';
+
+  @override
+  String get originVaranasiIndia => 'فاراناسي، الهند';
+
+  @override
+  String get originNileDeltaEgypt => 'دلتا النيل، مصر';
+
+  @override
+  String get originComoItaly => 'كومو، إيطاليا';
+
+  @override
+  String get originBelgium => 'بلجيكا';
+
+  @override
+  String get originYorkshireEngland => 'يوركشاير، إنجلترا';
+
+  @override
+  String get originSuzhouChina => 'سوتشو، الصين';
+
+  @override
+  String get originIzmirTurkey => 'إزمير، تركيا';
+
+  @override
+  String get originBursaTurkey => 'بورصة، تركيا';
+
+  @override
+  String get originBelfastNorthernIreland => 'بلفاست، أيرلندا الشمالية';
 }

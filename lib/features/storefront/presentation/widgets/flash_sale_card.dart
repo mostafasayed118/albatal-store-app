@@ -30,7 +30,13 @@ class FlashSaleCard extends StatelessWidget {
                 children: [
                   Text(product.name,
                       style: Theme.of(context).textTheme.titleMedium),
-                  Text('20% OFF · ${product.price.format()}'),
+                  Text(l.flashSalePriceLine(
+                    l.discountPercent(20),
+                    product.price.format(
+                      locale: Localizations.localeOf(context).toString(),
+                      symbol: l.currencyCode,
+                    ),
+                  )),
                   const SizedBox(height: 8),
                   FilledButton(
                     onPressed: () => context.read<CartCubit>().add(product),

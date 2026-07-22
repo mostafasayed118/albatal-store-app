@@ -1,8 +1,6 @@
-import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -10,20 +8,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('orders page shows a placed order in the Active tab',
+  testWidgets('orders page shows a reconciled paid order in the Active tab',
       (WidgetTester tester) async {
     final store = MemoryStorefrontPersistence();
     final orders = OrdersCubit(store);
-    orders.place(
-      CartState([
-        CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m',
-            quantity: 2),
-      ]),
+    final now = DateTime.now();
+    await orders.reconcile(Order(
+      id: 'ORD-INT-1',
+      items: [],
+      subtotal: Money.zero,
+      shipping: Money.zero,
+      total: Money.zero,
+      status: OrderStatus.paid,
+      placedAt: now,
       paymentMethod: 'Credit Card',
-    );
+    ));
 
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -37,8 +36,7 @@ void main() {
 
     expect(find.text('My Orders'), findsOneWidget);
     expect(find.byType(TabBar), findsOneWidget);
-    expect(find.textContaining('#ORD-'), findsOneWidget);
-    expect(find.textContaining('Royal Emerald Silk'), findsOneWidget);
-    expect(find.text('Placed'), findsOneWidget);
+    expect(find.textContaining('#ORD-INT-1'), findsOneWidget);
+    expect(find.text('Paid'), findsOneWidget);
   });
 }

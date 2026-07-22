@@ -13,8 +13,8 @@ void main() {
   group('OrderSuccessPage order id display', () {
     testWidgets('displays the real server order id', (tester) async {
       const orderId = 'ord-9f3a-4b2c-real-server-id';
-      await tester.pumpWidget(
-          _harness(const OrderSuccessPage(orderId: orderId)));
+      await tester
+          .pumpWidget(_harness(const OrderSuccessPage(orderId: orderId)));
       await tester.pumpAndSettle();
 
       expect(find.text('#$orderId'), findsOneWidget);
@@ -23,8 +23,8 @@ void main() {
     testWidgets('does NOT show the hardcoded legacy fallback id',
         (tester) async {
       const orderId = 'ord-real-123';
-      await tester.pumpWidget(
-          _harness(const OrderSuccessPage(orderId: orderId)));
+      await tester
+          .pumpWidget(_harness(const OrderSuccessPage(orderId: orderId)));
       await tester.pumpAndSettle();
 
       expect(find.text('#ORD-2023-8472'), findsNothing);

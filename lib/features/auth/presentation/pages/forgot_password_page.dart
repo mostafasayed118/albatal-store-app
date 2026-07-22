@@ -30,13 +30,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state.status == AuthStatus.passwordRecovery) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l.resetEmailSent)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l.resetEmailSent)));
             context.go('/sign-in');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
         },
         child: Padding(
@@ -70,8 +70,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(l.sendResetLink),
                     );
                   },

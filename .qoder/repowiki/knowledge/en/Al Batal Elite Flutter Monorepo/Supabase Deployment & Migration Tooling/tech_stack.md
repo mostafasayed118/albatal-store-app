@@ -1,0 +1,1 @@
+PowerShell (with `Invoke-RestMethod` against the Supabase REST API), Bash + `supabase` CLI, and plain PostgreSQL/PostgresPL/pgSQL; migration ordering relies on the `NNN_` filename convention enforced by regex `^\d{3}_`.

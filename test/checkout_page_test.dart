@@ -43,8 +43,8 @@ class StubCheckoutRepository implements CheckoutRepository {
     if (shouldFail) {
       return Failure(AppError(errorMessage ?? 'Checkout failed'));
     }
-    final subtotal =
-        items.fold(Money.zero, (Money v, CartItem i) => v + i.product.price * i.quantity);
+    final subtotal = items.fold(
+        Money.zero, (Money v, CartItem i) => v + i.product.price * i.quantity);
     const shipping = Money.egp(75);
     return Success(PendingOrder(
       orderId: 'ORD-STUB-1',
@@ -70,7 +70,8 @@ Widget _harness({StubCheckoutRepository? checkoutRepo}) {
         BlocProvider(create: (_) => OrdersCubit(persistence)),
         BlocProvider(create: (_) => AddressesCubit(StubAddressRepository())),
       ],
-      child: CheckoutPage(checkoutRepository: checkoutRepo ?? StubCheckoutRepository()),
+      child: CheckoutPage(
+          checkoutRepository: checkoutRepo ?? StubCheckoutRepository()),
     ),
   );
 }
@@ -80,6 +81,8 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
     await tester.pump();
+    // Let the cart debounce timer (500ms) complete.
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Checkout'), findsOneWidget);
     expect(find.text('Proceed to Payment'), findsOneWidget);
@@ -89,15 +92,16 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('No addresses saved yet'), findsOneWidget);
     expect(find.text('Add Address'), findsOneWidget);
   });
 
-  testWidgets('checkout page shows cart summary',
-      (WidgetTester tester) async {
+  testWidgets('checkout page shows cart summary', (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     // Scroll to bottom to find cart summary
     await tester.scrollUntilVisible(find.text('Total'), 100,

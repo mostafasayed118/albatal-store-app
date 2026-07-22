@@ -26,11 +26,11 @@ class CatalogSortBar extends StatelessWidget {
             initialValue: state.sort,
             onSelected: catalog.selectSort,
             itemBuilder: (_) => CatalogSort.values
-                .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
+                .map((s) => PopupMenuItem(value: s, child: Text(s.labelFor(l))))
                 .toList(),
             child: Chip(
               avatar: const Icon(Icons.sort, size: 18),
-              label: Text(state.sort.label),
+              label: Text(state.sort.labelFor(l)),
             ),
           ),
         ],

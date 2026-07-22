@@ -1,0 +1,1 @@
+Flutter with `flutter_bloc` (Cubits + BlocProvider/BlocBuilder), `go_router` for declarative routing with shell routes, `get_it` for service-location-style DI, Supabase client initialized at startup, `shared_preferences` for local persistence, Paymob payment integration, and `intl`/`l10n` for multi-language support.

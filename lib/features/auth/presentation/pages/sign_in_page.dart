@@ -34,11 +34,17 @@ class _SignInPageState extends State<SignInPage> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state.isAuthenticated) {
-            context.go('/home');
+            final redirect =
+                GoRouterState.of(context).uri.queryParameters['redirect'];
+            if (redirect != null && redirect.isNotEmpty) {
+              context.go(redirect);
+            } else {
+              context.go('/home');
+            }
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
         },
         child: Padding(
@@ -77,12 +83,11 @@ class _SignInPageState extends State<SignInPage> {
                   obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? l.passwordTooShort
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? l.passwordTooShort : null,
                 ),
                 Align(
-                  alignment: Alignment.centerRight,
+                  alignment: AlignmentDirectional.centerEnd,
                   child: TextButton(
                     onPressed: () => context.push('/forgot-password'),
                     child: Text(l.forgotPassword),
@@ -97,8 +102,7 @@ class _SignInPageState extends State<SignInPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(l.signIn),
                     );
                   },

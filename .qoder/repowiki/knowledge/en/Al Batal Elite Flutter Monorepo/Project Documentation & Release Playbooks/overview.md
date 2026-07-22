@@ -1,0 +1,1 @@
+Markdown playbooks covering release readiness, acceptance testing, Supabase integration, and feature walkthroughs for the Albatal Store Flutter app.

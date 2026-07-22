@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../shared/extensions/build_context_x.dart';
 import 'price_text.dart';
 import 'product_image_placeholder.dart';
 import 'wishlist_toggle_icon.dart';
@@ -12,7 +13,8 @@ class ProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: '${product.name}, ${product.price.format()}',
+        label:
+            '${product.name}, ${product.price.format(locale: Localizations.localeOf(context).toString(), symbol: context.l10n.currencyCode)}',
         button: true,
         child: Card(
           child: InkWell(

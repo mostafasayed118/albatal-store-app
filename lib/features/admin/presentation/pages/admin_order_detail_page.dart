@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -25,7 +26,10 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('${l.order} #${widget.orderId.substring(0, 8)}...')),
+      appBar: AppBar(
+          title: Text(l.orderNumber(widget.orderId.length > 8
+              ? '${widget.orderId.substring(0, 8)}...'
+              : widget.orderId))),
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
@@ -60,9 +64,12 @@ class _OrderStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final status = order['status'] as String? ?? 'unknown';
-    final total = Money(order['total'] as int? ?? 0).format();
-    final paymentMethod = order['payment_method'] as String? ?? 'Unknown';
+    final statusKey = order['status'] as String? ?? 'unknown';
+    final locale = Localizations.localeOf(context).toString();
+    final total = Money(order['total'] as int? ?? 0)
+        .format(locale: locale, symbol: l.currencyCode);
+    final paymentMethod = order['payment_method'] as String? ?? l.unknownLabel;
+    final statusLabel = _localizedOrderStatus(statusKey, l);
 
     return Card(
       child: Padding(
@@ -77,12 +84,13 @@ class _OrderStatusCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(status.toUpperCase(),
+                  child: Text(statusLabel,
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary)),
@@ -92,8 +100,7 @@ class _OrderStatusCard extends StatelessWidget {
             const Divider(),
             _DetailRow(l.total, total),
             _DetailRow(l.paymentMethod, paymentMethod),
-            _DetailRow(l.placedAt,
-                order['placed_at']?.toString().substring(0, 19) ?? ''),
+            _DetailRow(l.placedAt, _formatPlacedAt(order['placed_at'], locale)),
           ],
         ),
       ),
@@ -118,13 +125,16 @@ class _OrderItemsCard extends StatelessWidget {
           children: [
             Text(l.items, style: Theme.of(context).textTheme.titleMedium),
             const Divider(),
-            ...items.map((item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(item['product_name'] ?? 'Unknown'),
-                  subtitle: Text('${item['size']} / ${item['color']}'),
-                  trailing: Text(
-                      '×${item['quantity']} · ${Money(item['unit_price'] as int? ?? 0).format()}'),
-                )),
+            ...items.map((item) {
+              final locale = Localizations.localeOf(context).toString();
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(item['product_name'] ?? l.unknownLabel),
+                subtitle: Text('${item['size']} / ${item['color']}'),
+                trailing: Text(
+                    '×${item['quantity']} · ${Money(item['unit_price'] as int? ?? 0).format(locale: locale, symbol: l.currencyCode)}'),
+              );
+            }),
           ],
         ),
       ),
@@ -232,55 +242,94 @@ class _FulfillmentActions extends StatelessWidget {
     );
   }
 
-  void _updateStatus(BuildContext context, String status) {
-    context.read<AdminCubit>().updateOrderStatus(
-          order['id'] as String,
-          status,
+  void _updateStatus(BuildContext context, String status) async {
+    final l10n = context.l10n;
+    try {
+      await context.read<AdminCubit>().updateOrderStatus(
+            order['id'] as String,
+            status,
+          );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(l10n
+                  .orderStatusUpdatedTo(_localizedOrderStatus(status, l10n)))),
         );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Order status updated to $status')),
-    );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.failedToUpdateStatus),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showTrackingDialog(BuildContext context) {
+    final l10n = context.l10n;
     final trackingCtrl = TextEditingController();
     final courierCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Add Tracking Details'),
+        title: Text(l10n.addTrackingDetails),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: courierCtrl,
-              decoration: const InputDecoration(labelText: 'Courier Name'),
+              decoration: InputDecoration(labelText: l10n.courierNameLabel),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: trackingCtrl,
-              decoration: const InputDecoration(labelText: 'Tracking Number'),
+              decoration: InputDecoration(
+                labelText: l10n.trackingNumberLabel,
+                errorText: trackingCtrl.text.isEmpty
+                    ? l10n.trackingNumberRequired
+                    : null,
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () {
-              context.read<AdminCubit>().updateOrderStatus(
-                    order['id'] as String,
-                    'shipped',
-                    trackingNumber: trackingCtrl.text,
+            onPressed: () async {
+              final tracking = trackingCtrl.text.trim();
+              if (tracking.isEmpty) {
+                return;
+              }
+              try {
+                await context.read<AdminCubit>().updateOrderStatus(
+                      order['id'] as String,
+                      'shipped',
+                      trackingNumber: tracking,
+                    );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.orderMarkedAsShipped)),
                   );
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order marked as shipped')),
-              );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.failedToUpdateStatus),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }
             },
-            child: const Text('Confirm'),
+            child: Text(l10n.confirm),
           ),
         ],
       ),
@@ -305,10 +354,43 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(Icons.chevron_right,
+          color: Theme.of(context).colorScheme.onSurfaceVariant),
       onTap: onTap,
     );
   }
+}
+
+String _localizedOrderStatus(String status, AppLocalizations l) {
+  return switch (status) {
+    'placed' => l.placed,
+    'paid' => l.paid,
+    'processing' => l.processing,
+    'shipped' => l.shipped,
+    'delivered' => l.delivered,
+    'cancelled' => l.cancelled,
+    'unknown' => l.unknownLabel,
+    _ => status,
+  };
+}
+
+String _formatPlacedAt(Object? raw, String _) {
+  if (raw == null) return '';
+  final parsed = DateTime.tryParse(raw.toString());
+  if (parsed == null) {
+    final s = raw.toString();
+    return s.length >= 19 ? s.substring(0, 19) : s;
+  }
+  // Stable ops timestamp (local wall clock) — keeps business semantics
+  // identical across locales.
+  final local = parsed.toLocal();
+  final y = local.year.toString().padLeft(4, '0');
+  final m = local.month.toString().padLeft(2, '0');
+  final d = local.day.toString().padLeft(2, '0');
+  final h = local.hour.toString().padLeft(2, '0');
+  final min = local.minute.toString().padLeft(2, '0');
+  final sec = local.second.toString().padLeft(2, '0');
+  return '$y-$m-$d $h:$min:$sec';
 }
 
 class _DetailRow extends StatelessWidget {
@@ -321,7 +403,9 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(label,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const Spacer(),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],

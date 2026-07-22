@@ -1,0 +1,3 @@
+- File-mode migration generation: `powershell -ExecutionPolicy Bypass -File scripts\run_migrations.ps1` (writes `scripts/run_all_migrations.sql`).
+- API-mode execution requires env vars `SUPABASE_PROJECT_REF` and `SUPABASE_SERVICE_ROLE_KEY`, then `powershell -ExecutionPolicy Bypass -File scripts\run_migrations.ps1 -Mode API`.
+- Staging deploy runs `./scripts/deploy-staging.sh` after creating `.env.staging` from `.env.example` and installing the global `supabase` CLI.

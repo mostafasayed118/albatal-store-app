@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'features/addresses/domain/repositories/address_repository.dart';
@@ -42,8 +43,8 @@ final class AlBatalApp extends StatelessWidget {
                     productLookup: getIt<CatalogRepository>().findProductById,
                   )..restore()),
           BlocProvider(
-              create: (_) => WishlistCubit(getIt<WishlistRepository>())
-                ..restore()),
+              create: (_) =>
+                  WishlistCubit(getIt<WishlistRepository>())..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
           BlocProvider(
@@ -54,9 +55,7 @@ final class AlBatalApp extends StatelessWidget {
                     authRepository: getIt<AuthRepository>(),
                     profileRepository: getIt<ProfileRepository>(),
                   )..checkSession()),
-          BlocProvider(
-              create: (_) =>
-                  AdminCubit(getIt<AdminRepository>())),
+          BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
             buildWhen: (a, b) =>
@@ -64,6 +63,7 @@ final class AlBatalApp extends StatelessWidget {
             builder: (_, s) => MaterialApp.router(
                   title: 'Al Batal Elite',
                   debugShowCheckedModeBanner: false,
+                  color: AppTheme.emerald,
                   theme: AppTheme.light(),
                   darkTheme: AppTheme.dark(),
                   themeMode: s.themeMode,
@@ -72,8 +72,61 @@ final class AlBatalApp extends StatelessWidget {
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: appRouter,
-                  builder: (context, child) =>
-                      EnvironmentBanner(child: child!),
+                  builder: (context, child) => _SplashTransition(
+                    child: EnvironmentBanner(child: child!),
+                  ),
                 )));
+  }
+}
+
+/// Brief emerald overlay that fades out on the first frame, preventing a
+/// flash between the native splash screen and the Flutter content.
+class _SplashTransition extends StatefulWidget {
+  const _SplashTransition({required this.child});
+  final Widget child;
+
+  @override
+  State<_SplashTransition> createState() => _SplashTransitionState();
+}
+
+class _SplashTransitionState extends State<_SplashTransition>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _opacity = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _opacity,
+      builder: (context, child) {
+        if (_opacity.isCompleted) return child!;
+        return ColoredBox(
+          color: AppTheme.emerald.withValues(alpha: _opacity.value),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
   }
 }

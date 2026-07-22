@@ -39,6 +39,31 @@ class _NoVerifyStub implements PaymentService {
       const PaymentFailed(message: 'stub');
 
   @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
+  Stream<PaymentResult> watchPaymentStatus(String orderId) =>
+      const Stream<PaymentResult>.empty();
+}
+
+/// Stub that returns server-confirmed success for COD.
+class _ServerConfirmStub implements PaymentService {
+  @override
+  Future<PaymentResult> initiatePayment({
+    required Money amount,
+    required PaymentMethod method,
+    required String orderId,
+    required String customerEmail,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentSuccess(
+          transactionId: 'COD-server-stub-txn', amount: Money.zero);
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
@@ -65,13 +90,16 @@ void main() {
     // compile; since it is removed, any reference would be a
     // compile error. We instead verify the cubit only reaches
     // success via watchPaymentStatus / processPayment.
-    test('PaymentCubit reaches success only via server-watched status', () async {
-      final cubit = PaymentCubit(_NoVerifyStub());
+    test('PaymentCubit reaches success only via server-watched status',
+        () async {
+      final stub = _ServerConfirmStub();
+      final cubit = PaymentCubit(stub);
       cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
-      // COD path still works (local, no callback parsing).
+      // COD path now calls confirmCodPayment — stub returns success.
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
       expect(cubit.state.status, PaymentStatus.success);
+      expect(cubit.state.transactionId, 'COD-server-stub-txn');
       await cubit.close();
     });
 
@@ -82,7 +110,8 @@ void main() {
     // exist on the class — if any other file still referenced
     // them, `flutter analyze` would fail. We assert the
     // remaining non-dotenv members still work.
-    test('EnvConfig retains non-secret members (environment/isDevelopment)', () {
+    test('EnvConfig retains non-secret members (environment/isDevelopment)',
+        () {
       expect(EnvConfig.environment, isA<String>());
       expect(EnvConfig.isDevelopment, isA<bool>());
     });
@@ -91,7 +120,8 @@ void main() {
     // We confirm the cubit's terminal-success path is driven
     // by watchPaymentStatus, not by a client callback parse.
     test('PaymentCubit watchPaymentStatus emits terminal results', () async {
-      final cubit = PaymentCubit(_NoVerifyStub());
+      final stub = _ServerConfirmStub();
+      final cubit = PaymentCubit(stub);
       cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
       // startWatching subscribes to the server stream. The
       // stub stream is empty, so no success is emitted —

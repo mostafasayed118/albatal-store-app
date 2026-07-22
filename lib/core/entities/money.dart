@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 
 /// An immutable monetary value stored as integer minor units (e.g. cents).
 ///
@@ -31,10 +32,20 @@ final class Money extends Equatable {
   /// Major units as a double — for display only, never for arithmetic.
   double get majorUnits => minorUnits / 100;
 
-  /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGY"`.
+  /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGP"`.
+  ///
   /// Uses whole major units (no decimals) to match the existing UI convention.
-  String format({String symbol = 'EGY'}) =>
-      '${(minorUnits / 100).toStringAsFixed(0)} $symbol';
+  /// When [locale] is provided, digit grouping follows that locale while the
+  /// amount stays identical for business logic. Pass a localized [symbol]
+  /// (e.g. from `AppLocalizations.currencyCode`) for Arabic display.
+  String format({String symbol = 'EGP', String? locale}) {
+    final major = minorUnits / 100;
+    final number = locale == null
+        ? major.toStringAsFixed(0)
+        : NumberFormat.decimalPatternDigits(locale: locale, decimalDigits: 0)
+            .format(major);
+    return '$number $symbol';
+  }
 
   // ─── Arithmetic ────────────────────────────────────────────
 

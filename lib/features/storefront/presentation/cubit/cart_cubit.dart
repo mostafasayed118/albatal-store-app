@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -54,6 +56,14 @@ final class CartCubit extends Cubit<CartState> {
   /// isn't available yet (e.g. tests); restore then loads items as-is.
   final ProductLookup? _productLookup;
 
+  /// Debounce timer for SharedPreferences writes. Rapid quantity changes
+  /// (e.g. tapping +/- quickly) batch into a single write instead of
+  /// hammering disk on every mutation.
+  Timer? _persistTimer;
+
+  /// Whether a persistence flush is needed on disposal.
+  bool _pendingPersist = false;
+
   Future<void> restore() async {
     emit(state.copyWith(status: CartStatus.loading));
     final result = await _repository.readCart(_productLookup ?? (_) => null);
@@ -70,26 +80,41 @@ final class CartCubit extends Cubit<CartState> {
 
   void add(Product product,
       {String color = 'Emerald', String length = '2m', int quantity = 1}) {
+    final stock = product.stockFor(color, length);
+    final clampedQuantity = quantity.clamp(0, stock);
+    if (clampedQuantity <= 0) {
+      return;
+    }
     final item = CartItem(
-        product: product, color: color, length: length, quantity: quantity);
+        product: product,
+        color: color,
+        length: length,
+        quantity: clampedQuantity);
     final old =
         state.items.where((existing) => existing.key == item.key).firstOrNull;
     if (old == null) {
       _emitAndPersist(
           CartState([...state.items, item], status: CartStatus.ready));
     } else {
-      update(item.key, old.quantity + quantity);
+      final newQuantity = (old.quantity + clampedQuantity).clamp(1, stock);
+      update(item.key, newQuantity);
     }
   }
 
-  void update(String key, int quantity) => _emitAndPersist(CartState(
-        state.items
-            .map((item) => item.key == key
-                ? item.copyWith(quantity: quantity.clamp(1, 99).toInt())
-                : item)
-            .toList(),
-        status: CartStatus.ready,
-      ));
+  void update(String key, int quantity) {
+    final item = state.items.firstWhere((i) => i.key == key, orElse: () {
+      throw StateError('CartItem with key $key not found');
+    });
+    final stock = item.product.stockFor(item.color, item.length);
+    _emitAndPersist(CartState(
+      state.items
+          .map((i) => i.key == key
+              ? i.copyWith(quantity: quantity.clamp(1, stock).toInt())
+              : i)
+          .toList(),
+      status: CartStatus.ready,
+    ));
+  }
 
   void remove(String key) => _emitAndPersist(CartState(
       state.items.where((item) => item.key != key).toList(),
@@ -100,6 +125,21 @@ final class CartCubit extends Cubit<CartState> {
 
   void _emitAndPersist(CartState next) {
     emit(next);
-    _repository.writeCart(next.items);
+    _pendingPersist = true;
+    _persistTimer?.cancel();
+    _persistTimer = Timer(const Duration(milliseconds: 500), () {
+      _pendingPersist = false;
+      _repository.writeCart(next.items);
+    });
+  }
+
+  @override
+  Future<void> close() async {
+    _persistTimer?.cancel();
+    if (_pendingPersist) {
+      _pendingPersist = false;
+      await _repository.writeCart(state.items);
+    }
+    super.close();
   }
 }

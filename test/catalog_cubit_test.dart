@@ -210,13 +210,16 @@ void main() {
       'filters products by price range',
       build: () => CatalogCubit(StubCatalogRepository()),
       seed: seededState,
-      act: (cubit) => cubit.setPriceRange(const Money.egp(500), const Money.egp(800)),
+      act: (cubit) =>
+          cubit.setPriceRange(const Money.egp(500), const Money.egp(800)),
       verify: (cubit) {
         expect(cubit.state.priceMin, const Money.egp(500));
         expect(cubit.state.priceMax, const Money.egp(800));
         for (final p in cubit.state.visible) {
-          expect(p.price.minorUnits,
-              inInclusiveRange(Money.egp(500).minorUnits, Money.egp(800).minorUnits));
+          expect(
+              p.price.minorUnits,
+              inInclusiveRange(
+                  Money.egp(500).minorUnits, Money.egp(800).minorUnits));
         }
       },
     );

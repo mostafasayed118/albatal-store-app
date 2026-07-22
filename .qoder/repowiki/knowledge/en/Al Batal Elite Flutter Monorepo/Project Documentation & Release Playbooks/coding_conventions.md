@@ -1,0 +1,2 @@
+- Walkthrough files follow a fixed section order — Problem and approach, Files and ownership, Tests, Limitations, Current project state, Self-check — so each slice can be reviewed in isolation.
+- Release and acceptance documents use Markdown checklists and tables (Expected / Actual / Pass columns) to drive repeatable manual verification rather than automated assertions.

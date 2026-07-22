@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
+import '../localization/category_labels.dart';
 
 /// Horizontal scrollable chips showing active filters with "Clear all".
 class ActiveFiltersBar extends StatelessWidget {
@@ -22,9 +23,10 @@ class ActiveFiltersBar extends StatelessWidget {
     final catalog = context.read<CatalogCubit>();
     final chips = <Widget>[];
 
+    final locale = Localizations.localeOf(context).toString();
     if (state.category != 'All') {
       chips.add(_filterChip(
-        label: state.category,
+        label: localizedCategory(state.category, l),
         onDeleted: () => catalog.select('All'),
       ));
     }
@@ -38,7 +40,7 @@ class ActiveFiltersBar extends StatelessWidget {
         state.priceMax < const Money.egp(999999)) {
       chips.add(_filterChip(
         label:
-            '${state.priceMin.format()} – ${state.priceMax.format()}',
+            '${state.priceMin.format(locale: locale, symbol: l.currencyCode)} – ${state.priceMax.format(locale: locale, symbol: l.currencyCode)}',
         onDeleted: () =>
             catalog.setPriceRange(Money.zero, const Money.egp(999999)),
       ));

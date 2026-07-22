@@ -1,0 +1,1 @@
+Unit, widget and integration tests for the Al Batal Elite Flutter app covering BLoC state logic, UI rendering, accessibility/localization, and end-to-end checkout flows.

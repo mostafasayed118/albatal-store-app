@@ -3,9 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/repositories/admin_repository.dart';
 
-// ─── States ────────────────────────────────────────────────
-
-enum AdminStatus { initial, loading, ready, error }
+enum AdminStatus { initial, loading, ready, error, unauthorized }
 
 final class AdminState extends Equatable {
   const AdminState({
@@ -15,6 +13,7 @@ final class AdminState extends Equatable {
     this.selectedOrder,
     this.statusFilter,
     this.errorMessage,
+    this.isAdmin = false,
   });
 
   final AdminStatus status;
@@ -23,6 +22,7 @@ final class AdminState extends Equatable {
   final Map<String, dynamic>? selectedOrder;
   final String? statusFilter;
   final String? errorMessage;
+  final bool isAdmin;
 
   List<Map<String, dynamic>> get filteredOrders {
     if (statusFilter == null) return orders;
@@ -36,6 +36,7 @@ final class AdminState extends Equatable {
     Map<String, dynamic>? selectedOrder,
     String? statusFilter,
     String? errorMessage,
+    bool? isAdmin,
     bool clearSelectedOrder = false,
   }) =>
       AdminState(
@@ -46,6 +47,7 @@ final class AdminState extends Equatable {
             clearSelectedOrder ? null : (selectedOrder ?? this.selectedOrder),
         statusFilter: statusFilter ?? this.statusFilter,
         errorMessage: errorMessage,
+        isAdmin: isAdmin ?? this.isAdmin,
       );
 
   @override
@@ -56,23 +58,42 @@ final class AdminState extends Equatable {
         selectedOrder,
         statusFilter,
         errorMessage,
+        isAdmin,
       ];
 }
-
-// ─── Cubit ─────────────────────────────────────────────────
 
 class AdminCubit extends Cubit<AdminState> {
   AdminCubit(this._adminRepository) : super(const AdminState());
 
   final AdminRepository _adminRepository;
 
-  /// Check if current user is admin.
-  Future<void> checkAdmin() async {
+  /// Full dashboard load: check admin, then load orders + low stock.
+  Future<void> loadDashboard() async {
+    emit(state.copyWith(status: AdminStatus.loading));
+
     final isAdmin = await _adminRepository.isCurrentUserAdmin();
     if (!isAdmin) {
       emit(state.copyWith(
+        status: AdminStatus.unauthorized,
+        isAdmin: false,
+      ));
+      return;
+    }
+
+    try {
+      final orders = await _adminRepository.getAllOrders();
+      final lowStock = await _adminRepository.getLowStockProducts();
+      emit(state.copyWith(
+        status: AdminStatus.ready,
+        isAdmin: true,
+        orders: orders,
+        lowStockProducts: lowStock,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
         status: AdminStatus.error,
-        errorMessage: 'Access denied: admin only',
+        isAdmin: true,
+        errorMessage: 'Failed to load dashboard data',
       ));
     }
   }
@@ -94,8 +115,7 @@ class AdminCubit extends Cubit<AdminState> {
     emit(state.copyWith(status: AdminStatus.loading));
     try {
       final details = await _adminRepository.getOrderDetails(orderId);
-      emit(state.copyWith(
-          status: AdminStatus.ready, selectedOrder: details));
+      emit(state.copyWith(status: AdminStatus.ready, selectedOrder: details));
     } catch (e) {
       emit(state.copyWith(
           status: AdminStatus.error, errorMessage: 'Failed to load order'));
@@ -108,7 +128,6 @@ class AdminCubit extends Cubit<AdminState> {
     try {
       await _adminRepository.updateOrderStatus(orderId, status,
           trackingNumber: trackingNumber);
-      // Reload orders after status update
       await loadOrders(status: state.statusFilter);
     } catch (e) {
       emit(state.copyWith(
@@ -140,10 +159,8 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
-  /// Clear selected order.
   void clearSelectedOrder() => emit(state.copyWith(clearSelectedOrder: true));
 
-  /// Clear error.
   void clearError() {
     if (state.status == AdminStatus.error) {
       emit(state.copyWith(status: AdminStatus.ready));

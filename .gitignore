@@ -15,6 +15,15 @@ coverage/
 .env.*
 !.env.example
 secrets-*.env
+*.env.bak
+*.env.backup
+.env.local
+.env.rc
+# Common editor/OS backups that may retain secrets
+.env~
+.env.swp
+*.pem
+*.p12
 
 # Android
 android/local.properties

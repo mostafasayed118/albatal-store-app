@@ -24,14 +24,14 @@ class PriceText extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          money(amount),
+          money(amount, context: context),
           style:
               style ?? TextStyle(color: primary, fontWeight: FontWeight.bold),
         ),
         if (showStrikeThrough && strikeThroughAmount != null) ...[
           const SizedBox(width: 8),
           Text(
-            money(strikeThroughAmount!),
+            money(strikeThroughAmount!, context: context),
             style: TextStyle(
               color:
                   Theme.of(context).colorScheme.onSurface.withValues(alpha: .5),

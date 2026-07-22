@@ -77,9 +77,13 @@ class _AuthenticatedProfile extends StatelessWidget {
             contentPadding: const EdgeInsets.all(16),
             leading: CircleAvatar(
               radius: 30,
-              child: Text(profile?.fullName.isNotEmpty == true
-                  ? profile!.fullName.characters.first
-                  : '?'),
+              child: Builder(builder: (context) {
+                final name = profile?.fullName;
+                if (name != null && name.isNotEmpty) {
+                  return Text(name.characters.first);
+                }
+                return const Text('?');
+              }),
             ),
             title: Text(profile?.fullName ?? l.unknownUser),
             subtitle: Text(profile?.phone ?? ''),

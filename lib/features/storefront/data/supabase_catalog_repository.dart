@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,11 +23,28 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   SupabaseCatalogRepository({
     SupabaseClient? client,
     SharedPreferences? preferences,
+    String Function(String storagePath)? publicUrlFor,
   })  : _client = client ?? Supabase.instance.client,
-        _preferences = preferences;
+        _preferences = preferences,
+        _publicUrlFor = publicUrlFor;
 
   final SupabaseClient _client;
   final SharedPreferences? _preferences;
+
+  /// Resolves a `product_images.storage_path` to a public URL. Injectable
+  /// so [_mapProduct] can be unit-tested without a live Supabase client.
+  /// In production this defaults to the public URL of the
+  /// `product-images` bucket (see migration 005).
+  final String Function(String storagePath)? _publicUrlFor;
+
+  /// Storage bucket that holds public product imagery (migration 005).
+  static const _imageBucket = 'product-images';
+
+  String _publicUrl(String storagePath) {
+    final custom = _publicUrlFor;
+    if (custom != null) return custom(storagePath);
+    return _client.storage.from(_imageBucket).getPublicUrl(storagePath);
+  }
 
   /// In-memory cache of the full product list so that [findProductById]
   /// is synchronous (required by the hydration path that restores the
@@ -64,7 +82,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
             id, name, slug, description, composition, care, origin,
             base_price, old_price, rating, review_count,
             categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override)
+            product_variants(product_id, size, color, stock, price_override),
+            product_images(storage_path, is_primary, sort_order)
           ''').eq('is_active', true).order('name');
 
       final result = <Product>[];
@@ -73,7 +92,11 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         final variants = variantsRaw is List
             ? variantsRaw.whereType<Map<String, dynamic>>().toList()
             : <Map<String, dynamic>>[];
-        result.add(_mapProduct(row, variants));
+        final imagesRaw = row['product_images'];
+        final images = imagesRaw is List
+            ? imagesRaw.whereType<Map<String, dynamic>>().toList()
+            : <Map<String, dynamic>>[];
+        result.add(_mapProduct(row, variants, images, _publicUrl));
       }
 
       _cache = result;
@@ -214,9 +237,14 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   // ─── Mapping helpers ────────────────────────────────────────
 
+  /// Maps a raw `products` row (with embedded variants and images) into a
+  /// domain [Product]. [publicUrlFor] resolves an image `storage_path` to a
+  /// public URL; exposed via [debugMapProduct] for unit tests.
   static Product _mapProduct(
     Map<String, dynamic> row,
     List<Map<String, dynamic>> variants,
+    List<Map<String, dynamic>> images,
+    String Function(String storagePath) publicUrlFor,
   ) {
     final basePrice = row['base_price'] as int;
     final oldPriceRaw = row['old_price'] as int?;
@@ -240,15 +268,23 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     final category =
         (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
 
+    // Resolve image URLs from the embedded product_images rows. The primary
+    // image (or, failing that, the lowest sort_order) becomes the card
+    // thumbnail; the remainder feed the gallery. When a product has no
+    // images the URLs are empty and the UI falls back to [imageColor].
+    final imageUrls = _resolveImageUrls(images, publicUrlFor);
+
     return Product(
       id: row['id'] as String,
       name: row['name'] as String,
       category: category,
       price: Money(basePrice),
       oldPrice: oldPriceRaw != null ? Money(oldPriceRaw) : null,
-      // imageColor and imageAsset are presentation-layer concerns not
-      // stored in the database. Use defaults so the product card renders.
+      // imageColor is a presentation fallback used when no remote image is
+      // available; imageAsset carries the resolved primary image URL.
       imageColor: 0xFF888888,
+      imageAsset: imageUrls.isNotEmpty ? imageUrls.first : null,
+      images: imageUrls,
       description: row['description'] as String?,
       composition: row['composition'] as String?,
       care: row['care'] as String?,
@@ -260,4 +296,38 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       reviewCount: row['review_count'] as int? ?? 0,
     );
   }
+
+  /// Orders images (primary first, then by sort_order) and resolves each
+  /// non-empty `storage_path` to a public URL.
+  static List<String> _resolveImageUrls(
+    List<Map<String, dynamic>> images,
+    String Function(String storagePath) publicUrlFor,
+  ) {
+    final sorted = [...images]..sort((a, b) {
+        final aPrimary = a['is_primary'] == true ? 0 : 1;
+        final bPrimary = b['is_primary'] == true ? 0 : 1;
+        if (aPrimary != bPrimary) return aPrimary.compareTo(bPrimary);
+        final aOrder = (a['sort_order'] as num?)?.toInt() ?? 0;
+        final bOrder = (b['sort_order'] as num?)?.toInt() ?? 0;
+        return aOrder.compareTo(bOrder);
+      });
+    final urls = <String>[];
+    for (final img in sorted) {
+      final path = (img['storage_path'] as String?)?.trim() ?? '';
+      if (path.isEmpty) continue;
+      urls.add(publicUrlFor(path));
+    }
+    return urls;
+  }
+
+  /// Test-only entry point to [_mapProduct] so the mapping can be exercised
+  /// without constructing a repository against a live Supabase client.
+  @visibleForTesting
+  static Product debugMapProduct(
+    Map<String, dynamic> row,
+    List<Map<String, dynamic>> variants,
+    List<Map<String, dynamic>> images,
+    String Function(String storagePath) publicUrlFor,
+  ) =>
+      _mapProduct(row, variants, images, publicUrlFor);
 }

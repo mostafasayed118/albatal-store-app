@@ -1,0 +1,5 @@
+- Repository dependencies are replaced by hand-rolled classes implementing the production interface (e.g. `_StubAuthRepository`, `_FlowStub`) instead of using a mocking library, keeping dev-dependency count low.
+- Each cubit test file groups assertions under a single `group('XxxCubit', ...)` block and constructs fresh instances in `setUp`, closing them in `tearDown` or at the end of each test.
+- Widget tests build a minimal `MaterialApp` with only the required `BlocProvider`s and `MemoryStorefrontPersistence`, never booting the full app tree unless it is the smoke test in `widget_test.dart`.
+- Asynchronous stream-driven behavior is driven by injecting a `StreamController` (often named `_controller`) whose `.add(...)` calls simulate server events, followed by `await Future<void>.delayed(Duration.zero)` to flush listeners.
+- Assertions use `flutter_test` matchers (`isTrue`, `isNull`, `findsOneWidget`, `anyOf(...)`) and verify both success and failure branches of repository calls by passing `Success(...)` / `Failure(AppError(...))` into stub constructors.

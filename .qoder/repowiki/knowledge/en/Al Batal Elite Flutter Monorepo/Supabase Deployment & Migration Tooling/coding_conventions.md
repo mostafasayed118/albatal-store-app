@@ -1,0 +1,4 @@
+- Migration files are named with a three-digit zero-padded prefix (`001_initial_schema.sql`, `002_rls_policies.sql`, …) so both PowerShell discovery and manual ordering stay in sync.
+- Every DDL/DML statement is idempotent — uses `CREATE TABLE IF NOT EXISTS`, `DROP POLICY IF EXISTS` before `CREATE POLICY`, `CREATE OR REPLACE FUNCTION`, `ON CONFLICT DO NOTHING`, and `ALTER TYPE ... ADD VALUE IF NOT EXISTS` so the combined script can be re-run safely.
+- Each migration block in the combined file is wrapped by a comment banner (`-- MIGRATION: <name>`) plus a header describing run order and idempotency guarantees, produced consistently by both `run_migrations.ps1` and `combine_migrations.ps1`.
+- Edge Function deployments are gated through an explicit allowlist array rather than globbing all functions, with a documented list of removed/deprecated functions printed alongside the deployed ones.

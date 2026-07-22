@@ -40,12 +40,12 @@ class _SignUpPageState extends State<SignUpPage> {
             context.go('/home');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           } else if (state.status == AuthStatus.unauthenticated) {
             // Email confirmation required
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l.checkEmailToVerify)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l.checkEmailToVerify)));
             context.go('/sign-in');
           }
         },
@@ -63,8 +63,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _nameCtrl,
                   decoration: InputDecoration(labelText: l.fullName),
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      (v == null || v.trim().length < 2) ? l.nameRequired : null,
+                  validator: (v) => (v == null || v.trim().length < 2)
+                      ? l.nameRequired
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -88,9 +89,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   obscureText: _obscure,
                   textInputAction: TextInputAction.next,
-                  validator: (v) => (v == null || v.length < 6)
-                      ? l.passwordTooShort
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? l.passwordTooShort : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -111,8 +111,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(l.signUp),
                     );
                   },

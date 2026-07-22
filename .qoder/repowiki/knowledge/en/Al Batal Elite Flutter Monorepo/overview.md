@@ -1,0 +1,1 @@
+Top-level Flutter monorepo that wires the storefront app, per-platform native shells, Supabase deployment scripts, tests, and design docs into a single buildable e-commerce product.

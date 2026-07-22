@@ -75,37 +75,38 @@ class _AddressFormState extends State<AddressForm> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Full name'),
+              decoration: InputDecoration(labelText: l.fullNameLabel),
               textInputAction: TextInputAction.next,
               validator: (v) => (v == null || v.trim().length < 2)
-                  ? 'Name is required'
+                  ? l.nameRequiredValidation
                   : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _streetCtrl,
-              decoration: const InputDecoration(labelText: 'Street address'),
+              decoration: InputDecoration(labelText: l.streetAddressFormLabel),
               textInputAction: TextInputAction.next,
               validator: (v) => (v == null || v.trim().length < 5)
-                  ? 'Enter a valid street address'
+                  ? l.validStreetAddressRequired
                   : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _cityCtrl,
-              decoration: const InputDecoration(labelText: 'City'),
+              decoration: InputDecoration(labelText: l.cityFormLabel),
               textInputAction: TextInputAction.next,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'City is required' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? l.cityRequiredValidation
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _countryCtrl,
-              decoration: const InputDecoration(labelText: 'Country'),
+              decoration: InputDecoration(labelText: l.countryFormLabel),
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Country is required'
+                  ? l.countryRequiredValidation
                   : null,
             ),
             const SizedBox(height: 24),

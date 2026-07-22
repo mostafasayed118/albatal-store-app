@@ -1,0 +1,1 @@
+Cross-platform scripts and SQL artifacts that bootstrap, migrate, and deploy the Al Batal Elite Supabase project (schema, RLS policies, Edge Functions, secrets).

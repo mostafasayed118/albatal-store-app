@@ -16,10 +16,10 @@ class CartSummary extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _row(l.subtotal, money(state.subtotal)),
-            _row(l.shipping, money(state.shipping)),
+            _row(l.subtotal, money(state.subtotal, context: context)),
+            _row(l.shipping, money(state.shipping, context: context)),
             const Divider(),
-            _row(l.total, money(state.total), bold: true),
+            _row(l.total, money(state.total, context: context), bold: true),
           ],
         ),
       ),

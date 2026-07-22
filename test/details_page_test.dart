@@ -18,7 +18,8 @@ Widget _harness(String productId) {
         BlocProvider(create: (_) => WishlistCubit(persistence)),
         BlocProvider(create: (_) => CartCubit(persistence)),
       ],
-      child: DetailsPage(id: productId, catalogRepository: LocalCatalogRepository()),
+      child: DetailsPage(
+          id: productId, catalogRepository: LocalCatalogRepository()),
     ),
   );
 }
@@ -30,7 +31,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Royal Emerald Silk'), findsOneWidget);
-    expect(find.text('1290 EGY'), findsOneWidget);
+    expect(find.text('1,290 EGP'), findsOneWidget);
     expect(find.text('Add to Cart'), findsOneWidget);
   });
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
+import '../localization/category_labels.dart';
 
 /// Bottom sheet with category, color, and price range filters.
 ///
@@ -97,7 +98,7 @@ class _FilterSheetState extends State<FilterSheet> {
               children: [
                 for (final c in state.categories)
                   ChoiceChip(
-                    label: Text(c),
+                    label: Text(localizedCategory(c, l)),
                     selected: _selectedCategory == c,
                     onSelected: (_) => setState(() => _selectedCategory = c),
                   ),
@@ -131,17 +132,31 @@ class _FilterSheetState extends State<FilterSheet> {
               max: max,
               divisions: 20,
               labels: RangeLabels(
-                Money.egp(_priceRange.start.round()).format(),
-                Money.egp(_priceRange.end.round()).format(),
+                Money.egp(_priceRange.start.round()).format(
+                  locale: Localizations.localeOf(context).toString(),
+                  symbol: l.currencyCode,
+                ),
+                Money.egp(_priceRange.end.round()).format(
+                  locale: Localizations.localeOf(context).toString(),
+                  symbol: l.currencyCode,
+                ),
               ),
               onChanged: (v) => setState(() => _priceRange = v),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(Money.egp(_priceRange.start.round()).format(),
+                Text(
+                    Money.egp(_priceRange.start.round()).format(
+                      locale: Localizations.localeOf(context).toString(),
+                      symbol: l.currencyCode,
+                    ),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
-                Text(Money.egp(_priceRange.end.round()).format(),
+                Text(
+                    Money.egp(_priceRange.end.round()).format(
+                      locale: Localizations.localeOf(context).toString(),
+                      symbol: l.currencyCode,
+                    ),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
               ],
             ),

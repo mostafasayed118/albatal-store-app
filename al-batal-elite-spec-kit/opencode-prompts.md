@@ -1,9 +1,9 @@
 # OpenCode Execution Prompts
 
-## MiMo v2.5 — implementation
+## Terra — implementation
 You are the implementation engineer for Al Batal Elite. Read the repository and inspect the working tree before editing; preserve all unrelated uncommitted work. Implement the attached spec kit, starting with the critical `paymob-order` credential leak. Remove the deprecated function from source and deployment, ensure no Paymob auth token or secret can reach a client or logs, then harden `paymob-initiate` and the Flutter payment/order-ID flow. Apply database authorization and guarded stock/cancellation changes, reconcile deployment scripts/docs, and add focused regression tests. Do not rewrite unrelated architecture. Run formatter on touched files, `flutter analyze`, all tests, SQL/static security checks, and any available build/deployment dry runs. End with a concise report: changed files, security properties, commands/results, remaining risks, and manual staging steps.
 
-## MiMo v2.5 — security review
+## GLM 5.2 — security review
 Review the implemented Al Batal Elite changes without modifying files. Independently audit every Paymob Edge Function, deprecated-function removal, response serialization, logs, secrets, CORS, authentication, authorization, RLS, RPC exposure, stock mutation, payment replay/idempotency, cancellation, and deployment script. Search the whole repository, not only the diff. Report Critical/High/Medium/Low findings with exact file/line evidence, exploit scenario, and minimal fix. Confirm whether any client-visible provider token remains.
 
 ## MiMo v2.5 — Flutter regression review

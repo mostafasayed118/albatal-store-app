@@ -1,0 +1,89 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: master
+nodes_managed: true
+exported_at: "2026-07-21T07:06:20Z"
+modules:
+    "":
+        dir_name: Al Batal Elite Flutter Monorepo
+        title: Al Batal Elite Flutter Monorepo
+        scope:
+            - README.md
+            - DESIGN.md
+            - INSTRUCTIONS.md
+            - analysis_options.yaml
+            - l10n.yaml
+            - .mcp.json
+            - .env.example
+            - .flutter-plugins-dependencies
+            - .gitignore
+            - AGENTS.md
+            - LOOP.md
+            - STATE.md
+            - loop-budget.md
+            - loop-constraints.md
+            - loop-run-log.md
+            - opencode.json
+            - pubspec.lock
+            - pubspec.yaml
+        source_files: []
+        children:
+            - docs
+            - flutter_app
+            - platform_targets
+            - scripts
+            - tests
+        depends_on: []
+        related_to: []
+    docs:
+        dir_name: Project Documentation & Release Playbooks
+        title: Project Documentation & Release Playbooks
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    flutter_app:
+        dir_name: Al Batal Storefront Flutter Application
+        title: Al Batal Storefront Flutter Application
+        scope:
+            - lib/
+            - assets/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    platform_targets:
+        dir_name: Flutter Platform Target Shells
+        title: Flutter Platform Target Shells
+        scope:
+            - android/
+            - ios/
+            - linux/
+            - macos/
+            - windows/
+            - web/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    scripts:
+        dir_name: Supabase Deployment & Migration Tooling
+        title: Supabase Deployment & Migration Tooling
+        scope:
+            - scripts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    tests:
+        dir_name: Flutter Widget, Cubit & Integration Tests
+        title: Flutter Widget, Cubit & Integration Tests
+        scope:
+            - test/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

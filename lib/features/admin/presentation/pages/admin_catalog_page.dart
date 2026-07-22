@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 
 /// Admin catalog management — product and category overview.
+///
+/// Only the "Variants & stock" area is wired, because inventory is the sole
+/// admin CRUD surface implemented for the MVP (see [AdminInventoryPage]).
+/// Product / category / image CRUD are deferred post-MVP, so no dead
+/// (no-op) tiles are shown here.
 class AdminCatalogPage extends StatelessWidget {
   const AdminCatalogPage({super.key});
 
@@ -15,36 +21,10 @@ class AdminCatalogPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _ManagementTile(
-            icon: Icons.shopping_bag_outlined,
-            title: l.products,
-            subtitle: l.manageProducts,
-            onTap: () {
-              // TODO: Navigate to product list
-            },
-          ),
-          _ManagementTile(
-            icon: Icons.category_outlined,
-            title: l.categories,
-            subtitle: l.manageCategories,
-            onTap: () {
-              // TODO: Navigate to category list
-            },
-          ),
-          _ManagementTile(
-            icon: Icons.image_outlined,
-            title: l.productImages,
-            subtitle: l.manageProductImages,
-            onTap: () {
-              // TODO: Navigate to image management
-            },
-          ),
-          _ManagementTile(
             icon: Icons.inventory_2_outlined,
             title: l.variants,
             subtitle: l.manageVariantsAndStock,
-            onTap: () {
-              // TODO: Navigate to variant management
-            },
+            onTap: () => context.push('/admin/inventory'),
           ),
         ],
       ),

@@ -55,8 +55,8 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     final scheme = Theme.of(context).colorScheme;
     final total = (widget.args['total'] as Money?) ?? Money.zero;
     final orderId = (widget.args['orderId'] as String?)?.trim() ?? '';
-    final customerEmail = (widget.args['customerEmail'] as String?) ??
-        'customer@example.com';
+    final customerEmail =
+        (widget.args['customerEmail'] as String?) ?? 'customer@example.com';
 
     // Production: create a PaymentCubit from the registered
     // [PaymentService] (or an injected [paymentService]) and
@@ -65,128 +65,129 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     // transitions deterministically — the page must not shadow
     // it with its own GetIt lookup.
     final consumer = BlocConsumer<PaymentCubit, PaymentState>(
-        listenWhen: (previous, current) =>
-            previous.status != current.status ||
-            previous.checkoutUrl != current.checkoutUrl,
-        listener: (context, state) {
-          if (state.status == PaymentStatus.awaitingVerification &&
-              !_checkoutOpened) {
-            final checkoutUrl = state.checkoutUrl;
-            if (checkoutUrl == null ||
-                !PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
-              context.read<PaymentCubit>().cancel();
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('The payment checkout link is invalid. Please retry.'),
-              ));
-              return;
-            }
-            _checkoutOpened = true;
-            context.push('/paymob-checkout', extra: checkoutUrl);
-          } else if (state.status == PaymentStatus.success &&
-              !_successNavigated) {
-            final successOrderId = state.orderId.trim();
-            if (successOrderId.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Payment succeeded but the order reference is missing.'),
-              ));
-              return;
-            }
-            _successNavigated = true;
-            // Clear the local cart only. The canonical order
-            // lives on the server; order history is fetched
-            // from there, not duplicated locally.
-            context.read<CartCubit>().clear();
-            context.go('/order-success', extra: successOrderId);
-          } else if (state.status == PaymentStatus.failed ||
-              state.status == PaymentStatus.cancelled ||
-              state.status == PaymentStatus.expired ||
-              state.status == PaymentStatus.timedOut) {
-            // Pop the hosted-checkout WebView if it is still on top so
-            // the user lands back on this page and can read the
-            // recoverable error + retry. Only pop when we actually
-            // opened the checkout, so a failure that happens before
-            // navigation (e.g. initiation error) does not pop an
-            // unrelated route.
-            final checkoutWasOpen = _checkoutOpened;
-            _checkoutOpened = false;
-            if (checkoutWasOpen && context.canPop()) context.pop();
-            final message = state.errorMessage ?? switch (state.status) {
-              PaymentStatus.cancelled => 'Payment cancelled. You can retry.',
-              PaymentStatus.expired => 'Payment expired. You can retry.',
-              PaymentStatus.timedOut =>
-                'Payment verification timed out. Please check your orders before retrying.',
-              _ => 'Payment failed. You can retry.',
-            };
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(message)));
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          previous.checkoutUrl != current.checkoutUrl,
+      listener: (context, state) {
+        if (state.status == PaymentStatus.awaitingVerification &&
+            !_checkoutOpened) {
+          final checkoutUrl = state.checkoutUrl;
+          if (checkoutUrl == null ||
+              !PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
+            context.read<PaymentCubit>().cancel();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l.invalidCheckoutLink),
+            ));
+            return;
           }
-        },
-        builder: (context, state) {
-          if (orderId.isEmpty) {
-            return Scaffold(
-              appBar: AppBar(title: Text(l.selectPaymentMethod)),
-              body: Center(
-                child: Text('Unable to continue: the order reference is missing.'),
-              ),
-            );
+          _checkoutOpened = true;
+          context.push('/paymob-checkout', extra: checkoutUrl);
+        } else if (state.status == PaymentStatus.success &&
+            !_successNavigated) {
+          final successOrderId = state.orderId.trim();
+          if (successOrderId.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l.paymentSuccessOrderMissing),
+            ));
+            return;
           }
+          _successNavigated = true;
+          // Clear the local cart only. The canonical order
+          // lives on the server; order history is fetched
+          // from there, not duplicated locally.
+          context.read<CartCubit>().clear();
+          context.go('/order-success', extra: successOrderId);
+        } else if (state.status == PaymentStatus.failed ||
+            state.status == PaymentStatus.cancelled ||
+            state.status == PaymentStatus.expired ||
+            state.status == PaymentStatus.timedOut) {
+          // Pop the hosted-checkout WebView if it is still on top so
+          // the user lands back on this page and can read the
+          // recoverable error + retry. Only pop when we actually
+          // opened the checkout, so a failure that happens before
+          // navigation (e.g. initiation error) does not pop an
+          // unrelated route.
+          final checkoutWasOpen = _checkoutOpened;
+          _checkoutOpened = false;
+          if (checkoutWasOpen && context.canPop()) context.pop();
+          final message = state.errorMessage ??
+              switch (state.status) {
+                PaymentStatus.cancelled => l.paymentCancelledRetry,
+                PaymentStatus.expired => l.paymentExpiredRetry,
+                PaymentStatus.timedOut => l.paymentTimedOut,
+                _ => l.paymentFailedRetry,
+              };
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
+        }
+      },
+      builder: (context, state) {
+        if (orderId.isEmpty) {
           return Scaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
-            body: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(l.selectPaymentMethod,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text('${l.total}: ${state.amount.format()}',
-                    style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: scheme.primary)),
-                const SizedBox(height: 24),
-                _PaymentOption(
-                  icon: Icons.credit_card,
-                  title: l.payWithCard,
-                  subtitle: l.payWithCardDescription,
-                  isSelected: state.selectedMethod == PaymentMethod.paymobCard,
-                  onTap: () => context
-                      .read<PaymentCubit>()
-                      .selectMethod(PaymentMethod.paymobCard),
-                ),
-                const SizedBox(height: 12),
-                _PaymentOption(
-                  icon: Icons.money,
-                  title: l.cashOnDelivery,
-                  subtitle: l.cashOnDeliveryDescription,
-                  isSelected:
-                      state.selectedMethod == PaymentMethod.cashOnDelivery,
-                  onTap: () => context
-                      .read<PaymentCubit>()
-                      .selectMethod(PaymentMethod.cashOnDelivery),
-                ),
-                const SizedBox(height: 32),
-                BlocBuilder<PaymentCubit, PaymentState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.canProceed &&
-                              state.status != PaymentStatus.processing
-                          ? () => context.read<PaymentCubit>().processPayment(
-                                customerEmail: customerEmail,
-                              )
-                          : null,
-                      child: state.status == PaymentStatus.processing
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(l.payNow),
-                    );
-                  },
-                ),
-              ],
+            body: Center(
+              child: Text(l.unableToContinueOrderMissing),
             ),
           );
-        },
+        }
+        return Scaffold(
+          appBar: AppBar(title: Text(l.selectPaymentMethod)),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(l.selectPaymentMethod,
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                  '${l.total}: ${state.amount.format(locale: Localizations.localeOf(context).toString(), symbol: l.currencyCode)}',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: scheme.primary)),
+              const SizedBox(height: 24),
+              _PaymentOption(
+                icon: Icons.credit_card,
+                title: l.payWithCard,
+                subtitle: l.payWithCardDescription,
+                isSelected: state.selectedMethod == PaymentMethod.paymobCard,
+                onTap: () => context
+                    .read<PaymentCubit>()
+                    .selectMethod(PaymentMethod.paymobCard),
+              ),
+              const SizedBox(height: 12),
+              _PaymentOption(
+                icon: Icons.money,
+                title: l.cashOnDelivery,
+                subtitle: l.cashOnDeliveryDescription,
+                isSelected:
+                    state.selectedMethod == PaymentMethod.cashOnDelivery,
+                onTap: () => context
+                    .read<PaymentCubit>()
+                    .selectMethod(PaymentMethod.cashOnDelivery),
+              ),
+              const SizedBox(height: 32),
+              BlocBuilder<PaymentCubit, PaymentState>(
+                builder: (context, state) {
+                  return FilledButton(
+                    onPressed: state.canProceed &&
+                            state.status != PaymentStatus.processing
+                        ? () => context.read<PaymentCubit>().processPayment(
+                              customerEmail: customerEmail,
+                            )
+                        : null,
+                    child: state.status == PaymentStatus.processing
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(l.payNow),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
 
     if (widget.paymentCubit != null) {
@@ -201,9 +202,9 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
       create: (_) => PaymentCubit(
         widget.paymentService ?? getIt<PaymentService>(),
       )..initPayment(
-        amount: total,
-        orderId: orderId,
-      ),
+          amount: total,
+          orderId: orderId,
+        ),
       child: consumer,
     );
   }
@@ -238,8 +239,7 @@ class _PaymentOption extends StatelessWidget {
         ),
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Icon(icon,
             color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
         title: Text(title,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -50,7 +51,8 @@ class OrderCard extends StatelessWidget {
             if (isActive)
               StatusProgress(status: o.status, scheme: scheme)
             else
-              Text('${l.delivered} · ${_fmtDate(o.placedAt)}',
+              Text(
+                  '${l.delivered} · ${_fmtDate(o.placedAt, Localizations.localeOf(context).toString())}',
                   style: TextStyle(color: scheme.primary)),
             if (isActive) ...[
               const SizedBox(height: 8),
@@ -72,8 +74,8 @@ class OrderCard extends StatelessWidget {
   String _statusLabel(OrderStatus s, AppLocalizations l) => switch (s) {
         OrderStatus.pending => l.placed,
         OrderStatus.placed => l.placed,
-        OrderStatus.paid => l.placed,
-        OrderStatus.processing => l.placed,
+        OrderStatus.paid => l.paid,
+        OrderStatus.processing => l.processing,
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
@@ -81,18 +83,5 @@ class OrderCard extends StatelessWidget {
       };
 }
 
-const _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-];
-String _fmtDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+String _fmtDate(DateTime d, String locale) =>
+    DateFormat.yMMMd(locale).format(d);

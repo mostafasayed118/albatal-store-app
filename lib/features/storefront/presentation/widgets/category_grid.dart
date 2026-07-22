@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../cubit/catalog_cubit.dart';
+import '../localization/category_labels.dart';
 
 /// Grid of category tiles with image backgrounds.
 class CategoryGrid extends StatelessWidget {
@@ -80,7 +81,7 @@ class CategoryGrid extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(c,
+                        Text(localizedCategory(c, l),
                             style: TextStyle(
                                 color: scheme.onPrimary,
                                 fontSize: 22,

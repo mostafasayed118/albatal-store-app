@@ -5,17 +5,18 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../domain/repositories/catalog_repository.dart';
 
 enum CatalogSort { featured, priceLowToHigh, priceHighToLow, name, newest }
 
 extension CatalogSortLabel on CatalogSort {
-  String get label => switch (this) {
-        CatalogSort.featured => 'Featured',
-        CatalogSort.priceLowToHigh => 'Price: low to high',
-        CatalogSort.priceHighToLow => 'Price: high to low',
-        CatalogSort.name => 'Name: A to Z',
-        CatalogSort.newest => 'Newest',
+  String labelFor(AppLocalizations l) => switch (this) {
+        CatalogSort.featured => l.sortFeatured,
+        CatalogSort.priceLowToHigh => l.sortPriceLowToHigh,
+        CatalogSort.priceHighToLow => l.sortPriceHighToLow,
+        CatalogSort.name => l.sortNameAToZ,
+        CatalogSort.newest => l.sortNewest,
       };
 }
 
@@ -74,14 +75,10 @@ final class CatalogState extends Equatable {
   /// Price bounds computed from the full catalog.
   Money get catalogPriceMin => allProducts.isEmpty
       ? Money.zero
-      : allProducts
-          .map((p) => p.price)
-          .reduce((a, b) => a < b ? a : b);
+      : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
   Money get catalogPriceMax => allProducts.isEmpty
       ? _unboundedMax
-      : allProducts
-          .map((p) => p.price)
-          .reduce((a, b) => a > b ? a : b);
+      : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
 
   /// Products in a specific category (excluding "All").
   List<Product> productsInCategory(String category) =>
@@ -155,8 +152,7 @@ final class CatalogState extends Equatable {
         recentQueries: recentQueries ?? this.recentQueries,
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
         priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
-        priceMax:
-            resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
+        priceMax: resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
       );
 
   @override
@@ -177,16 +173,9 @@ final class CatalogState extends Equatable {
 }
 
 final class CatalogCubit extends Cubit<CatalogState> {
-  CatalogCubit(this._repository) : super(const CatalogState()) {
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => emit(state.copyWith(
-          saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt())),
-    );
-  }
+  CatalogCubit(this._repository) : super(const CatalogState());
 
   final CatalogRepository _repository;
-  late final Timer _timer;
   Timer? _debounce;
 
   Future<void> load() async {
@@ -257,7 +246,6 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   @override
   Future<void> close() {
-    _timer.cancel();
     _debounce?.cancel();
     return super.close();
   }

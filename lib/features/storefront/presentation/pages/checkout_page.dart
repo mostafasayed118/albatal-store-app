@@ -35,14 +35,15 @@ class CheckoutPage extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider(
-      create: (_) => CheckoutCubit(_checkoutRepository ?? getIt<CheckoutRepository>()),
+      create: (_) =>
+          CheckoutCubit(_checkoutRepository ?? getIt<CheckoutRepository>()),
       child: BlocConsumer<CheckoutCubit, CheckoutState>(
         listener: (context, s) {
           // When the pending order is created, navigate to payment with
           // the real orderId and server-computed total.
           if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
-            final email = SupabaseConfig.currentUser?.email ??
-                'customer@example.com';
+            final email =
+                SupabaseConfig.currentUser?.email ?? 'customer@example.com';
             context.push('/payment-method', extra: {
               'total': s.serverTotal,
               'subtotal': s.serverSubtotal,
@@ -113,16 +114,15 @@ class CheckoutPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Server-confirmed totals',
-                              style:
-                                  Theme.of(context).textTheme.titleSmall),
+                          Text(l.serverConfirmedTotals,
+                              style: Theme.of(context).textTheme.titleSmall),
                           const SizedBox(height: 8),
                           _ServerTotalRow(
-                              label: 'Subtotal', value: s.serverSubtotal),
+                              label: l.subtotalLabel, value: s.serverSubtotal),
                           _ServerTotalRow(
-                              label: 'Shipping', value: s.serverShipping),
+                              label: l.shippingLabel, value: s.serverShipping),
                           _ServerTotalRow(
-                              label: 'Total', value: s.serverTotal),
+                              label: l.totalLabel, value: s.serverTotal),
                         ],
                       ),
                     ),
@@ -168,7 +168,11 @@ class _ServerTotalRow extends StatelessWidget {
               style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const Spacer(),
-          Text(value?.format() ?? '--',
+          Text(
+              value?.format(
+                      locale: Localizations.localeOf(context).toString(),
+                      symbol: context.l10n.currencyCode) ??
+                  '--',
               style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),

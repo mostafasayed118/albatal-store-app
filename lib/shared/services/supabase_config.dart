@@ -22,13 +22,11 @@ class SupabaseConfig {
     final anonKey = dotenv.env['SUPABASE_ANON_KEY'];
 
     if (url == null || url.isEmpty) {
-      throw AssertionError(
-          'SUPABASE_URL is missing from .env. '
+      throw AssertionError('SUPABASE_URL is missing from .env. '
           'Copy .env.example to .env and fill in your Supabase project values.');
     }
     if (anonKey == null || anonKey.isEmpty) {
-      throw AssertionError(
-          'SUPABASE_ANON_KEY is missing from .env. '
+      throw AssertionError('SUPABASE_ANON_KEY is missing from .env. '
           'Copy .env.example to .env and fill in your Supabase project values.');
     }
 

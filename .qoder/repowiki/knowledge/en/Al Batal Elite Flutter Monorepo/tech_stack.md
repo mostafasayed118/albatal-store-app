@@ -1,0 +1,1 @@
+Flutter SDK ≥3.19 with Dart ≥3.3, bloc/flutter_bloc state management, GoRouter navigation, Supabase client, GetIt DI, intl + flutter_gen l10n, and Supabase CLI — all declared once in the root `pubspec.yaml` and inherited by every child.

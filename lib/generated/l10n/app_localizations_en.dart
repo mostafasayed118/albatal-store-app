@@ -267,6 +267,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortProducts => 'Sort products';
 
   @override
+  String get sortFeatured => 'Featured';
+
+  @override
+  String get sortPriceLowToHigh => 'Price: low to high';
+
+  @override
+  String get sortPriceHighToLow => 'Price: high to low';
+
+  @override
+  String get sortNameAToZ => 'Name: A to Z';
+
+  @override
+  String get sortNewest => 'Newest';
+
+  @override
   String fabricsFound(int count) {
     return '$count fabrics found';
   }
@@ -729,6 +744,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get faqDescription => 'Find answers to common questions';
 
   @override
+  String copiedToClipboard(String label) {
+    return '$label copied to clipboard';
+  }
+
+  @override
+  String get faqShippingQuestion => 'How long does shipping take?';
+
+  @override
+  String get faqShippingAnswer =>
+      'Orders are processed within 1–2 business days and typically delivered within 3–7 business days depending on your location.';
+
+  @override
+  String get faqReturnsQuestion => 'What is your return policy?';
+
+  @override
+  String get faqReturnsAnswer =>
+      'Unworn items in their original condition can be returned within 14 days of delivery. See our Returns & Exchange Policy for full details.';
+
+  @override
+  String get faqPaymentQuestion => 'Which payment methods do you accept?';
+
+  @override
+  String get faqPaymentAnswer =>
+      'We accept major cards and mobile wallets through our secure Paymob checkout, as well as cash on delivery where available.';
+
+  @override
+  String get faqOrderTrackingQuestion => 'How do I track my order?';
+
+  @override
+  String get faqOrderTrackingAnswer =>
+      'Once your order ships you will receive tracking details, and you can view live status any time under Orders in your profile.';
+
+  @override
   String get products => 'Products';
 
   @override
@@ -742,4 +790,272 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming Soon';
+
+  @override
+  String get setAsDefault => 'Set as default';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get addAddressTitle => 'Add address';
+
+  @override
+  String get editAddressTitle => 'Edit address';
+
+  @override
+  String get recipientLabel => 'Recipient';
+
+  @override
+  String get streetAddressLabel => 'Street address';
+
+  @override
+  String get cityLabel => 'City';
+
+  @override
+  String get countryLabel => 'Country';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get invalidCheckoutLink =>
+      'The payment checkout link is invalid. Please retry.';
+
+  @override
+  String get paymentSuccessOrderMissing =>
+      'Payment succeeded but the order reference is missing.';
+
+  @override
+  String get paymentCancelledRetry => 'Payment cancelled. You can retry.';
+
+  @override
+  String get paymentExpiredRetry => 'Payment expired. You can retry.';
+
+  @override
+  String get paymentTimedOut =>
+      'Payment verification timed out. Please check your orders before retrying.';
+
+  @override
+  String get paymentFailedRetry => 'Payment failed. You can retry.';
+
+  @override
+  String get unableToContinueOrderMissing =>
+      'Unable to continue: the order reference is missing.';
+
+  @override
+  String get invalidCheckoutLinkFull =>
+      'The payment checkout link is invalid. Please return and retry.';
+
+  @override
+  String get returnToPayment => 'Return to payment';
+
+  @override
+  String orderStatusUpdatedTo(String status) {
+    return 'Order status updated to $status';
+  }
+
+  @override
+  String get addTrackingDetails => 'Add Tracking Details';
+
+  @override
+  String get courierNameLabel => 'Courier Name';
+
+  @override
+  String get trackingNumberLabel => 'Tracking Number';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get orderMarkedAsShipped => 'Order marked as shipped';
+
+  @override
+  String get failedToUpdateStatus =>
+      'Failed to update status. Please try again.';
+
+  @override
+  String get trackingNumberRequired => 'Tracking number is required';
+
+  @override
+  String get updateStock => 'Update Stock';
+
+  @override
+  String get newStockLevelLabel => 'New stock level';
+
+  @override
+  String get update => 'Update';
+
+  @override
+  String get serverConfirmedTotals => 'Server-confirmed totals';
+
+  @override
+  String get subtotalLabel => 'Subtotal';
+
+  @override
+  String get shippingLabel => 'Shipping';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get fullNameLabel => 'Full name';
+
+  @override
+  String get streetAddressFormLabel => 'Street address';
+
+  @override
+  String get cityFormLabel => 'City';
+
+  @override
+  String get countryFormLabel => 'Country';
+
+  @override
+  String get nameRequiredValidation => 'Name is required';
+
+  @override
+  String get validStreetAddressRequired => 'Enter a valid street address';
+
+  @override
+  String get cityRequiredValidation => 'City is required';
+
+  @override
+  String get countryRequiredValidation => 'Country is required';
+
+  @override
+  String get orderReferenceMissing =>
+      'Order reference is missing. Please check your order history.';
+
+  @override
+  String get unknownLabel => 'Unknown';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String orderNumber(String id) {
+    return 'Order #$id';
+  }
+
+  @override
+  String get currencyCode => 'EGP';
+
+  @override
+  String get categoryAll => 'All';
+
+  @override
+  String get categorySilk => 'Silk';
+
+  @override
+  String get categoryCotton => 'Cotton';
+
+  @override
+  String get categoryVelvet => 'Velvet';
+
+  @override
+  String get categoryLinen => 'Linen';
+
+  @override
+  String get categoryWool => 'Wool';
+
+  @override
+  String flashSalePriceLine(String discount, String price) {
+    return '$discount · $price';
+  }
+
+  @override
+  String get compositionMulberrySilk => '100% Mulberry Silk';
+
+  @override
+  String get compositionEgyptianGizaCotton => '100% Egyptian Giza Cotton';
+
+  @override
+  String get compositionCottonSilkBlend => '85% Cotton, 15% Silk';
+
+  @override
+  String get compositionEuropeanFlaxLinen => '100% European Flax Linen';
+
+  @override
+  String get compositionMerinoWool => '100% Merino Wool';
+
+  @override
+  String get compositionMulberrySilkCharmeuse => '100% Mulberry Silk Charmeuse';
+
+  @override
+  String get compositionCombedCotton => '100% Combed Cotton';
+
+  @override
+  String get compositionSilkViscoseBlend => '70% Silk, 30% Viscose';
+
+  @override
+  String get compositionIrishLinen => '100% Irish Linen';
+
+  @override
+  String get careDryCleanSilk =>
+      'Dry clean only. Cool iron on reverse. Store folded in breathable cotton.';
+
+  @override
+  String get careMachineWashCotton =>
+      'Machine wash cold, gentle cycle. Tumble dry low. Iron while slightly damp.';
+
+  @override
+  String get careDryCleanVelvet =>
+      'Dry clean only. Steam to remove creases. Brush nap gently in one direction.';
+
+  @override
+  String get careMachineWashLinen =>
+      'Machine wash cold. Hang dry. Embrace natural wrinkles or iron on high while damp.';
+
+  @override
+  String get careDryCleanWool =>
+      'Dry clean preferred. Spot clean with cold water. Store with cedar to deter moths.';
+
+  @override
+  String get careDryCleanSilkCharmeuse =>
+      'Dry clean only. Cool iron on reverse. Hang on padded hanger to prevent creasing.';
+
+  @override
+  String get careMachineWashCombedCotton =>
+      'Machine wash warm. Tumble dry low. Iron on medium heat.';
+
+  @override
+  String get careDryCleanCrushedVelvet =>
+      'Dry clean only. Steam from a distance. Never press directly.';
+
+  @override
+  String get careMachineWashIrishLinen =>
+      'Machine wash cold. Line dry for best results. Iron while damp for crisp finish.';
+
+  @override
+  String get originVaranasiIndia => 'Varanasi, India';
+
+  @override
+  String get originNileDeltaEgypt => 'Nile Delta, Egypt';
+
+  @override
+  String get originComoItaly => 'Como, Italy';
+
+  @override
+  String get originBelgium => 'Belgium';
+
+  @override
+  String get originYorkshireEngland => 'Yorkshire, England';
+
+  @override
+  String get originSuzhouChina => 'Suzhou, China';
+
+  @override
+  String get originIzmirTurkey => 'Izmir, Turkey';
+
+  @override
+  String get originBursaTurkey => 'Bursa, Turkey';
+
+  @override
+  String get originBelfastNorthernIreland => 'Belfast, Northern Ireland';
 }

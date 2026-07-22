@@ -1,0 +1,4 @@
+- One public widget per file under `lib/features/*/presentation/widgets/` for discoverability and reviewability.
+- Domain-layer repository interfaces decouple Cubits from local-first SharedPreferences implementations so cloud sync can be wired later without UI changes.
+- `Money` value objects store currency as integer minor units to avoid floating-point rounding and match Postgres INTEGER cents columns.
+- Order items snapshot full product details at purchase time so historical orders remain accurate after catalog edits.

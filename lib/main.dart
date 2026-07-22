@@ -41,7 +41,8 @@ Future<void> main() async {
 
     // Capture Flutter framework errors.
     FlutterError.onError = (details) {
-      Log.e('Flutter error', error: details.exception, stackTrace: details.stack);
+      Log.e('Flutter error',
+          error: details.exception, stackTrace: details.stack);
       crashReporter.captureError(
         details.exception,
         details.stack,

@@ -33,13 +33,15 @@ void main() {
   test('restores configured cart lines and wishlist ids from local storage',
       () async {
     final storage = MemoryStorefrontPersistence();
-    Product? lookup(String id) =>
-        products.where((p) => p.id == id).firstOrNull;
+    Product? lookup(String id) => products.where((p) => p.id == id).firstOrNull;
     final sourceCart = CartCubit(storage, productLookup: lookup);
     final sourceWishlist = WishlistCubit(storage);
 
     sourceCart.add(products.first, color: 'Emerald', length: '3m', quantity: 2);
     sourceWishlist.toggle(products.last.id);
+
+    await sourceCart.close();
+    await sourceWishlist.close();
 
     final restoredCart = CartCubit(storage, productLookup: lookup);
     final restoredWishlist = WishlistCubit(storage);
@@ -51,9 +53,40 @@ void main() {
           product: products.first, color: 'Emerald', length: '3m', quantity: 2)
     ]);
     expect(restoredWishlist.state.ids, {products.last.id});
-    await sourceCart.close();
-    await sourceWishlist.close();
     await restoredCart.close();
     await restoredWishlist.close();
+  });
+
+  group('stock validation', () {
+    test('add clamps quantity to variant stock', () {
+      final cubit = CartCubit(MemoryStorefrontPersistence());
+      cubit.add(products.first, color: 'Emerald', length: '2m', quantity: 100);
+      expect(cubit.state.items, hasLength(1));
+      expect(cubit.state.items.first.quantity, 8);
+      cubit.close();
+    });
+
+    test('add with zero stock does not add item', () {
+      final cubit = CartCubit(MemoryStorefrontPersistence());
+      cubit.add(products.first, color: 'Gold', length: '5m', quantity: 5);
+      expect(cubit.state.items, isEmpty);
+      cubit.close();
+    });
+
+    test('update clamps quantity to variant stock', () {
+      final cubit = CartCubit(MemoryStorefrontPersistence());
+      cubit.add(products.first, color: 'Emerald', length: '2m', quantity: 1);
+      cubit.update(cubit.state.items.first.key, 100);
+      expect(cubit.state.items.first.quantity, 8);
+      cubit.close();
+    });
+
+    test('add merges into existing item respecting stock limit', () {
+      final cubit = CartCubit(MemoryStorefrontPersistence());
+      cubit.add(products.first, color: 'Emerald', length: '2m', quantity: 5);
+      cubit.add(products.first, color: 'Emerald', length: '2m', quantity: 10);
+      expect(cubit.state.items.first.quantity, 8);
+      cubit.close();
+    });
   });
 }

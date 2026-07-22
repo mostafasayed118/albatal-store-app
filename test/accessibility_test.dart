@@ -34,8 +34,7 @@ Widget _harness({required Locale locale}) {
 }
 
 void main() {
-  testWidgets('home settings button exposes localized tooltip',
-      (tester) async {
+  testWidgets('home settings button exposes localized tooltip', (tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('en')));
     await tester.pump(const Duration(seconds: 1));
 

@@ -1,0 +1,1 @@
+Root workflow: `flutter pub get && flutter gen-l10n`, copy `.env.example` → `.env`, run the 14 numbered Supabase migrations via SQL Editor or `scripts/`, deploy Edge Functions (`supabase functions deploy checkout|paymob-initiate|paymob-callback|cancel-expired-orders|send-order-notification`), then `flutter analyze && flutter test && flutter run`.

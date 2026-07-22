@@ -5,7 +5,8 @@ import 'logger.dart';
 /// Observer that logs all Cubit/Bloc state changes.
 class AppBlocObserver extends BlocObserver {
   @override
-  void onTransition(Bloc<dynamic, dynamic> bloc, Transition<dynamic, dynamic> transition) {
+  void onTransition(
+      Bloc<dynamic, dynamic> bloc, Transition<dynamic, dynamic> transition) {
     Log.cubit(
       bloc.runtimeType.toString(),
       '${transition.currentState.runtimeType} → ${transition.nextState.runtimeType}',

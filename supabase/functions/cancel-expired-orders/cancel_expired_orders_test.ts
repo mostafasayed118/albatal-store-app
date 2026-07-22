@@ -1,78 +1,90 @@
 // ============================================================
-// Contract test for cancel-expired-orders security properties.
+// Contract + unit tests for cancel-expired-orders security.
 //
-// Validates the scheduler-secret authorization pattern via
-// source analysis (the function is not unit-testable without
-// mocking Supabase, so we verify the security contract from
-// source code).
-//
-// Run: deno test supabase/functions/cancel-expired-orders/cancel_expired_orders_test.ts
+// Run:
+//   deno test supabase/functions/cancel-expired-orders/cancel_expired_orders_test.ts
 // ============================================================
 
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
-import { readFileSync } from "https://deno.land/std@0.177.0/fs/mod.ts";
+import {
+  assertEquals,
+  assert,
+} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { secretsMatch } from "./secrets.ts";
 
-const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname;
+const SOURCE_PATH = new URL("index.ts", import.meta.url);
 
-Deno.test("cancel-expired-orders requires scheduler secret", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+async function readSource(): Promise<string> {
+  return await Deno.readTextFile(SOURCE_PATH);
+}
 
-  // Must check for x-scheduler-secret header
+Deno.test("secretsMatch: equal secrets return true", async () => {
   assertEquals(
-    source.includes("x-scheduler-secret"),
+    await secretsMatch("scheduler-secret-value", "scheduler-secret-value"),
     true,
-    "Function must check x-scheduler-secret header",
-  );
-
-  // Must fail closed when secret is missing
-  assertEquals(
-    source.includes("CANCEL_EXPIRED_ORDERS_SECRET"),
-    true,
-    "Function must read CANCEL_EXPIRED_ORDERS_SECRET from env",
   );
 });
 
-Deno.test("cancel-expired-orders uses atomic RPC", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
-
-  // Must delegate to expire_pending_order RPC (atomic, idempotent)
+Deno.test("secretsMatch: unequal secrets return false", async () => {
   assertEquals(
-    source.includes("expire_pending_order"),
-    true,
-    "Function must delegate to expire_pending_order RPC",
+    await secretsMatch("scheduler-secret-value", "wrong-secret"),
+    false,
   );
 });
 
-Deno.test("cancel-expired-orders uses service-role key", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+Deno.test("secretsMatch: null provided returns false", async () => {
+  assertEquals(await secretsMatch("scheduler-secret-value", null), false);
+});
 
-  // Must use service_role key to bypass RLS
+Deno.test("secretsMatch: empty expected returns false (fail closed)", async () => {
+  assertEquals(await secretsMatch("", "anything"), false);
+  assertEquals(await secretsMatch("   ", "anything"), false);
+});
+
+Deno.test("secretsMatch: empty provided against non-empty expected is false", async () => {
+  assertEquals(await secretsMatch("scheduler-secret-value", ""), false);
+});
+
+Deno.test("secretsMatch: length-mismatched strings still compare via digest (false)", async () => {
   assertEquals(
-    source.includes("SUPABASE_SERVICE_ROLE_KEY"),
-    true,
-    "Function must use service-role key for RPC calls",
+    await secretsMatch("short", "much-longer-secret-value"),
+    false,
   );
 });
 
-Deno.test("cancel-expired-orders has safe error handling", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
-
-  // Catch block must not log raw error
-  const catchIdx = source.indexOf("catch");
-  if (catchIdx !== -1) {
-    const catchBlock = source.substring(catchIdx, catchIdx + 200);
-    assertEquals(
-      catchBlock.includes("console.error"),
-      true,
-      "Catch block must log a safe message",
-    );
-  }
+Deno.test("cancel-expired-orders requires scheduler secret env", async () => {
+  const source = await readSource();
+  assert(source.includes("x-scheduler-secret"));
+  assert(source.includes("CANCEL_EXPIRED_ORDERS_SECRET"));
 });
 
-Deno.test("cancel-expired-orders response never leaks secrets", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+Deno.test("cancel-expired-orders fails closed when secret missing (503 path)", async () => {
+  const source = await readSource();
+  assert(source.includes("Scheduler configuration unavailable"));
+  assert(/status:\s*503/.test(source));
+});
 
-  // Find all JSON.stringify calls in 200-status responses
+Deno.test("cancel-expired-orders does not use raw !== for secret compare", async () => {
+  const source = await readSource();
+  assert(source.includes("secretsMatch"));
+  assertEquals(
+    /receivedSecret\s*!==\s*schedulerSecret/.test(source),
+    false,
+    "Must not use !== between raw secret strings",
+  );
+});
+
+Deno.test("cancel-expired-orders uses atomic RPC", async () => {
+  const source = await readSource();
+  assert(source.includes("expire_pending_order"));
+});
+
+Deno.test("cancel-expired-orders uses service-role key", async () => {
+  const source = await readSource();
+  assert(source.includes("SUPABASE_SERVICE_ROLE_KEY"));
+});
+
+Deno.test("cancel-expired-orders response never leaks secrets", async () => {
+  const source = await readSource();
   const stringifyPattern = /JSON\.stringify\(\{([^}]+)\}\)/g;
   let match;
   const violations: string[] = [];
@@ -82,7 +94,6 @@ Deno.test("cancel-expired-orders response never leaks secrets", () => {
     const afterMatch = source.substring(match.index, match.index + 300);
     if (!/status:\s*200/.test(afterMatch)) continue;
 
-    // Check for forbidden keys
     for (const key of ["secret", "token", "api_key", "service_role_key"]) {
       if (new RegExp(`["']?${key}["']?\\s*:`, "i").test(body)) {
         violations.push(key);

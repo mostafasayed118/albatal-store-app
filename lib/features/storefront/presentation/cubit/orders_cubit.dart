@@ -1,24 +1,11 @@
-import 'dart:async';
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/entities/address.dart';
 import '../../../../core/entities/order.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/repositories/orders_repository.dart';
-import '../cubit/cart_cubit.dart';
 
 export '../../../../core/entities/order.dart';
-
-typedef OrderIdGenerator = String Function();
-
-String _defaultOrderId() {
-  final now = DateTime.now();
-  final suffix =
-      now.millisecondsSinceEpoch.remainder(10000).toString().padLeft(4, '0');
-  return 'ORD-${now.year}-$suffix';
-}
 
 enum OrdersStatus { initial, loading, ready, error }
 
@@ -37,6 +24,7 @@ final class OrdersState extends Equatable {
       .where((o) =>
           o.status == OrderStatus.pending ||
           o.status == OrderStatus.placed ||
+          o.status == OrderStatus.paid ||
           o.status == OrderStatus.processing ||
           o.status == OrderStatus.shipped)
       .toList()
@@ -64,12 +52,10 @@ final class OrdersState extends Equatable {
 }
 
 final class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit(this._repository, {OrderIdGenerator generateId = _defaultOrderId})
-      : _generateId = generateId,
-        super(const OrdersState(status: OrdersStatus.initial));
+  OrdersCubit(this._repository)
+      : super(const OrdersState(status: OrdersStatus.initial));
 
   final OrdersRepository _repository;
-  final OrderIdGenerator _generateId;
 
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
@@ -85,50 +71,24 @@ final class OrdersCubit extends Cubit<OrdersState> {
     }
   }
 
-  Future<Order> place(CartState cart,
-      {required String paymentMethod, Address? address}) async {
-    final order = Order(
-      id: _generateId(),
-      items: List.of(cart.items),
-      subtotal: cart.subtotal,
-      shipping: cart.shipping,
-      total: cart.total,
-      status: OrderStatus.placed,
-      placedAt: DateTime.now(),
-      paymentMethod: paymentMethod,
-      address: address,
-    );
-    final next = [order, ...state.orders];
-    emit(OrdersState(orders: next, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(next);
-    if (result case Failure(:final error)) {
-      // Persistence failed — surface to the UI but keep the order in
-      // memory so the session is not corrupted.
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
-    }
-    return order;
-  }
+  /// Client-side order creation is intentionally removed.
+  ///
+  /// Orders must be created via the server-side checkout RPC
+  /// (CheckoutService.createPendingOrder), not client-side.
+  /// Use [reconcile] to merge server-created orders into local history.
 
+  /// Client-side order progression is intentionally removed.
+  ///
+  /// Order status must be driven by server-side events (payment callbacks,
+  /// admin actions, or scheduled expiry). Client-only progression via
+  /// [advance] previously misled users about canonical order/payment status.
+  /// Use [reconcile] to merge server-confirmed status changes into local history.
   Future<void> advance(String orderId) async {
-    final updated = state.orders.map((o) {
-      if (o.id != orderId) return o;
-      return switch (o.status) {
-        OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
-        OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
-        _ => o,
-      };
-    }).toList();
-    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(updated);
-    if (result case Failure(:final error)) {
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
-    }
+    emit(state.copyWith(
+      status: OrdersStatus.error,
+      errorMessage: 'Order status updates are server-managed. '
+          'Refresh to see the latest status.',
+    ));
   }
 
   /// Idempotently merge a server-created order into local history.

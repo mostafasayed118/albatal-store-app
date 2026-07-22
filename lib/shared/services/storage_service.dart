@@ -19,7 +19,8 @@ class StorageService {
 
   Future<String?> uploadProductImage(File file, String productId) async {
     final ext = file.path.split('.').last;
-    final storagePath = '$productId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final storagePath =
+        '$productId/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
     await _client.storage.from('product-images').upload(
           storagePath,

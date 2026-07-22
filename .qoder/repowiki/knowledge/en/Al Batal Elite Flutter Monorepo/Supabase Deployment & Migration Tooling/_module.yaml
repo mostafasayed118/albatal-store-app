@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: scripts
+title: Supabase Deployment & Migration Tooling
+scope:
+    - scripts/
+source_files: []
+depends_on: []
+related_to: []

@@ -29,6 +29,12 @@ final class LocalStorefrontPersistence {
   static const _ordersKey = 'storefront_orders_v1';
   final SharedPreferences _preferences;
 
+  /// Maximum number of orders kept in local storage. Orders beyond
+  /// this limit are fetched on demand from the server. Prevents the
+  /// SharedPreferences JSON payload from growing unboundedly as order
+  /// history accumulates.
+  static const maxLocalOrders = 50;
+
   Future<List<CartItem>> readCart(ProductLookup productForId) async {
     final raw = _preferences.getString(_cartKey);
     if (raw == null) return const [];
@@ -99,9 +105,15 @@ final class LocalStorefrontPersistence {
   }
 
   Future<void> writeOrders(List<Order> orders) async {
+    // Keep only the most recent orders locally. Older orders are fetched
+    // on demand from the server via the order history RPC. This prevents
+    // the JSON payload from growing quadratically with order history.
+    final toStore = orders.length > maxLocalOrders
+        ? orders.sublist(0, maxLocalOrders)
+        : orders;
     await _preferences.setString(
       _ordersKey,
-      jsonEncode(orders.map(OrderCodec.encode).toList()),
+      jsonEncode(toStore.map(OrderCodec.encode).toList()),
     );
   }
 }
@@ -265,8 +277,7 @@ extension OrderCodec on Order {
               line: (raw['address'] as Map)['line'] as String,
               city: (raw['address'] as Map)['city'] as String,
               country: (raw['address'] as Map)['country'] as String? ?? '',
-              isDefault:
-                  (raw['address'] as Map)['isDefault'] as bool? ?? false,
+              isDefault: (raw['address'] as Map)['isDefault'] as bool? ?? false,
             )
           : null,
     );

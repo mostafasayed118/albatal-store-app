@@ -26,7 +26,8 @@ class NavigationObserver extends NavigatorObserver {
   }
 
   @override
-  void didStartUserGesture(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didStartUserGesture(
+      Route<dynamic> route, Route<dynamic>? previousRoute) {
     Log.nav('Back gesture started');
   }
 }

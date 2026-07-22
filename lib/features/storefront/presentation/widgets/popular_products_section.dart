@@ -35,11 +35,11 @@ class PopularProductsSection extends StatelessWidget {
               onSelected: catalog.selectSort,
               itemBuilder: (_) => CatalogSort.values
                   .map((sort) =>
-                      PopupMenuItem(value: sort, child: Text(sort.label)))
+                      PopupMenuItem(value: sort, child: Text(sort.labelFor(l))))
                   .toList(),
               child: Chip(
                 avatar: const Icon(Icons.sort, size: 18),
-                label: Text(state.sort.label),
+                label: Text(state.sort.labelFor(l)),
               ),
             ),
           ],

@@ -60,7 +60,8 @@ class _StockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = product['product_name'] as String? ?? 'Unknown';
+    final name =
+        product['product_name'] as String? ?? context.l10n.unknownLabel;
     final size = product['variant_size'] as String? ?? '';
     final color = product['variant_color'] as String? ?? '';
     final stock = product['current_stock'] as int? ?? 0;
@@ -89,21 +90,22 @@ class _StockTile extends StatelessWidget {
   }
 
   void _showStockDialog(BuildContext context, Map<String, dynamic> product) {
+    final l = context.l10n;
     final ctrl = TextEditingController(
         text: (product['current_stock'] as int? ?? 0).toString());
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Update Stock'),
+        title: Text(l.updateStock),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'New stock level'),
+          decoration: InputDecoration(labelText: l.newStockLevelLabel),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -114,7 +116,7 @@ class _StockTile extends StatelessWidget {
                   );
               Navigator.pop(context);
             },
-            child: const Text('Update'),
+            child: Text(l.update),
           ),
         ],
       ),

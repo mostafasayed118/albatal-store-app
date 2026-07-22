@@ -1,0 +1,25 @@
+schema_version: 1
+module_path: ""
+title: Al Batal Elite Flutter Monorepo
+scope:
+    - README.md
+    - DESIGN.md
+    - INSTRUCTIONS.md
+    - analysis_options.yaml
+    - l10n.yaml
+    - .mcp.json
+    - .env.example
+    - .flutter-plugins-dependencies
+    - .gitignore
+    - AGENTS.md
+    - LOOP.md
+    - STATE.md
+    - loop-budget.md
+    - loop-constraints.md
+    - loop-run-log.md
+    - opencode.json
+    - pubspec.lock
+    - pubspec.yaml
+source_files: []
+depends_on: []
+related_to: []

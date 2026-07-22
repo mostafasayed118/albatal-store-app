@@ -79,8 +79,7 @@ class Log {
     _log(level, LogCategory.cubit, '[$cubitName] $message');
   }
 
-  static void api(String method, String url,
-      {int? statusCode, dynamic body}) {
+  static void api(String method, String url, {int? statusCode, dynamic body}) {
     final statusStr = statusCode != null ? ' → $statusCode' : '';
     _log(LogLevel.info, LogCategory.network, '$method $url$statusStr');
     if (body != null && kDebugMode) {

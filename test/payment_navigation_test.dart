@@ -31,6 +31,10 @@ class _NavStub implements PaymentService {
       );
 
   @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
@@ -125,7 +129,8 @@ void main() {
       expect(find.byType(PaymobCheckoutPage), findsOneWidget);
 
       // Re-emit the same pending state (e.g. a duplicate realtime echo).
-      cubit.emit(cubit.state.copyWith(status: PaymentStatus.awaitingVerification));
+      cubit.emit(
+          cubit.state.copyWith(status: PaymentStatus.awaitingVerification));
       await tester.pumpAndSettle();
 
       // Still exactly one checkout page — no duplicate navigation.

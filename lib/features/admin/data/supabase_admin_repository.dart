@@ -34,8 +34,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     int limit = 50,
   }) async {
     final query = _client.from('orders').select('*, profiles(full_name)');
-    final filtered =
-        status != null ? query.eq('status', status) : query;
+    final filtered = status != null ? query.eq('status', status) : query;
     final result =
         await filtered.order('placed_at', ascending: false).limit(limit);
     return (result as List).cast<Map<String, dynamic>>();

@@ -1,0 +1,5 @@
+- Repositories are defined as Dart interfaces under `features/<feature>/domain/repositories/` and implemented in `data/` files; DI binds interface → concrete impl in `service_locator.dart` so presentation never imports data code directly.
+- Stateful UI logic lives in Cubits under `features/<feature>/presentation/cubit/`, instantiated per-route via `BlocProvider(create: (_) => XxxCubit(...))` rather than being registered in GetIt.
+- All long-running initialization (Supabase, SharedPreferences, DI registration) is wrapped in a try/catch in `main.dart` that falls back to `_BootstrapErrorApp` instead of letting the framework crash before `runApp`.
+- Routing rules (public vs. auth-required vs. admin-only) are centralized in the `GoRouter.redirect` callback, reading `context.read<AuthCubit>().state` instead of guarding individual pages.
+- Logging uses the module-local `Log.i/e/w/d` API with named `category` constants (`LogCategory.app`, `LogCategory.network`, etc.) and an `AppBlocObserver` wired to `Bloc.observer` for state-change tracing.

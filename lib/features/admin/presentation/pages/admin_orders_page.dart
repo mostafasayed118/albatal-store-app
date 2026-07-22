@@ -83,8 +83,13 @@ class _OrderTile extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final status = order['status'] as String? ?? 'unknown';
-    final total = Money(order['total'] as int? ?? 0).format();
-    final customerName = order['profiles']?['full_name'] as String? ?? 'Unknown';
+    final locale = Localizations.localeOf(context).toString();
+    final total = Money(order['total'] as int? ?? 0).format(
+      locale: locale,
+      symbol: l.currencyCode,
+    );
+    final customerName =
+        order['profiles']?['full_name'] as String? ?? l.unknownLabel;
     final itemCount = (order['order_items'] as List?)?.length ?? 0;
 
     return Card(
@@ -98,8 +103,10 @@ class _OrderTile extends StatelessWidget {
         title: Row(
           children: [
             Expanded(
-              child: Text('#${order['id'].toString().substring(0, 8)}...',
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                '#${order['id'].toString().length > 8 ? order['id'].toString().substring(0, 8) + '...' : order['id'].toString()}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             Text(total,
                 style: TextStyle(

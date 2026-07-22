@@ -22,7 +22,9 @@ class MenuListTile extends StatelessWidget {
           leading: Icon(icon),
           title: Text(title),
           subtitle: subtitle != null ? Text(subtitle!) : null,
-          trailing: trailing ?? const Icon(Icons.chevron_right),
+          trailing: trailing ??
+              Icon(Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
           onTap: onTap,
         ),
       );

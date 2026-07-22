@@ -32,13 +32,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state.isAuthenticated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l.passwordUpdated)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l.passwordUpdated)));
             context.go('/home');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
         },
         child: Padding(
@@ -57,9 +57,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   decoration: InputDecoration(labelText: l.password),
                   obscureText: true,
                   textInputAction: TextInputAction.next,
-                  validator: (v) => (v == null || v.length < 6)
-                      ? l.passwordTooShort
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? l.passwordTooShort : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -80,8 +79,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(l.updatePassword),
                     );
                   },

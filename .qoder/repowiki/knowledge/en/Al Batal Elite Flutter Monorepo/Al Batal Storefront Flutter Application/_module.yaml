@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: flutter_app
+title: Al Batal Storefront Flutter Application
+scope:
+    - lib/
+    - assets/
+source_files: []
+depends_on: []
+related_to: []

@@ -7,6 +7,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
+import '../localization/category_labels.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
@@ -18,7 +19,8 @@ import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
 
 class DetailsPage extends StatelessWidget {
-  const DetailsPage({super.key, required this.id, CatalogRepository? catalogRepository})
+  const DetailsPage(
+      {super.key, required this.id, CatalogRepository? catalogRepository})
       : _catalogRepository = catalogRepository;
 
   final String id;
@@ -30,19 +32,51 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())..loadProduct(id),
+      create: (_) =>
+          ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())
+            ..loadProduct(id),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
+          if (s.status == DetailsStatus.error) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: scheme.error),
+                      const SizedBox(height: 16),
+                      Text(
+                        s.errorMessage ?? l.errorTitle,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: () =>
+                            context.read<ProductDetailsCubit>().retry(),
+                        icon: const Icon(Icons.refresh),
+                        label: Text(l.retry),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           final p = s.product;
-          if (p == null) {
+          if (s.status == DetailsStatus.loading || p == null) {
             return Scaffold(
               appBar: AppBar(),
               body: const Center(child: CircularProgressIndicator()),
             );
           }
+
           return Scaffold(
             appBar: AppBar(
-              title: Text(p.category),
+              title: Text(localizedCategory(p.category, l)),
               actions: [
                 WishlistToggleIcon(productId: p.id),
                 IconButton(

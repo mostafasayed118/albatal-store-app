@@ -74,7 +74,8 @@ class CartItemTile extends StatelessWidget {
                     Text(item.product.name,
                         style: Theme.of(context).textTheme.titleSmall),
                     Text('${item.color} · ${item.length}'),
-                    Text(money(item.product.price * item.quantity)),
+                    Text(money(item.product.price * item.quantity,
+                        context: context)),
                     QuantityStepper(
                       quantity: item.quantity,
                       onChanged: (q) =>
@@ -91,7 +92,8 @@ class CartItemTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: Size.zero,
                           ),
-                          child: Text(l.remove, style: const TextStyle(fontSize: 12)),
+                          child: Text(l.remove,
+                              style: const TextStyle(fontSize: 12)),
                         ),
                         TextButton.icon(
                           onPressed: () {

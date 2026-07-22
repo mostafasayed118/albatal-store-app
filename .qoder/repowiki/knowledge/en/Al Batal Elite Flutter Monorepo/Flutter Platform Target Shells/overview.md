@@ -1,0 +1,1 @@
+Native host shells for the albatal_store Flutter app across Android, iOS, Linux, macOS, Windows, and Web targets, each bootstrapping the Flutter engine and registering plugins.

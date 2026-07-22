@@ -1,0 +1,10 @@
+flutter_native_splash:
+  color: "#064E3B"
+  image: assets/images/al_batal_elite_logo_splash.png
+  image_dark: assets/images/al_batal_elite_logo_splash.png
+  color_dark: "#064E3B"
+  fullscreen: true
+  android_12:
+    color: "#064E3B"
+    image: assets/images/al_batal_elite_logo_splash.png
+    icon_background_color: "#064E3B"

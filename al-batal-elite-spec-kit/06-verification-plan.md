@@ -1,13 +1,13 @@
 # Verification and Review Plan
 
-## Implementation pass — MiMo v2.5
+## Implementation pass — GPT-5.6 Terra
 - Inspect the current working tree first; preserve unrelated uncommitted work.
 - Implement P0.1–P0.4 in small, reviewable commits or clearly separated diffs.
 - Run formatter only on touched files initially.
 - Run analyzer, all tests, SQL validation, and deployment dry-run.
 - Report changed files, assumptions, commands, results, and unresolved risks.
 
-## Security pass — MiMo v2.5
+## Security pass — GLM 5.2
 Review the implementation independently. Search for credential leakage, authorization bypasses, public SQL functions, unsafe RLS, replay/double-spend behavior, secret logging, CORS abuse, missing rate limits, and stale deployment references. Do not modify code. Return findings by severity with file/line evidence and exact corrective actions.
 
 ## Flutter regression pass — MiMo v2.5

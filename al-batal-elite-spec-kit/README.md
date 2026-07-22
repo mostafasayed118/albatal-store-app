@@ -16,8 +16,8 @@ No provider secret, access token, payment authentication token, or internal erro
 6. `06-verification-plan.md` — independent review and staging evidence
 
 ## Model allocation
-- **MiMo v2.5 :** implementation of architecture-sensitive changes; preserve uncommitted work.
-- **MiMo v2.5:** independent security review of Edge Functions, SQL, RLS, secrets, and deployment.
+- **GPT-5.6 Terra:** implementation of architecture-sensitive changes; preserve uncommitted work.
+- **GLM 5.2:** independent security review of Edge Functions, SQL, RLS, secrets, and deployment.
 - **MiMo v2.5:** independent Flutter regression review covering navigation, payment states, disposal, routing, RTL/localization, COD, and tests.
 
 ## Definition of done

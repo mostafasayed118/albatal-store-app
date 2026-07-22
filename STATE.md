@@ -4,21 +4,40 @@ Last run: 2026-07-21T10:50:00Z
 
 ## High Priority (loop is acting or waiting on human)
 
-_None — project is clean._
+- **Active repair branch `fix/post-audit-production-repair`** with uncommitted
+  changes (post-audit local repairs: catalog image mapping, support/admin dead
+  buttons, CI branch+version alignment, docs). Not yet committed/merged.
 
 ## Watch List
 
-- **17 outdated packages** — `flutter pub outdated` shows newer versions available
-  - Major bumps available: `flutter_dotenv` 5.2.1 → 6.0.1, `flutter_lints` 5.0.0 → 6.0.0, `get_it` 8.3.0 → 9.2.1, `go_router` 16.3.0 → 17.3.0
-  - Minor/patch: `intl`, `matcher`, `meta`, `package_config`, `test`, `test_api`, `test_core`, `vector_math`, `vm_service`, `_fe_analyzer_shared`, `analyzer`, `lints`
-  - **Action:** Suggest `flutter pub upgrade` to human; major bumps need manual review
+- **Dependency majors already applied** in `pubspec.yaml`: `flutter_dotenv`
+  ^6.0.1, `flutter_lints` ^6.0.0, `get_it` ^9.2.1, `go_router` ^17.3.0. Re-run
+  `flutter pub outdated` before the next upgrade pass; no known pending majors.
+- **Backend security items are STAGING-BLOCKED** (idempotent stock restoration,
+  notification constant-time auth, revoke public EXECUTE on
+  `process_paymob_callback`, Paymob HMAC config confirmation, live atomic-
+  checkout verification) — require Deno + disposable Postgres + staging +
+  Paymob merchant dashboard. Tracked for a follow-up backend pass.
 
 ## Recent Noise (ignored this run)
 
 - Flutter analyze: no issues found
-- Flutter test: 163/163 passed (all green)
+- Flutter test: 223/223 passed (all green)
 
 ## Spec Kit Implementation (this run)
+
+### Spec 11 Phase 2 — Localization / RTL (2026-07-21)
+
+| Change | Evidence |
+|--------|----------|
+| EN/AR ARB key parity | 283 keys each, no duplicates, no missing keys |
+| Fixed Arabic `orderPlacedBody` | Full Arabic, no English fragments |
+| Localized scoped pages | addresses, payment, paymob checkout, admin pages, checkout, address form, order success |
+| Money.format locale-safe grouping | optional `locale` via `NumberFormat` |
+| Status/unknown labels | `paid`, `unknownLabel`, `orderNumber` |
+| Focused l10n tests | `test/localization_test.dart` — ARB, RTL, surfaces, format, overflow |
+| CI l10n job | `scripts/check_l10n.py` + gen-l10n drift gate + focused tests |
+| Tests | `flutter analyze` clean; `flutter test` 223/223 |
 
 ### Completed
 

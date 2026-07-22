@@ -1,0 +1,1 @@
+Flutter storefront and admin app for the Al Batal e-commerce platform, built with BLoC/Cubit state management, GoRouter navigation, Supabase backend, and GetIt dependency injection.

@@ -12,7 +12,16 @@ import 'product.dart';
 /// [pending] = created but not yet paid (server-side checkout flow).
 /// [paid] = payment confirmed by webhook (transitions to [placed] or
 /// [processing] for fulfillment).
-enum OrderStatus { pending, placed, paid, processing, shipped, delivered, cancelled, refunded }
+enum OrderStatus {
+  pending,
+  placed,
+  paid,
+  processing,
+  shipped,
+  delivered,
+  cancelled,
+  refunded
+}
 
 /// An immutable snapshot of a successfully placed order.
 ///

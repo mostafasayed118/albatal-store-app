@@ -29,15 +29,16 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Storage** — product images (public) and avatars (private)
 - **Admin support** — admin role for catalog/order management
 
-> **Note on local persistence:** Cart, wishlist, addresses, and orders are
-> currently persisted locally on-device via SharedPreferences (offline-first).
-> Cloud sync for these collections is planned but not yet wired — the
-> Supabase repository implementations were removed in favor of shipping a
-> reliable local-first experience first.
+> **Note on local persistence:** Cart, wishlist, and addresses are persisted
+> locally on-device via SharedPreferences (offline-first). Cloud sync for
+> these collections is planned but not yet wired.
 >
-> Catalog data shown in the app is also local mock seed data. Supabase remains
-> the authority for authentication, profiles, admin operations, checkout, and
-> Paymob payment processing.
+> Catalog and orders are Supabase-backed. `SupabaseCatalogRepository` fetches
+> products, variants, and product images from Postgres (with an on-device
+> cache for offline fallback), and orders use `SupabaseOrdersRepository` in
+> release builds — a local repository stands in for debug/offline
+> development. Supabase remains the authority for authentication, profiles,
+> admin operations, checkout, and Paymob payment processing.
 
 ---
 
@@ -114,10 +115,15 @@ flutter gen-l10n
 cp .env.example .env
 # Edit .env with your Supabase URL and anon key
 
-# 3. Run all 14 numbered migrations in Supabase SQL Editor, in order.
+# 3. Run all 19 numbered migrations in Supabase SQL Editor, in order.
+#    (The migrations/ directory also contains test/verify SQL scripts; the
+#    numbered files 001–019 are the schema migrations, 24 SQL files in total.)
 # See docs/supabase-integration.md for the migration list and helper scripts.
 
 # 4. Deploy the Edge Functions used by the configured flows.
+#    Note: `checkout` is a backend-only/reserved function. The app performs
+#    checkout via the `create_checkout_order` RPC directly; `checkout` is kept
+#    deployed and verified by CI for server-side/administrative use.
 supabase functions deploy checkout
 supabase functions deploy paymob-initiate
 supabase functions deploy paymob-callback

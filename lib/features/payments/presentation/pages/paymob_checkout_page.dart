@@ -49,14 +49,14 @@ class _InvalidCheckoutBody extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 56),
               const SizedBox(height: 16),
-              const Text(
-                'The payment checkout link is invalid. Please return and retry.',
+              Text(
+                context.l10n.invalidCheckoutLinkFull,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.pop(),
-                child: const Text('Return to payment'),
+                child: Text(context.l10n.returnToPayment),
               ),
             ],
           ),
@@ -100,27 +100,27 @@ class _CheckoutBodyState extends State<_CheckoutBody> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-           onPageStarted: (_) {
-             if (mounted) setState(() => _isLoading = true);
-           },
-           onPageFinished: (_) {
-             if (mounted) setState(() => _isLoading = false);
-           },
-           onNavigationRequest: (request) {
-             final uri = Uri.tryParse(request.url);
-             if (uri == null || !uri.isScheme('https')) {
-               return NavigationDecision.prevent;
-             }
-             final host = uri.host.toLowerCase();
-             final isPaymobHost = host == 'accept.paymob.com' ||
-                 host == 'secure-egypt.paymob.com' ||
-                 host.endsWith('.paymob.com') ||
-                 host.endsWith('.paymobsolutions.com');
-             return isPaymobHost
-                 ? NavigationDecision.navigate
-                 : NavigationDecision.prevent;
-           },
-         ),
+          onPageStarted: (_) {
+            if (mounted) setState(() => _isLoading = true);
+          },
+          onPageFinished: (_) {
+            if (mounted) setState(() => _isLoading = false);
+          },
+          onNavigationRequest: (request) {
+            final uri = Uri.tryParse(request.url);
+            if (uri == null || !uri.isScheme('https')) {
+              return NavigationDecision.prevent;
+            }
+            final host = uri.host.toLowerCase();
+            final isPaymobHost = host == 'accept.paymob.com' ||
+                host == 'secure-egypt.paymob.com' ||
+                host.endsWith('.paymob.com') ||
+                host.endsWith('.paymobsolutions.com');
+            return isPaymobHost
+                ? NavigationDecision.navigate
+                : NavigationDecision.prevent;
+          },
+        ),
       )
       ..loadRequest(Uri.parse(widget.checkoutUrl));
   }
@@ -146,7 +146,8 @@ class _CheckoutBodyState extends State<_CheckoutBody> {
           : Stack(
               children: [
                 WebViewWidget(controller: controller),
-                if (_isLoading) const Center(child: CircularProgressIndicator()),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
               ],
             ),
     );

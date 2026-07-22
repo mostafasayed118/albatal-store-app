@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../generated/l10n/app_localizations.dart';
+import '../localization/product_attribute_labels.dart';
 import 'info_row.dart';
 
 /// Description, composition, origin, and care details.
@@ -29,18 +30,18 @@ class ProductDetailsSection extends StatelessWidget {
             InfoRow(
                 icon: Icons.science_outlined,
                 label: l.composition,
-                value: product.composition!),
+                value: localizedProductComposition(product, l)),
           if (product.origin != null)
             InfoRow(
                 icon: Icons.place_outlined,
                 label: l.origin,
-                value: product.origin!),
+                value: localizedProductOrigin(product, l)),
         ],
         if (product.care != null) ...[
           const SizedBox(height: 20),
           Text(l.care, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
-          Text(product.care!),
+          Text(localizedProductCare(product, l)),
         ],
       ],
     );

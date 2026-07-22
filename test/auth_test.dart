@@ -17,8 +17,7 @@ void main() {
     });
 
     test('isLoading for initial, checkingSession, authenticating', () {
-      expect(
-          const AuthState(status: AuthStatus.initial).isLoading, isTrue);
+      expect(const AuthState(status: AuthStatus.initial).isLoading, isTrue);
       expect(const AuthState(status: AuthStatus.checkingSession).isLoading,
           isTrue);
       expect(
@@ -42,7 +41,8 @@ void main() {
         status: AuthStatus.authenticated,
         profile: profile,
       );
-      final updated = state.copyWith(profile: Profile(id: 'u1', fullName: 'Updated'));
+      final updated =
+          state.copyWith(profile: Profile(id: 'u1', fullName: 'Updated'));
       expect(updated.profile!.fullName, 'Updated');
     });
   });

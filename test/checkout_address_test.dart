@@ -2,17 +2,14 @@ import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Stub CheckoutRepository that returns a fake pending order.
 class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
@@ -24,7 +21,7 @@ class StubCheckoutRepository implements CheckoutRepository {
     return Success(PendingOrder(
       orderId: 'ORD-STUB-1',
       subtotal: items.fold(Money.zero,
-              (Money v, CartItem i) => v + (i.product.price * i.quantity)),
+          (Money v, CartItem i) => v + (i.product.price * i.quantity)),
       shipping: Money.egp(75),
       total: items.fold(Money.zero,
               (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
@@ -95,63 +92,61 @@ void main() {
   });
 
   group('OrdersCubit — address snapshot in order', () {
-    test('place() stores the selected address on the order', () {
-      final cubit = OrdersCubit(
-        MemoryStorefrontPersistence(),
-        generateId: () => 'ORD-ADDR-1',
-      );
-      final cart = CartState([
-        CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m',
-            quantity: 1),
-      ]);
-
-      final order = cubit.place(
-        cart,
+    test('reconcile stores the selected address on the order', () async {
+      final cubit = OrdersCubit(MemoryStorefrontPersistence());
+      final orderWithAddress = Order(
+        id: 'ORD-ADDR-1',
+        items: [],
+        subtotal: Money.zero,
+        shipping: Money.zero,
+        total: Money.zero,
+        status: OrderStatus.paid,
+        placedAt: DateTime.now(),
         paymentMethod: 'Credit Card',
         address: testAddress,
       );
+      await cubit.reconcile(orderWithAddress);
 
-      expect(order.address, testAddress);
-      expect(order.address!.recipient, 'Ahmed Mansour');
-      expect(order.address!.line, '12 El Tahrir Street');
+      expect(cubit.state.orders.single.address, testAddress);
+      expect(cubit.state.orders.single.address!.recipient, 'Ahmed Mansour');
+      expect(cubit.state.orders.single.address!.line, '12 El Tahrir Street');
+      await cubit.close();
     });
 
-    test('place() works without an address (null)', () {
-      final cubit = OrdersCubit(
-        MemoryStorefrontPersistence(),
-        generateId: () => 'ORD-ADDR-2',
-      );
-      final cart = CartState([
-        CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m',
-            quantity: 1),
-      ]);
-
-      final order = cubit.place(
-        cart,
+    test('reconcile works without an address (null)', () async {
+      final cubit = OrdersCubit(MemoryStorefrontPersistence());
+      final orderNoAddress = Order(
+        id: 'ORD-ADDR-2',
+        items: [],
+        subtotal: Money.zero,
+        shipping: Money.zero,
+        total: Money.zero,
+        status: OrderStatus.paid,
+        placedAt: DateTime.now(),
         paymentMethod: 'Cash on Delivery',
       );
+      await cubit.reconcile(orderNoAddress);
 
-      expect(order.address, isNull);
+      expect(cubit.state.orders.single.address, isNull);
+      await cubit.close();
     });
 
     test('address persists through restore', () async {
       final store = MemoryStorefrontPersistence();
-      final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
-      a.place(
-        CartState([
-          CartItem(product: products.first, color: 'Emerald', length: '2m')
-        ]),
+      final a = OrdersCubit(store);
+      await a.reconcile(Order(
+        id: 'ORD-PERSIST',
+        items: [],
+        subtotal: Money.zero,
+        shipping: Money.zero,
+        total: Money.zero,
+        status: OrderStatus.paid,
+        placedAt: DateTime.now(),
         paymentMethod: 'Credit Card',
         address: testAddress,
-      );
+      ));
 
-      final b = OrdersCubit(store, generateId: () => 'SHOULD-NOT');
+      final b = OrdersCubit(store);
       await b.restore();
 
       expect(b.state.orders.single.address, testAddress);

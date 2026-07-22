@@ -24,7 +24,7 @@ class OrderSuccessPage extends StatelessWidget {
                 Icon(Icons.error_outline, size: 60, color: scheme.error),
                 const SizedBox(height: 16),
                 Text(
-                  'Order reference is missing. Please check your order history.',
+                  l.orderReferenceMissing,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
