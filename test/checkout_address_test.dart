@@ -95,7 +95,7 @@ void main() {
   });
 
   group('OrdersCubit — address snapshot in order', () {
-    test('place() stores the selected address on the order', () {
+    test('place() stores the selected address on the order', () async {
       final cubit = OrdersCubit(
         MemoryStorefrontPersistence(),
         generateId: () => 'ORD-ADDR-1',
@@ -108,7 +108,7 @@ void main() {
             quantity: 1),
       ]);
 
-      final order = cubit.place(
+      final order = await cubit.place(
         cart,
         paymentMethod: 'Credit Card',
         address: testAddress,
@@ -119,7 +119,7 @@ void main() {
       expect(order.address!.line, '12 El Tahrir Street');
     });
 
-    test('place() works without an address (null)', () {
+    test('place() works without an address (null)', () async {
       final cubit = OrdersCubit(
         MemoryStorefrontPersistence(),
         generateId: () => 'ORD-ADDR-2',
@@ -132,7 +132,7 @@ void main() {
             quantity: 1),
       ]);
 
-      final order = cubit.place(
+      final order = await cubit.place(
         cart,
         paymentMethod: 'Cash on Delivery',
       );
@@ -143,7 +143,7 @@ void main() {
     test('address persists through restore', () async {
       final store = MemoryStorefrontPersistence();
       final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
-      a.place(
+      await a.place(
         CartState([
           CartItem(product: products.first, color: 'Emerald', length: '2m')
         ]),
