@@ -31,6 +31,10 @@ class _NavStub implements PaymentService {
       );
 
   @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }

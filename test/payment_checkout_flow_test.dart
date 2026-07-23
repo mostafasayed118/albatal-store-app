@@ -45,6 +45,10 @@ class _FlowStub implements PaymentService {
     return _controller.stream;
   }
 
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
+
   Future<void> close() => _controller.close();
 }
 

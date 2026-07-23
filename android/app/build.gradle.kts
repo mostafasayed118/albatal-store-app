@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.exists()) {
+        keyPropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -26,10 +35,7 @@ android {
 
     signingConfigs {
         create("release") {
-            val keyProperties = java.util.Properties()
-            val keyFile = rootProject.file("key.properties")
-            if (keyFile.exists()) {
-                keyProperties.load(keyFile.inputStream())
+            if (keyPropertiesFile.exists()) {
                 storeFile = file(keyProperties["storeFile"] as String)
                 storePassword = keyProperties["storePassword"] as String
                 keyAlias = keyProperties["keyAlias"] as String
@@ -40,14 +46,11 @@ android {
 
     buildTypes {
         release {
-            val keyProperties = java.util.Properties()
-            val keyFile = rootProject.file("key.properties")
-            if (keyFile.exists()) {
-                keyProperties.load(keyFile.inputStream())
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keyPropertiesFile.exists()) {
+                signingConfigs.getByName("release")
             } else {
                 // Fallback to debug signing for local development.
-                signingConfig = signingConfigs.getByName("debug")
+                signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
             isShrinkResources = true
