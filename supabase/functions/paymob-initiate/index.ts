@@ -148,27 +148,27 @@ Deno.serve(async (req) => {
     const currency = "EGP";
 
     // Build billing_data from the order's address snapshot.
-    // Falls back to generic placeholders only when a field is
-    // genuinely absent — never leaks real customer data.
+    // Paymob requires ALL fields to be non-empty.
     const addr = order.address_snapshot as Record<string, string> | null;
     const recipientParts = (addr?.recipient ?? "Customer").split(" ");
     const firstName = recipientParts[0] || "Customer";
     const lastName = recipientParts.slice(1).join(" ") || "Customer";
     const billingData = {
-      apartment: addr?.apartment ?? "NA",
-      email: user.email ?? "customer@example.com",
-      floor: addr?.floor ?? "NA",
-      first_name: firstName,
-      street: addr?.line ?? "NA",
-      building: addr?.building ?? "NA",
-      phone_number: addr?.phone ?? "+201000000000",
+      apartment: addr?.apartment || "NA",
+      email: user.email || "customer@example.com",
+      floor: addr?.floor || "NA",
+      first_name: firstName || "Customer",
+      street: addr?.line || addr?.street || "NA",
+      building: addr?.building || "NA",
+      phone_number: addr?.phone || "+201000000000",
       shipping_method: "NA",
-      postal_code: addr?.postalCode ?? "NA",
-      city: addr?.city ?? "Cairo",
-      country: addr?.country ?? "EG",
-      last_name: lastName,
-      state: addr?.city ?? "Cairo",
+      postal_code: addr?.postalCode || addr?.postal_code || "NA",
+      city: addr?.city || "Cairo",
+      country: addr?.country || "EG",
+      last_name: lastName || "Customer",
+      state: addr?.city || "Cairo",
     };
+    console.log("paymob-initiate: Billing data:", JSON.stringify(billingData));
 
     // ─── Get Paymob credentials ──────────────────────────────
     // Fail closed when required Paymob credentials are missing.
