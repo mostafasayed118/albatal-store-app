@@ -35,7 +35,7 @@ import { corsHeadersFor, jsonHeadersFor, requireCors } from "../_shared/cors.ts"
 import { requireSecret } from "../_shared/secrets.ts";
 
 /// Maximum time (ms) to wait for a single Paymob HTTP call.
-const PAYMOB_TIMEOUT_MS = 8_000;
+const PAYMOB_TIMEOUT_MS = 5_000;
 
 /// Maximum allowed response body size (bytes) from Paymob.
 /// Prevents memory exhaustion from malformed upstream payloads.
@@ -168,7 +168,6 @@ Deno.serve(async (req) => {
       last_name: lastName || "Customer",
       state: addr?.city || "Cairo",
     };
-    console.log("paymob-initiate: Billing data:", JSON.stringify(billingData));
 
     // ─── Get Paymob credentials ──────────────────────────────
     // Fail closed when required Paymob credentials are missing.
@@ -255,16 +254,13 @@ Deno.serve(async (req) => {
     }
 
     // ─── Step 1: Paymob auth token ──────────────────────────
-    console.log("paymob-initiate: Step 1 - Getting auth token from Paymob");
-    console.log("paymob-initiate: API key length:", apiKey?.length);
+    console.log("paymob-initiate: Step 1 - Getting auth token");
     const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ api_key: apiKey }),
     });
-    console.log("paymob-initiate: Auth response status:", authResponse.status);
     const authData = await authResponse.json();
-    console.log("paymob-initiate: Auth response:", JSON.stringify(authData).substring(0, 200));
     if (!authData.token) {
       console.error("paymob-initiate: Failed to get auth token", JSON.stringify(authData));
       return new Response(
@@ -272,11 +268,10 @@ Deno.serve(async (req) => {
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Auth token obtained successfully");
+    console.log("paymob-initiate: Auth token obtained");
 
     // ─── Step 2: Register Paymob provider order ─────────────
-    console.log("paymob-initiate: Step 2 - Registering order with Paymob");
-    console.log("paymob-initiate: Amount:", amountCents, "Currency:", currency);
+    console.log("paymob-initiate: Step 2 - Registering order");
     const paymobOrderResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/ecommerce/orders",
       {
@@ -294,9 +289,7 @@ Deno.serve(async (req) => {
         }),
       },
     );
-    console.log("paymob-initiate: Order response status:", paymobOrderResponse.status);
     const paymobOrderData = await paymobOrderResponse.json();
-    console.log("paymob-initiate: Order response:", JSON.stringify(paymobOrderData).substring(0, 200));
     if (!paymobOrderData.id) {
       console.error("paymob-initiate: Failed to register order", JSON.stringify(paymobOrderData));
       return new Response(
@@ -304,12 +297,12 @@ Deno.serve(async (req) => {
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Order registered with ID", paymobOrderData.id);
+    console.log("paymob-initiate: Order registered", paymobOrderData.id);
 
     const paymobOrderId = String(paymobOrderData.id);
 
     // ─── Persist the REAL Paymob provider order id ──────────
-    console.log("paymob-initiate: Persisting Paymob order ID", paymobOrderId, "for payment", paymentId);
+    console.log("paymob-initiate: Persisting Paymob order ID");
     const { data: providerOrderUpdate, error: updateError } = await supabase
       .rpc("set_payment_provider_order_id", {
         p_payment_id: paymentId,
@@ -323,12 +316,9 @@ Deno.serve(async (req) => {
         { status: 500, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Paymob order ID persisted successfully");
 
     // ─── Step 3: Payment key ─────────────────────────────────
-    console.log("paymob-initiate: Step 3 - Getting payment key from Paymob");
-    console.log("paymob-initiate: Integration ID:", integrationId);
-    console.log("paymob-initiate: Paymob Order ID:", paymobOrderId);
+    console.log("paymob-initiate: Step 3 - Getting payment key");
     const keyResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/acceptance/payment_keys",
       {
@@ -350,7 +340,6 @@ Deno.serve(async (req) => {
     );
     console.log("paymob-initiate: Payment key response status:", keyResponse.status);
     const keyData = await keyResponse.json();
-    console.log("paymob-initiate: Payment key response:", JSON.stringify(keyData).substring(0, 200));
     if (!keyData.token) {
       console.error("paymob-initiate: Failed to get payment key", JSON.stringify(keyData));
       return new Response(
@@ -358,12 +347,11 @@ Deno.serve(async (req) => {
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Payment key obtained successfully");
+    console.log("paymob-initiate: Payment key obtained");
 
     // ─── Return minimum safe client info ────────────────────
     const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
     console.log("paymob-initiate: SUCCESS - Returning checkout URL");
-    console.log("paymob-initiate: Checkout URL:", checkoutUrl);
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl }),
