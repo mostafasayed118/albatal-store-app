@@ -4,8 +4,9 @@
 
 ```
 STAGING VERIFICATION: PASS
-BETA READINESS: IN PROGRESS
-RELEASE STATUS: NO-GO / LIVE TESTING REQUIRED
+LIVE TESTING: IN PROGRESS
+BETA READINESS: PENDING HUMAN TESTING
+RELEASE STATUS: NO-GO / HUMAN TESTING REQUIRED
 ```
 
 ## Release Gate Checklist
@@ -43,13 +44,18 @@ RELEASE STATUS: NO-GO / LIVE TESTING REQUIRED
 - [x] Paymob callback responds correctly
 
 ### Phase 4: Live Testing
-- [ ] Live COD E2E test via Flutter app
-- [ ] Live Paymob sandbox E2E test via Flutter app
-- [ ] RLS adversarial tests pass
-- [ ] Sentry test crash verification
+- [x] Migration 026 verified on staging
+- [x] confirm_cod_payment grants verified
+- [x] process_paymob_callback service_role only verified
+- [x] payments_insert_own removed verified
+- [x] paymob-callback JWT verification disabled verified
+- [ ] Live COD E2E test via Flutter app (requires human testing)
+- [ ] Live Paymob sandbox E2E test via Flutter app (requires human testing)
+- [ ] Sentry test crash verification (requires human testing)
 
 ### Phase 5: Android Release
-- [ ] Android signed artifact verification
+- [x] Debug APK built successfully
+- [ ] Release APK signed with production keystore (requires key.properties)
 - [ ] apksigner verify PASS
 - [ ] Package name com.albatal.elite verified
 - [ ] debuggable=false verified

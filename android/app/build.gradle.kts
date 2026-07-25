@@ -13,6 +13,31 @@ val keyProperties = Properties().apply {
     }
 }
 
+val isReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (isReleaseBuild && keyPropertiesFile.exists()) {
+    val requiredKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+    val missingKeys = requiredKeys.filter { key ->
+        keyProperties.getProperty(key).isNullOrBlank()
+    }
+    if (missingKeys.isNotEmpty()) {
+        throw GradleException(
+            "RELEASE SIGNING FAILURE: key.properties is missing or incomplete. " +
+            "Missing properties: ${missingKeys.joinToString(", ")}. " +
+            "A release build MUST NOT fall back to debug signing."
+        )
+    }
+    val storeFile = file(keyProperties["storeFile"] as String)
+    if (!storeFile.exists()) {
+        throw GradleException(
+            "RELEASE SIGNING FAILURE: Keystore file not found at ${storeFile.absolutePath}. " +
+            "Verify the storeFile path in key.properties."
+        )
+    }
+}
+
 android {
     namespace = "com.albatal.elite"
     compileSdk = flutter.compileSdkVersion
@@ -34,8 +59,11 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            if (keyPropertiesFile.exists()) {
+        if (keyPropertiesFile.exists()) {
+            create("release") {
+                require(keyPropertiesFile.exists()) {
+                    "key.properties must exist for release signing."
+                }
                 storeFile = file(keyProperties["storeFile"] as String)
                 storePassword = keyProperties["storePassword"] as String
                 keyAlias = keyProperties["keyAlias"] as String
@@ -46,11 +74,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keyPropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                // Fallback to debug signing for local development.
-                signingConfigs.getByName("debug")
+            if (keyPropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
             }
             isMinifyEnabled = true
             isShrinkResources = true
