@@ -186,10 +186,8 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("PAYMOB_API_KEY") as string;
 
     // ─── Create/find one pending internal payment ───────────
-    // A pending payment may already exist if the user retried
-    // initiation for the same order. We reuse it so we never
-    // have two pending payments for one order.
-    const { data: existingPayment } = await supabase
+    console.log("paymob-initiate: Checking for existing payment for order", order_id);
+    const { data: existingPayment, error: existingPayError } = await supabase
       .from("payments")
       .select("id, paymob_order_id, status")
       .eq("order_id", order_id)
@@ -198,17 +196,16 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    if (existingPayError) {
+      console.error("paymob-initiate: Error checking existing payment", JSON.stringify(existingPayError));
+    }
+
     let paymentId: string;
 
     if (existingPayment && existingPayment.status === "pending") {
-      // Reuse the existing pending payment. If it already has
-      // a paymob_order_id from a previous initiation, we keep
-      // it so a duplicate initiation does not create a second
-      // provider order.
+      console.log("paymob-initiate: Found existing pending payment", existingPayment.id);
       if (existingPayment.paymob_order_id) {
-        // We already have a provider order for this payment.
-        // Re-issue a payment key for the SAME provider order
-        // instead of creating a new one.
+        console.log("paymob-initiate: Reusing existing Paymob order", existingPayment.paymob_order_id);
         paymentId = existingPayment.id as string;
         const reused = await reissuePaymentKey(
           apiKey,
@@ -219,6 +216,7 @@ Deno.serve(async (req) => {
           billingData,
         );
         if (!reused.ok) {
+          console.error("paymob-initiate: Failed to reissue payment key", reused.message);
           return new Response(
             JSON.stringify({ message: reused.message }),
             { status: 502, headers: jsonHeadersFor(req) },
@@ -232,9 +230,7 @@ Deno.serve(async (req) => {
       }
       paymentId = existingPayment.id as string;
     } else {
-      // Create a fresh pending payment. transaction_id stays
-      // NULL — it is written exactly once by the verified
-      // callback.
+      console.log("paymob-initiate: Creating new payment record");
       const { data: newPayment, error: payInsertError } = await supabase
         .from("payments")
         .insert({
@@ -247,34 +243,39 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (payInsertError || !newPayment) {
-        console.error("paymob-initiate: failed to create payment row");
+        console.error("paymob-initiate: Failed to create payment row", JSON.stringify(payInsertError));
         return new Response(
-          JSON.stringify({ message: "Failed to create payment record" }),
+          JSON.stringify({ message: "Failed to create payment record", error: payInsertError?.message }),
           { status: 500, headers: jsonHeadersFor(req) },
         );
       }
       paymentId = newPayment.id as string;
+      console.log("paymob-initiate: Payment record created", paymentId);
     }
 
     // ─── Step 1: Paymob auth token ──────────────────────────
-    console.log("paymob-initiate: Step 1 - Getting auth token");
+    console.log("paymob-initiate: Step 1 - Getting auth token from Paymob");
+    console.log("paymob-initiate: API key length:", apiKey?.length);
     const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ api_key: apiKey }),
     });
+    console.log("paymob-initiate: Auth response status:", authResponse.status);
     const authData = await authResponse.json();
+    console.log("paymob-initiate: Auth response:", JSON.stringify(authData).substring(0, 200));
     if (!authData.token) {
       console.error("paymob-initiate: Failed to get auth token", JSON.stringify(authData));
       return new Response(
-        JSON.stringify({ message: "Failed to get Paymob auth token" }),
+        JSON.stringify({ message: "Failed to get Paymob auth token", details: authData }),
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Auth token obtained");
+    console.log("paymob-initiate: Auth token obtained successfully");
 
     // ─── Step 2: Register Paymob provider order ─────────────
-    console.log("paymob-initiate: Step 2 - Registering order");
+    console.log("paymob-initiate: Step 2 - Registering order with Paymob");
+    console.log("paymob-initiate: Amount:", amountCents, "Currency:", currency);
     const paymobOrderResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/ecommerce/orders",
       {
@@ -292,22 +293,22 @@ Deno.serve(async (req) => {
         }),
       },
     );
+    console.log("paymob-initiate: Order response status:", paymobOrderResponse.status);
     const paymobOrderData = await paymobOrderResponse.json();
+    console.log("paymob-initiate: Order response:", JSON.stringify(paymobOrderData).substring(0, 200));
     if (!paymobOrderData.id) {
       console.error("paymob-initiate: Failed to register order", JSON.stringify(paymobOrderData));
       return new Response(
-        JSON.stringify({ message: "Failed to register payment order" }),
+        JSON.stringify({ message: "Failed to register payment order", details: paymobOrderData }),
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Order registered", paymobOrderData.id);
+    console.log("paymob-initiate: Order registered with ID", paymobOrderData.id);
 
     const paymobOrderId = String(paymobOrderData.id);
 
     // ─── Persist the REAL Paymob provider order id ──────────
-    // HIGH-03: store the provider order id on the payment row
-    // BEFORE returning the checkout URL. The callback will
-    // locate this payment by paymob_order_id.
+    console.log("paymob-initiate: Persisting Paymob order ID", paymobOrderId, "for payment", paymentId);
     const { data: providerOrderUpdate, error: updateError } = await supabase
       .rpc("set_payment_provider_order_id", {
         p_payment_id: paymentId,
@@ -315,15 +316,18 @@ Deno.serve(async (req) => {
       });
 
     if (updateError || !providerOrderUpdate?.ok) {
-      console.error("paymob-initiate: failed to persist paymob_order_id");
+      console.error("paymob-initiate: Failed to persist paymob_order_id", JSON.stringify(updateError));
       return new Response(
-        JSON.stringify({ message: "Failed to persist payment order" }),
+        JSON.stringify({ message: "Failed to persist payment order", error: updateError?.message }),
         { status: 500, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Paymob order ID persisted successfully");
 
     // ─── Step 3: Payment key ─────────────────────────────────
-    console.log("paymob-initiate: Step 3 - Getting payment key");
+    console.log("paymob-initiate: Step 3 - Getting payment key from Paymob");
+    console.log("paymob-initiate: Integration ID:", integrationId);
+    console.log("paymob-initiate: Paymob Order ID:", paymobOrderId);
     const keyResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/acceptance/payment_keys",
       {
@@ -342,29 +346,30 @@ Deno.serve(async (req) => {
         }),
       },
     );
+    console.log("paymob-initiate: Payment key response status:", keyResponse.status);
     const keyData = await keyResponse.json();
+    console.log("paymob-initiate: Payment key response:", JSON.stringify(keyData).substring(0, 200));
     if (!keyData.token) {
       console.error("paymob-initiate: Failed to get payment key", JSON.stringify(keyData));
       return new Response(
-        JSON.stringify({ message: "Failed to get payment key" }),
+        JSON.stringify({ message: "Failed to get payment key", details: keyData }),
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Payment key obtained");
+    console.log("paymob-initiate: Payment key obtained successfully");
 
     // ─── Return minimum safe client info ────────────────────
     const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
+    console.log("paymob-initiate: SUCCESS - Returning checkout URL");
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl }),
       { status: 200, headers: jsonHeadersFor(req) },
     );
-  } catch (_error) {
-    // SECURITY: Never log raw error — it may contain Paymob tokens
-    // or request body details. Log a safe prefix for correlation.
-    console.error("paymob-initiate: unhandled error");
+  } catch (error) {
+    console.error("paymob-initiate: Unhandled error", JSON.stringify(error));
     return new Response(
-      JSON.stringify({ message: "Internal server error" }),
+      JSON.stringify({ message: "Internal server error", error: String(error) }),
       { status: 500, headers: jsonHeadersFor(req) },
     );
   }
