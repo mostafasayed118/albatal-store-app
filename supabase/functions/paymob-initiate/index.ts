@@ -31,10 +31,11 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, jsonHeadersFor, requireCors } from "../_shared/cors.ts";
+import { requireSecret } from "../_shared/secrets.ts";
 
 /// Maximum time (ms) to wait for a single Paymob HTTP call.
-const PAYMOB_TIMEOUT_MS = 10_000;
+const PAYMOB_TIMEOUT_MS = 8_000;
 
 /// Maximum allowed response body size (bytes) from Paymob.
 /// Prevents memory exhaustion from malformed upstream payloads.
@@ -61,15 +62,19 @@ async function fetchWithGuard(
 }
 
 Deno.serve(async (req) => {
+  // Fail closed on CORS misconfiguration.
+  const corsFail = requireCors(req);
+  if (corsFail) return corsFail;
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   // Reject non-POST requests.
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ message: "Method not allowed" }),
-      { status: 405, headers: jsonHeaders() },
+      { status: 405, headers: jsonHeadersFor(req) },
     );
   }
 
@@ -79,7 +84,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ message: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -97,7 +102,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -109,7 +114,7 @@ Deno.serve(async (req) => {
     if (!order_id) {
       return new Response(
         JSON.stringify({ message: "order_id is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -127,14 +132,14 @@ Deno.serve(async (req) => {
     if (orderError || !order) {
       return new Response(
         JSON.stringify({ message: "Order not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 404, headers: jsonHeadersFor(req) },
       );
     }
 
     if (order.status !== "pending") {
       return new Response(
         JSON.stringify({ message: "Order is not pending" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -166,16 +171,19 @@ Deno.serve(async (req) => {
     };
 
     // ─── Get Paymob credentials ──────────────────────────────
-    const apiKey = Deno.env.get("PAYMOB_API_KEY");
+    // Fail closed when required Paymob credentials are missing.
+    const apiKeyFail = requireSecret(req, "PAYMOB_API_KEY");
+    if (apiKeyFail) return apiKeyFail;
     const integrationId = Deno.env.get("PAYMOB_INTEGRATION_ID");
     const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
-    if (!apiKey || !integrationId || !iframeId) {
+    if (!integrationId || !iframeId) {
       console.error("paymob-initiate: Paymob credentials not configured");
       return new Response(
         JSON.stringify({ message: "Payment provider not configured" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 503, headers: jsonHeadersFor(req) },
       );
     }
+    const apiKey = Deno.env.get("PAYMOB_API_KEY") as string;
 
     // ─── Create/find one pending internal payment ───────────
     // A pending payment may already exist if the user retried
@@ -213,13 +221,13 @@ Deno.serve(async (req) => {
         if (!reused.ok) {
           return new Response(
             JSON.stringify({ message: reused.message }),
-            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            { status: 502, headers: jsonHeadersFor(req) },
           );
         }
         const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
         return new Response(
           JSON.stringify({ checkout_url: checkoutUrl }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 200, headers: jsonHeadersFor(req) },
         );
       }
       paymentId = existingPayment.id as string;
@@ -242,13 +250,14 @@ Deno.serve(async (req) => {
         console.error("paymob-initiate: failed to create payment row");
         return new Response(
           JSON.stringify({ message: "Failed to create payment record" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 500, headers: jsonHeadersFor(req) },
         );
       }
       paymentId = newPayment.id as string;
     }
 
     // ─── Step 1: Paymob auth token ──────────────────────────
+    console.log("paymob-initiate: Step 1 - Getting auth token");
     const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -256,13 +265,16 @@ Deno.serve(async (req) => {
     });
     const authData = await authResponse.json();
     if (!authData.token) {
+      console.error("paymob-initiate: Failed to get auth token", JSON.stringify(authData));
       return new Response(
         JSON.stringify({ message: "Failed to get Paymob auth token" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Auth token obtained");
 
     // ─── Step 2: Register Paymob provider order ─────────────
+    console.log("paymob-initiate: Step 2 - Registering order");
     const paymobOrderResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/ecommerce/orders",
       {
@@ -282,12 +294,13 @@ Deno.serve(async (req) => {
     );
     const paymobOrderData = await paymobOrderResponse.json();
     if (!paymobOrderData.id) {
-      console.error("paymob-initiate: failed to register Paymob order");
+      console.error("paymob-initiate: Failed to register order", JSON.stringify(paymobOrderData));
       return new Response(
         JSON.stringify({ message: "Failed to register payment order" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Order registered", paymobOrderData.id);
 
     const paymobOrderId = String(paymobOrderData.id);
 
@@ -305,11 +318,12 @@ Deno.serve(async (req) => {
       console.error("paymob-initiate: failed to persist paymob_order_id");
       return new Response(
         JSON.stringify({ message: "Failed to persist payment order" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: jsonHeadersFor(req) },
       );
     }
 
     // ─── Step 3: Payment key ─────────────────────────────────
+    console.log("paymob-initiate: Step 3 - Getting payment key");
     const keyResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/acceptance/payment_keys",
       {
@@ -330,20 +344,20 @@ Deno.serve(async (req) => {
     );
     const keyData = await keyResponse.json();
     if (!keyData.token) {
+      console.error("paymob-initiate: Failed to get payment key", JSON.stringify(keyData));
       return new Response(
         JSON.stringify({ message: "Failed to get payment key" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Payment key obtained");
 
     // ─── Return minimum safe client info ────────────────────
-    // Only the checkout URL. No secrets, no provider order id,
-    // no payment key exposure beyond the iframe token.
     const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: jsonHeadersFor(req) },
     );
   } catch (_error) {
     // SECURITY: Never log raw error — it may contain Paymob tokens
@@ -351,7 +365,7 @@ Deno.serve(async (req) => {
     console.error("paymob-initiate: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: jsonHeaders() },
+      { status: 500, headers: jsonHeadersFor(req) },
     );
   }
 });
