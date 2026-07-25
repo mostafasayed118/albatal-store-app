@@ -339,6 +339,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           auth_token: authData.token,
           amount_cents: amountCents,
+          currency: currency,
           expiration: 3600,
           order_id: paymobOrderId,
           billing_data: billingData,
@@ -406,6 +407,7 @@ async function reissuePaymentKey(
       body: JSON.stringify({
         auth_token: authData.token,
         amount_cents: amountCents,
+        currency: "EGP",
         expiration: 3600,
         order_id: paymobOrderId,
         billing_data: billingData,
