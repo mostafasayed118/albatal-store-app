@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
           );
         }
         const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
+        console.log("paymob-initiate: SUCCESS (reissue) - Returning checkout URL");
         return new Response(
           JSON.stringify({ checkout_url: checkoutUrl }),
           { status: 200, headers: jsonHeadersFor(req) },
@@ -362,6 +363,7 @@ Deno.serve(async (req) => {
     // ─── Return minimum safe client info ────────────────────
     const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
     console.log("paymob-initiate: SUCCESS - Returning checkout URL");
+    console.log("paymob-initiate: Checkout URL:", checkoutUrl);
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl }),
