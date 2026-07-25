@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/services/crash_reporting_service.dart';
+import '../../shared/services/crash_reporting_service.dart';
+import '../../shared/services/env_config.dart';
+import '../../shared/services/sentry_crash_reporting_service.dart';
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
 import '../../features/admin/data/supabase_admin_repository.dart';
@@ -67,7 +69,11 @@ Future<void> configureDependencies() async {
         : SupabaseOrdersRepository())
     ..registerLazySingleton<CatalogRepository>(() =>
         SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
-    // Crash reporting: NoOp until sentry_flutter is approved in pubspec.
-    ..registerLazySingleton<CrashReportingService>(
-        () => const NoOpCrashReportingService());
+    // Crash reporting: Use Sentry when DSN is configured, NoOp otherwise.
+    ..registerLazySingleton<CrashReportingService>(() {
+      if (EnvConfig.sentryDsn.isNotEmpty) {
+        return SentryCrashReportingService();
+      }
+      return const NoOpCrashReportingService();
+    });
 }
