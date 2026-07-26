@@ -109,8 +109,14 @@ class PaymentCubit extends Cubit<PaymentState> {
   }
 
   /// Start payment processing.
+  ///
+  /// Guards against double-entry: if a COD RPC or card initiation is
+  /// already in flight, subsequent calls are silently ignored. The UI
+  /// button is also disabled during [PaymentStatus.processing], but
+  /// this guard protects against programmatic re-entry.
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
+    if (state.status == PaymentStatus.processing) return;
 
     // Cash on Delivery — server-confirmed path.
     // The client calls `confirm_cod_payment` RPC which atomically

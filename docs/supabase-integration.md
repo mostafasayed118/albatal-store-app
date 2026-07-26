@@ -140,9 +140,22 @@ files (`test_create_checkout_order.sql`, `test_paymob_callback.sql`).
 
 ## Environment variables
 
+The Flutter client receives these via build-time `--dart-define-from-file`
+(see `config/README.md`). They are NOT stored in a packaged `.env` file:
+
 ```
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-Stored in `.env` (gitignored). Loaded via `flutter_dotenv`.
+Inject at build time:
+
+```bash
+flutter run --dart-define-from-file=config/env.staging.local.json
+flutter build apk --release --dart-define-from-file=config/env.production.local.json
+```
+
+Server-only secrets (`PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`,
+`PAYMOB_HMAC_SECRET`, `PAYMOB_IFRAME_ID`, `SUPABASE_SERVICE_ROLE_KEY`,
+`SCHEDULER_SECRET`) are set via `supabase functions secrets set` and
+never reach the Flutter build.

@@ -41,7 +41,7 @@ class _SignInPageState extends State<SignInPage> {
                 SnackBar(content: Text(state.errorMessage!)));
           }
         },
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,

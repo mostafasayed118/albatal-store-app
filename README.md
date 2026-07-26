@@ -105,19 +105,36 @@ UI (Widget)
 
 ## Local Setup
 
+> **Security:** the Flutter app does **not** package `.env` as an asset
+> and does **not** read `.env` at runtime. Client config is injected at
+> build time via `--dart-define-from-file`. Paymob keys, the Supabase
+> service-role key, and Edge Function secrets live only in Supabase
+> Edge Function secrets and never reach the Flutter build. See
+> [`config/README.md`](config/README.md).
+
 ```bash
 # 1. Install dependencies
 flutter pub get
 flutter gen-l10n
 
-# 2. Configure Supabase
-cp .env.example .env
-# Edit .env with your Supabase URL and anon key
+# 2. Create a local build-config file with your Supabase values.
+#    Copy the placeholder template and fill in real values locally.
+#    (config/env.staging.local.json is gitignored.)
+cp config/env.staging.json config/env.staging.local.json
+# Edit config/env.staging.local.json:
+#   SUPABASE_URL, SUPABASE_ANON_KEY, (optional) SENTRY_DSN
 
-# 3. Run all 14 numbered migrations in Supabase SQL Editor, in order.
+# 3. Run the 14 numbered migrations in Supabase SQL Editor, in order.
 # See docs/supabase-integration.md for the migration list and helper scripts.
 
 # 4. Deploy the Edge Functions used by the configured flows.
+#    Set their secrets server-side (NEVER in the Flutter build):
+#      supabase functions secrets set PAYMOB_API_KEY=...
+#      supabase functions secrets set PAYMOB_INTEGRATION_ID=...
+#      supabase functions secrets set PAYMOB_HMAC_SECRET=...
+#      supabase functions secrets set PAYMOB_IFRAME_ID=...
+#      supabase functions secrets set SUPABASE_SERVICE_ROLE_KEY=...
+#      supabase functions secrets set SCHEDULER_SECRET=...
 supabase functions deploy checkout
 supabase functions deploy paymob-initiate
 supabase functions deploy paymob-callback
@@ -128,8 +145,39 @@ supabase functions deploy send-order-notification
 flutter analyze
 flutter test
 
-# 6. Run
-flutter run
+# 6. Run (staging)
+flutter run --dart-define-from-file=config/env.staging.local.json
+```
+
+### Staging build
+
+```bash
+# Debug run
+flutter run --dart-define-from-file=config/env.staging.local.json
+
+# Release APK
+flutter build apk --release \
+  --dart-define-from-file=config/env.staging.local.json
+```
+
+### Production build
+
+```bash
+# Create a local production config from the template, fill in real values
+cp config/env.production.json config/env.production.local.json
+# Edit config/env.production.local.json with production Supabase values
+
+flutter build apk --release \
+  --dart-define-from-file=config/env.production.local.json
+```
+
+### Verifying no secrets leak into the artifact
+
+```bash
+# After building, confirm .env is NOT in the APK and no PAYMOB_ strings
+# are present in the built artifact.
+unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -E "\.env$" || echo "OK: no .env in APK"
+unzip -p build/app/outputs/flutter-apk/app-release.apk | grep -a "PAYMOB_" | head || echo "OK: no PAYMOB_ strings in APK"
 ```
 
 ---
@@ -138,17 +186,36 @@ flutter run
 
 ### Required Steps
 1. Create a project at [supabase.com](https://supabase.com)
-2. Copy Project URL and anon key to `.env`
+2. Copy Project URL and anon key into `config/env.staging.local.json` (gitignored)
 3. Run the 14 numbered SQL migrations in order via SQL Editor
 4. Enable Email provider in Authentication → Providers
 5. Deploy the Edge Functions required by the enabled payment and notification flows
+6. Set Paymob + service secrets via `supabase functions secrets set` (server-only)
 
 ### Environment Variables
 
+The Flutter client only ever receives these (build-time, via
+`--dart-define-from-file`):
+
+```json
+// config/env.staging.local.json (gitignored — fill in real values)
+{
+  "SUPABASE_URL": "https://your-project.supabase.co",
+  "SUPABASE_ANON_KEY": "your-anon-key-here",
+  "SENTRY_DSN": ""
+}
+```
+
+Paymob keys, the service-role key, and scheduler secrets are **never**
+shipped to the client — they live in Supabase Edge Function secrets:
+
 ```bash
-# .env (never commit this file)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
+supabase functions secrets set PAYMOB_API_KEY=...
+supabase functions secrets set PAYMOB_INTEGRATION_ID=...
+supabase functions secrets set PAYMOB_HMAC_SECRET=...
+supabase functions secrets set PAYMOB_IFRAME_ID=...
+supabase functions secrets set SUPABASE_SERVICE_ROLE_KEY=...
+supabase functions secrets set SCHEDULER_SECRET=...
 ```
 
 ---
@@ -163,7 +230,6 @@ SUPABASE_ANON_KEY=your-anon-key-here
 | `go_router` | Declarative routing |
 | `shared_preferences` | Local persistence |
 | `supabase_flutter` | Cloud backend (auth, database, storage) |
-| `flutter_dotenv` | Environment variable loading |
 | `webview_flutter` | Paymob hosted checkout page |
 | `intl` + `flutter gen-l10n` | Localization and RTL |
 | `bloc_test` / `mocktail` | Testing |
@@ -208,7 +274,7 @@ Tests cover:
 | `supabase/migrations/002_rls_policies.sql` | ~100 | Row Level Security policies |
 | `supabase/migrations/003_auth_profiles_and_hardening.sql` | ~80 | Auth triggers, admin role, order protection |
 | `supabase/functions/checkout/index.ts` | ~130 | Server-side checkout Edge Function |
-| `lib/shared/services/supabase_config.dart` | ~45 | Supabase initialization |
+| `lib/shared/services/supabase_config.dart` | ~60 | Supabase initialization (build-time config) |
 | `lib/features/auth/presentation/cubit/auth_cubit.dart` | ~230 | Auth state machine |
 
 ---

@@ -1,0 +1,90 @@
+# ============================================================
+# Al Batal Elite — Supabase local + staging config
+#
+# SAFETY:
+#   - This file contains NO secrets. Project ref is a public
+#     identifier, not a credential.
+#   - All secrets live in environment variables (.env.staging)
+#     which are gitignored and never referenced here.
+#   - The [auth.external] section is intentionally absent. OAuth
+#     providers must be configured via the dashboard or
+#     supabase secrets, never in this file.
+# ============================================================
+
+project_id = "alxwvyflasewslinufqe"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 15
+max_client_conn = 200
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+
+# ─── Edge Functions ─────────────────────────────────────────
+# Functions are deployed individually via:
+#   supabase functions deploy <name>
+# Verify with: supabase functions list
+
+[functions.checkout]
+verify_jwt = true
+
+[functions.paymob-initiate]
+verify_jwt = true
+
+[functions.paymob-callback]
+# Paymob sends server-to-server callbacks with HMAC.
+# JWT verification is OFF because the caller is Paymob, not
+# our Flutter client. HMAC verification happens inside the
+# function body (hmac.ts).
+verify_jwt = false
+
+[functions.cancel-expired-orders]
+verify_jwt = false
+
+[functions.send-order-notification]
+verify_jwt = false

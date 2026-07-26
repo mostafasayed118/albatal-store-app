@@ -98,8 +98,23 @@ final class CartCubit extends Cubit<CartState> {
   void clear() =>
       _emitAndPersist(const CartState([], status: CartStatus.ready));
 
-  void _emitAndPersist(CartState next) {
+  /// Emit the optimistic [next] state, then await persistence and surface
+  /// any failure as a follow-up error state. Persistence errors do NOT
+  /// roll back the in-memory state (the user's intent is preserved for the
+  /// current session) but are reported so the UI can warn that the cart
+  /// won't survive a restart.
+  Future<void> _emitAndPersist(CartState next) async {
     emit(next);
-    _repository.writeCart(next.items);
+    final result = await _repository.writeCart(next.items);
+    switch (result) {
+      case Success():
+        // No-op: optimistic state already emitted.
+        break;
+      case Failure(:final error):
+        emit(next.copyWith(
+          status: CartStatus.error,
+          errorMessage: 'Cart may not be saved: ${error.message}',
+        ));
+    }
   }
 }

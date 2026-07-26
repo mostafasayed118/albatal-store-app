@@ -1,0 +1,17 @@
+== Anon Write Grants Evidence ==
+Query: SELECT grantee, privilege_type, table_name FROM information_schema.role_table_grants
+       WHERE grantee IN ('anon','authenticated') AND privilege_type IN ('INSERT','UPDATE','DELETE')
+Date: 2026-07-25
+
+RESULTS (anon role has write access to ALL user tables):
+
+addresses:  anon INSERT, anon UPDATE, anon DELETE
+cart_items: anon INSERT, anon UPDATE, anon DELETE
+orders:     anon INSERT, anon UPDATE, anon DELETE
+order_items: anon INSERT, anon UPDATE, anon DELETE
+payments:   anon INSERT, anon UPDATE, anon DELETE
+wishlists:  anon INSERT, anon UPDATE, anon DELETE
+
+Status: FAIL - Defense-in-depth failure. Migration 019 should have REVOKE'd these.
+Mitigation: RLS policies (auth.uid() checks) should block in practice, but GRANTs
+            are overly permissive.

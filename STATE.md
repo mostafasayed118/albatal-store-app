@@ -1,8 +1,160 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-22T19:15:00Z
+Last run: 2026-07-25T00:00:00Z
+
+## New — 2026-07-25
+
+### Environment Isolation Plan — COMPLETE (L1 report)
+
+**Problem:** `config/env.staging.json` and `config/env.production.json`
+point to the same Supabase project (`alxwvyflasewslinufqe`) with identical
+anon keys. Staging mistakes can directly affect production data and
+payments.
+
+**Analysis:** Compared 3 options:
+- **Option A: Separate projects** — RECOMMENDED. Complete blast-radius
+  isolation. Extra setup cost is justified for a payment-processing app.
+- **Option B: Separate schemas** — NOT RECOMMENDED. Migration complexity,
+  RLS duplication, and PostgREST schema routing edge cases outweigh savings.
+- **Option C: Separate keys only** — NOT RECOMMENDED. Zero data isolation;
+  same rows, same tables, same database.
+
+**Deliverable:** `docs/ENVIRONMENT_ISOLATION_PLAN.md` with:
+1. Recommended strategy (Option A — separate projects)
+2. Required Supabase projects (staging + production)
+3. Required secret names (client + Edge Function + Paymob)
+4. Required Flutter environment wiring (config files, build commands)
+5. Required CI/CD secret handling (GitHub Actions pattern)
+6. Migration promotion process (staging → production gate)
+7. Backup/restore considerations
+8. Implementation checklist (14 items)
+
+**Decision required from human:**
+1. Approve Option A (separate projects)?
+2. Which project becomes production — current `alxwvyflasewslinufqe` or new?
+3. Paymob account — supports multiple integrations or need second account?
+4. Supabase plan — Free (2 projects) or Pro?
+
+No code changes. No push/merge. Report only.
+
+---
 
 ## High Priority
+
+### P1 — `confirm_cod_payment` RPC not deployed to staging — OPEN (L1 report)
+
+**Deployment gap:** The on-disk migration `supabase/migrations/018_confirm_cod_payment.sql`
+defines the `confirm_cod_payment(UUID)` RPC, but the staging database's
+migration slot "018" is occupied by a DIFFERENT file
+(`018_low_stock_index_and_perf.sql` — a low-stock partial index). The
+`confirm_cod_payment` function does **not exist** in the staging `public`
+schema (verified via `pg_proc` — 0 rows). Migration version "019" on staging
+is `019_harden_rpc_grants.sql` (PUBLIC→authenticated on checkout/update_status),
+NOT the on-disk `019_harden_rpc_and_payments_authorization.sql`.
+
+**Evidence:**
+- `supabase_migrations.schema_migrations` → 19 versions applied (001–019)
+- `pg_proc WHERE proname='confirm_cod_payment'` → 0 rows (MISSING)
+- `pg_proc WHERE proname ILIKE '%confirm%'` → 0 rows
+- Staging slot "018" statements = low-stock index, NOT the COD RPC
+- `create_checkout_order`, `process_paymob_callback`, `update_order_status`,
+  `calculate_shipping_fee`, `get_low_stock_products`,
+  `set_payment_provider_order_id` all present; `confirm_cod_payment` absent
+
+**Impact:** Every COD checkout attempt from the Flutter client fails with a
+PostgREST "function confirm_cod_payment not found" error. The entire COD
+payment path is broken in staging.
+
+**Root cause (likely):** The local `supabase/migrations/` directory was
+renumbered/reorganized after an initial `supabase db push`, but the staging
+database was never re-pushed with the new 018/019 files. The
+`schema_migrations` table tracks version numbers, not file hashes, so the
+mismatch is invisible to `supabase db push` (it thinks 018/019 are applied).
+
+**Abuse-test evidence (transactional, rolled back):** The RPC *logic* was
+verified by defining the function inline inside a `BEGIN`/`ROLLBACK`
+transaction on staging and running the project's abuse-test harness
+(`supabase/tests/test_cod_payment.sql` pattern). All 8 scenarios passed:
+confirmed, idempotent, authentication_required, not_owner, order_not_pending,
+payment_not_cod, payment_not_pending (failed payment), and auto-create
+missing payment. Dart client tests (`test/cod_server_confirm_test.dart`)
+also pass (7/7). Staging `orders`/`payments` counts were 0 before and after
+— no persistent state change.
+
+**Required action (HUMAN GATED — do not auto-fix):**
+1. Reconcile the migration numbering mismatch between local
+   `supabase/migrations/` and staging `schema_migrations`.
+2. Push the actual `018_confirm_cod_payment.sql` to staging (likely as
+   migration 020 to avoid re-numbering, or via a repair migration).
+3. Re-run `supabase db query --linked "SELECT confirm_cod_payment(...)"` to
+   confirm the RPC exists, then re-run the REST E2E flow.
+
+**Schema notes for the E2E spec:**
+- `orders` has NO `payment_state` column. The spec's "orders.payment_state=paid"
+  maps to `orders.status='paid'` (enum `order_status`).
+- `payments.status` is `text` (not an enum); "success" is a string.
+- The RPC never returns `payment_not_found` — it auto-creates a missing
+  payment row (migration 018 lines 147–154). The Dart client maps this
+  code but it is unreachable. Documented as a spec deviation.
+
+### P0 — `.env` packaged as Flutter asset — FIXED (L2, main workspace)
+
+**Trust-boundary break:** `pubspec.yaml` listed `.env` as a Flutter
+asset, so `flutter build` baked Supabase + Paymob secrets into the APK.
+`.env` was gitignored (never committed) but was shipped inside the
+artifact at build time.
+
+**Changes:**
+1. `pubspec.yaml` — removed `.env` from `flutter.assets`; removed
+   `flutter_dotenv` dependency.
+2. `lib/shared/services/supabase_config.dart` — replaced `dotenv.load()`
+   + `dotenv.env[...]` with build-time `String.fromEnvironment(...)`.
+3. `lib/shared/services/env_config.dart` — same: dotenv reads →
+   `String.fromEnvironment`. Added `SUPABASE_SERVICE_ROLE_KEY` and
+   `SCHEDULER_SECRET` to the "never in client" docstring list.
+4. `test/payment_security_test.dart` — updated stale "non-dotenv"
+   comment to reference the new build-time config.
+5. `.env.example` — rewritten to document ONLY safe client vars
+   (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENTRY_DSN`) plus an explicit
+   "never ship" block listing every server-only secret.
+6. `config/env.staging.json`, `config/env.production.json` — new
+   committed placeholder templates for `--dart-define-from-file`.
+7. `config/README.md` — new doc explaining build-time config + which
+   vars are client-safe vs Edge-Function-only.
+8. `.gitignore` — added `config/env.*.local.json` and
+   `config/env.*.secret.json` so real values never get committed.
+9. `README.md` — replaced "cp .env.example .env" run flow with
+   `--dart-define-from-file=config/env.<env>.local.json` for staging
+   and production; removed `flutter_dotenv` from deps table; added
+   "Verifying no secrets leak into the artifact" section.
+
+**Verification:**
+| Check | Result |
+|-------|--------|
+| `flutter pub get` | OK — `flutter_dotenv` removed, 1 dependency changed |
+| `flutter analyze` | 1 pre-existing warning (`_CompleterConfirmService` unused in `test/cod_server_confirm_test.dart`); **0 new issues** |
+| `flutter test` | **170 passed**, 0 failed |
+| `flutter build apk --release` | FAILED — **pre-existing** proguard-rules.pro missing (fails on `master` before my changes too, confirmed via `git stash`) |
+| `flutter build apk --debug --dart-define-from-file=...` | OK — built `app-debug.apk` |
+| APK `.env` file search | **No `.env` packaged** (recursive search of extracted APK) |
+| APK `PAYMOB_` string search | 4 matches, **all in docstring comments** in `kernel_blob.bin` (debug-only artifact; release AOT strips comments) |
+| Real secret-value scan | No `sk_live`/`sk_test`, no real Bearer tokens, no real JWTs. "Bearer " matches are `supabase_flutter` HTTP template strings; "eyJ" matches are byte noise in keyboard key tables |
+
+**Client trust boundary (post-fix):**
+- Flutter build receives ONLY: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENTRY_DSN`
+- Flutter build NEVER receives: `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_HMAC_SECRET`, `PAYMOB_IFRAME_ID`, `SUPABASE_SERVICE_ROLE_KEY`, `SCHEDULER_SECRET`
+
+**New run commands:**
+```bash
+# Staging
+flutter run --dart-define-from-file=config/env.staging.local.json
+flutter build apk --release --dart-define-from-file=config/env.staging.local.json
+
+# Production
+flutter build apk --release --dart-define-from-file=config/env.production.local.json
+```
+
+## Previous — Fixed
 
 ### P0 — Missing DI sources — FIXED (L2, main workspace)
 
@@ -21,6 +173,11 @@ Last run: 2026-07-22T19:15:00Z
 
 ## Watch List
 
+- **Pre-existing Android release build break:** `flutter build apk --release`
+  fails on `minifyReleaseWithR8` because `android/app/proguard-rules.pro` is
+  referenced in `build.gradle` but absent from disk. Reproduces on clean
+  `master` HEAD (verified via `git stash`). Not a security issue; needs a
+  separate Android-config fix (add the file or drop the reference).
 - Outdated packages (major bumps need human review)
 - Sentry SDK deferred
 - macos ephemeral Packages lock on Windows may block `flutter analyze` in main tree
@@ -31,4 +188,147 @@ See previous run notes for completed specs 01–10 and deferred items.
 
 ---
 
-Run log: L2 enabled by human approval. Applied missing-DI fix to main workspace (was previously only in worktree). `dart analyze` clean, `flutter test` 170 passed. No push/merge.
+Run log: L1 report-only. COD E2E test requested. Staging deployment
+verified (linked project alxwvyflasewslinufqe, ACTIVE_HEALTHY). Found
+`confirm_cod_payment` RPC MISSING from staging — migration slot "018"
+on staging is a low-stock index, not the COD RPC. The on-disk
+`018_confirm_cod_payment.sql` was never pushed. Abuse tests run in a
+rolled-back transaction (function defined inline) — all 8 scenarios
+PASS. Dart client tests 7/7 PASS. No persistent staging state change
+(orders/payments counts 0 before and after). No push/merge. Human
+action required to deploy the RPC before COD can be marked ready.
+
+---
+
+## 2026-07-23 — Paymob Sandbox QA Run (L1 report-only)
+
+**Task:** End-to-end Paymob sandbox testing on staging (project ref
+`alxwvyflasewslinufqe`). 9 test scenarios from the QA brief.
+
+**Executed:**
+- Codebase reconnaissance (3 explore agents): Edge Functions, Flutter
+  payment feature, staging config, tests, migrations.
+- `flutter test test/payment_checkout_flow_test.dart
+  test/payment_security_test.dart test/paymob_url_guard_test.dart` →
+  **22 passed**, 0 failed.
+- Live staging probes against `paymob-callback` and `paymob-initiate`
+  Edge Functions (no secrets used; negative tests only).
+- `supabase secrets list` (names verified; values NOT recorded/printed).
+- `supabase functions list` (all 5 ACTIVE).
+
+**BLOCKERS found (cannot complete e2e sandbox tests):**
+
+### B1 — P0: `paymob-callback` deployed with `verify_jwt=true` (DRIFT)
+- Local `supabase/config.toml` correctly sets `verify_jwt = false` for
+  `paymob-callback` (Paymob is the caller; HMAC is the auth).
+- Deployed function on staging reports `verify_jwt: true` (from
+  `supabase functions list`).
+- Live probe: POST to `paymob-callback` with forged HMAC → HTTP 401
+  `{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization
+  header"}` — this is the **platform JWT gate**, NOT the Edge Function's
+  HMAC check. The function body never executes.
+- **Impact:** Paymob cannot deliver callbacks. Tests 5, 6, 8, 9 cannot
+  pass. Paymob is NOT ready.
+- **Fix:** `supabase functions deploy paymob-callback --no-verify-jwt
+  --project-ref alxwvyflasewslinufqe` (redeploy with correct config).
+  Requires human approval (per AGENTS.md scope — L2 + worktree).
+
+### B2 — `PAYMOB_IFRAME_ID` secret NOT set on staging
+- `supabase secrets list` shows: `PAYMOB_API_KEY`,
+  `PAYMOB_HMAC_SECRET`, `PAYMOB_INTEGRATION_ID` present.
+- `PAYMOB_IFRAME_ID` **absent** (also flagged in `secrets-staging.env`
+  TODO comment).
+- **Impact:** `paymob-initiate` returns HTTP 503 "Payment provider not
+  configured". Test 4 cannot return a valid checkout URL. Tests 5–7
+  cannot run.
+- **Fix:** `supabase secrets set PAYMOB_IFRAME_ID=<from-paymob-dashboard>
+  --project-ref alxwvyflasewslinufqe`. Requires human.
+
+### B3 — No live staging DB access for SQL test fixtures
+- `supabase status` fails locally (config.toml schema drift —
+  `db.pooler.extra_pool_size`, `db.shadow_project_id`,
+  `auth.refresh_token_rotation_enabled` rejected by current CLI 2.109.1).
+- `test_paymob_callback.sql` (amount-mismatch + invalid-HMAC RPC tests)
+  cannot be executed without DB access or a fixed config.toml.
+- **Mitigation:** The RPC logic is covered by the SQL fixture's documented
+  expectations + the Flutter unit tests. But the *live staging DB* has not
+  been exercised.
+
+**What DID pass (evidence-backed):**
+- 22 Flutter unit/widget tests: PaymentCubit state machine (success,
+  failure, timeout, cancel, duplicate-replay idempotency, watch cleanup),
+  URL guard (HTTPS/host allowlist/token redaction), security regression
+  (no client-side verifyPayment/handleCallback/secret getters).
+- Live staging: `paymob-initiate` correctly 401s without JWT (platform
+  gate works). All 5 Edge Functions ACTIVE. Secrets (5 of 6 Paymob
+  vars) present.
+
+**Verdict:** Paymob is **NOT READY** for production. B1 and B2 must be
+fixed and the full 9-test suite re-run before sign-off. The invalid-HMAC
+(Test 8) and amount-mismatch (Test 9) tests — the mandatory gates —
+cannot pass until B1 is fixed.
+
+---
+
+## 2026-07-23 — Adversarial RLS Verification Plan (L1 report-only)
+
+**Status:** Test plan created. NOT YET RUN against staging. RLS is NOT
+marked verified until the script is executed and all 44 tests pass.
+
+**Artifacts created (no source code modified — L1):**
+1. `supabase/tests/test_rls_adversarial.sql` — adversarial RLS test
+   script (44 tests across 4 sections, wrapped in BEGIN/ROLLBACK,
+   disposable test users, no production data touched, no secrets/JWT
+   bodies printed).
+2. `supabase/tests/test_rls_adversarial_results.md` — expected results,
+   actual-results template, PASS/FAIL summary, launch sign-off evidence
+   checklist (E1–E9).
+
+**Test coverage (44 tests):**
+- Section 1 (14 tests): anonymous user — cannot read user-scoped tables
+  (profiles, orders, order_items, addresses, cart_items, wishlists,
+  payments, notifications, analytics, error_logs); can read public
+  catalog (products, categories, product_variants, product_images).
+- Section 2 (14 tests): user A — can read own data (7 positive tests);
+  cannot read user B's data (7 negative tests: profiles, orders,
+  order_items, addresses, cart, wishlist, payments).
+- Section 3 (9 tests): non-admin escalation — cannot INSERT/UPDATE/
+  DELETE products, cannot INSERT/UPDATE categories, cannot call
+  `update_order_status` RPC, cannot self-escalate `is_admin`, cannot
+  call `get_low_stock_products`, IDOR blocked on `get_order_details`.
+- Section 4 (7 tests): payment integrity — cannot directly INSERT
+  payments (default-deny), cannot call `process_paymob_callback`
+  (service_role only), checkout ignores client-supplied pricing
+  (server-authoritative), cannot UPDATE payments, cannot UPDATE/INSERT
+  orders directly, cannot INSERT order_items directly.
+
+**How to run:**
+```bash
+supabase db execute --linked supabase/tests/test_rls_adversarial.sql
+```
+
+**Note on B3 blocker:** The `supabase status` config.toml schema drift
+issue (flagged in the Paymob QA run above) may also block `supabase db
+execute`. If so, paste the script into the Supabase SQL Editor on the
+staging project as a workaround.
+
+**Launch gate:** `Failed` count must be 0. Evidence E1–E9 must be
+collected before RLS is marked VERIFIED.
+
+### P1 — Foreign key constraint violation on orders — FIXED
+
+**Problem:** The checkout RPC create_checkout_order (migration 013) inserts into the orders table with user_id from uth.uid(). The orders table has user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT. If a user exists in uth.users but has no corresponding row in profiles, the INSERT fails with a foreign key constraint violation, breaking all checkout attempts.
+
+**Root cause:** The handle_new_user() trigger on uth.users (migration 003) creates profiles automatically, but it does not cover users who existed before the trigger was added, or whose profile was manually deleted, or auth users created through non-standard paths.
+
+**Fix applied to supabase/migrations/013_atomic_checkout_rpc.sql (lines 158-165):**
+Added a profile guard before the order insert:
+`sql
+INSERT INTO profiles (id, full_name, phone)
+VALUES (v_user_id, \'\', \'\')
+ON CONFLICT (id) DO NOTHING;
+`
+This ensures a profile exists for every authenticated user before attempting the order insert. The ON CONFLICT DO NOTHING makes it idempotent — if the profile already exists (normal case), it silently succeeds.
+
+**Verification:** 170/170 Flutter tests pass, 0 new linter issues.
+

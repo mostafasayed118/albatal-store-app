@@ -249,19 +249,21 @@ class _FulfillmentActions extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Add Tracking Details'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: courierCtrl,
-              decoration: const InputDecoration(labelText: 'Courier Name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: trackingCtrl,
-              decoration: const InputDecoration(labelText: 'Tracking Number'),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: courierCtrl,
+                decoration: const InputDecoration(labelText: 'Courier Name'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: trackingCtrl,
+                decoration: const InputDecoration(labelText: 'Tracking Number'),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

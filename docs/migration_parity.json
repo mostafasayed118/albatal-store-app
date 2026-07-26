@@ -1,0 +1,174 @@
+{
+  "audit_date": "2026-07-25",
+  "project": "Al Batal Elite",
+  "verdict": "DRIFT_DETECTED",
+  "git": {
+    "branch": "master",
+    "head_sha": "3898a89b06f78c1d96f135d7847ecf906f1150a2",
+    "origin_master_sha": "2a001fbe7f550d7a6d49fcfa9ce6ac09ea7791ca",
+    "diverged": true,
+    "ahead_count": 1,
+    "behind_count": 2,
+    "working_tree_clean": false
+  },
+  "migrations": {
+    "on_head_committed": [
+      "001_initial_schema.sql",
+      "002_rls_policies.sql",
+      "003_auth_profiles_and_hardening.sql",
+      "004_stock_function.sql",
+      "005_storage_buckets.sql",
+      "006_payments_table.sql",
+      "007_stock_increment_function.sql",
+      "008_order_fulfillment.sql",
+      "009_shipping_zones.sql",
+      "010_notifications_analytics.sql",
+      "011_orders_idempotency_and_expiry.sql",
+      "012_add_order_statuses.sql",
+      "013_atomic_checkout_rpc.sql",
+      "014_paymob_security_repair.sql",
+      "015_payments_update_and_stock_hardening.sql",
+      "016_seed_product_catalog.sql",
+      "017_authorize_rpcs.sql",
+      "018_confirm_cod_payment.sql"
+    ],
+    "on_origin_master_only": [],
+    "untracked_on_disk": [
+      "019_harden_rpc_and_payments_authorization.sql",
+      "020_fix_orders_fk.sql",
+      "021_fix_create_checkout_order.sql"
+    ],
+    "deleted_uncommitted": [
+      "test_cod_payment.sql",
+      "test_create_checkout_order.sql",
+      "test_payments_update_and_stock.sql",
+      "test_paymob_callback.sql",
+      "test_rpc_authorization.sql",
+      "verify_rls.sql"
+    ],
+    "modified_uncommitted": [
+      "013_atomic_checkout_rpc.sql"
+    ],
+    "highest_committed_on_head": "018",
+    "highest_committed_on_origin": "017",
+    "highest_on_disk": "021"
+  },
+  "staging_applied_migrations": "UNKNOWN",
+  "staging_queries_needed": [
+    "SELECT version, name, executed_at FROM supabase_migrations.schema_migrations ORDER BY version;",
+    "SELECT proname, prosecdef FROM pg_proc WHERE proname IN ('create_checkout_order','confirm_cod_payment','process_paymob_callback','update_order_status');",
+    "SELECT routine_name, grantee, privilege_type FROM information_schema.routine_privileges WHERE routine_schema = 'public' AND routine_name IN ('create_checkout_order','confirm_cod_payment','process_paymob_callback','update_order_status');",
+    "SELECT policyname, cmd FROM pg_policies WHERE tablename = 'payments' AND cmd = 'INSERT';"
+  ],
+  "drifts": [
+    {
+      "id": "D1",
+      "severity": "HIGH",
+      "description": "018_confirm_cod_payment.sql missing from origin/master",
+      "migration": "018",
+      "on_head": true,
+      "on_origin": false,
+      "on_disk": true
+    },
+    {
+      "id": "D2",
+      "severity": "HIGH",
+      "description": "019_harden_rpc_and_payments_authorization.sql not committed anywhere",
+      "migration": "019",
+      "on_head": false,
+      "on_origin": false,
+      "on_disk": true
+    },
+    {
+      "id": "D3",
+      "severity": "HIGH",
+      "description": "020_fix_orders_fk.sql not committed anywhere",
+      "migration": "020",
+      "on_head": false,
+      "on_origin": false,
+      "on_disk": true
+    },
+    {
+      "id": "D4",
+      "severity": "HIGH",
+      "description": "021_fix_create_checkout_order.sql not committed anywhere",
+      "migration": "021",
+      "on_head": false,
+      "on_origin": false,
+      "on_disk": true
+    },
+    {
+      "id": "D5",
+      "severity": "MEDIUM",
+      "description": "013_atomic_checkout_rpc.sql modified in working tree but uncommitted (profile FK guard added)",
+      "migration": "013",
+      "on_head": true,
+      "modified_uncommitted": true
+    },
+    {
+      "id": "D6",
+      "severity": "LOW",
+      "description": "6 test/verification migration files deleted but uncommitted",
+      "migrations": ["test_cod_payment.sql", "test_create_checkout_order.sql", "test_payments_update_and_stock.sql", "test_paymob_callback.sql", "test_rpc_authorization.sql", "verify_rls.sql"]
+    },
+    {
+      "id": "D7",
+      "severity": "MEDIUM",
+      "description": "payments_insert_own RLS policy status unknown in staging",
+      "migration": "019",
+      "policy": "payments_insert_own"
+    }
+  ],
+  "grant_conflicts": {
+    "create_checkout_order": {
+      "013_grant": "PUBLIC",
+      "019_revoke": "PUBLIC",
+      "019_grant": "authenticated",
+      "020_grant": "authenticated",
+      "021_grant": "authenticated",
+      "final_state_if_all_applied": "authenticated",
+      "risk_if_019_not_applied": "PUBLIC grant remains — anonymous access"
+    },
+    "process_paymob_callback": {
+      "014_grant": "PUBLIC",
+      "015_revoke": "PUBLIC",
+      "015_grant": "service_role",
+      "019_re_assert": "service_role",
+      "final_state_if_all_applied": "service_role",
+      "risk_if_015_019_not_applied": "PUBLIC grant remains — anonymous access"
+    },
+    "update_order_status": {
+      "014_grant": "PUBLIC",
+      "019_revoke": "PUBLIC",
+      "019_grant": "authenticated",
+      "final_state_if_all_applied": "authenticated",
+      "risk_if_019_not_applied": "PUBLIC grant remains — anonymous access"
+    },
+    "confirm_cod_payment": {
+      "018_grant": "authenticated",
+      "019_re_assert": "authenticated",
+      "final_state_if_all_applied": "authenticated",
+      "risk": "LOW — already restricted"
+    }
+  },
+  "duplicate_function_risk": {
+    "create_checkout_order": {
+      "defined_in": ["013", "020", "021"],
+      "method": "CREATE OR REPLACE",
+      "risk": "LOW — last applied wins, idempotent",
+      "caveat": "If only 013 applied (no 020/021), function body lacks FK guard"
+    }
+  },
+  "recommendations": {
+    "forward_only_repair": true,
+    "do_not_delete_or_renumber": true,
+    "steps": [
+      "Commit 019, 020, 021 as atomic commit",
+      "Discard uncommitted 013 working-tree diff (superseded by 020)",
+      "Merge/rebase onto origin/master",
+      "Apply 019 → 020 → 021 in sequence against staging",
+      "Verify with diagnostic queries",
+      "Tag freeze SHA"
+    ]
+  }
+}

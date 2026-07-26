@@ -6,11 +6,8 @@ import '../../../core/entities/address.dart';
 import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
-import '../../../core/error/result.dart';
 import '../../../shared/extensions/iterable_x.dart';
 import '../domain/repositories/cart_repository.dart';
-import '../domain/repositories/orders_repository.dart';
-import '../domain/repositories/wishlist_repository.dart';
 
 /// SharedPreferences-backed persistence for the storefront feature.
 ///
@@ -106,70 +103,7 @@ final class LocalStorefrontPersistence {
   }
 }
 
-/// In-memory test double for the storefront persistence layer.
-///
-/// Implements the three repository interfaces directly (no internal
-/// [LocalStorefrontPersistence] delegate) and returns [Success] for
-/// every operation — the in-memory store cannot fail, so no [Failure]
-/// path is exercised. Use this in cubit tests that need a working
-/// persistence double without touching SharedPreferences.
-final class MemoryStorefrontPersistence
-    implements CartRepository, WishlistRepository, OrdersRepository {
-  List<Map<String, Object>> cartLines = [];
-  Set<String> wishlistIds = {};
-  List<Map<String, Object?>> orderRecords = [];
-
-  @override
-  Future<Result<List<CartItem>>> readCart(ProductLookup productForId) async =>
-      Success(cartLines
-          .map((line) {
-            final product = productForId(line['productId'] as String? ?? '');
-            return product == null
-                ? null
-                : CartItem(
-                    product: product,
-                    color: line['color']! as String,
-                    length: line['length']! as String,
-                    quantity: line['quantity']! as int,
-                  );
-          })
-          .whereType<CartItem>()
-          .toList());
-
-  @override
-  Future<Result<Set<String>>> readWishlist() async => Success({...wishlistIds});
-
-  @override
-  Future<Result<void>> writeCart(List<CartItem> items) async {
-    cartLines = items
-        .map((item) => <String, Object>{
-              'productId': item.product.id,
-              'color': item.color,
-              'length': item.length,
-              'quantity': item.quantity,
-            })
-        .toList();
-    return const Success(null);
-  }
-
-  @override
-  Future<Result<void>> writeWishlist(Set<String> ids) async {
-    wishlistIds = {...ids};
-    return const Success(null);
-  }
-
-  @override
-  Future<Result<List<Order>>> readOrders() async =>
-      Success(orderRecords.map(OrderCodec.decode).whereType<Order>().toList());
-
-  @override
-  Future<Result<void>> writeOrders(List<Order> orders) async {
-    orderRecords = orders.map(OrderCodec.encode).toList();
-    return const Success(null);
-  }
-}
-
-/// Serializes [Order] to/from JSON for both persistence implementations.
+/// Serializes [Order] to/from JSON for the SharedPreferences persistence layer.
 ///
 /// Orders snapshot the full [Product] (not just an ID) so a historical order
 /// stays correct if the catalog later changes price or removes a product. This

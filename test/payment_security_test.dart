@@ -109,7 +109,9 @@ void main() {
     // This file compiles only because those getters no longer
     // exist on the class — if any other file still referenced
     // them, `flutter analyze` would fail. We assert the
-    // remaining non-dotenv members still work.
+    // remaining non-secret members still work. (EnvConfig is now
+    // build-time configured via --dart-define-from-file; the
+    // non-secret members below do not depend on injected values.)
     test('EnvConfig retains non-secret members (environment/isDevelopment)',
         () {
       expect(EnvConfig.environment, isA<String>());

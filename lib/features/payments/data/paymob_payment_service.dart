@@ -77,20 +77,32 @@ class PaymobPaymentService implements PaymentService {
   ///
   /// Returns [PaymentSuccess] with the server transaction ID on success,
   /// [PaymentFailed] with a machine-readable code on rejection.
+  /// Timeout for the confirm_cod_payment RPC call.
+  ///
+  /// The RPC is a single atomic DB transaction; under normal load it
+  /// completes in <2 s. A 30 s ceiling covers cold starts and replica
+  /// lag while keeping the user from waiting indefinitely.
+  static const _rpcTimeout = Duration(seconds: 30);
+
   @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async {
     try {
-      final response = await _client.rpc(
-        'confirm_cod_payment',
-        params: {
-          'p_order_id': orderId,
-        },
-      );
+      final response = await _client
+          .rpc(
+            'confirm_cod_payment',
+            params: {
+              'p_order_id': orderId,
+            },
+          )
+          .timeout(_rpcTimeout);
 
       final data = response as Map<String, dynamic>;
       final ok = data['ok'] as bool? ?? false;
       final code = data['code'] as String? ?? 'unknown';
 
+      // The server returns ok=true only for 'confirmed' and
+      // 'already_confirmed'. Trust ok as the authoritative signal
+      // and use the server-generated transaction_id.
       if (ok) {
         return PaymentSuccess(
           transactionId: data['transaction_id'] as String? ?? '',
@@ -105,6 +117,8 @@ class PaymobPaymentService implements PaymentService {
           'No Cash on Delivery payment found for this order.',
         'not_owner' => 'You can only confirm your own orders.',
         'payment_not_pending' => 'This payment has already been processed.',
+        'payment_not_cod' =>
+          'This order is not a Cash on Delivery order.',
         'order_not_found' => 'Order not found.',
         'order_not_pending' =>
           'This order can no longer be confirmed. Please check your orders.',
@@ -114,6 +128,12 @@ class PaymobPaymentService implements PaymentService {
       };
 
       return PaymentFailed(message: message, code: code);
+    } on TimeoutException {
+      return const PaymentFailed(
+        message:
+            'Server did not respond in time. Please check your orders and try again.',
+        code: 'rpc_timeout',
+      );
     } catch (e) {
       return PaymentFailed(
         message: 'Failed to confirm payment. Please try again.',
