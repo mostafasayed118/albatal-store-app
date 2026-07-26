@@ -1,6 +1,112 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-25T00:00:00Z
+Last run: 2026-07-26T11:25:00Z
+
+## New - 2026-07-26
+
+### P0 Package A security review remediation - IMPLEMENTED LOCALLY (L2 attempt 2/3)
+
+**Review verdict received:** `APPROVE WITH CONDITIONS`. Migration 028 passed
+all nine review rules. The reviewer required removal of raw Paymob response
+details from client errors, recommended removal of serialized upstream/database
+objects from logs, and recommended runtime JWT rejection coverage.
+
+**Attempt 2 candidate changes (repository only):**
+1. All `paymob-initiate` 4xx/5xx response bodies are now allow-listed to the
+   single `message` key; raw Paymob `details` and Supabase `error` values are
+   not returned.
+2. The function no longer serializes Paymob responses or Supabase error objects
+   into `console.error` logs.
+3. Exported `handlePaymobInitiate(Request)` and guarded the production
+   `Deno.serve` registration with `import.meta.main`, preserving deployed
+   behavior while allowing a real handler request in tests.
+4. Expanded the Deno suite to 13 tests, including a runtime POST without
+   Authorization that proves HTTP 401, plus ownership, canonical amount,
+   fixed pending status, absent initiation transaction ID, sanitized response,
+   and sanitized logging contracts.
+5. Applied canonical `deno fmt` to both touched TypeScript files.
+
+**Verification evidence:**
+| Check | Result |
+|-------|--------|
+| `deno fmt --check` after canonical formatting | PASS |
+| `deno check` on implementation and test | PASS (exit 0) |
+| Handler/contract suite | **13 passed, 0 failed**, including runtime no-JWT 401 |
+| Security contract scan | raw `details` responses 0; raw `error` responses 0; serialized error logs 0 |
+| Ownership/server-state scan | caller ownership filter, server order total, and service-role INSERT all present |
+| Migration-order scan | 028 remains latest and drops both known direct INSERT policies |
+| Targeted secret-value scan of candidate files | 0 matches |
+| `flutter test` | **198 passed, 0 failed** |
+| `flutter analyze` | **NOT PASSING** (exit 1): same two pre-existing info findings outside Package A |
+| Target-file `git diff --check` | PASS (exit 0) |
+
+**Verification hygiene:** `flutter analyze/test` rewrote generated desktop
+plugin registrants. Those unrelated generated-file side effects were restored
+to HEAD; only `STATE.md`, the two Paymob-initiate files, and untracked migration
+028 remain changed in this worktree.
+
+**Safety / evidence boundary unchanged:**
+- No migration was applied and no Edge Function was deployed.
+- No secret was set or printed.
+- No commit, push, PR, or merge was performed.
+- Runtime no-JWT evidence is local handler evidence, not live staging proof.
+- Live ownership, successful initiation, callback, and adversarial RLS checks
+  remain staging gates.
+- Staging acceptance remains **NO-GO** and release remains **NO-GO**.
+
+---
+
+### P0 Package A - Restore trusted payment INSERT boundary - IMPLEMENTED LOCALLY (L2 attempt 1/3)
+
+**Worktree:** `C:/flutter_projects/albatal-package-a`
+
+**Branch:** `fix/package-a-payment-insert-boundary`
+
+**Problem verified:** migration `027_add_payments_insert_policy.sql` recreated
+`payments_insert_authenticated_own`, allowing direct authenticated INSERT on
+`public.payments`. That contradicted migration 026 and the approved boundary
+that payment rows are created only by SECURITY DEFINER RPCs or trusted
+service-role Edge Functions. `paymob-initiate` depended on the caller-JWT
+client for its payment INSERT, so simply dropping the policy would have broken
+new Paymob initiation.
+
+**Candidate changes (repository only):**
+1. Added forward-only, idempotent migration
+   `supabase/migrations/028_reclose_payments_insert_policy.sql`; it drops both
+   known direct payment INSERT policies.
+2. Updated `supabase/functions/paymob-initiate/index.ts` so authentication,
+   ownership-scoped reads, and the guarded provider-order RPC remain on the
+   caller-JWT client, while only server-generated payment INSERT uses a
+   fail-closed service-role client.
+3. Hardened the unhandled-error path discovered by the inherited contract test:
+   no raw error object is logged or returned.
+4. Updated `paymob_initiate_test.ts` for the current Deno one-argument
+   `readTextFileSync` API and added a contract test for the service-role INSERT
+   boundary.
+
+**Verification evidence:**
+| Check | Result |
+|-------|--------|
+| `deno check supabase/functions/paymob-initiate/index.ts` | PASS (exit 0) |
+| `deno test --allow-read supabase/functions/paymob-initiate/paymob_initiate_test.ts` | **9 passed, 0 failed** |
+| `git diff --check` on touched TypeScript | PASS (exit 0) |
+| Migration-order scan | `028_reclose_payments_insert_policy.sql` is latest and drops `payments_insert_authenticated_own` |
+| Targeted secret-value scan of the three candidate files | 0 matches |
+| `flutter test` | **198 passed, 0 failed** |
+| `flutter analyze` | **NOT PASSING** (exit 1): 2 pre-existing info findings outside Package A - undeclared direct `url_launcher` dependency and deprecated Sentry `copyWith` use |
+
+**Safety / evidence boundary:**
+- No migration was applied.
+- No Edge Function was deployed.
+- No secret was set or printed.
+- No commit, push, PR, or merge was performed.
+- These results are SOURCE/HARNESS evidence only, not staging deployment proof.
+- Staging acceptance remains **NO-GO** and release remains **NO-GO** until the
+  candidate is reviewed, committed through the approved workflow, applied and
+  deployed to staging, and the required live payment/RLS/race/Sentry/Android
+  evidence gates pass.
+
+---
 
 ## New — 2026-07-25
 
@@ -331,4 +437,5 @@ ON CONFLICT (id) DO NOTHING;
 This ensures a profile exists for every authenticated user before attempting the order insert. The ON CONFLICT DO NOTHING makes it idempotent — if the profile already exists (normal case), it silently succeeds.
 
 **Verification:** 170/170 Flutter tests pass, 0 new linter issues.
+
 
