@@ -1,36 +1,24 @@
-Yes. Below is a **filled version of `DECISIONS.md` using the recommended solutions**.
-
-Important: this is filled as:
-
-```text
-RECOMMENDED — PENDING HUMAN APPROVAL
-```
-
-It is **not** a final authorized approval. A human owner must review it and change each status to:
-
-```text
-APPROVED
-```
-
-and fill the owner names/dates.
-
----
-
-```md
 # DECISIONS.md — Professional Remediation Kit: Phase 0 Human Authorization
 
 Project: Al Batal Elite  
 Stack: Flutter + Supabase + Edge Functions + Paymob  
 Release Verdict: NO-GO / BLOCKED  
-Status: ALL DECISIONS APPROVED — L2 IMPLEMENTATION AUTHORIZED  
+Status: PHASE 0 APPROVED FOR PLANNING AND CONTROLLED EXECUTION
 Created: 2026-07-25  
-Last Updated: 2026-07-25  
+Last Updated: 2026-07-26
 
-CRITICAL: All 9 decisions have been APPROVED. L2 implementation is now authorized for the 4 pending items:
-1. Migration repair structure
-2. COD missing-payment behavior
-3. Sentry observability
-4. Production environment placeholder
+## Phase 0 Status
+
+Phase 0 governance decisions are approved for planning and controlled execution.
+
+This is not final release sign-off.
+
+Final release sign-off remains pending until:
+- all technical gates pass
+- live evidence is tied to an immutable candidate SHA
+- the four release roles sign `docs/RELEASE_SIGNOFF.md`
+
+Owner names, dates, approval references, and final signatures have not been provided. All such fields remain `PENDING HUMAN SIGNATURE`.
 
 HARD RULES for L2 implementation:
 - Do NOT push to git.
@@ -45,8 +33,7 @@ HARD RULES for L2 implementation:
 - Do NOT remove NoOp crash reporting fallback.
 - Do NOT change payment behavior unless create_checkout_order creates a pending COD payment row or Decision 2 is formally changed to auto-create.
 
-This document has been filled with recommended solutions. These recommendations are not final approvals.
-A human owner must review, confirm, change status to APPROVED, and add owner/date signatures.
+The selected Phase 0 options may guide controlled implementation. Individual decision signatures and final release approval remain pending.
 
 ---
 
@@ -54,15 +41,15 @@ A human owner must review, confirm, change status to APPROVED, and add owner/dat
 
 | # | Decision | Status | Owner | Date | Risk if Not Decided |
 |---|---|---|---|---|---|
-| 1 | Migration repair strategy | ✅ APPROVED | fill | 2026-07-25 | Schema drift between environments; broken migrations; unshippable local state |
-| 2 | COD missing-payment behavior | ✅ APPROVED | fill | 2026-07-25 | Inconsistent payment state; orphaned orders; broken checkout flow |
-| 3 | Paymob callback gateway | ✅ APPROVED | fill | 2026-07-25 | Webhook verification failure; revenue loss on missed callbacks |
-| 4 | Staging and production Supabase projects | ✅ APPROVED | fill | 2026-07-25 | Environment bleed; accidental production data exposure |
-| 5 | Secret provisioning | ✅ APPROVED | fill | 2026-07-25 | Secret leaks in client bundle; compromised credentials |
-| 6 | Observability | ✅ APPROVED | fill | 2026-07-25 | Invisible crashes; no error tracking; PII exposure in logs |
-| 7 | Android release | ✅ APPROVED | fill | 2026-07-25 | Unsigned or insecure APK; CI pipeline gaps |
-| 8 | Beta scope | ✅ APPROVED | fill | 2026-07-25 | Unclear rollout boundaries; untested platform combinations |
-| 9 | Release gate ownership | ✅ APPROVED | fill | 2026-07-25 | Accountability gaps; blocked releases; process ambiguity |
+| 1 | Migration repair strategy | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Schema drift between environments; broken migrations; unshippable local state |
+| 2 | COD missing-payment behavior | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Inconsistent payment state; orphaned orders; broken checkout flow |
+| 3 | Paymob callback gateway | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Webhook verification failure; revenue loss on missed callbacks |
+| 4 | Staging and production Supabase projects | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Environment bleed; accidental production data exposure |
+| 5 | Secret provisioning | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Secret leaks in client bundle; compromised credentials |
+| 6 | Observability | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Invisible crashes; no error tracking; PII exposure in logs |
+| 7 | Android release | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Unsigned or insecure APK; CI pipeline gaps |
+| 8 | Beta scope | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Unclear rollout boundaries; untested platform combinations |
+| 9 | Release gate ownership | Phase 0 selected / signature pending | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE | Accountability gaps; blocked releases; process ambiguity |
 
 ---
 
@@ -142,7 +129,7 @@ or a timestamped equivalent.
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -251,8 +238,8 @@ failed payment -> invalid_state
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
-| Product Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Product Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -338,8 +325,8 @@ PUBLIC
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
-| Security Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -438,8 +425,8 @@ Supabase Edge Function secrets
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
-| Security Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -548,8 +535,8 @@ android/key.properties
 
 | Approved By | Name | Date |
 |---|---|---|
-| Security Owner | fill | fill |
-| Engineering Owner | fill | fill |
+| Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -654,9 +641,9 @@ stock restoration error
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
-| Security Owner | fill | fill |
-| Product Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Product Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -753,8 +740,8 @@ native methods
 
 | Approved By | Name | Date |
 |---|---|---|
-| Engineering Owner | fill | fill |
-| Security Owner | fill | fill |
+| Engineering Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -839,8 +826,8 @@ crash-free user rate drops below threshold
 
 | Approved By | Name | Date |
 |---|---|---|
-| Product Owner | fill | fill |
-| QA Owner | fill | fill |
+| Product Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| QA Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -854,10 +841,10 @@ Each release gate requires a named approver. Without explicit ownership, release
 
 | Gate | Recommended Approver Role | Name | Date |
 |---|---|---|---|
-| Product | Product Owner | fill | fill |
-| Engineering | Engineering Lead | fill | fill |
-| QA | QA Lead | fill | fill |
-| Security | Security Owner | fill | fill |
+| Product | Product Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Engineering | Engineering Lead | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| QA | QA Lead | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security | Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ## Questions for Decision Maker
 
@@ -940,10 +927,10 @@ client trust boundary
 
 | Gate | Approver Role | Name | Date |
 |---|---|---|---|
-| Product | Product Owner | fill | fill |
-| Engineering | Engineering Lead | fill | fill |
-| QA | QA Lead | fill | fill |
-| Security | Security Owner | fill | fill |
+| Product | Product Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Engineering | Engineering Lead | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| QA | QA Lead | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
+| Security | Security Owner | PENDING HUMAN SIGNATURE | PENDING HUMAN SIGNATURE |
 
 ---
 
@@ -951,63 +938,21 @@ client trust boundary
 
 | # | Decision | Recommended Status | Final Status |
 |---|---|---|---|
-| 1 | Migration repair strategy | ✅ RECOMMENDED | ✅ APPROVED |
-| 2 | COD missing-payment behavior | ✅ RECOMMENDED | ✅ APPROVED |
-| 3 | Paymob callback gateway | ✅ RECOMMENDED | ✅ APPROVED |
-| 4 | Staging and production Supabase projects | ✅ RECOMMENDED | ✅ APPROVED |
-| 5 | Secret provisioning | ✅ RECOMMENDED | ✅ APPROVED |
-| 6 | Observability | ✅ RECOMMENDED | ✅ APPROVED |
-| 7 | Android release | ✅ RECOMMENDED | ✅ APPROVED |
-| 8 | Beta scope | ✅ RECOMMENDED | ✅ APPROVED |
-| 9 | Release gate ownership | ✅ RECOMMENDED | ✅ APPROVED |
+| 1 | Migration repair strategy | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 2 | COD missing-payment behavior | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 3 | Paymob callback gateway | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 4 | Staging and production Supabase projects | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 5 | Secret provisioning | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 6 | Observability | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 7 | Android release | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 8 | Beta scope | ✅ RECOMMENDED | Phase 0 selected / signature pending |
+| 9 | Release gate ownership | ✅ RECOMMENDED | Phase 0 selected / signature pending |
 
 ---
 
-# Instructions
+## Signature Instructions
 
-1. Review each decision above with your team.
-2. Confirm the recommended option is acceptable.
-3. Change each status from:
-
-```text
-RECOMMENDED — PENDING APPROVAL
-```
-
-to:
-
-```text
-APPROVED
-```
-
-4. Fill in owner names and dates in the gate ownership table.
-5. Save this file. It is the single source of truth for Phase 0 authorization.
-6. Do NOT proceed to Phase 1 until ALL decisions above are marked APPROVED.
-
-Phase 0 gate: All 9 decisions must be APPROVED before any code, migration, deployment, or test activity begins.
-```
-
----
-
-## What you should do next
-
-Replace your current `DECISIONS.md` with the content above.
-
-Then have the human owners fill only these fields:
-
-```text
-Name
-Date
-Final APPROVED status
-```
-
-Once all 9 decisions are marked:
-
-```text
-APPROVED
-```
-
-you can move to:
-
-```text
-Phase 1 — Freeze and Reconcile
-```
+1. Preserve the selected Phase 0 options unless the project owner explicitly changes them.
+2. Do not infer owner names, dates, approval references, or signatures.
+3. Human owners must complete all `PENDING HUMAN SIGNATURE` fields before final release approval.
+4. Final release sign-off is controlled by `docs/RELEASE_SIGNOFF.md` and remains pending until every technical gate has candidate-SHA-bound evidence.

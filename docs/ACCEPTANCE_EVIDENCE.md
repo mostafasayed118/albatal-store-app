@@ -1,3 +1,9 @@
+> HISTORICAL EVIDENCE ONLY
+>
+> This document contains infrastructure and deployment evidence tied to older SHA b914bd0.
+> It is not current-candidate release evidence.
+> It must be regenerated after the immutable candidate SHA is frozen and all live acceptance tests pass.
+
 # ACCEPTANCE_EVIDENCE.md — Staging Verification
 
 ## Date
