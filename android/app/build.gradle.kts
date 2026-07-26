@@ -17,7 +17,14 @@ val isReleaseBuild = gradle.startParameter.taskNames.any {
     it.contains("release", ignoreCase = true)
 }
 
-if (isReleaseBuild && keyPropertiesFile.exists()) {
+if (isReleaseBuild && !keyPropertiesFile.exists()) {
+    throw GradleException(
+        "RELEASE SIGNING FAILURE: key.properties is required for release builds. " +
+        "A release build MUST NOT produce an unsigned artifact or fall back to debug signing."
+    )
+}
+
+if (isReleaseBuild) {
     val requiredKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
     val missingKeys = requiredKeys.filter { key ->
         keyProperties.getProperty(key).isNullOrBlank()
