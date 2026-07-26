@@ -118,9 +118,8 @@ class SentryCrashReportingService implements CrashReportingService {
       scrubbedUser = SentryUser(id: event.user!.id);
     }
 
-    return event.copyWith(
-      tags: scrubbedTags,
-      user: scrubbedUser,
-    );
+    event.tags = scrubbedTags;
+    event.user = scrubbedUser;
+    return event;
   }
 }
