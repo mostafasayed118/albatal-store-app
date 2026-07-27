@@ -35,9 +35,17 @@ K1 DONE (autonomous, non-mutating):
 - Draft PR #5 -> base master: https://github.com/mostafasayed118/albatal-store-app/pull/5
   Title: "fix(supabase): Package K security grant repairs (migration 029)". DO NOT MERGE.
 
+K0 DONE (human-executed, owner Mustaf Sayed Saeed, ref PACKAGE-K0-APPLY-028, 2026-07-27):
+- Migration 028 applied to staging (alxwvyflasewslinufqe) via `supabase db push`
+  from the release-candidate/484a3ea worktree. Dry-run listed ONLY 028 pending
+  (029 not listed). Ledger shows 028 present. payments_insert_own and
+  payments_insert_authenticated_own both ABSENT (0 rows). K0 VERDICT = PASS.
+  This resolves the Package J "Payments INSERT policy" FAIL. Evidence:
+  docs/evidence/484a3ea/K0_MIGRATION_028_APPLIED.md. No 029 applied; no Edge
+  Function deploy; no secret changes.
+
 PENDING (human-gated — require staging DB password / CI, not done autonomously):
-- K0: apply missing migration 028 to staging (supabase db push --dry-run then push);
-  verify payments_insert_own / payments_insert_authenticated_own => 0 rows.
+
 - K2: after PR #5 CI is GREEN, record NEW SHA, create annotated tag
   release-candidate/<NEW_SHORT_SHA> (include CI run URL), push tag only.
 - K3: apply migration 029 to staging from the new frozen candidate.

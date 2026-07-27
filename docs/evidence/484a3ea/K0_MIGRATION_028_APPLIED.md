@@ -68,19 +68,61 @@ WHERE schemaname = 'public'
   AND policyname IN ('payments_insert_own', 'payments_insert_authenticated_own');
 ```
 
-## Results (paste after execution)
+## K0 Execution Summary (results)
 
-Dry-run output (only 028 pending?): [FILL]
+Executed by: Mustaf Sayed Saeed
+Date: 2026-07-27
+Method: supabase db push
+Staging project: alxwvyflasewslinufqe
+Source tag: release-candidate/484a3ea
+Source SHA: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
 
-Migration ledger high-water after push: [FILL]  (expect 028 present; 029 NOT present yet)
+### Dry run
 
-payments_insert_own present: [FILL]  (expect NO)
-payments_insert_authenticated_own present: [FILL]  (expect NO)
-Payments INSERT policies query row count: [FILL]  (expect 0)
+```bash
+supabase db push --dry-run
+```
 
-K0 verdict: [PASS / FAIL]
+Result:
 
-Notes: [FILL]
+```text
+Only migration 028 pending.
+Migration 029 was NOT listed.
+```
+
+Confirmed only 028 pending: YES
+Confirmed 029 absent: YES
+
+### Migration ledger
+
+```sql
+SELECT version FROM supabase_migrations.schema_migrations WHERE version = '028';
+```
+
+Result: `028 present`
+
+### Payments policies
+
+```sql
+SELECT policyname
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'payments'
+  AND policyname IN ('payments_insert_own', 'payments_insert_authenticated_own');
+```
+
+Result: `0 rows`
+
+payments_insert_own present: NO
+payments_insert_authenticated_own present: NO
+Payments INSERT policies query row count: 0
+
+### K0 verdict
+
+**PASS** — migration 028 applied to staging; the Package J
+`payments_insert_authenticated_own` FAIL is resolved. No migration 029 applied.
+No Edge Function deployment. No secret changes. Release verdict remains NO-GO.
+
 
 ---
 
