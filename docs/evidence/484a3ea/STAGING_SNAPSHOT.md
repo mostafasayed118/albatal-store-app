@@ -69,19 +69,26 @@ FROM supabase_migrations.schema_migrations
 ORDER BY version;
 ```
 
-Paste result here:
+RESULT (human-executed 2026-07-27, Dashboard SQL Editor):
 ```
-[fill]
+migration_count = 27
+high_water      = 027
+versions        = 001..022, 024, 025, 026, 027   (no 023, no 028)
 ```
 
-Staging migration count: [fill]
-Staging high-water: [fill]
-Missing migrations: [fill]
-Extra migrations: [fill]
-Parity verdict: PENDING (repo high-water mark is 028; confirm 018/019 slot
-identity — prior Package notes flagged a historical 018/019 renumbering drift
-on staging where slot 018 held a low-stock index instead of confirm_cod_payment,
-and staging 019 differed from the on-disk 019).
+Repo migrations at tag release-candidate/484a3ea (verified via
+`git ls-tree -r release-candidate/484a3ea supabase/migrations`): 001–022, 024,
+025, 026, 027, 028 — NO 023 file exists at the tag, and 028
+(`028_reclose_payments_insert_policy.sql`) IS present.
+
+Staging migration count: 27
+Staging high-water: 027
+Missing migrations: 028 (`028_reclose_payments_insert_policy.sql`)
+Extra migrations: none observed
+Absence of 023: expected (no 023 file exists at the frozen tag) — NOT a failure.
+Parity verdict: **FAIL** — staging is missing migration 028. This is the direct
+cause of the payments policy failure below (028 drops the direct-INSERT policy).
+
 
 
 ---
@@ -122,17 +129,33 @@ Target:
 - create_checkout_order / update_order_status / calculate_shipping_fee: authenticated true, anon false
 - expire_pending_order / decrement_stock / increment_stock: service_role true, anon false, authenticated false
 
-Paste result here:
+RESULT (human-executed 2026-07-27):
 ```
-[fill]
+proname                       | anon | authenticated | service_role
+------------------------------+------+---------------+-------------
+confirm_cod_payment (uuid)    | f    | t             | t     [OK]
+create_checkout_order         | f    | t             | t     [OK]
+update_order_status           | f    | t             | t     [OK]
+calculate_shipping_fee        | f    | t             | t     [OK]
+process_paymob_callback       | f    | f             | t     [OK]
+set_payment_provider_order_id | t    | t             | t     [FAIL: anon=true]
+decrement_stock               | t    | t             | t     [FAIL: anon/auth=true]
+increment_stock               | t    | t             | t     [FAIL: anon/auth=true]
+expire_pending_order          | t    | t             | t     [FAIL: anon/auth=true]
 ```
 
-confirm_cod_payment present: [YES/NO]
-confirm_cod_payment grants correct: [YES/NO]
-process_paymob_callback service_role only: [YES/NO]
-Missing RPCs: [fill]
-Grant failures: [fill]
-RPC verdict: [PASS/FAIL]
+confirm_cod_payment present: YES
+confirm_cod_payment grants correct: YES (anon=false, authenticated=true, prosecdef=true)
+process_paymob_callback service_role only: YES (anon=false, authenticated=false, service_role=true)
+Missing RPCs: none observed (all 9 exist)
+Grant failures:
+- decrement_stock: anon=true, authenticated=true (should be service_role only)
+- increment_stock: anon=true, authenticated=true (should be service_role only)
+- expire_pending_order: anon=true, authenticated=true (should be service_role only)
+- set_payment_provider_order_id: anon=true (anon must be false)
+RPC verdict: **FAIL** — privileged stock/expiry RPCs invocable by anon/authenticated;
+set_payment_provider_order_id invocable by anon.
+
 
 ---
 
@@ -165,16 +188,22 @@ WHERE schemaname = 'public'
 Target: second query returns 0 rows; no active policy grants anon/authenticated
 direct INSERT into payments.
 
-Paste result here:
+RESULT (human-executed 2026-07-27):
 ```
-[fill]
+Second query returned 1 row:
+  policyname = payments_insert_authenticated_own
 ```
 
-payments_insert_own present: [YES/NO]
-payments_insert_authenticated_own present: [YES/NO]
-Other payments INSERT policies: [fill]
-Direct authenticated payment INSERT allowed by policy: [YES/NO]
-Payments policy verdict: [PASS/FAIL]
+payments_insert_own present: NO
+payments_insert_authenticated_own present: YES
+Other payments INSERT policies: (payments_insert_authenticated_own is the active INSERT policy)
+Direct authenticated payment INSERT allowed by policy: YES
+Payments policy verdict: **FAIL** — `payments_insert_authenticated_own` still
+exists because migration 028 (which drops it) is not applied to staging. This
+violates the approved boundary that payment rows are created only by trusted
+server logic (SECURITY DEFINER RPC / service-role Edge Function). P0 payment-
+integrity issue. Fixed by applying migration 028.
+
 
 ---
 
@@ -200,14 +229,18 @@ ORDER BY c.relname;
 Target: relrowsecurity = true for all user-private tables (at minimum profiles,
 addresses, wishlists, cart_items, orders, order_items, payments).
 
-Paste result here:
+RESULT (human-executed 2026-07-27):
 ```
-[fill]
+relrowsecurity = true for ALL 10 tables:
+  profiles, addresses, wishlists, cart_items, orders, order_items,
+  payments, notifications, analytics_events, error_logs
 ```
 
-RLS enabled tables: [fill]
-RLS disabled tables: [fill]
-RLS verdict: [PASS/FAIL]
+RLS enabled tables: all 10 (profiles, addresses, wishlists, cart_items, orders,
+order_items, payments, notifications, analytics_events, error_logs)
+RLS disabled tables: none
+RLS verdict: **PASS**
+
 
 ---
 
@@ -233,13 +266,19 @@ ORDER BY table_name, grantee, privilege_type;
 
 Target: 0 rows.
 
-Paste result here:
+RESULT (human-executed 2026-07-27):
 ```
-[fill]
+30 rows returned. anon has INSERT, UPDATE, DELETE on ALL 10 private tables:
+  addresses, analytics_events, cart_items, error_logs, notifications,
+  order_items, orders, payments, profiles, wishlists
 ```
 
-Anonymous/public write grants found: [YES/NO]
-Anonymous write grant verdict: [PASS/FAIL]
+Anonymous/public write grants found: YES (30 rows; expected 0)
+Anonymous write grant verdict: **FAIL** — `anon` holds INSERT/UPDATE/DELETE on
+all 10 user-private tables. This is a defense-in-depth failure: even with RLS
+enabled, table-level DML grants for `anon` must be revoked. If any RLS policy is
+missing/too broad, anonymous users could write or delete private data.
+
 
 ### Optional — authenticated write grant context (informational)
 
@@ -263,10 +302,21 @@ Does not auto-fail. Key question: RLS must deny unsafe authenticated writes;
 for payments, direct authenticated INSERT must be denied by absence of an
 INSERT policy (see SQL Block 3).
 
-Paste result here (informational):
+RESULT (human-executed 2026-07-27, informational):
 ```
-[fill]
+authenticated has INSERT, UPDATE, DELETE on all 10 tables:
+  addresses, analytics_events, cart_items, error_logs, notifications,
+  order_items, orders, payments, profiles, wishlists
 ```
+
+Interpretation: INFORMATIONAL, not an automatic fail. Broad table-level DML for
+`authenticated` is common in Supabase; RLS row policies are the actual guard.
+BUT this means RLS is the ONLY protection, so the full RLS adversarial suite
+(`supabase/tests/test_rls_adversarial.sql`) MUST be run in Package K after the
+028 + 029 repairs. Critically, for `payments` the direct authenticated INSERT
+must be denied by ABSENCE of an INSERT policy — which currently FAILS (SQL Block
+3 shows `payments_insert_authenticated_own` still present until 028 is applied).
+
 
 ---
 
@@ -417,21 +467,27 @@ the allowlist contains the intended production/staging web origins.
 
 ---
 
-## Package K remediation required (provisional — pending DB section)
+## Package K remediation required (FINAL — DB section complete)
 
-Confirmed clean so far (no remediation needed):
+Confirmed clean (no remediation needed):
 1. Edge Function JWT matrix already matches target — no redeploy needed for JWT.
 2. All required secret NAMES present, including previously-missing PAYMOB_IFRAME_ID.
 3. CORS is explicit (not wildcard).
 4. paymob-callback HMAC rejection works at the body level.
+5. All 9 critical RPCs exist; confirm_cod_payment + process_paymob_callback grants correct.
+6. RLS enabled on all 10 user-private tables.
 
-Still to confirm before Package K scope is final (DB section):
-5. Migration ledger parity to repo high-water mark 028 (watch the historical
-   018/019 slot drift).
-6. `confirm_cod_payment` exists with anon=false / authenticated=true.
-7. `process_paymob_callback` is service_role-only.
-8. `payments_insert_own` / `payments_insert_authenticated_own` absent (028 applied).
-9. RLS enabled on all user-private tables.
+DB FAILURES requiring Package K repair (see DB Catalog Snapshot Summary):
+7. Migration parity FAIL — staging missing migration 028 -> apply 028.
+8. Payments policy FAIL — `payments_insert_authenticated_own` still present (fixed by 028).
+9. RPC grant FAIL — decrement_stock / increment_stock / expire_pending_order callable by
+   anon+authenticated; set_payment_provider_order_id callable by anon -> new migration 029.
+10. Anon write-grant FAIL — anon has INSERT/UPDATE/DELETE on all 10 private tables -> 029.
+11. Authenticated broad DML is informational -> run RLS adversarial suite after 028+029.
+
+DB catalog verdict: FAIL. Frozen tag release-candidate/484a3ea is a
+PRE-SECURITY-REPAIR candidate only; NOT the final production release candidate.
+
 
 ---
 
@@ -447,47 +503,78 @@ mutating E2E remain gated on Package K human approval.
 
 ## DB Catalog Snapshot Summary
 
-Executed by: [fill]
-Date: [fill]
-Method: Dashboard SQL Editor / supabase db execute
+Executed by: Human (staging DB owner) via Supabase Dashboard SQL Editor
+Date: 2026-07-27
+Method: Dashboard SQL Editor (read-only)
 Staging project: alxwvyflasewslinufqe
 Frozen candidate: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
 
 ### Migration parity
 
-Staging migration count: [fill]
-Staging high-water: [fill]
-Missing migrations: [fill]
-Extra migrations: [fill]
-Verdict: PASS / FAIL / DRIFT
+Staging migration count: 27
+Staging high-water: 027
+Missing migrations: 028 (`028_reclose_payments_insert_policy.sql`)
+Extra migrations: none observed
+Verdict: **FAIL**
+
+Notes:
+- Staging has 001–022, 024–027. Frozen candidate repo includes 028.
+- Absence of 023 is expected — no 023 file exists at the frozen tag.
 
 ### Critical RPCs
 
-confirm_cod_payment present: YES / NO
-confirm_cod_payment grants correct: YES / NO
-process_paymob_callback service_role only: YES / NO
-Missing RPCs: [fill]
-Grant failures: [fill]
-Verdict: PASS / FAIL
+confirm_cod_payment present: YES
+confirm_cod_payment grants correct: YES
+process_paymob_callback service_role only: YES
+Missing RPCs: none observed
+Grant failures:
+- decrement_stock executable by anon and authenticated
+- increment_stock executable by anon and authenticated
+- expire_pending_order executable by anon and authenticated
+- set_payment_provider_order_id executable by anon
+Verdict: **FAIL**
 
 ### Payments policies
 
-payments_insert_own present: YES / NO
-payments_insert_authenticated_own present: YES / NO
-Direct authenticated payment INSERT allowed by policy: YES / NO
-Verdict: PASS / FAIL
+payments_insert_own present: NO
+payments_insert_authenticated_own present: YES
+Direct authenticated payment INSERT allowed by policy: YES
+Verdict: **FAIL**
+
+Notes:
+- payments_insert_authenticated_own exists because migration 028 is missing from staging.
 
 ### RLS flags
 
-RLS disabled tables: [fill]
-Verdict: PASS / FAIL
+RLS disabled tables: none
+Verdict: **PASS**
 
 ### Anonymous/public write grants
 
-Anonymous/public write grants found: YES / NO
-Verdict: PASS / FAIL
+Anonymous/public write grants found: YES (anon has INSERT/UPDATE/DELETE on all 10 checked private tables; expected 0 rows)
+Verdict: **FAIL**
+
+### Authenticated write grants (informational)
+
+Authenticated write grants found: YES (INSERT/UPDATE/DELETE on all 10 tables)
+Verdict: INFORMATIONAL — not an automatic fail; RLS row policies control access.
+Full RLS adversarial suite must be run after 028 + 029 repairs.
 
 ### Overall DB catalog verdict
 
-PASS / FAIL
+**FAIL**
+
+Required Package K repairs:
+1. Apply missing migration 028 to staging (drops payments_insert_authenticated_own / payments_insert_own).
+2. Create forward-only migration 029_security_grant_repairs.sql (NEW code — cannot be added to the frozen tag; requires a new candidate branch + CI + new freeze).
+3. Revoke anon/public INSERT/UPDATE/DELETE grants on the 10 private tables.
+4. Restrict decrement_stock, increment_stock, expire_pending_order to service_role only.
+5. Remove anon (and PUBLIC) execute grant from set_payment_provider_order_id.
+6. Re-run all five DB catalog checks (expect 0 rows / correct grants).
+7. Run RLS adversarial suite (supabase/tests/test_rls_adversarial.sql).
+
+Consequence: frozen tag release-candidate/484a3ea is a PRE-SECURITY-REPAIR
+candidate only. It must NOT be used as the final production release candidate.
+Release verdict: NO-GO.
+
 

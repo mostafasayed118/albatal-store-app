@@ -11,16 +11,49 @@ Android: DEFERRED (missing signing secrets only) under approval
 PACKAGE-D-FREEZE-484A3EA-DEFERRED-ANDROID. Release verdict: NO-GO.
 Docs evidence branch: docs/release-evidence-484a3ea (RELEASE_GATE + RELEASE_SIGNOFF updated).
 
-## Package J — Read-Only Staging Snapshot (COMPLETE for API surface; DB pending human)
+## Package J — Read-Only Staging Snapshot (COMPLETE; DB catalog verdict = FAIL)
 
 Staging project alxwvyflasewslinufqe. Mode: READ-ONLY. No mutations. config.toml untouched.
-Evidence: docs/evidence/484a3ea/STAGING_SNAPSHOT.md (commits b82b2d5 + 28eb3d9 on docs branch).
-DB section finalized with 5 read-only SQL blocks (ledger, RPC+grants, payments
-policy, RLS flags, anon write grants) + DB Catalog Snapshot Summary skeleton —
-awaiting human SQL Editor execution. Code reads EXACTLY 10 canonical secret
-names (git grep at tag); legacy dups (ANON_KEY/URL/SERVICE_ROLE_KEY/
-CANCEL_EXPIRED_ORDERS_SECRET + platform SUPABASE_* keys) are unreferenced =
-safe Package-K pruning candidates (do not unset under J).
+Evidence: docs/evidence/484a3ea/STAGING_SNAPSHOT.md (docs branch).
+DB catalog SQL executed by human in Dashboard SQL Editor (2026-07-27) and recorded.
+
+PACKAGE J DB CATALOG VERDICT = FAIL. Overall Package J = COMPLETE (all evidence
+captured/recorded). Package K = REQUIRED. Frozen tag release-candidate/484a3ea
+is a PRE-SECURITY-REPAIR candidate only; NOT the final production candidate.
+
+DB results:
+- Migration parity: FAIL — staging high-water 027; missing 028
+  (028_reclose_payments_insert_policy.sql). No 023 exists at tag (expected).
+- Critical RPC existence: PASS (all 9 exist).
+- confirm_cod_payment grants: PASS (anon=f, authenticated=t, prosecdef=t).
+- process_paymob_callback grants: PASS (anon=f, authenticated=f, service_role=t).
+- Stock/expiry RPC grants: FAIL — decrement_stock/increment_stock/
+  expire_pending_order executable by anon+authenticated (must be service_role only).
+- set_payment_provider_order_id: FAIL — anon=true (must be false).
+- Payments INSERT policy: FAIL — payments_insert_authenticated_own still present
+  (because 028 not applied); payments_insert_own absent.
+- RLS flags: PASS — RLS enabled on all 10 checked tables.
+- Anon write grants: FAIL — anon has INSERT/UPDATE/DELETE on all 10 private tables.
+- Authenticated write grants: INFORMATIONAL — broad DML; RLS is the guard; run
+  RLS adversarial suite after 028+029.
+
+Non-DB surface (all PASS, unchanged): 5 Edge Functions ACTIVE; JWT matrix matches
+target (B1 resolved); all required secret NAMES present incl PAYMOB_IFRAME_ID (B2
+resolved); code reads EXACTLY 10 canonical secret names (git grep at tag); CORS
+explicit allowlist. Legacy dup secret names (ANON_KEY/URL/SERVICE_ROLE_KEY/
+CANCEL_EXPIRED_ORDERS_SECRET + platform SUPABASE_* keys) unreferenced = safe
+Package-K pruning candidates (do not unset under J).
+
+Package K required repairs (NOT authorized yet; new-code work off frozen tag):
+1. Apply missing migration 028 to staging (drops the direct-INSERT payment policy).
+2. Create forward-only 029_security_grant_repairs.sql on a NEW branch from
+   release-candidate/484a3ea (cannot add code to the frozen tag) -> CI -> new freeze.
+   - REVOKE anon/public INSERT/UPDATE/DELETE on the 10 private tables.
+   - Restrict decrement_stock/increment_stock/expire_pending_order to service_role.
+   - REVOKE anon (+PUBLIC) EXECUTE on set_payment_provider_order_id.
+3. Re-run the 5 DB catalog checks + RLS adversarial suite.
+Do NOT modify the existing frozen tag; no force push; no merge to master.
+
 
 
 Captured (automated, API token + live probes):
