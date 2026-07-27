@@ -21,16 +21,23 @@ Approval reference: PACKAGE-K0-APPLY-028
 > using the migration body, or temporarily reconcile config.toml (do NOT commit
 > that change to the frozen tag).
 
-## K0 Authorization (fill before execution)
+## K0 Authorization (GRANTED)
 
 ```
 I approve applying migration 028_reclose_payments_insert_policy.sql to staging.
 Source tag: release-candidate/484a3ea
 Project: alxwvyflasewslinufqe
-Owner name: [FILL]
-Date: [FILL]
+Owner name: Mustaf Sayed Saeed
+Role: Project Owner / Database Owner
+Date: 2026-07-27
 Approval reference: PACKAGE-K0-APPLY-028
 ```
+
+Link status (checked automatically): worktree C:/flutter_projects/albatal-484a3ea
+is NOT yet linked (no supabase/.temp/project-ref). `supabase link` must be run by
+the owner and requires the interactive staging DB password. The agent does not
+enter, print, or store that password.
+
 
 ## Commands (run in the frozen-tag worktree)
 
