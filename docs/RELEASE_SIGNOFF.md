@@ -6,14 +6,20 @@ Release verdict: NO-GO
 ## Candidate Identity
 
 Candidate branch: fix/package-b-freeze-hardening
+Candidate SHA: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
+Short SHA: 484a3ea
 Base SHA: fee90bb2365d4709e6a84161f923bacc014a21af
-Local HEAD: 50a6870af03bfa5558f5f5d087ad4bb2c5544870
-Pushed: NO
-CI: NOT RUN
-Frozen: NO
+Frozen by tag: release-candidate/484a3ea
+Pushed: YES
+PR: https://github.com/mostafasayed118/albatal-store-app/pull/4
+CI run: https://github.com/mostafasayed118/albatal-store-app/actions/runs/30255090975
+CI code-quality verdict: GREEN
+Android release: DEFERRED — missing signing secrets
+Frozen: YES
 
-This SHA is a local candidate only.
-It is not an immutable release candidate until pushed, CI-verified, and recorded.
+This candidate is frozen for staging verification.
+Release verdict remains NO-GO until staging and live evidence gates pass.
+
 
 ## Migration 027 / 028 Payment-Insert Boundary
 

@@ -4,7 +4,7 @@
 
 ```text
 PHASE 0 GOVERNANCE: APPROVED FOR PLANNING AND CONTROLLED EXECUTION
-CANDIDATE: LOCAL ONLY / NOT FROZEN
+CANDIDATE: FROZEN BY TAG release-candidate/484a3ea
 STAGING ACCEPTANCE: NO-GO / PENDING LIVE EVIDENCE
 RELEASE: NO-GO
 FINAL RELEASE SIGN-OFF: PENDING
@@ -13,13 +13,20 @@ FINAL RELEASE SIGN-OFF: PENDING
 ## Candidate Identity
 
 Candidate branch: fix/package-b-freeze-hardening
+Candidate SHA: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
+Short SHA: 484a3ea
 Base SHA: fee90bb2365d4709e6a84161f923bacc014a21af
-Local HEAD: 50a6870af03bfa5558f5f5d087ad4bb2c5544870
-Pushed: NO
-CI: NOT RUN
-Frozen: NO
+Frozen by tag: release-candidate/484a3ea
+Pushed: YES
+PR: https://github.com/mostafasayed118/albatal-store-app/pull/4
+CI run: https://github.com/mostafasayed118/albatal-store-app/actions/runs/30255090975
+CI code-quality verdict: GREEN
+Android release: DEFERRED — missing signing secrets
+Frozen: YES
 
-This candidate is not immutable until it is pushed, CI-verified, and recorded as the release candidate SHA.
+This candidate is frozen for staging verification.
+Release verdict remains NO-GO until staging and live evidence gates pass.
+
 
 ## Governance Status
 
@@ -48,8 +55,9 @@ Do not mark any technical gate PASS without candidate-SHA-bound evidence.
 | RLS adversarial | NO-GO / PENDING LIVE EVIDENCE | Full adversarial suite against staging with zero failures |
 | Race conditions | NO-GO / PENDING LIVE EVIDENCE | Concurrent callback/expiry/stock restoration results |
 | Sentry crash | NO-GO / PENDING LIVE EVIDENCE | Candidate release event visible in Sentry with PII review |
-| Android signed artifact | NO-GO / PENDING LIVE EVIDENCE | Signed APK/AAB, `apksigner` verification, package and debuggable checks |
+| Android signed artifact | NO-GO / DEFERRED (missing signing secrets) | Signed APK/AAB, `apksigner` verification, package and debuggable checks |
 | Release gate signed | NO-GO / PENDING HUMAN SIGNATURE | Four completed role signatures in `docs/RELEASE_SIGNOFF.md` |
+
 
 ## Package B Local Verification
 
@@ -83,3 +91,26 @@ It remains useful historical evidence but does not pass gates for the current lo
 **RELEASE: NO-GO**
 
 The candidate must be published and pass CI before it can be frozen. After freeze, every technical gate above must be rerun or verified against that immutable SHA, and final human signatures must remain pending until all evidence is complete.
+
+## Package D Status
+
+Package D — candidate publication and CI freeze is complete for candidate SHA 484a3ea.
+
+Candidate SHA 484a3ea39462277dd9ab0830b26d4fd724ab0c1a is frozen by tag release-candidate/484a3ea.
+
+CI code-quality gates are green:
+- analyze: SUCCESS
+- test: SUCCESS
+- deno-test: SUCCESS
+- secret-scan: SUCCESS
+- deploy-check: SUCCESS
+
+Android release is deferred:
+- android-release failed only due to missing signing secrets
+- fail-closed behavior worked as intended
+- Android signed artifact remains NO-GO
+
+Approval reference: PACKAGE-D-FREEZE-484A3EA-DEFERRED-ANDROID
+
+This does not authorize staging deployment, migration application, Edge Function deployment, secret changes, beta, or production release.
+
