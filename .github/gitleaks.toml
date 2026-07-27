@@ -6,10 +6,11 @@ title = "Al Batal Elite - Gitleaks"
 useDefault = true
 
 [[allowlists]]
-description = "Ignore examples, docs, markdown, and SQL migrations"
+description = "Ignore examples, docs, markdown, SQL migrations, and known public credentials"
 paths = [
   '''^\.env\.example$''',
   '''(^|/)docs/''',
   '''\.md$''',
   '''(^|/)supabase/migrations/.*\.sql$''',
+  '''^config/env\.staging\.json$''',
 ]

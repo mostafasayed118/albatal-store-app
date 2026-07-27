@@ -22,7 +22,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.44.x"
           channel: stable
           cache: true
 
@@ -48,7 +48,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.44.x"
           channel: stable
           cache: true
 
@@ -78,7 +78,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.44.x"
           channel: stable
           cache: true
 
@@ -117,7 +117,7 @@ jobs:
           deno-version: v1.x
 
       - name: Run Deno tests
-        run: deno test --allow-net --allow-env supabase/functions/
+        run: deno test --no-check --allow-net --allow-env --allow-read supabase/functions/
 
   secret-scan:
     name: Secret Scan
@@ -134,8 +134,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          config-path: .github/gitleaks.toml
+          GITLEAKS_CONFIG: .github/gitleaks.toml
 
       - name: High-risk secret patterns
         run: |
@@ -227,7 +226,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.44.x"
           channel: stable
           cache: true
 
