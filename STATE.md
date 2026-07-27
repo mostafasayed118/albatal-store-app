@@ -1,6 +1,53 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-27T09:28:00Z
+Last run: 2026-07-27T10:14:00Z
+
+## Package D — Candidate Freeze (COMPLETE)
+
+Frozen candidate SHA: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
+Annotated tag: release-candidate/484a3ea (tag object c591cd5), pushed to origin.
+PR #4: returned to draft + DO NOT MERGE comment. CI code-quality GREEN.
+Android: DEFERRED (missing signing secrets only) under approval
+PACKAGE-D-FREEZE-484A3EA-DEFERRED-ANDROID. Release verdict: NO-GO.
+Docs evidence branch: docs/release-evidence-484a3ea (RELEASE_GATE + RELEASE_SIGNOFF updated).
+
+## Package J — Read-Only Staging Snapshot (COMPLETE for API surface; DB pending human)
+
+Staging project alxwvyflasewslinufqe. Mode: READ-ONLY. No mutations. config.toml untouched.
+Evidence: docs/evidence/484a3ea/STAGING_SNAPSHOT.md (commits b82b2d5 + 28eb3d9 on docs branch).
+DB section finalized with 5 read-only SQL blocks (ledger, RPC+grants, payments
+policy, RLS flags, anon write grants) + DB Catalog Snapshot Summary skeleton —
+awaiting human SQL Editor execution. Code reads EXACTLY 10 canonical secret
+names (git grep at tag); legacy dups (ANON_KEY/URL/SERVICE_ROLE_KEY/
+CANCEL_EXPIRED_ORDERS_SECRET + platform SUPABASE_* keys) are unreferenced =
+safe Package-K pruning candidates (do not unset under J).
+
+
+Captured (automated, API token + live probes):
+- Edge Functions: 5 ACTIVE — checkout v27, paymob-initiate v34, paymob-callback v25,
+  cancel-expired-orders v25, send-order-notification v24.
+- JWT matrix CONFIRMED via unauthenticated POST probes and matches target:
+  checkout=true, paymob-initiate=true (platform UNAUTHORIZED_NO_AUTH_HEADER);
+  paymob-callback=false (body returns Invalid signature — HISTORICAL B1 DRIFT RESOLVED);
+  cancel-expired-orders=false, send-order-notification=false (body Unauthorized).
+- Secret NAMES: all required present incl PAYMOB_IFRAME_ID (HISTORICAL B2 RESOLVED)
+  and SCHEDULER_SECRET (code-confirmed name). Values NOT printed. Legacy duplicate
+  names noted (ANON_KEY/URL/SERVICE_ROLE_KEY) — Package K cleanup decision.
+- CORS: EXPLICIT/allowlist (disallowed origin gets NO Access-Control-Allow-Origin; not wildcard).
+
+PENDING HUMAN (DB catalog via Dashboard SQL Editor — CLI link needs DB password):
+- migration ledger parity to repo high-water mark 028 (watch historical 018/019 slot drift)
+- confirm_cod_payment existence + grants (anon=false/auth=true)
+- process_paymob_callback service_role-only grants
+- payments_insert_own / payments_insert_authenticated_own absent (028)
+- RLS flags on user-private tables
+Exact SQL is embedded in STAGING_SNAPSHOT.md.
+
+Next: Package I (Android signing, parallel if secrets available); Package K after
+human reviews Package J DB results and approves staging deployment. Release: NO-GO.
+
+---
+
 
 ## Package H — CI Gate Repair (L2, COMPLETE LOCALLY)
 
@@ -28,10 +75,32 @@ Local verification — ALL GREEN:
 - flutter test: 198/198 PASS (no logic edits)
 - ci.yml: YAML parses OK
 
-Evidence: docs/evidence/PACKAGE_H_CI_REPAIR.md,
-docs/evidence/PACKAGE_H_GITLEAKS_FINDINGS.md
-Release verdict: NO-GO (unchanged). Freeze still NOT authorized. Awaiting fresh
-CI conclusion on new HEAD; capture in PACKAGE_D_CI_EVIDENCE_POST_H.md.
+Commits pushed:
+- 22bc76a ci: repair secret-scan and coverage gates (Package H)
+- 484a3ea ci: reword .gitleaksignore comment + suppress its own historical FP
+
+CI RESULT on HEAD 484a3ea — run 30255090975 (PR #4):
+- Format & Analyze: SUCCESS
+- Flutter Tests: SUCCESS
+- Edge Function Tests: SUCCESS
+- Secret Scan: SUCCESS  (was FAIL — repaired)
+- Deployment Readiness: SUCCESS
+- Android Release Build: FAILURE — ONLY the "Verify signing secrets present"
+  gate; KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD all empty.
+  Fail-closed by design (Package B); no code/logic defect.
+
+=> Code-quality gate GREEN. Matches Package D Option A/B precondition.
+
+CANDIDATE SHA CHANGED: c2a2ef7 -> 484a3ea (two Package H commits). The pre-
+written c2a2ef7 freeze authorization and tag name release-candidate/c2a2ef7 no
+longer match HEAD. Any freeze MUST bind to 484a3ea (tag
+release-candidate/484a3ea) and needs FRESH human authorization + Option-B
+deferred-android approval (android-release red on missing secrets).
+
+Evidence: docs/evidence/PACKAGE_D_CI_EVIDENCE_POST_H.md,
+docs/evidence/PACKAGE_H_CI_REPAIR.md, docs/evidence/PACKAGE_H_GITLEAKS_FINDINGS.md
+Release verdict: NO-GO. Freeze NOT created — awaiting authorization for 484a3ea.
+
 
 
 
