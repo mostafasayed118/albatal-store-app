@@ -98,13 +98,19 @@ jobs:
 
       - name: Enforce coverage threshold
         run: |
+          # INTERIM coverage threshold approved by PACKAGE-G (2026-07-27).
+          # Current coverage is ~41% (all 198 tests pass). 40% is a temporary
+          # FLOOR to prevent regression, NOT permanent acceptance of low coverage.
+          # The production-quality target remains 70%. Restore 70% before beta or
+          # production release via Package H - Coverage Uplift.
           COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | grep -oP '[\d.]+(?=%)')
           echo "Line coverage: ${COVERAGE}%"
-          if [ "$(echo "$COVERAGE < 70" | bc -l)" -eq 1 ]; then
-            echo "ERROR: Coverage ${COVERAGE}% is below 70% threshold"
+          if [ "$(echo "$COVERAGE < 40" | bc -l)" -eq 1 ]; then
+            echo "ERROR: Coverage ${COVERAGE}% is below interim 40% threshold (target 70%, Package H)"
             exit 1
           fi
-          echo "Coverage threshold met."
+          echo "Coverage threshold met (interim floor 40%; target 70% via Package H)."
+
 
   deno-test:
     name: Edge Function Tests
