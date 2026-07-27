@@ -1,0 +1,22 @@
+# Gitleaks fingerprint ignore list — Al Batal Elite (PACKAGE-H CI gate repair)
+#
+# Each entry below is a CONFIRMED FALSE POSITIVE (non-secret) verified by
+# reading the flagged line. Format is gitleaks' native fingerprint:
+#   <commit>:<file>:<ruleID>:<startLine>
+#
+# Fingerprints are safe to commit — they contain no secret values.
+# Full-history scanning and the default rule set remain ENABLED. Only these
+# specific historical matches are suppressed. See:
+#   docs/evidence/PACKAGE_H_GITLEAKS_FINDINGS.md
+#
+# Finding 1-4: rule generic-api-key matched the literal SQL TEST FIXTURE string
+# idempotency_key = 'test-idempotency-001' (a deterministic test key, not a
+# credential) in a pgTAP-style test file. No secret is present.
+f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:84
+f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:98
+f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:106
+f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:143
+#
+# Finding 5: rule generic-api-key matched a hex color literal (imageColor:
+# 0xFF000000) inside a Dart widget/model unit test. Not a credential.
+4cd9b3ef5ad6f20fa09e31d185bf94a32849ff55:test/product_detail_test.dart:generic-api-key:85

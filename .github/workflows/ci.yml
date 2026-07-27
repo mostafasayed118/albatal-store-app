@@ -93,6 +93,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Install lcov
+        # lcov is NOT preinstalled on ubuntu-latest runners. The coverage
+        # threshold step below parses coverage/lcov.info via `lcov --summary`,
+        # so lcov must be installed first (PACKAGE-H CI gate repair).
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
       - name: Run tests with coverage
         run: flutter test --no-pub --coverage
 

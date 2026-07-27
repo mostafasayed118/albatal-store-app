@@ -1,6 +1,75 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-26T15:30:00Z
+Last run: 2026-07-27T09:28:00Z
+
+## Package H — CI Gate Repair (L2, COMPLETE LOCALLY)
+
+Worktree: C:/flutter_projects/albatal-freeze-fix
+Branch: fix/package-b-freeze-hardening
+Failed run repaired: actions/runs/30251635376 (secret-scan + coverage)
+
+Root causes:
+- secret-scan: gitleaks `generic-api-key` FALSE POSITIVES on test fixtures
+  (SQL literal `idempotency_key='test-idempotency-001'` x4 + Dart hex color
+  `0xFF000000` x1). No real secret; no rotation.
+- coverage: `lcov` not preinstalled on ubuntu-latest, so `lcov --summary` failed
+  regardless of threshold. Package G lowering 70->40 was necessary but not
+  sufficient.
+
+Fixes (bounded, no lib/logic changes):
+- Added `.gitleaksignore` with the 5 exact FP fingerprints (full scanning + all
+  default rules stay ENABLED; no path allowlist broadening; no secret values).
+- Added "Install lcov" step to the `test` job before coverage steps. Interim
+  40% threshold kept EXACTLY (70% target deferred to Coverage Uplift).
+
+Local verification — ALL GREEN:
+- gitleaks 8.24.3 detect (committed config + .gitleaksignore): 0 leaks (was 5)
+- flutter analyze: No issues found (no lib/ edits)
+- flutter test: 198/198 PASS (no logic edits)
+- ci.yml: YAML parses OK
+
+Evidence: docs/evidence/PACKAGE_H_CI_REPAIR.md,
+docs/evidence/PACKAGE_H_GITLEAKS_FINDINGS.md
+Release verdict: NO-GO (unchanged). Freeze still NOT authorized. Awaiting fresh
+CI conclusion on new HEAD; capture in PACKAGE_D_CI_EVIDENCE_POST_H.md.
+
+
+
+## Package E — Candidate/Master Conflict Remediation (L2, COMPLETE + PUSHED)
+
+Worktree: C:/flutter_projects/albatal-freeze-fix
+Branch: fix/package-b-freeze-hardening
+Method: `git merge origin/master --no-ff --no-commit` (rebase/force-push NOT used)
+
+- Pre-merge candidate SHA: 364807183c47ff97592da45aad005300e2b026a7 (3648071)
+- Merged origin/master: 2a001fbe7f550d7a6d49fcfa9ce6ac09ea7791ca
+- Merge-base: 37118b1e8e745ee6d971f1ab1008c1a50fe9a9d6
+- NEW post-merge candidate SHA: c2a2ef72dbfd6a087a7b5035e6a60ff8d76a6461 (c2a2ef7)
+- Merge parents: 3648071 + 2a001fb
+- Push: 3648071..c2a2ef7 (normal); local == origin == c2a2ef7; 0/0; tree clean
+
+Conflicts resolved (exactly the two expected files):
+- `lib/shared/services/service_locator.dart` (content) — preserved master's
+  restored DI sources + candidate's Sentry/NoOp selection; imports shared
+  crash_reporting_service.dart + sentry_crash_reporting_service.dart; orders
+  registration unchanged (debug Local / release Supabase); no payment changes.
+- `test/crash_reporting_scrub_test.dart` (add/add) — one coherent scrub suite,
+  no duplicate test names, targets CrashReportingService.scrubContext.
+
+Local verification (pre-commit) — ALL GREEN:
+- flutter pub get: exit 0, no dependency conflicts
+- flutter analyze: No issues found! (exit 0)
+- flutter test: 198/198 PASS (exit 0)
+- deno test supabase/functions/: 70/70 PASS (exit 0)
+- git diff --cached --check: clean; staged + untracked secret scans: clean
+
+Evidence: `docs/evidence/PACKAGE_D_CI_EVIDENCE_POST_E.md`
+
+Pending: CI conclusion on new HEAD c2a2ef7 (gh CLI unavailable — read from
+GitHub Actions UI). Freeze NOT authorized. If CI green, freeze tag MUST be
+`release-candidate/c2a2ef7` — do NOT reuse `release-candidate/3648071`.
+Release verdict: NO-GO.
+
 
 ## Package B — Candidate Freeze Hardening
 
