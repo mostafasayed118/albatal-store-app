@@ -46,8 +46,21 @@ K0 DONE (human-executed, owner Mustaf Sayed Saeed, ref PACKAGE-K0-APPLY-028, 202
 
 PENDING (human-gated — require staging DB password / CI, not done autonomously):
 
-- K2: after PR #5 CI is GREEN, record NEW SHA, create annotated tag
-  release-candidate/<NEW_SHORT_SHA> (include CI run URL), push tag only.
+- K2 DONE (autonomous, authorized by owner Mustaf Sayed Saeed, ref
+PACKAGE-K2-DEFERRED-ANDROID-B74D326, 2026-07-27):
+- PR #5 CI run 30262963571: Format & Analyze PASS, Flutter Tests PASS, Edge
+  Function Tests PASS, Secret Scan PASS, Deployment Readiness PASS. Android
+  Release Build FAIL — only at "Verify signing secrets present" gate
+  (KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD all empty; no code
+  defect). Deferred-android approval granted.
+- Annotated tag release-candidate/b74d326 created at
+  b74d32653462d555213ac171b12f0f4b7cded7ad and pushed to origin.
+  Tag target verified = b74d32653462d555213ac171b12f0f4b7cded7ad.
+  Pre-repair tag release-candidate/484a3ea preserved (not deleted).
+  No branch push. No master push. No force push.
+
+K3: apply migration 029 to staging from the new frozen candidate.
+
 - K3: apply migration 029 to staging from the new frozen candidate.
 - K4: re-run the 5 DB catalog checks (expect: 028+029 present; anon write grants 0 rows;
   stock/expiry RPCs service_role only; set_payment_provider_order_id anon=false,
