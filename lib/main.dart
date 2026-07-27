@@ -4,11 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'app.dart';
 import 'shared/services/app_bloc_observer.dart';
+import 'shared/services/crash_reporting_service.dart';
 import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
-
-import 'core/services/crash_reporting_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +40,8 @@ Future<void> main() async {
 
     // Capture Flutter framework errors.
     FlutterError.onError = (details) {
-      Log.e('Flutter error', error: details.exception, stackTrace: details.stack);
+      Log.e('Flutter error',
+          error: details.exception, stackTrace: details.stack);
       crashReporter.captureError(
         details.exception,
         details.stack,

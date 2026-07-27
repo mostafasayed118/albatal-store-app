@@ -31,10 +31,15 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
+import {
+  corsHeadersFor,
+  jsonHeadersFor,
+  requireCors,
+} from "../_shared/cors.ts";
+import { requireSecret } from "../_shared/secrets.ts";
 
 /// Maximum time (ms) to wait for a single Paymob HTTP call.
-const PAYMOB_TIMEOUT_MS = 10_000;
+const PAYMOB_TIMEOUT_MS = 5_000;
 
 /// Maximum allowed response body size (bytes) from Paymob.
 /// Prevents memory exhaustion from malformed upstream payloads.
@@ -60,16 +65,20 @@ async function fetchWithGuard(
   }
 }
 
-Deno.serve(async (req) => {
+export async function handlePaymobInitiate(req: Request): Promise<Response> {
+  // Fail closed on CORS misconfiguration.
+  const corsFail = requireCors(req);
+  if (corsFail) return corsFail;
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   // Reject non-POST requests.
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ message: "Method not allowed" }),
-      { status: 405, headers: jsonHeaders() },
+      { status: 405, headers: jsonHeadersFor(req) },
     );
   }
 
@@ -79,12 +88,13 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ message: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } },
     );
@@ -97,7 +107,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -109,7 +119,7 @@ Deno.serve(async (req) => {
     if (!order_id) {
       return new Response(
         JSON.stringify({ message: "order_id is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -127,14 +137,14 @@ Deno.serve(async (req) => {
     if (orderError || !order) {
       return new Response(
         JSON.stringify({ message: "Order not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 404, headers: jsonHeadersFor(req) },
       );
     }
 
     if (order.status !== "pending") {
       return new Response(
         JSON.stringify({ message: "Order is not pending" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -143,45 +153,48 @@ Deno.serve(async (req) => {
     const currency = "EGP";
 
     // Build billing_data from the order's address snapshot.
-    // Falls back to generic placeholders only when a field is
-    // genuinely absent — never leaks real customer data.
+    // Paymob requires ALL fields to be non-empty.
     const addr = order.address_snapshot as Record<string, string> | null;
     const recipientParts = (addr?.recipient ?? "Customer").split(" ");
     const firstName = recipientParts[0] || "Customer";
     const lastName = recipientParts.slice(1).join(" ") || "Customer";
     const billingData = {
-      apartment: addr?.apartment ?? "NA",
-      email: user.email ?? "customer@example.com",
-      floor: addr?.floor ?? "NA",
-      first_name: firstName,
-      street: addr?.line ?? "NA",
-      building: addr?.building ?? "NA",
-      phone_number: addr?.phone ?? "+201000000000",
+      apartment: addr?.apartment || "NA",
+      email: user.email || "customer@example.com",
+      floor: addr?.floor || "NA",
+      first_name: firstName || "Customer",
+      street: addr?.line || addr?.street || "NA",
+      building: addr?.building || "NA",
+      phone_number: addr?.phone || "+201000000000",
       shipping_method: "NA",
-      postal_code: addr?.postalCode ?? "NA",
-      city: addr?.city ?? "Cairo",
-      country: addr?.country ?? "EG",
-      last_name: lastName,
-      state: addr?.city ?? "Cairo",
+      postal_code: addr?.postalCode || addr?.postal_code || "NA",
+      city: addr?.city || "Cairo",
+      country: addr?.country || "EG",
+      last_name: lastName || "Customer",
+      state: addr?.city || "Cairo",
     };
 
     // ─── Get Paymob credentials ──────────────────────────────
-    const apiKey = Deno.env.get("PAYMOB_API_KEY");
+    // Fail closed when required Paymob credentials are missing.
+    const apiKeyFail = requireSecret(req, "PAYMOB_API_KEY");
+    if (apiKeyFail) return apiKeyFail;
     const integrationId = Deno.env.get("PAYMOB_INTEGRATION_ID");
     const iframeId = Deno.env.get("PAYMOB_IFRAME_ID");
-    if (!apiKey || !integrationId || !iframeId) {
+    if (!integrationId || !iframeId) {
       console.error("paymob-initiate: Paymob credentials not configured");
       return new Response(
         JSON.stringify({ message: "Payment provider not configured" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 503, headers: jsonHeadersFor(req) },
       );
     }
+    const apiKey = Deno.env.get("PAYMOB_API_KEY") as string;
 
     // ─── Create/find one pending internal payment ───────────
-    // A pending payment may already exist if the user retried
-    // initiation for the same order. We reuse it so we never
-    // have two pending payments for one order.
-    const { data: existingPayment } = await supabase
+    console.log(
+      "paymob-initiate: Checking for existing payment for order",
+      order_id,
+    );
+    const { data: existingPayment, error: existingPayError } = await supabase
       .from("payments")
       .select("id, paymob_order_id, status")
       .eq("order_id", order_id)
@@ -190,17 +203,22 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
+    if (existingPayError) {
+      console.error("paymob-initiate: Error checking existing payment");
+    }
+
     let paymentId: string;
 
     if (existingPayment && existingPayment.status === "pending") {
-      // Reuse the existing pending payment. If it already has
-      // a paymob_order_id from a previous initiation, we keep
-      // it so a duplicate initiation does not create a second
-      // provider order.
+      console.log(
+        "paymob-initiate: Found existing pending payment",
+        existingPayment.id,
+      );
       if (existingPayment.paymob_order_id) {
-        // We already have a provider order for this payment.
-        // Re-issue a payment key for the SAME provider order
-        // instead of creating a new one.
+        console.log(
+          "paymob-initiate: Reusing existing Paymob order",
+          existingPayment.paymob_order_id,
+        );
         paymentId = existingPayment.id as string;
         const reused = await reissuePaymentKey(
           apiKey,
@@ -211,58 +229,83 @@ Deno.serve(async (req) => {
           billingData,
         );
         if (!reused.ok) {
+          console.error(
+            "paymob-initiate: Failed to reissue payment key",
+            reused.message,
+          );
           return new Response(
             JSON.stringify({ message: reused.message }),
-            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            { status: 502, headers: jsonHeadersFor(req) },
           );
         }
-        const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
+        const checkoutUrl =
+          `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
+        console.log(
+          "paymob-initiate: SUCCESS (reissue) - Returning checkout URL",
+        );
         return new Response(
           JSON.stringify({ checkout_url: checkoutUrl }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 200, headers: jsonHeadersFor(req) },
         );
       }
       paymentId = existingPayment.id as string;
     } else {
-      // Create a fresh pending payment. transaction_id stays
-      // NULL — it is written exactly once by the verified
-      // callback.
-      const { data: newPayment, error: payInsertError } = await supabase
-        .from("payments")
-        .insert({
-          order_id: order_id,
-          user_id: user.id,
-          method: "paymob_card",
-          amount: amountCents,
-          status: "pending",
-        })
-        .select("id")
-        .single();
+      console.log("paymob-initiate: Creating new payment record");
+      // Payment INSERT is a trusted server-side operation. Keep the caller
+      // JWT client above for auth, ownership reads, and the guarded RPC, but
+      // do not grant authenticated clients direct INSERT on payments.
+      const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
+      if (serviceRoleFail) return serviceRoleFail;
+      const serviceRoleClient = createClient(
+        supabaseUrl,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      );
+      const { data: newPayment, error: payInsertError } =
+        await serviceRoleClient
+          .from("payments")
+          .insert({
+            order_id: order_id,
+            user_id: user.id,
+            method: "paymob_card",
+            amount: amountCents,
+            status: "pending",
+          })
+          .select("id")
+          .single();
       if (payInsertError || !newPayment) {
-        console.error("paymob-initiate: failed to create payment row");
+        console.error("paymob-initiate: Failed to create payment row");
         return new Response(
           JSON.stringify({ message: "Failed to create payment record" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          { status: 500, headers: jsonHeadersFor(req) },
         );
       }
       paymentId = newPayment.id as string;
+      console.log("paymob-initiate: Payment record created", paymentId);
     }
 
     // ─── Step 1: Paymob auth token ──────────────────────────
-    const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: apiKey }),
-    });
+    console.log("paymob-initiate: Step 1 - Getting auth token");
+    const authResponse = await fetchWithGuard(
+      "https://accept.paymob.com/api/auth/tokens",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: apiKey }),
+      },
+    );
     const authData = await authResponse.json();
     if (!authData.token) {
+      console.error("paymob-initiate: Failed to get auth token");
       return new Response(
         JSON.stringify({ message: "Failed to get Paymob auth token" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Auth token obtained");
 
     // ─── Step 2: Register Paymob provider order ─────────────
+    console.log("paymob-initiate: Step 2 - Registering order");
     const paymobOrderResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/ecommerce/orders",
       {
@@ -282,19 +325,18 @@ Deno.serve(async (req) => {
     );
     const paymobOrderData = await paymobOrderResponse.json();
     if (!paymobOrderData.id) {
-      console.error("paymob-initiate: failed to register Paymob order");
+      console.error("paymob-initiate: Failed to register order");
       return new Response(
         JSON.stringify({ message: "Failed to register payment order" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Order registered", paymobOrderData.id);
 
     const paymobOrderId = String(paymobOrderData.id);
 
     // ─── Persist the REAL Paymob provider order id ──────────
-    // HIGH-03: store the provider order id on the payment row
-    // BEFORE returning the checkout URL. The callback will
-    // locate this payment by paymob_order_id.
+    console.log("paymob-initiate: Persisting Paymob order ID");
     const { data: providerOrderUpdate, error: updateError } = await supabase
       .rpc("set_payment_provider_order_id", {
         p_payment_id: paymentId,
@@ -302,14 +344,15 @@ Deno.serve(async (req) => {
       });
 
     if (updateError || !providerOrderUpdate?.ok) {
-      console.error("paymob-initiate: failed to persist paymob_order_id");
+      console.error("paymob-initiate: Failed to persist paymob_order_id");
       return new Response(
         JSON.stringify({ message: "Failed to persist payment order" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: jsonHeadersFor(req) },
       );
     }
 
     // ─── Step 3: Payment key ─────────────────────────────────
+    console.log("paymob-initiate: Step 3 - Getting payment key");
     const keyResponse = await fetchWithGuard(
       "https://accept.paymob.com/api/acceptance/payment_keys",
       {
@@ -321,6 +364,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           auth_token: authData.token,
           amount_cents: amountCents,
+          currency: currency,
           expiration: 3600,
           order_id: paymobOrderId,
           billing_data: billingData,
@@ -328,33 +372,45 @@ Deno.serve(async (req) => {
         }),
       },
     );
+    console.log(
+      "paymob-initiate: Payment key response status:",
+      keyResponse.status,
+    );
     const keyData = await keyResponse.json();
     if (!keyData.token) {
+      console.error("paymob-initiate: Failed to get payment key");
       return new Response(
         JSON.stringify({ message: "Failed to get payment key" }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: jsonHeadersFor(req) },
       );
     }
+    console.log("paymob-initiate: Payment key obtained");
 
     // ─── Return minimum safe client info ────────────────────
-    // Only the checkout URL. No secrets, no provider order id,
-    // no payment key exposure beyond the iframe token.
-    const checkoutUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
+    const checkoutUrl =
+      `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
+    console.log("paymob-initiate: SUCCESS - Returning checkout URL");
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: jsonHeadersFor(req) },
     );
   } catch (_error) {
-    // SECURITY: Never log raw error — it may contain Paymob tokens
-    // or request body details. Log a safe prefix for correlation.
-    console.error("paymob-initiate: unhandled error");
+    // Do not emit upstream/provider error objects or return their contents.
+    console.error("paymob-initiate: Unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: jsonHeaders() },
+      { status: 500, headers: jsonHeadersFor(req) },
     );
   }
-});
+}
+
+// Supabase executes this module as the function entrypoint. Keeping handler
+// registration behind import.meta.main lets tests exercise the real request
+// handler without opening a listener or changing deployed behavior.
+if (import.meta.main) {
+  Deno.serve(handlePaymobInitiate);
+}
 
 // ─── Helper: re-issue a payment key for an existing provider order
 // Used when the user retries initiation for an order that already
@@ -367,11 +423,14 @@ async function reissuePaymentKey(
   email: string,
   billingData: Record<string, string>,
 ): Promise<{ ok: boolean; token?: string; message?: string }> {
-  const authResponse = await fetchWithGuard("https://accept.paymob.com/api/auth/tokens", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: apiKey }),
-  });
+  const authResponse = await fetchWithGuard(
+    "https://accept.paymob.com/api/auth/tokens",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: apiKey }),
+    },
+  );
   const authData = await authResponse.json();
   if (!authData.token) {
     return { ok: false, message: "Failed to get Paymob auth token" };
@@ -387,6 +446,7 @@ async function reissuePaymentKey(
       body: JSON.stringify({
         auth_token: authData.token,
         amount_cents: amountCents,
+        currency: "EGP",
         expiration: 3600,
         order_id: paymobOrderId,
         billing_data: billingData,

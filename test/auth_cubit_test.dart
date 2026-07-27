@@ -64,7 +64,8 @@ class _StubAuthRepository implements AuthRepository {
     String? fullName,
   }) async {
     if (_signUp != null) {
-      return await _signUp(email: email, password: password, fullName: fullName);
+      return await _signUp(
+          email: email, password: password, fullName: fullName);
     }
     return const Success(ConfirmationRequired());
   }
@@ -97,8 +98,9 @@ class _StubAuthRepository implements AuthRepository {
   }
 
   @override
-  Stream<Authenticated?> get authStateChanges =>
-      _authStateChanges != null ? _authStateChanges() : const Stream<Authenticated?>.empty();
+  Stream<Authenticated?> get authStateChanges => _authStateChanges != null
+      ? _authStateChanges()
+      : const Stream<Authenticated?>.empty();
 }
 
 class _StubProfileRepository implements ProfileRepository {
@@ -106,8 +108,7 @@ class _StubProfileRepository implements ProfileRepository {
   final Profile? profile;
 
   @override
-  Future<Result<Profile?>> readProfile(String userId) async =>
-      Success(profile);
+  Future<Result<Profile?>> readProfile(String userId) async => Success(profile);
 
   @override
   Future<Result<void>> upsertProfile(Profile profile) async =>
@@ -146,8 +147,7 @@ void main() {
       await cubit.close();
     });
 
-    test('checkSession with session loads profile and authenticates',
-        () async {
+    test('checkSession with session loads profile and authenticates', () async {
       final cubit = AuthCubit(
         authRepository: _StubAuthRepository(
           checkSession: () async => const Success(Authenticated('user-1')),

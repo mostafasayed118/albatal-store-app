@@ -24,7 +24,8 @@ class AdminDashboardPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                  Icon(Icons.error_outline,
+                      size: 48, color: Theme.of(context).colorScheme.error),
                   const SizedBox(height: 16),
                   Text(state.errorMessage ?? 'Error'),
                   const SizedBox(height: 16),
@@ -48,7 +49,8 @@ class AdminDashboardPage extends StatelessWidget {
               const SizedBox(height: 12),
               _StatCard(
                 title: l.pendingOrders,
-                value: '${state.orders.where((o) => o['status'] == 'placed').length}',
+                value:
+                    '${state.orders.where((o) => o['status'] == 'placed').length}',
                 icon: Icons.pending_actions,
                 color: Theme.of(context).colorScheme.secondary,
               ),
@@ -113,8 +115,15 @@ class _StatCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  Text(value, style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: color)),
+                  Text(title,
+                      style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant)),
+                  Text(value,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(color: color)),
                 ],
               ),
             ),

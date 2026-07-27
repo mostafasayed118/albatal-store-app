@@ -159,6 +159,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
                 'composition': p.composition,
                 'care': p.care,
                 'origin': p.origin,
+                'images': p.images,
                 'sizes': p.sizes,
                 'colors': p.colors,
                 'stock': p.stock,
@@ -198,6 +199,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
                 composition: m['composition'] as String?,
                 care: m['care'] as String?,
                 origin: m['origin'] as String?,
+                images: (m['images'] as List?)?.cast<String>() ?? const [],
                 sizes: (m['sizes'] as List?)?.cast<String>() ?? const [],
                 colors: (m['colors'] as List?)?.cast<String>() ?? const [],
                 stock: (m['stock'] as Map<String, dynamic>?)

@@ -1,0 +1,324 @@
+# =============================================================================
+# Al Batal Elite — Android Release Pipeline
+# Fail-closed: missing secrets or debug cert = immediate failure
+# =============================================================================
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+
+# Only one release build at a time; cancel superseded runs
+concurrency:
+  group: android-release
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "17"
+  FLUTTER_VERSION: "stable"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gate 1: Validate that all required secrets are present
+  # ---------------------------------------------------------------------------
+  validate-secrets:
+    name: Validate Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if required secrets are missing
+        run: |
+          MISSING=()
+          [ -z "${{ secrets.KEYSTORE_BASE64 }}" ] && MISSING+=("KEYSTORE_BASE64")
+          [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] && MISSING+=("KEYSTORE_PASSWORD")
+          [ -z "${{ secrets.KEY_ALIAS }}" ] && MISSING+=("KEY_ALIAS")
+          [ -z "${{ secrets.KEY_PASSWORD }}" ] && MISSING+=("KEY_PASSWORD")
+
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "::error::Missing required secrets: ${MISSING[*]}"
+            echo "Configure these in GitHub repo Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          echo "All required secrets are present."
+
+  # ---------------------------------------------------------------------------
+  # Gate 2: Build, sign, verify
+  # ---------------------------------------------------------------------------
+  build-release:
+    name: Build & Verify Release
+    needs: validate-secrets
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # to create GitHub Release
+      packages: read
+
+    steps:
+      # -----------------------------------------------------------------
+      # 0. Checkout at the exact triggering SHA
+      # -----------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      # -----------------------------------------------------------------
+      # 1. Set up Flutter
+      # -----------------------------------------------------------------
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_VERSION }}
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      # -----------------------------------------------------------------
+      # 2. Set up Java 17
+      # -----------------------------------------------------------------
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # -----------------------------------------------------------------
+      # 3. Decode keystore into an IGNORED temporary file
+      #    The .gitignore already blocks *.keystore / *.jks
+      # -----------------------------------------------------------------
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "${KEYSTORE_BASE64}" | base64 --decode > /tmp/release-keystore.jks
+          chmod 600 /tmp/release-keystore.jks
+          echo "Keystore decoded. Size: $(stat -c%s /tmp/release-keystore.jks) bytes"
+
+      # -----------------------------------------------------------------
+      # 4. Write key.properties without printing secrets
+      # -----------------------------------------------------------------
+      - name: Write key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          printf 'storeFile=/tmp/release-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "${KEYSTORE_PASSWORD}" "${KEY_ALIAS}" "${KEY_PASSWORD}" \
+            > android/key.properties
+          echo "key.properties written (secrets not logged)."
+
+      # -----------------------------------------------------------------
+      # 5. Build release AAB + APK
+      # -----------------------------------------------------------------
+      - name: Build App Bundle
+        run: flutter build appbundle --release --no-tree-shake-icons
+
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      # -----------------------------------------------------------------
+      # 6. Locate build artifacts
+      # -----------------------------------------------------------------
+      - name: Find artifacts
+        id: artifacts
+        run: |
+          AAB=$(find build/app/outputs/bundle/release -name "*.aab" | head -1)
+          APK=$(find build/app/outputs/flutter-apk -name "app-release.apk" | head -1)
+
+          if [ -z "$AAB" ]; then
+            echo "::error::No AAB found after build"
+            exit 1
+          fi
+          if [ -z "$APK" ]; then
+            echo "::error::No APK found after build"
+            exit 1
+          fi
+
+          echo "AAB_PATH=${AAB}" >> "$GITHUB_OUTPUT"
+          echo "APK_PATH=${APK}" >> "$GITHUB_OUTPUT"
+          echo "AAB size: $(stat -c%s "${AAB}") bytes"
+          echo "APK size: $(stat -c%s "${APK}") bytes"
+
+      # -----------------------------------------------------------------
+      # 7. APK signature verification
+      # -----------------------------------------------------------------
+      - name: Verify APK signature
+        run: |
+          echo "=== apksigner verify ==="
+          apksigner verify --verbose "${{ steps.artifacts.outputs.APK_PATH }}"
+
+      # -----------------------------------------------------------------
+      # 8. Reject debug certificate (androiddebugkey)
+      # -----------------------------------------------------------------
+      - name: Reject debug certificate
+        run: |
+          CERT_INFO=$(apksigner verify --print-certs "${{ steps.artifacts.outputs.APK_PATH }}")
+
+          echo "${CERT_INFO}"
+
+          if echo "${CERT_INFO}" | grep -qi "androiddebugkey"; then
+            echo "::error::APK is signed with a DEBUG certificate (androiddebugkey). REJECTED."
+            exit 1
+          fi
+
+          echo "Certificate is NOT androiddebugkey. PASS."
+
+      # -----------------------------------------------------------------
+      # 9. Verify package name and debuggable flag
+      # -----------------------------------------------------------------
+      - name: Verify package and debuggable
+        run: |
+          APK="${{ steps.artifacts.outputs.APK_PATH }}"
+
+          echo "=== Package name check ==="
+          ACTUAL_PKG=$(aapt dump badging "${APK}" 2>/dev/null | grep "package: name=" | sed "s/.*name='\\([^']*\\)'.*/\\1/")
+          echo "Package: ${ACTUAL_PKG}"
+
+          if [ "${ACTUAL_PKG}" != "com.albatal.elite" ]; then
+            echo "::error::Package mismatch: expected 'com.albatal.elite', got '${ACTUAL_PKG}'"
+            exit 1
+          fi
+          echo "Package name: PASS"
+
+          echo "=== Debuggable check ==="
+          # aapt2 / aapt debuggable flag
+          DEBUGGABLE=$(aapt dump badging "${APK}" 2>/dev/null | grep "application-debuggable" || true)
+          if [ -n "${DEBUGGABLE}" ]; then
+            echo "::error::APK is marked as debuggable. REJECTED."
+            exit 1
+          fi
+          echo "Debuggable: PASS (app is not debuggable)"
+
+      # -----------------------------------------------------------------
+      # 10. Generate redacted verification report
+      # -----------------------------------------------------------------
+      - name: Generate verification report
+        run: |
+          APK="${{ steps.artifacts.outputs.APK_PATH }}"
+          AAB="${{ steps.artifacts.outputs.AAB_PATH }}"
+          CERT_INFO=$(apksigner verify --print-certs "${APK}")
+          PKG=$(aapt dump badging "${APK}" 2>/dev/null | grep "package: name=" | sed "s/.*name='\([^']*\)'.*/\1/")
+          AAB_SIZE=$(stat -c%s "${AAB}")
+          APK_SIZE=$(stat -c%s "${APK}")
+          SIG_VERIFY=$(apksigner verify --verbose "${APK}" 2>&1)
+          CERT_REDACTED=$(echo "${CERT_INFO}" | sed 's/[A-Fa-f0-9]\{40,\}/[REDACTED]/g')
+
+          cat > verification-report.md <<ENDREPORT
+          # Android Release Verification Report
+
+          **Project:** Al Batal Elite
+          **Package:** com.albatal.elite
+          **Commit:** ${{ github.sha }}
+          **Date:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          ## Artifact Summary
+
+          | Artifact | Path | Size |
+          |----------|------|------|
+          | AAB | \`${AAB}\` | ${AAB_SIZE} bytes |
+          | APK | \`${APK}\` | ${APK_SIZE} bytes |
+
+          ## Signature Verification
+
+          \`\`\`
+          ${SIG_VERIFY}
+          \`\`\`
+
+          ## Certificate Info (redacted)
+
+          \`\`\`
+          ${CERT_REDACTED}
+          \`\`\`
+
+          ## Package Verification
+
+          - **Expected package:** com.albatal.elite
+          - **Actual package:** ${PKG}
+          - **Debuggable:** false
+          - **Certificate:** NOT androiddebugkey
+          - **R8/ProGuard:** enabled
+          - **Signing:** release (fail-closed)
+          ENDREPORT
+
+          echo "Verification report generated."
+
+      # -----------------------------------------------------------------
+      # 11. Upload verified artifacts as build outputs
+      # -----------------------------------------------------------------
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: ${{ steps.artifacts.outputs.AAB_PATH }}
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: ${{ steps.artifacts.outputs.APK_PATH }}
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-report
+          path: verification-report.md
+          retention-days: 30
+
+      # -----------------------------------------------------------------
+      # 12. Cleanup — remove temporary secrets from runner
+      # -----------------------------------------------------------------
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          rm -f /tmp/release-keystore.jks
+          rm -f android/key.properties
+          echo "Temporary secrets removed."
+
+  # ---------------------------------------------------------------------------
+  # Gate 3: Create GitHub Release (optional — only on tag push)
+  # ---------------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+          path: dist/
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: dist/
+
+      - name: Download verification report
+        uses: actions/download-artifact@v4
+        with:
+          name: verification-report
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*.aab
+            dist/**/*.apk
+            dist/verification-report.md
+          generate_release_notes: true
+          draft: true

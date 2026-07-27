@@ -5,7 +5,7 @@ import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubi
 import 'package:al_batal_elite/features/payments/presentation/pages/paymob_checkout_page.dart';
 import 'package:al_batal_elite/features/payments/presentation/pages/payment_method_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
+import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/data/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/order_success_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
@@ -29,6 +29,10 @@ class _NavStub implements PaymentService {
         checkoutUrl:
             'https://accept.paymob.com/api/acceptance/iframes/85679?payment_token=abc',
       );
+
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
 
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
@@ -125,7 +129,8 @@ void main() {
       expect(find.byType(PaymobCheckoutPage), findsOneWidget);
 
       // Re-emit the same pending state (e.g. a duplicate realtime echo).
-      cubit.emit(cubit.state.copyWith(status: PaymentStatus.awaitingVerification));
+      cubit.emit(
+          cubit.state.copyWith(status: PaymentStatus.awaitingVerification));
       await tester.pumpAndSettle();
 
       // Still exactly one checkout page — no duplicate navigation.

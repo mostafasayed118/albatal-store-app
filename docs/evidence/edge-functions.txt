@@ -1,0 +1,14 @@
+== Edge Function Deployment Evidence ==
+Command: supabase functions list --project-ref alxwvyflasewslinufqe
+Date: 2026-07-25
+
+Function            | Status | verify_jwt | Expected
+--------------------|--------|------------|--------
+checkout            | ACTIVE | true       | true    ✓
+paymob-initiate     | ACTIVE | true       | true    ✓
+paymob-callback     | ACTIVE | true       | false   ✗
+cancel-expired-orders | ACTIVE | true     | false   ✗
+send-order-notification | ACTIVE | true   | false   ✗
+
+Status: FAIL - paymob-callback has verify_jwt=true but config.toml says false
+        This means Paymob webhook callbacks will fail with 401.
