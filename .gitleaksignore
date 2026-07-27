@@ -9,14 +9,23 @@
 # specific historical matches are suppressed. See:
 #   docs/evidence/PACKAGE_H_GITLEAKS_FINDINGS.md
 #
-# Finding 1-4: rule generic-api-key matched the literal SQL TEST FIXTURE string
-# idempotency_key = 'test-idempotency-001' (a deterministic test key, not a
-# credential) in a pgTAP-style test file. No secret is present.
+# Finding 1-4: rule generic-api-key matched a literal SQL TEST FIXTURE
+# idempotency value (a deterministic, hard-coded test lookup token, NOT a
+# credential) in a pgTAP-style test file. No secret is present. The literal
+# value is intentionally not reproduced here to avoid re-triggering the rule.
 f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:84
 f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:98
 f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:106
 f2fc1049ebed6f014d69f95cc30201caa86ab86a:supabase/tests/test_026_forward_repair.sql:generic-api-key:143
 #
-# Finding 5: rule generic-api-key matched a hex color literal (imageColor:
-# 0xFF000000) inside a Dart widget/model unit test. Not a credential.
+# Finding 5: rule generic-api-key matched a hex color literal (an ARGB color
+# constant) inside a Dart widget/model unit test. Not a credential.
 4cd9b3ef5ad6f20fa09e31d185bf94a32849ff55:test/product_detail_test.dart:generic-api-key:85
+#
+# Finding 6: SECOND-ORDER false positive. The first version of THIS ignore file
+# (commit 22bc76a) quoted the SQL test-fixture value verbatim in a comment,
+# which re-triggered generic-api-key on .gitleaksignore itself. The comment has
+# since been reworded (no literal value). This fingerprint suppresses only that
+# one historical comment line; force-push/history-rewrite is intentionally NOT
+# used (forbidden by release-freeze safety rules). Not a credential.
+22bc76aaaf2f91a0d425a5b6f9e5d1c9bf67167d:.gitleaksignore:generic-api-key:13
