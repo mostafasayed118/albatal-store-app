@@ -56,9 +56,14 @@ Highest version = `028`. Expected staging ledger high-water mark = `028`.
 
 ### Staging applied migrations — PENDING HUMAN EXECUTION
 
-Run in Dashboard SQL Editor (read-only):
+SQL Block 1 — run in Dashboard SQL Editor (read-only):
 
 ```sql
+SELECT
+  count(*) AS migration_count,
+  max(version) AS high_water
+FROM supabase_migrations.schema_migrations;
+
 SELECT version
 FROM supabase_migrations.schema_migrations
 ORDER BY version;
@@ -69,30 +74,39 @@ Paste result here:
 [fill]
 ```
 
+Staging migration count: [fill]
+Staging high-water: [fill]
 Missing migrations: [fill]
 Extra migrations: [fill]
 Parity verdict: PENDING (repo high-water mark is 028; confirm 018/019 slot
 identity — prior Package notes flagged a historical 018/019 renumbering drift
-on staging where slot 018 held a low-stock index instead of confirm_cod_payment).
+on staging where slot 018 held a low-stock index instead of confirm_cod_payment,
+and staging 019 differed from the on-disk 019).
+
 
 ---
 
-## Critical RPCs — PENDING HUMAN EXECUTION
+## Critical RPCs + grants — PENDING HUMAN EXECUTION
+
+SQL Block 2 — existence + SECURITY DEFINER + per-role EXECUTE in one query:
 
 ```sql
 SELECT
   p.proname,
   pg_get_function_identity_arguments(p.oid) AS args,
   p.prosecdef,
-  p.proconfig
+  p.proconfig,
+  has_function_privilege('anon', p.oid, 'EXECUTE') AS anon_execute,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated_execute,
+  has_function_privilege('service_role', p.oid, 'EXECUTE') AS service_role_execute
 FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE n.nspname = 'public'
   AND p.proname IN (
     'confirm_cod_payment',
+    'process_paymob_callback',
     'create_checkout_order',
     'update_order_status',
-    'process_paymob_callback',
     'calculate_shipping_fee',
     'expire_pending_order',
     'decrement_stock',
@@ -102,47 +116,42 @@ WHERE n.nspname = 'public'
 ORDER BY p.proname;
 ```
 
+Target:
+- confirm_cod_payment: exists, args uuid, prosecdef true, anon false, authenticated true
+- process_paymob_callback: exists, anon false, authenticated false, service_role true
+- create_checkout_order / update_order_status / calculate_shipping_fee: authenticated true, anon false
+- expire_pending_order / decrement_stock / increment_stock: service_role true, anon false, authenticated false
+
 Paste result here:
 ```
 [fill]
 ```
 
+confirm_cod_payment present: [YES/NO]
+confirm_cod_payment grants correct: [YES/NO]
+process_paymob_callback service_role only: [YES/NO]
 Missing RPCs: [fill]
-Note: capture the ACTUAL identity args of `process_paymob_callback` here so the
-grant query below uses the correct signature.
+Grant failures: [fill]
+RPC verdict: [PASS/FAIL]
 
 ---
 
-## RPC grants — PENDING HUMAN EXECUTION
+## Payments INSERT policy absence — PENDING HUMAN EXECUTION
+
+SQL Block 3:
 
 ```sql
 SELECT
-  has_function_privilege('anon', 'confirm_cod_payment(uuid)', 'EXECUTE') AS anon_confirm_cod,
-  has_function_privilege('authenticated', 'confirm_cod_payment(uuid)', 'EXECUTE') AS auth_confirm_cod;
-```
+  policyname,
+  roles,
+  cmd,
+  qual,
+  with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'payments'
+ORDER BY policyname;
 
-Target: anon_confirm_cod = false, auth_confirm_cod = true.
-
-```sql
--- Adjust signature to match the args captured above.
-SELECT
-  has_function_privilege('anon', 'process_paymob_callback(text,text,integer,text,boolean)', 'EXECUTE') AS anon_callback,
-  has_function_privilege('authenticated', 'process_paymob_callback(text,text,integer,text,boolean)', 'EXECUTE') AS auth_callback,
-  has_function_privilege('service_role', 'process_paymob_callback(text,text,integer,text,boolean)', 'EXECUTE') AS service_callback;
-```
-
-Target: anon_callback = false, auth_callback = false, service_callback = true.
-
-Paste results here:
-```
-[fill]
-```
-
----
-
-## Payments policies — PENDING HUMAN EXECUTION
-
-```sql
 SELECT policyname
 FROM pg_policies
 WHERE schemaname = 'public'
@@ -153,43 +162,115 @@ WHERE schemaname = 'public'
   );
 ```
 
-Target after migration 028: 0 rows.
+Target: second query returns 0 rows; no active policy grants anon/authenticated
+direct INSERT into payments.
 
 Paste result here:
 ```
 [fill]
 ```
 
-Direct authenticated payment INSERT present: [fill YES/NO]
+payments_insert_own present: [YES/NO]
+payments_insert_authenticated_own present: [YES/NO]
+Other payments INSERT policies: [fill]
+Direct authenticated payment INSERT allowed by policy: [YES/NO]
+Payments policy verdict: [PASS/FAIL]
 
 ---
 
-## RLS flags — PENDING HUMAN EXECUTION
+## RLS enabled flags — PENDING HUMAN EXECUTION
+
+SQL Block 4:
 
 ```sql
 SELECT
-  relname,
-  relrowsecurity,
-  relforcerowsecurity
-FROM pg_class
-WHERE relnamespace = 'public'::regnamespace
-  AND relname IN (
+  c.relname,
+  c.relrowsecurity,
+  c.relforcerowsecurity
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relname IN (
     'profiles','addresses','wishlists','cart_items','orders',
     'order_items','payments','notifications','analytics_events','error_logs'
   )
-ORDER BY relname;
+ORDER BY c.relname;
 ```
+
+Target: relrowsecurity = true for all user-private tables (at minimum profiles,
+addresses, wishlists, cart_items, orders, order_items, payments).
 
 Paste result here:
 ```
 [fill]
 ```
 
-Target: relrowsecurity = true for all user-private tables.
+RLS enabled tables: [fill]
+RLS disabled tables: [fill]
+RLS verdict: [PASS/FAIL]
 
 ---
 
-## Policy catalog — PENDING HUMAN EXECUTION
+## Anonymous/public write grants — PENDING HUMAN EXECUTION
+
+SQL Block 5 (checks the historical P0 where anon had write grants):
+
+```sql
+SELECT
+  grantee,
+  table_name,
+  privilege_type
+FROM information_schema.table_privileges
+WHERE table_schema = 'public'
+  AND grantee IN ('anon', 'public')
+  AND table_name IN (
+    'profiles','addresses','wishlists','cart_items','orders',
+    'order_items','payments','notifications','analytics_events','error_logs'
+  )
+  AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE')
+ORDER BY table_name, grantee, privilege_type;
+```
+
+Target: 0 rows.
+
+Paste result here:
+```
+[fill]
+```
+
+Anonymous/public write grants found: [YES/NO]
+Anonymous write grant verdict: [PASS/FAIL]
+
+### Optional — authenticated write grant context (informational)
+
+```sql
+SELECT
+  grantee,
+  table_name,
+  privilege_type
+FROM information_schema.table_privileges
+WHERE table_schema = 'public'
+  AND grantee = 'authenticated'
+  AND table_name IN (
+    'profiles','addresses','wishlists','cart_items','orders',
+    'order_items','payments','notifications','analytics_events','error_logs'
+  )
+  AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE')
+ORDER BY table_name, privilege_type;
+```
+
+Does not auto-fail. Key question: RLS must deny unsafe authenticated writes;
+for payments, direct authenticated INSERT must be denied by absence of an
+INSERT policy (see SQL Block 3).
+
+Paste result here (informational):
+```
+[fill]
+```
+
+---
+
+## Policy catalog (detail) — PENDING HUMAN EXECUTION (optional deep dive)
 
 ```sql
 SELECT tablename, policyname, roles, cmd, qual, with_check
@@ -208,6 +289,7 @@ Paste result here (review for secrets before saving — policy defs should have 
 ```
 
 ---
+
 
 ## Edge Functions — CAPTURED
 
@@ -285,12 +367,33 @@ Required-name checklist:
 
 Missing required secret names: NONE.
 
-Observation (not a blocker): there are duplicate/legacy name pairs
-(`ANON_KEY` vs `SUPABASE_ANON_KEY`, `URL` vs `SUPABASE_URL`, `SERVICE_ROLE_KEY`
-vs `SUPABASE_SERVICE_ROLE_KEY`) plus new-style `SUPABASE_PUBLISHABLE_KEYS` /
-`SUPABASE_SECRET_KEYS`. Values were NOT inspected. Package K should confirm the
-functions read the canonical names and consider pruning legacy duplicates
-(human decision; no action under Package J).
+### Secret names the Edge Function code actually reads (git grep at frozen tag)
+
+`git grep 'env.get' release-candidate/484a3ea -- supabase/functions` (parsed to
+distinct names) yields EXACTLY these 10 canonical names:
+
+```
+CORS_ALLOWED_ORIGINS
+NOTIFICATIONS_INTERNAL_KEY
+PAYMOB_API_KEY
+PAYMOB_HMAC_SECRET
+PAYMOB_IFRAME_ID
+PAYMOB_INTEGRATION_ID
+SCHEDULER_SECRET
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_URL
+```
+
+All 10 are present in staging secrets. Nothing the code reads is missing.
+
+Legacy/duplicate secrets NOT referenced by function code (safe pruning
+candidates for Package K with approval): `ANON_KEY`, `URL`, `SERVICE_ROLE_KEY`,
+`CANCEL_EXPIRED_ORDERS_SECRET` (code reads `SCHEDULER_SECRET`, not this), plus
+platform-managed `SUPABASE_DB_URL`, `SUPABASE_JWKS`, `SUPABASE_PUBLISHABLE_KEYS`,
+`SUPABASE_SECRET_KEYS`. Values were NOT inspected. Do NOT unset any of these
+under Package J; leave them until Package K explicit approval.
+
 
 ---
 
@@ -339,3 +442,52 @@ NO-GO
 Frozen candidate remains 484a3ea. This snapshot is read-only reconnaissance and
 authorizes nothing. Staging deployment, migrations, secret changes, and live
 mutating E2E remain gated on Package K human approval.
+
+---
+
+## DB Catalog Snapshot Summary
+
+Executed by: [fill]
+Date: [fill]
+Method: Dashboard SQL Editor / supabase db execute
+Staging project: alxwvyflasewslinufqe
+Frozen candidate: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a
+
+### Migration parity
+
+Staging migration count: [fill]
+Staging high-water: [fill]
+Missing migrations: [fill]
+Extra migrations: [fill]
+Verdict: PASS / FAIL / DRIFT
+
+### Critical RPCs
+
+confirm_cod_payment present: YES / NO
+confirm_cod_payment grants correct: YES / NO
+process_paymob_callback service_role only: YES / NO
+Missing RPCs: [fill]
+Grant failures: [fill]
+Verdict: PASS / FAIL
+
+### Payments policies
+
+payments_insert_own present: YES / NO
+payments_insert_authenticated_own present: YES / NO
+Direct authenticated payment INSERT allowed by policy: YES / NO
+Verdict: PASS / FAIL
+
+### RLS flags
+
+RLS disabled tables: [fill]
+Verdict: PASS / FAIL
+
+### Anonymous/public write grants
+
+Anonymous/public write grants found: YES / NO
+Verdict: PASS / FAIL
+
+### Overall DB catalog verdict
+
+PASS / FAIL
+
