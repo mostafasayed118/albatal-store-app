@@ -11,7 +11,48 @@ Android: DEFERRED (missing signing secrets only) under approval
 PACKAGE-D-FREEZE-484A3EA-DEFERRED-ANDROID. Release verdict: NO-GO.
 Docs evidence branch: docs/release-evidence-484a3ea (RELEASE_GATE + RELEASE_SIGNOFF updated).
 
+## Package K — Staging Security Repair (K1 COMPLETE; staging phases human-gated)
+
+Authorization: PACKAGE-K-2026-07-27-001 (L2 ENABLED, bounded security-repair only).
+Frozen tag release-candidate/484a3ea = PRE-SECURITY-REPAIR candidate ONLY; keep as
+historical evidence — do NOT modify/delete. Release verdict: NO-GO.
+
+K1 DONE (autonomous, non-mutating):
+- Worktree C:/flutter_projects/albatal-package-k on branch fix/package-k-security-grants,
+  created from release-candidate/484a3ea (HEAD 484a3ea, clean).
+- Verified exact function signatures at the tag before writing grants:
+  decrement_stock(UUID,TEXT,TEXT,INTEGER), increment_stock(UUID,TEXT,TEXT,INTEGER),
+  expire_pending_order(UUID), set_payment_provider_order_id(UUID,TEXT).
+- Added supabase/migrations/029_security_grant_repairs.sql (forward-only; no data
+  changes; no RLS policy changes; no renumbering):
+  * REVOKE anon+public INSERT/UPDATE/DELETE on the 10 private tables (SELECT untouched).
+  * decrement_stock/increment_stock/expire_pending_order -> service_role only.
+  * set_payment_provider_order_id -> REVOKE anon/public; GRANT authenticated+service_role
+    (authenticated kept: Paymob initiation calls it on the user JWT, self-verifies ownership).
+- Added supabase/tests/test_029_security_grant_repairs.sql (read-only verification).
+- Commit on branch; both secret scans clean (filename + value). Pushed new branch
+  origin/fix/package-k-security-grants (no force push, no master push).
+- Draft PR #5 -> base master: https://github.com/mostafasayed118/albatal-store-app/pull/5
+  Title: "fix(supabase): Package K security grant repairs (migration 029)". DO NOT MERGE.
+
+PENDING (human-gated — require staging DB password / CI, not done autonomously):
+- K0: apply missing migration 028 to staging (supabase db push --dry-run then push);
+  verify payments_insert_own / payments_insert_authenticated_own => 0 rows.
+- K2: after PR #5 CI is GREEN, record NEW SHA, create annotated tag
+  release-candidate/<NEW_SHORT_SHA> (include CI run URL), push tag only.
+- K3: apply migration 029 to staging from the new frozen candidate.
+- K4: re-run the 5 DB catalog checks (expect: 028+029 present; anon write grants 0 rows;
+  stock/expiry RPCs service_role only; set_payment_provider_order_id anon=false,
+  authenticated=true; payments INSERT policies 0 rows; RLS still all true).
+- K5: run supabase/tests/test_rls_adversarial.sql (expect 0 FAIL).
+- Evidence: docs/evidence/<NEW_SHORT_SHA>/STAGING_SNAPSHOT_POST_K.md on the docs
+  branch (do NOT merge into the frozen tag).
+
+Package I (Android signing): still DEFERRED until the 4 keystore secrets are provided.
+Note: final Android artifact must be rebuilt from the NEW post-K frozen candidate, not 484a3ea.
+
 ## Package J — Read-Only Staging Snapshot (COMPLETE; DB catalog verdict = FAIL)
+
 
 Staging project alxwvyflasewslinufqe. Mode: READ-ONLY. No mutations. config.toml untouched.
 Evidence: docs/evidence/484a3ea/STAGING_SNAPSHOT.md (docs branch).
