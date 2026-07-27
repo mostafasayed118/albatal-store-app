@@ -13,9 +13,8 @@ class FlashSaleSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final flashProduct = state.allProducts.isNotEmpty
-        ? state.allProducts.first
-        : null;
+    final flashProduct =
+        state.allProducts.isNotEmpty ? state.allProducts.first : null;
     return Column(
       children: [
         Row(
@@ -32,8 +31,7 @@ class FlashSaleSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        if (flashProduct != null)
-          FlashSaleCard(product: flashProduct),
+        if (flashProduct != null) FlashSaleCard(product: flashProduct),
       ],
     );
   }

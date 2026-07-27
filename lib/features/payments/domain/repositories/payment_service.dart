@@ -11,6 +11,11 @@ import '../entities/payment.dart';
 /// verification) and observed by the client only through
 /// [watchPaymentStatus]. Flutter must never parse a callback
 /// URL to decide that a payment succeeded.
+///
+/// COD is also server-confirmed: [confirmCodPayment] calls the
+/// `confirm_cod_payment` RPC which atomically marks the payment
+/// as success and the order as paid. The client never declares
+/// COD success without a server response.
 abstract interface class PaymentService {
   /// Initialize payment with the given amount and method.
   Future<PaymentResult> initiatePayment({
@@ -19,6 +24,16 @@ abstract interface class PaymentService {
     required String orderId,
     required String customerEmail,
   });
+
+  /// Confirm a Cash on Delivery payment server-side.
+  ///
+  /// Calls the `confirm_cod_payment` RPC which atomically transitions
+  /// the order from `pending` to `paid` and records the COD payment
+  /// as successful with a server-generated transaction ID.
+  ///
+  /// Returns [PaymentSuccess] on success, [PaymentFailed] on
+  /// rejection (e.g. order already cancelled, expired, not pending).
+  Future<PaymentResult> confirmCodPayment({required String orderId});
 
   /// Watch a payment's status as it is updated server-side.
   ///

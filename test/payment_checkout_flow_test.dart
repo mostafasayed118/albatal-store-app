@@ -35,7 +35,8 @@ class _FlowStub implements PaymentService {
     lastOrderId = orderId;
     return _initResult ??
         PaymentPending(
-          checkoutUrl: 'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t',
+          checkoutUrl:
+              'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t',
         );
   }
 
@@ -44,6 +45,10 @@ class _FlowStub implements PaymentService {
     lastOrderId = orderId;
     return _controller.stream;
   }
+
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
 
   Future<void> close() => _controller.close();
 }
@@ -99,8 +104,7 @@ void main() {
       expect(cubit.state.transactionId, 'txn-real');
     });
 
-    test('server failure transitions cubit to failed with message',
-        () async {
+    test('server failure transitions cubit to failed with message', () async {
       cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
@@ -113,8 +117,7 @@ void main() {
       expect(cubit.state.errorMessage, 'declined');
     });
 
-    test(
-        'timeout emits timedOut and cancels the watch (no permanent loading)',
+    test('timeout emits timedOut and cancels the watch (no permanent loading)',
         () async {
       cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
@@ -167,10 +170,12 @@ void main() {
       await cubit.close();
       // Re-close is a no-op.
       await cubit.close();
-      expect(cubit.state.status, anyOf(
-        PaymentStatus.awaitingVerification,
-        PaymentStatus.timedOut,
-      ));
+      expect(
+          cubit.state.status,
+          anyOf(
+            PaymentStatus.awaitingVerification,
+            PaymentStatus.timedOut,
+          ));
     });
 
     test('initPayment with empty orderId keeps orderId empty (caller rejects)',

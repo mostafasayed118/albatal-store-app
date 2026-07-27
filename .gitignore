@@ -16,6 +16,12 @@ coverage/
 !.env.example
 secrets-*.env
 
+# Build-time env overrides (real values filled in locally)
+# The placeholder templates env.staging.json / env.production.json
+# ARE committed; only the *.local.json variants hold real secrets.
+config/env.*.local.json
+config/env.*.secret.json
+
 # Android
 android/local.properties
 android/key.properties

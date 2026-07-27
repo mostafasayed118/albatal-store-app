@@ -74,14 +74,10 @@ final class CatalogState extends Equatable {
   /// Price bounds computed from the full catalog.
   Money get catalogPriceMin => allProducts.isEmpty
       ? Money.zero
-      : allProducts
-          .map((p) => p.price)
-          .reduce((a, b) => a < b ? a : b);
+      : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
   Money get catalogPriceMax => allProducts.isEmpty
       ? _unboundedMax
-      : allProducts
-          .map((p) => p.price)
-          .reduce((a, b) => a > b ? a : b);
+      : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
 
   /// Products in a specific category (excluding "All").
   List<Product> productsInCategory(String category) =>
@@ -155,8 +151,7 @@ final class CatalogState extends Equatable {
         recentQueries: recentQueries ?? this.recentQueries,
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
         priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
-        priceMax:
-            resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
+        priceMax: resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
       );
 
   @override

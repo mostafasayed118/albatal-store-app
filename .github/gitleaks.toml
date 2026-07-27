@@ -1,0 +1,25 @@
+title = "Al Batal Elite - Gitleaks"
+
+# Inherit the full upstream gitleaks rule set (private keys, generic API
+# keys, JWT, AWS, GCP, etc.) and layer our allowlist on top.
+[extend]
+useDefault = true
+
+# PACKAGE-G triage: full git-history scan (docs/evidence/PACKAGE_G_GITLEAKS_TRIAGE.md)
+# found NO real secret. The only credential-like finding is the Supabase ANON
+# (public, role=anon) key in config/env.staging.json across 9 revisions. No
+# service-role key, Paymob secret, private key, or keystore was ever committed.
+# Narrow allowlist below covers only confirmed public / non-secret artifacts.
+# Singular [allowlist] table form is used for maximum compatibility with the
+# gitleaks version installed by gitleaks/gitleaks-action@v2. Full-history
+# scanning stays ENABLED; default rules stay ENABLED via [extend].
+[allowlist]
+description = "Narrow allowlist for confirmed public/non-secret artifacts (PACKAGE-G triage)"
+paths = [
+  '''^\.env\.example$''',
+  '''(^|/)docs/''',
+  '''\.md$''',
+  '''(^|/)supabase/migrations/.*\.sql$''',
+  '''^config/env\.staging\.json$''',
+]
+

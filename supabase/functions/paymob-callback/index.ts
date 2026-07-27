@@ -37,11 +37,12 @@ import {
   buildHmacPayload,
   verifyHmac,
 } from "./hmac.ts";
-import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, jsonHeadersFor } from "../_shared/cors.ts";
+import { requireSecret } from "../_shared/secrets.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   // ─── 1. Reject non-POST / invalid content ──────────────
@@ -50,7 +51,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ message: "Method not allowed" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 400, headers: jsonHeadersFor(req) },
     );
   }
 
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
     if (!body || body.trim().length === 0) {
       return new Response(
         JSON.stringify({ message: "Empty callback body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -69,16 +70,9 @@ Deno.serve(async (req) => {
     // CRIT-03: the secret MUST be present and non-empty. If
     // it is not, the server cannot verify any callback, so we
     // return 503 and change NO state.
-    const hmacSecret = Deno.env.get("PAYMOB_HMAC_SECRET");
-    if (!hmacSecret || hmacSecret.trim().length === 0) {
-      console.error(
-        "paymob-callback: PAYMOB_HMAC_SECRET is not configured — rejecting callback (503)",
-      );
-      return new Response(
-        JSON.stringify({ message: "HMAC configuration unavailable" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    const hmacFail = requireSecret(req, "PAYMOB_HMAC_SECRET");
+    if (hmacFail) return hmacFail;
+    const hmacSecret = Deno.env.get("PAYMOB_HMAC_SECRET") as string;
 
     // ─── 3. Build canonical HMAC payload + verify ─────────
     // HIGH-02: build the payload from the documented fields
@@ -103,7 +97,7 @@ Deno.serve(async (req) => {
       console.error("paymob-callback: HMAC verification failed");
       return new Response(
         JSON.stringify({ message: "Invalid signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -118,7 +112,7 @@ Deno.serve(async (req) => {
     if (!paymobOrderId || !paymobTxnId || !amountCentsRaw) {
       return new Response(
         JSON.stringify({ message: "Missing required callback fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -126,7 +120,7 @@ Deno.serve(async (req) => {
     if (Number.isNaN(amountCents)) {
       return new Response(
         JSON.stringify({ message: "Malformed amount_cents" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -137,9 +131,13 @@ Deno.serve(async (req) => {
     // amount/currency, and is idempotent. We use the
     // service-role client because the callback is an
     // unauthenticated webhook from Paymob (HMAC is the auth).
+    //
+    // Fail closed when service_role key is missing.
+    const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceRoleFail) return serviceRoleFail;
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
     );
 
     const { data, error } = await supabase.rpc("process_paymob_callback", {
@@ -154,7 +152,7 @@ Deno.serve(async (req) => {
       console.error("paymob-callback: RPC error", error.message);
       return new Response(
         JSON.stringify({ message: "Callback processing failed" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -172,7 +170,7 @@ Deno.serve(async (req) => {
       );
       return new Response(
         JSON.stringify({ message: "Callback processed", code }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 200, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -182,13 +180,13 @@ Deno.serve(async (req) => {
     );
     return new Response(
       JSON.stringify({ message: "Callback rejected", code }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 400, headers: jsonHeadersFor(req) },
     );
   } catch (_error) {
     console.error("paymob-callback: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: jsonHeaders() }
+      { status: 500, headers: jsonHeadersFor(req) }
     );
   }
 });

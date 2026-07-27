@@ -62,7 +62,7 @@ class _AddressFormState extends State<AddressForm> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottomInset + 24),
       child: Form(
         key: _formKey,
