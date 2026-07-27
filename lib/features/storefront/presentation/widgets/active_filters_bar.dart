@@ -37,8 +37,7 @@ class ActiveFiltersBar extends StatelessWidget {
     if (state.priceMin > Money.zero ||
         state.priceMax < const Money.egp(999999)) {
       chips.add(_filterChip(
-        label:
-            '${state.priceMin.format()} – ${state.priceMax.format()}',
+        label: '${state.priceMin.format()} – ${state.priceMax.format()}',
         onDeleted: () =>
             catalog.setPriceRange(Money.zero, const Money.egp(999999)),
       ));

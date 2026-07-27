@@ -199,8 +199,7 @@ extension OrderCodec on Order {
               line: (raw['address'] as Map)['line'] as String,
               city: (raw['address'] as Map)['city'] as String,
               country: (raw['address'] as Map)['country'] as String? ?? '',
-              isDefault:
-                  (raw['address'] as Map)['isDefault'] as bool? ?? false,
+              isDefault: (raw['address'] as Map)['isDefault'] as bool? ?? false,
             )
           : null,
     );

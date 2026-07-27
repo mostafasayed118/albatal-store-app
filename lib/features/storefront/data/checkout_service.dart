@@ -68,7 +68,8 @@ class CheckoutService implements CheckoutRepository {
       ));
     } on PostgrestException catch (e) {
       final message = e.message;
-      return Failure(AppError(message.isNotEmpty ? message : 'Checkout failed'));
+      return Failure(
+          AppError(message.isNotEmpty ? message : 'Checkout failed'));
     } catch (e) {
       return Failure(AppError('Checkout failed: $e'));
     }

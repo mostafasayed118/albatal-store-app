@@ -84,7 +84,8 @@ class _OrderTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final status = order['status'] as String? ?? 'unknown';
     final total = Money(order['total'] as int? ?? 0).format();
-    final customerName = order['profiles']?['full_name'] as String? ?? 'Unknown';
+    final customerName =
+        order['profiles']?['full_name'] as String? ?? 'Unknown';
     final itemCount = (order['order_items'] as List?)?.length ?? 0;
 
     return Card(

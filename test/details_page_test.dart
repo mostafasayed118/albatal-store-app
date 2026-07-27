@@ -18,7 +18,8 @@ Widget _harness(String productId) {
         BlocProvider(create: (_) => WishlistCubit(persistence)),
         BlocProvider(create: (_) => CartCubit(persistence)),
       ],
-      child: DetailsPage(id: productId, catalogRepository: LocalCatalogRepository()),
+      child: DetailsPage(
+          id: productId, catalogRepository: LocalCatalogRepository()),
     ),
   );
 }

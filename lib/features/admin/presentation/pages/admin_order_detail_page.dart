@@ -25,7 +25,8 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('${l.order} #${widget.orderId.substring(0, 8)}...')),
+      appBar: AppBar(
+          title: Text('${l.order} #${widget.orderId.substring(0, 8)}...')),
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
@@ -77,7 +78,8 @@ class _OrderStatusCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -323,7 +325,9 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(label,
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const Spacer(),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],

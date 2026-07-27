@@ -15,7 +15,8 @@ class PrivacyPolicyPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l.privacyPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.privacyPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -34,7 +35,8 @@ class TermsOfServicePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l.termsOfServiceContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.termsOfServiceContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -53,7 +55,8 @@ class ShippingPolicyPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l.shippingPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.shippingPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -72,7 +75,8 @@ class ReturnsPolicyPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l.returnsPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.returnsPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -113,7 +117,8 @@ class SupportPage extends StatelessWidget {
               subtitle: Text(l.emailSupportAddress),
               trailing: const Icon(Icons.open_in_new),
               onTap: () async {
-                final uri = Uri.parse('mailto:${context.l10n.emailSupportAddress}');
+                final uri =
+                    Uri.parse('mailto:${context.l10n.emailSupportAddress}');
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }

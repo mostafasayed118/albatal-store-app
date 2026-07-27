@@ -32,14 +32,12 @@ class SupabaseConfig {
     final anonKey = EnvConfig.supabaseAnonKey;
 
     if (url.isEmpty) {
-      throw AssertionError(
-          'SUPABASE_URL is missing. Build with '
+      throw AssertionError('SUPABASE_URL is missing. Build with '
           '--dart-define-from-file=config/env.staging.json '
           '(or env.production.json) and fill in your Supabase project URL.');
     }
     if (anonKey.isEmpty) {
-      throw AssertionError(
-          'SUPABASE_ANON_KEY is missing. Build with '
+      throw AssertionError('SUPABASE_ANON_KEY is missing. Build with '
           '--dart-define-from-file=config/env.staging.json '
           '(or env.production.json) and fill in your Supabase anon key.');
     }
