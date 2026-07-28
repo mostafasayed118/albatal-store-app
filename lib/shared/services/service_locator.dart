@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/services/crash_reporting_service.dart';
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
 import '../../features/admin/data/supabase_admin_repository.dart';
@@ -18,10 +17,10 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_orders_repository.dart';
-import '../../features/storefront/data/supabase_orders_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
+import '../../features/storefront/data/supabase_orders_repository.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
@@ -29,6 +28,9 @@ import '../../features/storefront/domain/repositories/orders_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/support/data/local_support_repository.dart';
 import '../../features/support/domain/repositories/support_repository.dart';
+import 'crash_reporting_service.dart';
+import 'env_config.dart';
+import 'sentry_crash_reporting_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -50,7 +52,8 @@ Future<void> configureDependencies() async {
         () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())
     ..registerLazySingleton<AuthRepository>(() => SupabaseAuthRepository())
-    ..registerLazySingleton<ProfileRepository>(() => SupabaseProfileRepository())
+    ..registerLazySingleton<ProfileRepository>(
+        () => SupabaseProfileRepository())
     ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
     ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
     ..registerLazySingleton<SupportRepository>(() => LocalSupportRepository())
@@ -64,9 +67,15 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<OrdersRepository>(() => kDebugMode
         ? LocalOrdersRepository(getIt<LocalStorefrontPersistence>())
         : SupabaseOrdersRepository())
-    ..registerLazySingleton<CatalogRepository>(
-        () => SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
-    // Crash reporting: NoOp until sentry_flutter is approved in pubspec.
+    ..registerLazySingleton<CatalogRepository>(() =>
+        SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
+    // Crash reporting: Use Sentry when DSN is configured, NoOp otherwise.
     ..registerLazySingleton<CrashReportingService>(
-        () => const NoOpCrashReportingService());
+      () {
+        if (EnvConfig.sentryDsn.isEmpty) {
+          return const NoOpCrashReportingService();
+        }
+        return SentryCrashReportingService();
+      },
+    );
 }

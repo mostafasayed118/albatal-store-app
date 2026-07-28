@@ -42,8 +42,8 @@ final class AlBatalApp extends StatelessWidget {
                     productLookup: getIt<CatalogRepository>().findProductById,
                   )..restore()),
           BlocProvider(
-              create: (_) => WishlistCubit(getIt<WishlistRepository>())
-                ..restore()),
+              create: (_) =>
+                  WishlistCubit(getIt<WishlistRepository>())..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
           BlocProvider(
@@ -54,9 +54,7 @@ final class AlBatalApp extends StatelessWidget {
                     authRepository: getIt<AuthRepository>(),
                     profileRepository: getIt<ProfileRepository>(),
                   )..checkSession()),
-          BlocProvider(
-              create: (_) =>
-                  AdminCubit(getIt<AdminRepository>())),
+          BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
             buildWhen: (a, b) =>
@@ -72,8 +70,7 @@ final class AlBatalApp extends StatelessWidget {
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: appRouter,
-                  builder: (context, child) =>
-                      EnvironmentBanner(child: child!),
+                  builder: (context, child) => EnvironmentBanner(child: child!),
                 )));
   }
 }

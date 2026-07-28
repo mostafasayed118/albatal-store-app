@@ -28,7 +28,11 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, jsonHeadersFor, requireCors } from "../_shared/cors.ts";
+import {
+  constantTimeEquals,
+  requireSecret,
+} from "../_shared/secrets.ts";
 
 // Email templates for different order events.
 // Subject/body use only the order id prefix to avoid leaking
@@ -61,8 +65,12 @@ const templates: Record<string, { subject: string; body: string }> = {
 };
 
 Deno.serve(async (req) => {
+  // Fail closed on CORS misconfiguration.
+  const corsFail = requireCors(req);
+  if (corsFail) return corsFail;
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   try {
@@ -70,35 +78,16 @@ Deno.serve(async (req) => {
     // Only callers that present the server-side internal key
     // may create notifications. The key is never shipped to
     // Flutter.
-    const expectedKey = Deno.env.get("NOTIFICATIONS_INTERNAL_KEY");
-    if (!expectedKey || expectedKey.trim().length === 0) {
-      // The server is not configured to send notifications —
-      // fail closed.
-      console.error(
-        "send-order-notification: NOTIFICATIONS_INTERNAL_KEY is not configured",
-      );
-      return new Response(
-        JSON.stringify({ message: "Notification service unavailable" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    const keyFail = requireSecret(req, "NOTIFICATIONS_INTERNAL_KEY");
+    if (keyFail) return keyFail;
+    const expectedKey = Deno.env.get("NOTIFICATIONS_INTERNAL_KEY") as string;
 
     const providedKey = req.headers.get("x-internal-key") ?? "";
     // Constant-time compare so the key cannot be timed.
-    if (providedKey.length !== expectedKey.length) {
+    if (!constantTimeEquals(providedKey, expectedKey)) {
       return new Response(
         JSON.stringify({ message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    let diff = 0;
-    for (let i = 0; i < expectedKey.length; i++) {
-      diff |= providedKey.charCodeAt(i) ^ expectedKey.charCodeAt(i);
-    }
-    if (diff !== 0) {
-      return new Response(
-        JSON.stringify({ message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 401, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -109,7 +98,7 @@ Deno.serve(async (req) => {
     if (!order_id || !event || !recipient_email) {
       return new Response(
         JSON.stringify({ message: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -117,7 +106,7 @@ Deno.serve(async (req) => {
     if (!template) {
       return new Response(
         JSON.stringify({ message: "Unknown event" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 400, headers: jsonHeadersFor(req) },
       );
     }
 
@@ -132,9 +121,21 @@ Deno.serve(async (req) => {
     // Safe audit log — no recipient email, no payment details.
     console.log(`send-order-notification: event=${event} order=${orderPrefix}`);
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) {
+      console.error("send-order-notification: SUPABASE_URL is not configured");
+      return new Response(
+        JSON.stringify({ message: "Server configuration error" }),
+        { status: 503, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceRoleFail) return serviceRoleFail;
+
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
     );
 
     // Store notification record.
@@ -150,13 +151,13 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ message: "Notification sent", event }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: jsonHeadersFor(req) },
     );
   } catch (_error) {
     console.error("send-order-notification: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: jsonHeaders() }
+      { status: 500, headers: jsonHeadersFor(req) }
     );
   }
 });

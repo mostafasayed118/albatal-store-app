@@ -19,11 +19,15 @@
 
 import "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders, jsonHeaders } from "../_shared/cors.ts";
+import { corsHeadersFor, jsonHeadersFor, requireCors } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
+  // Fail closed on CORS misconfiguration.
+  const corsFail = requireCors(req);
+  if (corsFail) return corsFail;
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   try {
@@ -32,7 +36,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ message: "Authentication required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -52,7 +56,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ message: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -77,7 +81,7 @@ Deno.serve(async (req) => {
       const status = error.code === "PGRST301" ? 400 : 400;
       return new Response(
         JSON.stringify({ message: "Checkout failed. Please try again." }),
-        { status, headers: jsonHeaders() }
+        { status, headers: jsonHeadersFor(req) }
       );
     }
 
@@ -92,13 +96,13 @@ Deno.serve(async (req) => {
         expires_at: data.expires_at,
         idempotent: data.idempotent,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: jsonHeadersFor(req) }
     );
   } catch (_error) {
     console.error("checkout: unhandled error");
     return new Response(
       JSON.stringify({ message: "Internal server error" }),
-      { status: 500, headers: jsonHeaders() }
+      { status: 500, headers: jsonHeadersFor(req) }
     );
   }
 });

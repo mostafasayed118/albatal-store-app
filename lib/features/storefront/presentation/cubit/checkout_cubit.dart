@@ -108,9 +108,12 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// original order instead of creating a duplicate. When the user
   /// navigates away and starts a new checkout, a new cubit (and thus
   /// a new key) is created.
+  static int _instanceCounter = 0;
+  final int _instanceId = ++_instanceCounter;
+
   String _generateIdempotencyKey() {
     _attemptCounter++;
-    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-${identityHashCode(this)}';
+    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-$_instanceId';
   }
 
   /// Create a pending order via the server-side checkout RPC.
