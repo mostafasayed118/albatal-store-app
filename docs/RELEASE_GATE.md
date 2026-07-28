@@ -159,3 +159,43 @@ E2E authorization `STAGING-E2E-B74D326-2026-07-28` was NOT recorded (preconditio
 `test_rls_adversarial.sql` PASS is unmet). COD/Paymob E2E remains NOT authorized.
 
 **RELEASE: NO-GO (unchanged).**
+
+## Package L.1 / E2E Precondition Closure — 2026-07-28
+
+Authoritative staging candidate: e9a6debbb3f807030bab698f8b92241e5b3526d4
+Frozen tag: release-candidate/e9a6deb
+PR: https://github.com/mostafasayed118/albatal-store-app/pull/7
+
+### Security DB gates
+
+- Migration 028 applied: PASS
+- Migration 029 applied: PASS
+- Migration 030 applied: PASS
+- Payments INSERT policies absent: PASS
+- Anonymous/public write grants revoked: PASS
+- Privileged RPC grants matrix: PASS
+- RLS enabled on private tables: PASS
+- profiles_update_own removed: PASS
+- profiles_update_own_safe present with non-null WITH CHECK: PASS
+- RLS-ESC-001: REMEDIATED
+
+### Formal adversarial suite
+
+- Committed executable suite: supabase/tests/test_rls_adversarial_dbquery.sql
+- Result: 44 PASS / 0 FAIL
+- Original psql suite retained
+- No security expectations weakened
+
+### E2E precondition
+
+SATISFIED
+
+### E2E authorization
+
+STAGING-E2E-E9A6DEB-2026-07-28
+
+### Release status
+
+Release verdict remains NO-GO.
+Android signed artifact remains NO-GO / DEFERRED.
+Production candidacy remains NOT DESIGNATED.
