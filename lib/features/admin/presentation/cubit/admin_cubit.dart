@@ -94,8 +94,7 @@ class AdminCubit extends Cubit<AdminState> {
     emit(state.copyWith(status: AdminStatus.loading));
     try {
       final details = await _adminRepository.getOrderDetails(orderId);
-      emit(state.copyWith(
-          status: AdminStatus.ready, selectedOrder: details));
+      emit(state.copyWith(status: AdminStatus.ready, selectedOrder: details));
     } catch (e) {
       emit(state.copyWith(
           status: AdminStatus.error, errorMessage: 'Failed to load order'));

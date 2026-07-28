@@ -161,10 +161,10 @@ class AuthCubit extends Cubit<AuthState> {
       case Failure(:final error):
         Log.w('Profile save failed: ${error.message}',
             category: LogCategory.auth);
-        // Don't change the in-memory profile — the user's edit is preserved
-        // locally even if the server write failed. A future read will
-        // reconcile. Surfacing this as a hard error would lose the user's
-        // input on a transient network blip.
+      // Don't change the in-memory profile — the user's edit is preserved
+      // locally even if the server write failed. A future read will
+      // reconcile. Surfacing this as a hard error would lose the user's
+      // input on a transient network blip.
     }
   }
 
@@ -187,7 +187,8 @@ class AuthCubit extends Cubit<AuthState> {
   // ─── Private helpers ───────────────────────────────────
 
   void _listenToAuthChanges() {
-    _authSubscription = _authRepository.authStateChanges.listen((outcome) async {
+    _authSubscription =
+        _authRepository.authStateChanges.listen((outcome) async {
       if (outcome != null) {
         await _loadProfile(outcome.userId);
       } else {

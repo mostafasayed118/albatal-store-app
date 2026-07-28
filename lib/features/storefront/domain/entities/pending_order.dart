@@ -33,6 +33,13 @@ final class PendingOrder extends Equatable {
   final bool isIdempotentRetry;
 
   @override
-  List<Object?> get props =>
-      [orderId, subtotal, shipping, total, expiresAt, status, isIdempotentRetry];
+  List<Object?> get props => [
+        orderId,
+        subtotal,
+        shipping,
+        total,
+        expiresAt,
+        status,
+        isIdempotentRetry
+      ];
 }

@@ -37,11 +37,11 @@ class _SignInPageState extends State<SignInPage> {
             context.go('/home');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.errorMessage!)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
           }
         },
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
@@ -77,9 +77,8 @@ class _SignInPageState extends State<SignInPage> {
                   obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? l.passwordTooShort
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.length < 6) ? l.passwordTooShort : null,
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -97,8 +96,7 @@ class _SignInPageState extends State<SignInPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2))
                           : Text(l.signIn),
                     );
                   },

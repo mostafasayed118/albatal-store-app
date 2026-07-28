@@ -10,9 +10,10 @@
 // ============================================================
 
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
-import { readFileSync } from "https://deno.land/std@0.177.0/fs/mod.ts";
 
-const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname;
+const readFileSync = Deno.readTextFileSync;
+
+const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
 
 Deno.test("cancel-expired-orders requires scheduler secret", () => {
   const source = readFileSync(SOURCE_PATH, "utf-8");
@@ -24,11 +25,18 @@ Deno.test("cancel-expired-orders requires scheduler secret", () => {
     "Function must check x-scheduler-secret header",
   );
 
-  // Must fail closed when secret is missing
+  // Must use requireSecretHeader for constant-time comparison
   assertEquals(
-    source.includes("CANCEL_EXPIRED_ORDERS_SECRET"),
+    source.includes("requireSecretHeader"),
     true,
-    "Function must read CANCEL_EXPIRED_ORDERS_SECRET from env",
+    "Function must use requireSecretHeader for constant-time secret comparison",
+  );
+
+  // Must read SCHEDULER_SECRET (canonical) or CANCEL_EXPIRED_ORDERS_SECRET (legacy)
+  assertEquals(
+    source.includes("SCHEDULER_SECRET") || source.includes("CANCEL_EXPIRED_ORDERS_SECRET"),
+    true,
+    "Function must read scheduler secret from env",
   );
 });
 
@@ -40,6 +48,15 @@ Deno.test("cancel-expired-orders uses atomic RPC", () => {
     source.includes("expire_pending_order"),
     true,
     "Function must delegate to expire_pending_order RPC",
+  );
+});
+
+Deno.test("cancel-expired-orders uses requireCors for fail-closed CORS", () => {
+  const source = readFileSync(SOURCE_PATH, "utf-8");
+  assertEquals(
+    source.includes("requireCors(req)"),
+    true,
+    "Function must call requireCors(req) for fail-closed CORS",
   );
 });
 

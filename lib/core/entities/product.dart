@@ -35,9 +35,11 @@ final class Product extends Equatable {
   final double rating;
   final int reviewCount;
 
-  int? get discountPercent => oldPrice == null
-      ? null
-      : ((1 - price.minorUnits / oldPrice!.minorUnits) * 100).round();
+  int? get discountPercent {
+    final original = oldPrice;
+    if (original == null || original.minorUnits == 0) return null;
+    return ((1 - price.minorUnits / original.minorUnits) * 100).round();
+  }
 
   /// Stock for a specific variant key like "Emerald-2m".
   int stockFor(String color, String length) => stock['$color-$length'] ?? 0;

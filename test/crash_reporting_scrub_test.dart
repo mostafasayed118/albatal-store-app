@@ -1,4 +1,4 @@
-import 'package:al_batal_elite/core/services/crash_reporting_service.dart';
+import 'package:al_batal_elite/shared/services/crash_reporting_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

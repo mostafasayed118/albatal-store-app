@@ -67,7 +67,23 @@ final class WishlistCubit extends Cubit<WishlistState> {
   void toggle(String id) {
     final next = {...state.ids}..toggle(id);
     emit(WishlistState(ids: next, status: WishlistStatus.ready));
-    _repository.writeWishlist(next);
+    _persist(next);
+  }
+
+  /// Await persistence and surface any failure as a follow-up error state.
+  /// The in-memory state is preserved (user's intent kept for the session)
+  /// but the UI is warned the wishlist won't survive a restart.
+  Future<void> _persist(Set<String> ids) async {
+    final result = await _repository.writeWishlist(ids);
+    switch (result) {
+      case Success():
+        break;
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: WishlistStatus.error,
+          errorMessage: 'Wishlist may not be saved: ${error.message}',
+        ));
+    }
   }
 }
 

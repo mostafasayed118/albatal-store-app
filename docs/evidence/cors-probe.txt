@@ -1,0 +1,22 @@
+== CORS Header Probe Evidence ==
+Date: 2026-07-25
+
+Endpoint: https://alxwvyflasewslinufqe.supabase.co/functions/v1/paymob-callback
+
+Request: curl -sI "https://alxwvyflasewslinufqe.supabase.co/functions/v1/paymob-callback"
+
+Response Headers:
+  HTTP/1.1 401 Unauthorized
+  Access-Control-Allow-Origin: *
+  access-control-allow-headers: authorization, x-client-info, apikey
+  ...
+
+Status: FAIL - Access-Control-Allow-Origin is wildcard *
+
+OPTIONS preflight:
+  curl -sI -X OPTIONS -H "Origin: https://evil.example.com" -H "Access-Control-Request-Method: POST" "https://alxwvyflasewslinufqe.supabase.co/functions/v1/paymob-callback"
+
+  HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: *
+
+Status: FAIL - CORS allows any origin

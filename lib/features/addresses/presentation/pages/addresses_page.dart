@@ -12,51 +12,51 @@ class AddressesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.shippingAddresses)),
-      body: BlocBuilder<AddressesCubit, AddressesState>(
-        builder: (context, s) {
-          if (s.status == AddressesStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (s.status == AddressesStatus.failure) {
-            return Center(child: Text(s.errorMessage!));
-          }
-          if (s.addresses.isEmpty) {
-            return Center(child: Text(l.noAddressesSaved));
-          }
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: s.addresses.map((a) {
-              return Card(
-                child: ListTile(
-                  leading: Icon(
-                      a.isDefault ? Icons.home : Icons.location_on_outlined),
-                  title: Text(a.recipient),
-                  subtitle: Text('${a.line}, ${a.city}, ${a.country}'),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (v) {
-                      final c = context.read<AddressesCubit>();
-                      if (v == 'default') c.setDefault(a.id);
-                      if (v == 'delete') c.remove(a.id);
-                      if (v == 'edit') _edit(context, a);
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(
-                          value: 'default', child: Text('Set as default')),
-                      PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
-                    ],
+        appBar: AppBar(title: Text(l.shippingAddresses)),
+        body: BlocBuilder<AddressesCubit, AddressesState>(
+          builder: (context, s) {
+            if (s.status == AddressesStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (s.status == AddressesStatus.failure) {
+              return Center(child: Text(s.errorMessage!));
+            }
+            if (s.addresses.isEmpty) {
+              return Center(child: Text(l.noAddressesSaved));
+            }
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: s.addresses.map((a) {
+                return Card(
+                  child: ListTile(
+                    leading: Icon(
+                        a.isDefault ? Icons.home : Icons.location_on_outlined),
+                    title: Text(a.recipient),
+                    subtitle: Text('${a.line}, ${a.city}, ${a.country}'),
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (v) {
+                        final c = context.read<AddressesCubit>();
+                        if (v == 'default') c.setDefault(a.id);
+                        if (v == 'delete') c.remove(a.id);
+                        if (v == 'edit') _edit(context, a);
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                            value: 'default', child: Text('Set as default')),
+                        PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _edit(context, null),
-          icon: const Icon(Icons.add),
-          label: Text(l.addAddress)));
+                );
+              }).toList(),
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _edit(context, null),
+            icon: const Icon(Icons.add),
+            label: Text(l.addAddress)));
   }
 }
 
