@@ -2,6 +2,40 @@
 
 Last run: 2026-07-27T10:14:00Z
 
+## Package K3 — Migration 029 applied to staging; RLS adversarial FAIL (2026-07-28)
+
+**Authorization:** `PACKAGE-K3-APPLY-029-B74D326` (owner: Mustaf Sayed Saeed).
+Staging candidate designated `b74d32653462d555213ac171b12f0f4b7cded7ad`
+(tag `release-candidate/b74d326`), superseding `fee90bb2`. Migration 029 applied
+from a clean worktree at the frozen tag via `supabase db push` (dry-run confirmed
+only 029 pending). Evidence: `docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md`
+and `docs/evidence/staging-deployment-2026-07-28.md`.
+
+**DB catalog: PASS** — ledger high-water 029; payments INSERT policies absent;
+anon/public write grants 30→0; all 9 RPC grants match target matrix; RLS enabled
+on all 10 tables. `test_029_security_grant_repairs.sql` PASS.
+
+**RLS adversarial: FAIL (3/44).** `test_rls_adversarial.sql` had never been run;
+a runner copy exposed 3 harness defects (reserved `desc` param; service_role
+seeding of auth.users; narrow `check_violation` handlers). After fixes: 41 PASS,
+3 FAIL, tracing to one confirmed vulnerability.
+
+**FINDING RLS-ESC-001 (confirmed P0): profiles admin self-escalation.** `profiles`
+has two permissive UPDATE policies — `profiles_update_own` (from 002, WITH CHECK
+null) and `profiles_update_own_safe` (WITH CHECK guarding is_admin). Permissive
+policies OR together and a null WITH CHECK falls back to USING, so setting
+`is_admin=true` still passes `profiles_update_own`'s check. The redundant policy
+defeats the escalation guard. Tests 3.8/3.9 cascade from 3.7 in the shared
+transaction. No migration through 029 drops the old policy.
+
+**Owner decisions (2026-07-28):** push K3 FAIL evidence now (APPROVED); remediate
+via migration 030 under **Package L** (`PACKAGE-L-RLS-ESC-001-2026-07-28`); E2E
+**NOT** authorized (`STAGING-E2E-B74D326-2026-07-28` not recorded — precondition
+`test_rls_adversarial.sql PASS` unmet); release verdict remains **NO-GO**.
+
+---
+
+
 ## Package D — Candidate Freeze (COMPLETE)
 
 Frozen candidate SHA: 484a3ea39462277dd9ab0830b26d4fd724ab0c1a

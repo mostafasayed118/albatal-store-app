@@ -114,3 +114,48 @@ Approval reference: PACKAGE-D-FREEZE-484A3EA-DEFERRED-ANDROID
 
 This does not authorize staging deployment, migration application, Edge Function deployment, secret changes, beta, or production release.
 
+
+## Package K3 — Staging Migration 029 Applied; RLS Adversarial FAIL (2026-07-28)
+
+Authorization: `PACKAGE-K3-APPLY-029-B74D326` (owner: Mustaf Sayed Saeed).
+
+Staging candidate now designated `b74d32653462d555213ac171b12f0f4b7cded7ad`
+(tag `release-candidate/b74d326`), superseding `484a3ea` / base `fee90bb2`.
+Migration 029 was applied to staging from a clean worktree at the frozen tag
+(`supabase db push`; dry-run confirmed only 029 pending).
+
+Evidence (candidate-SHA-bound):
+- `docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md`
+- `docs/evidence/staging-deployment-2026-07-28.md`
+
+Gate movement (this candidate only — all others remain NO-GO):
+
+| Gate | Status after K3 | Evidence |
+|---|---|---|
+| Migrations applied | VERIFIED (029 high-water) | STAGING_SNAPSHOT_POST_K §migrations |
+| RPC grants verified | VERIFIED (post-029; 9/9 match matrix) | STAGING_SNAPSHOT_POST_K §rpc-grants |
+| RLS adversarial | FAIL (3/44 — RLS-ESC-001) | STAGING_SNAPSHOT_POST_K §finding |
+
+DB catalog: PASS (5/5 checks) — ledger high-water 029; payments INSERT policies
+absent; anon/public write grants 30→0; 9/9 RPC grants match matrix; RLS enabled
+on all 10 tables. `test_029_security_grant_repairs.sql` PASS.
+
+RLS adversarial: FAIL (3/44). `test_rls_adversarial.sql` executed for the first
+time (41 PASS / 3 FAIL after fixing 3 runner-only harness defects). Failures
+3.7/3.8/3.9 trace to one confirmed vulnerability.
+
+FINDING RLS-ESC-001 (confirmed P0) — profiles admin self-escalation. `profiles`
+carries two permissive UPDATE policies: `profiles_update_own` (from migration 002,
+WITH CHECK null) and `profiles_update_own_safe` (WITH CHECK guarding is_admin).
+Permissive policies OR-combine and a null WITH CHECK falls back to USING, so
+`is_admin=true` still passes `profiles_update_own`. The redundant policy defeats
+the escalation guard. No migration through 029 drops the old policy.
+
+Remediation authorized under **Package L** (`PACKAGE-L-RLS-ESC-001-2026-07-28`):
+forward-only migration 030 dropping `profiles_update_own`. Not yet applied —
+gated on CI green + new tag freeze.
+
+E2E authorization `STAGING-E2E-B74D326-2026-07-28` was NOT recorded (precondition
+`test_rls_adversarial.sql` PASS is unmet). COD/Paymob E2E remains NOT authorized.
+
+**RELEASE: NO-GO (unchanged).**
