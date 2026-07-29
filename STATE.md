@@ -1,6 +1,47 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-26T11:25:00Z
+Last run: 2026-07-28T00:00:00Z
+
+## New — 2026-07-28
+
+### Package K3 — Migration 029 applied to staging; RLS adversarial FAIL (L2, authorized)
+
+**Authorization:** `PACKAGE-K3-APPLY-029-B74D326` (owner: Mustaf Sayed Saeed).
+Staging candidate designated `b74d32653462d555213ac171b12f0f4b7cded7ad`
+(tag `release-candidate/b74d326`), superseding `fee90bb2`. Applied migration 029
+from a clean worktree at the frozen tag via `supabase db push` (dry-run confirmed
+only 029 pending). Evidence: `docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md`.
+
+**DB catalog: PASS** — ledger high-water 029; payments INSERT policies absent;
+anon/public write grants 30→0; all 9 RPC grants match target matrix; RLS enabled
+on all 10 tables. `test_029_security_grant_repairs.sql` PASS.
+
+**RLS adversarial: FAIL (3/44).** `test_rls_adversarial.sql` had never been run;
+a runner copy (`scripts/run_rls_adversarial_dbquery.sql` via
+`scripts/transform_rls_suite.ps1`) exposed 3 harness defects (reserved `desc`
+param; service_role seeding of auth.users; narrow `check_violation` handlers) —
+fixed in the runner copy only; committed suite unchanged. After fixes: 41 PASS,
+3 FAIL.
+
+**FINDING RLS-ESC-001 (confirmed, real): profiles admin self-escalation.**
+`profiles` has two permissive UPDATE policies — `profiles_update_own` (from 002,
+WITH CHECK null) and `profiles_update_own_safe` (WITH CHECK guarding is_admin).
+Permissive policies OR together and a null WITH CHECK falls back to USING, so
+setting `is_admin=true` still passes `profiles_update_own`'s check
+(`auth.uid()=id`). The redundant policy defeats the escalation guard. Tests
+3.8/3.9 cascade from 3.7 in the shared transaction (once admin, admin-only
+functions stop raising). Migration 003 added the safe policy but never dropped
+the old one; no migration through 029 drops it. Independent of 029's grant scope.
+
+**Recommended remediation (owner authorization required — NOT applied):** a new
+migration dropping the redundant `profiles_update_own`, then re-run the
+adversarial suite (expect 3.7/3.8/3.9 to pass).
+
+**E2E NOT authorized** — post-K is not ALL-PASS, so `STAGING-E2E-B74D326-2026-07-28`
+is **not recorded**. No secret changes, no Edge Function deploy, no source/
+migration commits. Release verdict remains **NO-GO**.
+
+---
 
 ## New - 2026-07-26
 

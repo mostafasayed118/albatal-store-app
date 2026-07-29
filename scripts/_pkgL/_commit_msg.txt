@@ -1,0 +1,11 @@
+docs: record staging E2E partial pass and Paymob initiation blocker
+
+- Preflight PASS
+- COD E2E PASS 5/5 plus 2 N/A by design
+- Forged HMAC quick probe PASS
+- CORS disallowed-origin probe PASS
+- Paymob initiation BLOCKED: HTTP 500 Failed to create payment record
+- Root cause hypothesis: deployed paymob-initiate service-role credential not operative
+- Candidate SQL/RLS design appears correct
+- Package M opened for staging runtime remediation
+- Release verdict remains NO-GO
