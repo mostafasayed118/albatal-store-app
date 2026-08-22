@@ -33,6 +33,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _searchController = TextEditingController();
     // Flash sale countdown driving StitchFlashSaleCard (spec §5 data flow).
+    // flashEnd is client-side placeholder; TODO: drive from Supabase flash_sales table
     context.read<CatalogCubit>().startFlashSale(
           end: DateTime.now().add(
             const Duration(hours: 2, minutes: 45, seconds: 12),
@@ -192,15 +193,19 @@ class _HomePageState extends State<HomePage> {
                 )
               else
                 // Wishlist state drives each card's heart (spec §5 data flow).
+                // TODO(audit): consider SliverGrid or visible.take(20) for 100+ items
                 BlocBuilder<WishlistCubit, WishlistState>(
-                  builder: (context, wishlist) => RepaintBoundary(
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: state.visible.length,
-                      gridDelegate: productGridDelegate,
-                      itemBuilder: (_, index) {
-                        final product = state.visible[index];
+                  builder: (context, wishlist) {
+                    // Cap Popular grid to 20 to prevent jank at 100+ products.
+                    final displayProducts = state.visible.take(20).toList();
+                    return RepaintBoundary(
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: displayProducts.length,
+                        gridDelegate: productGridDelegate,
+                        itemBuilder: (_, index) {
+                          final product = displayProducts[index];
                         return StitchProductGridCard(
                           product: product,
                           onTap: () =>
@@ -212,8 +217,9 @@ class _HomePageState extends State<HomePage> {
                               wishlist.ids.contains(product.id),
                         );
                       },
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
             ],
           );

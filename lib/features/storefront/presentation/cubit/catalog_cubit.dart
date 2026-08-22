@@ -191,6 +191,7 @@ final class CatalogState extends Equatable {
       ];
 }
 
+// TODO(audit): split into CatalogFiltersCubit + FlashSaleTicker — see audit B+
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
@@ -316,6 +317,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
 }
 
 /// Maps an imageColor int to a human-readable color name for filtering.
+// TODO(audit): derive availableColors from DB distinct query, not hardcoded map
 // TODO(audit): derive color names from DB/config (Product.colorName field)
 // rather than hardcoded map; keep fallback to 'Other' for unknown values.
 String _colorName(int color) {

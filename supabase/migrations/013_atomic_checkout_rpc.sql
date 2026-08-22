@@ -101,7 +101,8 @@ BEGIN
     END IF;
   END IF;
 
-  -- ─── Validate items, read DB prices, check stock ────────
+   -- ─── Validate items, read DB prices, check stock ────────
+  -- TODO(audit): batch variant SELECT with UNNEST + FOR UPDATE to prevent concurrent oversell (see 025 race_safe)
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) LOOP
     v_product_id := (v_item->>'product_id')::UUID;
     v_size       := v_item->>'size';
