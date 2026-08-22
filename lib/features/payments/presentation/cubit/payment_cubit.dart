@@ -91,6 +91,7 @@ class PaymentCubit extends Cubit<PaymentState> {
   final Duration _watchTimeout;
 
   final PaymentService _paymentService;
+  // ignore: cancel_subscriptions - cancelled in _stopWatching/_complete/close
   StreamSubscription<PaymentResult>? _watchSubscription;
   Timer? _watchTimeoutTimer;
 

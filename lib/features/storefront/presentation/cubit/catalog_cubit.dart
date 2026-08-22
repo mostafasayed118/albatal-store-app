@@ -21,9 +21,15 @@ extension CatalogSortLabel on CatalogSort {
 
 enum CatalogStatus { initial, loading, ready, error }
 
-/// Upper bound used when no max-price filter is applied.
-/// Large enough to cover any plausible fabric price.
-final _unboundedMax = Money.egp(999999);
+/// Centralized catalog constants for audit lint compliance.
+abstract final class CatalogConstants {
+  /// Upper bound used when no max-price filter is applied.
+  /// Large enough to cover any plausible fabric price (999999 EGP).
+  static const unboundedMax = Money.egp(999999);
+}
+
+/// Private alias kept for backward compat within this library.
+final _unboundedMax = CatalogConstants.unboundedMax;
 
 final class CatalogState extends Equatable {
   const CatalogState({
@@ -38,7 +44,7 @@ final class CatalogState extends Equatable {
     this.recentQueries = const [],
     this.colorFilter = '',
     this.priceMin = Money.zero,
-    this.priceMax = const Money.egp(999999),
+    this.priceMax = CatalogConstants.unboundedMax,
     this.flashEnd,
     this.flashRemaining,
   });
@@ -189,10 +195,17 @@ final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
         super(const CatalogState()) {
+    // Legacy hero countdown (saleSeconds). Gated to avoid needless ticks:
+    // - only ticks while saleSeconds > 0
+    // - cancelled deterministically in close() (satisfies cancel_subscriptions)
+    // Future: gate to flashEnd active or feature flag; keep _colorName TODO below.
     _timer = Timer.periodic(
       const Duration(seconds: 1),
-      (_) => emit(state.copyWith(
-          saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt())),
+      (_) {
+        if (state.saleSeconds == 0) return;
+        emit(state.copyWith(
+            saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt()));
+      },
     );
   }
 
@@ -303,6 +316,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
 }
 
 /// Maps an imageColor int to a human-readable color name for filtering.
+// TODO(audit): derive color names from DB/config (Product.colorName field)
+// rather than hardcoded map; keep fallback to 'Other' for unknown values.
 String _colorName(int color) {
   const map = {
     0xFF176B57: 'Emerald',

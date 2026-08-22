@@ -13,7 +13,7 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.privacyPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Text(l.privacyPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
         ],
@@ -32,7 +32,7 @@ class TermsOfServicePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.termsOfService)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Text(l.termsOfServiceContent, style: Theme.of(context).textTheme.bodyLarge),
         ],
@@ -51,7 +51,7 @@ class ShippingPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.shippingPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Text(l.shippingPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
         ],
@@ -70,7 +70,7 @@ class ReturnsPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.returnsPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Text(l.returnsPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
         ],
@@ -89,7 +89,7 @@ class SupportPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.customerSupport)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Card(
             child: ListTile(

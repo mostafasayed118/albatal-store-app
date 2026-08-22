@@ -151,7 +151,7 @@ class _CatalogPageState extends State<CatalogPage> {
       count++;
     }
     if (state.priceMin > Money.zero ||
-        state.priceMax < const Money.egp(999999)) {
+        state.priceMax < CatalogConstants.unboundedMax) {
       count++;
     }
     return count;

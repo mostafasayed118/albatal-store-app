@@ -21,6 +21,7 @@ dependencies:
   sentry_flutter: ^9.0.0
   shared_preferences: ^2.5.3
   supabase_flutter: ^2.8.4
+  url_launcher: ^6.2.5
   webview_flutter: ^4.10.0
 
 dev_dependencies:
