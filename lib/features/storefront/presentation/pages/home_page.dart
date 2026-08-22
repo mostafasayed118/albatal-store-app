@@ -9,7 +9,9 @@ import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
+import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/promo_banner.dart';
 
@@ -152,6 +154,7 @@ class _HomePageState extends State<HomePage> {
                   product: flashProduct,
                   discountLabel: '-15%',
                   remaining: state.flashRemaining,
+                  onAdd: () => context.read<CartCubit>().add(flashProduct),
                   onTap: () => context.push('/product/${flashProduct.id}'),
                 ),
                 const SizedBox(height: 24),
@@ -188,20 +191,28 @@ class _HomePageState extends State<HomePage> {
                   },
                 )
               else
-                RepaintBoundary(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.visible.length,
-                    gridDelegate: productGridDelegate,
-                    itemBuilder: (_, index) {
-                      final product = state.visible[index];
-                      return StitchProductGridCard(
-                        product: product,
-                        onTap: () =>
-                            context.push('/product/${product.id}'),
-                      );
-                    },
+                // Wishlist state drives each card's heart (spec §5 data flow).
+                BlocBuilder<WishlistCubit, WishlistState>(
+                  builder: (context, wishlist) => RepaintBoundary(
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: state.visible.length,
+                      gridDelegate: productGridDelegate,
+                      itemBuilder: (_, index) {
+                        final product = state.visible[index];
+                        return StitchProductGridCard(
+                          product: product,
+                          onTap: () =>
+                              context.push('/product/${product.id}'),
+                          onWishlist: () => context
+                              .read<WishlistCubit>()
+                              .toggle(product.id),
+                          isWishlisted:
+                              wishlist.ids.contains(product.id),
+                        );
+                      },
+                    ),
                   ),
                 ),
             ],

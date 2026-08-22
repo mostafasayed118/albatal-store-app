@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
@@ -56,7 +57,12 @@ class DetailsPage extends StatelessWidget {
             body: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                ImageGallery(product: p),
+                // Stitch gallery card (spec §4): media clipped to the 16dp
+                // card radius so page-view edges never escape the card.
+                ClipRRect(
+                  borderRadius: AppTheme.cardRadius,
+                  child: ImageGallery(product: p),
+                ),
                 const SizedBox(height: 20),
                 NameAndPrice(product: p),
                 if (p.reviewCount > 0) ...[

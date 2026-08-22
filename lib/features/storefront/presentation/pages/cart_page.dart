@@ -26,7 +26,8 @@ class CartPage extends StatelessWidget {
             );
           }
           return ListView(
-            padding: const EdgeInsets.all(16),
+            // Directional padding keeps RTL layouts mirrored correctly.
+            padding: const EdgeInsetsDirectional.all(16),
             children: [
               ...s.items.map((i) => CartItemTile(item: i)),
               const SizedBox(height: 16),

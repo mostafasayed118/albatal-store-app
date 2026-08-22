@@ -2,7 +2,9 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/promo_banner.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
@@ -13,6 +15,8 @@ import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../helpers/memory_storefront_persistence.dart';
 
 class _StubRepo implements CatalogRepository {
   const _StubRepo();
@@ -70,16 +74,24 @@ class _StubRepo implements CatalogRepository {
       const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
 }
 
-/// BlocProvider with `create:` so the binding's tree disposal closes the
-/// cubit — cancelling its countdown timers before the pending-timer check.
-Widget _harness() => MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: BlocProvider(
-        create: (_) => CatalogCubit(const _StubRepo())..load(),
-        child: const HomePage(),
-      ),
-    );
+/// MultiBlocProvider with Wishlist/Cart so the Home grid (spec §5)
+/// can read wishlist ids and toggle/add per-card. BlocProvider `create:`
+/// ensures tree disposal closes the cubits (cancels timers).
+Widget _harness({MemoryStorefrontPersistence? persistence}) {
+  final store = persistence ?? MemoryStorefrontPersistence();
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => CatalogCubit(const _StubRepo())..load()),
+        BlocProvider(create: (_) => WishlistCubit(store)),
+        BlocProvider(create: (_) => CartCubit(store)),
+      ],
+      child: const HomePage(),
+    ),
+  );
+}
 
 void main() {
   // Fixed pumps only (never pumpAndSettle): the cubit runs periodic

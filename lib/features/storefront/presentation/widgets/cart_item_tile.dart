@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/utils/currency.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import 'product_image_placeholder.dart';
@@ -56,6 +57,13 @@ class CartItemTile extends StatelessWidget {
         return false;
       },
       child: Card(
+        // Stitch cart tile (spec §4): surface fill + 1dp outlineVariant
+        // border on the 16dp card radius.
+        color: scheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppTheme.cardRadius,
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
