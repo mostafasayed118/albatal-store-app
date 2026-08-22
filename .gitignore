@@ -58,5 +58,13 @@ supabase/.temp/
 # Local agent config (never commit local settings)
 .claude/
 
+# Node.js test runners (ephemeral — RLS/Paymob verification scripts)
+node_modules/
+package.json
+package-lock.json
+
+# IDE tool directories
+.freebuff/
+
 # Loop engineering
 loop-ledger.json
