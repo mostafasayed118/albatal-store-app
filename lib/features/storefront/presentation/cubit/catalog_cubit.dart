@@ -39,6 +39,8 @@ final class CatalogState extends Equatable {
     this.colorFilter = '',
     this.priceMin = Money.zero,
     this.priceMax = const Money.egp(999999),
+    this.flashEnd,
+    this.flashRemaining,
   });
 
   final CatalogStatus status;
@@ -53,6 +55,8 @@ final class CatalogState extends Equatable {
   final String colorFilter;
   final Money priceMin;
   final Money priceMax;
+  final DateTime? flashEnd;
+  final Duration? flashRemaining;
 
   bool get hasActiveFilters =>
       category != 'All' ||
@@ -142,6 +146,8 @@ final class CatalogState extends Equatable {
     Money? priceMax,
     bool clearColorFilter = false,
     bool resetPrice = false,
+    DateTime? flashEnd,
+    Duration? flashRemaining,
   }) =>
       CatalogState(
         status: status ?? this.status,
@@ -155,8 +161,9 @@ final class CatalogState extends Equatable {
         recentQueries: recentQueries ?? this.recentQueries,
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
         priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
-        priceMax:
-            resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
+        priceMax: resetPrice ? _unboundedMax : (priceMax ?? this.priceMax),
+        flashEnd: flashEnd ?? this.flashEnd,
+        flashRemaining: flashRemaining ?? this.flashRemaining,
       );
 
   @override
@@ -173,11 +180,15 @@ final class CatalogState extends Equatable {
         colorFilter,
         priceMin,
         priceMax,
+        flashEnd,
+        flashRemaining,
       ];
 }
 
 final class CatalogCubit extends Cubit<CatalogState> {
-  CatalogCubit(this._repository) : super(const CatalogState()) {
+  CatalogCubit(this._repository, {DateTime Function()? now})
+      : _now = now ?? DateTime.now,
+        super(const CatalogState()) {
     _timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) => emit(state.copyWith(
@@ -186,7 +197,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   }
 
   final CatalogRepository _repository;
+
+  /// Injectable clock so the flash countdown is testable deterministically.
+  final DateTime Function() _now;
   late final Timer _timer;
+  Timer? _flashTimer;
   Timer? _debounce;
 
   Future<void> load() async {
@@ -244,6 +259,27 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   void carousel(int index) => emit(state.copyWith(carouselIndex: index));
 
+  /// Starts the flash-sale countdown ending at [end].
+  ///
+  /// Emits an initial [CatalogState.flashRemaining] immediately, then ticks
+  /// once per second. Clamps at zero and cancels itself once [end] passes.
+  void startFlashSale({required DateTime end}) {
+    _flashTimer?.cancel();
+    emit(state.copyWith(
+      flashEnd: end,
+      flashRemaining: end.difference(_now()),
+    ));
+    _flashTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final remaining = state.flashEnd!.difference(_now());
+      if (remaining.isNegative) {
+        _flashTimer?.cancel();
+        emit(state.copyWith(flashRemaining: Duration.zero));
+      } else {
+        emit(state.copyWith(flashRemaining: remaining));
+      }
+    });
+  }
+
   void _recordRecentQuery(String q) {
     final updated =
         [q, ...state.recentQueries.where((r) => r != q)].take(5).toList();
@@ -258,6 +294,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   @override
   Future<void> close() {
     _timer.cancel();
+    _flashTimer?.cancel();
     _debounce?.cancel();
     return super.close();
   }

@@ -1,0 +1,131 @@
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/promo_banner.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
+import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
+import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
+import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+class _StubRepo implements CatalogRepository {
+  const _StubRepo();
+  @override
+  Future<Result<List<Product>>> fetchProducts() async => const Success([
+        Product(
+          id: 'silk-01',
+          name: 'Royal Emerald Silk',
+          category: 'Silk',
+          price: Money.egp(1290),
+          oldPrice: Money.egp(1520),
+          imageColor: 0xFF176B57,
+          imageAsset: 'assets/images/1.png',
+          rating: 4.8,
+          reviewCount: 124,
+        ),
+        Product(
+          id: 'cotton-01',
+          name: 'Golden Cotton Weave',
+          category: 'Cotton',
+          price: Money.egp(640),
+          imageColor: 0xFFD9C6A1,
+          rating: 4.5,
+          reviewCount: 88,
+        ),
+        Product(
+          id: 'velvet-01',
+          name: 'Purple Velvet Drape',
+          category: 'Velvet',
+          price: Money.egp(980),
+          imageColor: 0xFF302244,
+          rating: 4.7,
+          reviewCount: 61,
+        ),
+        Product(
+          id: 'linen-01',
+          name: 'Sand Linen Roll',
+          category: 'Linen',
+          price: Money.egp(430),
+          imageColor: 0xFFE0CDA0,
+          rating: 4.2,
+          reviewCount: 30,
+        ),
+      ]);
+
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All', 'Silk', 'Cotton', 'Velvet', 'Linen']);
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories =>
+      const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
+}
+
+/// BlocProvider with `create:` so the binding's tree disposal closes the
+/// cubit — cancelling its countdown timers before the pending-timer check.
+Widget _harness() => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: BlocProvider(
+        create: (_) => CatalogCubit(const _StubRepo())..load(),
+        child: const HomePage(),
+      ),
+    );
+
+void main() {
+  // Fixed pumps only (never pumpAndSettle): the cubit runs periodic
+  // countdown timers, so settle-based pumping would never quiesce.
+  testWidgets('Home shows Stitch hero + chips + flash + grid', (tester) async {
+    // Tall viewport so the shrinkWrap grid builds all four cards.
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_harness());
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(StitchSearchBar), findsOneWidget);
+    // Hero fallback until StitchHeroCarousel exists.
+    expect(find.byType(PromoBanner), findsOneWidget);
+    expect(find.byType(StitchCategoryChips), findsOneWidget);
+    // Category names render twice: chip labels + grid card subtitles.
+    expect(find.text('Silk'), findsNWidgets(2));
+    expect(find.text('Cotton'), findsNWidgets(2));
+    expect(find.byType(StitchFlashSaleCard), findsOneWidget);
+    expect(find.text('-15%'), findsNWidgets(2)); // header badge + card badge
+    expect(find.byType(StitchProductGridCard), findsNWidgets(4));
+    // Live countdown from startFlashSale is rendered on the flash row.
+    final countdown = RegExp(r'^\d{2}:\d{2}:\d{2}$');
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is Text && w.data != null && countdown.hasMatch(w.data!)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('tapping the Silk chip filters via cubit.select',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pump(const Duration(seconds: 1));
+
+    // 'Silk' also appears as a grid-card subtitle, so scope to the chips.
+    await tester.tap(
+      find.descendant(
+        of: find.byType(StitchCategoryChips),
+        matching: find.text('Silk'),
+      ),
+    );
+    await tester.pump();
+
+    final context = tester.element(find.byType(HomePage));
+    expect(context.read<CatalogCubit>().state.category, 'Silk');
+  });
+}

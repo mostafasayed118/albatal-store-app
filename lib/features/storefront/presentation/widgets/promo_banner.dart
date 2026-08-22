@@ -13,7 +13,8 @@ class PromoBanner extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      height: 170,
+      // Stitch hero contract: 180dp (spec §4 StitchHeroCarousel).
+      height: 180,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [

@@ -3,14 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/stitch/stitch_category_chips.dart';
+import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
+import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
+import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
-import '../widgets/category_chips.dart';
-import '../widgets/flash_sale_section.dart';
-import '../widgets/home_search_bar.dart';
-import '../widgets/popular_products_section.dart';
+import '../widgets/catalog_empty_state.dart';
 import '../widgets/promo_banner.dart';
 
+/// Home — Stitch reskin (spec §4/§5):
+/// pill search → 180dp gold hero → circular category chips →
+/// flash-sale row with live countdown → 2-col (.68) popular grid.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -25,6 +30,12 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    // Flash sale countdown driving StitchFlashSaleCard (spec §5 data flow).
+    context.read<CatalogCubit>().startFlashSale(
+          end: DateTime.now().add(
+            const Duration(hours: 2, minutes: 45, seconds: 12),
+          ),
+        );
   }
 
   @override
@@ -80,10 +91,15 @@ class _HomePageState extends State<HomePage> {
               onAction: catalog.load,
             );
           }
+          final flashProduct =
+              state.visible.isEmpty ? null : state.visible.first;
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsetsDirectional.all(16),
             children: [
-              HomeSearchBar(controller: _searchController, state: state),
+              StitchSearchBar(
+                controller: _searchController,
+                onChanged: catalog.updateQuery,
+              ),
               if (state.query.isEmpty && state.recentQueries.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Wrap(
@@ -96,26 +112,98 @@ class _HomePageState extends State<HomePage> {
                         avatar: const Icon(Icons.history, size: 16),
                         onDeleted: () => catalog.deleteRecentQuery(q),
                         deleteIcon: const Icon(Icons.close, size: 14),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       ),
                   ],
                 ),
               ],
               const SizedBox(height: 20),
+              // Hero fallback: StitchHeroCarousel is not built yet; PromoBanner
+              // keeps the 180dp gold-CTA contract until it lands.
               const PromoBanner(),
               const SizedBox(height: 24),
-              CategoryChips(state: state),
-              const SizedBox(height: 24),
-              FlashSaleSection(state: state),
-              const SizedBox(height: 24),
-              PopularProductsSection(
-                state: state,
-                onClearFilters: () {
-                  _searchController.clear();
-                  catalog.clearFilters();
-                },
+              StitchCategoryChips(
+                selected: state.category,
+                onSelect: catalog.select,
+                categories: state.categories,
               ),
+              const SizedBox(height: 24),
+              if (flashProduct != null) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(l.flashSale,
+                          style:
+                              Theme.of(context).textTheme.titleLarge),
+                    ),
+                    Text(
+                      '-15%',
+                      style: TextStyle(
+                        color: scheme.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                StitchFlashSaleCard(
+                  product: flashProduct,
+                  discountLabel: '-15%',
+                  remaining: state.flashRemaining,
+                  onTap: () => context.push('/product/${flashProduct.id}'),
+                ),
+                const SizedBox(height: 24),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(l.popularProducts,
+                        style: Theme.of(context).textTheme.titleLarge),
+                  ),
+                  PopupMenuButton<CatalogSort>(
+                    tooltip: l.sortProducts,
+                    initialValue: state.sort,
+                    onSelected: catalog.selectSort,
+                    itemBuilder: (_) => CatalogSort.values
+                        .map((sort) => PopupMenuItem(
+                            value: sort, child: Text(sort.label)))
+                        .toList(),
+                    child: Chip(
+                      avatar: const Icon(Icons.sort, size: 18),
+                      label: Text(state.sort.label),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(l.fabricsFound(state.visible.length)),
+              const SizedBox(height: 12),
+              if (state.visible.isEmpty)
+                CatalogEmptyState(
+                  onClear: () {
+                    _searchController.clear();
+                    catalog.clearFilters();
+                  },
+                )
+              else
+                RepaintBoundary(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: state.visible.length,
+                    gridDelegate: productGridDelegate,
+                    itemBuilder: (_, index) {
+                      final product = state.visible[index];
+                      return StitchProductGridCard(
+                        product: product,
+                        onTap: () =>
+                            context.push('/product/${product.id}'),
+                      );
+                    },
+                  ),
+                ),
             ],
           );
         },
