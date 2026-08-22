@@ -57,3 +57,11 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# ---------------------------------------------------------------------------
+# Google Play Core — Flutter engine references these but they're
+# unused in our APK. Suppress missing class warnings.
+# ---------------------------------------------------------------------------
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
