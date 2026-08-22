@@ -265,9 +265,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   /// once per second. Clamps at zero and cancels itself once [end] passes.
   void startFlashSale({required DateTime end}) {
     _flashTimer?.cancel();
+    final diff = end.difference(_now());
+    final clamped = diff.isNegative ? Duration.zero : diff;
     emit(state.copyWith(
       flashEnd: end,
-      flashRemaining: end.difference(_now()),
+      flashRemaining: clamped,
     ));
     _flashTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final remaining = state.flashEnd!.difference(_now());

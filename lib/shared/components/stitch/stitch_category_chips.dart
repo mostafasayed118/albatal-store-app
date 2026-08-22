@@ -27,7 +27,7 @@ class StitchCategoryChips extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     return SizedBox(
-      height: 80,
+      height: 72,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
@@ -64,7 +64,7 @@ class StitchCategoryChips extends StatelessWidget {
                     size: 22,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   cat,
                   style: textTheme.labelSmall?.copyWith(
@@ -72,7 +72,11 @@ class StitchCategoryChips extends StatelessWidget {
                         isActive ? scheme.onSurface : scheme.onSurfaceVariant,
                     fontWeight:
                         isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 11,
+                    height: 1.0,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

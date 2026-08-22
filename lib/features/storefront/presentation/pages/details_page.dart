@@ -55,7 +55,7 @@ class DetailsPage extends StatelessWidget {
               ],
             ),
             body: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsetsDirectional.all(16),
               children: [
                 // Stitch gallery card (spec §4): media clipped to the 16dp
                 // card radius so page-view edges never escape the card.

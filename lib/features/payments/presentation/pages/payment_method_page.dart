@@ -187,7 +187,19 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSecondary),
                             )
-                          : Text(l.payNow),
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(l.payNow),
+                                const SizedBox(width: 8),
+                                const Icon(
+                                    IconData(0xe5cc,
+                                        fontFamily: 'MaterialIcons',
+                                        matchTextDirection: true),
+                                    size: 18),
+                              ],
+                            ),
                     );
                   },
                 ),

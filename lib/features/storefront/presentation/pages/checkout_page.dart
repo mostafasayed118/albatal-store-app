@@ -170,7 +170,11 @@ class CheckoutPage extends StatelessWidget {
                         children: [
                           Text(l.proceedToPayment),
                           const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward, size: 18),
+                          const Icon(
+                              IconData(0xe5cc,
+                                  fontFamily: 'MaterialIcons',
+                                  matchTextDirection: true),
+                              size: 18),
                         ],
                       ),
               ),
