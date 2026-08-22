@@ -31,17 +31,13 @@
  * shorter one before returning false.
  */
 export function constantTimeEquals(a: string, b: string): boolean {
-  // Normalize so callers can pass either case without accidentally
-  // weakening the comparison. Hex digests are case-insensitive; for
-  // raw secrets (which are case-sensitive) this is still safe
-  // because lowercasing is a bijection on the ASCII range that
-  // secrets are drawn from.
-  const left = a.toLowerCase();
-  const right = b.toLowerCase();
-  const maxLen = Math.max(left.length, right.length);
-  let diff = left.length ^ right.length;
+  // Raw secrets are case-sensitive — do NOT normalize case here.
+  // Hex-digest case-insensitive comparison is handled only in
+  // paymob-callback/hmac.ts where that normalization is required.
+  const maxLen = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
   for (let i = 0; i < maxLen; i++) {
-    diff |= (left.charCodeAt(i) || 0) ^ (right.charCodeAt(i) || 0);
+    diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
   }
   return diff === 0;
 }

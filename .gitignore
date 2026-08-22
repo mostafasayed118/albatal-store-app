@@ -66,5 +66,8 @@ package-lock.json
 # IDE tool directories
 .freebuff/
 
+# Superpowers local reports (never commit)
+.superpowers-*
+
 # Loop engineering
 loop-ledger.json

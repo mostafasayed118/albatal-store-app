@@ -23,8 +23,8 @@ Deno.test("constantTimeEquals returns true for identical strings", () => {
   assertEquals(constantTimeEquals("hello", "hello"), true);
 });
 
-Deno.test("constantTimeEquals returns true case-insensitively", () => {
-  assertEquals(constantTimeEquals("ABCDEF", "abcdef"), true);
+Deno.test("constantTimeEquals returns false case-sensitively for raw secrets", () => {
+  assertEquals(constantTimeEquals("ABCDEF", "abcdef"), false);
 });
 
 Deno.test("constantTimeEquals returns false for different strings", () => {
@@ -54,14 +54,14 @@ Deno.test("constantTimeEquals handles long strings", () => {
   assertEquals(constantTimeEquals(long1, long3), false);
 });
 
-Deno.test("constantTimeEquals normalizes hex digests", () => {
-  // HMAC hex digests are case-insensitive
+Deno.test("constantTimeEquals is case-sensitive even for hex digests (raw secrets)", () => {
+  // Hex normalization is only for hmac.ts; raw secrets remain case-sensitive
   assertEquals(
     constantTimeEquals(
       "a1b2c3d4e5f6",
       "A1B2C3D4E5F6",
     ),
-    true,
+    false,
   );
 });
 
