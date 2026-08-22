@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/theme/app_theme.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
@@ -133,7 +134,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           return Scaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
             body: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsetsDirectional.all(16),
               children: [
                 Text(l.selectPaymentMethod,
                     style: Theme.of(context).textTheme.titleLarge),
@@ -168,6 +169,12 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                 BlocBuilder<PaymentCubit, PaymentState>(
                   builder: (context, state) {
                     return FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.secondary,
+                        foregroundColor: scheme.onSecondary,
+                        shape: const RoundedRectangleBorder(borderRadius: AppTheme.controlRadius),
+                        textStyle: Theme.of(context).textTheme.labelLarge,
+                      ),
                       onPressed: state.canProceed &&
                               state.status != PaymentStatus.processing
                           ? () => context.read<PaymentCubit>().processPayment(
@@ -175,10 +182,11 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                               )
                           : null,
                       child: state.status == PaymentStatus.processing
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
+                              child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSecondary),
+                            )
                           : Text(l.payNow),
                     );
                   },

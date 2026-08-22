@@ -17,7 +17,7 @@ class OrderSuccessPage extends StatelessWidget {
       return Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsetsDirectional.all(32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -42,7 +42,7 @@ class OrderSuccessPage extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsetsDirectional.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
