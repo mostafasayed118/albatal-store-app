@@ -6,7 +6,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/orders_cubit.dart';
 import 'status_progress.dart';
 
-/// Single order card with status, items, and advance button.
+/// Single order card with Stitch surface + outlineVariant border (16dp) + primaryContainer status pill.
 class OrderCard extends StatelessWidget {
   const OrderCard({
     super.key,
@@ -26,8 +26,14 @@ class OrderCard extends StatelessWidget {
     final isActive = !isCompleted && o.status != OrderStatus.cancelled;
 
     return Card(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        side: BorderSide(color: scheme.outlineVariant, width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -37,11 +43,23 @@ class OrderCard extends StatelessWidget {
                   child: Text('#${o.id}',
                       style: Theme.of(context).textTheme.titleLarge),
                 ),
-                Text(_statusLabel(o.status, l),
+                // Stitch pill status chip: primaryContainer fill when applicable.
+                Container(
+                  padding:
+                      const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _statusLabel(o.status, l),
                     style: TextStyle(
-                        color: scheme.secondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12)),
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),

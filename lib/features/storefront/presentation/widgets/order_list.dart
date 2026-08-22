@@ -27,7 +27,7 @@ class OrderList extends StatelessWidget {
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsetsDirectional.all(16),
       itemCount: orders.length,
       itemBuilder: (_, i) => OrderCard(
         order: orders[i],
