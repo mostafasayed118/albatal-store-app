@@ -8,11 +8,23 @@
 -- Permissive OR + null WITH CHECK falls back to USING, so any auth user could
 -- UPDATE is_admin=true. This migration drops the old policy.
 --
--- profiles_update_own_safe remains as the guard.
+-- Local docker variant `users can update own profile` (with_check auth.uid()=id)
+-- is also permissive and must be replaced. This migration is idempotent
+-- and handles all known names, then recreates the single safe policy.
 --
--- Forward-only, idempotent: DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
--- This file is repository evidence only until a separately approved staging
--- migration run is performed. Human review required before supabase db push.
+-- Forward-only, idempotent. Human review required before supabase db push.
 -- ============================================================
 
+-- Drop all known variants of the permissive UPDATE policy
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own_safe" ON public.profiles;
+
+-- Recreate the single safe policy: only allow is_admin to stay as it was
+CREATE POLICY "profiles_update_own_safe"
+  ON public.profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id
+    AND is_admin = (SELECT is_admin FROM public.profiles WHERE id = auth.uid())
+  );
