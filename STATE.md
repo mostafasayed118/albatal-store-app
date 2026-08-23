@@ -1,6 +1,45 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-23T00:00:00Z
+Last run: 2026-08-23T16:15:00Z
+
+## New — 2026-08-23 (later)
+
+### PR #8 conflict reconciliation + Stitch emulator smoke (L1 evidence run)
+
+**Why:** PR #8 (`fix/l2-remediation-package` → `master`) reported CONFLICTING.
+`origin/master` carried PR #3 (fix/di-sources) whose changes the branch had
+mirrored independently and then evolved past — duplicate history, two real
+conflicts.
+
+**Resolution (merge commit `716a9e5`):**
+- Kept `CrashReportingService` at `shared/services/`; deleted master's
+  byte-identical `core/services/` copy (diff was CRLF-only). All live
+  callsites (`main.dart`, `sentry_crash_reporting_service.dart`, tests)
+  import the shared path.
+- Kept branch's DSN-conditional Sentry/NoOp DI registration — supersedes
+  master's stale "NoOp until sentry_flutter is approved" state
+  (`sentry_flutter ^9.0.0` is in pubspec).
+- Verified all 5 PR #3 files accounted for: orders repository identical to
+  master; checkout test intentionally uses the newer
+  `memory_storefront_persistence` helper; scrub test identical except import
+  path matching kept location.
+
+**Verification this run:**
+| Check | Result |
+|-------|--------|
+| `flutter analyze` | **No issues found** |
+| `flutter test` | **243 passed, 0 failed** |
+| Working tree | clean (generated registrant side effects restored) |
+
+**Stitch reskin visual smoke (Android emulator, staging env):** Home screen
+(hero banner, category chips, flash-sale countdown, populated grid from
+staging) and Categories screen verified rendering in the emerald/gold Stitch
+palette. Evidence: `docs/evidence/stitch-smoke-2026-08-23/{home,categories}.png`.
+
+**Branch:** merge pushed; PR #8 conflict status clears on CI re-run.
+**Merge into `master` remains human-gated per AGENTS.md.**
+
+---
 
 ## New — 2026-08-23
 
