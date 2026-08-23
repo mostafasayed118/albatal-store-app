@@ -35,15 +35,15 @@ pre-existing defects, all fixed (commits `f93645d`, `b9068a7`, `640417c`,
    lcov absent on runners + never-executed 70% figure → dependency-free awk
    computation with ratchet floor at measured baseline (50%).
 
-**CI now: 6/7 green** — Setup ✔ Format/Analyze ✔ Tests(+coverage) ✔
-Edge Functions ✔ Secret Scan ✔ Deployment Readiness ✔.
+**RESOLVED same evening (owner-approved):** all four signing secrets
+provisioned via `gh secret set` from local `android/key.properties` +
+`android/app/release-key.jks` (values piped stdin→GitHub, never echoed or
+stored locally). Rerun of run `32643334798`: **Android Release Build PASS —
+CI fully 7/7 GREEN** on PR #8 head. Signed APK built in CI, package identity
+verified, artifact retained 30 days.
 
-**BLOCKED on owner action:** Android Release Build fails its own preflight —
-repo has no signing secrets configured (`KEYSTORE_BASE64`,
-`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`). Provision via GitHub repo
-settings (or `gh secret set`). Master is branch-unprotected, so this does
-not technically block merging PR #8 — but a payments app should not merge
-with an unproven release pipeline.
+**Merge decision now rests entirely with the owner** per AGENTS.md human
+gate.
 
 ---
 
