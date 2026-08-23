@@ -1,7 +1,6 @@
 # Environment Isolation Plan — Al Batal Elite
 
-**Date:** 2026-07-25
-**Status:** DRAFT — requires human approval before implementation
+**Status:** APPROVED — 2026-08-23, solo-owner model (owner delegated to best-recommendation path)
 **Scope:** Supabase project isolation across staging / production
 
 ---
@@ -298,21 +297,20 @@ supabase db dump --project-ref <PRODUCTION_REF> > backup/full_pre_migration_$(da
 
 | # | Task | Status |
 |---|---|---|
-| 1 | Create new Supabase project `al-batal-staging` | Pending |
-| 2 | Rename/verify current project as production | Pending |
-| 3 | Run all 21 migrations on staging project | Pending |
-| 4 | Deploy all 5 Edge Functions to staging | Pending |
-| 5 | Set Edge Function secrets on staging project | Pending |
-| 6 | Create Paymob staging integration (test keys) | Pending |
-| 7 | Configure Paymob staging callback URL | Pending |
-| 8 | Update `config/env.staging.json` with staging project ref | Pending |
-| 9 | Update `config/env.production.json` with production project ref | Pending |
-| 10 | Update `.gitignore` to cover `config/env.*.local.json` | Pending |
-| 11 | Enhance `EnvironmentBanner` to show project ref | Pending |
-| 12 | Test staging checkout flow end-to-end | Pending |
-| 13 | Test production checkout flow end-to-end | Pending |
+| 1 | Create new Supabase project `al-batal-staging` | **DONE 2026-08-23** — ref `zvpjngdgbpnkkqrorkul`, eu-west-1, org `al-batal` |
+| 2 | Rename/verify current project as production | **DONE** — `alxwvyflasewslinufqe` retained as production (live Paymob webhook, secrets, users); designated in `RELEASE_GATE.md` |
+| 3 | Run all migrations on staging project | **DONE 2026-08-23** — 29/29 via CLI push; required one-time bootstrap: `public.uuid_generate_v4()` shim (Supavisor transaction pooler forces empty search_path; see evidence doc) |
+| 4 | Deploy all 5 Edge Functions to staging | **DONE 2026-08-23** — cancel-expired-orders, checkout, paymob-callback, paymob-initiate, send-order-notification |
+| 5 | Set Edge Function secrets on staging project | **DONE (6/7)** — PAYMOB_API_KEY/INTEGRATION_ID/HMAC, CANCEL_EXPIRED_ORDERS_SECRET, NOTIFICATIONS_INTERNAL_KEY, SCHEDULER_SECRET. **PAYMOB_IFRAME_ID pending owner** (value only exists in Paymob dashboard) |
+| 6 | Create Paymob staging integration (test keys) | **PENDING OWNER** — Paymob dashboard task |
+| 7 | Configure Paymob staging callback URL | **PENDING OWNER** — `https://zvpjngdgbpnkkqrorkul.supabase.co/functions/v1/paymob-callback`; also set `verify_jwt=false` for this function in staging dashboard |
+| 8 | Update `config/env.staging.json` with staging project ref | **DONE 2026-08-23** |
+| 9 | Update `config/env.production.json` with production project ref | **DONE** — already pointed at production ref; unchanged by design |
+| 10 | Update `.gitignore` to cover `config/env.*.local.json` | DONE (pre-existing) |
+| 11 | Enhance `EnvironmentBanner` to show project ref | **DONE 2026-08-23** — shows `DEV·<ref>` in debug builds |
+| 12 | Test staging checkout flow end-to-end | Pending — COD E2E unblocked now; Paymob E2E blocked on #6/#7 |
+| 13 | Test production checkout flow end-to-end | Pending — blocked on launch decision |
 | 14 | Document migration promotion process in `AGENTS.md` | Pending |
-
 ---
 
 ## Risk Assessment
@@ -327,11 +325,14 @@ supabase db dump --project-ref <PRODUCTION_REF> > backup/full_pre_migration_$(da
 
 ---
 
-## Decision Required
+## Decisions — APPROVED 2026-08-23
 
-Before implementation, confirm:
+Approved by owner ("use the best recommendation"), recorded per solo-owner
+model. Rationale follows the plan's own verdicts:
 
-1. **Approve Option A** (separate projects)? Or discuss alternatives?
-2. **Which project becomes production** — the current `alxwvyflasewslinufqe` or a new one?
-3. **Paymob account** — does the current Paymob account support multiple integrations, or do we need a second merchant account?
-4. **Supabase plan** — Free tier limits to 2 projects; Pro tier allows more. Which plan?
+| # | Decision | Resolution |
+|---|---|---|
+| 1 | Isolation option | **Option A — separate Supabase projects** (only complete blast-radius isolation; RECOMMENDED verdict) |
+| 2 | Production project | **Current `alxwvyflasewslinufqe` becomes production** — it carries live Paymob webhook, function secrets, auth users, and verified RLS evidence. **New project = staging** (`al-batal-staging`) |
+| 3 | Paymob account | **Second integration on the existing account with TEST keys** for staging (dashboard task — owner action; documented commands in `docs/evidence/isolation-2026-08-23/`) |
+| 4 | Supabase plan | **Free tier** (2 projects = exactly staging + production). Upgrade to Pro at production launch for daily backups + PITR (§Backup rules) |
