@@ -77,9 +77,9 @@ android {
             if (keyPropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            // R8 full mode + shrinkResources — narrow keeps per audit (core/lifecycle only)
             isMinifyEnabled = true
             isShrinkResources = true
-            // TODO: narrow -keep androidx.** to core/lifecycle per audit
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

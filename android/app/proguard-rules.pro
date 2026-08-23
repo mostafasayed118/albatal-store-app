@@ -15,10 +15,11 @@
 -keep class io.flutter.plugins.**  { *; }
 
 # ---------------------------------------------------------------------------
-# AndroidX — keep annotated classes used by reflection / manifest
+# AndroidX — keep annotated classes used by reflection / manifest (narrow)
 # ---------------------------------------------------------------------------
--keep class androidx.** { *; }
--keep interface androidx.** { *; }
+-keep class androidx.core.** { *; }
+-keep class androidx.lifecycle.** { *; }
+-keep class androidx.annotation.** { *; }
 -dontwarn androidx.**
 
 # ---------------------------------------------------------------------------
