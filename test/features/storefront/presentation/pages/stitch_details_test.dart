@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
@@ -47,6 +48,10 @@ class _StubRepo implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       const Success(['All', 'Silk', 'Cotton']);
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

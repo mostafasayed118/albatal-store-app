@@ -49,7 +49,35 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
   final CatalogRepository _catalogRepository;
 
   /// Load a product by id from the catalog repository.
+  ///
+  /// First attempts a single-row [fetchProductById] query (1 query, not N).
+  /// Falls back to the full [fetchProducts] scan if the single fetch fails.
+  /// Related products are still derived via [fetchProducts] filtering — at
+  /// least the single product fetch is now 1 query not N.
   void loadProduct(String id) async {
+    final singleResult = await _catalogRepository.fetchProductById(id);
+    final singleProduct = singleResult.when(
+      success: (product) => product,
+      failure: (_) => null,
+    );
+    if (singleProduct != null) {
+      final allResult = await _catalogRepository.fetchProducts();
+      final related = allResult.when(
+        success: (all) => all
+            .where((x) => x.category == singleProduct.category && x.id != singleProduct.id)
+            .toList(),
+        failure: (_) => <Product>[],
+      );
+      emit(state.copyWith(
+        product: singleProduct,
+        relatedProducts: related,
+        color: singleProduct.colors.isNotEmpty ? singleProduct.colors.first : '',
+        length: singleProduct.sizes.isNotEmpty ? singleProduct.sizes.first : '',
+      ));
+      return;
+    }
+
+    // Fallback to full catalog scan (legacy N+1 path) when single fetch fails.
     final result = await _catalogRepository.fetchProducts();
     result.when(
       success: (allProducts) {

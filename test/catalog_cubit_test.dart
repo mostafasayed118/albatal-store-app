@@ -19,6 +19,13 @@ final class StubCatalogRepository implements CatalogRepository {
       Success(List.of(categories));
 
   @override
+  Future<Result<Product>> fetchProductById(String id) async {
+    final product = products.where((p) => p.id == id).firstOrNull;
+    if (product != null) return Success(product);
+    return Failure(AppError('Product not found'));
+  }
+
+  @override
   Product? findProductById(String id) =>
       products.where((p) => p.id == id).firstOrNull;
 
@@ -35,6 +42,10 @@ final class FailingCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Failure(AppError('Catalog unavailable'));
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

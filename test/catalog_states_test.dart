@@ -23,6 +23,10 @@ final class FailingCatalogRepository implements CatalogRepository {
       Failure(AppError('Categories unavailable'));
 
   @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      Failure(AppError('Product not found'));
+
+  @override
   Product? findProductById(String id) => null;
 
   @override
@@ -70,6 +74,10 @@ class _NeverCompletesRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() =>
       Completer<Result<List<String>>>().future;
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) =>
+      Completer<Result<Product>>().future;
 
   @override
   Product? findProductById(String id) => null;

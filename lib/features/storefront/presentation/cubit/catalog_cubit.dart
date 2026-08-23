@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import 'flash_sale_ticker.dart';
 
 enum CatalogSort { featured, priceLowToHigh, priceHighToLow, name, newest }
 
@@ -191,15 +192,13 @@ final class CatalogState extends Equatable {
       ];
 }
 
-// TODO(audit): split into CatalogFiltersCubit + FlashSaleTicker — see audit B+
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
         super(const CatalogState()) {
-    // Legacy hero countdown (saleSeconds). Gated to avoid needless ticks:
-    // - only ticks while saleSeconds > 0
-    // - cancelled deterministically in close() (satisfies cancel_subscriptions)
-    // Future: gate to flashEnd active or feature flag; keep _colorName TODO below.
+    // Legacy hero countdown (saleSeconds) — will be removed when flash_sales table lands.
+    // Gated to avoid needless ticks: only ticks while saleSeconds > 0,
+    // cancelled deterministically in close().
     _timer = Timer.periodic(
       const Duration(seconds: 1),
       (_) {
@@ -208,6 +207,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
             saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt()));
       },
     );
+    _flashTicker = FlashSaleTicker(now: _now);
   }
 
   final CatalogRepository _repository;
@@ -215,7 +215,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   /// Injectable clock so the flash countdown is testable deterministically.
   final DateTime Function() _now;
   late final Timer _timer;
-  Timer? _flashTimer;
+  late final FlashSaleTicker _flashTicker;
   Timer? _debounce;
 
   Future<void> load() async {
@@ -275,25 +275,14 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   /// Starts the flash-sale countdown ending at [end].
   ///
-  /// Emits an initial [CatalogState.flashRemaining] immediately, then ticks
-  /// once per second. Clamps at zero and cancels itself once [end] passes.
+  /// Delegates ticking to [FlashSaleTicker]; mirrors updates back into
+  /// state via `onTick: (remaining) => emit(state.copyWith(flashRemaining: remaining))`.
   void startFlashSale({required DateTime end}) {
-    _flashTimer?.cancel();
-    final diff = end.difference(_now());
-    final clamped = diff.isNegative ? Duration.zero : diff;
-    emit(state.copyWith(
-      flashEnd: end,
-      flashRemaining: clamped,
-    ));
-    _flashTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final remaining = state.flashEnd!.difference(_now());
-      if (remaining.isNegative) {
-        _flashTimer?.cancel();
-        emit(state.copyWith(flashRemaining: Duration.zero));
-      } else {
-        emit(state.copyWith(flashRemaining: remaining));
-      }
-    });
+    emit(state.copyWith(flashEnd: end));
+    _flashTicker.start(
+      end,
+      onTick: (remaining) => emit(state.copyWith(flashRemaining: remaining)),
+    );
   }
 
   void _recordRecentQuery(String q) {
@@ -310,7 +299,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   @override
   Future<void> close() {
     _timer.cancel();
-    _flashTimer?.cancel();
+    _flashTicker.cancel();
     _debounce?.cancel();
     return super.close();
   }

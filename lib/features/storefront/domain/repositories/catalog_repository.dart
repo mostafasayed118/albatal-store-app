@@ -11,6 +11,14 @@ abstract interface class CatalogRepository {
   Future<Result<List<Product>>> fetchProducts();
   Future<Result<List<String>>> fetchCategories();
 
+  /// Fetch a single product by [id] — single-row query, not N-product fan-out.
+  ///
+  /// Implementations should check the in-memory cache first
+  /// (`_cache?.firstWhere`) then fall back to a
+  /// `select(...).eq('id', id).single()` query, handling the Postgrest
+  /// single() throw when not found.
+  Future<Result<Product>> fetchProductById(String id);
+
   /// Synchronous lookup used by hydration paths (cart restore, wishlist
   /// resolve) that need a [Product] from its id without awaiting a fetch.
   /// Returns `null` when the id is not in the catalog.

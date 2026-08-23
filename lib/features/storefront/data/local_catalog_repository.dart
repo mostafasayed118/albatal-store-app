@@ -1,4 +1,5 @@
 import '../../../../core/entities/product.dart';
+import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../domain/repositories/catalog_repository.dart';
 import 'products_data.dart';
@@ -17,6 +18,13 @@ final class LocalCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       Success(List.of(categories));
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async {
+    final product = products.where((p) => p.id == id).firstOrNull;
+    if (product != null) return Success(product);
+    return Failure(AppError('Product not found'));
+  }
 
   @override
   Product? findProductById(String id) =>

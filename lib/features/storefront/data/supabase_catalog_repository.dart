@@ -119,6 +119,38 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   }
 
   @override
+  Future<Result<Product>> fetchProductById(String id) async {
+    // Cache fast path — avoids network when fetchProducts() already warmed _cache.
+    final cached = _cache;
+    if (cached != null) {
+      for (final p in cached) {
+        if (p.id == id) return Success(p);
+      }
+    }
+
+    try {
+      final row = await _client.from('products').select('''
+            id, name, slug, description, composition, care, origin,
+            base_price, old_price, rating, review_count,
+            categories!inner(name),
+            product_variants(product_id, size, color, stock, price_override)
+          ''').eq('id', id).single();
+
+      final variantsRaw = row['product_variants'];
+      final variants = variantsRaw is List
+          ? variantsRaw.whereType<Map<String, dynamic>>().toList()
+          : <Map<String, dynamic>>[];
+      final product = _mapProduct(row, variants);
+      return Success(product);
+    } on PostgrestException catch (e) {
+      // single() throws PostgrestException (PGRST116) when no row matches.
+      return Failure(AppError('Product not found', cause: e));
+    } on Exception catch (e) {
+      return Failure(AppError('Failed to load product', cause: e));
+    }
+  }
+
+  @override
   Product? findProductById(String id) {
     // Fast path: check the cache populated by fetchProducts.
     final cached = _cache;
