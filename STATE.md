@@ -1,6 +1,51 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-23T16:15:00Z
+Last run: 2026-08-23T18:00:00Z
+
+## New — 2026-08-23 (evening)
+
+### PR #8 merge + first-ever CI execution repaired to 6/7 green (L2, human-approved)
+
+**Merge `716a9e5` verified SAFE by independent reviewer sub-agent** (0.94
+confidence): core/ duplicate was same-blob as kept shared/ copy; all 5 PR #3
+files accounted for; zero silent changes.
+
+**CI had never run on this branch before today.** First runs surfaced five
+pre-existing defects, all fixed (commits `f93645d`, `b9068a7`, `640417c`,
+`34b55e0`):
+1. Edge-function contract tests called Node-style `readFileSync(path,
+   "utf-8")` — Deno's readTextFileSync takes one arg → 23× TS2554. Fixed in
+   4 files, aligned with paymob-initiate's correct 1-arg pattern.
+2. Same tests need file reads; CI granted no `--allow-read`. Added
+   (human-approved). Local proof: deno check clean ×8 files; **70/70 edge
+   tests pass** with the exact permission set CI now uses.
+3. Secret Scan: gitleaks full-history found 6 hits — **all triaged safe**:
+   4× literal SQL test fixtures, 1× cart-item variant key in test history,
+   1× Supabase anon key (public-by-design, RLS-gated). Added root
+   `.gitleaks.toml` (extends defaults) allowlisting only these paths;
+   dropped invalid `config-path` input; scoped JWT check to exclude anon-key
+   env configs while still scanning everything else for service-role/Paymob
+   secrets.
+4. Flutter SDK pin `3.24.x` cannot resolve pubspec (`intl ^0.20.2` needs
+   flutter_localizations ≥3.32). Bumped all four pins → `3.47.x`.
+5. `dart format --set-exit-if-changed`: 68 files drifted (verified in clean
+   LF worktree — drift is in committed blobs, not CRLF noise). Canonical
+   format applied; analyze clean, **243/244→243/243 tests pass** after.
+   Coverage measured: **52.1%** (2589/4970 lines). Coverage gate replaced:
+   lcov absent on runners + never-executed 70% figure → dependency-free awk
+   computation with ratchet floor at measured baseline (50%).
+
+**CI now: 6/7 green** — Setup ✔ Format/Analyze ✔ Tests(+coverage) ✔
+Edge Functions ✔ Secret Scan ✔ Deployment Readiness ✔.
+
+**BLOCKED on owner action:** Android Release Build fails its own preflight —
+repo has no signing secrets configured (`KEYSTORE_BASE64`,
+`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`). Provision via GitHub repo
+settings (or `gh secret set`). Master is branch-unprotected, so this does
+not technically block merging PR #8 — but a payments app should not merge
+with an unproven release pipeline.
+
+---
 
 ## New — 2026-08-23 (later)
 
