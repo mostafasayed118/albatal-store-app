@@ -1,5 +1,11 @@
 # Al Batal Stitch Implementation Plan
 
+> **STATUS: COMPLETE — 2026-08-23.** All phases committed (`1bf7db3` tokens →
+> `dc60ad8` primitives → `6308c6c` home → `8864c71` details/cart → `670341c`
+> categories/catalog → `7802a53` checkout "phase 5 FINAL" incl. dark verify).
+> Final verification 2026-08-23: `flutter test` **243/243 PASS**, `flutter
+> analyze` **0 issues**. Checkboxes below were completed as part of execution.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Translate Stitch project 10846693823016291635 (4 flows, light+dark) pixel-perfect into Flutter, preserving Clean Architecture and passing flutter test/analyze.
@@ -65,7 +71,7 @@
 - Consumes: Stitch designMd colors (stitch_get_project)
 - Produces: Updated ColorScheme.light primary #003527, scaffold #f9f9f9 for all later tasks
 
-- [ ] **Step 1: Write failing token test (proves drift)**
+- [x] **Step 1: Write failing token test (proves drift)**
 
 ```dart
 // test/shared/theme/app_theme_stitch_tokens_test.dart
@@ -81,12 +87,12 @@ void main(){
 }
 ```
 
-- [ ] **Step 2: Run test to verify FAIL**
+- [x] **Step 2: Run test to verify FAIL**
 
 Run: `flutter test test/shared/theme/app_theme_stitch_tokens_test.dart -v`
 Expected: FAIL expected 0xFFF9F9F9 got 0xFFFAFAFA
 
-- [ ] **Step 3: Update AppTheme.light/dark to exact Stitch tokens**
+- [x] **Step 3: Update AppTheme.light/dark to exact Stitch tokens**
 
 ```dart
 // lib/shared/theme/app_theme.dart
@@ -115,17 +121,17 @@ card: Colors.white,
 
 Update DESIGN.md colors block to same values, add surface-* scale, keep emerald alias note.
 
-- [ ] **Step 4: Run test to verify PASS**
+- [x] **Step 4: Run test to verify PASS**
 
 Run: `flutter test test/shared/theme/app_theme_stitch_tokens_test.dart -v`
 Expected: PASS
 
-- [ ] **Step 5: Verify no regression**
+- [x] **Step 5: Verify no regression**
 
 Run: `flutter analyze` and `flutter test`
 Expected: analyze 0 issues in lib/, test 199 passing (198+1)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/shared/theme/app_theme.dart DESIGN.md test/shared/theme/app_theme_stitch_tokens_test.dart
@@ -147,7 +153,7 @@ git commit -m "feat(theme): sync AppTheme to Stitch #f9f9f9/#003527 tokens (phas
 - Consumes: AppTheme tokens from Task 0, Material Symbols
 - Produces: Stateless widgets used by Home/Details in Tasks 2-3
 
-- [ ] **Step 1: Write failing widget test**
+- [x] **Step 1: Write failing widget test**
 
 ```dart
 // test/shared/components/stitch_primitives_test.dart
@@ -163,12 +169,12 @@ void main(){
 }
 ```
 
-- [ ] **Step 2: Run to FAIL (not found)**
+- [x] **Step 2: Run to FAIL (not found)**
 
 Run: `flutter test test/shared/components/stitch_primitives_test.dart -v`
 Expected: FAIL file not found
 
-- [ ] **Step 3: Implement minimal primitives (example one, repeat for 4)**
+- [x] **Step 3: Implement minimal primitives (example one, repeat for 4)**
 
 ```dart
 // lib/shared/components/stitch/stitch_category_chips.dart
@@ -193,17 +199,17 @@ class StitchCategoryChips extends StatelessWidget{
 
 Implement similarly: `stitch_search_bar.dart` (rounded-full Container #f3f3f3, TextField mic), `stitch_flash_sale_card.dart` (Row 120dp image, badge secondary), `stitch_product_grid_card.dart` (Card surface outlineVariant, aspectSquare image, heart).
 
-- [ ] **Step 4: Run test PASS**
+- [x] **Step 4: Run test PASS**
 
 Run: `flutter test test/shared/components/stitch_primitives_test.dart -v`
 Expected: PASS
 
-- [ ] **Step 5: Analyze + test all**
+- [x] **Step 5: Analyze + test all**
 
 Run: `flutter analyze; flutter test`
 Expected: 0 issues, all green
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/shared/components/stitch/*.dart test/shared/components/stitch_primitives_test.dart
@@ -225,7 +231,7 @@ git commit -m "feat(ui): add Stitch primitives (chips/search/flash/grid)"
 - Consumes: Stitch primitives from Task 1
 - Produces: HomePage with Stitch layout, CatalogCubit.flashRemaining for Task 1 primitives
 
-- [ ] **Step 1: Write failing cubit flash test**
+- [x] **Step 1: Write failing cubit flash test**
 
 ```dart
 // test/features/storefront/presentation/cubit/catalog_flash_test.dart
@@ -239,12 +245,12 @@ void main(){
 }
 ```
 
-- [ ] **Step 2: Run FAIL**
+- [x] **Step 2: Run FAIL**
 
 Run: `flutter test test/features/storefront/presentation/cubit/catalog_flash_test.dart -v`
 Expected: FAIL no startFlashSale
 
-- [ ] **Step 3: Add flash state + timer to CatalogCubit**
+- [x] **Step 3: Add flash state + timer to CatalogCubit**
 
 ```dart
 // catalog_state.dart
@@ -255,18 +261,18 @@ void startFlashSale({required DateTime end}){ _flashTimer?.cancel(); emit(state.
 @override Future<void> close(){ _flashTimer?.cancel(); return super.close();}
 ```
 
-- [ ] **Step 4: Verify cubit test PASS**
+- [x] **Step 4: Verify cubit test PASS**
 
 Run: `flutter test test/features/storefront/presentation/cubit/catalog_flash_test.dart -v`
 Expected: PASS
 
-- [ ] **Step 5: Reskin HomePage (wire primitives)**
+- [x] **Step 5: Reskin HomePage (wire primitives)**
 
 Replace home_page.dart body ListView children with: StitchSearchBar(controller, onChanged: cubit.updateQuery), promo hero StitchHeroCarousel(imageUrl: state.hero?.image), StitchCategoryChips(selected: state.category, onSelect: cubit.select), StitchFlashSaleCard(product: state.visible.first, discount: '-15%', remaining: state.flashRemaining), Popular GridView.builder 2-col with StitchProductGridCard.
 
 Keep AppBar as StitchAppBar (avatar+Hello Ahmed!+dark_mode gradient). Keep BlocBuilder loading/error/empty branches.
 
-- [ ] **Step 6: Widget test for Home stitch parity**
+- [x] **Step 6: Widget test for Home stitch parity**
 
 ```dart
 testWidgets('Home shows hero + chips + flash + grid', (w)async{
@@ -276,7 +282,7 @@ testWidgets('Home shows hero + chips + flash + grid', (w)async{
 
 Run: `flutter test test/features/storefront/presentation/pages/stitch_home_page_test.dart -v` PASS
 
-- [ ] **Step 7: Full verify + commit**
+- [x] **Step 7: Full verify + commit**
 
 Run: `flutter analyze; flutter test`
 ```bash
@@ -298,7 +304,7 @@ git commit -m "feat(home): Stitch reskin + flash timer (phase 1)"
 - Consumes: CatalogState.product, CartCubit, WishlistCubit
 - Produces: DetailsPage with Stitch gallery+price 850 EGY, gold AddToCart bar
 
-- [ ] **Step 1: Write failing details test (EGY suffix + gold button)**
+- [x] **Step 1: Write failing details test (EGY suffix + gold button)**
 
 ```dart
 testWidgets('Details shows 850 EGY and gold CTA', (w)async{
@@ -308,21 +314,21 @@ testWidgets('Details shows 850 EGY and gold CTA', (w)async{
 });
 ```
 
-- [ ] **Step 2: Run FAIL**
+- [x] **Step 2: Run FAIL**
 
 Run: `flutter test test/features/storefront/presentation/pages/stitch_details_test.dart -v` FAIL
 
-- [ ] **Step 3: Reskin DetailsPage**
+- [x] **Step 3: Reskin DetailsPage**
 
 ImageGallery unchanged but wrapped ClipRRect 16, NameAndPrice price Text('${p.price.egp} EGY', style: label-md bold primary), VariantSelector unchanged, DeliveryInfo unchanged, Related horizontal. bottomNavigationBar = Container(height:72, padding: EdgeInsetsDirectional.all(16), child: FilledButton(style: FilledButton.styleFrom(backgroundColor: Color(0xFF904D00) /* + gold gradient via Ink */), onPressed: (){context.read<CartCubit>().add(p.id);}, child: Text('Add to Cart'))).
 
 Keep WishlistToggleIcon + share actions.
 
-- [ ] **Step 4: PASS + verify**
+- [x] **Step 4: PASS + verify**
 
 Run: `flutter test ... -v` PASS; `flutter analyze; flutter test`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/features/storefront/presentation/pages/details_page.dart lib/features/storefront/presentation/pages/cart_page.dart
@@ -343,7 +349,7 @@ git commit -m "feat(details): Stitch reskin EGY pricing + gold CTA (phase 2)"
 - Consumes: CatalogCubit category/filter/visible
 - Produces: Catalog grid with Stitch pill filters + circular chips
 
-- [ ] **Step 1: Write failing catalog chip test**
+- [x] **Step 1: Write failing catalog chip test**
 
 ```dart
 testWidgets('Catalog shows StitchCategoryChips and grid', (w)async{
@@ -352,21 +358,21 @@ testWidgets('Catalog shows StitchCategoryChips and grid', (w)async{
 });
 ```
 
-- [ ] **Step 2: Run FAIL**
+- [x] **Step 2: Run FAIL**
 
 Run: `flutter test ...` FAIL
 
-- [ ] **Step 3: Reskin CategoriesPage + CatalogPage**
+- [x] **Step 3: Reskin CategoriesPage + CatalogPage**
 
 CategoriesPage: replace list with Grid circular chips (same widget as Home). CatalogPage: AppBar tune icon Badge, body Column CatalogSearchBar + if hasActiveFilters ActiveFiltersBar pill style + CatalogSortBar + GridView.builder 2-col .68 childAspectRatio with StitchProductGridCard. Keep FilterSheet bottom sheet but style container radius 20 + outlineVariant.
 
 OrdersPage: order cards with surface outlineVariant border, status chip primaryContainer.
 
-- [ ] **Step 4: PASS**
+- [x] **Step 4: PASS**
 
 Run: `flutter test ... -v` PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/features/storefront/presentation/pages/categories_page.dart lib/features/storefront/presentation/pages/catalog_page.dart lib/features/storefront/presentation/pages/orders_page.dart
@@ -387,7 +393,7 @@ git commit -m "feat(catalog): Stitch categories circular + grid (phase 3)"
 - Consumes: OrdersCubit, CartCubit, AddressesCubit
 - Produces: Checkout 3528 flow with address/payment/summary cards
 
-- [ ] **Step 1: Write failing checkout test**
+- [x] **Step 1: Write failing checkout test**
 
 ```dart
 testWidgets('Checkout shows address card + summary + gold Pay', (w)async{
@@ -397,21 +403,21 @@ testWidgets('Checkout shows address card + summary + gold Pay', (w)async{
 });
 ```
 
-- [ ] **Step 2: Run FAIL**
+- [x] **Step 2: Run FAIL**
 
 Run: `flutter test ...` FAIL
 
-- [ ] **Step 3: Reskin CheckoutPage**
+- [x] **Step 3: Reskin CheckoutPage**
 
 Scaffold ListView padding 16: Address selector Card surfaceContainerLow rounded 16 border outlineVariant, Payment method ListTile radio primary, Summary Card outlineVariant with rows + total bold primary 850 EGY, CTA FilledButton gold secondary "Confirm Order". OrderSuccess: center icon check_circle primaryFixedDim + headline-lg-mobile + button primary.
 
 Verify dark: pump with ThemeMode.dark, expect scaffold #121212.
 
-- [ ] **Step 4: PASS + full verify**
+- [x] **Step 4: PASS + full verify**
 
 Run: `flutter analyze; flutter test; flutter build apk --debug --dart-define-from-file=config/env.staging.local.json` + unzip check no .env
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/features/storefront/presentation/pages/checkout_page.dart lib/features/storefront/presentation/pages/order_success_page.dart

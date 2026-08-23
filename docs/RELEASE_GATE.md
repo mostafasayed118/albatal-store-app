@@ -53,10 +53,10 @@ CI produce a frozen candidate.
 | CORS | PASS (scoped) | Allowed and disallowed origin probes | Test 1 (approved origin) = **N/A — mobile-only scope, no approved web origin**; Test 2 (disallowed origin) = PASS, `docs/evidence/staging-deployment-2026-07-28.md` (Phase 4) |
 | COD E2E | NO-GO | Flutter flow plus order/payment/stock evidence | `[LINK REQUIRED]` |
 | Paymob sandbox E2E | NO-GO | Initiation, success, decline, cancel/retry, duplicate, mismatch, late callback | `[LINK REQUIRED]` |
-| RLS adversarial | FAIL (staging, 2026-07-28) | Required anonymous, IDOR, admin, and payment-denial tests pass live | 41/44 PASS; **3 FAIL — RLS-ESC-001 profiles admin self-escalation (confirmed, real)**: redundant `profiles_update_own` policy (WITH CHECK null) defeats `profiles_update_own_safe` guard; remediation migration required before E2E (`docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md` §FINDING) |
+| RLS adversarial | VERIFIED (staging, post-030, 2026-07-28) | Required anonymous, IDOR, admin, and payment-denial tests pass live | **44/44 PASS** after migration 030 dropped the redundant `profiles_update_own` policy (fixes RLS-ESC-001; was 41/44): `docs/evidence/6c8521a/POST_030_STAGING_VERIFICATION.md` |
 | Race conditions | NO-GO | Concurrent state/stock tests pass exactly once | `[LINK REQUIRED]` |
 | Sentry | NO-GO | Controlled staging event with scrubbed context | `[LINK REQUIRED]` |
-| Android signed artifact | NO-GO | Signature, package, debuggable, checksum, provenance | `[LINK REQUIRED]` |
+| Android signed artifact | NO-GO (evidence exists, re-tie pending) | Signature, package, debuggable, checksum, provenance | `docs/evidence/eebcc4d/RELEASE_APK_PROOF.md` (78MB, v2 signed, no `.env`, 243 tests); tied to `eebcc4d` — must be re-tied to the final designated candidate SHA |
 | Release sign-off | NO-GO | Four signatures in `docs/RELEASE_SIGNOFF.md` | `docs/RELEASE_SIGNOFF.md` |
 
 ## Independent post-remediation review — 2026-07-28
@@ -158,6 +158,28 @@ scoped authorization text (staging-only, project `alxwvyflasewslinufqe`,
 approved candidate SHA, approved 7-name secret scope; no production
 traffic/secrets, commits, pushes, Android release build, unrelated
 deployments, or customer traffic). Overall verdict remains **NO-GO**.
+
+## Record reconciliation — 2026-08-23
+
+Read-only re-verification run; no source changes. Reconciles this register
+with work completed after the 2026-07-28 entries:
+
+- **RLS adversarial: now VERIFIED** — migration 030 (candidate `6c8521a`,
+  tag `release-candidate/6c8521a`, approval `PACKAGE-L3-APPLY-030-6C8521A`)
+  dropped the redundant `profiles_update_own` policy; adversarial suite
+  **44/44 PASS** on staging (`docs/evidence/6c8521a/POST_030_STAGING_VERIFICATION.md`).
+  The K3 §"RLS adversarial FAIL" entry above is superseded.
+- **July Paymob blockers resolved live:** `paymob-callback` forged-HMAC probe
+  now reaches the function's own HMAC layer (`{"message":"Invalid signature"}`)
+  instead of the platform JWT gate — `verify_jwt=false` is deployed correctly;
+  `PAYMOB_IFRAME_ID` secret is now present (names-only check).
+- **Edge Functions:** all 5 ACTIVE, redeployed 2026-08-23 00:43 UTC.
+- **Migration parity:** local/remote in sync through 030.
+- **Local evidence:** `flutter test` 243/243 PASS; `flutter analyze` 0 issues.
+- **Candidate lineage note:** staging candidates `b74d326` → `6c8521a` →
+  `eebcc4d` (APK proof) all precede the current `fix/l2-remediation-package`
+  branch state. A fresh post-merge candidate designation is required before
+  E2E authorization can be reissued.
 
 ## Approval rule
 

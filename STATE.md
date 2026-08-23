@@ -1,6 +1,62 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-07-28T00:00:00Z
+Last run: 2026-08-23T00:00:00Z
+
+## New — 2026-08-23
+
+### Record reconciliation + live staging re-verification (L1 evidence run)
+
+**Why:** STATE.md and RELEASE_GATE.md were stale (last updated 2026-07-28,
+still recording RLS adversarial as FAIL). Git history, tags, and evidence
+folders showed substantial completed work. This run reconciled the record
+against reality and re-verified live staging state. No source code changes.
+
+**Reconciled — work completed since the 2026-07-28 entry but unrecorded:**
+1. **RLS-ESC-001 FIXED** — migration 030 dropped the redundant
+   `profiles_update_own` policy. Post-030 staging verification: adversarial
+   suite **44/44 PASS** (was 41/44). Evidence:
+   `docs/evidence/6c8521a/POST_030_STAGING_VERIFICATION.md` (candidate
+   `6c8521a`, tag `release-candidate/6c8521a`, approval
+   `PACKAGE-L3-APPLY-030-6C8521A`).
+2. **Stitch UI reskin COMPLETE** — all phases committed (`1bf7db3` tokens →
+   `7802a53` checkout "phase 5 FINAL") per
+   `docs/superpowers/plans/2026-08-22-stitch-implementation-plan.md`; plan
+   checkboxes now ticked with a completion banner.
+3. **Android release APK proof** — evidence at
+   `docs/evidence/eebcc4d/RELEASE_APK_PROOF.md` (78MB, v2 signed, no `.env`,
+   243 tests). Commit `2506cbd`.
+
+**Local verification this run (2026-08-23):**
+| Check | Result |
+|-------|--------|
+| `flutter test` | **243 passed, 0 failed** |
+| `flutter analyze` | **No issues found** (pre-existing url_launcher/Sentry infos were fixed by audit batch `2af4c84`) |
+| Working tree | clean (generated registrant side effects restored to HEAD) |
+
+**Live staging re-verification this run (read-only / negative probes only):**
+| Check | Result |
+|-------|--------|
+| Migration parity (`supabase migration list --linked`) | local/remote in sync through **030** |
+| Edge Functions | all 5 ACTIVE, redeployed 2026-08-23 00:43 UTC |
+| `paymob-callback` JWT-gate drift (July B1) | **RESOLVED** — forged-HMAC probe now returns `{"message":"Invalid signature"}` (function HMAC layer), not the platform `UNAUTHORIZED_NO_AUTH_HEADER` gate; `verify_jwt=false` is live |
+| `PAYMOB_IFRAME_ID` secret (July B2) | **RESOLVED** — now present in staging secrets (names-only check) |
+
+**Release gate impact:** RLS adversarial row and Android artifact evidence
+links updated in `docs/RELEASE_GATE.md`. Overall verdict remains **NO-GO**
+pending COD E2E, Paymob sandbox E2E, race-condition, Sentry, and four-party
+sign-off evidence, plus owner designation of a post-merge candidate SHA.
+
+**Open — owner decisions required (environment isolation,
+`docs/ENVIRONMENT_ISOLATION_PLAN.md`):** no second Supabase project exists
+yet (verified via `supabase projects list`; only `alxwvyflasewslinufqe` is
+linked). Pending: (1) approve Option A separate projects, (2) which project
+becomes production, (3) Paymob second integration, (4) Supabase plan tier.
+
+**Branch:** `fix/l2-remediation-package` — 40+ commits ahead of `master`,
+pushed to origin; PR to `master` created this run (see git). Merge remains
+human-gated per AGENTS.md.
+
+---
 
 ## New — 2026-07-28
 
