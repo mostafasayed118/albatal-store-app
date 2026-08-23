@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -245,6 +246,23 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       return null;
     }
   }
+
+  // ─── Testing helpers ──────────────────────────────────────
+
+  @visibleForTesting
+  void persistCacheForTest(List<Product> products) => _persistCache(products);
+
+  @visibleForTesting
+  List<Product>? restorePersistentCacheForTest() => _restorePersistentCache();
+
+  @visibleForTesting
+  void setCacheForTest(List<Product> products) {
+    _cache = products;
+    _cacheTimestamp = DateTime.now();
+  }
+
+  @visibleForTesting
+  List<Product>? get cacheForTest => _cache;
 
   // ─── Mapping helpers ────────────────────────────────────────
 
