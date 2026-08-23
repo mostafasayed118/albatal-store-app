@@ -4,7 +4,7 @@
 **Review date:** 2026-07-26  
 **Current verdict:** **NO-GO**  
 **Staging candidate SHA:** `b74d32653462d555213ac171b12f0f4b7cded7ad` (tag `release-candidate/b74d326`, branch `fix/package-k-security-grants`; designation ref `STAGING-CANDIDATE-B74D326-2026-07-28`; supersedes `fee90bb2365d4709e6a84161f923bacc014a21af`)  
-**Production candidate SHA:** NOT DESIGNATED — Git frozen for production: NO-GO  
+**Production candidate SHA:** `fc0b2a2` — PR #8 merged to `master` 2026-08-23T14:16:01Z; CI run `32644307832` all 7 jobs GREEN at HEAD `ff0bbcf`; Git frozen for production: **YES**
 **Phase 0 planning status:** **APPROVED FOR PLANNING AND CONTROLLED EXECUTION**  
 **Approval reference:** `PHASE0-ALBATAL-2026-07-26-001`  
 **Phase 0 approver:** Mustafa Sayed — Solo Owner  
@@ -45,7 +45,7 @@ CI produce a frozen candidate.
 | Gate | Status | Required evidence | Evidence reference |
 |---|---|---|---|
 | Decisions approved | PASS | Nine approved decisions with named solo owner and date | `docs/DECISIONS.md` |
-| Git frozen | NO-GO | Clean reviewed candidate, immutable SHA, green CI | `[LINK REQUIRED]` |
+| Git frozen | **PASS** (2026-08-23) | Clean reviewed candidate, immutable SHA, green CI | Merge commit `fc0b2a2` (PR #8, conflict-free, verifier sub-agent SAFE); CI `32644307832` = 7/7 green incl. signed Android build |
 | Migration parity | VERIFIED (staging, 2026-07-28) | No unresolved repository/staging drift | `docs/MIGRATION_PARITY.md`, `docs/evidence/staging-deployment-2026-07-28.md` (provenance reconciliation §Post-Remediation Review) |
 | RPC grants | VERIFIED (staging, 2026-07-28, post-029) | Raw staging grant queries for all 9 critical RPCs | All 9 RPCs match target matrix after migration 029 applied; anon/public table DML grants 30→0 (`docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md` Checks 3–4; `test_029_security_grant_repairs.sql` PASS) |
 | Edge Functions | VERIFIED (staging, 2026-07-28) | Function list/auth settings tied to candidate SHA | `docs/evidence/staging-deployment-2026-07-28.md` (Phase 3 + §Governance Closure Addendum: ezbr_sha256 bundle digests, git blob + SHA-256 source digests at `fee90bb2`) |
