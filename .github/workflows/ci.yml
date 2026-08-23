@@ -117,7 +117,7 @@ jobs:
           deno-version: v1.x
 
       - name: Run Deno tests
-        run: deno test --allow-net --allow-env supabase/functions/
+        run: deno test --allow-net --allow-env --allow-read supabase/functions/
 
   secret-scan:
     name: Secret Scan

@@ -18,7 +18,7 @@ const readFileSync = Deno.readTextFileSync;
 const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
 
 Deno.test("send-order-notification uses requireCors for fail-closed CORS", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("requireCors(req)"),
     true,
@@ -27,7 +27,7 @@ Deno.test("send-order-notification uses requireCors for fail-closed CORS", () =>
 });
 
 Deno.test("send-order-notification uses constantTimeEquals for key comparison", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("constantTimeEquals"),
     true,
@@ -47,7 +47,7 @@ Deno.test("send-order-notification uses constantTimeEquals for key comparison", 
 });
 
 Deno.test("send-order-notification uses requireSecret for NOTIFICATIONS_INTERNAL_KEY", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes('requireSecret(req, "NOTIFICATIONS_INTERNAL_KEY")'),
     true,
@@ -56,7 +56,7 @@ Deno.test("send-order-notification uses requireSecret for NOTIFICATIONS_INTERNAL
 });
 
 Deno.test("send-order-notification uses requireSecret for SUPABASE_SERVICE_ROLE_KEY", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes('requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")'),
     true,
@@ -65,7 +65,7 @@ Deno.test("send-order-notification uses requireSecret for SUPABASE_SERVICE_ROLE_
 });
 
 Deno.test("send-order-notification uses corsHeadersFor(req) not legacy corsHeaders", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("corsHeadersFor"),
     true,
@@ -79,7 +79,7 @@ Deno.test("send-order-notification uses corsHeadersFor(req) not legacy corsHeade
 });
 
 Deno.test("send-order-notification uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("jsonHeadersFor(req)"),
     true,
@@ -93,7 +93,7 @@ Deno.test("send-order-notification uses jsonHeadersFor(req) not legacy jsonHeade
 });
 
 Deno.test("send-order-notification never logs raw error objects", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   const catchIdx = source.indexOf("catch");
   if (catchIdx !== -1) {
     const catchBlock = source.substring(catchIdx, catchIdx + 200);

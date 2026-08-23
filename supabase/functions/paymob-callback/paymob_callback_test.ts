@@ -18,7 +18,7 @@ const readFileSync = Deno.readTextFileSync;
 const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
 
 Deno.test("paymob-callback uses requireSecret for PAYMOB_HMAC_SECRET", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes('requireSecret(req, "PAYMOB_HMAC_SECRET")'),
     true,
@@ -27,7 +27,7 @@ Deno.test("paymob-callback uses requireSecret for PAYMOB_HMAC_SECRET", () => {
 });
 
 Deno.test("paymob-callback uses requireSecret for SUPABASE_SERVICE_ROLE_KEY", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes('requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")'),
     true,
@@ -36,7 +36,7 @@ Deno.test("paymob-callback uses requireSecret for SUPABASE_SERVICE_ROLE_KEY", ()
 });
 
 Deno.test("paymob-callback uses corsHeadersFor(req) not legacy corsHeaders", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   // Should import corsHeadersFor
   assertEquals(
     source.includes("corsHeadersFor"),
@@ -52,7 +52,7 @@ Deno.test("paymob-callback uses corsHeadersFor(req) not legacy corsHeaders", () 
 });
 
 Deno.test("paymob-callback uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("jsonHeadersFor(req)"),
     true,
@@ -66,7 +66,7 @@ Deno.test("paymob-callback uses jsonHeadersFor(req) not legacy jsonHeaders()", (
 });
 
 Deno.test("paymob-callback never logs raw error objects", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   const catchIdx = source.indexOf("catch");
   if (catchIdx !== -1) {
     const catchBlock = source.substring(catchIdx, catchIdx + 300);
@@ -85,7 +85,7 @@ Deno.test("paymob-callback never logs raw error objects", () => {
 });
 
 Deno.test("paymob-callback uses verifyHmac for constant-time comparison", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("verifyHmac"),
     true,

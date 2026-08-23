@@ -16,7 +16,7 @@ const readFileSync = Deno.readTextFileSync;
 const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1");
 
 Deno.test("checkout uses requireCors for fail-closed CORS", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("requireCors(req)"),
     true,
@@ -25,7 +25,7 @@ Deno.test("checkout uses requireCors for fail-closed CORS", () => {
 });
 
 Deno.test("checkout uses corsHeadersFor(req) not legacy corsHeaders", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("corsHeadersFor"),
     true,
@@ -39,7 +39,7 @@ Deno.test("checkout uses corsHeadersFor(req) not legacy corsHeaders", () => {
 });
 
 Deno.test("checkout uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   assertEquals(
     source.includes("jsonHeadersFor(req)"),
     true,
@@ -53,7 +53,7 @@ Deno.test("checkout uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
 });
 
 Deno.test("checkout never logs raw error objects", () => {
-  const source = readFileSync(SOURCE_PATH, "utf-8");
+  const source = readFileSync(SOURCE_PATH);
   const catchIdx = source.indexOf("catch");
   if (catchIdx !== -1) {
     const catchBlock = source.substring(catchIdx, catchIdx + 200);
