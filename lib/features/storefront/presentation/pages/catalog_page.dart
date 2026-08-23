@@ -128,8 +128,7 @@ class _CatalogPageState extends State<CatalogPage> {
                               onWishlist: () => context
                                   .read<WishlistCubit>()
                                   .toggle(product.id),
-                              isWishlisted:
-                                  wishlist.ids.contains(product.id),
+                              isWishlisted: wishlist.ids.contains(product.id),
                             );
                           },
                         ),

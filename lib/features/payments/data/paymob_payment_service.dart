@@ -87,14 +87,12 @@ class PaymobPaymentService implements PaymentService {
   @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async {
     try {
-      final response = await _client
-          .rpc(
-            'confirm_cod_payment',
-            params: {
-              'p_order_id': orderId,
-            },
-          )
-          .timeout(_rpcTimeout);
+      final response = await _client.rpc(
+        'confirm_cod_payment',
+        params: {
+          'p_order_id': orderId,
+        },
+      ).timeout(_rpcTimeout);
 
       final data = response as Map<String, dynamic>;
       final ok = data['ok'] as bool? ?? false;
@@ -117,8 +115,7 @@ class PaymobPaymentService implements PaymentService {
           'No Cash on Delivery payment found for this order.',
         'not_owner' => 'You can only confirm your own orders.',
         'payment_not_pending' => 'This payment has already been processed.',
-        'payment_not_cod' =>
-          'This order is not a Cash on Delivery order.',
+        'payment_not_cod' => 'This order is not a Cash on Delivery order.',
         'order_not_found' => 'Order not found.',
         'order_not_pending' =>
           'This order can no longer be confirmed. Please check your orders.',

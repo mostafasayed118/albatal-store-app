@@ -96,7 +96,8 @@ void main() {
       );
     }
 
-    testWidgets('gallery is clipped to the 16dp card radius and the CTA sits '
+    testWidgets(
+        'gallery is clipped to the 16dp card radius and the CTA sits '
         'in a 72dp gold bottom bar', (tester) async {
       await tester.pumpWidget(detailsHarness('silk-01'));
       await tester.pump(const Duration(milliseconds: 100));
@@ -115,8 +116,7 @@ void main() {
       expect(find.textContaining('EGY'), findsWidgets);
 
       // Single FilledButton CTA, gold (#904D00 secondary token).
-      final button =
-          tester.widget<FilledButton>(find.byType(FilledButton));
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(
         button.style?.backgroundColor?.resolve(const {}),
         const Color(0xFF904D00),
@@ -159,8 +159,7 @@ void main() {
           ),
         );
 
-    testWidgets('grid card heart toggles the wishlist cubit',
-        (tester) async {
+    testWidgets('grid card heart toggles the wishlist cubit', (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -170,7 +169,9 @@ void main() {
       Finder firstCardHeart() => find.descendant(
             of: find.byType(StitchProductGridCard).first,
             matching: find.byWidgetPredicate(
-              (w) => w is Icon && (w.icon == Icons.favorite || w.icon == Icons.favorite_border),
+              (w) =>
+                  w is Icon &&
+                  (w.icon == Icons.favorite || w.icon == Icons.favorite_border),
             ),
           );
       await tester.ensureVisible(firstCardHeart());
@@ -183,7 +184,8 @@ void main() {
       // Toggling again removes it.
       await tester.tap(firstCardHeart());
       await tester.pump();
-      expect(context.read<WishlistCubit>().state.ids, isNot(contains('silk-01')));
+      expect(
+          context.read<WishlistCubit>().state.ids, isNot(contains('silk-01')));
     });
 
     testWidgets('flash sale add FAB adds the product to the cart',
@@ -211,8 +213,7 @@ void main() {
   });
 
   group('Cart page Stitch alignment', () {
-    testWidgets('item tiles carry an outlineVariant border',
-        (tester) async {
+    testWidgets('item tiles carry an outlineVariant border', (tester) async {
       final store = MemoryStorefrontPersistence();
       final cart = CartCubit(store);
       cart.add(_stubProduct);
@@ -232,14 +233,15 @@ void main() {
       await tester.pump();
 
       final tileContext = tester.element(find.byType(CartItemTile));
-      final expectedBorder =
-          Theme.of(tileContext).colorScheme.outlineVariant;
+      final expectedBorder = Theme.of(tileContext).colorScheme.outlineVariant;
       final tileCardShape = tester
           .widget<Card>(
-            find.descendant(
-              of: find.byType(CartItemTile),
-              matching: find.byType(Card),
-            ).first,
+            find
+                .descendant(
+                  of: find.byType(CartItemTile),
+                  matching: find.byType(Card),
+                )
+                .first,
           )
           .shape as RoundedRectangleBorder;
       expect(tileCardShape.side.color, expectedBorder);

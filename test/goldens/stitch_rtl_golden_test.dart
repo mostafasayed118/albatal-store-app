@@ -97,10 +97,12 @@ void main() {
       expect(find.byType(StitchSearchBar), findsOneWidget);
       // Verify Directionality wrapping HomePage is LTR.
       final dir = tester.widget<Directionality>(
-        find.ancestor(
-          of: find.byType(HomePage),
-          matching: find.byType(Directionality),
-        ).first,
+        find
+            .ancestor(
+              of: find.byType(HomePage),
+              matching: find.byType(Directionality),
+            )
+            .first,
       );
       expect(dir.textDirection, TextDirection.ltr);
     });
@@ -116,10 +118,12 @@ void main() {
       expect(find.byType(StitchCategoryChips), findsOneWidget);
       expect(find.byType(StitchSearchBar), findsOneWidget);
       final dir = tester.widget<Directionality>(
-        find.ancestor(
-          of: find.byType(HomePage),
-          matching: find.byType(Directionality),
-        ).first,
+        find
+            .ancestor(
+              of: find.byType(HomePage),
+              matching: find.byType(Directionality),
+            )
+            .first,
       );
       expect(dir.textDirection, TextDirection.rtl);
     });

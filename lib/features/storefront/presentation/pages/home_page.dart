@@ -120,8 +120,7 @@ class _HomePageState extends State<HomePage> {
                                 Chip(
                                   label: Text(q),
                                   avatar: const Icon(Icons.history, size: 16),
-                                  onDeleted: () =>
-                                      catalog.deleteRecentQuery(q),
+                                  onDeleted: () => catalog.deleteRecentQuery(q),
                                   deleteIcon: const Icon(Icons.close, size: 14),
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
@@ -145,16 +144,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                   if (flashProduct != null) ...[
                     SliverPadding(
-                      padding: const EdgeInsetsDirectional.symmetric(
-                          horizontal: 16),
+                      padding:
+                          const EdgeInsetsDirectional.symmetric(horizontal: 16),
                       sliver: SliverToBoxAdapter(
                         child: Row(
                           children: [
                             Expanded(
                               child: Text(l.flashSale,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge),
+                                  style:
+                                      Theme.of(context).textTheme.titleLarge),
                             ),
                             Text(
                               '-15%',
@@ -210,7 +208,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 12),
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 12),
                     sliver: SliverToBoxAdapter(
                       child: Text(l.fabricsFound(state.visible.length)),
                     ),
@@ -238,13 +237,11 @@ class _HomePageState extends State<HomePage> {
                           final product = state.visible[index];
                           return StitchProductGridCard(
                             product: product,
-                            onTap: () =>
-                                context.push('/product/${product.id}'),
+                            onTap: () => context.push('/product/${product.id}'),
                             onWishlist: () => context
                                 .read<WishlistCubit>()
                                 .toggle(product.id),
-                            isWishlisted:
-                                wishlist.ids.contains(product.id),
+                            isWishlisted: wishlist.ids.contains(product.id),
                           );
                         },
                       ),

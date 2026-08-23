@@ -58,7 +58,8 @@ void main() {
       await cubit.close();
     });
 
-    test('idempotency keys differ across fresh cubits (not persisted) — TODO persisted',
+    test(
+        'idempotency keys differ across fresh cubits (not persisted) — TODO persisted',
         () async {
       final repoA = _StubCheckoutRepo();
       final cubitA = CheckoutCubit(repoA);

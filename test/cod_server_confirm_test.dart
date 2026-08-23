@@ -238,7 +238,8 @@ void main() {
   group('COD timeout path', () {
     test('emits failed when RPC hangs and timeout fires', () async {
       final service = _CompleterConfirmService();
-      final cubit = PaymentCubit(service, watchTimeout: const Duration(seconds: 1));
+      final cubit =
+          PaymentCubit(service, watchTimeout: const Duration(seconds: 1));
 
       cubit.initPayment(amount: Money.egp(100), orderId: 'ord-timeout');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
@@ -343,7 +344,8 @@ void main() {
   });
 
   group('COD payment_not_found rejection', () {
-    test('server returns payment_not_found → failed with safe message', () async {
+    test('server returns payment_not_found → failed with safe message',
+        () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message: 'No Cash on Delivery payment found for this order.',
@@ -381,8 +383,7 @@ void main() {
       expect(cubit.state.status, PaymentStatus.failed);
       expect(cubit.state.errorMessage, contains('no longer be confirmed'));
       // Must NOT leak the order ID.
-      expect(
-          cubit.state.errorMessage, isNot(contains('ord-cancelled')));
+      expect(cubit.state.errorMessage, isNot(contains('ord-cancelled')));
       await cubit.close();
     });
   });
@@ -418,7 +419,8 @@ void main() {
       await cubit.close();
     });
 
-    test('COD failure before RPC returns leaves state as processing until resolved',
+    test(
+        'COD failure before RPC returns leaves state as processing until resolved',
         () async {
       final service = _CompleterConfirmService();
       final cubit = PaymentCubit(service);

@@ -53,8 +53,7 @@ class StitchFlashSaleCard extends StatelessWidget {
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: product.imageAsset == null
-                      ? const Icon(Icons.texture,
-                          color: Colors.white, size: 28)
+                      ? const Icon(Icons.texture, color: Colors.white, size: 28)
                       : product.imageAsset!.startsWith('http')
                           ? CachedNetworkImage(
                               imageUrl: product.imageAsset!,
@@ -64,9 +63,10 @@ class StitchFlashSaleCard extends StatelessWidget {
                                 child: const Icon(Icons.texture,
                                     color: Colors.white, size: 28),
                               ),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.texture,
-                                      color: Colors.white, size: 28),
+                              errorWidget: (context, url, error) => const Icon(
+                                  Icons.texture,
+                                  color: Colors.white,
+                                  size: 28),
                             )
                           : Image.asset(
                               product.imageAsset!,
@@ -89,8 +89,7 @@ class StitchFlashSaleCard extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            padding:
-                                const EdgeInsetsDirectional.symmetric(
+                            padding: const EdgeInsetsDirectional.symmetric(
                               horizontal: 6,
                               vertical: 2,
                             ),

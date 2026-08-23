@@ -82,8 +82,8 @@ final class CatalogFilters extends Equatable {
         product.name.toLowerCase().contains(normalizedQuery) ||
         product.category.toLowerCase().contains(normalizedQuery) ||
         (product.description?.toLowerCase().contains(normalizedQuery) ?? false);
-    final matchesColor =
-        colorFilter.isEmpty || catalogColorName(product.imageColor) == colorFilter;
+    final matchesColor = colorFilter.isEmpty ||
+        catalogColorName(product.imageColor) == colorFilter;
     final matchesPrice = product.price >= priceMin && product.price <= priceMax;
     return matchesCategory && matchesQuery && matchesColor && matchesPrice;
   }
@@ -104,10 +104,12 @@ final class CatalogFilters extends Equatable {
         sort: sort ?? this.sort,
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
         priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
-        priceMax:
-            resetPrice ? CatalogConstants.unboundedMax : (priceMax ?? this.priceMax),
+        priceMax: resetPrice
+            ? CatalogConstants.unboundedMax
+            : (priceMax ?? this.priceMax),
       );
 
   @override
-  List<Object?> get props => [category, query, sort, colorFilter, priceMin, priceMax];
+  List<Object?> get props =>
+      [category, query, sort, colorFilter, priceMin, priceMax];
 }

@@ -30,8 +30,7 @@ class _StubAuthRepo implements AuthRepository {
       const Success(Authenticated('user-1'));
 
   @override
-  Future<Result<void>> resetPassword(String email) async =>
-      const Success(null);
+  Future<Result<void>> resetPassword(String email) async => const Success(null);
 
   @override
   Future<Result<void>> updatePassword(String newPassword) async =>
@@ -178,7 +177,8 @@ void main() {
       await cubit.close();
     });
 
-    test('SupabaseProfileRepository never sends is_admin column (client cannot escalate)',
+    test(
+        'SupabaseProfileRepository never sends is_admin column (client cannot escalate)',
         () async {
       // This is a contract test documenting the expected repository behavior:
       // SupabaseProfileRepository.upsert only sends id, full_name, phone, avatar_url

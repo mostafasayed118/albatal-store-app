@@ -200,7 +200,8 @@ void main() {
       );
     });
 
-    testWidgets('tune Badge appears when filters active and ActiveFiltersBar pills',
+    testWidgets(
+        'tune Badge appears when filters active and ActiveFiltersBar pills',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
@@ -271,7 +272,8 @@ void main() {
       final order = Order(
         id: 'ORD-2026-0001',
         items: const [
-          CartItem(product: product, color: 'Emerald', length: '2m', quantity: 1),
+          CartItem(
+              product: product, color: 'Emerald', length: '2m', quantity: 1),
         ],
         subtotal: const Money.egp(1290),
         shipping: const Money.egp(75),
@@ -294,12 +296,18 @@ void main() {
 
       // OrderCard Card should use surface + outlineVariant border radius 16.
       final card = tester.widget<Card>(find.byType(Card).first);
-      expect(card.color, Theme.of(tester.element(find.byType(Card).first)).colorScheme.surface);
+      expect(
+          card.color,
+          Theme.of(tester.element(find.byType(Card).first))
+              .colorScheme
+              .surface);
       final shape = card.shape as RoundedRectangleBorder;
       expect(shape.borderRadius, const BorderRadius.all(Radius.circular(16)));
       expect(
         shape.side.color,
-        Theme.of(tester.element(find.byType(Card).first)).colorScheme.outlineVariant,
+        Theme.of(tester.element(find.byType(Card).first))
+            .colorScheme
+            .outlineVariant,
       );
       expect(shape.side.width, 1);
     });

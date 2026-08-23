@@ -28,11 +28,9 @@ class AddToCartButton extends StatelessWidget {
       decoration: BoxDecoration(color: scheme.surface),
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor:
-              state.inStock ? scheme.secondary : scheme.outline,
-          foregroundColor: state.inStock
-              ? scheme.onSecondary
-              : scheme.onSurfaceVariant,
+          backgroundColor: state.inStock ? scheme.secondary : scheme.outline,
+          foregroundColor:
+              state.inStock ? scheme.onSecondary : scheme.onSurfaceVariant,
           // 72dp bar − 2×16dp padding = 40dp button height.
           minimumSize: const Size.fromHeight(40),
           shape: const RoundedRectangleBorder(

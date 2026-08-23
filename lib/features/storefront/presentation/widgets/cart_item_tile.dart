@@ -99,7 +99,8 @@ class CartItemTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: Size.zero,
                           ),
-                          child: Text(l.remove, style: const TextStyle(fontSize: 12)),
+                          child: Text(l.remove,
+                              style: const TextStyle(fontSize: 12)),
                         ),
                         TextButton.icon(
                           onPressed: () {

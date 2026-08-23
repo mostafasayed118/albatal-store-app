@@ -55,7 +55,8 @@ class _StubCheckoutRepo implements CheckoutRepository {
     String? idempotencyKey,
   }) async {
     if (shouldFail) return const Failure(AppError('Checkout failed'));
-    final subtotal = items.fold(Money.zero, (Money v, CartItem i) => v + i.product.price * i.quantity);
+    final subtotal = items.fold(
+        Money.zero, (Money v, CartItem i) => v + i.product.price * i.quantity);
     return Success(PendingOrder(
       orderId: 'ORD-STUB-1',
       subtotal: subtotal,
@@ -87,11 +88,16 @@ class _StubPayService implements PaymentService {
     required PaymentMethod method,
     required String orderId,
     required String customerEmail,
-  }) async => const PaymentPending(checkoutUrl: 'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t');
+  }) async =>
+      const PaymentPending(
+          checkoutUrl:
+              'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t');
   @override
-  Future<PaymentResult> confirmCodPayment({required String orderId}) async => const PaymentFailed(message: 'stub');
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      const PaymentFailed(message: 'stub');
   @override
-  Stream<PaymentResult> watchPaymentStatus(String orderId) => const Stream.empty();
+  Stream<PaymentResult> watchPaymentStatus(String orderId) =>
+      const Stream.empty();
 }
 
 Widget _checkoutHarness({
@@ -101,7 +107,8 @@ Widget _checkoutHarness({
   MemoryStorefrontPersistence? persistence,
 }) {
   final store = persistence ?? MemoryStorefrontPersistence();
-  final cart = CartCubit(store)..add(products.first, color: 'Emerald', length: '2m', quantity: 1);
+  final cart = CartCubit(store)
+    ..add(products.first, color: 'Emerald', length: '2m', quantity: 1);
   return MaterialApp(
     theme: AppTheme.light(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -111,18 +118,23 @@ Widget _checkoutHarness({
         BlocProvider.value(value: cart),
         BlocProvider(create: (_) => WishlistCubit(store)),
         BlocProvider(create: (_) => OrdersCubit(store)),
-        BlocProvider(create: (_) => AddressesCubit(addrRepo ?? _StubAddrRepo(const []))),
+        BlocProvider(
+            create: (_) => AddressesCubit(addrRepo ?? _StubAddrRepo(const []))),
       ],
-      child: CheckoutPage(checkoutRepository: checkoutRepo ?? _StubCheckoutRepo(), checkoutCubit: checkoutCubit),
+      child: CheckoutPage(
+          checkoutRepository: checkoutRepo ?? _StubCheckoutRepo(),
+          checkoutCubit: checkoutCubit),
     ),
   );
 }
 
-Widget _checkoutWithAddressHarness() => _checkoutHarness(addrRepo: _StubAddrRepo(const [_testAddress]));
+Widget _checkoutWithAddressHarness() =>
+    _checkoutHarness(addrRepo: _StubAddrRepo(const [_testAddress]));
 
 void main() {
   group('Task 5 — Checkout Stitch reskin (3528 flow)', () {
-    testWidgets('ListView uses EdgeInsetsDirectional padding.all(16) and Shipping Address Card is surface/outlineVariant 16 clipAntiAlias',
+    testWidgets(
+        'ListView uses EdgeInsetsDirectional padding.all(16) and Shipping Address Card is surface/outlineVariant 16 clipAntiAlias',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
@@ -140,8 +152,10 @@ void main() {
       // Find the first Card that contains the shipping address title and AddressPicker descendants.
       final shippingCard = tester.widget<Card>(find.byType(Card).first);
       // Card should carry Stitch tokens surface + outlineVariant border radius 16.
-      final scheme = Theme.of(tester.element(find.byType(Card).first)).colorScheme;
-      expect(shippingCard.color, scheme.surface, reason: 'Shipping Card surface should be scheme.surface');
+      final scheme =
+          Theme.of(tester.element(find.byType(Card).first)).colorScheme;
+      expect(shippingCard.color, scheme.surface,
+          reason: 'Shipping Card surface should be scheme.surface');
       final shape = shippingCard.shape as RoundedRectangleBorder;
       expect(shape.borderRadius, const BorderRadius.all(Radius.circular(16)));
       expect(shape.side.color, scheme.outlineVariant);
@@ -149,27 +163,38 @@ void main() {
       expect(shippingCard.clipBehavior, Clip.antiAlias);
     });
 
-    testWidgets('Server-confirmed totals Card appears after hasPendingOrder with surface outlineVariant 16 titleSmall and 8dp labelRows',
+    testWidgets(
+        'Server-confirmed totals Card appears after hasPendingOrder with surface outlineVariant 16 titleSmall and 8dp labelRows',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final seeded = _seededPendingCubit();
-      await tester.pumpWidget(_checkoutHarness(checkoutCubit: seeded, addrRepo: _StubAddrRepo(const [_testAddress])));
+      await tester.pumpWidget(_checkoutHarness(
+          checkoutCubit: seeded,
+          addrRepo: _StubAddrRepo(const [_testAddress])));
       await tester.pump();
 
       // Should now show Server-confirmed totals card.
       expect(find.text('Server-confirmed totals'), findsOneWidget);
       // Title uses titleSmall.
       final title = tester.widget<Text>(find.text('Server-confirmed totals'));
-      expect(title.style?.fontSize, Theme.of(tester.element(find.text('Server-confirmed totals'))).textTheme.titleSmall?.fontSize);
+      expect(
+          title.style?.fontSize,
+          Theme.of(tester.element(find.text('Server-confirmed totals')))
+              .textTheme
+              .titleSmall
+              ?.fontSize);
 
       // The card wrapping server totals should be surface/outlineVariant 16.
       // Locate the Card ancestor of the title.
       final card = tester.widget<Card>(
-        find.ancestor(of: find.text('Server-confirmed totals'), matching: find.byType(Card)),
+        find.ancestor(
+            of: find.text('Server-confirmed totals'),
+            matching: find.byType(Card)),
       );
-      final scheme = Theme.of(tester.element(find.byType(Card).first)).colorScheme;
+      final scheme =
+          Theme.of(tester.element(find.byType(Card).first)).colorScheme;
       expect(card.color, scheme.surface);
       final shape = card.shape as RoundedRectangleBorder;
       expect(shape.borderRadius, const BorderRadius.all(Radius.circular(16)));
@@ -177,7 +202,8 @@ void main() {
       expect(shape.side.width, 1);
     });
 
-    testWidgets('bottomNavigationBar is Container height 72 EdgeInsetsDirectional.all(16) surface with FilledButton secondary #904D00 controlRadius 8 labelLarge proceedToPayment and hasAddress guard',
+    testWidgets(
+        'bottomNavigationBar is Container height 72 EdgeInsetsDirectional.all(16) surface with FilledButton secondary #904D00 controlRadius 8 labelLarge proceedToPayment and hasAddress guard',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
@@ -187,13 +213,15 @@ void main() {
 
       // Height check via constraints finder - Container height 72 is the Stitch bottom bar pattern.
       expect(
-        find.byWidgetPredicate((w) => w is Container && w.constraints?.maxHeight == 72),
+        find.byWidgetPredicate(
+            (w) => w is Container && w.constraints?.maxHeight == 72),
         findsOneWidget,
         reason: 'Bottom bar Container should have height 72',
       );
       // Padding should be EdgeInsetsDirectional.all(16).
       final containerWithPadding = tester.widget<Container>(
-        find.byWidgetPredicate((w) => w is Container && w.constraints?.maxHeight == 72),
+        find.byWidgetPredicate(
+            (w) => w is Container && w.constraints?.maxHeight == 72),
       );
       expect(containerWithPadding.padding, isA<EdgeInsetsDirectional>());
       expect(containerWithPadding.padding, const EdgeInsetsDirectional.all(16));
@@ -205,9 +233,12 @@ void main() {
       expect(boxDeco?.color, scheme.surface);
 
       // FilledButton inside should be secondary #904D00 and controlRadius 8.
-      final button = tester.widget<FilledButton>(find.byType(FilledButton).last);
-      expect(button.style?.backgroundColor?.resolve(const {}), const Color(0xFF904D00));
-      final shape = button.style?.shape?.resolve(const {}) as RoundedRectangleBorder?;
+      final button =
+          tester.widget<FilledButton>(find.byType(FilledButton).last);
+      expect(button.style?.backgroundColor?.resolve(const {}),
+          const Color(0xFF904D00));
+      final shape =
+          button.style?.shape?.resolve(const {}) as RoundedRectangleBorder?;
       expect(shape?.borderRadius, const BorderRadius.all(Radius.circular(8)));
 
       // Guard: onPressed disabled when no address? In this harness we have address, so should be enabled initially (before creating).
@@ -215,12 +246,16 @@ void main() {
       final ctx = tester.element(find.byType(ListView));
       ctx.read<CheckoutCubit>().clearAddress();
       await tester.pump();
-      final buttonAfterClear = tester.widget<FilledButton>(find.byType(FilledButton).last);
-      expect(buttonAfterClear.onPressed, isNull, reason: 'CTA should be disabled without address (hasAddress guard)');
+      final buttonAfterClear =
+          tester.widget<FilledButton>(find.byType(FilledButton).last);
+      expect(buttonAfterClear.onPressed, isNull,
+          reason: 'CTA should be disabled without address (hasAddress guard)');
     });
 
-    testWidgets('PaymentMethodPage CTA uses secondary #904D00 if present', (tester) async {
-      final cubit = PaymentCubit(_StubPayService())..initPayment(amount: const Money.egp(100), orderId: 'ord-123');
+    testWidgets('PaymentMethodPage CTA uses secondary #904D00 if present',
+        (tester) async {
+      final cubit = PaymentCubit(_StubPayService())
+        ..initPayment(amount: const Money.egp(100), orderId: 'ord-123');
       final cart = CartCubit(MemoryStorefrontPersistence());
       await tester.pumpWidget(MaterialApp(
         theme: AppTheme.light(),
@@ -244,14 +279,17 @@ void main() {
       expect(buttons, findsOneWidget);
       final btn = tester.widget<FilledButton>(buttons.first);
       final bg = btn.style?.backgroundColor?.resolve(const {});
-      expect(bg, const Color(0xFF904D00), reason: 'PaymentMethodPage CTA should use secondary #904D00');
+      expect(bg, const Color(0xFF904D00),
+          reason: 'PaymentMethodPage CTA should use secondary #904D00');
       await cubit.close();
       await cart.close();
     });
   });
 
   group('Task 5 — OrderSuccess Stitch confirmation', () {
-    testWidgets('shows CircleAvatar radius 48 primary with check and retains empty-id error branch', (tester) async {
+    testWidgets(
+        'shows CircleAvatar radius 48 primary with check and retains empty-id error branch',
+        (tester) async {
       await tester.pumpWidget(MaterialApp(
         theme: AppTheme.light(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -262,7 +300,11 @@ void main() {
 
       final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
       expect(avatar.radius, 48);
-      expect(avatar.backgroundColor, Theme.of(tester.element(find.byType(CircleAvatar))).colorScheme.primary);
+      expect(
+          avatar.backgroundColor,
+          Theme.of(tester.element(find.byType(CircleAvatar)))
+              .colorScheme
+              .primary);
       expect(find.byIcon(Icons.check), findsOneWidget);
 
       // Empty-id branch.

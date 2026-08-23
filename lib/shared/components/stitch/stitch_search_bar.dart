@@ -79,8 +79,7 @@ class StitchSearchBar extends StatelessWidget {
                   () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('Voice search coming soon'),
+                        content: Text('Voice search coming soon'),
                       ),
                     );
                   },

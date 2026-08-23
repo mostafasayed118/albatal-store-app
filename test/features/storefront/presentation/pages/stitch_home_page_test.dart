@@ -125,14 +125,13 @@ void main() {
     // Live countdown from startFlashSale is rendered on the flash row.
     final countdown = RegExp(r'^\d{2}:\d{2}:\d{2}$');
     expect(
-      find.byWidgetPredicate((w) =>
-          w is Text && w.data != null && countdown.hasMatch(w.data!)),
+      find.byWidgetPredicate(
+          (w) => w is Text && w.data != null && countdown.hasMatch(w.data!)),
       findsOneWidget,
     );
   });
 
-  testWidgets('tapping the Silk chip filters via cubit.select',
-      (tester) async {
+  testWidgets('tapping the Silk chip filters via cubit.select', (tester) async {
     await tester.pumpWidget(_harness());
     await tester.pump(const Duration(seconds: 1));
 

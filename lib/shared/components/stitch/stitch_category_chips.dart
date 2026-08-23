@@ -47,20 +47,16 @@ class StitchCategoryChips extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isActive
-                        ? _activeFill
-                        : scheme.surfaceContainerHighest,
+                    color:
+                        isActive ? _activeFill : scheme.surfaceContainerHighest,
                     border: Border.all(
-                      color:
-                          isActive ? _activeStroke : scheme.outlineVariant,
+                      color: isActive ? _activeStroke : scheme.outlineVariant,
                       width: 1,
                     ),
                   ),
                   child: Icon(
                     Icons.texture,
-                    color: isActive
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
+                    color: isActive ? scheme.primary : scheme.onSurfaceVariant,
                     size: 22,
                   ),
                 ),
@@ -70,8 +66,7 @@ class StitchCategoryChips extends StatelessWidget {
                   style: textTheme.labelSmall?.copyWith(
                     color:
                         isActive ? scheme.onSurface : scheme.onSurfaceVariant,
-                    fontWeight:
-                        isActive ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 11,
                     height: 1.0,
                   ),

@@ -32,7 +32,8 @@ class EnvConfig {
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
   /// Public anon key. Safe to ship — RLS is the trust boundary, not the key.
-  static const String supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const String supabaseAnonKey =
+      String.fromEnvironment('SUPABASE_ANON_KEY');
 
   /// Sentry DSN. Public identifier; only set when Sentry is approved.
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');

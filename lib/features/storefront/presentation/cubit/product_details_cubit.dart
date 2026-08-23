@@ -64,14 +64,17 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
       final allResult = await _catalogRepository.fetchProducts();
       final related = allResult.when(
         success: (all) => all
-            .where((x) => x.category == singleProduct.category && x.id != singleProduct.id)
+            .where((x) =>
+                x.category == singleProduct.category &&
+                x.id != singleProduct.id)
             .toList(),
         failure: (_) => <Product>[],
       );
       emit(state.copyWith(
         product: singleProduct,
         relatedProducts: related,
-        color: singleProduct.colors.isNotEmpty ? singleProduct.colors.first : '',
+        color:
+            singleProduct.colors.isNotEmpty ? singleProduct.colors.first : '',
         length: singleProduct.sizes.isNotEmpty ? singleProduct.sizes.first : '',
       ));
       return;

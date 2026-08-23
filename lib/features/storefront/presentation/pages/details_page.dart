@@ -19,7 +19,8 @@ import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
 
 class DetailsPage extends StatelessWidget {
-  const DetailsPage({super.key, required this.id, CatalogRepository? catalogRepository})
+  const DetailsPage(
+      {super.key, required this.id, CatalogRepository? catalogRepository})
       : _catalogRepository = catalogRepository;
 
   final String id;
@@ -31,7 +32,9 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())..loadProduct(id),
+      create: (_) =>
+          ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())
+            ..loadProduct(id),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
           final p = s.product;

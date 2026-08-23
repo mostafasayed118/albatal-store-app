@@ -45,8 +45,8 @@ class OrderCard extends StatelessWidget {
                 ),
                 // Stitch pill status chip: primaryContainer fill when applicable.
                 Container(
-                  padding:
-                      const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: scheme.primaryContainer,
                     borderRadius: BorderRadius.circular(999),

@@ -10,7 +10,12 @@ import '../../domain/repositories/catalog_repository.dart';
 import 'flash_sale_ticker.dart';
 
 export '../../domain/entities/catalog_filters.dart'
-    show CatalogFilters, CatalogSort, CatalogSortLabel, CatalogConstants, catalogColorName;
+    show
+        CatalogFilters,
+        CatalogSort,
+        CatalogSortLabel,
+        CatalogConstants,
+        catalogColorName;
 
 enum CatalogStatus { initial, loading, ready, error }
 
@@ -274,14 +279,15 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   void setColorFilter(String color) {
     if (color == state.colorFilter) {
-      emit(state.copyWith(filters: state.filters.copyWith(clearColorFilter: true)));
+      emit(state.copyWith(
+          filters: state.filters.copyWith(clearColorFilter: true)));
     } else {
       emit(state.copyWith(filters: state.filters.copyWith(colorFilter: color)));
     }
   }
 
-  void setPriceRange(Money min, Money max) =>
-      emit(state.copyWith(filters: state.filters.copyWith(priceMin: min, priceMax: max)));
+  void setPriceRange(Money min, Money max) => emit(state.copyWith(
+      filters: state.filters.copyWith(priceMin: min, priceMax: max)));
 
   void clearFilters() => emit(state.copyWith(filters: const CatalogFilters()));
 

@@ -119,7 +119,8 @@ void main() {
       expect(restored, isNull);
     });
 
-    test('cache hit path: findProductById and fetchProductById return same product',
+    test(
+        'cache hit path: findProductById and fetchProductById return same product',
         () async {
       const product = Product(
         id: '33333333-3333-3333-3333-333333333333',

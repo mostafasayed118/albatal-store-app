@@ -6,9 +6,11 @@ abstract final class AppTheme {
   @Deprecated('Use primaryStitch/surfaceStitch')
   static const emerald = Color(0xFF064E3B); // alias -> stitch primaryContainer
   @Deprecated('Use primaryStitch/surfaceStitch')
-  static const gold = Color(0xFFD97706); // legacy accent alias -> stitch secondary
+  static const gold =
+      Color(0xFFD97706); // legacy accent alias -> stitch secondary
   @Deprecated('Use primaryStitch/surfaceStitch')
-  static const offWhite = Color(0xFFFAFAFA); // deprecated alias -> stitch scaffold #F9F9F9
+  static const offWhite =
+      Color(0xFFFAFAFA); // deprecated alias -> stitch scaffold #F9F9F9
   static const charcoal = Color(0xFF121212);
   static const slate = Color(0xFF1E293B);
   static const terracotta = Color(0xFFBA1A1A);

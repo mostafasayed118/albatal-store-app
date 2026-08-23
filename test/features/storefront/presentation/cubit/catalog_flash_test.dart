@@ -13,7 +13,8 @@ class _StubRepo implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);
   @override
-  Future<Result<List<String>>> fetchCategories() async => const Success(['All']);
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All']);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
       Failure(AppError('Product not found'));
@@ -30,8 +31,7 @@ void main() {
   test('flashRemaining ticks every second', () {
     fakeAsync((a) {
       final base = DateTime(2026);
-      final cubit =
-          CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
+      final cubit = CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
       cubit.startFlashSale(end: base.add(const Duration(seconds: 3)));
       expect(cubit.state.flashRemaining?.inSeconds, 3);
       a.elapse(const Duration(seconds: 1));
@@ -45,8 +45,7 @@ void main() {
   test('flash timer cancels on close and reaches zero', () {
     fakeAsync((a) {
       final base = DateTime(2026);
-      final cubit =
-          CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
+      final cubit = CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
       cubit.startFlashSale(end: base.add(const Duration(seconds: 1)));
       a.elapse(const Duration(seconds: 2));
       expect(cubit.state.flashRemaining, Duration.zero);
