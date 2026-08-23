@@ -2,6 +2,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'crash_reporting_service.dart';
 import 'env_config.dart';
+import 'logger.dart';
 
 /// Sentry-backed crash reporting service.
 ///
@@ -26,7 +27,8 @@ class SentryCrashReportingService implements CrashReportingService {
     if (dsn.isEmpty) {
       // DSN not configured — remain a no-op. The DI container should
       // have registered NoOpCrashReportingService instead, but this is
-      // a safety net.
+      // a safety net. Log warning so misconfiguration is visible.
+      Log.w('Sentry disabled — no DSN', category: LogCategory.app);
       return;
     }
 
@@ -44,6 +46,8 @@ class SentryCrashReportingService implements CrashReportingService {
         // ─── Environment metadata ─────────────────────────────
         options.environment = EnvConfig.environment;
         // Release and dist are set by the build system if needed.
+
+        options.tracesSampleRate = 0.1;
 
         // ─── Defense-in-depth scrubbing ───────────────────────
         // The beforeSend hook scrubs any PII that might leak

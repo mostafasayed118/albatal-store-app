@@ -79,6 +79,7 @@ android {
             }
             isMinifyEnabled = true
             isShrinkResources = true
+            // TODO: narrow -keep androidx.** to core/lifecycle per audit
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

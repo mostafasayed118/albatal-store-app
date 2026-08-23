@@ -248,6 +248,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   // ─── Mapping helpers ────────────────────────────────────────
 
+  // TODO: add cached_network_image for Storage URLs with Cache-Control max-age=86400
   static Product _mapProduct(
     Map<String, dynamic> row,
     List<Map<String, dynamic>> variants,
