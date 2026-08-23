@@ -1,0 +1,28 @@
+# Gitleaks config — extends the default ruleset.
+# Allowlists ONLY triaged false positives (audited 2026-08-23, PR #8):
+#
+# 1. supabase/tests/test_026_forward_repair.sql
+#    gitleaks "generic-api-key" fires on the literal test fixture string
+#    idempotency_key = 'test-idempotency-001'. No secret exists in the file.
+#
+# 2. test/.../stitch_details_test.dart
+#    generic-api-key fired on a cart-item variant key ('silk-01-Emerald-1m').
+#    Full git history of this path contains no credential material.
+#
+# 3. config/env.staging.json / config/env.production.json
+#    Hold only the Supabase ANON key (public by design: it ships inside the
+#    client app bundle; data access is enforced by RLS — adversarial suite
+#    44/44 PASS). High-risk secrets (PAYMOB_*, SUPABASE_SERVICE_ROLE_KEY,
+#    private keys) are still caught by the dedicated CI step in ci.yml and
+#    by default gitleaks rules on every other path.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Triaged false positives — see comments above"
+paths = [
+  '''^supabase/tests/test_026_forward_repair\.sql$''',
+  '''^test/features/storefront/presentation/pages/stitch_details_test\.dart$''',
+  '''^config/env\.staging\.json$''',
+  '''^config/env\.production\.json$''',
+]

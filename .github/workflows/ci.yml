@@ -22,7 +22,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
 
@@ -48,7 +48,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
 
@@ -78,7 +78,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
 
@@ -134,8 +134,8 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          config-path: .github/gitleaks.toml
+        # Custom rules live at repo root .gitleaks.toml (extends defaults;
+        # allowlists only triaged false positives — see that file).
 
       - name: High-risk secret patterns
         run: |
@@ -163,7 +163,11 @@ jobs:
           fi
 
           echo "==> JWT-like tokens in source"
+          # config/env*.json hold only the Supabase ANON key (public by
+          # design: ships in the client bundle; access is RLS-gated).
+          # Service-role/Paymob secrets are checked separately below.
           if rg -n --type-add 'src:*.{dart,ts,js,json,yaml,yml,env,toml,sh}' --type src \
+              --glob '!config/env*.json' \
               -e 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'; then
             echo "::error::JWT-like token detected in source"
             EXIT=1
@@ -227,7 +231,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
 
