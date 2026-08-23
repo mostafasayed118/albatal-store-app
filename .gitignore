@@ -16,6 +16,12 @@ coverage/
 !.env.example
 secrets-*.env
 
+# Build-time env overrides (real values filled in locally)
+# The placeholder templates env.staging.json / env.production.json
+# ARE committed; only the *.local.json variants hold real secrets.
+config/env.*.local.json
+config/env.*.secret.json
+
 # Android
 android/local.properties
 android/key.properties
@@ -51,6 +57,17 @@ supabase/.temp/
 
 # Local agent config (never commit local settings)
 .claude/
+
+# Node.js test runners (ephemeral — RLS/Paymob verification scripts)
+node_modules/
+package.json
+package-lock.json
+
+# IDE tool directories
+.freebuff/
+
+# Superpowers local reports (never commit)
+.superpowers-*
 
 # Loop engineering
 loop-ledger.json

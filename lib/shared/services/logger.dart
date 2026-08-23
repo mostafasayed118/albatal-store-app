@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 /// Log levels for filtering output.
 enum LogLevel { debug, info, warning, error }
@@ -79,8 +80,7 @@ class Log {
     _log(level, LogCategory.cubit, '[$cubitName] $message');
   }
 
-  static void api(String method, String url,
-      {int? statusCode, dynamic body}) {
+  static void api(String method, String url, {int? statusCode, dynamic body}) {
     final statusStr = statusCode != null ? ' → $statusCode' : '';
     _log(LogLevel.info, LogCategory.network, '$method $url$statusStr');
     if (body != null && kDebugMode) {
@@ -96,7 +96,19 @@ class Log {
 
   static void _log(LogLevel level, LogCategory category, String message) {
     if (level.index < _minLevel.index) return;
-    if (kReleaseMode) return; // No output in release mode
+    if (kReleaseMode) {
+      Sentry.addBreadcrumb(Breadcrumb(
+        message: message,
+        category: category.name,
+        level: switch (level) {
+          LogLevel.debug => SentryLevel.debug,
+          LogLevel.info => SentryLevel.info,
+          LogLevel.warning => SentryLevel.warning,
+          LogLevel.error => SentryLevel.error,
+        },
+      ));
+      return;
+    }
 
     final parts = <String>[];
 

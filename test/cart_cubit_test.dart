@@ -1,6 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
+import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/data/products_data.dart';
@@ -33,8 +33,7 @@ void main() {
   test('restores configured cart lines and wishlist ids from local storage',
       () async {
     final storage = MemoryStorefrontPersistence();
-    Product? lookup(String id) =>
-        products.where((p) => p.id == id).firstOrNull;
+    Product? lookup(String id) => products.where((p) => p.id == id).firstOrNull;
     final sourceCart = CartCubit(storage, productLookup: lookup);
     final sourceWishlist = WishlistCubit(storage);
 

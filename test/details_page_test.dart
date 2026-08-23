@@ -1,5 +1,5 @@
 import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
+import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
@@ -18,7 +18,8 @@ Widget _harness(String productId) {
         BlocProvider(create: (_) => WishlistCubit(persistence)),
         BlocProvider(create: (_) => CartCubit(persistence)),
       ],
-      child: DetailsPage(id: productId, catalogRepository: LocalCatalogRepository()),
+      child: DetailsPage(
+          id: productId, catalogRepository: LocalCatalogRepository()),
     ),
   );
 }

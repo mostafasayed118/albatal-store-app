@@ -1,14 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'app.dart';
 import 'shared/services/app_bloc_observer.dart';
+import 'shared/services/crash_reporting_service.dart';
+import 'shared/services/env_config.dart';
 import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
-
-import 'core/services/crash_reporting_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,26 @@ Future<void> main() async {
 
   // Set up Bloc observer for state change logging
   Bloc.observer = AppBlocObserver();
+
+  // Sentry init per docs — must be awaited before FlutterError binding
+  // and wrap runApp. Keep NoOp fallback when DSN is empty.
+  if (EnvConfig.sentryDsn.isEmpty) {
+    Log.w('Sentry disabled — no DSN', category: LogCategory.app);
+  } else {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = EnvConfig.sentryDsn;
+        options.environment = EnvConfig.environment;
+        options.sendDefaultPii = false;
+        options.attachScreenshot = false;
+        options.tracesSampleRate = 0.1;
+        options.beforeSend = (event, hint) {
+          // Defense-in-depth scrub is handled by SentryCrashReportingService._scrubEvent
+          return event;
+        };
+      },
+    );
+  }
 
   // Bootstrap Supabase + DI. Either can throw if .env is missing, env
   // vars are blank, or SharedPreferences fails. Without a guard the app
@@ -33,15 +54,16 @@ Future<void> main() async {
     await configureDependencies();
     Log.i('Dependencies ready', category: LogCategory.app);
 
-    // Initialize crash reporting after DI is ready so Sentry is
-    // configured before runApp. If no DSN is configured the service
-    // silently degrades to a no-op.
+    // Crash reporting service complements direct SentryFlutter.init above
+    // and provides NoOp fallback when DSN is empty. init() is a no-op
+    // if Sentry was already initialized.
     final crashReporter = getIt<CrashReportingService>();
     crashReporter.init();
 
-    // Capture Flutter framework errors.
+    // Capture Flutter framework errors — must be after Sentry init.
     FlutterError.onError = (details) {
-      Log.e('Flutter error', error: details.exception, stackTrace: details.stack);
+      Log.e('Flutter error',
+          error: details.exception, stackTrace: details.stack);
       crashReporter.captureError(
         details.exception,
         details.stack,
@@ -81,7 +103,7 @@ class _BootstrapErrorApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsetsDirectional.all(32),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,

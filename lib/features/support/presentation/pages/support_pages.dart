@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 
@@ -12,9 +13,10 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.privacyPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
-          Text(l.privacyPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.privacyPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -31,9 +33,10 @@ class TermsOfServicePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.termsOfService)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
-          Text(l.termsOfServiceContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.termsOfServiceContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -50,9 +53,10 @@ class ShippingPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.shippingPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
-          Text(l.shippingPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.shippingPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -69,9 +73,10 @@ class ReturnsPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.returnsPolicy)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
-          Text(l.returnsPolicyContent, style: Theme.of(context).textTheme.bodyLarge),
+          Text(l.returnsPolicyContent,
+              style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -88,7 +93,7 @@ class SupportPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.customerSupport)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         children: [
           Card(
             child: ListTile(
@@ -96,8 +101,11 @@ class SupportPage extends StatelessWidget {
               title: Text(l.whatsappSupport),
               subtitle: Text(l.whatsappSupportDescription),
               trailing: const Icon(Icons.open_in_new),
-              onTap: () {
-                // TODO: Launch WhatsApp
+              onTap: () async {
+                final uri = Uri.parse('https://wa.me/1234567890');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           ),
@@ -108,8 +116,12 @@ class SupportPage extends StatelessWidget {
               title: Text(l.emailSupport),
               subtitle: Text(l.emailSupportAddress),
               trailing: const Icon(Icons.open_in_new),
-              onTap: () {
-                // TODO: Launch email
+              onTap: () async {
+                final uri =
+                    Uri.parse('mailto:${context.l10n.emailSupportAddress}');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           ),
@@ -121,7 +133,9 @@ class SupportPage extends StatelessWidget {
               subtitle: Text(l.faqDescription),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                // TODO: Navigate to FAQ
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('FAQ section coming soon')),
+                );
               },
             ),
           ),

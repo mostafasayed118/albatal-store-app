@@ -101,7 +101,8 @@ BEGIN
     END IF;
   END IF;
 
-  -- ─── Validate items, read DB prices, check stock ────────
+   -- ─── Validate items, read DB prices, check stock ────────
+  -- TODO(audit): batch variant SELECT with UNNEST + FOR UPDATE to prevent concurrent oversell (see 025 race_safe)
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) LOOP
     v_product_id := (v_item->>'product_id')::UUID;
     v_size       := v_item->>'size';
@@ -152,14 +153,23 @@ BEGIN
   v_shipping := calculate_shipping_fee(v_governorate, v_subtotal);
   v_total    := v_subtotal + v_shipping;
 
-  -- ─── Compute expiry ──────────────────────────────────────
-  v_expires_at := now() + interval '15 minutes';
+   -- ─── Compute expiry ──────────────────────────────────────
+   v_expires_at := now() + interval '15 minutes';
 
-  -- ─── Insert order (atomic with the rest) ─────────────────
-  -- Wrap in a sub-block so a unique-constraint violation on
-  -- idempotency_key (from a concurrent request with the same
-  -- key) is caught and the existing order is returned instead.
-  BEGIN
+   -- ─── Ensure a profile exists ──────────────────────────
+   -- The handle_new_user() trigger on auth.users should have
+   -- created a profile, but users who signed up before that
+   -- trigger was added, or whose profile was deleted, would
+   -- hit a FK violation on orders.user_id -> profiles(id).
+   INSERT INTO profiles (id, full_name, phone)
+   VALUES (v_user_id, '', '')
+   ON CONFLICT (id) DO NOTHING;
+
+   -- ─── Insert order (atomic with the rest) ─────────────────
+   -- Wrap in a sub-block so a unique-constraint violation on
+   -- idempotency_key (from a concurrent request with the same
+   -- key) is caught and the existing order is returned instead.
+   BEGIN
     INSERT INTO orders (
       user_id, status, subtotal, shipping, total,
       payment_method, address_snapshot,

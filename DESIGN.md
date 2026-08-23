@@ -3,15 +3,29 @@ version: alpha
 name: Al Batal Elite — Design System
 description: A tactile, textile-inspired design language for a premium fabric-commerce Flutter app. Emerald/Gold light mode and an intentional Charcoal/Slate dark mode, Montserrat display headings paired with Inter body, and rounded tactile surfaces that read like fine cloth.
 colors:
-  emerald: "#064E3B"
-  gold: "#D97706"
-  off-white: "#FAFAFA"
+  # Stitch-exact light tokens — stitch_get_project designMd (primary #003527, scaffold #F9F9F9, etc.)
+  primary: "#003527"
+  primary-container: "#064E3B"
+  emerald: "#064E3B" # legacy alias -> primary-container
+  secondary: "#904D00"
+  secondary-container: "#FE932C"
+  gold: "#D97706" # legacy alias -> secondary (warm accent)
+  tertiary: "#531E00"
+  scaffold: "#F9F9F9" # was off-white #FAFAFA — Stitch background
+  off-white: "#F9F9F9" # deprecated alias -> scaffold
+  surface: "#FFFFFF"
+  light-surface: "#FFFFFF"
+  surface-container-low: "#F3F3F3"
+  surface-container: "#EEEEEE"
+  surface-container-high: "#E8E8E8"
+  light-on-surface: "#1A1C1C" # was #17201C — Stitch onSurface
+  on-surface: "#1A1C1C"
+  light-outline: "#707974" # was #B7C1BB — Stitch outline
+  outline: "#707974"
+  outline-variant: "#BFC9C3"
   charcoal: "#121212"
   slate: "#1E293B"
   terracotta: "#BA1A1A"
-  light-surface: "#FFFFFF"
-  light-on-surface: "#17201C"
-  light-outline: "#B7C1BB"
   dark-primary: "#95D3BA"
   dark-on-primary: "#002117"
   dark-secondary: "#FFB77D"
@@ -150,15 +164,16 @@ Typography splits across two families. **Montserrat** — set at semibold (600) 
 > **Source:** `lib/shared/theme/app_theme.dart`.
 
 ### Brand & Accent
-- **Emerald** (`{colors.emerald}` — `#064E3B`): The primary brand color — deep, botanical, premium. Used for primary buttons, navbar indicators, focus rings, and the light-mode surface tint.
-- **Gold** (`{colors.gold}` — `#D97706`): The secondary accent — warm, artisanal, fabric-market energy. Used for accent buttons, prices, and highlighted values.
-- **Terracotta** (`{colors.terracotta}` — `#BA1A1A`): The error / destructive color — used for "Remove" actions, validation failures, and the delete affordance. In dark mode this softens to `{colors.dark-error}` (`#FFB4AB`).
+- **Primary** (`{colors.primary}` — `#003527`) / **Primary Container** (`{colors.primary-container}` — `#064E3B`, legacy `{colors.emerald}`): Deep botanical premium — Stitch `primary` #003527 for main actions, `primaryContainer` #064E3B (emerald) for filled tonal accents, navbar indicators, focus rings.
+- **Secondary** (`{colors.secondary}` — `#904D00`) / **Secondary Container** (`{colors.secondary-container}` — `#FE932C`, legacy `{colors.gold}` `#D97706` warm accent alias): Warm artisanal fabric-market energy — used for promotional badges, secondary CTAs, accent prices.
+- **Tertiary** (`{colors.tertiary}` — `#531E00`): Stitch `tertiary` — deep tertiary accent for complementary chips.
+- **Terracotta** (`{colors.terracotta}` — `#BA1A1A`): The error / destructive color — used for "Remove" actions, validation failures. In dark mode softens to `{colors.dark-error}` (`#FFB4AB`).
 
 ### Light Mode Surface
-- **Off-White** (`{colors.off-white}` — `#FAFAFA`): The scaffold background — a whisper warmer than pure white.
-- **Surface White** (`{colors.light-surface}` — `#FFFFFF`): Cards, inputs, navbar, and chips sit on pure white for quiet contrast against the off-white canvas.
-- **On-Surface** (`{colors.light-on-surface}` — `#17201C`): Near-black green-tinted text on light.
-- **Outline** (`{colors.light-outline}` — `#B7C1BB`): Hairline borders, dividers, unfocused input edges.
+- **Scaffold** (`{colors.scaffold}` — `#F9F9F9`, alias `{colors.off-white}` was `#FAFAFA`): Stitch `background` #f9f9f9 — a whisper warmer than pure white, now sync'd from designMd. Cards/inputs remain `#FFFFFF` for quiet contrast.
+- **Surface White** (`{colors.light-surface}` — `#FFFFFF`): Cards, inputs, navbar, chips sit on pure white. Surface containers for layered elevation: `low #F3F3F3` (`{colors.surface-container-low}`), `container #EEEEEE` (`{colors.surface-container}`), `high #E8E8E8` (`{colors.surface-container-high}`).
+- **On-Surface** (`{colors.light-on-surface}` — `#1A1C1C`, was `#17201C`): Near-black green-tinted text on light (Stitch `onSurface` #1A1C1C).
+- **Outline** (`{colors.light-outline}` — `#707974`, was `#B7C1BB`): Hairline borders, dividers (`{colors.outline}`). Variant `{colors.outline-variant}` `#BFC9C3` for subtle strokes.
 
 ### Dark Mode Surface
 - **Charcoal** (`{colors.charcoal}` — `#121212`): The dark scaffold background.

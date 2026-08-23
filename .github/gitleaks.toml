@@ -1,0 +1,15 @@
+title = "Al Batal Elite - Gitleaks"
+
+# Inherit the full upstream gitleaks rule set (private keys, generic API
+# keys, JWT, AWS, GCP, etc.) and layer our allowlist on top.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore examples, docs, markdown, and SQL migrations"
+paths = [
+  '''^\.env\.example$''',
+  '''(^|/)docs/''',
+  '''\.md$''',
+  '''(^|/)supabase/migrations/.*\.sql$''',
+]

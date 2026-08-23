@@ -1,0 +1,18 @@
+== RPC EXECUTE Grants Evidence ==
+Query: has_function_privilege checks on all 4 RPCs
+Date: 2026-07-25
+
+create_checkout_order:
+  ACL: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+  Status: PASS (authenticated only, anon denied)
+
+update_order_status:
+  ACL: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+  Status: PASS (authenticated only, anon denied)
+
+process_paymob_callback:
+  ACL: {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+  Status: FAIL - anon and authenticated have EXECUTE (should be service_role only)
+
+confirm_cod_payment:
+  Status: FAIL - function does not exist in pg_proc

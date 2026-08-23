@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
 
 /// Al Batal Elite's tactile, textile-inspired visual system.
+/// Stitch-exact tokens (phase 0): light scaffold #f9f9f9, primary #003527, see DESIGN.md.
 abstract final class AppTheme {
-  static const emerald = Color(0xFF064E3B);
-  static const gold = Color(0xFFD97706);
-  static const offWhite = Color(0xFFFAFAFA);
+  @Deprecated('Use primaryStitch/surfaceStitch')
+  static const emerald = Color(0xFF064E3B); // alias -> stitch primaryContainer
+  @Deprecated('Use primaryStitch/surfaceStitch')
+  static const gold =
+      Color(0xFFD97706); // legacy accent alias -> stitch secondary
+  @Deprecated('Use primaryStitch/surfaceStitch')
+  static const offWhite =
+      Color(0xFFFAFAFA); // deprecated alias -> stitch scaffold #F9F9F9
   static const charcoal = Color(0xFF121212);
   static const slate = Color(0xFF1E293B);
   static const terracotta = Color(0xFFBA1A1A);
+
+  // Stitch-exact light tokens (stitch_get_project designMd)
+  static const primaryStitch = Color(0xFF003527);
+  static const surfaceStitch = Color(0xFFF9F9F9);
+  static const surfaceContainerLow = Color(0xFFF3F3F3);
+  static const surfaceContainerStitch = Color(0xFFEEEEEE);
+  static const surfaceContainerHigh = Color(0xFFE8E8E8);
 
   static const cardRadius = BorderRadius.all(Radius.circular(16));
   static const controlRadius = BorderRadius.all(Radius.circular(8));
@@ -15,16 +28,22 @@ abstract final class AppTheme {
   static ThemeData light() => _theme(
         brightness: Brightness.light,
         scheme: const ColorScheme.light(
-          primary: emerald,
+          primary: Color(0xFF003527),
           onPrimary: Colors.white,
-          secondary: gold,
-          onSecondary: Colors.white,
+          primaryContainer: Color(0xFF064E3B),
+          secondary: Color(0xFF904D00),
+          secondaryContainer: Color(0xFFFE932C),
+          tertiary: Color(0xFF531E00),
           surface: Colors.white,
-          onSurface: Color(0xFF17201C),
+          surfaceContainerLow: Color(0xFFF3F3F3),
+          surfaceContainer: Color(0xFFEEEEEE),
+          surfaceContainerHigh: Color(0xFFE8E8E8),
+          onSurface: Color(0xFF1A1C1C),
           error: terracotta,
-          outline: Color(0xFFB7C1BB),
+          outline: Color(0xFF707974),
+          outlineVariant: Color(0xFFBFC9C3),
         ),
-        scaffold: offWhite,
+        scaffold: Color(0xFFF9F9F9),
         card: Colors.white,
       );
 

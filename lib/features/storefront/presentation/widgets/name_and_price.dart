@@ -19,12 +19,14 @@ class NameAndPrice extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
+            // Stitch price: EGY-suffixed amount in label-md (labelLarge)
+            // bold primary #003527 (spec §4).
             PriceText(
               product.price,
-              style: TextStyle(
-                  fontSize: 22,
-                  color: scheme.primary,
-                  fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
               showStrikeThrough: product.oldPrice != null,
               strikeThroughAmount: product.oldPrice,
             ),

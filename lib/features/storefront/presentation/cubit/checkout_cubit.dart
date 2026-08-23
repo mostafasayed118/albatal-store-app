@@ -108,9 +108,13 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// original order instead of creating a duplicate. When the user
   /// navigates away and starts a new checkout, a new cubit (and thus
   /// a new key) is created.
+  // TODO(audit): persist idempotencyKey to SharedPreferences with expiry (key: checkout_idempotency_key, ttl 24h) and restore on app restart
+  static int _instanceCounter = 0;
+  final int _instanceId = ++_instanceCounter;
+
   String _generateIdempotencyKey() {
     _attemptCounter++;
-    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-${identityHashCode(this)}';
+    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-$_instanceId';
   }
 
   /// Create a pending order via the server-side checkout RPC.
@@ -126,6 +130,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
   }) async {
+    // TODO(audit): persist idempotencyKey to SharedPreferences with expiry
     // Use the existing idempotency key if this is a retry, or
     // generate a new one for a fresh checkout attempt.
     final key = state.idempotencyKey ?? _generateIdempotencyKey();

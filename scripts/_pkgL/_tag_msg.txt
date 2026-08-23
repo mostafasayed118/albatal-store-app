@@ -1,0 +1,25 @@
+Release candidate frozen for Al Batal Elite after Package L RLS-ESC-001 remediation
+
+Candidate branch: fix/package-l-rls-escalation
+Candidate SHA: 6c8521a90f4600f6038bcf20b425cd04d0fa5095
+Base candidate: b74d32653462d555213ac171b12f0f4b7cded7ad
+Base tag: release-candidate/b74d326
+
+PR: https://github.com/mostafasayed118/albatal-store-app/pull/6
+CI run: https://github.com/mostafasayed118/albatal-store-app/actions/runs/30389365900
+CI verdict: GREEN WITH DEFERRED ANDROID
+
+Security repair included:
+- Migration 030_fix_profiles_admin_escalation.sql
+- Drops redundant unsafe policy profiles_update_own
+- Keeps profiles_update_own_safe with is_admin guard
+- Remediate RLS-ESC-001 authenticated admin self-escalation
+
+Android release: DEFERRED - missing signing secrets
+
+Frozen: YES
+Release verdict: NO-GO
+Staging acceptance: NOT STARTED
+Production release: NOT AUTHORIZED
+
+Approval reference: PACKAGE-L-DEFERRED-ANDROID-6C8521A

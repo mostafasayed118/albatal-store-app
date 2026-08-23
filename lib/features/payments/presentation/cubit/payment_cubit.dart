@@ -76,7 +76,8 @@ final class PaymentState extends Equatable {
 // ─── Cubit ─────────────────────────────────────────────────
 
 class PaymentCubit extends Cubit<PaymentState> {
-  PaymentCubit(this._paymentService, {Duration watchTimeout = _defaultWatchTimeout})
+  PaymentCubit(this._paymentService,
+      {Duration watchTimeout = _defaultWatchTimeout})
       : _watchTimeout = watchTimeout,
         super(const PaymentState());
 
@@ -91,6 +92,7 @@ class PaymentCubit extends Cubit<PaymentState> {
   final Duration _watchTimeout;
 
   final PaymentService _paymentService;
+  // ignore: cancel_subscriptions - cancelled in _stopWatching/_complete/close
   StreamSubscription<PaymentResult>? _watchSubscription;
   Timer? _watchTimeoutTimer;
 
@@ -109,16 +111,41 @@ class PaymentCubit extends Cubit<PaymentState> {
   }
 
   /// Start payment processing.
+  ///
+  /// Guards against double-entry: if a COD RPC or card initiation is
+  /// already in flight, subsequent calls are silently ignored. The UI
+  /// button is also disabled during [PaymentStatus.processing], but
+  /// this guard protects against programmatic re-entry.
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
+    if (state.status == PaymentStatus.processing) return;
 
-    // Cash on Delivery — direct success
+    // Cash on Delivery — server-confirmed path.
+    // The client calls `confirm_cod_payment` RPC which atomically
+    // marks the payment as success and the order as paid. The client
+    // NEVER declares success without a server response.
     if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
       emit(state.copyWith(status: PaymentStatus.processing));
-      emit(state.copyWith(
-        status: PaymentStatus.success,
-        transactionId: 'COD-${DateTime.now().millisecondsSinceEpoch}',
-      ));
+
+      final result = await _paymentService.confirmCodPayment(
+        orderId: state.orderId,
+      );
+
+      switch (result) {
+        case PaymentSuccess(:final transactionId):
+          emit(state.copyWith(
+            status: PaymentStatus.success,
+            transactionId: transactionId,
+          ));
+        case PaymentFailed(:final message):
+          emit(state.copyWith(
+            status: PaymentStatus.failed,
+            errorMessage: message,
+          ));
+        case PaymentPending():
+        case PaymentCancelled():
+          break;
+      }
       return;
     }
 
