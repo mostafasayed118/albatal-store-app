@@ -96,132 +96,162 @@ class _HomePageState extends State<HomePage> {
           }
           final flashProduct =
               state.visible.isEmpty ? null : state.visible.first;
-          return ListView(
-            padding: const EdgeInsetsDirectional.all(16),
-            children: [
-              StitchSearchBar(
-                controller: _searchController,
-                onChanged: catalog.updateQuery,
-              ),
-              if (state.query.isEmpty && state.recentQueries.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    for (final q in state.recentQueries)
-                      Chip(
-                        label: Text(q),
-                        avatar: const Icon(Icons.history, size: 16),
-                        onDeleted: () => catalog.deleteRecentQuery(q),
-                        deleteIcon: const Icon(Icons.close, size: 14),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 20),
-              // Hero fallback: StitchHeroCarousel is not built yet; PromoBanner
-              // keeps the 180dp gold-CTA contract until it lands.
-              const PromoBanner(),
-              const SizedBox(height: 24),
-              StitchCategoryChips(
-                selected: state.category,
-                onSelect: catalog.select,
-                categories: state.categories,
-              ),
-              const SizedBox(height: 24),
-              if (flashProduct != null) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(l.flashSale,
-                          style:
-                              Theme.of(context).textTheme.titleLarge),
-                    ),
-                    Text(
-                      '-15%',
-                      style: TextStyle(
-                        color: scheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                StitchFlashSaleCard(
-                  product: flashProduct,
-                  discountLabel: '-15%',
-                  remaining: state.flashRemaining,
-                  onAdd: () => context.read<CartCubit>().add(flashProduct),
-                  onTap: () => context.push('/product/${flashProduct.id}'),
-                ),
-                const SizedBox(height: 24),
-              ],
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(l.popularProducts,
-                        style: Theme.of(context).textTheme.titleLarge),
-                  ),
-                  PopupMenuButton<CatalogSort>(
-                    tooltip: l.sortProducts,
-                    initialValue: state.sort,
-                    onSelected: catalog.selectSort,
-                    itemBuilder: (_) => CatalogSort.values
-                        .map((sort) => PopupMenuItem(
-                            value: sort, child: Text(sort.label)))
-                        .toList(),
-                    child: Chip(
-                      avatar: const Icon(Icons.sort, size: 18),
-                      label: Text(state.sort.label),
+          // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
+          return BlocBuilder<WishlistCubit, WishlistState>(
+            builder: (context, wishlist) {
+              return CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsetsDirectional.all(16),
+                    sliver: SliverList.list(
+                      children: [
+                        StitchSearchBar(
+                          controller: _searchController,
+                          onChanged: catalog.updateQuery,
+                        ),
+                        if (state.query.isEmpty &&
+                            state.recentQueries.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              for (final q in state.recentQueries)
+                                Chip(
+                                  label: Text(q),
+                                  avatar: const Icon(Icons.history, size: 16),
+                                  onDeleted: () =>
+                                      catalog.deleteRecentQuery(q),
+                                  deleteIcon: const Icon(Icons.close, size: 14),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        // Hero fallback: StitchHeroCarousel is not built yet; PromoBanner
+                        // keeps the 180dp gold-CTA contract until it lands.
+                        const PromoBanner(),
+                        const SizedBox(height: 24),
+                        StitchCategoryChips(
+                          selected: state.category,
+                          onSelect: catalog.select,
+                          categories: state.categories,
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(l.fabricsFound(state.visible.length)),
-              const SizedBox(height: 12),
-              if (state.visible.isEmpty)
-                CatalogEmptyState(
-                  onClear: () {
-                    _searchController.clear();
-                    catalog.clearFilters();
-                  },
-                )
-              else
-                // Wishlist state drives each card's heart (spec §5 data flow).
-                // TODO(audit): consider SliverGrid or visible.take(20) for 100+ items
-                BlocBuilder<WishlistCubit, WishlistState>(
-                  builder: (context, wishlist) {
-                    // Cap Popular grid to 20 to prevent jank at 100+ products.
-                    final displayProducts = state.visible.take(20).toList();
-                    return RepaintBoundary(
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: displayProducts.length,
-                        gridDelegate: productGridDelegate,
-                        itemBuilder: (_, index) {
-                          final product = displayProducts[index];
-                        return StitchProductGridCard(
-                          product: product,
+                  if (flashProduct != null) ...[
+                    SliverPadding(
+                      padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 16),
+                      sliver: SliverToBoxAdapter(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(l.flashSale,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge),
+                            ),
+                            Text(
+                              '-15%',
+                              style: TextStyle(
+                                color: scheme.secondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsetsDirectional.all(16),
+                      sliver: SliverToBoxAdapter(
+                        child: StitchFlashSaleCard(
+                          product: flashProduct,
+                          discountLabel: '-15%',
+                          remaining: state.flashRemaining,
+                          onAdd: () =>
+                              context.read<CartCubit>().add(flashProduct),
                           onTap: () =>
-                              context.push('/product/${product.id}'),
-                          onWishlist: () => context
-                              .read<WishlistCubit>()
-                              .toggle(product.id),
-                          isWishlisted:
-                              wishlist.ids.contains(product.id),
-                        );
-                      },
+                              context.push('/product/${flashProduct.id}'),
+                        ),
                       ),
-                    );
-                  },
-                ),
-            ],
+                    ),
+                  ],
+                  SliverPadding(
+                    padding:
+                        const EdgeInsetsDirectional.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(l.popularProducts,
+                                style: Theme.of(context).textTheme.titleLarge),
+                          ),
+                          PopupMenuButton<CatalogSort>(
+                            tooltip: l.sortProducts,
+                            initialValue: state.sort,
+                            onSelected: catalog.selectSort,
+                            itemBuilder: (_) => CatalogSort.values
+                                .map((sort) => PopupMenuItem(
+                                    value: sort, child: Text(sort.label)))
+                                .toList(),
+                            child: Chip(
+                              avatar: const Icon(Icons.sort, size: 18),
+                              label: Text(state.sort.label),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 12),
+                    sliver: SliverToBoxAdapter(
+                      child: Text(l.fabricsFound(state.visible.length)),
+                    ),
+                  ),
+                  if (state.visible.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.all(16),
+                        child: CatalogEmptyState(
+                          onClear: () {
+                            _searchController.clear();
+                            catalog.clearFilters();
+                          },
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsetsDirectional.all(16),
+                      sliver: SliverGrid.builder(
+                        gridDelegate: productGridDelegate,
+                        itemCount: state.visible.length,
+                        itemBuilder: (_, index) {
+                          final product = state.visible[index];
+                          return StitchProductGridCard(
+                            product: product,
+                            onTap: () =>
+                                context.push('/product/${product.id}'),
+                            onWishlist: () => context
+                                .read<WishlistCubit>()
+                                .toggle(product.id),
+                            isWishlisted:
+                                wishlist.ids.contains(product.id),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              );
+            },
           );
         },
       ),

@@ -102,7 +102,7 @@ void main() {
   // Fixed pumps only (never pumpAndSettle): the cubit runs periodic
   // countdown timers, so settle-based pumping would never quiesce.
   testWidgets('Home shows Stitch hero + chips + flash + grid', (tester) async {
-    // Tall viewport so the shrinkWrap grid builds all four cards.
+    // Tall viewport so the lazy SliverGrid builds all four cards.
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -119,6 +119,9 @@ void main() {
     expect(find.byType(StitchFlashSaleCard), findsOneWidget);
     expect(find.text('-15%'), findsNWidgets(2)); // header badge + card badge
     expect(find.byType(StitchProductGridCard), findsNWidgets(4));
+    // Perf: Home uses lazy SliverGrid (no shrinkWrap) via productGridDelegate.
+    expect(find.byType(SliverGrid), findsOneWidget);
+    expect(find.byType(GridView), findsNothing);
     // Live countdown from startFlashSale is rendered on the flash row.
     final countdown = RegExp(r'^\d{2}:\d{2}:\d{2}$');
     expect(
