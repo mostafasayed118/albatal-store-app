@@ -40,6 +40,7 @@ final class CatalogState extends Equatable {
     this.recentQueries = const [],
     this.flashEnd,
     this.flashRemaining,
+    this.flashSales = const [],
   })  : _rawFilters = filters ?? const CatalogFilters(),
         _category = category,
         _query = query,
@@ -63,6 +64,7 @@ final class CatalogState extends Equatable {
   final List<String> recentQueries;
   final DateTime? flashEnd;
   final Duration? flashRemaining;
+  final List<Map<String, dynamic>> flashSales;
 
   /// Effective filters — merges overrides when deprecated ctor params were used.
   CatalogFilters get filters {
@@ -166,6 +168,7 @@ final class CatalogState extends Equatable {
     bool resetPrice = false,
     DateTime? flashEnd,
     Duration? flashRemaining,
+    List<Map<String, dynamic>>? flashSales,
   }) {
     var effectiveFilters = filters ?? this.filters;
     final hasDeprecated = category != null ||
@@ -198,6 +201,7 @@ final class CatalogState extends Equatable {
       recentQueries: recentQueries ?? this.recentQueries,
       flashEnd: flashEnd ?? this.flashEnd,
       flashRemaining: flashRemaining ?? this.flashRemaining,
+      flashSales: flashSales ?? this.flashSales,
     );
   }
 
@@ -212,6 +216,7 @@ final class CatalogState extends Equatable {
         recentQueries,
         flashEnd,
         flashRemaining,
+        flashSales,
       ];
 }
 
@@ -256,9 +261,47 @@ final class CatalogCubit extends Cubit<CatalogState> {
           allProducts: products,
           categories: cats,
         ));
+        // Integrate flash sales into initial load (T1). Fire-and-forget;
+        // emissions are skipped when sales are empty to keep existing
+        // load tests deterministic.
+        // ignore: discarded_futures
+        loadFlashSales();
       },
       failure: (_) => emit(state.copyWith(status: CatalogStatus.error)),
     );
+  }
+
+  /// Loads active flash sales from the repository and binds the countdown.
+  ///
+  /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
+  /// When a sale is active, the first sale's [endsAt] drives
+  /// [startFlashSale] so [flashRemaining] ticks live. Failures are
+  /// swallowed so catalog loading never regresses to error due to a
+  /// flash-sale fetch issue.
+  Future<void> loadFlashSales() async {
+    try {
+      final sales = await _repository.getActiveFlashSales();
+      if (sales.isEmpty && state.flashSales.isEmpty) return;
+      if (sales.isEmpty) {
+        emit(state.copyWith(flashSales: sales));
+        return;
+      }
+      final endsAt = _parseFlashEndsAt(sales.first);
+      emit(state.copyWith(flashSales: sales));
+      if (endsAt != null) {
+        startFlashSale(end: endsAt);
+      }
+    } catch (_) {
+      // Swallow — flash sales are non-critical.
+    }
+  }
+
+  DateTime? _parseFlashEndsAt(Map<String, dynamic> sale) {
+    final raw = sale['ends_at'] ?? sale['endsAt'] ?? sale['endsAt'] ?? sale['end_at'];
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw);
+    // Typed FlashSale object masquerading as Map via json? Try discount case-insensitive.
+    return null;
   }
 
   void select(String category) =>

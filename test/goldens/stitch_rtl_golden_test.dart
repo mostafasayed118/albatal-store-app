@@ -55,6 +55,9 @@ class _StubRepo implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
   List<String> get defaultCategories =>
       const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
 }
