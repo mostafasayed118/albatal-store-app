@@ -8,6 +8,7 @@ import '../../../core/entities/money.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
+import '../../../shared/services/storage_service.dart';
 import '../domain/repositories/catalog_repository.dart';
 
 /// Supabase-backed catalog repository.
@@ -18,16 +19,19 @@ import '../domain/repositories/catalog_repository.dart';
 ///
 /// Maintains both an in-memory cache (for synchronous [findProductById])
 /// and a persistent SharedPreferences cache (for offline fallback when
-/// the app restarts without network).
 final class SupabaseCatalogRepository implements CatalogRepository {
   SupabaseCatalogRepository({
     SupabaseClient? client,
     SharedPreferences? preferences,
+    StorageService? storageService,
   })  : _client = client ?? Supabase.instance.client,
-        _preferences = preferences;
+        _preferences = preferences,
+        _storageService = storageService ??
+            StorageService(client: client ?? Supabase.instance.client);
 
   final SupabaseClient _client;
   final SharedPreferences? _preferences;
+  final StorageService _storageService;
 
   /// In-memory cache of the full product list so that [findProductById]
   /// is synchronous (required by the hydration path that restores the
@@ -57,15 +61,15 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     if (_cacheIsFresh) return Success(_cache!);
 
     try {
-      // Single query with embedded variant relation. Supabase PostgREST
-      // returns variants as an array inside each product row, eliminating
-      // the second round-trip that previously fetched all variants and
-      // grouped them in Dart.
+      // Single query with embedded variant + image relations. Supabase
+      // PostgREST returns variants/images as arrays inside each product row,
+      // eliminating extra round-trips.
       final rows = await _client.from('products').select('''
             id, name, slug, description, composition, care, origin,
             base_price, old_price, rating, review_count,
             categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override)
+            product_variants(product_id, size, color, stock, price_override),
+            product_images(storage_path, sort_order)
           ''').eq('is_active', true).order('name');
 
       final result = <Product>[];
@@ -134,7 +138,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
             id, name, slug, description, composition, care, origin,
             base_price, old_price, rating, review_count,
             categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override)
+            product_variants(product_id, size, color, stock, price_override),
+            product_images(storage_path, sort_order)
           ''').eq('id', id).single();
 
       final variantsRaw = row['product_variants'];
@@ -165,6 +170,14 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     // hydration path can skip the missing product gracefully.
     return null;
   }
+
+  /// Fetches currently active flash sales via `get_active_flash_sales` RPC.
+  ///
+  /// Returns a list of raw JSON rows — UI can map to domain as needed.
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() =>
+      _client.rpc('get_active_flash_sales').then(
+            (value) => (value as List).cast<Map<String, dynamic>>(),
+          );
 
   @override
   List<String> get defaultCategories => const [
@@ -267,7 +280,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   // ─── Mapping helpers ────────────────────────────────────────
 
   // TODO: add cached_network_image for Storage URLs with Cache-Control max-age=86400
-  static Product _mapProduct(
+  Product _mapProduct(
     Map<String, dynamic> row,
     List<Map<String, dynamic>> variants,
   ) {
@@ -293,15 +306,31 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     final category =
         (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
 
+    // Map product_images → imageUrls via StorageService, ordered by sort_order.
+    final rawImages = row['product_images'];
+    final imageRows = rawImages is List
+        ? rawImages.whereType<Map<String, dynamic>>().toList()
+        : <Map<String, dynamic>>[];
+    imageRows.sort(
+      (a, b) => (a['sort_order'] as int? ?? 0).compareTo(b['sort_order'] as int? ?? 0),
+    );
+    final imageUrls = imageRows
+        .map((m) => m['storage_path'] as String?)
+        .whereType<String>()
+        .where((p) => p.isNotEmpty)
+        .map((p) => _storageService.getProductImageUrl(p))
+        .where((u) => u.isNotEmpty)
+        .toList();
+
     return Product(
       id: row['id'] as String,
       name: row['name'] as String,
       category: category,
       price: Money(basePrice),
       oldPrice: oldPriceRaw != null ? Money(oldPriceRaw) : null,
-      // imageColor and imageAsset are presentation-layer concerns not
-      // stored in the database. Use defaults so the product card renders.
+      // imageColor is a placeholder fallback — only used when images empty.
       imageColor: 0xFF888888,
+      images: imageUrls,
       description: row['description'] as String?,
       composition: row['composition'] as String?,
       care: row['care'] as String?,

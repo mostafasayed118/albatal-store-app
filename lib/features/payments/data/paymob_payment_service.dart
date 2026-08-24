@@ -152,6 +152,9 @@ class PaymobPaymentService implements PaymentService {
   Stream<PaymentResult> watchPaymentStatus(String orderId) {
     final controller = StreamController<PaymentResult>();
     RealtimeChannel? channel;
+    Timer? fallbackTimer;
+    final completer = Completer<void>();
+    bool hasEmitted = false;
 
     controller.onListen = () {
       channel = _client
@@ -166,28 +169,74 @@ class PaymobPaymentService implements PaymentService {
               value: orderId,
             ),
             callback: (payload) {
+              if (completer.isCompleted) return;
               final newRecord = payload.newRecord;
               final status = newRecord['status'] as String?;
               if (status == 'success') {
                 final transactionId =
                     newRecord['transaction_id'] as String? ?? '';
-                controller.add(PaymentSuccess(
-                  transactionId: transactionId,
-                  amount: Money.zero,
-                ));
+                if (!controller.isClosed && !hasEmitted) {
+                  hasEmitted = true;
+                  if (!completer.isCompleted) completer.complete();
+                  fallbackTimer?.cancel();
+                  controller.add(PaymentSuccess(
+                    transactionId: transactionId,
+                    amount: Money.zero,
+                  ));
+                }
               } else if (status == 'failed') {
-                controller.add(const PaymentFailed(
-                  message: 'Payment was declined by the gateway',
-                ));
+                if (!controller.isClosed && !hasEmitted) {
+                  hasEmitted = true;
+                  if (!completer.isCompleted) completer.complete();
+                  fallbackTimer?.cancel();
+                  controller.add(const PaymentFailed(
+                    message: 'Payment was declined by the gateway',
+                  ));
+                }
               }
               // Other status values (e.g. 'pending') are ignored — the
               // webhook will update the row again when terminal.
             },
           )
           .subscribe();
+
+      fallbackTimer = Timer(const Duration(seconds: 45), () async {
+        if (completer.isCompleted) return;
+        if (controller.isClosed) return;
+        if (hasEmitted) return;
+        try {
+          final row = await _client
+              .from('payments')
+              .select('status, transaction_id')
+              .eq('order_id', orderId)
+              .maybeSingle();
+          if (completer.isCompleted) return;
+          if (controller.isClosed) return;
+          if (hasEmitted) return;
+          if (row == null) return;
+          final status = row['status'] as String?;
+          if (status == 'success') {
+            hasEmitted = true;
+            if (!completer.isCompleted) completer.complete();
+            controller.add(PaymentSuccess(
+              transactionId: row['transaction_id'] as String? ?? '',
+              amount: Money.zero,
+            ));
+          } else if (status == 'failed') {
+            hasEmitted = true;
+            if (!completer.isCompleted) completer.complete();
+            controller.add(const PaymentFailed(
+              message: 'Payment was declined by the gateway',
+            ));
+          }
+        } catch (_) {
+          // Fallback poll failure is silent — realtime may still deliver.
+        }
+      });
     };
 
     controller.onCancel = () {
+      fallbackTimer?.cancel();
       channel?.unsubscribe();
     };
 
