@@ -7,7 +7,15 @@ void main() {
     final root = Directory('assets/images');
     expect(root.existsSync(), isTrue);
 
-    final rasterExtensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.avif'};
+    final rasterExtensions = {
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.webp',
+      '.bmp',
+      '.avif'
+    };
     final rasterFiles = root
         .listSync(recursive: true)
         .whereType<File>()
