@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,13 +10,13 @@ import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/promo_banner.dart';
-
 /// Home — Stitch reskin (spec §4/§5):
 /// pill search → 180dp gold hero → circular category chips →
 /// flash-sale row with live countdown → 2-col (.68) popular grid.
@@ -27,22 +29,26 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final TextEditingController _searchController;
+  Timer? _flashPollTimer;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    // Flash sale countdown driving StitchFlashSaleCard (spec §5 data flow).
-    // flashEnd is client-side placeholder; TODO: drive from Supabase flash_sales table
-    context.read<CatalogCubit>().startFlashSale(
-          end: DateTime.now().add(
-            const Duration(hours: 2, minutes: 45, seconds: 12),
-          ),
-        );
+    // Bind flash sale banner to server (T1). Initial load + poll every 60s.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CatalogCubit>().loadFlashSales();
+    });
+    _flashPollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!mounted) return;
+      context.read<CatalogCubit>().loadFlashSales();
+    });
   }
 
   @override
   void dispose() {
+    _flashPollTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -94,8 +100,20 @@ class _HomePageState extends State<HomePage> {
               onAction: catalog.load,
             );
           }
-          final flashProduct =
-              state.visible.isEmpty ? null : state.visible.first;
+          // Flash sale binding (T1): server-driven. First active sale drives
+          // countdown (state.flashRemaining via loadFlashSales → startFlashSale)
+          // and discount label. Product resolved by product_id lookup with
+          // visible.first fallback to keep hero populated even before sales load.
+          final flashSale = state.flashSales.firstOrNull;
+          final flashProduct = flashSale == null
+              ? (state.visible.isEmpty ? null : state.visible.first)
+              : state.allProducts
+                      .where((p) => p.id == flashSale['product_id'])
+                      .firstOrNull ??
+                  (state.visible.isEmpty ? null : state.visible.first);
+          final discountLabel = flashSale == null
+              ? '-15%'
+              : '-${flashSale['discount_pct'] ?? flashSale['discountPct'] ?? 15}%';
           // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
           return BlocBuilder<WishlistCubit, WishlistState>(
             builder: (context, wishlist) {
@@ -155,7 +173,7 @@ class _HomePageState extends State<HomePage> {
                                       Theme.of(context).textTheme.titleLarge),
                             ),
                             Text(
-                              '-15%',
+                              discountLabel,
                               style: TextStyle(
                                 color: scheme.secondary,
                                 fontWeight: FontWeight.bold,
@@ -170,8 +188,7 @@ class _HomePageState extends State<HomePage> {
                       sliver: SliverToBoxAdapter(
                         child: StitchFlashSaleCard(
                           product: flashProduct,
-                          discountLabel: '-15%',
-                          remaining: state.flashRemaining,
+                          discountLabel: discountLabel,
                           onAdd: () =>
                               context.read<CartCubit>().add(flashProduct),
                           onTap: () =>

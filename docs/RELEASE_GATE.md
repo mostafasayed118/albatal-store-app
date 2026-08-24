@@ -181,6 +181,35 @@ with work completed after the 2026-07-28 entries:
   branch state. A fresh post-merge candidate designation is required before
   E2E authorization can be reissued.
 
+## T0 Production Cutover Addendum — 2026-08-24 (031–033, owner-gated dry-run)
+
+**Scope:** T0 hardened production cutover for migrations `031_realtime_and_cron_fix`,
+`032_flash_sales_and_product_images`, `033_admin_catalog_rpcs` onto production
+project `alxwvyflasewslinufqe`. Evidence scaffold: `docs/evidence/prod-cutover-031-033/VERIFICATION.md`.
+Actual prod `supabase db push` / `functions deploy` / `secrets set` is **owner-gated** and was **not**
+executed in this `docs(release)` commit — this addendum records the dry-run checklist and reserves
+`TBD prod` slots for live output.
+
+**Plan ref:** `docs/superpowers/plans/2026-08-24-backend-platform-plan.md` Task 10 Steps 2–3.
+**Branch:** `feat/backend-platform-t0-t1` base `f38753d`. Staging pre-condition through `030_batch_checkout_variants.sql`
+verified (RLS 44/44, Paymob F1–F4 21/21 incl. live auto-callback `521080502`) — see §Record reconciliation and §Isolated-staging E2E.
+
+| Item | Dry-run check (replayable without prod mutation) | Live prod check (owner terminal, `TBD prod` until run) | Status |
+|------|---------------------------------------------------|--------------------------------------------------------|--------|
+| Backup / PITR | `supabase/config.toml:14` `project_id="alxwvyflasewslinufqe"` + dashboard PITR panel exists | Dashboard screenshot: PITR enabled + last backup `completed` | `PENDING owner-gated` — see VERIFICATION.md §1 |
+| `db push --dry-run` | Local `supabase/migrations` pending = `031,032,033` (001–030 parity) | `supabase db push --dry-run --project-ref alxwvyflasewslinufqe` lists exactly `031,032,033` | `TBD prod` — VERIFICATION.md §2 |
+| Edge Functions | `supabase/config.toml` `verify_jwt` matrix 5 functions pinned; local digests staged | `supabase functions list --project-ref alxwvyflasewslinufqe` → 5 `ACTIVE`, `verify_jwt` per matrix (`paymob-callback=false`, `cancel-expired-orders=false`, `send-order-notification=false`, `checkout=true`, `paymob-initiate=true`) + `ezbr_sha256` pinned | `TBD prod` — VERIFICATION.md §3 + §9 |
+| Realtime publication | `[realtime] enabled=true` local | `SELECT * FROM pg_publication_tables WHERE pubname='supabase_realtime'` → `payments` count `1`; `ALTER TABLE payments REPLICA IDENTITY FULL` (`relreplident='f'`) | `TBD prod` — VERIFICATION.md §4 |
+| Cron | 031 schedules 4 jobs (`cancel-expired-every-5m` `*/5 * * * *` + rollups/retention) | `SELECT * FROM cron.job WHERE jobname='cancel-expired-every-5m'` → `1` active | `TBD prod` — VERIFICATION.md §5 |
+| Secrets (names-only) | `config/env.production.json` stays `REPLACE_WITH_*` placeholders in git; real values in `env.production.local.json` (gitignored) + Edge secrets | `supabase secrets list --project-ref alxwvyflasewslinufqe` → 7 names: `PAYMOB_API_KEY`, `PAYMOB_HMAC_SECRET`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `CORS_ALLOWED_ORIGINS`, `SCHEDULER_SECRET`, `NOTIFICATIONS_INTERNAL_KEY` (values never logged) | `TBD prod` — VERIFICATION.md §6 |
+| REST smoke (anon) | — | `curl -H "apikey: $PROD_ANON" https://alxwvyflasewslinufqe.supabase.co/rest/v1/products?select=id&limit=1 | jq length` → HTTP 200 JSON array | `TBD prod` — VERIFICATION.md §7 |
+| Paymob live smoke | Staging live `521080502` APPROVED precedent | `TODO owner-gated` — live card approval flips `payments→success`/`orders→paid` without manual replay; HMAC 20-field canonical verified | `TODO owner-gated` — VERIFICATION.md §8 |
+
+**Digests:** `ezbr_sha256` bundle digests are `TBD prod` in VERIFICATION.md §9 until the owner deploys functions; git blob / SHA-256 source digests for `_shared/cors.ts`, `_shared/secrets.ts`, and the five function entrypoints are scaffolded there as `TBD prod` placeholders (no secret values).
+
+**Verdict for this addendum:** `DRY-RUN SCAFFOLD LANDED`. Production cutover remains **NO-GO / owner-gated** until the owner fills the `TBD prod` rows in `docs/evidence/prod-cutover-031-033/VERIFICATION.md` and re-runs the four gates above with live evidence. This docs-only commit does not authorize or perform any prod push.
+
+
 ## Approval rule
 
 The project remains **NO-GO** if any gate is `UNKNOWN`, `PENDING`, or `FAIL`, or

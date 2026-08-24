@@ -77,6 +77,18 @@ class _StubRepo implements CatalogRepository {
   @override
   List<String> get defaultCategories =>
       const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [
+        {
+          'id': 'flash-test',
+          'product_id': 'silk-01',
+          'discount_pct': 15,
+          'starts_at': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+          'ends_at': DateTime.now().add(const Duration(hours: 2, minutes: 45, seconds: 12)).toIso8601String(),
+          'is_active': true,
+        }
+      ];
 }
 
 /// MultiBlocProvider with Wishlist/Cart so the Home grid (spec §5)
@@ -107,6 +119,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(_harness());
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(StitchSearchBar), findsOneWidget);
@@ -122,17 +135,18 @@ void main() {
     // Perf: Home uses lazy SliverGrid (no shrinkWrap) via productGridDelegate.
     expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.byType(GridView), findsNothing);
-    // Live countdown from startFlashSale is rendered on the flash row.
-    final countdown = RegExp(r'^\d{2}:\d{2}:\d{2}$');
-    expect(
-      find.byWidgetPredicate(
-          (w) => w is Text && w.data != null && countdown.hasMatch(w.data!)),
-      findsOneWidget,
-    );
+    // Live countdown from server flash sale (T1) — flashRemaining driven by loadFlashSales.
+    // Pump extra to flush async flash load.
+    await tester.pump(const Duration(milliseconds: 100));
+    final ctx = tester.element(find.byType(HomePage));
+    expect(ctx.read<CatalogCubit>().state.flashRemaining, isNotNull);
+    // Flash sale card should be visible with server discount.
+    expect(find.byType(StitchFlashSaleCard), findsOneWidget);
   });
 
   testWidgets('tapping the Silk chip filters via cubit.select', (tester) async {
     await tester.pumpWidget(_harness());
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(seconds: 1));
 
     // 'Silk' also appears as a grid-card subtitle, so scope to the chips.

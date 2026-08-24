@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'storage_service.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
@@ -69,6 +70,7 @@ Future<void> configureDependencies() async {
         : SupabaseOrdersRepository())
     ..registerLazySingleton<CatalogRepository>(() =>
         SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
+    ..registerLazySingleton<StorageService>(() => StorageService())
     // Crash reporting: Use Sentry when DSN is configured, NoOp otherwise.
     ..registerLazySingleton<CrashReportingService>(() {
       if (EnvConfig.sentryDsn.isNotEmpty) {

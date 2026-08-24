@@ -31,6 +31,9 @@ final class StubCatalogRepository implements CatalogRepository {
 
   @override
   List<String> get defaultCategories => categories;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
 }
 
 /// Stub repository that always fails.
@@ -52,6 +55,9 @@ final class FailingCatalogRepository implements CatalogRepository {
 
   @override
   List<String> get defaultCategories => const ['All'];
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
 }
 
 /// Pre-seeded state with products loaded — avoids testing load() in every test.
