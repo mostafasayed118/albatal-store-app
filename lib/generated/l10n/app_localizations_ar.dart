@@ -36,6 +36,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeTitle => 'مصنوع للتميّز';
 
   @override
+  String get onboardingExquisiteTitle => 'أقمشة فاخرة';
+
+  @override
+  String get onboardingExquisiteBody =>
+      'اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.';
+
+  @override
+  String get onboardingCraftsmanshipTitle => 'حرفية أصيلة';
+
+  @override
+  String get onboardingCraftsmanshipBody =>
+      'كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.';
+
+  @override
+  String get onboardingExcellenceTitle => 'مصمم للتميّز';
+
+  @override
+  String get onboardingExcellenceBody =>
+      'اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ الآن';
+
+  @override
   String get welcomeBody =>
       'أساس لتجارة إلكترونية راقية بخيارات مدروسة لكل اتجاه ووضع عرض.';
 

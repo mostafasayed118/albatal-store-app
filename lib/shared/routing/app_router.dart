@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/onboarding/presentation/pages/splash_page.dart';
 import '../services/navigation_observer.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
@@ -30,7 +32,7 @@ import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
 
 final appRouter = GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
     observers: [NavigationObserver()],
     redirect: (context, state) {
       final auth = context.read<AuthCubit>().state;
@@ -51,6 +53,8 @@ final appRouter = GoRouter(
         '/terms',
         '/shipping-policy',
         '/returns-policy',
+        '/splash',
+        '/onboarding',
       };
       final isPublic = publicRoutes.any((p) => path.startsWith(p));
 
@@ -80,6 +84,8 @@ final appRouter = GoRouter(
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
       ShellRoute(builder: (_, __, child) => AppShell(child: child), routes: [
         GoRoute(path: '/home', builder: (_, __) => const HomePage()),
         GoRoute(

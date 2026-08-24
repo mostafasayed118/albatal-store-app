@@ -2,6 +2,22 @@
 
 Last run: 2026-08-24T05:35:00Z
 
+## New — 2026-08-24 (onboarding and SVG runtime assets)
+
+### Stitch onboarding flow and SVG-only app-owned assets — merged from `33389f2`
+
+Added the splash and first-run onboarding flow with persisted completion,
+English/Arabic copy, local SVG Stitch artwork, and routes `/splash` and
+`/onboarding`. Migrated app-owned runtime product imagery to SVG through the
+shared `AppImage` renderer, added `flutter_svg`, and documented/enforced the
+SVG-only rule for `assets/images/` with focused tests.
+
+Static checks passed: `git diff --check`, SVG XML validation, and 14 SVG / 0
+non-SVG runtime assets. Flutter verification was unavailable because the
+execution environment has no Flutter or Dart SDK; `pubspec.lock` requires
+regeneration with `flutter pub get` before analyzer/tests can run.
+
+
 ## New — 2026-08-24 (T0+T1 backend platform)
 
 ### Backend platform T0+T1 implemented, reviewed, merged to master (L2, owner-approved "1" = subagent-driven + merge locally)

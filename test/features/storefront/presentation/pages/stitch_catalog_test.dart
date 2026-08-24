@@ -35,7 +35,7 @@ class _StubRepo implements CatalogRepository {
           price: Money.egp(1290),
           oldPrice: Money.egp(1520),
           imageColor: 0xFF176B57,
-          imageAsset: 'assets/images/1.png',
+          imageAsset: 'assets/images/1.svg',
           rating: 4.8,
           reviewCount: 124,
         ),

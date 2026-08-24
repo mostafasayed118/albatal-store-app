@@ -36,6 +36,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeTitle => 'Crafted for distinction';
 
   @override
+  String get onboardingExquisiteTitle => 'Exquisite Fabrics';
+
+  @override
+  String get onboardingExquisiteBody =>
+      'Discover a curated collection of the world\\'s finest silks, linens, and velvets.';
+
+  @override
+  String get onboardingCraftsmanshipTitle => 'Artisanal Craftsmanship';
+
+  @override
+  String get onboardingCraftsmanshipBody =>
+      'Every thread is woven with precision and heritage to ensure unparalleled quality.';
+
+  @override
+  String get onboardingExcellenceTitle => 'Tailored for Excellence';
+
+  @override
+  String get onboardingExcellenceBody =>
+      'Experience the luxury of fabrics designed for those who settle for nothing less than elite.';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
   String get welcomeBody =>
       'A premium commerce foundation with considered defaults for every direction and display.';
 

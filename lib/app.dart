@@ -8,6 +8,8 @@ import 'features/admin/presentation/cubit/admin_cubit.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/repositories/profile_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/onboarding/domain/repositories/onboarding_repository.dart';
+import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
@@ -31,6 +33,10 @@ final class AlBatalApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
         providers: [
+          BlocProvider(
+              create: (_) => OnboardingCubit(
+                    getIt<OnboardingRepository>(),
+                  )),
           BlocProvider(
               create: (_) =>
                   SettingsCubit(getIt<SettingsRepository>())..load()),

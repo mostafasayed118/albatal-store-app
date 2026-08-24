@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 /// pretending to be a real fabric image. It gives the swatch more tactile
 /// presence than a flat color block, and the pattern scales to any size.
 ///
-/// When real product photography is supplied, this painter is removed
-/// and `Image.asset` takes its place — the rest of the widget tree
+/// When a local or remote product image is supplied, this painter is removed
+/// and the shared image renderer takes its place; the rest of the widget tree
 /// is unchanged.
 class FabricWeavePainter extends CustomPainter {
   FabricWeavePainter({

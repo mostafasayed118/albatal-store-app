@@ -14,6 +14,8 @@ import '../../features/auth/data/supabase_auth_repository.dart';
 import '../../features/auth/data/supabase_profile_repository.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/repositories/profile_repository.dart';
+import '../../features/onboarding/data/local_onboarding_repository.dart';
+import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
 import '../../features/payments/data/paymob_payment_service.dart';
 import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
@@ -49,6 +51,8 @@ Future<void> configureDependencies() async {
     ..registerSingleton<SharedPreferences>(preferences)
     ..registerLazySingleton<SettingsRepository>(
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<OnboardingRepository>(
+        () => LocalOnboardingRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AddressRepository>(
         () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())

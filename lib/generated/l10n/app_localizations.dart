@@ -152,6 +152,33 @@ abstract class AppLocalizations {
   /// **'Crafted for distinction'**
   String get welcomeTitle;
 
+  /// No description provided for @onboardingExquisiteTitle.
+  String get onboardingExquisiteTitle;
+
+  /// No description provided for @onboardingExquisiteBody.
+  String get onboardingExquisiteBody;
+
+  /// No description provided for @onboardingCraftsmanshipTitle.
+  String get onboardingCraftsmanshipTitle;
+
+  /// No description provided for @onboardingCraftsmanshipBody.
+  String get onboardingCraftsmanshipBody;
+
+  /// No description provided for @onboardingExcellenceTitle.
+  String get onboardingExcellenceTitle;
+
+  /// No description provided for @onboardingExcellenceBody.
+  String get onboardingExcellenceBody;
+
+  /// No description provided for @onboardingNext.
+  String get onboardingNext;
+
+  /// No description provided for @onboardingSkip.
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingGetStarted.
+  String get onboardingGetStarted;
+
   /// No description provided for @welcomeBody.
   ///
   /// In en, this message translates to:

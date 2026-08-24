@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../app_image.dart';
 
 /// Stitch flash-sale row card — 120dp, image left, badge + CTA.
 ///
@@ -52,32 +52,15 @@ class StitchFlashSaleCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: product.imageAsset == null
-                      ? const Icon(Icons.texture, color: Colors.white, size: 28)
-                      : product.imageAsset!.startsWith('http')
-                          ? CachedNetworkImage(
-                              imageUrl: product.imageAsset!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Color(product.imageColor),
-                                child: const Icon(Icons.texture,
-                                    color: Colors.white, size: 28),
-                              ),
-                              errorWidget: (context, url, error) => const Icon(
-                                  Icons.texture,
-                                  color: Colors.white,
-                                  size: 28),
-                            )
-                          : Image.asset(
-                              product.imageAsset!,
-                              fit: BoxFit.cover,
-                              gaplessPlayback: true,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.texture,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
+                  child: AppImage(
+                    source: product.imageAsset,
+                    fit: BoxFit.cover,
+                    placeholder: const Icon(
+                      Icons.texture,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
