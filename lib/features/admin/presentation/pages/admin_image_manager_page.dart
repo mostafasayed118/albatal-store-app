@@ -70,7 +70,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
 
   Future<void> _persistPaths(List<String> paths) async {
     try {
-      await getIt<AdminRepository>().adminSetProductImages(widget.productId, paths);
+      await getIt<AdminRepository>()
+          .adminSetProductImages(widget.productId, paths);
       if (!mounted) return;
       setState(() => _paths = List.of(paths));
       ScaffoldMessenger.of(context).showSnackBar(
@@ -78,10 +79,12 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       );
     } on AppError catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save images: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to save images: $e')));
     }
   }
 
@@ -102,21 +105,25 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         'image/jpeg',
       );
       final next = [..._paths, storagePath];
-      await getIt<AdminRepository>().adminSetProductImages(widget.productId, next);
+      await getIt<AdminRepository>()
+          .adminSetProductImages(widget.productId, next);
       if (!mounted) return;
       setState(() {
         _paths = next;
         _uploading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image uploaded')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Image uploaded')));
     } on AppError catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Upload failed: $e')));
     }
   }
 
@@ -172,7 +179,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                           ? const Center(child: Text('No images yet'))
                           : GridView.builder(
                               padding: const EdgeInsets.all(16),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
@@ -183,7 +191,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                 final path = _paths[i];
                                 String url;
                                 try {
-                                  url = getIt<StorageService>().getProductImageUrl(path);
+                                  url = getIt<StorageService>()
+                                      .getProductImageUrl(path);
                                 } catch (_) {
                                   url = path;
                                 }
@@ -192,19 +201,26 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                   child: Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      // Placeholder for image; real network image would use url.
-                                      Container(
-                                        color: Theme.of(context).colorScheme.surfaceContainer,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                      // Real network image once CDN cache
+                                      // headers land; url kept for tooltip.
+                                      Image.network(
+                                        url,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             const Icon(Icons.image, size: 40),
                                             const SizedBox(height: 8),
                                             Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8),
                                               child: Text(
                                                 path.split('/').last,
-                                                style: Theme.of(context).textTheme.bodySmall,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall,
                                                 textAlign: TextAlign.center,
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
@@ -221,11 +237,15 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                           children: [
                                             _IconBtn(
                                               icon: Icons.arrow_upward,
-                                              onTap: i == 0 ? null : () => _move(i, i - 1),
+                                              onTap: i == 0
+                                                  ? null
+                                                  : () => _move(i, i - 1),
                                             ),
                                             _IconBtn(
                                               icon: Icons.arrow_downward,
-                                              onTap: i == _paths.length - 1 ? null : () => _move(i, i + 1),
+                                              onTap: i == _paths.length - 1
+                                                  ? null
+                                                  : () => _move(i, i + 1),
                                             ),
                                             _IconBtn(
                                               icon: Icons.delete,

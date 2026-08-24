@@ -17,6 +17,7 @@ import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/promo_banner.dart';
+
 /// Home — Stitch reskin (spec §4/§5):
 /// pill search → 180dp gold hero → circular category chips →
 /// flash-sale row with live countdown → 2-col (.68) popular grid.

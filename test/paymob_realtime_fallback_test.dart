@@ -1,9 +1,7 @@
-// ignore: depend_on_referenced_packages
 import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:postgrest/postgrest.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:al_batal_elite/features/payments/data/paymob_payment_service.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
@@ -55,7 +53,6 @@ class FakeRealtimeChannel extends Fake implements RealtimeChannel {
   void triggerPostgresChange(PostgresChangePayload payload) {
     capturedCallback?.call(payload);
   }
-
 }
 
 class FakeSupabaseClient extends Fake implements SupabaseClient {
@@ -135,14 +132,12 @@ class _FakeMaybeSingle extends Fake
   }
 
   @override
-  Future<Map<String, dynamic>?> whenComplete(
-      FutureOr<void> Function() action) {
+  Future<Map<String, dynamic>?> whenComplete(FutureOr<void> Function() action) {
     return Future.value(_row).whenComplete(action);
   }
 
   @override
-  Stream<Map<String, dynamic>?> asStream() =>
-      Future.value(_row).asStream();
+  Stream<Map<String, dynamic>?> asStream() => Future.value(_row).asStream();
 
   @override
   Future<Map<String, dynamic>?> timeout(
@@ -239,7 +234,8 @@ void main() {
 
         final service = PaymobPaymentService(client: client);
         final results = <PaymentResult>[];
-        final sub = service.watchPaymentStatus('order-pending').listen(results.add);
+        final sub =
+            service.watchPaymentStatus('order-pending').listen(results.add);
 
         fake.elapse(const Duration(seconds: 45));
         fake.flushMicrotasks();
@@ -259,7 +255,8 @@ void main() {
 
         final service2 = PaymobPaymentService(client: client2);
         final results2 = <PaymentResult>[];
-        final sub2 = service2.watchPaymentStatus('order-null').listen(results2.add);
+        final sub2 =
+            service2.watchPaymentStatus('order-null').listen(results2.add);
         fake.elapse(const Duration(seconds: 45));
         fake.flushMicrotasks();
         fake.flushMicrotasks();
@@ -274,12 +271,16 @@ void main() {
         final channel = FakeRealtimeChannel();
         final client = FakeSupabaseClient(
           fakeChannel: channel,
-          fallbackRow: {'status': 'success', 'transaction_id': 'txn-should-not'},
+          fallbackRow: {
+            'status': 'success',
+            'transaction_id': 'txn-should-not'
+          },
         );
 
         final service = PaymobPaymentService(client: client);
         final results = <PaymentResult>[];
-        final sub = service.watchPaymentStatus('order-cancel').listen(results.add);
+        final sub =
+            service.watchPaymentStatus('order-cancel').listen(results.add);
 
         fake.flushMicrotasks();
         sub.cancel();
@@ -307,7 +308,8 @@ void main() {
 
         final service = PaymobPaymentService(client: client);
         final results = <PaymentResult>[];
-        final sub = service.watchPaymentStatus('order-realtime').listen(results.add);
+        final sub =
+            service.watchPaymentStatus('order-realtime').listen(results.add);
         fake.flushMicrotasks();
 
         expect(channel.capturedCallback, isNotNull);
@@ -344,7 +346,9 @@ void main() {
         );
         final service = PaymobPaymentService(client: client);
         final results = <PaymentResult>[];
-        final sub = service.watchPaymentStatus('order-realtime-fail').listen(results.add);
+        final sub = service
+            .watchPaymentStatus('order-realtime-fail')
+            .listen(results.add);
         fake.flushMicrotasks();
 
         channel.triggerPostgresChange(

@@ -84,8 +84,12 @@ class _StubRepo implements CatalogRepository {
           'id': 'flash-test',
           'product_id': 'silk-01',
           'discount_pct': 15,
-          'starts_at': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
-          'ends_at': DateTime.now().add(const Duration(hours: 2, minutes: 45, seconds: 12)).toIso8601String(),
+          'starts_at': DateTime.now()
+              .subtract(const Duration(hours: 1))
+              .toIso8601String(),
+          'ends_at': DateTime.now()
+              .add(const Duration(hours: 2, minutes: 45, seconds: 12))
+              .toIso8601String(),
           'is_active': true,
         }
       ];

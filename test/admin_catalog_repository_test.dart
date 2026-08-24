@@ -2,18 +2,19 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:postgrest/postgrest.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class FakePostgrestFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
+class FakePostgrestFilterBuilder<T> extends Fake
+    implements PostgrestFilterBuilder<T> {
   FakePostgrestFilterBuilder(this._value);
   final T _value;
 
   @override
-  Future<R> then<R>(FutureOr<R> Function(T value) onValue, {Function? onError}) {
+  Future<R> then<R>(FutureOr<R> Function(T value) onValue,
+      {Function? onError}) {
     return Future.value(_value).then(onValue, onError: onError);
   }
 

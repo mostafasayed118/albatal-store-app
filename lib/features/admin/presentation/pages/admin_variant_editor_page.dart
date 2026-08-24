@@ -51,7 +51,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
         _loading = false;
         // Keep empty list but surface error only if not "not initialized".
         _error = e.toString();
-        if (_error!.contains('Supabase') || _error!.contains('not initialized')) {
+        if (_error!.contains('Supabase') ||
+            _error!.contains('not initialized')) {
           _error = null;
           _variants = [];
         }
@@ -60,11 +61,16 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
   }
 
   void _showVariantDialog({Map<String, dynamic>? existing}) {
-    final sizeCtrl = TextEditingController(text: existing?['size'] as String? ?? '');
-    final colorCtrl = TextEditingController(text: existing?['color'] as String? ?? '');
-    final stockCtrl = TextEditingController(text: (existing?['stock'] ?? '').toString());
+    final sizeCtrl =
+        TextEditingController(text: existing?['size'] as String? ?? '');
+    final colorCtrl =
+        TextEditingController(text: existing?['color'] as String? ?? '');
+    final stockCtrl =
+        TextEditingController(text: (existing?['stock'] ?? '').toString());
     final priceCtrl = TextEditingController(
-      text: existing?['price_override']?.toString() ?? existing?['price']?.toString() ?? '',
+      text: existing?['price_override']?.toString() ??
+          existing?['price']?.toString() ??
+          '',
     );
     bool saving = false;
 
@@ -95,8 +101,10 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceCtrl,
-                  decoration: const InputDecoration(labelText: 'Price Override (optional)'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Price Override (optional)'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
               ],
             ),
@@ -109,14 +117,19 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
             saving
                 ? const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 : AppButton(
                     label: 'Save',
                     onPressed: () async {
-                      if (sizeCtrl.text.trim().isEmpty || colorCtrl.text.trim().isEmpty) {
+                      if (sizeCtrl.text.trim().isEmpty ||
+                          colorCtrl.text.trim().isEmpty) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Size and color are required')),
+                          const SnackBar(
+                              content: Text('Size and color are required')),
                         );
                         return;
                       }
@@ -130,9 +143,11 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                       final priceOverride = priceCtrl.text.trim().isEmpty
                           ? null
                           : double.tryParse(priceCtrl.text.trim());
-                      if (priceCtrl.text.trim().isNotEmpty && priceOverride == null) {
+                      if (priceCtrl.text.trim().isNotEmpty &&
+                          priceOverride == null) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Invalid price override')),
+                          const SnackBar(
+                              content: Text('Invalid price override')),
                         );
                         return;
                       }
@@ -205,7 +220,9 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                             const SizedBox(height: 12),
                             const Text('No variants yet'),
                             const SizedBox(height: 12),
-                            AppButton(label: 'Add Variant', onPressed: () => _showVariantDialog()),
+                            AppButton(
+                                label: 'Add Variant',
+                                onPressed: () => _showVariantDialog()),
                           ],
                         ),
                       ),
@@ -224,10 +241,12 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                           return Card(
                             child: ListTile(
                               title: Text('$size / $color'),
-                              subtitle: Text('Stock: $stock${price != null ? ' • Override: $price' : ''}'),
+                              subtitle: Text(
+                                  'Stock: $stock${price != null ? ' • Override: $price' : ''}'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () => _showVariantDialog(existing: v),
+                                onPressed: () =>
+                                    _showVariantDialog(existing: v),
                               ),
                             ),
                           );

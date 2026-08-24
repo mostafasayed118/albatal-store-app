@@ -6,7 +6,6 @@ import 'package:al_batal_elite/features/storefront/data/supabase_catalog_reposit
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:postgrest/postgrest.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

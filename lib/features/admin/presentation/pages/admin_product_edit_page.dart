@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/app_error.dart';
-import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -53,7 +52,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       text: price == null ? '' : price.toString(),
     );
     _isActive = d?['is_active'] as bool? ?? true;
-    _selectedCategory = d?['category_id'] as String? ?? d?['category'] as String?;
+    _selectedCategory =
+        d?['category_id'] as String? ?? d?['category'] as String?;
     _loadCategories();
   }
 
@@ -67,7 +67,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
           setState(() {
             _categories = cats;
             _loadingCategories = false;
-            if (_selectedCategory != null && !_categories.contains(_selectedCategory)) {
+            if (_selectedCategory != null &&
+                !_categories.contains(_selectedCategory)) {
               // Keep existing value even if not in list (e.g. category id).
               _categories = [..._categories, _selectedCategory!];
             } else if (_selectedCategory == null && _categories.isNotEmpty) {
@@ -78,7 +79,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         failure: (e) {
           setState(() {
             _loadingCategories = false;
-            _categories = _selectedCategory != null ? [_selectedCategory!] : const [];
+            _categories =
+                _selectedCategory != null ? [_selectedCategory!] : const [];
           });
         },
       );
@@ -119,15 +121,22 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         id: widget.productId,
         name: _nameCtrl.text.trim(),
         slug: _slugCtrl.text.trim(),
-        description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
-        composition: _compositionCtrl.text.trim().isEmpty ? null : _compositionCtrl.text.trim(),
+        description: _descriptionCtrl.text.trim().isEmpty
+            ? null
+            : _descriptionCtrl.text.trim(),
+        composition: _compositionCtrl.text.trim().isEmpty
+            ? null
+            : _compositionCtrl.text.trim(),
         categoryId: _selectedCategory!,
         basePrice: price,
         isActive: _isActive,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.productId == null ? 'Product created' : 'Product updated')),
+        SnackBar(
+            content: Text(widget.productId == null
+                ? 'Product created'
+                : 'Product updated')),
       );
       context.pop(true);
     } on AppError catch (e) {
@@ -160,13 +169,15 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
             TextFormField(
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _slugCtrl,
               decoration: const InputDecoration(labelText: 'Slug'),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -181,21 +192,26 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
             ),
             const SizedBox(height: 16),
             _loadingCategories
-                ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()))
+                ? const Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator()))
                 : DropdownButtonFormField<String>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(labelText: 'Category'),
                     items: _categories
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
                     onChanged: (v) => setState(() => _selectedCategory = v),
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
                   ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _priceCtrl,
               decoration: const InputDecoration(labelText: 'Base Price (EGP)'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Required';
                 if (double.tryParse(v.trim()) == null) return 'Invalid number';
@@ -212,7 +228,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
             _submitting
                 ? const Center(child: CircularProgressIndicator())
                 : AppButton(
-                    label: widget.productId == null ? 'Create Product' : 'Update Product',
+                    label: widget.productId == null
+                        ? 'Create Product'
+                        : 'Update Product',
                     onPressed: _submit,
                   ),
           ],

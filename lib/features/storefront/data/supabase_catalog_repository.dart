@@ -174,6 +174,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// Fetches currently active flash sales via `get_active_flash_sales` RPC.
   ///
   /// Returns a list of raw JSON rows — UI can map to domain as needed.
+  @override
   Future<List<Map<String, dynamic>>> getActiveFlashSales() =>
       _client.rpc('get_active_flash_sales').then(
             (value) => (value as List).cast<Map<String, dynamic>>(),
@@ -312,7 +313,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         ? rawImages.whereType<Map<String, dynamic>>().toList()
         : <Map<String, dynamic>>[];
     imageRows.sort(
-      (a, b) => (a['sort_order'] as int? ?? 0).compareTo(b['sort_order'] as int? ?? 0),
+      (a, b) => (a['sort_order'] as int? ?? 0)
+          .compareTo(b['sort_order'] as int? ?? 0),
     );
     final imageUrls = imageRows
         .map((m) => m['storage_path'] as String?)

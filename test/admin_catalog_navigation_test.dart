@@ -24,16 +24,21 @@ class FakeAdminRepository implements AdminRepository {
   Future<bool> isCurrentUserAdmin() async => isAdmin;
 
   @override
-  Future<List<Map<String, dynamic>>> getAllOrders({String? status, int limit = 50}) async => [];
+  Future<List<Map<String, dynamic>>> getAllOrders(
+          {String? status, int limit = 50}) async =>
+      [];
 
   @override
   Future<Map<String, dynamic>?> getOrderDetails(String orderId) async => null;
 
   @override
-  Future<void> updateOrderStatus(String orderId, String status, {String? trackingNumber}) async {}
+  Future<void> updateOrderStatus(String orderId, String status,
+      {String? trackingNumber}) async {}
 
   @override
-  Future<List<Map<String, dynamic>>> getLowStockProducts({int threshold = 5}) async => [];
+  Future<List<Map<String, dynamic>>> getLowStockProducts(
+          {int threshold = 5}) async =>
+      [];
 
   @override
   Future<void> updateStock(String variantId, int newStock) async {}
@@ -62,20 +67,24 @@ class FakeAdminRepository implements AdminRepository {
       'fake-variant-id';
 
   @override
-  Future<void> adminSetProductImages(String productId, List<String> storagePaths) async {}
+  Future<void> adminSetProductImages(
+      String productId, List<String> storagePaths) async {}
 
   @override
   Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [];
 }
+
 class FakeCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => Success([]);
 
   @override
-  Future<Result<List<String>>> fetchCategories() async => Success(['Cat A', 'Cat B']);
+  Future<Result<List<String>>> fetchCategories() async =>
+      Success(['Cat A', 'Cat B']);
 
   @override
-  Future<Result<Product>> fetchProductById(String id) async => Failure(AppError('not found'));
+  Future<Result<Product>> fetchProductById(String id) async =>
+      Failure(AppError('not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -92,14 +101,17 @@ class FakeStorageService extends StorageService {
   FakeStorageService() : super(client: null);
 
   @override
-  String buildProductImagePath(String productId, String fileName) => 'product-images/$productId/$fileName';
-
-  @override
-  Future<String> uploadProductImage(String productId, List<int> bytes, String fileName, String contentType) async =>
+  String buildProductImagePath(String productId, String fileName) =>
       'product-images/$productId/$fileName';
 
   @override
-  String getProductImageUrl(String storagePath) => 'https://example.com/$storagePath';
+  Future<String> uploadProductImage(String productId, List<int> bytes,
+          String fileName, String contentType) async =>
+      'product-images/$productId/$fileName';
+
+  @override
+  String getProductImageUrl(String storagePath) =>
+      'https://example.com/$storagePath';
 
   @override
   Future<void> deleteProductImage(String storagePath) async {}
@@ -108,9 +120,13 @@ class FakeStorageService extends StorageService {
 GoRouter _routerForCatalog({bool isAdmin = true}) {
   final fakeAdmin = FakeAdminRepository(isAdmin: isAdmin);
   // Register fakes in getIt (reset first).
-  if (getIt.isRegistered<AdminRepository>()) getIt.unregister<AdminRepository>();
+  if (getIt.isRegistered<AdminRepository>()) {
+    getIt.unregister<AdminRepository>();
+  }
   getIt.registerSingleton<AdminRepository>(fakeAdmin);
-  if (getIt.isRegistered<CatalogRepository>()) getIt.unregister<CatalogRepository>();
+  if (getIt.isRegistered<CatalogRepository>()) {
+    getIt.unregister<CatalogRepository>();
+  }
   getIt.registerSingleton<CatalogRepository>(FakeCatalogRepository());
   if (getIt.isRegistered<StorageService>()) getIt.unregister<StorageService>();
   getIt.registerSingleton<StorageService>(FakeStorageService());
@@ -118,11 +134,22 @@ GoRouter _routerForCatalog({bool isAdmin = true}) {
   return GoRouter(
     initialLocation: '/admin/catalog',
     routes: [
-      GoRoute(path: '/admin/catalog', builder: (_, __) => const AdminCatalogPage()),
-      GoRoute(path: '/admin/products', builder: (_, __) => const AdminProductEditPage()),
-      GoRoute(path: '/admin/categories', builder: (_, __) => const AdminProductEditPage()),
-      GoRoute(path: '/admin/images', builder: (_, __) => const AdminImageManagerPage(productId: 'test-pid')),
-      GoRoute(path: '/admin/variants', builder: (_, __) => const AdminVariantEditorPage(productId: 'test-pid')),
+      GoRoute(
+          path: '/admin/catalog', builder: (_, __) => const AdminCatalogPage()),
+      GoRoute(
+          path: '/admin/products',
+          builder: (_, __) => const AdminProductEditPage()),
+      GoRoute(
+          path: '/admin/categories',
+          builder: (_, __) => const AdminProductEditPage()),
+      GoRoute(
+          path: '/admin/images',
+          builder: (_, __) =>
+              const AdminImageManagerPage(productId: 'test-pid')),
+      GoRoute(
+          path: '/admin/variants',
+          builder: (_, __) =>
+              const AdminVariantEditorPage(productId: 'test-pid')),
     ],
   );
 }
@@ -135,9 +162,15 @@ Widget _harness(GoRouter router) => MaterialApp.router(
 
 void main() {
   tearDown(() {
-    if (getIt.isRegistered<AdminRepository>()) getIt.unregister<AdminRepository>();
-    if (getIt.isRegistered<CatalogRepository>()) getIt.unregister<CatalogRepository>();
-    if (getIt.isRegistered<StorageService>()) getIt.unregister<StorageService>();
+    if (getIt.isRegistered<AdminRepository>()) {
+      getIt.unregister<AdminRepository>();
+    }
+    if (getIt.isRegistered<CatalogRepository>()) {
+      getIt.unregister<CatalogRepository>();
+    }
+    if (getIt.isRegistered<StorageService>()) {
+      getIt.unregister<StorageService>();
+    }
   });
 
   testWidgets('catalog page shows 4 management tiles', (tester) async {
@@ -203,11 +236,17 @@ void main() {
     // We also verify the pages can be pumped.
     final fakeAdmin = FakeAdminRepository();
     final fakeCatalog = FakeCatalogRepository();
-    if (getIt.isRegistered<AdminRepository>()) getIt.unregister<AdminRepository>();
+    if (getIt.isRegistered<AdminRepository>()) {
+      getIt.unregister<AdminRepository>();
+    }
     getIt.registerSingleton<AdminRepository>(fakeAdmin);
-    if (getIt.isRegistered<CatalogRepository>()) getIt.unregister<CatalogRepository>();
+    if (getIt.isRegistered<CatalogRepository>()) {
+      getIt.unregister<CatalogRepository>();
+    }
     getIt.registerSingleton<CatalogRepository>(fakeCatalog);
-    if (getIt.isRegistered<StorageService>()) getIt.unregister<StorageService>();
+    if (getIt.isRegistered<StorageService>()) {
+      getIt.unregister<StorageService>();
+    }
     getIt.registerSingleton<StorageService>(FakeStorageService());
 
     await tester.pumpWidget(

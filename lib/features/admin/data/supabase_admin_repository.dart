@@ -126,7 +126,8 @@ final class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> adminSetProductImages(String productId, List<String> storagePaths) async {
+  Future<void> adminSetProductImages(
+      String productId, List<String> storagePaths) async {
     await _client.rpc('admin_set_product_images', params: {
       'p_product_id': productId,
       'p_paths': storagePaths,

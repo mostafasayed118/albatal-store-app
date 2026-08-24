@@ -62,8 +62,7 @@ void main() {
         .thenAnswer((_) async => const Success(_testProducts));
     when(() => mockRepo.fetchCategories())
         .thenAnswer((_) async => const Success(['All', 'Silk', 'Cotton']));
-    when(() => mockRepo.findProductById(any()))
-        .thenAnswer((inv) {
+    when(() => mockRepo.findProductById(any())).thenAnswer((inv) {
       final id = inv.positionalArguments[0] as String;
       return _testProducts.where((p) => p.id == id).firstOrNull;
     });
@@ -77,8 +76,9 @@ void main() {
             'id': 'flash-1',
             'product_id': 'p1',
             'discount_pct': 15,
-            'starts_at':
-                DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+            'starts_at': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toIso8601String(),
             'ends_at':
                 DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
             'is_active': true,
@@ -112,8 +112,9 @@ void main() {
             'id': 'flash-2',
             'product_id': 'p1',
             'discount_pct': 22,
-            'starts_at':
-                DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+            'starts_at': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toIso8601String(),
             'ends_at':
                 DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
             'is_active': true,
@@ -135,16 +136,16 @@ void main() {
     expect(find.text('-15%'), findsNothing);
   });
 
-  testWidgets('flash sale countdown ticks from server endsAt',
-      (tester) async {
+  testWidgets('flash sale countdown ticks from server endsAt', (tester) async {
     final endsAt = DateTime.now().add(const Duration(hours: 1, minutes: 5));
     when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => [
           {
             'id': 'flash-3',
             'product_id': 'p1',
             'discount_pct': 10,
-            'starts_at':
-                DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
+            'starts_at': DateTime.now()
+                .subtract(const Duration(hours: 1))
+                .toIso8601String(),
             'ends_at': endsAt.toIso8601String(),
             'is_active': true,
           }

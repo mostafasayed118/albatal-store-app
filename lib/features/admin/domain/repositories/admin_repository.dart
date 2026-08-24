@@ -66,7 +66,8 @@ abstract interface class AdminRepository {
   });
 
   /// Replace all images for a product with the given storage paths.
-  Future<void> adminSetProductImages(String productId, List<String> storagePaths);
+  Future<void> adminSetProductImages(
+      String productId, List<String> storagePaths);
 
   /// Get currently active flash sales (window filter).
   Future<List<Map<String, dynamic>>> getActiveFlashSales();

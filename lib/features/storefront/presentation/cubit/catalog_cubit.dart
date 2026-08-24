@@ -297,7 +297,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
   }
 
   DateTime? _parseFlashEndsAt(Map<String, dynamic> sale) {
-    final raw = sale['ends_at'] ?? sale['endsAt'] ?? sale['endsAt'] ?? sale['end_at'];
+    final raw =
+        sale['ends_at'] ?? sale['endsAt'] ?? sale['endsAt'] ?? sale['end_at'];
     if (raw is DateTime) return raw;
     if (raw is String) return DateTime.tryParse(raw);
     // Typed FlashSale object masquerading as Map via json? Try discount case-insensitive.
