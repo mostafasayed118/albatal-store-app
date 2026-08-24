@@ -5,6 +5,46 @@
       "args": [
         "server"
       ]
+    },
+    "dart": {
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ]
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "stitch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@_davideast/stitch-mcp",
+        "proxy"
+      ],
+      "env": {
+        "STITCH_API_KEY": "${STITCH_API_KEY}"
+      }
     }
   }
 }

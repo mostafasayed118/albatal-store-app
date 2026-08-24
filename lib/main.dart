@@ -7,6 +7,7 @@ import 'app.dart';
 import 'shared/services/app_bloc_observer.dart';
 import 'shared/services/crash_reporting_service.dart';
 import 'shared/services/env_config.dart';
+import 'shared/services/e2e_sentry_probe.dart';
 import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
@@ -59,6 +60,11 @@ Future<void> main() async {
     // if Sentry was already initialized.
     final crashReporter = getIt<CrashReportingService>();
     crashReporter.init();
+
+    // E2E-only: fires ONE tagged exception into Sentry when built with
+    // --dart-define E2E_SENTRY_PROBE=true AND kDebugMode. Dead code in
+    // every normal build. Must run after crash-reporting init above.
+    fireE2ESentryProbe();
 
     // Capture Flutter framework errors — must be after Sentry init.
     FlutterError.onError = (details) {

@@ -1,6 +1,24 @@
 import { Client } from 'pg';
 
-const STAGING_URL = 'postgresql://postgres.alxwvyflasewslinufqe:MZ1avH7HTec2yGht@aws-0-eu-west-1.pooler.supabase.com:5432/postgres';
+
+// ── SAFETY GUARD ─────────────────────────────────────────────
+// This script may ONLY run against the isolated STAGING project.
+// The previous staging project ref is now PRODUCTION and must
+// never be touched by test runners.
+// Connection string comes from the STAGING_DB_URL env var only —
+// never from a committed constant.
+const REQUIRED_STAGING_REF = 'zvpjngdgbpnkkqrorkul';
+const STAGING_URL = process.env.STAGING_DB_URL ?? '';
+
+if (!STAGING_URL) {
+  console.error('ABORT: STAGING_DB_URL is not set. Export the isolated staging connection string first.');
+  process.exit(1);
+}
+if (!STAGING_URL.includes(REQUIRED_STAGING_REF)) {
+  console.error(`ABORT: STAGING_DB_URL does not reference the isolated staging project ${REQUIRED_STAGING_REF}. Refusing to run.`);
+  process.exit(1);
+}
+// ── END SAFETY GUARD ─────────────────────────────────────────
 
 let passed = 0;
 let failed = 0;
@@ -141,6 +159,10 @@ try {
   // ═══════════════════════════════════════════════════════════
   console.log('═══ CLEANUP ═══');
   await client.query(`
+    RESET ROLE;
+    DELETE FROM state_transitions WHERE entity_id IN (
+      SELECT id FROM payments WHERE user_id = '${userId}'
+      UNION SELECT id FROM orders WHERE user_id = '${userId}');
     DELETE FROM order_items WHERE product_id = 'AA000000-0000-0000-0000-000000000002';
     DELETE FROM payments WHERE user_id = '${userId}';
     DELETE FROM orders WHERE user_id = '${userId}';

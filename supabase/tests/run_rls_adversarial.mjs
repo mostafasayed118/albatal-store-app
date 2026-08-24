@@ -1,10 +1,29 @@
 import { Client } from 'pg';
 import { readFileSync } from 'fs';
 
+// ── SAFETY GUARD ─────────────────────────────────────────────
+// This script may ONLY run against the isolated STAGING project.
+// The previous staging project ref is now PRODUCTION and must
+// never be touched by test runners.
+// Connection string comes from the STAGING_DB_URL env var only —
+// never from a committed constant.
+const REQUIRED_STAGING_REF = 'zvpjngdgbpnkkqrorkul';
+const STAGING_DB_URL = process.env.STAGING_DB_URL ?? '';
+
+if (!STAGING_DB_URL) {
+  console.error('ABORT: STAGING_DB_URL is not set. Export the isolated staging connection string first.');
+  process.exit(1);
+}
+if (!STAGING_DB_URL.includes(REQUIRED_STAGING_REF)) {
+  console.error(`ABORT: STAGING_DB_URL does not reference the isolated staging project ${REQUIRED_STAGING_REF}. Refusing to run.`);
+  process.exit(1);
+}
+// ── END SAFETY GUARD ─────────────────────────────────────────
+
 let sql = readFileSync('supabase/tests/test_rls_adversarial_cli.sql', 'utf8');
 
 const client = new Client({
-  connectionString: 'postgresql://postgres.alxwvyflasewslinufqe:MZ1avH7HTec2yGht@aws-0-eu-west-1.pooler.supabase.com:5432/postgres',
+  connectionString: STAGING_DB_URL,
   ssl: { rejectUnauthorized: false }
 });
 
