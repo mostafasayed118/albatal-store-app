@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
@@ -33,29 +32,18 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
       _error = null;
     });
     try {
-      // Prefer Supabase direct query; fallback to empty on error (e.g. no client).
-      final client = Supabase.instance.client;
-      final data = await client
-          .from('product_variants')
-          .select()
-          .eq('product_id', widget.productId)
-          .order('size');
+      final variants =
+          await getIt<AdminRepository>().getVariants(widget.productId);
       if (!mounted) return;
       setState(() {
-        _variants = (data as List).cast<Map<String, dynamic>>();
+        _variants = variants;
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        // Keep empty list but surface error only if not "not initialized".
         _error = e.toString();
-        if (_error!.contains('Supabase') ||
-            _error!.contains('not initialized')) {
-          _error = null;
-          _variants = [];
-        }
       });
     }
   }
