@@ -40,7 +40,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingExquisiteBody =>
-      'Discover a curated collection of the world\\'s finest silks, linens, and velvets.';
+      'Discover a curated collection of the world\'s finest silks, linens, and velvets.';
 
   @override
   String get onboardingCraftsmanshipTitle => 'Artisanal Craftsmanship';

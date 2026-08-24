@@ -153,30 +153,57 @@ abstract class AppLocalizations {
   String get welcomeTitle;
 
   /// No description provided for @onboardingExquisiteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exquisite Fabrics'**
   String get onboardingExquisiteTitle;
 
   /// No description provided for @onboardingExquisiteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover a curated collection of the world\'s finest silks, linens, and velvets.'**
   String get onboardingExquisiteBody;
 
   /// No description provided for @onboardingCraftsmanshipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Artisanal Craftsmanship'**
   String get onboardingCraftsmanshipTitle;
 
   /// No description provided for @onboardingCraftsmanshipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every thread is woven with precision and heritage to ensure unparalleled quality.'**
   String get onboardingCraftsmanshipBody;
 
   /// No description provided for @onboardingExcellenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tailored for Excellence'**
   String get onboardingExcellenceTitle;
 
   /// No description provided for @onboardingExcellenceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience the luxury of fabrics designed for those who settle for nothing less than elite.'**
   String get onboardingExcellenceBody;
 
   /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
   String get onboardingNext;
 
   /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
   String get onboardingSkip;
 
   /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
   String get onboardingGetStarted;
 
   /// No description provided for @welcomeBody.
