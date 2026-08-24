@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Al Batal Premium - Checkout &amp; Confirmation</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Montserrat:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "background": "#f9f9f9",
+                    "surface-variant": "#e2e2e2",
+                    "on-secondary-container": "#663500",
+                    "on-secondary-fixed": "#2f1500",
+                    "inverse-surface": "#2f3131",
+                    "on-tertiary-fixed-variant": "#76330d",
+                    "error": "#ba1a1a",
+                    "tertiary": "#531e00",
+                    "surface": "#f9f9f9",
+                    "secondary-container": "#fe932c",
+                    "tertiary-fixed": "#ffdbcc",
+                    "surface-container-high": "#e8e8e8",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f0f1f1",
+                    "on-primary-fixed-variant": "#0b513d",
+                    "primary-fixed": "#b0f0d6",
+                    "outline-variant": "#bfc9c3",
+                    "on-secondary-fixed-variant": "#6e3900",
+                    "on-primary-container": "#80bea6",
+                    "secondary": "#904d00",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f3f3f3",
+                    "on-surface-variant": "#404944",
+                    "primary-fixed-dim": "#95d3ba",
+                    "inverse-primary": "#95d3ba",
+                    "secondary-fixed-dim": "#ffb77d",
+                    "tertiary-fixed-dim": "#ffb693",
+                    "surface-container-highest": "#e2e2e2",
+                    "on-background": "#1a1c1c",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#72310b",
+                    "on-tertiary-container": "#f89a6c",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#eeeeee",
+                    "primary": "#003527",
+                    "surface-tint": "#2b6954",
+                    "outline": "#707974",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#1a1c1c",
+                    "on-primary-fixed": "#002117",
+                    "primary-container": "#064e3b",
+                    "on-tertiary-fixed": "#351000",
+                    "surface-bright": "#f9f9f9",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#ffdcc3",
+                    "surface-dim": "#dadada"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "unit": "8px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "64px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Montserrat"
+                    ],
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Montserrat"
+                    ],
+                    "display": [
+                            "Montserrat"
+                    ],
+                    "headline-lg": [
+                            "Montserrat"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Ambient shadows */
+        .shadow-level-1 { box-shadow: 0 4px 8px rgba(0, 53, 39, 0.02); }
+        .shadow-level-2 { box-shadow: 0 8px 16px rgba(0, 53, 39, 0.04); }
+        
+        /* Hide scrollbar for clean presentation */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-variant text-on-surface font-body-md antialiased min-h-screen flex items-center justify-center p-md md:p-xl gap-xl flex-wrap">
+<!-- Screen 1: Checkout Flow -->
+<main class="w-full max-w-[400px] bg-background h-[850px] rounded-xl overflow-y-auto relative shadow-level-2 flex flex-col">
+<!-- Transactional Header (Suppressed main nav shells) -->
+<header class="flex items-center justify-between px-margin-mobile py-md bg-surface sticky top-0 z-10 border-b border-outline-variant/20">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-on-surface">Checkout</h1>
+<div class="w-6"></div> <!-- Spacer for centering -->
+</header>
+<div class="p-margin-mobile flex-1 flex flex-col gap-lg">
+<!-- Step Indicator -->
+<div class="flex items-center justify-between w-full px-sm">
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-sm z-10">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary">Address</span>
+</div>
+<!-- Line -->
+<div class="flex-1 h-[2px] bg-primary-fixed -mx-2 mb-[20px]"></div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center gap-sm z-10">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-md text-label-md shadow-sm">
+                        2
+                    </div>
+<span class="font-label-sm text-label-sm text-primary">Payment</span>
+</div>
+<!-- Line -->
+<div class="flex-1 h-[2px] bg-outline-variant/30 -mx-2 mb-[20px]"></div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-sm z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant/50 flex items-center justify-center font-label-md text-label-md">
+                        3
+                    </div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Summary</span>
+</div>
+</div>
+<!-- Address Section -->
+<section class="flex flex-col gap-sm">
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Shipping Address</h2>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 flex items-start gap-md shadow-level-1 cursor-pointer hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-primary mt-xs" style="font-variation-settings: 'FILL' 0;">location_on</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface">Ahmed's Office</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mt-1">Maadi, Cairo<br/>Egypt</p>
+</div>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">radio_button_checked</span>
+</div>
+<button class="w-full py-sm px-md border-[1.5px] border-primary text-primary rounded-xl font-label-md text-label-md flex items-center justify-center gap-sm hover:bg-primary-fixed/20 transition-colors mt-xs">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Add New Address
+                </button>
+</section>
+<!-- Payment Section -->
+<section class="flex flex-col gap-sm">
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Payment Method</h2>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-level-1 overflow-hidden flex flex-col">
+<!-- Option 1 -->
+<label class="flex items-center gap-md p-md border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low transition-colors">
+<input checked="" class="hidden peer" name="payment" type="radio"/>
+<span class="material-symbols-outlined text-outline peer-checked:text-primary peer-checked:[font-variation-settings:'FILL'_1] transition-all">radio_button_checked</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface">Credit/Debit Card</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">credit_card</span>
+</label>
+<!-- Option 2 -->
+<label class="flex items-center gap-md p-md border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="hidden peer" name="payment" type="radio"/>
+<span class="material-symbols-outlined text-outline peer-checked:text-primary peer-checked:[font-variation-settings:'FILL'_1] transition-all">radio_button_unchecked</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface">Cash on Delivery</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">payments</span>
+</label>
+<!-- Option 3 -->
+<label class="flex items-center gap-md p-md cursor-pointer hover:bg-surface-container-low transition-colors">
+<input class="hidden peer" name="payment" type="radio"/>
+<span class="material-symbols-outlined text-outline peer-checked:text-primary peer-checked:[font-variation-settings:'FILL'_1] transition-all">radio_button_unchecked</span>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface">InstaPay</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">account_balance</span>
+</label>
+</div>
+</section>
+<!-- Summary Section -->
+<section class="flex flex-col gap-sm mb-xl">
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Order Summary</h2>
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 shadow-level-1 flex flex-col gap-md">
+<!-- Item List -->
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up, highly detailed shot of folded premium emerald green Egyptian cotton bed sheets. The lighting is soft and natural, emphasizing the high thread count and silky texture of the fabric. The setting is minimal, with a faint touch of gold trim visible on the edge of the fabric. The overall mood is luxurious, serene, and sophisticated, perfectly aligned with a high-end textile brand's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyfK4f5hitO7WPhUWU9Z9CIZq9Wvdo8sw7KZmA4zybpEZJ2rSE_h8-UdljEI97XerA18AV9Bo2VZZeU9vF___Ko6XIdFCFLj0XgSRz1na7C8KWQ5qqb-4gQ9bBx_VTAWXinG-0R0xOUMrffOePtZGjNcBmtXnZrwsoJNdGLy9RG18F81h4TR7I9Jh8oMiEtwK3LvOzZen80taYlL5jeIgyDL7eJ5U-6OjqnZOBA3jvzI6vxTyOvRIAPlRIi3D-eP9DcMZsnczHFq1l"/>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface line-clamp-1">Emerald Signature Bedset</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">King Size • Qty 1</p>
+</div>
+<p class="font-label-md text-label-md text-on-surface">1850 EGY</p>
+</div>
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A macro photography shot of two folded, luxurious silk pillowcases in a deep, rich gold tone. The fabric reflects light softly, highlighting its smooth, premium quality. The background is a clean, off-white surface, providing stark contrast and emphasizing the product. The lighting is studio-quality, casting gentle shadows that give depth and realism to the textiles. The aesthetic is clean, corporate, and incredibly elegant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1RkPwSqSPJ8nP33qrXZAgGWw1JtCIg5V0FJMQDbAhSBd51TySV0WkfbiqnoWVAG0gRee7qgbdiDsZsUj8jkknJdZHs6tbtvBeRlyFegaSRztg0IIV6THMRcW3rK62VylR69y9WjdrrHWtNGwM3DV1b2bvvnLtFoBzJgodMbLRpdS7DxM2LS9EwOJvwdwFoB4egEfMueFGNH_FYdwDhhyZJRckww9xxwVSXkWLq2h7AiXk-jhDXnU5mxlvJiWSTBLFB1Uusxq0igid"/>
+</div>
+<div class="flex-1">
+<p class="font-label-md text-label-md text-on-surface line-clamp-1">Golden Silk Pillowcases</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Standard • Qty 2</p>
+</div>
+<p class="font-label-md text-label-md text-on-surface">600 EGY</p>
+</div>
+<div class="h-[1px] bg-outline-variant/30 w-full my-sm"></div>
+<!-- Totals -->
+<div class="flex justify-between items-center">
+<p class="font-body-md text-body-md text-on-surface-variant">Subtotal</p>
+<p class="font-body-md text-body-md text-on-surface">2450 EGY</p>
+</div>
+<div class="flex justify-between items-center">
+<p class="font-body-md text-body-md text-on-surface-variant">Delivery <span class="text-sm">(Standard 2-3 days)</span></p>
+<p class="font-body-md text-body-md text-primary">Free</p>
+</div>
+<div class="flex justify-between items-center mt-sm pt-sm border-t border-outline-variant/30">
+<p class="font-headline-md text-headline-md text-on-surface">Total</p>
+<p class="font-headline-md text-headline-md text-primary">2450 EGY</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Bottom Action -->
+<div class="sticky bottom-0 left-0 w-full p-margin-mobile bg-surface/90 backdrop-blur-md border-t border-outline-variant/20">
+<button class="w-full py-md bg-primary text-on-primary rounded-xl font-label-md text-label-md shadow-level-2 hover:bg-primary-container transition-colors active:scale-95 duration-150 flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">lock</span>
+                Place Order
+            </button>
+</div>
+</main>
+<!-- Screen 2: Order Confirmation -->
+<main class="w-full max-w-[400px] bg-background h-[850px] rounded-xl relative shadow-level-2 flex flex-col items-center justify-center text-center p-xl relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary-fixed/30 to-transparent pointer-events-none"></div>
+<!-- Success Illustration -->
+<div class="w-32 h-32 rounded-full bg-primary-fixed/40 flex items-center justify-center mb-lg relative z-10 animate-[pulse_3s_ease-in-out_infinite]">
+<div class="w-24 h-24 rounded-full bg-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[48px] text-on-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Content -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-sm z-10">Success!</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xl max-w-[280px] z-10">
+            Order <span class="font-label-md text-label-md text-primary">#AB-92837</span> Placed Successfully. We'll notify you when it's shipped.
+        </p>
+<!-- Actions -->
+<div class="w-full flex flex-col gap-md z-10 mt-md">
+<button class="w-full py-md border-[1.5px] border-primary text-primary rounded-xl font-label-md text-label-md hover:bg-primary-fixed/10 transition-colors active:scale-95 duration-150">
+                Track My Order
+            </button>
+<button class="w-full py-md bg-primary text-on-primary rounded-xl font-label-md text-label-md shadow-level-2 hover:bg-primary-container transition-colors active:scale-95 duration-150">
+                Continue Shopping
+            </button>
+</div>
+</main>
+</body></html>

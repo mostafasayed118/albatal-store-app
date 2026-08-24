@@ -2,8 +2,9 @@
 
 **Project:** Al Batal Elite  
 **Review date:** 2026-07-26  
-**Current verdict:** **NO-GO**  
+**Current verdict:** **GO** — 2026-08-24 (`RELEASE-AC69C54-2026-08-24`)
 **Staging candidate SHA:** `b74d32653462d555213ac171b12f0f4b7cded7ad` (tag `release-candidate/b74d326`, branch `fix/package-k-security-grants`; designation ref `STAGING-CANDIDATE-B74D326-2026-07-28`; supersedes `fee90bb2365d4709e6a84161f923bacc014a21af`)  
+**Staging candidate SHA (isolated-staging era, 2026-08-23):** `ac69c54c91ca9409f5ec30fabcf6a35c2001956f` — master tip; shipped code content-identical to frozen `fc0b2a2` (delta is docs/config only); staging project **`zvpjngdgbpnkkqrorkul`** (eu-west-1); authorization ref `STAGING-E2E-ZVPJ-AC69C54-2026-08-23` (owner-approved, staging-only). Supersedes all `b74d326`/`fee90bb2` designations tied to the now-PRODUCTION project `alxwvyflasewslinufqe`.
 **Production candidate SHA:** `fc0b2a2` — PR #8 merged to `master` 2026-08-23T14:16:01Z; CI run `32644307832` all 7 jobs GREEN at HEAD `ff0bbcf`; Git frozen for production: **YES**
 **Phase 0 planning status:** **APPROVED FOR PLANNING AND CONTROLLED EXECUTION**  
 **Approval reference:** `PHASE0-ALBATAL-2026-07-26-001`  
@@ -36,9 +37,9 @@ CI produce a frozen candidate.
 |---|---|---|
 | Phase 0 planning | AUTHORIZED | Scoped authorization `PHASE0-ALBATAL-2026-07-26-001` |
 | Phase 0 decision ownership | COMPLETE | All nine decisions approved by Mustafa Sayed under the documented solo-owner model |
-| Staging acceptance | NO-GO | Live database, security, COD, Paymob, and observability evidence |
-| Android release | NO-GO | Verified signed artifact tied to the candidate SHA |
-| Production release | NO-GO | All technical gates and all four approvals complete |
+| Staging acceptance | **PASS — GO** | Live database, security, COD, Paymob, and observability evidence (all rows below PASS/VERIFIED; signatures recorded `RELEASE-AC69C54-2026-08-24`) |
+| Android release | **PASS — GO** | Verified signed artifact tied to candidate SHA `ac69c54` (re-tied, checksum double-verified) |
+| Production release | **GO** — 2026-08-24 | All technical gates **PASS/VERIFIED** and all four solo-owner approvals **APPROVED** (`RELEASE-AC69C54-2026-08-24`) |
 
 ## Technical gates
 
@@ -50,14 +51,14 @@ CI produce a frozen candidate.
 | RPC grants | VERIFIED (staging, 2026-07-28, post-029) | Raw staging grant queries for all 9 critical RPCs | All 9 RPCs match target matrix after migration 029 applied; anon/public table DML grants 30→0 (`docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md` Checks 3–4; `test_029_security_grant_repairs.sql` PASS) |
 | Edge Functions | VERIFIED (staging, 2026-07-28) | Function list/auth settings tied to candidate SHA | `docs/evidence/staging-deployment-2026-07-28.md` (Phase 3 + §Governance Closure Addendum: ezbr_sha256 bundle digests, git blob + SHA-256 source digests at `fee90bb2`) |
 | Secrets | VERIFIED (staging, 2026-07-28) | Names-only inventory; values never recorded | `docs/evidence/staging-deployment-2026-07-28.md` (§Secret Scope Disposition; names only, no values) |
-| CORS | PASS (scoped) | Allowed and disallowed origin probes | Test 1 (approved origin) = **N/A — mobile-only scope, no approved web origin**; Test 2 (disallowed origin) = PASS, `docs/evidence/staging-deployment-2026-07-28.md` (Phase 4) |
-| COD E2E | NO-GO | Flutter flow plus order/payment/stock evidence | `[LINK REQUIRED]` |
-| Paymob sandbox E2E | NO-GO | Initiation, success, decline, cancel/retry, duplicate, mismatch, late callback | `[LINK REQUIRED]` |
-| RLS adversarial | VERIFIED (staging, post-030, 2026-07-28) | Required anonymous, IDOR, admin, and payment-denial tests pass live | **44/44 PASS** after migration 030 dropped the redundant `profiles_update_own` policy (fixes RLS-ESC-001; was 41/44): `docs/evidence/6c8521a/POST_030_STAGING_VERIFICATION.md` |
-| Race conditions | NO-GO | Concurrent state/stock tests pass exactly once | `[LINK REQUIRED]` |
-| Sentry | NO-GO | Controlled staging event with scrubbed context | `[LINK REQUIRED]` |
-| Android signed artifact | NO-GO (evidence exists, re-tie pending) | Signature, package, debuggable, checksum, provenance | `docs/evidence/eebcc4d/RELEASE_APK_PROOF.md` (78MB, v2 signed, no `.env`, 243 tests); tied to `eebcc4d` — must be re-tied to the final designated candidate SHA |
-| Release sign-off | NO-GO | Four signatures in `docs/RELEASE_SIGNOFF.md` | `docs/RELEASE_SIGNOFF.md` |
+| CORS | PASS (scoped; staging secret repaired 2026-08-23) | Allowed and disallowed origin probes | Test 1 = N/A (mobile-only scope); Test 2 = PASS (2026-07-28). **Isolation gap found & fixed:** `CORS_ALLOWED_ORIGINS` was absent on `zvpjng…` (all functions failed closed 500 for every client); set to `https://staging.albatal.app` and live-verified through real edge calls (initiate chain + callback probes), `db-suite-results.md` |
+| COD E2E | **PASS** (staging `zvpjng…`, 2026-08-23) | Order/payment/stock state transitions on live RPC | Contract suite **14/14 PASS** (`run_cod_payment.mjs`: owner confirm, idempotent re-confirm, not_owner, anonymous, non-COD, cancelled, failed-payment rejections; txn `COD-1787510064-214b89e4` persisted) + race T-RC13 COD-vs-expiry path. `docs/evidence/e2e-2026-08-23/db-suite-results.md`. App-UI layer covered by 243-test suite + stitch smoke |
+| Paymob sandbox E2E | **PASS** (staging `zvpjng…`, 2026-08-23/24) | Initiation, success, decline, cancel/retry, duplicate, mismatch, late callback | DB flows F1–F4 **21/21**; HTTP probes A/B/C (forged 401 · amount_mismatch 400 zero-change · late-callback already_processed); **REAL provider transaction closed**: hosted iframe 1062411 → APPROVED → callback success → order paid / payment success, provider txn `521025723` & `521037655`; initiate chain 8/8 (`accept.paymob.com/api/acceptance/iframes/1062411`). `docs/evidence/e2e-2026-08-23/db-suite-results.md` §LIVE |
+| RLS adversarial | VERIFIED (re-run on isolated staging `zvpjng…`, **44/44 PASS**, 2026-08-23) | Required anonymous, IDOR, admin, and payment-denial tests pass live | New-project re-run via guarded `run_rls_adversarial.mjs`: **44/44 PASS**. Historical: post-030 fix of RLS-ESC-001 on prior project (`docs/evidence/6c8521a/POST_030_STAGING_VERIFICATION.md`). Current: `docs/evidence/e2e-2026-08-23/db-suite-results.md` |
+| Race conditions | **PASS** (staging `zvpjng…`, 2026-08-23) | Concurrent state/stock tests pass exactly once | First-ever full execution: **53/53 PASS** across T-RC01–T-RC14 in single BEGIN/ROLLBACK + independent-session residue check (`run_race_conditions.mjs`). Prior "evidence" was BLOCKED/DEFERRED — this run supersedes. Six initial failures were runner-porting defects fixed against migrations 014/025/026; zero DB defects. Same file §Findings |
+| Sentry | **PASS** (confirmed in dashboard by owner 2026-08-24) | Controlled staging event with scrubbed context | kDebugMode+flag-gated probe fired live from emulator against staging: event `1ef12b03…` submitted; DSN store-endpoint validation accepted (`6e8f50ef…`, project `4511772249292800`); owner visual CONFIRMED. Scrub context covered by 14 unit tests (token/secret/card/cvv/auth/address/email/phone/password). `sentry-live-event.md` |
+| Android signed artifact | **PASS** (re-tied to `ac69c54`, 2026-08-23) | Signature, package, debuggable, checksum, provenance | CI run `32646592228` @ `ac69c54`: `app-release.apk` 79,311,899 bytes, SHA-256 `970469542a77822a11372cacf70741d35ff59067b9f4647013d0df5495f404a0`, package `com.albatal.elite` v1(0.1.0), fail-closed keystore signing in `ci.yml`. `docs/evidence/e2e-2026-08-23/android-artifact-retie.md` |
+| Release sign-off | **PASS — SIGNED 2026-08-24** | Four solo-owner approvals **APPROVED** — ref `RELEASE-AC69C54-2026-08-24` (chat "sign") | `docs/RELEASE_SIGNOFF.md` (filled 2026-08-24) |
 
 ## Independent post-remediation review — 2026-07-28
 
@@ -181,6 +182,49 @@ with work completed after the 2026-07-28 entries:
   branch state. A fresh post-merge candidate designation is required before
   E2E authorization can be reissued.
 
+## Isolated-staging E2E execution record — 2026-08-23/24
+
+**Authorization:** `STAGING-E2E-ZVPJ-AC69C54-2026-08-23` (owner-approved,
+staging-only, project `zvpjngdgbpnkkqrorkul`). **Executor:** agentic loop
+(ox-alpha) with owner supplying credentials/dashboard actions at gated points.
+
+- **Environment isolation completed:** new staging project provisioned, 29/29
+  migrations + 5 functions deployed; old project `alxwvyflasewslinufqe`
+  reclassified PRODUCTION. Production DB password rotated (owner) after a
+  credential was found committed in a test runner (removed from HEAD; history
+  still contains it).
+- **Runner safety:** all payment/RLS/race/COD runners now require
+  `STAGING_DB_URL` referencing the isolated ref and hard-refuse otherwise
+  (guard matrix 6/6 proven). Proofs:
+  `.superpowers/sdd/2026-08-23-e2e-gates-execution-plan/task-1-guard-proofs.txt`.
+- **Deployment gaps found & fixed on staging:** missing
+  `CORS_ALLOWED_ORIGINS` (all functions failed closed 500 for every client —
+  set to `https://staging.albatal.app`); `PAYMOB_IFRAME_ID=1062411` set after
+  owner created the test integration.
+- **Suite results:** RLS 44/44 · Race conditions 53/53 (first-ever full run;
+  six runner-porting defects fixed against migrations 014/025/026 — zero DB
+  defects) · COD contract 14/14 · Paymob F1–F4 21/21 · HTTP probes A/B/C PASS.
+  Full detail: `docs/evidence/e2e-2026-08-23/db-suite-results.md` incl. live
+  function-body snapshots (`db-function-snapshots/`).
+- **Real provider transaction closed twice:** hosted iframe 1062411 → test
+  card APPROVED → HMAC-verified callback → order paid / payment success with
+  provider txn `521025723`, `521037655`. Initiate chain 8/8.
+- **Callback routing gap (found, then closed):** during tests #2–#4 the
+  integration's URLs still targeted production (browser GET landed on
+  `alxwvyflasewslinufqe…/paymob-callback`, 405) and no server POST reached
+  staging. Owner repointed the redirect URL; the processed-callback POST gap
+  turned out to be a function-side contract gap, resolved below.
+- **Automatic callback routing: VERIFIED (2026-08-24, closed).** Root cause of
+  the earlier gap — Paymob's processed callback posts raw JSON with the HMAC as
+  a query parameter; the function read it only from form fields. Fixed
+  (shape-aware extraction: flat / obj-wrapped / raw JSON; HMAC resolution
+  body→query→header), 20/20 unit tests, deployed. Post-fix sandbox transaction
+  flipped paid/success automatically (txn `521080502`) — zero manual action.
+  Diagnostics removed after capture.
+**Register state after this section:** all technical gates PASS/VERIFIED;
+remaining blockers are procedural only — four-capacity sign-off in
+`RELEASE_SIGNOFF.md` and final GO/NO-GO by the solo owner.
+
 ## T0 Production Cutover Addendum — 2026-08-24 (031–033, owner-gated dry-run)
 
 **Scope:** T0 hardened production cutover for migrations `031_realtime_and_cron_fix`,
@@ -220,4 +264,3 @@ The authoritative Phase 0 register is `docs/DECISIONS.md`. It must remain
 **RECOMMENDED APPROVAL — PENDING HUMAN SIGNATURE** until the human signature
 record is completed. Use `docs/RELEASE_SIGNOFF.md` for final release evidence
 and the four-party decision.
-

@@ -1,6 +1,133 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-23T18:00:00Z
+Last run: 2026-08-24T05:35:00Z
+
+## New — 2026-08-24 (T0+T1 backend platform)
+
+### Backend platform T0+T1 implemented, reviewed, merged to master (L2, owner-approved "1" = subagent-driven + merge locally)
+
+Spec `docs/superpowers/specs/2026-08-24-backend-platform-design.md` (`123cdc1`) ·
+Plan `docs/superpowers/plans/2026-08-24-backend-platform-plan.md` (`bd9b7e2`).
+Executed in worktree `C:/flutter_projects/albatal-platform-t0t1`
+(branch `feat/backend-platform-t0-t1`, 11 commits) via fresh subagent per task
+with spec+quality review loops; **merged to master as `3b42f58` (--no-ff, local only — NOT pushed)**.
+
+| Task | Commit | Result |
+|------|--------|--------|
+| 031 realtime+cron | `98086fc`+`cdfbb34`(fix) | payments→supabase_realtime publication + REPLICA IDENTITY FULL; `batch_expire_pending_orders()` SECURITY DEFINER wrapper (quality review caught zero-arg `expire_pending_order()` cron bug + invalid `REFRESH … IF EXISTS` syntax; both fixed with guarded `$cron$DO $do$…$do$$cron$`); 4 pg_cron jobs |
+| 032 flash_sales+images | `915929d` | flash_sales table RLS active-window policy + partial index; product_images sort index + public-read policy; product-images bucket tightened (public read / admin insert+delete) |
+| 033 admin RPCs | `07a0bad` | assert_admin + admin_upsert_product/variant/set_product_images + get_active_flash_sales; all SECURITY DEFINER search_path=public,pg_temp, REVOKE PUBLIC/anon |
+| StorageService DI | `cde5094` | prefix-guarded buildProductImagePath/uploadProductImage (2 tests) |
+| Admin repo contracts | `a01f577` | AdminRepository +4 methods w/ mocktail param verification |
+| Catalog embed+paymob fallback | `f38753d` | select embeds product_images→getPublicUrl; getActiveFlashSales RPC; watchPaymentStatus 45s fallback poll (5/5+6/6 tests) |
+| Flash banner binding | `6ae40fa` | home_page placeholder removed; server-driven countdown+discount, 60s poll; 13 test files touched for stubs (3/3 new tests) |
+| Admin CRUD pages | `88de741` | 4 pages replace TODO tiles; isCurrentUserAdmin-guarded navigation; 4/4 nav tests |
+| Cutover evidence | `b8cd7db` | VERIFICATION.md 10 sections dry-run scaffold + RELEASE_GATE addendum; prod push owner-gated TBD |
+
+**Verification:** full suite **264/264 PASS** on merged master lineage; `flutter analyze` clean in worktree (master shows 12 pre-existing-style infos incl. depend_on_referenced_packages in new tests — lint-only).
+**Incident during merge:** uncommitted release-wave GO edits in `docs/RELEASE_GATE.md` were found reverted at merge time (cause: external process cleared the file between session start and merge; reflog clean). Recovered verbatim from session-start read snapshot + branch addendum → file restored to GO verdict + T0 addendum, left UNCOMMITTED for owner review as before. All other owner-uncommitted files verified intact.
+**Owner-gated next:** prod cutover runbook staged in `docs/evidence/prod-cutover-031-033/VERIFICATION.md`; commit/push of working tree per your review.
+
+---
+## New — 2026-08-24
+
+### Stitch screen source files downloaded (L1 evidence run)
+
+Stitch design source files (HTML + screenshots) for the 4 flows downloaded to `docs/stitch/screens/`. Worked around WSL→Windows env var boundary (node.exe can’t see WSL env vars) using `node --import` ESM preload. API key in gitignored `secrets-stitch.env` (confirmed). Temp scripts cleaned up. No source code changes, no commits.
+
+---
+
+## New — 2026-08-23 (night)
+
+### E2E gates execution wave 1 (L2, owner-approved "do all you need i approved")
+
+Plan: `docs/superpowers/plans/2026-08-23-e2e-gates-execution-plan.md`. Worktree
+`C:\flutter_projects\albatal-e2e` (branch `fix/e2e-gates-evidence`); verified
+files applied to master working tree **UNCOMMITTED** for owner review. No push,
+no merge, no commits made by agents.
+
+| Item | Result |
+|------|--------|
+| Runner safety guards (plan T1) | `verify_paymob_sandbox.mjs` +20/-1, `run_rls_adversarial.mjs` +21/-1: hardcoded prod connection string REMOVED; both runners now require `STAGING_DB_URL` containing ref `zvpjngdgbpnkkqrorkul`, ABORT otherwise. Guard matrix 6/6 proven (unset / wrong-ref / correct-ref-dummy per file) — proofs: `.superpowers/sdd/2026-08-23-e2e-gates-execution-plan/task-1-guard-proofs.txt` |
+| Race-condition runner (plan T5 prep) | NEW `supabase/tests/run_race_conditions.mjs`: all T-RC01..T-RC14 ported psql→node/pg, single BEGIN/ROLLBACK (zero persistent state), same env guards, second pg Client only for post-cleanup residue check. `node --check` OK. Execution awaits `STAGING_DB_URL` |
+| Sentry probe (plan T6) | NEW `lib/shared/services/e2e_sentry_probe.dart` + `test/e2e_sentry_probe_test.dart` (4 tests) + `main.dart` wiring. Gate = kDebugMode AND dart-define `E2E_SENTRY_PROBE`; proven DEAD BY DEFAULT (flagless launch fired nothing). LIVE on emulator-5556 against staging: event id `1ef12b03f24d413ab3850bbd0ffb81d2` submitted, logcat init+submit captured. Evidence: `docs/evidence/e2e-2026-08-23/sentry-live-event.md`. Owner must visually confirm event in Sentry dashboard |
+| Android artifact re-tie (plan T7) | `docs/evidence/e2e-2026-08-23/android-artifact-retie.md`: CI run `32646592228` @ `ac69c54`, `release-apk` 79,311,899 bytes, SHA-256 `970469542a77822a11372cacf70741d35ff59067b9f4647013d0df5495f404a0` (double-computed), `com.albatal.elite` v1/0.1.0, fail-closed signing quoted from ci.yml. OWNER PICKS candidate SHA: fc0b2a2 vs ac69c54 |
+| Verification this run | `node --check` ×3 PASS · `flutter analyze`: No issues · `flutter test`: **247/247** (243 prior + 4 new probe tests) |
+
+**Still blocked on owner (gate rows cannot be reissued yet):**
+1. **Paymob dashboard** (blocks T4 live + full sandbox flow): staging integration
+   entry, `PAYMOB_IFRAME_ID` secret on new project, callback URL →
+   `https://zvpjngdgbpnkkqrorkul.supabase.co/functions/v1/paymob-callback`,
+   `verify_jwt` OFF for that function.
+2. **Reset staging DB password** → export `STAGING_DB_URL` (unblocks T2 RLS
+   re-run, T3 SQL layers, T4 DB flows, T5 execution).
+3. **Sentry dashboard**: confirm event `1ef12b03…` visible, tagged `source=e2e-probe`.
+4. **URGENT security**: rotate PRODUCTION DB password (`alxwvyflasewslinufqe`) —
+   its credential was committed to git history in a test runner (removed from
+   HEAD this run; history still contains it) and was exposed in session logs.
+
+**Wave 2 progress (same night):** owner rotated the production DB password
+(security item CLOSED). Probe A forged-HMAC executed against staging
+`paymob-callback`: garbage-hmac AND hmac-absent both → **HTTP 401
+`{"message":"Invalid signature"}`** (anon bearer used to pass platform
+`verify_jwt`; wall proven to be the function's own HMAC layer). Zero state
+change possible on this path by construction. Evidence:
+`docs/evidence/e2e-2026-08-23/paymob-probe-a-forged-hmac.md`. Remaining owner
+gates: export `STAGING_DB_URL` · Paymob dashboard 4 steps · Sentry dashboard
+visual confirm of event `1ef12b03…` · candidate SHA pick (fc0b2a2 vs ac69c54).
+
+**Wave 2 EXECUTED (same night, owner supplied `STAGING_DB_URL`):**
+RLS adversarial **44/44 PASS** · Race conditions **53/53 PASS** · COD contract
+**14/14 PASS** (`run_cod_payment.mjs`, new) · Paymob sandbox F1–F4 **21/21
+PASS** incl. hardened cleanup · HTTP probes A/B/C **ALL PASS** (401 forged /
+400 amount_mismatch / 200 already_processed; secret-sync proven). Key findings:
+new project pooler is `aws-1-eu-west-1`; race suite's six initial failures were
+all runner-porting defects fixed against migrations 014/025/026 — zero staging
+DB defects; prior "race evidence" was BLOCKED/DEFERRED so today was the first
+true execution. Full detail: `docs/evidence/e2e-2026-08-23/db-suite-results.md`
++ live function snapshots under `db-function-snapshots/`. Remaining owner gates:
+Paymob dashboard steps (live app-side flow) · Sentry visual confirm · SHA pick.
+
+**Wave 2 FINALE — real payment loop closed (same night):** owner provided
+iframe `1062411`; secret set. Fixed missing staging secret `CORS_ALLOWED_ORIGINS`
+(isolation carryover gap — all edge functions were failing closed 500 for every
+client). Live chain 8/8: signup → checkout RPC → initiate → hosted
+`accept.paymob.com/…/iframes/1062411`. Headless Accept test card APPROVED;
+signed callback `code=success`; DB: order **paid**, payment **success**,
+provider txn **521025723** / order **593650832** persisted.
+Evidence: `db-suite-results.md` §LIVE END-TO-END PAYMENT.
+**Owner must still repoint integration 1062411's callback/redirect URLs from the
+old project to `zvpjngdgbpnkkqrorkul` (dashboard)** — until then real callbacks
+land on production as harmless unmapped no-ops and staging won't auto-flip.
+Sentry visual confirm + SHA pick remain for gate signoff.
+
+**GATE CONSOLIDATED (2026-08-24):** `RELEASE_GATE.md` — candidate designation
+`ac69c54` on staging `zvpjng…` recorded; all technical gates now PASS/VERIFIED
+(COD 14/14, Paymob incl. two real closed transactions, Races 53/53 first-ever
+run, Sentry owner-confirmed, APK re-tied, RLS re-run 44/44, CORS repair noted);
+full execution-record addendum appended. `RELEASE_SIGNOFF.md`: identity table +
+every evidence link filled with real values; four-capacity signature block and
+GO/NO-GO remain intentionally PENDING for the solo owner. **Open item:** Paymob
+integration 1062411 automatic-callback routing NOT independently verified —
+test transaction #2 (post-"fix") still redirected to production and no server
+POST reached staging in a 70s window; bridge-replay closed it manually. One more
+sandbox transaction after owner re-checks the dashboard will settle it.
+
+**OPEN ITEM CLOSED (2026-08-24, final):** automatic callback routing VERIFIED.
+Root cause (proven via field-name-only live capture): Paymob's processed
+callback posts raw JSON with the HMAC as a **query parameter**, not a form
+field. `paymob-callback` fixed: shape-aware extraction (flat / obj-wrapped /
+raw JSON) + HMAC resolution body→query→header; `canonicalValuesFromTransaction`
+added to `hmac.ts` (20/20 tests incl. obj-vs-flat equivalence); deployed.
+**Transaction #5 post-fix flipped paid/success automatically (txn `521080502`)**
+— zero manual action. Diagnostics stripped, debug table dropped, clean final
+deployed. Evidence: `db-suite-results.md` §AUTOMATIC CALLBACK ROUTING.
+**Register state: every technical gate PASS; owner confirmed callback routing and
+Sentry dashboard; candidate SHA `ac69c54` designated.**
+**RELEASE SIGNED — GO (2026-08-24):** four solo-owner approvals recorded via chat
+"sign" — ref `RELEASE-AC69C54-2026-08-24` — in `RELEASE_SIGNOFF.md` and
+`RELEASE_GATE.md` (verdict **GO**). No unresolved P0/P1 exceptions. Build ready
+for Play upload / staged rollout at owner's discretion.
 
 ## New — 2026-08-23 (evening)
 
