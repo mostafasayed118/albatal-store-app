@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/storage_service.dart';
@@ -203,10 +204,10 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                     children: [
                                       // Real network image once CDN cache
                                       // headers land; url kept for tooltip.
-                                      Image.network(
-                                        url,
+                                      AppImage(
+                                        source: url,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Column(
+                                        placeholder: Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
