@@ -57,6 +57,10 @@ supabase/.temp/
 
 # Local agent config (never commit local settings)
 .claude/
+.agents/
+.openclaw/
+.opencode/
+skills/superpowers/
 
 # Node.js test runners (ephemeral — RLS/Paymob verification scripts)
 node_modules/

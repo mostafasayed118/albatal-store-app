@@ -1,6 +1,66 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-24T05:35:00Z
+Last run: 2026-08-24T17:45:00Z
+
+## New — 2026-08-24 (evening)
+
+### Repo hygiene sweep + codebase fix batch (L2, owner-approved "fix all")
+
+Worktree `C:\flutter_projects\albatal-fixes`, branch `fix/codebase-fixes-2026-08-24`
+(based on master `561097e`). Changes UNCOMMITTED pending owner sign-off.
+No push, no merge.
+
+**Phase 1 — Git/worktree cleanup (main repo):**
+| Item | Result |
+|------|--------|
+| Worktrees | 16 → 1. All 15 secondary worktrees removed; 5 dirty ones backed up first to `C:\flutter_projects\worktree-backups-2026-08-24\` (patches + untracked files incl. PACKAGE_D/F evidence docs) |
+| Branches | 17 fully-merged local branches deleted (`git branch -d`); 8 unmerged branches preserved (docs/release-evidence-484a3ea, package-a/b/k/l/l1, post-audit-production-repair, ui-phase-0 ×24 unique commits) |
+| Tags | All four frozen candidates confirmed tag-preserved (`release-candidate/{484a3ea,b74d326,6c8521a,e9a6deb}`) |
+| .gitignore | Added `.agents/`, `.openclaw/`, `.opencode/`, `skills/superpowers/` |
+| Pub cache | Repaired 12 corrupted pub-cache packages on this machine (sentry_flutter, package_info_plus, jni, app_links ×2, gtk, path_provider linux+windows, shared_preferences_windows, url_launcher_windows) — re-downloaded via pub get |
+
+**Phase 2 — Code fixes (worktree diff: 25 substantive files, +181/−241):**
+1. Support contacts unified through `SupportRepository` (owner-supplied:
+   WhatsApp `wa.me/201154580512` Mustafa Sayed, email `al3tar66@gmail.com`);
+   fake `wa.me/1234567890` removed from SupportPage
+2. Wrong-product fallback eliminated: unknown product id → explicit
+   not-found state (+ l10n `productNotFound`) instead of silently showing
+   first catalog product
+3. AddressForm country field actually submitted (was hardcoded `''`)
+4. Layer violation fixed: presentation no longer imports
+   `supabase_config`; new `AuthRepository.currentUserEmail`; fake
+   `customer@example.com` fallback replaced by empty-email guard
+   (sign-in snackbar blocks processPayment)
+5. ARB dedupe (categories/cashOnDelivery ×2 both locales,
+   noResultsFound/tryAdjustingFilters dup ar-only); mixed-language Arabic
+   `orderPlacedBody` rewritten in proper Arabic; support email updated en+ar;
+   generated l10n regenerated
+6. Dead code deleted: `category_grid.dart`, `payment_section.dart`
+7. Router dead-code cleanup (`publicRoutes`/`isPublic` block)
+8. CI pins aligned to 3.47.x (daily-triage, android-release);
+   ci.yml gitleaks-path comment corrected
+9. Doc truth: config/README.md accuracy note (staging anon key committed
+   intentionally, client-safe by design); SUPERSEDED banner atop stale
+   docs/release-readiness.md → RELEASE_GATE.md
+10. Two test stubs gained `currentUserEmail` override (additive only)
+
+**Verification evidence (implementer + independent verifier re-run):**
+| Check | Result |
+|-------|--------|
+| `flutter analyze --no-pub` | **No issues found!** |
+| `dart format --set-exit-if-changed .` | exit 0 |
+| `flutter test` | **275 passed, 0 failed** |
+| Verifier sub-agent | **APPROVE** — intent match 10/10 areas, no layer violations, no secrets, pubspec/supabase untouched |
+
+Non-blocking verifier notes: desktop plugin-registrant churn is EOL-only;
+sign-in snackbar text hardcoded English (l10n nit); unreachable
+externalLink switch arm maps to FAQ strings.
+
+**Owner decision (2026-08-24):** COMMITTED as `629c14c` and PUSHED to
+`origin/fix/codebase-fixes-2026-08-24`. Merge to master remains human-gated;
+PR URL: https://github.com/mostafasayed118/albatal-store-app/pull/new/fix/codebase-fixes-2026-08-24
+
+---
 
 ## New — 2026-08-24 (onboarding and SVG runtime assets)
 
