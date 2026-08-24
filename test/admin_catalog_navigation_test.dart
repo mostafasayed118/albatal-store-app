@@ -19,6 +19,8 @@ import 'package:go_router/go_router.dart';
 class FakeAdminRepository implements AdminRepository {
   FakeAdminRepository({this.isAdmin = true});
   bool isAdmin;
+  List<Map<String, dynamic>> variants = const [];
+  List<String> productImagePaths = const [];
 
   @override
   Future<bool> isCurrentUserAdmin() async => isAdmin;
@@ -72,6 +74,14 @@ class FakeAdminRepository implements AdminRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> getVariants(String productId) async =>
+      variants;
+
+  @override
+  Future<List<String>> getProductImagePaths(String productId) async =>
+      productImagePaths;
 }
 
 class FakeCatalogRepository implements CatalogRepository {

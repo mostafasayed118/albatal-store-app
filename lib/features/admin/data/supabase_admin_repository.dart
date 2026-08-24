@@ -139,4 +139,26 @@ final class SupabaseAdminRepository implements AdminRepository {
     final res = await _client.rpc('get_active_flash_sales');
     return (res as List).cast<Map<String, dynamic>>();
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> getVariants(String productId) async {
+    final res = await _client
+        .from('product_variants')
+        .select()
+        .eq('product_id', productId)
+        .order('size');
+    return (res as List).cast<Map<String, dynamic>>();
+  }
+
+  @override
+  Future<List<String>> getProductImagePaths(String productId) async {
+    final res = await _client
+        .from('product_images')
+        .select('storage_path')
+        .eq('product_id', productId)
+        .order('sort_order');
+    return (res as List)
+        .map((e) => (e as Map<String, dynamic>)['storage_path'] as String)
+        .toList();
+  }
 }
