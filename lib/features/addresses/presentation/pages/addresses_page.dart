@@ -19,7 +19,19 @@ class AddressesPage extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (s.status == AddressesStatus.failure) {
-              return Center(child: Text(s.errorMessage!));
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(s.errorMessage ?? l.errorTitle),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: context.read<AddressesCubit>().load,
+                      child: Text(l.retry),
+                    ),
+                  ],
+                ),
+              );
             }
             if (s.addresses.isEmpty) {
               return Center(child: Text(l.noAddressesSaved));
@@ -60,48 +72,56 @@ class AddressesPage extends StatelessWidget {
   }
 }
 
-void _edit(BuildContext context, Address? a) {
+Future<void> _edit(BuildContext context, Address? a) async {
   final r = TextEditingController(text: a?.recipient);
   final l = TextEditingController(text: a?.line);
   final c = TextEditingController(text: a?.city);
   final n = TextEditingController(text: a?.country);
-  showDialog(
-      context: context,
-      builder: (d) => AlertDialog(
-              title: Text(a == null ? 'Add address' : 'Edit address'),
-              content: SingleChildScrollView(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                for (final x in [
-                  (r, 'Recipient'),
-                  (l, 'Street address'),
-                  (c, 'City'),
-                  (n, 'Country')
-                ])
-                  Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: TextField(
-                          controller: x.$1,
-                          decoration: InputDecoration(labelText: x.$2)))
-              ])),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(d),
-                    child: const Text('Cancel')),
-                FilledButton(
-                    onPressed: () {
-                      if ([r, l, c, n].any((x) => x.text.trim().isEmpty)) {
-                        return;
-                      }
-                      context.read<AddressesCubit>().upsert(Address(
-                          id: a?.id ??
-                              DateTime.now().microsecondsSinceEpoch.toString(),
-                          recipient: r.text.trim(),
-                          line: l.text.trim(),
-                          city: c.text.trim(),
-                          country: n.text.trim(),
-                          isDefault: a?.isDefault ?? false));
-                      Navigator.pop(d);
-                    },
-                    child: const Text('Save'))
-              ]));
+  try {
+    await showDialog<void>(
+        context: context,
+        builder: (d) => AlertDialog(
+                title: Text(a == null ? 'Add address' : 'Edit address'),
+                content: SingleChildScrollView(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  for (final x in [
+                    (r, 'Recipient'),
+                    (l, 'Street address'),
+                    (c, 'City'),
+                    (n, 'Country')
+                  ])
+                    Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: TextField(
+                            controller: x.$1,
+                            decoration: InputDecoration(labelText: x.$2)))
+                ])),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(d),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () {
+                        if ([r, l, c, n].any((x) => x.text.trim().isEmpty)) {
+                          return;
+                        }
+                        context.read<AddressesCubit>().upsert(Address(
+                            id: a?.id ?? DateTime.now()
+                                .microsecondsSinceEpoch
+                                .toString(),
+                            recipient: r.text.trim(),
+                            line: l.text.trim(),
+                            city: c.text.trim(),
+                            country: n.text.trim(),
+                            isDefault: a?.isDefault ?? false));
+                        Navigator.pop(d);
+                      },
+                      child: const Text('Save'))
+                ]));
+  } finally {
+    r.dispose();
+    l.dispose();
+    c.dispose();
+    n.dispose();
+  }
 }

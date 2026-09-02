@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/entities/money.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/repositories/catalog_repository.dart';
+import 'product_mapper.dart';
 
 /// Supabase-backed catalog repository.
 ///
@@ -78,7 +78,11 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         final variants = variantsRaw is List
             ? variantsRaw.whereType<Map<String, dynamic>>().toList()
             : <Map<String, dynamic>>[];
-        result.add(_mapProduct(row, variants));
+        result.add(ProductCodec.fromRow(
+          row,
+          variants,
+          storageService: _storageService,
+        ));
       }
 
       _cache = result;
@@ -146,7 +150,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       final variants = variantsRaw is List
           ? variantsRaw.whereType<Map<String, dynamic>>().toList()
           : <Map<String, dynamic>>[];
-      final product = _mapProduct(row, variants);
+      final product =
+          ProductCodec.fromRow(row, variants, storageService: _storageService);
       return Success(product);
     } on PostgrestException catch (e) {
       // single() throws PostgrestException (PGRST116) when no row matches.
@@ -195,27 +200,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     final prefs = _preferences;
     if (prefs == null) return;
     try {
-      final encoded = products
-          .map((p) => {
-                'id': p.id,
-                'name': p.name,
-                'category': p.category,
-                'price': p.price.minorUnits,
-                'oldPrice': p.oldPrice?.minorUnits,
-                'description': p.description,
-                'composition': p.composition,
-                'care': p.care,
-                'origin': p.origin,
-                'images': p.images,
-                'sizes': p.sizes,
-                'colors': p.colors,
-                'stock': p.stock,
-                'rating': p.rating,
-                'reviewCount': p.reviewCount,
-                'imageColor': p.imageColor,
-                'imageAsset': p.imageAsset,
-              })
-          .toList();
+      final encoded = products.map(ProductCodec.encode).toList();
       prefs.setString(_persistentCacheKey, jsonEncode(encoded));
     } catch (_) {
       // Best-effort persistence — never crash the app over a cache write.
@@ -232,29 +217,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       if (decoded is! List) return null;
       return decoded
           .whereType<Map<String, dynamic>>()
-          .map((m) => Product(
-                id: m['id'] as String,
-                name: m['name'] as String,
-                category: m['category'] as String? ?? '',
-                price: Money((m['price'] as num).toInt()),
-                oldPrice: m['oldPrice'] != null
-                    ? Money((m['oldPrice'] as num).toInt())
-                    : null,
-                imageColor: (m['imageColor'] as num?)?.toInt() ?? 0xFF888888,
-                imageAsset: m['imageAsset'] as String?,
-                description: m['description'] as String?,
-                composition: m['composition'] as String?,
-                care: m['care'] as String?,
-                origin: m['origin'] as String?,
-                images: (m['images'] as List?)?.cast<String>() ?? const [],
-                sizes: (m['sizes'] as List?)?.cast<String>() ?? const [],
-                colors: (m['colors'] as List?)?.cast<String>() ?? const [],
-                stock: (m['stock'] as Map<String, dynamic>?)
-                        ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
-                    const {},
-                rating: (m['rating'] as num?)?.toDouble() ?? 0.0,
-                reviewCount: (m['reviewCount'] as num?)?.toInt() ?? 0,
-              ))
+          .map(ProductCodec.decode)
           .toList();
     } catch (_) {
       return null;
@@ -277,71 +240,4 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   @visibleForTesting
   List<Product>? get cacheForTest => _cache;
-
-  // ─── Mapping helpers ────────────────────────────────────────
-
-  // TODO: add cached_network_image for Storage URLs with Cache-Control max-age=86400
-  Product _mapProduct(
-    Map<String, dynamic> row,
-    List<Map<String, dynamic>> variants,
-  ) {
-    final basePrice = row['base_price'] as int;
-    final oldPriceRaw = row['old_price'] as int?;
-
-    // Derive sizes and colors from variants.
-    final sizeSet = <String>{};
-    final colorSet = <String>{};
-    final stockMap = <String, int>{};
-
-    for (final v in variants) {
-      final size = v['size'] as String;
-      final color = v['color'] as String;
-      final stock = v['stock'] as int;
-
-      sizeSet.add(size);
-      colorSet.add(color);
-      stockMap['$color-$size'] = stock;
-    }
-
-    // Category name via the join.
-    final category =
-        (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
-
-    // Map product_images → imageUrls via StorageService, ordered by sort_order.
-    final rawImages = row['product_images'];
-    final imageRows = rawImages is List
-        ? rawImages.whereType<Map<String, dynamic>>().toList()
-        : <Map<String, dynamic>>[];
-    imageRows.sort(
-      (a, b) => (a['sort_order'] as int? ?? 0)
-          .compareTo(b['sort_order'] as int? ?? 0),
-    );
-    final imageUrls = imageRows
-        .map((m) => m['storage_path'] as String?)
-        .whereType<String>()
-        .where((p) => p.isNotEmpty)
-        .map((p) => _storageService.getProductImageUrl(p))
-        .where((u) => u.isNotEmpty)
-        .toList();
-
-    return Product(
-      id: row['id'] as String,
-      name: row['name'] as String,
-      category: category,
-      price: Money(basePrice),
-      oldPrice: oldPriceRaw != null ? Money(oldPriceRaw) : null,
-      // imageColor is a placeholder fallback — only used when images empty.
-      imageColor: 0xFF888888,
-      images: imageUrls,
-      description: row['description'] as String?,
-      composition: row['composition'] as String?,
-      care: row['care'] as String?,
-      origin: row['origin'] as String?,
-      sizes: sizeSet.toList(),
-      colors: colorSet.toList(),
-      stock: stockMap,
-      rating: (row['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: row['review_count'] as int? ?? 0,
-    );
-  }
 }

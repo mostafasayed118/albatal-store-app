@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -38,10 +40,48 @@ class DetailsPage extends StatelessWidget {
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
           final p = s.product;
-          if (p == null) {
+          if (s.status == DetailsStatus.loading ||
+              s.status == DetailsStatus.initial) {
+            return const Scaffold(
+              body: FeedbackView(type: FeedbackViewType.loading),
+            );
+          }
+          if (s.status == DetailsStatus.notFound) {
             return Scaffold(
               appBar: AppBar(),
-              body: const Center(child: CircularProgressIndicator()),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(l.noResultsFound,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          textAlign: TextAlign.center),
+                      const SizedBox(height: 24),
+                      AppButton(
+                        label: l.returnHome,
+                        onPressed: () => context.go('/'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+          if (s.status == DetailsStatus.error) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: FeedbackView(
+                type: FeedbackViewType.error,
+                onAction: () =>
+                    context.read<ProductDetailsCubit>().loadProduct(id),
+              ),
+            );
+          }
+          if (p == null) {
+            return const Scaffold(
+              body: FeedbackView(type: FeedbackViewType.error),
             );
           }
           return Scaffold(

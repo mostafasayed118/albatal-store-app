@@ -112,25 +112,6 @@ final class OrdersCubit extends Cubit<OrdersState> {
     return order;
   }
 
-  Future<void> advance(String orderId) async {
-    final updated = state.orders.map((o) {
-      if (o.id != orderId) return o;
-      return switch (o.status) {
-        OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
-        OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
-        _ => o,
-      };
-    }).toList();
-    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(updated);
-    if (result case Failure(:final error)) {
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
-    }
-  }
-
   /// Idempotently merge a server-created order into local history.
   ///
   /// Matches by [Order.id]. If an order with the same ID already

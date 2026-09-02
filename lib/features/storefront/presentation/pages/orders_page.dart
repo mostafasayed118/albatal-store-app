@@ -21,6 +21,15 @@ class OrdersPage extends StatelessWidget {
             body: const FeedbackView(type: FeedbackViewType.loading),
           );
         }
+        if (state.status == OrdersStatus.error) {
+          return Scaffold(
+            appBar: AppBar(title: Text(l.myOrders)),
+            body: FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: context.read<OrdersCubit>().restore,
+            ),
+          );
+        }
         return DefaultTabController(
           length: 3,
           child: Scaffold(

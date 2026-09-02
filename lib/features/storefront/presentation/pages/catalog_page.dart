@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
@@ -74,6 +75,16 @@ class _CatalogPageState extends State<CatalogPage> {
       body: BlocBuilder<CatalogCubit, CatalogState>(
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
+          if (state.status == CatalogStatus.loading ||
+              state.status == CatalogStatus.initial) {
+            return const FeedbackView(type: FeedbackViewType.loading);
+          }
+          if (state.status == CatalogStatus.error) {
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: catalog.load,
+            );
+          }
           return Column(
             children: [
               StitchSearchBar(

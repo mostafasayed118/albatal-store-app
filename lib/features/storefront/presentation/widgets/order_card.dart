@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -70,17 +69,6 @@ class OrderCard extends StatelessWidget {
             else
               Text('${l.delivered} · ${_fmtDate(o.placedAt)}',
                   style: TextStyle(color: scheme.primary)),
-            if (isActive) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton.icon(
-                  onPressed: () => context.read<OrdersCubit>().advance(o.id),
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: Text(l.advanceOrder),
-                ),
-              ),
-            ],
           ],
         ),
       ),

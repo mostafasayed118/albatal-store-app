@@ -39,33 +39,6 @@ void main() {
       },
     );
 
-    blocTest<OrdersCubit, OrdersState>(
-      'advances an active order placed -> shipped -> delivered',
-      build: () => OrdersCubit(MemoryStorefrontPersistence(),
-          generateId: () => 'ORD-TEST-2'),
-      act: (cubit) async {
-        await cubit.place(
-          CartState([
-            CartItem(product: products.first, color: 'Emerald', length: '2m')
-          ]),
-          paymentMethod: 'Cash on Delivery',
-        );
-        await cubit.advance('ORD-TEST-2');
-        await cubit.advance('ORD-TEST-2');
-      },
-      expect: () => [
-        isA<OrdersState>().having((s) => s.active, 'active', hasLength(1)),
-        isA<OrdersState>(),
-        isA<OrdersState>(),
-      ],
-      verify: (cubit) {
-        final order = cubit.state.orders.single;
-        expect(order.status, OrderStatus.delivered);
-        expect(cubit.state.active, isEmpty);
-        expect(cubit.state.completed, hasLength(1));
-      },
-    );
-
     test('orders survive a cubit recreation through the same store', () async {
       final store = MemoryStorefrontPersistence();
       final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
