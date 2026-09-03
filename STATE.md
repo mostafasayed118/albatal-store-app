@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-03T17:10:00+03:00
+Last run: 2026-09-03T17:30:00+03:00
+
+## New — 2026-09-03 (UX polish round — both deferred items FIXED)
+
+**Greeting fix:** "Good morning, Ahmed" was a hardcoded l10n string. Now `goodMorning(name)` (parameterized, first name of the signed-in profile) + `goodMorningGuest` fallback. HomePage watches AuthCubit; 6 test harnesses updated with new `test/helpers/stub_auth_repositories.dart` (unsigned-in stubs).
+
+**Default-address auto-select:** CheckoutPage now wraps a BlocListener<AddressesCubit> that auto-selects the default (isDefault, else first) address when the book loads and nothing is picked — the proceed button is enabled immediately on open. Widget test proves the button auto-enables; all prior checkout tests still green (empty-book path unaffected).
+
+**Verification:** 306/306 tests PASS (13 new since morning: 3 handshake + 5 anti-clobber + 2 dead-order retry + 2 orders autoload + 1 exhaustive tab mapping... plus this round), analyzer clean. Release APK rebuilt (64.7MB) with all fixes. On-device final verification PENDING: the device USB disconnected mid-deploy ("no devices/emulators found") — install the APK at `build/app/outputs/flutter-apk/app-release.apk` when the phone is reconnected, then check: home greeting shows "UI Tester" (signed-in) instead of "Ahmed", and checkout auto-selects the default address with the button enabled.
+
+**Visual verification note:** this model cannot read screenshots (image input unsupported) — pixel-level verification of dark mode/colors needs the owner's eyes. Suggested checks: Settings → Dark (cards/foregrounds switch), Arabic RTL flow, flash-sale countdown styling.
 
 ## New — 2026-09-03 (LIVE device test round 2 — 3 bugs found & FIXED, COD E2E proven)
 
