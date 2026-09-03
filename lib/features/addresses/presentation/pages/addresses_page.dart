@@ -80,45 +80,70 @@ Future<void> _edit(BuildContext context, Address? a) async {
   final n = TextEditingController(text: a?.country);
   try {
     await showDialog<void>(
-        context: context,
-        builder: (d) => AlertDialog(
-                title: Text(a == null ? 'Add address' : 'Edit address'),
-                content: SingleChildScrollView(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  for (final x in [
-                    (r, 'Recipient'),
-                    (l, 'Street address'),
-                    (c, 'City'),
-                    (n, 'Country')
-                  ])
+      context: context,
+      builder: (d) {
+        var submitted = false;
+        final fields = [
+          (r, 'Recipient'),
+          (l, 'Street address'),
+          (c, 'City'),
+          (n, 'Country'),
+        ];
+        return StatefulBuilder(
+          builder: (d, setState) => AlertDialog(
+            title: Text(a == null ? 'Add address' : 'Edit address'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final x in fields)
                     Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: TextField(
-                            controller: x.$1,
-                            decoration: InputDecoration(labelText: x.$2)))
-                ])),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(d),
-                      child: const Text('Cancel')),
-                  FilledButton(
-                      onPressed: () {
-                        if ([r, l, c, n].any((x) => x.text.trim().isEmpty)) {
-                          return;
-                        }
-                        context.read<AddressesCubit>().upsert(Address(
-                            id: a?.id ?? DateTime.now()
-                                .microsecondsSinceEpoch
-                                .toString(),
-                            recipient: r.text.trim(),
-                            line: l.text.trim(),
-                            city: c.text.trim(),
-                            country: n.text.trim(),
-                            isDefault: a?.isDefault ?? false));
-                        Navigator.pop(d);
-                      },
-                      child: const Text('Save'))
-                ]));
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: TextField(
+                        controller: x.$1,
+                        decoration: InputDecoration(
+                          labelText: x.$2,
+                          errorText: submitted && x.$1.text.trim().isEmpty
+                              ? '${x.$2} is required'
+                              : null,
+                        ),
+                        onChanged: (_) {
+                          if (submitted) setState(() {});
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(d),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (fields.any((x) => x.$1.text.trim().isEmpty)) {
+                    setState(() => submitted = true);
+                    return;
+                  }
+                  context.read<AddressesCubit>().upsert(Address(
+                        id: a?.id ??
+                            DateTime.now().microsecondsSinceEpoch.toString(),
+                        recipient: r.text.trim(),
+                        line: l.text.trim(),
+                        city: c.text.trim(),
+                        country: n.text.trim(),
+                        isDefault: a?.isDefault ?? false,
+                      ));
+                  Navigator.pop(d);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   } finally {
     r.dispose();
     l.dispose();

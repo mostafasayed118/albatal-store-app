@@ -121,27 +121,32 @@ class _CatalogPageState extends State<CatalogPage> {
                           catalog.clearFilters();
                         },
                       )
-                    : BlocBuilder<WishlistCubit, WishlistState>(
-                        builder: (context, wishlist) => GridView.builder(
-                          padding: const EdgeInsetsDirectional.all(16),
-                          itemCount: state.visible.length,
-                          gridDelegate: productGridDelegate,
-                          itemBuilder: (_, i) {
-                            final product = state.visible[i];
-                            return StitchProductGridCard(
-                              product: product,
-                              onTap: () {
-                                final router = GoRouter.maybeOf(context);
-                                if (router != null) {
-                                  context.push('/product/${product.id}');
-                                }
-                              },
-                              onWishlist: () => context
-                                  .read<WishlistCubit>()
-                                  .toggle(product.id),
-                              isWishlisted: wishlist.ids.contains(product.id),
-                            );
-                          },
+                    : LayoutBuilder(
+                        builder: (context, constraints) =>
+                            BlocBuilder<WishlistCubit, WishlistState>(
+                          builder: (context, wishlist) => GridView.builder(
+                            padding: const EdgeInsetsDirectional.all(16),
+                            itemCount: state.visible.length,
+                            gridDelegate: productGridDelegateForWidth(
+                              constraints.maxWidth,
+                            ),
+                            itemBuilder: (_, i) {
+                              final product = state.visible[i];
+                              return StitchProductGridCard(
+                                product: product,
+                                onTap: () {
+                                  final router = GoRouter.maybeOf(context);
+                                  if (router != null) {
+                                    context.push('/product/${product.id}');
+                                  }
+                                },
+                                onWishlist: () => context
+                                    .read<WishlistCubit>()
+                                    .toggle(product.id),
+                                isWishlisted: wishlist.ids.contains(product.id),
+                              );
+                            },
+                          ),
                         ),
                       ),
               ),

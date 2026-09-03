@@ -36,44 +36,51 @@ class StitchCategoryChips extends StatelessWidget {
         itemBuilder: (_, i) {
           final cat = categories[i];
           final isActive = cat == selected;
-          return InkWell(
-            onTap: () => onSelect(cat),
-            borderRadius: BorderRadius.circular(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        isActive ? _activeFill : scheme.surfaceContainerHighest,
-                    border: Border.all(
-                      color: isActive ? _activeStroke : scheme.outlineVariant,
-                      width: 1,
+          return Semantics(
+            button: true,
+            selected: isActive,
+            label: cat,
+            child: InkWell(
+              onTap: () => onSelect(cat),
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isActive
+                          ? _activeFill
+                          : scheme.surfaceContainerHighest,
+                      border: Border.all(
+                        color: isActive ? _activeStroke : scheme.outlineVariant,
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.texture,
+                      color:
+                          isActive ? scheme.primary : scheme.onSurfaceVariant,
+                      size: 22,
                     ),
                   ),
-                  child: Icon(
-                    Icons.texture,
-                    color: isActive ? scheme.primary : scheme.onSurfaceVariant,
-                    size: 22,
+                  const SizedBox(height: 2),
+                  Text(
+                    cat,
+                    style: textTheme.labelSmall?.copyWith(
+                      color:
+                          isActive ? scheme.onSurface : scheme.onSurfaceVariant,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 11,
+                      height: 1.0,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  cat,
-                  style: textTheme.labelSmall?.copyWith(
-                    color:
-                        isActive ? scheme.onSurface : scheme.onSurfaceVariant,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 11,
-                    height: 1.0,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
