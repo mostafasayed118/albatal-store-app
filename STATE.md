@@ -1,6 +1,20 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-03T13:10:00+03:00
+Last run: 2026-09-03T14:30:00+03:00
+
+## New — 2026-09-03 (LIVE on-device functional test, Infinix X6882, staging)
+
+Ran full ADB-driven walk (uiautomator + logcat; screenshots unreadable by this model — function/state/data verified, NOT pixels). APK debug built with staging dart-define, installed OK.
+
+**PASS (T1–T13):** splash→home(RTL) → categories → catalog Silk filter (2 real products, prices, discount) → details (rating 4.8, colors, lengths, stock, share) → add-to-cart ×2 variant-dedupe (badge=2) → cart math verified (1290×2=2580+75=2655; ×3=3870→3945) → stepper ± → save-for-later → wishlist (move-to-cart) → account (logged-in as mustafa, session restore across reinstall ✓) → address form (Enter-nav fill, save, auto-select, step-2 advance) → checkout nav + server totals → payment-method screen render. Overflow scan 40 dumps clean; no Flutter FATALs; device-vendor log noise only.
+
+**BUG-1 (P0, code-confirmed): COD flow broken.** Checkout creates the order with `state.payment` default `'Credit Card'` (checkout_page has NO method selector — verified by grep). `confirm_cod_payment` (018) requires method ILIKE cash/cod → rejects with `payment_not_cod` → pay button appears dead (error snackbar transient). Fix: migration 037 `set_pending_order_payment_method` (SECURITY DEFINER, owner+pending only, allowlisted) + PaymentCubit COD branch calls it before confirm + tests. NOT yet implemented.
+
+**BUG-2 (P0/P1, server-evidence): wrong product priced.** Payment screen total = 820 (server-computed `serverTotal`) vs review 1365. Shipping math proves server subtotal was 82000 = Premium Pima Cotton, not Royal Emerald (129000). RPC variant lookup is correctly scoped (product+size+color), so the app likely sent the wrong product_id (wishlist→cart move suspect) OR staging data differs. NEEDS orders-screen confirmation (snapped product_name) — deferred, owner was using the phone.
+
+**UX-GAP (P2):** review screen renders LOCAL cart math (1290+75) while server charges its own figure (820) — review must render server totals post-RPC. Also customer Variant model lacks `price_override` (admin has it) so details can't show variant-level prices.
+
+**PAUSED:** owner actively using device (WhatsApp foregrounded 14:12–14:14); all adb input stopped; one private-chat dump deleted. Resume needs device-free window: orders screen, settings EN/dark, support, search/sort/filters, sign-up, Paymob card WebView, pm-clear splash/onboarding.
 
 ## New — 2026-09-03 (production cutover EXECUTED, L2 owner-approved)
 

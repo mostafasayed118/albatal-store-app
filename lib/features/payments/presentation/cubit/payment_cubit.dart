@@ -121,11 +121,26 @@ class PaymentCubit extends Cubit<PaymentState> {
     if (state.status == PaymentStatus.processing) return;
 
     // Cash on Delivery — server-confirmed path.
-    // The client calls `confirm_cod_payment` RPC which atomically
-    // marks the payment as success and the order as paid. The client
-    // NEVER declares success without a server response.
+    // The checkout creates the order BEFORE the customer picks a
+    // method, so first record the COD choice server-side
+    // (`set_pending_order_payment_method`, migration 037) — the
+    // `confirm_cod_payment` RPC requires a COD-like stored method
+    // and would otherwise reject with `payment_not_cod`.
+    // The client NEVER declares success without a server response.
     if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
       emit(state.copyWith(status: PaymentStatus.processing));
+
+      final methodResult = await _paymentService.setOrderPaymentMethod(
+        orderId: state.orderId,
+        method: 'cod',
+      );
+      if (methodResult case PaymentFailed(:final message)) {
+        emit(state.copyWith(
+          status: PaymentStatus.failed,
+          errorMessage: message,
+        ));
+        return;
+      }
 
       final result = await _paymentService.confirmCodPayment(
         orderId: state.orderId,

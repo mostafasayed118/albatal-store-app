@@ -139,6 +139,57 @@ class PaymobPaymentService implements PaymentService {
     }
   }
 
+  /// Record the customer's chosen payment method on a pending order.
+  ///
+  /// Calls the `set_pending_order_payment_method` RPC (see migration
+  /// 037). Same 30 s ceiling as [confirmCodPayment].
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'set_pending_order_payment_method',
+        params: {
+          'p_order_id': orderId,
+          'p_method': method,
+        },
+      ).timeout(_rpcTimeout);
+
+      final data = response as Map<String, dynamic>;
+      final ok = data['ok'] as bool? ?? false;
+      final code = data['code'] as String? ?? 'unknown';
+
+      if (ok) {
+        return PaymentSuccess(transactionId: '', amount: Money.zero);
+      }
+
+      final message = switch (code) {
+        'authentication_required' => 'Please sign in to continue.',
+        'invalid_method' => 'Unsupported payment method.',
+        'not_owner' => 'You can only modify your own orders.',
+        'order_not_found' => 'Order not found.',
+        'order_not_pending' =>
+          'This order can no longer be modified. Please check your orders.',
+        _ => 'Failed to set payment method. Please try again.',
+      };
+
+      return PaymentFailed(message: message, code: code);
+    } on TimeoutException {
+      return const PaymentFailed(
+        message:
+            'Server did not respond in time. Please check your orders and try again.',
+        code: 'rpc_timeout',
+      );
+    } catch (e) {
+      return PaymentFailed(
+        message: 'Failed to set payment method. Please try again.',
+        code: 'network_error',
+      );
+    }
+  }
+
   /// Subscribe to the `payments` row for [orderId] via Supabase Realtime.
   ///
   /// The `/paymob-callback` webhook updates the row server-side; this

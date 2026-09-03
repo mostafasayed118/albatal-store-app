@@ -96,6 +96,13 @@ class _StubPayService implements PaymentService {
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
       const PaymentFailed(message: 'stub');
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream.empty();
 }
