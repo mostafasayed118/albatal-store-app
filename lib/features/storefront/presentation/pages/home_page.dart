@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
@@ -64,7 +65,16 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l.goodMorning,
+            Text(context.watch<AuthCubit>().state.profile?.fullName.isNotEmpty ==
+                    true
+                ? l.goodMorning(context
+                        .watch<AuthCubit>()
+                        .state
+                        .profile!
+                        .fullName
+                        .split(' ')
+                        .first)
+                : l.goodMorningGuest,
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

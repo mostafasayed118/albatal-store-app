@@ -2,8 +2,10 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -156,8 +158,18 @@ void main() {
 
   group('Task 2 deferred wiring (spec section 5)', () {
     Widget homeHarness() => _app(
-          builder: (_) => BlocProvider(
-            create: (_) => CatalogCubit(const _StubRepo())..load(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => CatalogCubit(const _StubRepo())..load(),
+              ),
+              BlocProvider(
+                create: (_) => AuthCubit(
+                      authRepository: StubAuthRepository(),
+                      profileRepository: StubProfileRepository(),
+                    )..checkSession(),
+              ),
+            ],
             child: const HomePage(),
           ),
         );

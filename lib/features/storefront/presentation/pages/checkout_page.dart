@@ -207,9 +207,28 @@ class CheckoutPage extends StatelessWidget {
         );
       },
     );
+    final page = BlocListener<AddressesCubit, AddressesState>(
+      // Auto-select the default address once, when the address book
+      // arrives and the user hasn't picked one yet (UX: a 'افتراضي'
+      // address that still requires a manual tap reads as broken).
+      listenWhen: (previous, current) =>
+          current.addresses.isNotEmpty &&
+          previous.addresses != current.addresses,
+      listener: (context, addressesState) {
+        final checkout = context.read<CheckoutCubit>();
+        if (checkout.state.selectedAddress != null) return;
+        final addresses = addressesState.addresses;
+        final chosen = addresses.firstWhere(
+          (a) => a.isDefault,
+          orElse: () => addresses.first,
+        );
+        context.read<CheckoutCubit>().selectAddress(chosen);
+      },
+      child: consumer,
+    );
     if (_checkoutCubit != null) {
       return BlocProvider<CheckoutCubit>.value(
-          value: _checkoutCubit, child: consumer);
+          value: _checkoutCubit, child: page);
     }
     return BlocProvider<CheckoutCubit>(
       create: (_) =>
@@ -221,7 +240,7 @@ class CheckoutPage extends StatelessWidget {
                 ? getIt<SharedPreferences>()
                 : null,
           ),
-      child: consumer,
+      child: page,
     );
   }
 }

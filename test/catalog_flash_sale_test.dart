@@ -1,7 +1,9 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -47,6 +49,11 @@ Widget _harness(CatalogRepository repo, MemoryStorefrontPersistence store) {
         BlocProvider(create: (_) => CatalogCubit(repo)..load()),
         BlocProvider(create: (_) => WishlistCubit(store)),
         BlocProvider(create: (_) => CartCubit(store)),
+        BlocProvider(
+            create: (_) => AuthCubit(
+                  authRepository: StubAuthRepository(),
+                  profileRepository: StubProfileRepository(),
+                )..checkSession()),
       ],
       child: const HomePage(),
     ),

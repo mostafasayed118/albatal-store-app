@@ -366,7 +366,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get care => 'Care';
 
   @override
-  String get goodMorning => 'Good morning, Ahmed';
+  String goodMorning(Object name) {
+    return 'Good morning, $name';
+  }
+
+  @override
+  String get goodMorningGuest => 'Good morning';
 
   @override
   String get openSettings => 'Open settings';

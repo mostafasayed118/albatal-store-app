@@ -19,8 +19,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class StubAddressRepository implements AddressRepository {
+  StubAddressRepository({this.addresses = const []});
+  final List<Address> addresses;
+
+  factory StubAddressRepository.withAddresses(List<Address> addresses) =>
+      StubAddressRepository(addresses: addresses);
+
   @override
-  Future<Result<List<Address>>> read() async => const Success([]);
+  Future<Result<List<Address>>> read() async => Success(addresses);
   @override
   Future<Result<void>> save(List<Address> addresses) async =>
       const Success(null);
@@ -107,5 +113,47 @@ void main() {
     expect(find.text('Subtotal'), findsOneWidget);
     expect(find.text('Shipping'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
+  });
+
+  testWidgets('default address is auto-selected (button enabled)',
+      (WidgetTester tester) async {
+    // Address book arrives with a default address — the checkout must
+    // select it automatically so 'Proceed to Payment' is enabled
+    // (UX fix, live-found 2026-09-03).
+    final persistence = MemoryStorefrontPersistence();
+    final cart = CartCubit(persistence)
+      ..add(products.first, color: 'Emerald', length: '2m', quantity: 1);
+    final repo = StubAddressRepository.withAddresses([
+      const Address(
+          id: 'a1',
+          recipient: 'Default Person',
+          line: '1 Main St',
+          city: 'Cairo',
+          country: 'EG',
+          isDefault: true),
+    ]);
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cart),
+          BlocProvider(create: (_) => WishlistCubit(persistence)),
+          BlocProvider(create: (_) => OrdersCubit(persistence)),
+          BlocProvider(create: (_) => AddressesCubit(repo)..load()),
+        ],
+        child: CheckoutPage(
+          checkoutRepository: StubCheckoutRepository(),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // The default address was auto-selected: the proceed button is enabled.
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Proceed to Payment'),
+    );
+    expect(button.onPressed, isNotNull,
+        reason: 'default address must be auto-selected on open');
   });
 }

@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "en",
   "appTitle": "Al Batal Elite",
   "brandName": "Al Batal Elite",
@@ -133,7 +133,11 @@
   "composition": "Composition",
   "origin": "Origin",
   "care": "Care",
-  "goodMorning": "Good morning, Ahmed",
+  "goodMorning": "Good morning, {name}",
+  "@goodMorning": {
+    "name": { "type": "String" }
+  },
+  "goodMorningGuest": "Good morning",
   "openSettings": "Open settings",
   "successTitle": "Success!",
   "orderPlacedBody": "Your order has been placed. We will keep you updated.",

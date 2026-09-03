@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "ar",
   "appTitle": "البطل إيليت",
   "brandName": "البطل إيليت",
@@ -133,7 +133,8 @@
   "composition": "التركيب",
   "origin": "المنشأ",
   "care": "العناية",
-  "goodMorning": "صباح الخير، أحمد",
+  "goodMorning": "صباح الخير، {name}",
+  "goodMorningGuest": "صباح الخير",
   "openSettings": "فتح الإعدادات",
   "successTitle": "نجاح!",
   "orderPlacedBody": "تم placed طلبك. سن informك بالتحديثات.",

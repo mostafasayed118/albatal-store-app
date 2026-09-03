@@ -366,7 +366,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get care => 'العناية';
 
   @override
-  String get goodMorning => 'صباح الخير، أحمد';
+  String goodMorning(Object name) {
+    return 'صباح الخير، $name';
+  }
+
+  @override
+  String get goodMorningGuest => 'صباح الخير';
 
   @override
   String get openSettings => 'فتح الإعدادات';

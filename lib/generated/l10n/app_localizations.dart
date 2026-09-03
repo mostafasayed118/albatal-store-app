@@ -791,8 +791,14 @@ abstract class AppLocalizations {
   /// No description provided for @goodMorning.
   ///
   /// In en, this message translates to:
-  /// **'Good morning, Ahmed'**
-  String get goodMorning;
+  /// **'Good morning, {name}'**
+  String goodMorning(Object name);
+
+  /// No description provided for @goodMorningGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get goodMorningGuest;
 
   /// No description provided for @openSettings.
   ///

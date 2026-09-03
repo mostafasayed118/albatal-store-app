@@ -1,4 +1,6 @@
 import 'helpers/memory_storefront_persistence.dart';
+import 'helpers/stub_auth_repositories.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -27,6 +29,11 @@ Widget _harness({required Locale locale}) {
         BlocProvider(
             create: (_) =>
                 WishlistCubit(MemoryStorefrontPersistence())..restore()),
+        BlocProvider(
+            create: (_) => AuthCubit(
+                  authRepository: StubAuthRepository(),
+                  profileRepository: StubProfileRepository(),
+                )..checkSession()),
       ],
       child: const HomePage(),
     ),
