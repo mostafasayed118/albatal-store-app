@@ -6,7 +6,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
-const file = join(root, '037_pending_order_payment_method.sql');
+const file37 = join(root, '037_pending_order_payment_method.sql');
+const file38 = join(root, '038_fix_037_grants.sql');
+const file39 = join(root, '039_method_update_ensures_cod_row.sql');
 
 let pass = 0;
 let fail = 0;
@@ -16,16 +18,28 @@ const check = (name, cond) => {
 };
 
 console.log('037 method-update contract:');
-check('migration file exists', existsSync(file));
-const src = existsSync(file) ? readFileSync(file, 'utf8') : '';
+check('migration file exists', existsSync(file37));
+check('038 grant-fix migration exists', existsSync(file38));
+const src = existsSync(file37) ? readFileSync(file37, 'utf8') : '';
+const src38 = existsSync(file38) ? readFileSync(file38, 'utf8') : '';
 
 check('defines set_pending_order_payment_method(UUID, TEXT)',
   /CREATE OR REPLACE FUNCTION set_pending_order_payment_method\(\s*p_order_id UUID,\s*p_method\s+TEXT\s*\)/i.test(src));
 check('SECURITY DEFINER', /SECURITY DEFINER/i.test(src));
 check('locked search_path (public, pg_temp)',
   /SET\s+search_path\s*=\s*public\s*,\s*pg_temp/i.test(src));
-check('revokes from PUBLIC/anon/authenticated',
-  /REVOKE ALL ON FUNCTION set_pending_order_payment_method\(UUID, TEXT\)[\s\S]*FROM PUBLIC,\s*anon,\s*authenticated/i.test(src));
+check('revokes from PUBLIC/anon (038-corrected matrix)',
+  /REVOKE ALL ON FUNCTION set_pending_order_payment_method\(UUID, TEXT\)[\s\S]*FROM PUBLIC,\s*anon/i.test(src38));
+check('grants EXECUTE to authenticated (client calls it)',
+  /GRANT EXECUTE ON FUNCTION set_pending_order_payment_method\(UUID, TEXT\)[\s\S]*TO authenticated/i.test(src38));
+check('039 payment-row migration exists', existsSync(file39));
+const src39 = existsSync(file39) ? readFileSync(file39, 'utf8') : '';
+check('039 inserts pending cash_on_delivery row on cod switch',
+  /INSERT INTO payments \(order_id, user_id, method, amount, status\)[\s\S]*'cash_on_delivery', total, 'pending'/i.test(src39));
+check('039 insert guarded by NOT EXISTS (idempotent)',
+  /AND NOT EXISTS \([\s\S]*status = 'pending'[\s\S]*method ILIKE '%cash%' OR method ILIKE '%cod%'/i.test(src39));
+check('039 re-asserts client grant matrix',
+  /GRANT EXECUTE ON FUNCTION set_pending_order_payment_method\(UUID, TEXT\)[\s\S]*TO authenticated/i.test(src39));
 check('method allowlist cod+card',
   /p_method NOT IN \('cod',\s*'card'\)/i.test(src));
 check('invalid_method code', /'invalid_method'/.test(src));
