@@ -12,7 +12,8 @@ Root cause of the earlier Flutter test failure was the configured HTTP proxy int
 - Physical device smoke: debug APK installed on Infinix X6882, app launched, no Flutter fatal exceptions in logcat.
 - Fixed a test expectation that still assumed the old fixed `productGridDelegate`; it now asserts the responsive delegate at the test viewport width.
 - Added a signed-in profile test harness so the greeting regression is tested against an authenticated profile.
-- Commits now on master: `3d05e4c`, `5cf216b`, `2483080`, `1416db2`. Master is ahead of origin by four commits; no push performed.
+- Commits now on master: `3d05e4c`, `5cf216b`, `2483080`, `1416db2`, `7589290`, `eafd1af`. Master is ahead of origin by six commits; no push performed.
+- Paymob staging `PAYMOB_IFRAME_ID=1062411` was set on project `zvpjngdgbpnkkqrorkul`; secrets list confirms the name without exposing its value. The callback endpoint is active and returns HTTP 400 for an unsigned empty request, confirming the endpoint is reachable and validation is active.
 
 ## New — 2026-09-03 (UX polish round — both deferred items FIXED)
 
