@@ -60,6 +60,8 @@ class ProductImagePlaceholder extends StatelessWidget {
                 AppImage(
                   source: imageAsset,
                   fit: BoxFit.cover,
+                  cacheWidth: 720,
+                  cacheHeight: 720,
                   placeholder:
                       Icon(Icons.texture, color: Colors.white, size: size),
                 ),

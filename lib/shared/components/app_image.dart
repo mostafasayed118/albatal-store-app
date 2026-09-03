@@ -16,6 +16,8 @@ class AppImage extends StatelessWidget {
     this.placeholder,
     this.colorFilter,
     this.semanticsLabel,
+    this.cacheWidth,
+    this.cacheHeight,
   });
 
   final String? source;
@@ -25,6 +27,8 @@ class AppImage extends StatelessWidget {
   final Widget? placeholder;
   final ColorFilter? colorFilter;
   final String? semanticsLabel;
+  final int? cacheWidth;
+  final int? cacheHeight;
 
   Widget _fallback(BuildContext context) {
     return placeholder ??
@@ -48,6 +52,8 @@ class AppImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        memCacheWidth: cacheWidth,
+        memCacheHeight: cacheHeight,
         placeholder: (_, __) => _fallback(context),
         errorWidget: (_, __, ___) => _fallback(context),
       );

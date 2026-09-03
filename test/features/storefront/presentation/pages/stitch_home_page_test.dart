@@ -155,6 +155,16 @@ void main() {
     expect(find.byType(StitchFlashSaleCard), findsOneWidget);
   });
 
+  testWidgets('Home greeting uses the authenticated profile first name',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Good morning, UI'), findsOneWidget);
+    expect(find.text('Good morning, Ahmed'), findsNothing);
+  });
+
   testWidgets('tapping the Silk chip filters via cubit.select', (tester) async {
     await tester.pumpWidget(_harness());
     await tester.pump(const Duration(milliseconds: 100));

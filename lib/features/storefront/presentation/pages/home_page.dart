@@ -61,34 +61,36 @@ class _HomePageState extends State<HomePage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(context.watch<AuthCubit>().state.profile?.fullName.isNotEmpty ==
-                    true
-                ? l.goodMorning(context
-                        .watch<AuthCubit>()
-                        .state
-                        .profile!
-                        .fullName
-                        .split(' ')
-                        .first)
-                : l.goodMorningGuest,
+        title: BlocSelector<AuthCubit, AuthState, String?>(
+          selector: (state) {
+            final fullName = state.profile?.fullName.trim() ?? '';
+            if (fullName.isEmpty) return null;
+            return fullName.split(RegExp(r'\s+')).first;
+          },
+          builder: (context, firstName) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                firstName == null
+                    ? l.goodMorningGuest
+                    : l.goodMorning(firstName),
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: scheme.onSurface.withValues(alpha: .6))),
-            Text(
-              l.brandName,
-              style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.15,
-                  color: scheme.primary),
-            ),
-          ],
+                    color: scheme.onSurface.withValues(alpha: .6)),
+              ),
+              Text(
+                l.brandName,
+                style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.15,
+                    color: scheme.primary),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
@@ -256,22 +258,27 @@ class _HomePageState extends State<HomePage> {
                       ),
                     )
                   else
-                    SliverPadding(
-                      padding: const EdgeInsetsDirectional.all(16),
-                      sliver: SliverGrid.builder(
-                        gridDelegate: productGridDelegate,
-                        itemCount: state.visible.length,
-                        itemBuilder: (_, index) {
-                          final product = state.visible[index];
-                          return StitchProductGridCard(
-                            product: product,
-                            onTap: () => context.push('/product/${product.id}'),
-                            onWishlist: () => context
-                                .read<WishlistCubit>()
-                                .toggle(product.id),
-                            isWishlisted: wishlist.ids.contains(product.id),
-                          );
-                        },
+                    SliverLayoutBuilder(
+                      builder: (context, constraints) => SliverPadding(
+                        padding: const EdgeInsetsDirectional.all(16),
+                        sliver: SliverGrid.builder(
+                          gridDelegate: productGridDelegateForWidth(
+                            constraints.crossAxisExtent,
+                          ),
+                          itemCount: state.visible.length,
+                          itemBuilder: (_, index) {
+                            final product = state.visible[index];
+                            return StitchProductGridCard(
+                              product: product,
+                              onTap: () =>
+                                  context.push('/product/${product.id}'),
+                              onWishlist: () => context
+                                  .read<WishlistCubit>()
+                                  .toggle(product.id),
+                              isWishlisted: wishlist.ids.contains(product.id),
+                            );
+                          },
+                        ),
                       ),
                     ),
                 ],

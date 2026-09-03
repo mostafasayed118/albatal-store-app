@@ -4,6 +4,7 @@ import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.da
 import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
+import 'package:al_batal_elite/shared/theme/grid_delegate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +23,19 @@ const _kProduct = Product(
 );
 
 void main() {
+  test('product grid adds columns at responsive breakpoints', () {
+    final phone = productGridDelegateForWidth(390)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+    final tablet = productGridDelegateForWidth(800)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+    final desktop = productGridDelegateForWidth(1200)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+
+    expect(phone.crossAxisCount, 2);
+    expect(tablet.crossAxisCount, 3);
+    expect(desktop.crossAxisCount, 4);
+  });
+
   testWidgets('StitchCategoryChips shows 5 chips, Silk active', (tester) async {
     String selected = 'Silk';
     await tester.pumpWidget(
