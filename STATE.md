@@ -1,6 +1,30 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-03T14:30:00+03:00
+Last run: 2026-09-03T17:10:00+03:00
+
+## New — 2026-09-03 (LIVE device test round 2 — 3 bugs found & FIXED, COD E2E proven)
+
+Owner authorized full fix execution. Continued on-device testing (Infinix X6882, staging env).
+
+**BUG-1 FIXED (P0, COD flow):** checkout creates the order BEFORE the customer picks a method (default 'Credit Card'), so `confirm_cod_payment` always rejected `payment_not_cod`.
+- Migration 037 `set_pending_order_payment_method` (SECURITY DEFINER, owner+pending-only, allowlist cod/card).
+- Migration 038: fixed 037's grant matrix — 037 copied the 033/035 service-only REVOKE pattern, but this RPC is CLIENT-called → 403 on every call ("Failed to set payment method"). Correct: REVOKE PUBLIC/anon + GRANT authenticated (same as 018/022/033).
+- Migration 039: switching to 'cod' now also ensures the pending `cash_on_delivery` payments row (026's Decision-2 requires it; orders created with a non-COD method had none → `payment_not_found` even after 038). Idempotent guarded INSERT.
+- PaymentCubit COD branch: setOrderPaymentMethod('cod') → confirmCodPayment, short-circuits on set failure. 7 test stubs updated; contract verifier 20/20.
+
+**BUG-2 RESOLVED (P0, wrong product/total):** root cause = stale-persisted state race — startup `restore()/load()` reads completed LATE and clobbered live user state (cart showed fresh, RPC got stale product/address). Fixed in CartCubit.restore + WishlistCubit.restore + AddressesCubit.load: persisted data applies only to pristine (empty) state unless `force:true` (manual refresh buttons pass it). 5 anti-clobber tests. Secondary finding: the persisted idempotency key resurrected a CANCELLED order — CheckoutCubit now detects non-pending status and retries once with a fresh key (2 tests).
+
+**BUG-3 FIXED (P0, orders screen always empty — the deep one):**
+- OrdersPage never fetched (restore only wired to empty-state button) → auto-load in initState.
+- Status-tab mapping black holes: paid/expired/refunded invisible → paid→completed, expired+refunded→cancelled; added OrderStatus.expired (server enum has it) + exhaustive one-tab-per-status test + order_card label coverage.
+- **DI split was the killer**: debug builds used LocalOrdersRepository while checkout writes server-side → orders screen PERMANENTLY empty in debug. Now SupabaseOrdersRepository in ALL builds. (Isolating this took a cross-audit: RLS simulation via `supabase db query` with role+JWT claims proved the DB returns rows; REST replication with a real anon-key JWT returned the order; the missing readOrders logs proved the local repo was in use; dumpsys exposed a silent INSTALL_FAILED_UPDATE_INCOMPATIBLE that had masked every "release" install.)
+- Also fixed: checkout now PERSISTS newly added addresses (were selected-then-lost), readOrders diagnostic logging.
+
+**VERIFIED LIVE (release build, clean install, fresh user uitest0903b):** onboarding (EN) → home → sign-up (validation caught my mistyped confirm ✓) → sign-in → COD checkout end-to-end → order success (#e2e7a4f9) → **orders screen shows the order** (Completed tab, product name, date) → settings language switch live (EN↔AR RTL) → theme options render. Address persist + auto-select-after-add verified. Dark mode: code+tests verified; pixel-level unverified (this model cannot read screenshots).
+
+**Deferred (owner-visible, minor):** default address not auto-selected on checkout open (P2 UX); greeting uses static l10n name ("Ahmed") not profile name (P3); payment-status label says "Placed" for paid COD orders (cosmetic).
+
+**Verification:** 305/305 tests, analyzer clean, contract verifier 20/20, migrations 037/038/039 applied to staging (parity 38/38). All commits merged to master (through d0ed0a4). Device state: release build installed, logged in as UI Tester, Arabic locale, dark-mode setting = Light (unchanged).
 
 ## New — 2026-09-03 (LIVE on-device functional test, Infinix X6882, staging)
 
