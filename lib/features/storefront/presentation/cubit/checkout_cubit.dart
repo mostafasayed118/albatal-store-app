@@ -164,8 +164,18 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   ///
   /// The idempotency key is generated on the first call and reused
   /// on subsequent calls (retries) for the same checkout attempt.
+  /// If a restored key resurrects a dead (non-pending) order, the key
+  /// is discarded and the attempt is retried once with a fresh key so
+  /// checkout never gets stuck on an unpayable order.
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
+  }) async {
+    await _createAttempt(cartItems: cartItems, allowFreshRetry: true);
+  }
+
+  Future<void> _createAttempt({
+    required List<CartItem> cartItems,
+    required bool allowFreshRetry,
   }) async {
     // Reuse the in-session key on retry, fall back to a persisted key
     // restored after an app restart, or generate a fresh one.
@@ -192,20 +202,37 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         idempotencyKey: key,
       );
 
-      result.when(
-        success: (pending) => emit(state.copyWith(
-          status: CheckoutStatus.placing,
-          pendingOrderId: pending.orderId,
-          serverSubtotal: pending.subtotal,
-          serverShipping: pending.shipping,
-          serverTotal: pending.total,
-          expiresAt: pending.expiresAt,
-        )),
-        failure: (error) => emit(state.copyWith(
-          status: CheckoutStatus.error,
-          errorMessage: error.message,
-        )),
+      final shouldRetryFresh = result.when(
+        success: (pending) {
+          if (pending.status != 'pending' && allowFreshRetry) {
+            _clearPersistedKey();
+            emit(CheckoutState(
+              payment: state.payment,
+              selectedAddress: state.selectedAddress,
+            ));
+            return true;
+          }
+          emit(state.copyWith(
+            status: CheckoutStatus.placing,
+            pendingOrderId: pending.orderId,
+            serverSubtotal: pending.subtotal,
+            serverShipping: pending.shipping,
+            serverTotal: pending.total,
+            expiresAt: pending.expiresAt,
+          ));
+          return false;
+        },
+        failure: (error) {
+          emit(state.copyWith(
+            status: CheckoutStatus.error,
+            errorMessage: error.message,
+          ));
+          return false;
+        },
       );
+      if (shouldRetryFresh) {
+        await _createAttempt(cartItems: cartItems, allowFreshRetry: false);
+      }
     } catch (e) {
       emit(state.copyWith(
         status: CheckoutStatus.error,

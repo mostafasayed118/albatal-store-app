@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -130,4 +131,109 @@ void main() {
       await cubit.close();
     });
   });
+
+  group('dead-order recovery (restored key hits cancelled order)', () {
+    test('discards the dead key and retries once with a fresh key',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'checkout_idempotency_key': 'cko-stale-dead-key',
+        'checkout_idempotency_key_ts':
+            DateTime.now().millisecondsSinceEpoch,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _SequencedCheckoutRepo();
+      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final items = [
+        CartItem(product: products.first, color: 'Emerald', length: '2m'),
+      ];
+
+      await cubit.createPendingOrder(cartItems: items);
+
+      // First call reused the restored dead key, second used a fresh key.
+      expect(repo.keys, hasLength(2));
+      expect(repo.keys.first, 'cko-stale-dead-key');
+      expect(repo.keys.last, isNot(equals('cko-stale-dead-key')));
+      // Final state carries the live pending order + the fresh key.
+      expect(cubit.state.status, CheckoutStatus.placing);
+      expect(cubit.state.pendingOrderId, 'ord-fresh');
+      expect(cubit.state.idempotencyKey, repo.keys.last);
+      expect(prefs.getString('checkout_idempotency_key'), repo.keys.last);
+
+      await cubit.close();
+    });
+
+    test('no retry loop when the fresh order is also non-pending',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'checkout_idempotency_key': 'cko-stale-dead-key',
+        'checkout_idempotency_key_ts':
+            DateTime.now().millisecondsSinceEpoch,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _AlwaysDeadCheckoutRepo();
+      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final items = [
+        CartItem(product: products.first, color: 'Emerald', length: '2m'),
+      ];
+
+      await cubit.createPendingOrder(cartItems: items);
+
+      // Exactly two attempts: restored key + one fresh retry, then stop.
+      expect(repo.keys, hasLength(2));
+
+      await cubit.close();
+    });
+  });
+}
+
+/// Returns a cancelled order for the stale key, then a live pending
+/// order for any fresh key.
+class _SequencedCheckoutRepo implements CheckoutRepository {
+  final List<String?> keys = [];
+
+  PendingOrder _order(String id, String status) => PendingOrder(
+        orderId: id,
+        subtotal: Money.egp(100),
+        shipping: Money.zero,
+        total: Money.egp(100),
+        expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+        status: status,
+      );
+
+  @override
+  Future<Result<PendingOrder>> placeOrder({
+    required List<CartItem> items,
+    required String paymentMethod,
+    required Map<String, dynamic> addressSnapshot,
+    String? idempotencyKey,
+  }) async {
+    keys.add(idempotencyKey);
+    if (idempotencyKey == 'cko-stale-dead-key') {
+      return Success(_order('ord-dead', 'cancelled'));
+    }
+    return Success(_order('ord-fresh', 'pending'));
+  }
+}
+
+/// Always returns a cancelled order, whatever the key.
+class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
+  final List<String?> keys = [];
+
+  @override
+  Future<Result<PendingOrder>> placeOrder({
+    required List<CartItem> items,
+    required String paymentMethod,
+    required Map<String, dynamic> addressSnapshot,
+    String? idempotencyKey,
+  }) async {
+    keys.add(idempotencyKey);
+    return Success(PendingOrder(
+      orderId: 'ord-dead',
+      subtotal: Money.zero,
+      shipping: Money.zero,
+      total: Money.zero,
+      expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+      status: 'cancelled',
+    ));
+  }
 }
