@@ -71,4 +71,10 @@ abstract interface class AdminRepository {
 
   /// Get currently active flash sales (window filter).
   Future<List<Map<String, dynamic>>> getActiveFlashSales();
+
+  /// Get all variants for [productId], ordered by size.
+  Future<List<Map<String, dynamic>>> getVariants(String productId);
+
+  /// Get ordered storage paths for a product's images.
+  Future<List<String>> getProductImagePaths(String productId);
 }

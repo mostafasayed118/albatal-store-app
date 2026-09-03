@@ -8,6 +8,7 @@ import 'package:al_batal_elite/features/admin/presentation/pages/admin_product_e
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_variant_editor_page.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/components/app_image.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,8 @@ import 'package:go_router/go_router.dart';
 class FakeAdminRepository implements AdminRepository {
   FakeAdminRepository({this.isAdmin = true});
   bool isAdmin;
+  List<Map<String, dynamic>> variants = const [];
+  List<String> productImagePaths = const [];
 
   @override
   Future<bool> isCurrentUserAdmin() async => isAdmin;
@@ -72,6 +75,14 @@ class FakeAdminRepository implements AdminRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> getVariants(String productId) async =>
+      variants;
+
+  @override
+  Future<List<String>> getProductImagePaths(String productId) async =>
+      productImagePaths;
 }
 
 class FakeCatalogRepository implements CatalogRepository {
@@ -259,6 +270,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AdminProductEditPage), findsOneWidget);
 
+    fakeAdmin.variants = [
+      {'id': 'v1', 'size': 'M', 'color': 'Navy', 'stock': 12},
+    ];
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -268,7 +282,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(AdminVariantEditorPage), findsOneWidget);
+    expect(find.text('M / Navy'), findsOneWidget);
+    expect(find.text('Stock: 12'), findsOneWidget);
 
+    fakeAdmin.productImagePaths = ['product-images/pid/a.jpg'];
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -278,5 +295,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(AdminImageManagerPage), findsOneWidget);
+    expect(find.byType(AppImage), findsOneWidget);
   });
 }

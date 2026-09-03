@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
@@ -36,35 +35,18 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       _error = null;
     });
     try {
-      final client = Supabase.instance.client;
-      final data = await client
-          .from('product_images')
-          .select('storage_path')
-          .eq('product_id', widget.productId)
-          .order('sort_order');
+      final paths = await getIt<AdminRepository>()
+          .getProductImagePaths(widget.productId);
       if (!mounted) return;
-      final paths = (data as List)
-          .map((e) => (e as Map<String, dynamic>)['storage_path'] as String)
-          .toList();
       setState(() {
         _paths = paths;
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString();
-      // Treat uninitialized Supabase as empty in tests.
-      if (msg.contains('not initialized') || msg.contains('Supabase')) {
-        setState(() {
-          _paths = [];
-          _loading = false;
-          _error = null;
-        });
-        return;
-      }
       setState(() {
         _loading = false;
-        _error = msg;
+        _error = e.toString();
       });
     }
   }
