@@ -59,7 +59,7 @@ void main() {
     });
 
     test(
-        'idempotency keys differ across fresh cubits (not persisted) — TODO persisted',
+        'idempotency keys differ across fresh cubits without persistence',
         () async {
       final repoA = _StubCheckoutRepo();
       final cubitA = CheckoutCubit(repoA);
@@ -78,15 +78,11 @@ void main() {
 
       expect(keyA, isNotNull);
       expect(keyB, isNotNull);
-      // Currently keys are different because CheckoutCubit generates
-      // new key per instance via DateTime.now + instanceCounter and
-      // does NOT persist to SharedPreferences. This is the documented gap.
+      // Without a SharedPreferences handle the cubit does not persist,
+      // so fresh instances generate independent keys. Persistence
+      // behavior is covered by checkout_idempotency_persistence_test.dart.
       expect(keyA, isNot(equals(keyB)),
-          reason: 'fresh cubits currently generate different keys');
-
-      // TODO: when persisted to SharedPreferences with expiry (key: checkout_idempotency_key, ttl 24h)
-      // and restored on app restart, expect equality for same cart:
-      // expect(keyA, equals(keyB));
+          reason: 'unpersisted fresh cubits generate different keys');
 
       await cubitA.close();
       await cubitB.close();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -207,7 +208,14 @@ class CheckoutPage extends StatelessWidget {
     }
     return BlocProvider<CheckoutCubit>(
       create: (_) =>
-          CheckoutCubit(_checkoutRepository ?? getIt<CheckoutRepository>()),
+          CheckoutCubit(
+            _checkoutRepository ?? getIt<CheckoutRepository>(),
+            // GetIt always carries SharedPreferences in the real app;
+            // widget tests pump this page without the locator.
+            prefs: getIt.isRegistered<SharedPreferences>()
+                ? getIt<SharedPreferences>()
+                : null,
+          ),
       child: consumer,
     );
   }

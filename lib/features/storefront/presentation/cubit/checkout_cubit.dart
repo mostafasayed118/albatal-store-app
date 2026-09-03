@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
@@ -88,10 +89,17 @@ final class CheckoutState extends Equatable {
 }
 
 final class CheckoutCubit extends Cubit<CheckoutState> {
-  CheckoutCubit(this._checkoutRepository) : super(const CheckoutState());
+  CheckoutCubit(this._checkoutRepository, {SharedPreferences? prefs})
+      : _prefs = prefs,
+        super(const CheckoutState());
 
   final CheckoutRepository _checkoutRepository;
+  final SharedPreferences? _prefs;
   int _attemptCounter = 0;
+
+  static const _persistKeyStorage = 'checkout_idempotency_key';
+  static const _persistTsStorage = 'checkout_idempotency_key_ts';
+  static const _idempotencyTtl = Duration(hours: 24);
 
   void payment(String value) => emit(state.copyWith(payment: value));
 
@@ -108,13 +116,42 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// original order instead of creating a duplicate. When the user
   /// navigates away and starts a new checkout, a new cubit (and thus
   /// a new key) is created.
-  // TODO(audit): persist idempotencyKey to SharedPreferences with expiry (key: checkout_idempotency_key, ttl 24h) and restore on app restart
+  // Persisted idempotency keys survive app restarts (crash mid-checkout)
+  // with a 24h TTL so the server can return the original pending order
+  // instead of creating a duplicate.
   static int _instanceCounter = 0;
   final int _instanceId = ++_instanceCounter;
 
   String _generateIdempotencyKey() {
     _attemptCounter++;
     return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-$_instanceId';
+  }
+
+  /// Returns the persisted idempotency key if it exists and is younger
+  /// than the 24h TTL, otherwise null.
+  String? _restoredKey() {
+    final prefs = _prefs;
+    if (prefs == null) return null;
+    final key = prefs.getString(_persistKeyStorage);
+    final ts = prefs.getInt(_persistTsStorage);
+    if (key == null || ts == null) return null;
+    final age = DateTime.now().millisecondsSinceEpoch - ts;
+    if (age > _idempotencyTtl.inMilliseconds) return null;
+    return key;
+  }
+
+  void _persistIdempotencyKey(String key) {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    prefs.setString(_persistKeyStorage, key);
+    prefs.setInt(_persistTsStorage, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  void _clearPersistedKey() {
+    final prefs = _prefs;
+    if (prefs == null) return;
+    prefs.remove(_persistKeyStorage);
+    prefs.remove(_persistTsStorage);
   }
 
   /// Create a pending order via the server-side checkout RPC.
@@ -130,10 +167,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
   }) async {
-    // TODO(audit): persist idempotencyKey to SharedPreferences with expiry
-    // Use the existing idempotency key if this is a retry, or
-    // generate a new one for a fresh checkout attempt.
-    final key = state.idempotencyKey ?? _generateIdempotencyKey();
+    // Reuse the in-session key on retry, fall back to a persisted key
+    // restored after an app restart, or generate a fresh one.
+    final key = state.idempotencyKey ?? _restoredKey() ?? _generateIdempotencyKey();
+    _persistIdempotencyKey(key);
     emit(state.copyWith(
       status: CheckoutStatus.creatingOrder,
       idempotencyKey: key,
@@ -178,15 +215,20 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   /// Reset the checkout state for a new attempt, clearing the
-  /// idempotency key so the next [createPendingOrder] gets a new one.
+  /// idempotency key (and its persisted copy) so the next
+  /// [createPendingOrder] gets a new one.
   void resetForNewAttempt() {
+    _clearPersistedKey();
     emit(CheckoutState(
       payment: state.payment,
       selectedAddress: state.selectedAddress,
     ));
   }
 
-  void markSuccess() => emit(state.copyWith(status: CheckoutStatus.success));
+  void markSuccess() {
+    _clearPersistedKey();
+    emit(state.copyWith(status: CheckoutStatus.success));
+  }
   void markError(String message) =>
       emit(state.copyWith(status: CheckoutStatus.error, errorMessage: message));
 }
