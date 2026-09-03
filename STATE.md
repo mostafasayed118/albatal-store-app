@@ -1,6 +1,25 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-03T00:00:00+03:00
+Last run: 2026-09-03T13:10:00+03:00
+
+## New — 2026-09-03 (production cutover EXECUTED, L2 owner-approved)
+
+Owner asked to run RELEASE_NEXT_STEPS §1 via Supabase CLI + Docker. Executed against production `alxwvyflasewslinufqe`:
+
+| Step | Result |
+|---|---|
+| CLI auth | ✅ v2.109.1, access token present |
+| Link | ✅ linked to `alxwvyflasewslinufqe` |
+| Migration parity | ✅ prod was already at **034** (stale doc assumption ≤030 corrected) |
+| Dry run | ✅ exactly 035 + 036 pending |
+| Backup | ✅ `outputs/db-backups/prod-pre035-036-20260903-124857.sql` 87KB (Docker Desktop started for pg_dump) |
+| db push | ✅ 035 + 036 applied — **35/35 parity, zero pending** |
+| Functions | ✅ all 5 deployed ACTIVE (checkout v36, paymob-initiate v46, paymob-callback v39, cancel-expired-orders v35, send-order-notification v34) |
+| verify_jwt | ✅ checkout+initiate true; callback+cancel+notification false |
+| Secrets | ✅ all 10 app secrets present (names only; CLI shows hashes) |
+| REST smoke | ✅ paymob-initiate no-JWT → HTTP 401 `UNAUTHORIZED_NO_AUTH_HEADER` |
+
+No real payment transaction was created against production. Remaining owner dashboard items: PITR confirm, 2 SQL sanity queries (realtime publication + cron jobs), Paymob integration URL repoint + one sandbox transaction. RELEASE_NEXT_STEPS §1 updated with executed table.
 
 ## New — 2026-09-03 (L1 portfolio-completeness audit)
 

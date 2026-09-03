@@ -7,13 +7,32 @@
 
 ---
 
-## 1. Production cutover (Supabase)
+## 1. Production cutover (Supabase) — ✅ EXECUTED 2026-09-03
 
-Production project: `alxwvyflasewslinufqe` (currently on migrations ≤030
-with pre-T1 Edge Functions). Staging (`zvpjngdgbpnkkqrorkul`) is the
-verified reference. Scaffold: `docs/evidence/prod-cutover-031-033/VERIFICATION.md`.
+Executed via authenticated Supabase CLI (v2.109.1), linked to `alxwvyflasewslinufqe`:
 
-Run in order, from repo root on `master`:
+| Step | Result |
+|---|---|
+| Link | ✅ `alxwvyflasewslinufqe` |
+| Migration list | ✅ prod was already at 034 (docs assumption of ≤030 was stale) |
+| Dry run | ✅ exactly 035 + 036 pending |
+| Backup | ✅ `outputs/db-backups/prod-pre035-036-20260903-124857.sql` (87 KB, Docker started for pg_dump) |
+| `db push` | ✅ 035 + 036 applied — parity **35/35** (no pending) |
+| 5 functions deploy | ✅ checkout, paymob-initiate, paymob-callback, cancel-expired-orders, send-order-notification — all ACTIVE |
+| Secrets | ✅ all 10 app secrets present (names verified) |
+| verify_jwt matrix | ✅ checkout+paymob-initiate=true; callback+cancel+notification=false |
+| REST smoke | ✅ paymob-initiate without JWT → HTTP 401 `UNAUTHORIZED_NO_AUTH_HEADER` |
+
+**Still open (owner, dashboard-only):**
+- [ ] PITR / backups confirmation (dashboard → Database → Backups)
+- [ ] SQL editor sanity: `SELECT * FROM pg_publication_tables WHERE pubname='supabase_realtime';` → must include `public.payments`; `SELECT jobname, active FROM cron.job;` → 4 jobs + retention
+- [ ] Paymob dashboard: repoint integration callback/redirect URLs to
+      `https://alxwvyflasewslinufqe.supabase.co/functions/v1/paymob-callback`,
+      then run ONE sandbox transaction and confirm the order flips to paid automatically
+
+Original runbook retained below for reference.
+
+---
 
 ```bash
 # 0. Link CLI to production
