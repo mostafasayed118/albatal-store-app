@@ -21,6 +21,16 @@
 //   * Returns only the minimum safe client information
 //     (checkout_url). No secrets, no provider order id.
 //
+// CONCURRENCY (migration 034):
+//   The database is the concurrency boundary, not this function.
+//   `get_or_claim_paymob_payment(UUID)` atomically resolves,
+//   creates, and claims the single pending card payment under
+//   the order lock, and returns the server-authoritative total.
+//   A partial unique index caps one pending card payment per
+//   order; an active claim remains exclusive until provider-order
+//   persistence. Non-card orders are rejected before any provider
+//   call. The service-role key is no longer used at all.
+//
 // Expects:
 //   - Authorization header (authenticated user)
 //   - body: { order_id }
@@ -37,6 +47,7 @@ import {
   requireCors,
 } from "../_shared/cors.ts";
 import { requireSecret } from "../_shared/secrets.ts";
+import { decideInitiationClaim, type PaymobClaim } from "./decision.ts";
 
 /// Maximum time (ms) to wait for a single Paymob HTTP call.
 const PAYMOB_TIMEOUT_MS = 5_000;
@@ -129,7 +140,7 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
     // authoritative total + payment method.
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, status, total, payment_method, user_id, address_snapshot")
+      .select("id, status, payment_method, user_id, address_snapshot")
       .eq("id", order_id)
       .eq("user_id", user.id)
       .single();
@@ -148,8 +159,20 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
       );
     }
 
-    // The server-computed total is the source of truth.
-    const amountCents = order.total as number;
+    // Reject non-card orders before loading provider credentials or making
+    // any provider call. The atomic RPC below repeats this check under the
+    // order lock as the authoritative concurrency boundary.
+    if (order.payment_method !== "paymob_card") {
+      console.error("paymob-initiate: Rejected non-card payment method");
+      return new Response(
+        JSON.stringify({ message: "Unsupported payment method" }),
+        { status: 400, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    // `currency` is fixed by the payment-provider contract. The amount is
+    // taken only from the atomic claim RPC below so it can never drift from
+    // the server-authoritative order total computed under the same lock.
     const currency = "EGP";
 
     // Build billing_data from the order's address snapshot.
@@ -189,206 +212,251 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
     }
     const apiKey = Deno.env.get("PAYMOB_API_KEY") as string;
 
-    // ─── Create/find one pending internal payment ───────────
-    console.log(
-      "paymob-initiate: Checking for existing payment for order",
-      order_id,
+    // ─── Atomically get-or-claim the pending card payment ────
+    // The database is the concurrency boundary, not this function.
+    // A partial unique index guarantees at most one pending
+    // `paymob_card` payment per order, and a bounded claim lease
+    // guarantees at most one caller creates the provider order.
+    // This RPC also enforces authentication, ownership, pending
+    // status, and the card-only method under the order lock — so
+    // the decision below is made on data no concurrent request
+    // can invalidate.
+    console.log("paymob-initiate: Claiming payment boundary for order");
+    const { data: claim, error: claimError } = await supabase.rpc(
+      "get_or_claim_paymob_payment",
+      { p_order_id: order_id },
     );
-    const { data: existingPayment, error: existingPayError } = await supabase
-      .from("payments")
-      .select("id, paymob_order_id, status")
-      .eq("order_id", order_id)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
 
-    if (existingPayError) {
-      console.error("paymob-initiate: Error checking existing payment");
-    }
-
-    let paymentId: string;
-
-    if (existingPayment && existingPayment.status === "pending") {
-      console.log(
-        "paymob-initiate: Found existing pending payment",
-        existingPayment.id,
-      );
-      if (existingPayment.paymob_order_id) {
-        console.log(
-          "paymob-initiate: Reusing existing Paymob order",
-          existingPayment.paymob_order_id,
-        );
-        paymentId = existingPayment.id as string;
-        const reused = await reissuePaymentKey(
-          apiKey,
-          integrationId,
-          existingPayment.paymob_order_id as string,
-          amountCents,
-          user.email ?? "customer@example.com",
-          billingData,
-        );
-        if (!reused.ok) {
-          console.error(
-            "paymob-initiate: Failed to reissue payment key",
-            reused.message,
-          );
-          return new Response(
-            JSON.stringify({ message: reused.message }),
-            { status: 502, headers: jsonHeadersFor(req) },
-          );
-        }
-        const checkoutUrl =
-          `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
-        console.log(
-          "paymob-initiate: SUCCESS (reissue) - Returning checkout URL",
-        );
-        return new Response(
-          JSON.stringify({ checkout_url: checkoutUrl }),
-          { status: 200, headers: jsonHeadersFor(req) },
-        );
-      }
-      paymentId = existingPayment.id as string;
-    } else {
-      console.log("paymob-initiate: Creating new payment record");
-      // Payment INSERT is a trusted server-side operation. Keep the caller
-      // JWT client above for auth, ownership reads, and the guarded RPC, but
-      // do not grant authenticated clients direct INSERT on payments.
-      const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
-      if (serviceRoleFail) return serviceRoleFail;
-      const serviceRoleClient = createClient(
-        supabaseUrl,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-      );
-      const { data: newPayment, error: payInsertError } =
-        await serviceRoleClient
-          .from("payments")
-          .insert({
-            order_id: order_id,
-            user_id: user.id,
-            method: "paymob_card",
-            amount: amountCents,
-            status: "pending",
-          })
-          .select("id")
-          .single();
-      if (payInsertError || !newPayment) {
-        console.error("paymob-initiate: Failed to create payment row");
-        return new Response(
-          JSON.stringify({ message: "Failed to create payment record" }),
-          { status: 500, headers: jsonHeadersFor(req) },
-        );
-      }
-      paymentId = newPayment.id as string;
-      console.log("paymob-initiate: Payment record created", paymentId);
-    }
-
-    // ─── Step 1: Paymob auth token ──────────────────────────
-    console.log("paymob-initiate: Step 1 - Getting auth token");
-    const authResponse = await fetchWithGuard(
-      "https://accept.paymob.com/api/auth/tokens",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ api_key: apiKey }),
-      },
-    );
-    const authData = await authResponse.json();
-    if (!authData.token) {
-      console.error("paymob-initiate: Failed to get auth token");
+    if (claimError || !claim) {
+      console.error("paymob-initiate: Failed to resolve payment claim");
       return new Response(
-        JSON.stringify({ message: "Failed to get Paymob auth token" }),
-        { status: 502, headers: jsonHeadersFor(req) },
-      );
-    }
-    console.log("paymob-initiate: Auth token obtained");
-
-    // ─── Step 2: Register Paymob provider order ─────────────
-    console.log("paymob-initiate: Step 2 - Registering order");
-    const paymobOrderResponse = await fetchWithGuard(
-      "https://accept.paymob.com/api/ecommerce/orders",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authData.token}`,
-        },
-        body: JSON.stringify({
-          auth_token: authData.token,
-          delivery_needed: false,
-          amount_cents: amountCents,
-          currency,
-          items: [],
-        }),
-      },
-    );
-    const paymobOrderData = await paymobOrderResponse.json();
-    if (!paymobOrderData.id) {
-      console.error("paymob-initiate: Failed to register order");
-      return new Response(
-        JSON.stringify({ message: "Failed to register payment order" }),
-        { status: 502, headers: jsonHeadersFor(req) },
-      );
-    }
-    console.log("paymob-initiate: Order registered", paymobOrderData.id);
-
-    const paymobOrderId = String(paymobOrderData.id);
-
-    // ─── Persist the REAL Paymob provider order id ──────────
-    console.log("paymob-initiate: Persisting Paymob order ID");
-    const { data: providerOrderUpdate, error: updateError } = await supabase
-      .rpc("set_payment_provider_order_id", {
-        p_payment_id: paymentId,
-        p_paymob_order_id: paymobOrderId,
-      });
-
-    if (updateError || !providerOrderUpdate?.ok) {
-      console.error("paymob-initiate: Failed to persist paymob_order_id");
-      return new Response(
-        JSON.stringify({ message: "Failed to persist payment order" }),
+        JSON.stringify({ message: "Failed to initialize payment" }),
         { status: 500, headers: jsonHeadersFor(req) },
       );
     }
 
-    // ─── Step 3: Payment key ─────────────────────────────────
-    console.log("paymob-initiate: Step 3 - Getting payment key");
-    const keyResponse = await fetchWithGuard(
-      "https://accept.paymob.com/api/acceptance/payment_keys",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authData.token}`,
-        },
-        body: JSON.stringify({
-          auth_token: authData.token,
-          amount_cents: amountCents,
-          currency: currency,
-          expiration: 3600,
-          order_id: paymobOrderId,
-          billing_data: billingData,
-          integration_id: integrationId,
-        }),
-      },
+    const decision = decideInitiationClaim(
+      order.payment_method,
+      claim as PaymobClaim,
     );
-    console.log(
-      "paymob-initiate: Payment key response status:",
-      keyResponse.status,
-    );
-    const keyData = await keyResponse.json();
-    if (!keyData.token) {
-      console.error("paymob-initiate: Failed to get payment key");
+
+    if (decision.kind === "reject") {
+      console.error("paymob-initiate: Order rejected by payment claim");
       return new Response(
-        JSON.stringify({ message: "Failed to get payment key" }),
+        JSON.stringify({ message: decision.message }),
+        { status: decision.status, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    if (decision.kind === "error") {
+      console.error("paymob-initiate: Claim returned an incomplete result");
+      return new Response(
+        JSON.stringify({ message: decision.message }),
+        { status: decision.status, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    if (decision.kind === "reissue") {
+      console.log("paymob-initiate: Reusing existing provider order");
+      const reused = await reissuePaymentKey(
+        apiKey,
+        integrationId,
+        decision.paymobOrderId,
+        decision.amount,
+        user.email ?? "customer@example.com",
+        billingData,
+      );
+      if (!reused.ok) {
+        console.error(
+          "paymob-initiate: Failed to reissue payment key",
+          reused.message,
+        );
+        return new Response(
+          JSON.stringify({ message: reused.message }),
+          { status: 502, headers: jsonHeadersFor(req) },
+        );
+      }
+      const checkoutUrl =
+        `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${reused.token}`;
+      console.log(
+        "paymob-initiate: SUCCESS (reissue) - Returning checkout URL",
+      );
+      return new Response(
+        JSON.stringify({ checkout_url: checkoutUrl }),
+        { status: 200, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    if (decision.kind === "in_progress") {
+      console.log("paymob-initiate: Initiation already in progress");
+      return new Response(
+        JSON.stringify({ message: decision.message }),
+        { status: decision.status, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    const paymentId = decision.paymentId;
+    const claimToken = decision.claimToken;
+    // This amount originates only from the atomic RPC claim result.
+    const amountCents = decision.amount;
+
+    // Internal claim transitions use a separate service-role client. The
+    // caller client remains responsible for the authenticated claim and the
+    // owner-bound provider-order persistence RPC.
+    const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceRoleFail) return serviceRoleFail;
+    const serviceRoleClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+
+    // Past this point claim.code === "claimed": this caller owns
+    // provider-order creation until the provider order is persisted.
+    console.log("paymob-initiate: Claimed provider order creation");
+
+    // ─── Provider steps ─────────────────────────────────────
+    // Pre-provider failures can be released only through the token-bound
+    // service-role RPC. Once the claim is marked provider_submitted, every
+    // failure retains it because the external POST may have succeeded.
+    let paymentToken: string;
+    let providerSubmissionStarted = false;
+    try {
+      // ─── Step 1: Paymob auth token ────────────────────────
+      console.log("paymob-initiate: Step 1 - Getting auth token");
+      const authResponse = await fetchWithGuard(
+        "https://accept.paymob.com/api/auth/tokens",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ api_key: apiKey }),
+        },
+      );
+      const authData = await authResponse.json();
+      if (!authData.token) {
+        console.error("paymob-initiate: Failed to get auth token");
+        throw new Error("auth_token");
+      }
+
+      // Transition to provider_submitted before the external POST. This is
+      // deliberately conservative: any subsequent failure is ambiguous.
+      const { data: submitted, error: submittedError } = await serviceRoleClient
+        .rpc(
+          "mark_paymob_initiation_submitted",
+          { p_payment_id: paymentId, p_claim_token: claimToken },
+        );
+      if (submittedError || !submitted?.ok) {
+        console.error("paymob-initiate: Failed to advance provider claim");
+        throw new Error("claim_transition");
+      }
+      providerSubmissionStarted = true;
+      console.log("paymob-initiate: Auth token obtained");
+
+      // ─── Step 2: Register Paymob provider order ───────────
+      console.log("paymob-initiate: Step 2 - Registering order");
+      const paymobOrderResponse = await fetchWithGuard(
+        "https://accept.paymob.com/api/ecommerce/orders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authData.token}`,
+          },
+          body: JSON.stringify({
+            auth_token: authData.token,
+            delivery_needed: false,
+            amount_cents: amountCents,
+            currency,
+            items: [],
+          }),
+        },
+      );
+      const paymobOrderData = await paymobOrderResponse.json();
+      if (!paymobOrderData.id) {
+        console.error("paymob-initiate: Failed to register order");
+        throw new Error("register_order");
+      }
+      console.log("paymob-initiate: Order registered");
+
+      const paymobOrderId = String(paymobOrderData.id);
+
+      // ─── Persist the REAL Paymob provider order id ────────
+      console.log("paymob-initiate: Persisting Paymob order ID");
+      const { data: providerOrderUpdate, error: updateError } = await supabase
+        .rpc("set_payment_provider_order_id", {
+          p_payment_id: paymentId,
+          p_paymob_order_id: paymobOrderId,
+        });
+
+      if (updateError || !providerOrderUpdate?.ok) {
+        console.error("paymob-initiate: Failed to persist paymob_order_id");
+        throw new Error("persist_provider_order");
+      }
+
+      // ─── Step 3: Payment key ──────────────────────────────
+      console.log("paymob-initiate: Step 3 - Getting payment key");
+      const keyResponse = await fetchWithGuard(
+        "https://accept.paymob.com/api/acceptance/payment_keys",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authData.token}`,
+          },
+          body: JSON.stringify({
+            auth_token: authData.token,
+            amount_cents: amountCents,
+            currency: currency,
+            expiration: 3600,
+            order_id: paymobOrderId,
+            billing_data: billingData,
+            integration_id: integrationId,
+          }),
+        },
+      );
+      console.log(
+        "paymob-initiate: Payment key response status:",
+        keyResponse.status,
+      );
+      const keyData = await keyResponse.json();
+      if (!keyData.token) {
+        console.error("paymob-initiate: Failed to get payment key");
+        throw new Error("payment_key");
+      }
+      paymentToken = keyData.token as string;
+      console.log("paymob-initiate: Payment key obtained");
+    } catch (_providerFailure) {
+      // Never clear the claim here. Provider submission may have succeeded
+      // even when the response was lost or malformed; only the persisted
+      // provider order path can safely transition to key reissue.
+      if (!providerSubmissionStarted) {
+        try {
+          const { error: releaseError } = await serviceRoleClient.rpc(
+            "release_paymob_initiation_claim",
+            { p_payment_id: paymentId, p_claim_token: claimToken },
+          );
+          if (releaseError) {
+            console.error(
+              "paymob-initiate: Pre-provider claim recovery failed",
+            );
+          }
+        } catch (_releaseFailure) {
+          console.error("paymob-initiate: Pre-provider claim recovery failed");
+        }
+      } else {
+        console.error(
+          "paymob-initiate: Provider initiation failed; claim retained",
+        );
+      }
+      return new Response(
+        JSON.stringify({ message: "Failed to initialize payment" }),
         { status: 502, headers: jsonHeadersFor(req) },
       );
     }
-    console.log("paymob-initiate: Payment key obtained");
 
     // ─── Return minimum safe client info ────────────────────
     const checkoutUrl =
-      `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${keyData.token}`;
+      `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentToken}`;
     console.log("paymob-initiate: SUCCESS - Returning checkout URL");
 
     return new Response(

@@ -1,6 +1,60 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-24T17:45:00Z
+Last run: 2026-09-03T00:00:00+03:00
+
+## New — 2026-09-03 (L1 portfolio-completeness audit)
+
+Full-project completeness audit, report-only. No source/config files modified.
+
+**Complete/strong:** 29 pages across 8 features (incl. 9 admin pages), 51 test files (283 passing), 5 Edge Functions, 35 migrations (001–035), RLS hardened (44/44 adversarial, 53/53 race), real Paymob sandbox transactions closed end-to-end, signed Android APK in CI, RELEASE_GATE verdict GO (staging, 2026-08-24).
+
+**Top gaps found (priority order):**
+1. Branch `audit-remediation` has UNCOMMITTED verified work: migrations 034/035, `paymob-initiate` claim-RPC rewrite + `decision.ts`, 4 hardened test runners, `verify_payment_initiation_contract.mjs` — verified on staging (39/39, 12/12) but not committed/pushed/merged.
+2. Production cutover not executed — prod `alxwvyflasewslinufqe` likely on ≤030, all prod checks `TBD` in `docs/evidence/prod-cutover-031-033/VERIFICATION.md`.
+3. Play Store upload never done (APK artifact ready, Internal Testing pending).
+4. Retail-breadth gaps: no reviews/ratings writes (static seed), no coupons, no refunds flow, `send-order-notification` writes DB rows only (no email/FCM provider), no `analytics_daily` rollup (cron is guarded no-op), no support tickets table, "coming soon" placeholders (FAQ, voice search).
+5. Cloud sync incomplete: cart/wishlist/addresses local-only via SharedPreferences; catalog+orders+admin are Supabase-backed.
+6. Code TODOs: checkout idempotency-key persistence, color names from DB, cached_network_image Cache-Control; `orders.payment_id` used as tracking-number store (schema hack); `audit-retention-90d` cron prunes nonexistent `audit_logs` while real `state_transitions` grows unbounded.
+7. Portfolio polish: README has no screenshots/badges/demo link; no iOS verification or workflow; web/PWA unverified; coverage ~52% (ratchet 50%); old prod DB credential still in git history (rotated; scrub pending).
+
+L1 only — no fixes applied.
+
+## New — 2026-09-02 (L1 report-only scan)
+
+### Albatal workspace scan and audit-remediation verification
+
+Scanned `C:\\flutter_projects` for Albatal-related projects, worktrees, states, guidance, specs, plans, evidence, and source references. No source/config/migration/CI files were modified in this L1 run.
+
+**Workspace findings:**
+- Primary repository: `C:\\flutter_projects\\albatal_store`, branch `audit-remediation`, HEAD `4b3b34b`.
+- Primary worktree is dirty with 2 modified Edge Function files and 3 untracked audit-remediation files: `decision.ts`, migration `034_payment_initiation_and_expiry_hardening.sql`, and `verify_payment_initiation_contract.mjs`.
+- Related directories `albatal-audit-fixes`, `albatal-fixes`, `albatal-merged-verify`, `albatal-review-standards`, `albatal_store_wt_prod`, `albatal-ui-kit`, and `stitch_al_batal_fabric_e_commerce` remain on disk but are no longer valid Git worktrees/repositories (`git` reports invalid/missing worktree metadata). Treat them as read-only artifacts until reconstructed or removed by an approved cleanup task.
+
+**Verification:**
+- `flutter analyze --no-pub`: PASS, no issues found.
+- `git diff --check`: PASS.
+- `node --check supabase/tests/verify_payment_initiation_contract.mjs`: PASS.
+- Migration contract: **37/38 PASS, 1 FAIL** — the contract rejects the migration's pre-provider stale-claim reclamation path.
+- Deno Edge Function checks: type check PASS; contract tests **11/12 PASS, 1 FAIL** due a brittle formatting expectation for the multiline service-role RPC call.
+- No live Supabase or Paymob deployment was performed.
+
+**L2 authorization received 2026-09-02:** owner approved fixing migration 034 and its tests, with Supabase CLI/Docker available if needed. Changes applied in the current `audit-remediation` worktree only; no commit, push, migration apply, or remote deployment performed.
+
+**Remediation:** declared `v_lease INTERVAL '5 minutes'` in migration 034 and strengthened the migration contract to require the declaration and to scope provider-submitted claim exclusivity correctly. Replaced brittle whitespace-sensitive Deno assertions with regex/source-section checks.
+
+**Fresh verification:** migration contract **39/39 PASS**; Deno type check **PASS**; paymob-initiate contract tests **12/12 PASS**; Flutter analyzer **PASS**; `git diff --check` **PASS**. Full Flutter suite executed without proxy variables: **283 passed, 2 failed**, both pre-existing local asset-rule failures for untracked `assets/images/fabric/hero_silk.webp` and `splash_bg.webp`. The initial proxied Flutter run failed at test startup due `Invalid WebSocket upgrade request`; proxy-free execution reached the full suite.
+
+**Local Supabase:** Docker and Supabase CLI are available, but the existing Rosette Supabase project occupies port 54322. An isolated copy was attempted with alternate ports; Supabase CLI still resolved the database port to 54322 and stopped before startup. No database was started or modified.
+
+**Database execution — corrected and applied (2026-09-02):** Owner corrected the staging pooler endpoint from `aws-0-eu-west-1` to `aws-1-eu-west-1` for project `zvpjngdgbpnkkqrorkul`. The migration-number collision was reconciled forward-only: restored `034_lock_audit_trail.sql` and renamed payment hardening to `035_payment_initiation_and_expiry_hardening.sql`. The contract verifier now targets migration 035.
+
+Backups recorded: `outputs/db-backups/staging-pre035-20260902-210030.sql` (88,195 bytes) and `outputs/db-backups/staging-post035-20260902-210502.sql` (99,213 bytes). Dry-run identified only 035; `supabase db push --db-url <corrected-url>` applied 035 successfully. No `--include-all`, linked reset, production deployment, commit, or push was performed.
+
+**Fresh verification against corrected endpoint:** `supabase migration list` reports local/remote parity through 035. `schema_migrations` contains 034 and 035. The three `paymob_initiation_*` columns and `uq_payments_one_pending_card_per_order` exist. The four hardened RPCs are present and SECURITY DEFINER. Local contract remains **39/39 PASS**; Deno type check and paymob-initiate contract tests remain **12/12 PASS**; `git diff --check` passes.
+
+**Current gate:** staging migration 035 and the revised `paymob-initiate` Edge Function are applied and verified. Production deployment, commit, and push remain pending owner approval.
+
+**Edge Function deployment (2026-09-02):** `paymob-initiate` deployed to staging project `zvpjngdgbpnkkqrorkul` successfully, version 6, status ACTIVE, updated at 2026-09-02 18:34:46 UTC. Safe unauthenticated probe returned HTTP 401 `UNAUTHORIZED_NO_AUTH_HEADER`, confirming the function's JWT gate. No authenticated payment creation or Paymob transaction was attempted in this step.
 
 ## New — 2026-08-24 (evening)
 

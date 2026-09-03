@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 // Connection string comes from the STAGING_DB_URL env var only —
 // never from a committed constant.
 const REQUIRED_STAGING_REF = 'zvpjngdgbpnkkqrorkul';
-const STAGING_DB_URL = process.env.STAGING_DB_URL ?? '';
+const STAGING_DB_URL = (process.env.STAGING_DB_URL ?? '').replace(/aws-[0-9]+-eu-west-1/, 'aws-1-eu-west-1');
 
 if (!STAGING_DB_URL) {
   console.error('ABORT: STAGING_DB_URL is not set. Export the isolated staging connection string first.');

@@ -7,7 +7,7 @@
 // state changes), mirroring the psql original.
 //
 // USAGE:
-//   STAGING_DB_URL='postgresql://postgres.<ref>:<pw>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres' \
+//   STAGING_DB_URL='postgresql://postgres.<ref>:<pw>@aws-1-eu-west-1.pooler.supabase.com:5432/postgres' \
 //     node supabase/tests/run_race_conditions.mjs
 //
 // GUARDS:
@@ -37,7 +37,7 @@
 import { Client } from 'pg';
 
 const REQUIRED_STAGING_REF = 'zvpjngdgbpnkkqrorkul';
-const STAGING_DB_URL = process.env.STAGING_DB_URL;
+const STAGING_DB_URL = (process.env.STAGING_DB_URL ?? '').replace(/aws-[0-9]+-eu-west-1/, 'aws-1-eu-west-1');
 
 let passed = 0;
 let failed = 0;
