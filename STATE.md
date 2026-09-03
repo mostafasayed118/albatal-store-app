@@ -1,6 +1,18 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-03T21:52:37+03:00
+Last run: 2026-09-03T22:05:03+03:00
+
+## New — 2026-09-03 (test runner and final verification)
+
+Root cause of the earlier Flutter test failure was the configured HTTP proxy intercepting localhost WebSocket traffic. Running with `NO_PROXY=localhost,127.0.0.1` and `no_proxy=localhost,127.0.0.1` restored the Flutter test runner.
+
+- Focused catalog and Home regression tests: passed.
+- Full suite: **308 tests passed** with `flutter test --no-pub -j 1` and the localhost proxy bypass.
+- Analyzer: passed with no issues.
+- Physical device smoke: debug APK installed on Infinix X6882, app launched, no Flutter fatal exceptions in logcat.
+- Fixed a test expectation that still assumed the old fixed `productGridDelegate`; it now asserts the responsive delegate at the test viewport width.
+- Added a signed-in profile test harness so the greeting regression is tested against an authenticated profile.
+- Commits now on master: `3d05e4c`, `5cf216b`, `2483080`, `1416db2`. Master is ahead of origin by four commits; no push performed.
 
 ## New — 2026-09-03 (UX polish round — both deferred items FIXED)
 
