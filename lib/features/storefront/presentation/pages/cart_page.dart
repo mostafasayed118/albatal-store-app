@@ -26,7 +26,7 @@ class CartPage extends StatelessWidget {
           if (s.status == CartStatus.error) {
             return FeedbackView(
               type: FeedbackViewType.error,
-              onAction: context.read<CartCubit>().restore,
+              onAction: () => context.read<CartCubit>().restore(force: true),
             );
           }
           if (s.items.isEmpty) {

@@ -26,7 +26,8 @@ class AddressesPage extends StatelessWidget {
                     Text(s.errorMessage ?? l.errorTitle),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: context.read<AddressesCubit>().load,
+                      onPressed: () =>
+                          context.read<AddressesCubit>().load(force: true),
                       child: Text(l.retry),
                     ),
                   ],
