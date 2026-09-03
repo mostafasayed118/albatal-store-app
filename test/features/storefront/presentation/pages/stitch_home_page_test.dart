@@ -2,6 +2,8 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/core/entities/profile.dart';
+import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
@@ -20,6 +22,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/memory_storefront_persistence.dart';
+
+class _SignedInAuthRepository extends StubAuthRepository {
+  @override
+  Future<Result<Authenticated?>> checkSession() async =>
+      const Success(Authenticated('ui-test-user'));
+}
+
+class _SignedInProfileRepository extends StubProfileRepository {
+  @override
+  Future<Result<Profile?>> readProfile(String userId) async =>
+      const Success(Profile(id: 'ui-test-user', fullName: 'UI Tester'));
+}
 
 class _StubRepo implements CatalogRepository {
   const _StubRepo();
@@ -157,7 +171,28 @@ void main() {
 
   testWidgets('Home greeting uses the authenticated profile first name',
       (tester) async {
-    await tester.pumpWidget(_harness());
+    final store = MemoryStorefrontPersistence();
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+                create: (_) => CatalogCubit(const _StubRepo())..load()),
+            BlocProvider(create: (_) => WishlistCubit(store)),
+            BlocProvider(create: (_) => CartCubit(store)),
+            BlocProvider(
+              create: (_) => AuthCubit(
+                authRepository: _SignedInAuthRepository(),
+                profileRepository: _SignedInProfileRepository(),
+              )..checkSession(),
+            ),
+          ],
+          child: const HomePage(),
+        ),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(seconds: 1));
 

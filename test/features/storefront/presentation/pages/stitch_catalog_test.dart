@@ -17,7 +17,6 @@ import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.da
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
-import 'package:al_batal_elite/shared/theme/grid_delegate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -181,11 +180,13 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(StitchSearchBar), findsOneWidget);
-      // Grid should be 2-col .68 using shared delegate (not ProductTile).
+      // Grid should use the width-aware shared delegate (not ProductTile).
       expect(find.byType(StitchProductGridCard), findsNWidgets(4));
-      // Ensure productGridDelegate is wired: GridView uses it.
       final grid = tester.widget<GridView>(find.byType(GridView));
-      expect(grid.gridDelegate, productGridDelegate);
+      final delegate =
+          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, 4);
+      expect(delegate.childAspectRatio, .68);
       // EdgeInsetsDirectional padding on grid.
       expect(grid.padding, isA<EdgeInsetsDirectional>());
 

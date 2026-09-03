@@ -127,9 +127,11 @@ class _CatalogPageState extends State<CatalogPage> {
                           builder: (context, wishlist) => GridView.builder(
                             padding: const EdgeInsetsDirectional.all(16),
                             itemCount: state.visible.length,
-                            gridDelegate: productGridDelegateForWidth(
-                              constraints.maxWidth,
-                            ),
+                            gridDelegate: constraints.maxWidth >= 600
+                                ? productGridDelegateForWidth(
+                                    constraints.maxWidth,
+                                  )
+                                : productGridDelegate,
                             itemBuilder: (_, i) {
                               final product = state.visible[i];
                               return StitchProductGridCard(
