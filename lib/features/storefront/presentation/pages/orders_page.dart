@@ -6,8 +6,23 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/orders_cubit.dart';
 import '../widgets/order_list.dart';
 
-class OrdersPage extends StatelessWidget {
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
+
+  @override
+  State<OrdersPage> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends State<OrdersPage> {
+  @override
+  void initState() {
+    super.initState();
+    // The orders list is server-read: fetch on every open so newly
+    // placed/updated orders appear. Previously the screen only
+    // refreshed via the empty-state action button, so it stayed
+    // empty forever for users who had orders (live-found 2026-09-03).
+    context.read<OrdersCubit>().restore();
+  }
 
   @override
   Widget build(BuildContext context) {

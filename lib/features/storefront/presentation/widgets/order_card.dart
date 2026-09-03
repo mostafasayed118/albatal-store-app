@@ -84,6 +84,7 @@ class OrderCard extends StatelessWidget {
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
         OrderStatus.refunded => l.cancelled,
+        OrderStatus.expired => l.cancelled,
       };
 }
 

@@ -42,11 +42,19 @@ final class OrdersState extends Equatable {
       .toList()
     ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
   List<Order> get completed =>
-      orders.where((o) => o.status == OrderStatus.delivered).toList()
+      orders
+          .where((o) =>
+              o.status == OrderStatus.paid ||
+              o.status == OrderStatus.delivered)
+          .toList()
         ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get cancelled =>
-      orders.where((o) => o.status == OrderStatus.cancelled).toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get cancelled => orders
+      .where((o) =>
+          o.status == OrderStatus.cancelled ||
+          o.status == OrderStatus.expired ||
+          o.status == OrderStatus.refunded)
+      .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
 
   OrdersState copyWith({
     List<Order>? orders,

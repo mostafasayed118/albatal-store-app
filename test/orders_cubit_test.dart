@@ -192,6 +192,7 @@ void main() {
       await cubit.close();
     });
   });
+  _tabMappingTests();
 }
 
 /// Test double that always fails on writeOrders.
@@ -202,4 +203,52 @@ class _FailingOrdersPersistence implements OrdersRepository {
   @override
   Future<Result<void>> writeOrders(List<Order> orders) async =>
       Failure(AppError('write failed'));
+}
+
+Order _orderWithStatus(String id, OrderStatus status) => Order(
+      id: id,
+      items: const [],
+      subtotal: Money.zero,
+      shipping: Money.zero,
+      total: Money.zero,
+      status: status,
+      placedAt: DateTime.utc(2026, 1, 1),
+      paymentMethod: 'cod',
+    );
+
+void _tabMappingTests() {
+  group('OrdersState tab mapping (live-found 2026-09-03)', () {
+    test('paid orders land in completed (were invisible)', () {
+      const state = OrdersState();
+      final s = state.copyWith(
+          orders: [_orderWithStatus('p1', OrderStatus.paid)]);
+      expect(s.completed.map((o) => o.id), ['p1']);
+      expect(s.active, isEmpty);
+      expect(s.cancelled, isEmpty);
+    });
+
+    test('expired and refunded land in cancelled (were invisible)', () {
+      const state = OrdersState();
+      final s = state.copyWith(orders: [
+        _orderWithStatus('e1', OrderStatus.expired),
+        _orderWithStatus('r1', OrderStatus.refunded),
+      ]);
+      expect(s.cancelled.map((o) => o.id), containsAll(['e1', 'r1']));
+      expect(s.active, isEmpty);
+      expect(s.completed, isEmpty);
+    });
+
+    test('every OrderStatus is visible in exactly one tab', () {
+      const state = OrdersState();
+      for (final status in OrderStatus.values) {
+        final s = state.copyWith(orders: [_orderWithStatus('x', status)]);
+        final hits = [
+          s.active.any((o) => o.id == 'x'),
+          s.completed.any((o) => o.id == 'x'),
+          s.cancelled.any((o) => o.id == 'x'),
+        ].where((h) => h).length;
+        expect(hits, 1, reason: '$status must appear in exactly one tab');
+      }
+    });
+  });
 }
