@@ -6,7 +6,7 @@ The approved mobile UX/performance fixes and the physical-device E2E fixes were 
 
 - Merge commit: `5cf216b`
 - Feature commit: `3d05e4c`
-- Master state: ahead of `origin/master` by 2 commits
+- Master state: ahead of `origin/master` by 3 commits
 - No push performed
 
 ## Implemented
@@ -25,8 +25,8 @@ The approved mobile UX/performance fixes and the physical-device E2E fixes were 
 
 - `flutter analyze`: passed with no issues on merged `master`.
 - `git diff --check`: passed.
-- Full `flutter test --no-pub`: blocked before test execution for all 55 files by:
-  `WebSocketException: Invalid WebSocket upgrade request`.
+- Root cause of the earlier test-runner failure was the configured HTTP proxy intercepting localhost WebSocket traffic. Running tests with `NO_PROXY=localhost,127.0.0.1` and `no_proxy=localhost,127.0.0.1` restored the runner.
+- Full `flutter test --no-pub -j 1` with the localhost bypass: **308 tests passed**.
 - Physical device detected: Infinix X6882, Android 14, 1080x2460, density 480.
 - Final debug APK installed successfully on the device.
 - App launched successfully with `com.albatal.elite/.MainActivity` focused.
@@ -34,6 +34,6 @@ The approved mobile UX/performance fixes and the physical-device E2E fixes were 
 
 ## Remaining external constraints
 
-- The Flutter test runner environment must be repaired before test results can be collected.
+- The Flutter test runner itself is working when localhost traffic bypasses the configured proxy; the durable shell/CI environment should set `NO_PROXY` and `no_proxy` for localhost.
 - Paymob card/WebView requires the approved staging integration and sandbox flow.
 - Production push was intentionally not performed; the two commits are local and ready for review/push.
