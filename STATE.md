@@ -6,6 +6,27 @@ Last run: 2026-09-03T00:00:00+03:00
 
 Full-project completeness audit, report-only. No source/config files modified.
 
+### L2 EXECUTION SAME DAY (owner: "نفذ كله")
+
+**1. Audit-remediation batch committed, merged, pushed (`eb2b273` → `447f645` master):**
+- Discovered master already carried 034 (289075b, UTF-8); local untracked 034 was textually identical (UTF-16 only) → deleted duplicate, kept master's.
+- Committed: migration 035 + `paymob-initiate` claim-RPC rewrite + `decision.ts` + `verify_payment_initiation_contract.mjs` + 4 hardened test runners + docs.
+- Merged master into `audit-remediation` (clean, ort); verified; ff-merged to master; pushed.
+- Also deleted untracked unreferenced `assets/images/fabric/hero_silk.webp` + `splash_bg.webp` (broke SVG-only asset rule tests).
+
+**2. README portfolio polish (`32f4578` master, branch `docs/portfolio-readme-2026-09-03`):**
+- CI + Android-release badges, tests/coverage badges, real emulator screenshots (docs/screenshots/{home,categories}.png from stitch-smoke evidence).
+- Accuracy: catalog/orders/admin/checkout/payments ARE Supabase-backed (was falsely listed as local mock); migrations 14→35; testing section expanded with backend suites.
+
+**3. Portfolio completion batch (`4052d84` master, branch `fix/portfolio-completion-2026-09-03`):**
+- `CheckoutCubit`: idempotency key now persisted to SharedPreferences (24h TTL), restored after app restart, cleared on reset/success — closes audit TODO. `checkout_page` wires it via GetIt (`isRegistered`-guarded for widget tests).
+- Migration `036_fix_audit_retention_cron.sql`: `audit-retention-90d` now prunes `state_transitions` (031's job was a daily no-op on nonexistent `audit_logs`). NOT yet applied to any DB.
+- `docs/RELEASE_NEXT_STEPS.md`: production cutover runbook (7 steps), Play Store upload checklist (AAB already built by CI), deferred-T4 email delivery, git-history scrub, product backlog.
+
+**Verification:** `flutter analyze` clean; `flutter test` **290/290 PASS** (5 new persistence tests); `deno check` PASS; `deno test` paymob-initiate **12/12**; `node --check` ×5 PASS; migration contract **39/39**. Secret scan of all diffs: only placeholders.
+
+**Still owner-gated (needs external accounts/credentials):** production `db push` + 5 function deploys + Paymob dashboard repoint (docs/RELEASE_NEXT_STEPS.md §1), Play Console upload (§2), email provider key (§3), git history scrub (§4).
+
 **Complete/strong:** 29 pages across 8 features (incl. 9 admin pages), 51 test files (283 passing), 5 Edge Functions, 35 migrations (001–035), RLS hardened (44/44 adversarial, 53/53 race), real Paymob sandbox transactions closed end-to-end, signed Android APK in CI, RELEASE_GATE verdict GO (staging, 2026-08-24).
 
 **Top gaps found (priority order):**
