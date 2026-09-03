@@ -9,6 +9,7 @@ import '../../../../shared/services/supabase_config.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../widgets/address_form.dart';
@@ -101,6 +102,10 @@ class CheckoutPage extends StatelessWidget {
                             context
                                 .read<CheckoutCubit>()
                                 .selectAddress(address);
+                            // Persist to the address book too: previously
+                            // the new address was only selected and vanished
+                            // on restart (live-found 2026-09-03).
+                            context.read<AddressesCubit>().upsert(address);
                           }
                         },
                         l: l,
