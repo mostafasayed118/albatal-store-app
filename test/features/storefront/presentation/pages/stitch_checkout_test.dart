@@ -50,7 +50,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {

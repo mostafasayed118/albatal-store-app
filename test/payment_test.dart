@@ -64,5 +64,13 @@ void main() {
       expect(PaymentMethod.paymobCard.label, 'Paymob Card');
       expect(PaymentMethod.cashOnDelivery.label, 'Cash on Delivery');
     });
+
+    test('serverValue matches the strings the server gates on', () {
+      // Migration 035 + paymob-initiate require orders.payment_method to be
+      // exactly 'paymob_card' for card initiation; 018/022/026 confirm COD
+      // via ILIKE '%cash%'/'%cod%'; 037/039 allowlist ('cod','card').
+      expect(PaymentMethod.paymobCard.serverValue, 'paymob_card');
+      expect(PaymentMethod.cashOnDelivery.serverValue, 'cod');
+    });
   });
 }

@@ -6,6 +6,7 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -42,7 +43,7 @@ class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {

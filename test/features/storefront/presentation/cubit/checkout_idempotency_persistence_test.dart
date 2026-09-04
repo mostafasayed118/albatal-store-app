@@ -4,6 +4,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/data/products_data.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +17,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -198,7 +199,7 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -217,7 +218,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
