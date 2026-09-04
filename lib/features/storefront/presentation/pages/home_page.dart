@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
@@ -122,9 +123,11 @@ class _HomePageState extends State<HomePage> {
               ? '-15%'
               : '-${flashSale['discount_pct'] ?? flashSale['discountPct'] ?? 15}%';
           // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
+          // ResponsiveShell caps width at 1200px on tablet/desktop.
           return BlocBuilder<WishlistCubit, WishlistState>(
             builder: (context, wishlist) {
-              return CustomScrollView(
+              return ResponsiveShell(
+                child: CustomScrollView(
                 // Dismiss the search keyboard on scroll: an open IME
                 // shrank the viewport into a 7.6px bottom overflow
                 // (live-found 2026-09-04).
@@ -285,6 +288,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                 ],
+                ),
               );
             },
           );

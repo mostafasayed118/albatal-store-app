@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
@@ -85,14 +86,15 @@ class _CatalogPageState extends State<CatalogPage> {
               onAction: catalog.load,
             );
           }
-          return Column(
-            children: [
-              StitchSearchBar(
-                controller: _searchController,
-                hintText: l.searchFabrics,
-                onChanged: catalog.updateQuery,
-                onSubmitted: catalog.updateQuery,
-              ),
+          return ResponsiveShell(
+            child: Column(
+              children: [
+                StitchSearchBar(
+                  controller: _searchController,
+                  hintText: l.searchFabrics,
+                  onChanged: catalog.updateQuery,
+                  onSubmitted: catalog.updateQuery,
+                ),
               if (state.hasActiveFilters)
                 ActiveFiltersBar(
                   state: state,
@@ -127,11 +129,11 @@ class _CatalogPageState extends State<CatalogPage> {
                           builder: (context, wishlist) => GridView.builder(
                             padding: const EdgeInsetsDirectional.all(16),
                             itemCount: state.visible.length,
-                            gridDelegate: constraints.maxWidth >= 600
-                                ? productGridDelegateForWidth(
-                                    constraints.maxWidth,
-                                  )
-                                : productGridDelegate,
+                            // Single breakpoint source (grid_delegate.dart):
+                            // 2-col phones, 3-col ≥700, 4-col ≥1000.
+                            gridDelegate: productGridDelegateForWidth(
+                              constraints.maxWidth,
+                            ),
                             itemBuilder: (_, i) {
                               final product = state.visible[i];
                               return StitchProductGridCard(
@@ -153,6 +155,7 @@ class _CatalogPageState extends State<CatalogPage> {
                       ),
               ),
             ],
+            ),
           );
         },
       ),
