@@ -20,8 +20,8 @@ void main() {
 
     test('email channel uses the verified support address', () {
       final channels = const LocalSupportRepository().getChannels();
-      final email = channels
-          .firstWhere((c) => c.kind == SupportChannelKind.email);
+      final email =
+          channels.firstWhere((c) => c.kind == SupportChannelKind.email);
       expect(email.value, 'al3tar66@gmail.com');
     });
 
@@ -47,8 +47,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const SupportPage(
-            supportRepository: LocalSupportRepository()),
+        home: const SupportPage(supportRepository: LocalSupportRepository()),
       ));
       await tester.pumpAndSettle();
 
