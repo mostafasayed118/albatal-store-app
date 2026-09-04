@@ -287,5 +287,15 @@
   "noAddressProvided": "لم يتم توفير عنوان",
   "noResultsFound": "لم يتم العثور على نتائج",
   "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
-  "comingSoon": "قريباً"
+  "comingSoon": "قريباً",
+  "serverConfirmedTotals": "الإجماليات المؤكدة من الخادم",
+  "orderReferenceMissing": "تعذر المتابعة: مرجع الطلب مفقود.",
+  "customerEmailMissing": "تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.",
+  "paymentLinkInvalid": "رابط الدفع غير صالح. يرجى المحاولة مجددًا.",
+  "paymentSucceededNoReference": "نجح الدفع لكن مرجع الطلب مفقود.",
+  "paymentCancelledRetry": "تم إلغاء الدفع. يمكنك المحاولة مجددًا.",
+  "paymentExpiredRetry": "انتهت صلاحية الدفع. يمكنك المحاولة مجددًا.",
+  "paymentTimedOutRetry": "انتهت مهلة التحقق من الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.",
+  "paymentFailedRetry": "فشل الدفع. يمكنك المحاولة مجددًا.",
+  "adminAccessRequired": "يلزم الوصول كمسؤول"
 }

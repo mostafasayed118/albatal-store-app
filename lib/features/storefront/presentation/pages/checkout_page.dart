@@ -148,7 +148,7 @@ class CheckoutPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Server-confirmed totals',
+                        Text(l.serverConfirmedTotals,
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 8),
                         _ServerTotalRow(

@@ -773,4 +773,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get comingSoon => 'قريباً';
+
+  @override
+  String get serverConfirmedTotals => 'الإجماليات المؤكدة من الخادم';
+
+  @override
+  String get orderReferenceMissing => 'تعذر المتابعة: مرجع الطلب مفقود.';
+
+  @override
+  String get customerEmailMissing =>
+      'تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.';
+
+  @override
+  String get paymentLinkInvalid => 'رابط الدفع غير صالح. يرجى المحاولة مجددًا.';
+
+  @override
+  String get paymentSucceededNoReference => 'نجح الدفع لكن مرجع الطلب مفقود.';
+
+  @override
+  String get paymentCancelledRetry => 'تم إلغاء الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get paymentExpiredRetry =>
+      'انتهت صلاحية الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get paymentTimedOutRetry =>
+      'انتهت مهلة التحقق من الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.';
+
+  @override
+  String get paymentFailedRetry => 'فشل الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get adminAccessRequired => 'يلزم الوصول كمسؤول';
 }

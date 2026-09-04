@@ -17,7 +17,7 @@ class AdminCatalogPage extends StatelessWidget {
       if (!context.mounted) return;
       if (!isAdmin) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Admin access required')),
+          SnackBar(content: Text(context.l10n.adminAccessRequired)),
         );
         return;
       }

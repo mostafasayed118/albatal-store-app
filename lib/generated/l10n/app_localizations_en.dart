@@ -777,4 +777,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming Soon';
+
+  @override
+  String get serverConfirmedTotals => 'Server-confirmed totals';
+
+  @override
+  String get orderReferenceMissing =>
+      'Unable to continue: the order reference is missing.';
+
+  @override
+  String get customerEmailMissing =>
+      'Unable to continue: the customer email is missing. Please sign in again.';
+
+  @override
+  String get paymentLinkInvalid =>
+      'The payment checkout link is invalid. Please retry.';
+
+  @override
+  String get paymentSucceededNoReference =>
+      'Payment succeeded but the order reference is missing.';
+
+  @override
+  String get paymentCancelledRetry => 'Payment cancelled. You can retry.';
+
+  @override
+  String get paymentExpiredRetry => 'Payment expired. You can retry.';
+
+  @override
+  String get paymentTimedOutRetry =>
+      'Payment verification timed out. Please check your orders before retrying.';
+
+  @override
+  String get paymentFailedRetry => 'Payment failed. You can retry.';
+
+  @override
+  String get adminAccessRequired => 'Admin access required';
 }
