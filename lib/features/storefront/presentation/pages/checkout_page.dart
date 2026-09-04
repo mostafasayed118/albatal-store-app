@@ -153,10 +153,10 @@ class CheckoutPage extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 8),
                         _ServerTotalRow(
-                            label: 'Subtotal', value: s.serverSubtotal),
+                            label: l.subtotal, value: s.serverSubtotal),
                         _ServerTotalRow(
-                            label: 'Shipping', value: s.serverShipping),
-                        _ServerTotalRow(label: 'Total', value: s.serverTotal),
+                            label: l.shipping, value: s.serverShipping),
+                        _ServerTotalRow(label: l.total, value: s.serverTotal),
                       ],
                     ),
                   ),
