@@ -53,7 +53,7 @@ class _AddressFormState extends State<AddressForm> {
         recipient: _nameCtrl.text.trim(),
         line: _streetCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
-        country: '',
+        country: _countryCtrl.text.trim(),
       ));
     }
   }

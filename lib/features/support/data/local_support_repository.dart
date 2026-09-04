@@ -3,9 +3,9 @@ import '../domain/repositories/support_repository.dart';
 
 /// Local fixed-list implementation of [SupportRepository].
 ///
-/// Channels are hardcoded for now. The abstraction earns its keep the
-/// moment these values are remote-configured or A/B-tested — the UI
-/// stays the same.
+/// Contact data is owner-verified (WhatsApp +201154580512,
+/// al3tar66@gmail.com). Guarded by `test/support_contacts_test.dart` —
+/// placeholders must never ship again (live-found 2026-09-04).
 final class LocalSupportRepository implements SupportRepository {
   const LocalSupportRepository();
 
@@ -15,13 +15,13 @@ final class LocalSupportRepository implements SupportRepository {
           id: 'whatsapp',
           label: 'WhatsApp',
           kind: SupportChannelKind.whatsapp,
-          value: 'https://wa.me/201000000000',
+          value: 'https://wa.me/201154580512',
         ),
         SupportChannel(
           id: 'email',
           label: 'Email',
           kind: SupportChannelKind.email,
-          value: 'support@albatal-store.example',
+          value: 'al3tar66@gmail.com',
         ),
         SupportChannel(
           id: 'faq',
