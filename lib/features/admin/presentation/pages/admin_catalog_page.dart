@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Admin catalog management — product and category overview.
@@ -28,8 +29,11 @@ class AdminCatalogPage extends StatelessWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
+      // Generic user message — raw exception stays in logs only.
+      Log.e('Admin access check failed', error: e);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to verify admin access: $e')),
+        const SnackBar(
+            content: Text('Unable to verify admin access. Please try again.')),
       );
     }
   }

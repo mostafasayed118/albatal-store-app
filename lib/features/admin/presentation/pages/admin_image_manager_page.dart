@@ -5,6 +5,7 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -44,9 +45,11 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       });
     } catch (e) {
       if (!mounted) return;
+      // Generic user message — raw exception stays in logs only.
+      Log.e('Admin image list load failed', error: e);
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = 'Failed to load images. Please try again.';
       });
     }
   }
@@ -66,8 +69,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
           .showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Failed to save images: $e')));
+      Log.e('Admin image save failed', error: e);
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save images. Please try again.')));
     }
   }
 
@@ -105,8 +109,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      Log.e('Admin image upload failed', error: e);
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Upload failed. Please try again.')));
     }
   }
 

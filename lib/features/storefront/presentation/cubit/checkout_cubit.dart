@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/checkout_repository.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
@@ -234,9 +235,11 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         await _createAttempt(cartItems: cartItems, allowFreshRetry: false);
       }
     } catch (e) {
+      // Generic user message — raw exception stays in logs only.
+      Log.e('Create pending order failed', error: e);
       emit(state.copyWith(
         status: CheckoutStatus.error,
-        errorMessage: 'Failed to create order: $e',
+        errorMessage: 'Failed to create order. Please try again.',
       ));
     }
   }

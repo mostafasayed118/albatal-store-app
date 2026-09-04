@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
+import '../../../shared/services/logger.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
 
@@ -62,7 +63,11 @@ class PaymobPaymentService implements PaymentService {
 
       return PaymentPending(checkoutUrl: checkoutUrl);
     } catch (e) {
-      return PaymentFailed(message: 'Payment initialization failed: $e');
+      // Generic user message — raw exception stays in logs only.
+      Log.e('Paymob initiate failed', error: e, category: LogCategory.payment);
+      return const PaymentFailed(
+        message: 'Payment initialization failed. Please try again.',
+      );
     }
   }
 
