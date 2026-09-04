@@ -19,13 +19,14 @@ class StitchCategoryChips extends StatelessWidget {
   final ValueChanged<String> onSelect;
   final List<String> categories;
 
-  static const _activeFill = Color(0xFFB0F0D6);
-  static const _activeStroke = Color(0xFF064E3B);
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    // Active state from the theme (primaryContainer + primary) so dark
+    // mode stays legible — never hardcoded mint.
+    final activeFill = scheme.primaryContainer;
+    final activeStroke = scheme.primary;
     return SizedBox(
       height: 72,
       child: ListView.separated(
@@ -52,17 +53,18 @@ class StitchCategoryChips extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isActive
-                          ? _activeFill
+                          ? activeFill
                           : scheme.surfaceContainerHighest,
                       border: Border.all(
-                        color: isActive ? _activeStroke : scheme.outlineVariant,
+                        color: isActive ? activeStroke : scheme.outlineVariant,
                         width: 1,
                       ),
                     ),
                     child: Icon(
                       Icons.texture,
-                      color:
-                          isActive ? scheme.primary : scheme.onSurfaceVariant,
+                      color: isActive
+                          ? scheme.onPrimaryContainer
+                          : scheme.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
@@ -73,8 +75,6 @@ class StitchCategoryChips extends StatelessWidget {
                       color:
                           isActive ? scheme.onSurface : scheme.onSurfaceVariant,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                      fontSize: 11,
-                      height: 1.0,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

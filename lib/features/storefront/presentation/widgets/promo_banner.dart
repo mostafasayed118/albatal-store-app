@@ -28,22 +28,16 @@ class PromoBanner extends StatelessWidget {
         children: [
           Text(
             l.newSilkCollection,
-            style: TextStyle(
-                color: scheme.secondary.withValues(alpha: .9),
-                fontFamily: 'Montserrat',
-                fontSize: 12,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.secondaryContainer,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.05),
           ),
           const SizedBox(height: 8),
           Text(
             l.wovenForDistinction,
-            style: TextStyle(
-                color: scheme.onPrimary,
-                fontFamily: 'Montserrat',
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                height: 1.15),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: scheme.onPrimary, height: 1.15),
           ),
           const Spacer(),
           AppButton(

@@ -19,7 +19,9 @@ class EnvironmentBanner extends StatelessWidget {
     return Banner(
       message: label,
       location: BannerLocation.topEnd,
-      color: Colors.orange,
+      // Deep umber keeps white 10px-bold text above 4.5:1
+      // (raw orange fails contrast).
+      color: const Color(0xFF7C2D12),
       textStyle: const TextStyle(
           color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
       child: child,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../../theme/contrast.dart';
 import '../app_image.dart';
 
 /// Stitch 2-col product grid card — surface, outlineVariant border, square media.
@@ -52,34 +53,37 @@ class StitchProductGridCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         cacheWidth: 420,
                         cacheHeight: 420,
-                        placeholder: const Icon(
+                        placeholder: Icon(
                           Icons.texture,
-                          color: Colors.white,
+                          color: onSwatchColor(Color(product.imageColor)),
                           size: 32,
                         ),
                       ),
                     ),
-                    // Wishlist heart top-end
+                    // Wishlist heart top-end — 44px touch target with an
+                    // accessible name (product + selected state).
                     PositionedDirectional(
                       top: 8,
                       end: 8,
-                      child: Material(
-                        color: scheme.surface.withValues(alpha: 0.92),
-                        shape: const CircleBorder(),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: onWishlist,
-                          customBorder: const CircleBorder(),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Icon(
-                              isWishlisted
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 18,
-                              color: isWishlisted
-                                  ? scheme.error
-                                  : scheme.onSurfaceVariant,
+                      child: Semantics(
+                        button: true,
+                        selected: isWishlisted,
+                        label: product.name,
+                        child: Material(
+                          color: scheme.surface.withValues(alpha: 0.92),
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: onWishlist,
+                            customBorder: const CircleBorder(),
+                            child: SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: Center(
+                                child: _WishlistHeart(
+                                  isWishlisted: isWishlisted,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -145,6 +149,23 @@ class StitchProductGridCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Heart icon split out so the 44px hit area stays constant while only
+/// the glyph rebuilds on wishlist toggles.
+class _WishlistHeart extends StatelessWidget {
+  const _WishlistHeart({required this.isWishlisted});
+  final bool isWishlisted;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Icon(
+      isWishlisted ? Icons.favorite : Icons.favorite_border,
+      size: 20,
+      color: isWishlisted ? scheme.error : scheme.onSurfaceVariant,
     );
   }
 }

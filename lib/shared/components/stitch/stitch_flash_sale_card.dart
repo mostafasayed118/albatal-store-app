@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../../extensions/build_context_x.dart';
+import '../../theme/contrast.dart';
 import '../app_image.dart';
 
 /// Stitch flash-sale row card — 120dp, image left, badge + CTA.
@@ -58,9 +60,9 @@ class StitchFlashSaleCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       cacheWidth: 180,
                       cacheHeight: 180,
-                      placeholder: const Icon(
+                      placeholder: Icon(
                         Icons.texture,
-                        color: Colors.white,
+                        color: onSwatchColor(Color(product.imageColor)),
                         size: 28,
                       ),
                     ),
@@ -123,21 +125,26 @@ class StitchFlashSaleCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // 32dp add FAB — secondary / gold semantic
-                  Material(
-                    color: scheme.secondary,
-                    shape: const CircleBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: onAdd,
-                      customBorder: const CircleBorder(),
-                      child: const SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
+                  // 48dp add button — secondary fill with its on-color icon
+                  // (dark-safe) and a localized action name.
+                  Semantics(
+                    button: true,
+                    label: context.l10n.addToCart,
+                    child: Material(
+                      color: scheme.secondary,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: onAdd,
+                        customBorder: const CircleBorder(),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Icon(
+                            Icons.add,
+                            color: scheme.onSecondary,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),

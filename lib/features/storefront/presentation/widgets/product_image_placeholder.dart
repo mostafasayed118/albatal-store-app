@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/components/app_image.dart';
+import '../../../../shared/theme/contrast.dart';
 import 'fabric_weave_painter.dart';
 
 /// Fabric swatch stand-in for product imagery.
@@ -50,7 +51,8 @@ class ProductImagePlaceholder extends StatelessWidget {
               painter: FabricWeavePainter(baseColor: Color(imageColor)),
               size: Size.infinite,
               child: Center(
-                child: Icon(Icons.texture, color: Colors.white, size: size),
+                child: Icon(Icons.texture,
+                    color: onSwatchColor(Color(imageColor)), size: size),
               ),
             )
           : Stack(
@@ -62,8 +64,8 @@ class ProductImagePlaceholder extends StatelessWidget {
                   fit: BoxFit.cover,
                   cacheWidth: 720,
                   cacheHeight: 720,
-                  placeholder:
-                      Icon(Icons.texture, color: Colors.white, size: size),
+                  placeholder: Icon(Icons.texture,
+                      color: onSwatchColor(Color(imageColor)), size: size),
                 ),
               ],
             ),
