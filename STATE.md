@@ -1,6 +1,66 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-08-23T18:00:00Z
+Last run: 2026-09-04T00:00:00Z
+
+## New — 2026-09-04
+
+### L2: Admin layering remediation — typed Order domain + Result repository
+**Branch:** `refactor/admin-typed-order-domain` (worktree
+`.trees/admin-typed-domain`, from `master` @ `ac69c54`). Human enabled L2 for
+audit issue #1 (AdminState untyped `Map<String, dynamic>` models).
+
+**Changes:**
+1. NEW `lib/features/admin/domain/entities/admin_order.dart` — `AdminOrder`,
+   `AdminOrderItem`, `AdminOrderAddress`, `AdminOrderStatus` (safe parse →
+   `unknown`), status-transition guards (`canConfirm/canCancel/canShip/
+   canDeliver`), `shortId`.
+2. NEW `lib/features/admin/domain/entities/low_stock_variant.dart` — typed
+   `LowStockVariant`.
+3. NEW `lib/features/admin/data/admin_mappers.dart` — `AdminMappers`; every
+   raw-row cast lives here; defensive defaults, skips unmappable rows.
+4. `lib/features/admin/domain/repositories/admin_repository.dart` — rewritten
+   Result-based: `getAllOrders/getOrderDetails/updateOrderStatus/
+   getLowStockProducts/updateStock` now return `Result<T>` with typed
+   entities; `updateOrderStatus` rejects `unknown` before any network call.
+5. `lib/features/admin/data/supabase_admin_repository.dart` — maps via
+   `AdminMappers`, returns `Result` (no exceptions cross the boundary);
+   admin probe fails closed on any error; `.maybeSingle()` for details
+   (Success(null) on missing) replaces `.single()` throw path; broad
+   `catch` documented (TypeError is not an Exception).
+6. `lib/features/admin/presentation/cubit/admin_cubit.dart` — typed state
+   (`List<AdminOrder>`, `List<LowStockVariant>`, `AdminOrder?`),
+   `AdminOrderStatus?` filter with `clearStatusFilter`, all repo calls via
+   `Result` switch, explicit `Order not found` for `Success(null)`.
+7. All 4 admin pages consume typed entities (no `Map<String, dynamic>`
+   subscripting in widgets); fulfillment actions driven by typed guards;
+   intl-based timestamp formatting (intl already a direct dep).
+8. NEW `test/features/admin/data/admin_mappers_test.dart` (17 assertions:
+   status parse, queue/detail/address/low-stock mapping, malformed rows,
+   status guards).
+9. NEW `test/features/admin/presentation/cubit/admin_cubit_test.dart`
+   (bloc_test + mocktail: success/failure/not-found paths, typed filter,
+   reload-verify on status/stock updates).
+
+**Layering result:** `Map<String, dynamic>` now appears in the admin feature
+only inside `data/` (mappers + repository). Presentation and domain are
+clean; `lib/app.dart` + `service_locator.dart` needed no changes.
+
+**Verification evidence (Flutter 3.47.2 stable / Dart 3.13.2 — matches the CI 3.47.x pin):**
+| Check | Result |
+|-------|--------|
+| `flutter pub get` | OK (worktree-local; `pubspec.lock` restored to HEAD after) |
+| `flutter analyze` | **No issues found!** (first run: 40 errors → 3 missing/unused imports fixed) |
+| `flutter test` | **270 passed, 0 failed** — 243 pre-existing + 27 new, zero regressions |
+| Test-driven fix | The 2 initial mapper-test failures exposed a real defect: bare `as` casts **throw** TypeError on mistyped payloads instead of degrading. Mappers rewritten to `is` type tests + promotion; behavior now genuinely tested |
+| Layering grep | raw maps confined to `data/` ✔; no cross-feature API breaks ✔ |
+
+**Incidental side effects restored to HEAD:** `.flutter-plugins-dependencies`,
+`analysis_options.yaml` (tool auto-edit),
+`macos/Flutter/GeneratedPluginRegistrant.swift`, `pubspec.lock`.
+l10n: only pre-existing arb getters used; hardcoded admin UI strings left
+for the separate l10n issue. **Merge remains human-gated per AGENTS.md.**
+
+---
 
 ## New — 2026-08-23 (evening)
 

@@ -1,6 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/error/result.dart';
+import '../../domain/entities/admin_order.dart';
+import '../../domain/entities/low_stock_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 // ─── States ────────────────────────────────────────────────
@@ -18,25 +21,30 @@ final class AdminState extends Equatable {
   });
 
   final AdminStatus status;
-  final List<Map<String, dynamic>> orders;
-  final List<Map<String, dynamic>> lowStockProducts;
-  final Map<String, dynamic>? selectedOrder;
-  final String? statusFilter;
+  final List<AdminOrder> orders;
+  final List<LowStockVariant> lowStockProducts;
+  final AdminOrder? selectedOrder;
+
+  /// Queue filter. Null shows every order; [AdminOrderStatus.unknown] is
+  /// never assigned a filter (see [loadOrders]).
+  final AdminOrderStatus? statusFilter;
   final String? errorMessage;
 
-  List<Map<String, dynamic>> get filteredOrders {
-    if (statusFilter == null) return orders;
-    return orders.where((o) => o['status'] == statusFilter).toList();
+  List<AdminOrder> get filteredOrders {
+    final filter = statusFilter;
+    if (filter == null) return orders;
+    return orders.where((o) => o.status == filter).toList();
   }
 
   AdminState copyWith({
     AdminStatus? status,
-    List<Map<String, dynamic>>? orders,
-    List<Map<String, dynamic>>? lowStockProducts,
-    Map<String, dynamic>? selectedOrder,
-    String? statusFilter,
+    List<AdminOrder>? orders,
+    List<LowStockVariant>? lowStockProducts,
+    AdminOrder? selectedOrder,
+    AdminOrderStatus? statusFilter,
     String? errorMessage,
     bool clearSelectedOrder = false,
+    bool clearStatusFilter = false,
   }) =>
       AdminState(
         status: status ?? this.status,
@@ -44,7 +52,8 @@ final class AdminState extends Equatable {
         lowStockProducts: lowStockProducts ?? this.lowStockProducts,
         selectedOrder:
             clearSelectedOrder ? null : (selectedOrder ?? this.selectedOrder),
-        statusFilter: statusFilter ?? this.statusFilter,
+        statusFilter:
+            clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
         errorMessage: errorMessage,
       );
 
@@ -61,6 +70,12 @@ final class AdminState extends Equatable {
 
 // ─── Cubit ─────────────────────────────────────────────────
 
+/// Presentation-layer state machine for the admin screens.
+///
+/// Consumes `Result` values from [AdminRepository] — errors are
+/// translated into user-safe [AdminState.errorMessage] strings here, the
+/// single place admin failures become UI state. No exceptions are caught
+/// (none escape the repository) and no raw row maps appear in state.
 class AdminCubit extends Cubit<AdminState> {
   AdminCubit(this._adminRepository) : super(const AdminState());
 
@@ -78,64 +93,101 @@ class AdminCubit extends Cubit<AdminState> {
   }
 
   /// Load orders with optional status filter.
-  Future<void> loadOrders({String? status}) async {
-    emit(state.copyWith(status: AdminStatus.loading, statusFilter: status));
-    try {
-      final orders = await _adminRepository.getAllOrders(status: status);
-      emit(state.copyWith(status: AdminStatus.ready, orders: orders));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AdminStatus.error, errorMessage: 'Failed to load orders'));
+  Future<void> loadOrders({AdminOrderStatus? status}) async {
+    emit(state.copyWith(
+      status: AdminStatus.loading,
+      statusFilter: status,
+      clearStatusFilter: status == null,
+    ));
+    final result = await _adminRepository.getAllOrders(status: status);
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(status: AdminStatus.ready, orders: value));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 
   /// Load order details.
   Future<void> loadOrderDetails(String orderId) async {
     emit(state.copyWith(status: AdminStatus.loading));
-    try {
-      final details = await _adminRepository.getOrderDetails(orderId);
-      emit(state.copyWith(status: AdminStatus.ready, selectedOrder: details));
-    } catch (e) {
-      emit(state.copyWith(
-          status: AdminStatus.error, errorMessage: 'Failed to load order'));
+    final result = await _adminRepository.getOrderDetails(orderId);
+    switch (result) {
+      case Success(:final value):
+        if (value == null) {
+          emit(state.copyWith(
+            status: AdminStatus.error,
+            errorMessage: 'Order not found',
+          ));
+        } else {
+          emit(state.copyWith(
+            status: AdminStatus.ready,
+            selectedOrder: value,
+          ));
+        }
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 
   /// Update order status.
-  Future<void> updateOrderStatus(String orderId, String status,
-      {String? trackingNumber}) async {
-    try {
-      await _adminRepository.updateOrderStatus(orderId, status,
-          trackingNumber: trackingNumber);
-      // Reload orders after status update
-      await loadOrders(status: state.statusFilter);
-    } catch (e) {
-      emit(state.copyWith(
-          status: AdminStatus.error, errorMessage: 'Failed to update status'));
+  Future<void> updateOrderStatus(
+    String orderId,
+    AdminOrderStatus status, {
+    String? trackingNumber,
+  }) async {
+    final result = await _adminRepository.updateOrderStatus(
+      orderId,
+      status,
+      trackingNumber: trackingNumber,
+    );
+    switch (result) {
+      case Success():
+        // Reload orders after status update so the queue reflects it.
+        await loadOrders(status: state.statusFilter);
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 
   /// Load low stock products.
   Future<void> loadLowStockProducts({int threshold = 5}) async {
-    try {
-      final products =
-          await _adminRepository.getLowStockProducts(threshold: threshold);
-      emit(state.copyWith(lowStockProducts: products));
-    } catch (e) {
-      emit(state.copyWith(
+    final result =
+        await _adminRepository.getLowStockProducts(threshold: threshold);
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(
+          status: AdminStatus.ready,
+          lowStockProducts: value,
+        ));
+      case Failure(:final error):
+        emit(state.copyWith(
           status: AdminStatus.error,
-          errorMessage: 'Failed to load low stock products'));
+          errorMessage: error.message,
+        ));
     }
   }
 
   /// Update variant stock.
   Future<void> updateStock(String variantId, int newStock) async {
-    try {
-      await _adminRepository.updateStock(variantId, newStock);
-      await loadLowStockProducts();
-    } catch (e) {
-      emit(state.copyWith(
-          status: AdminStatus.error, errorMessage: 'Failed to update stock'));
+    final result = await _adminRepository.updateStock(variantId, newStock);
+    switch (result) {
+      case Success():
+        await loadLowStockProducts();
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminStatus.error,
+          errorMessage: error.message,
+        ));
     }
   }
 
