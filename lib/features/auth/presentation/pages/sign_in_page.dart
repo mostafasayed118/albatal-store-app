@@ -53,8 +53,10 @@ class _SignInPageState extends State<SignInPage> {
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 Text(l.signInSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: scheme.onSurfaceVariant)),
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailCtrl,

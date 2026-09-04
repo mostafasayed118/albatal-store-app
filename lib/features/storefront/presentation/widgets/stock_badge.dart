@@ -27,14 +27,17 @@ class StockBadge extends StatelessWidget {
       text = l.inStock;
     }
     return Container(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6),
+      padding:
+          const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color, fontWeight: FontWeight.w600)),
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

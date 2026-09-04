@@ -229,8 +229,7 @@ void main() {
       // Padding should be EdgeInsetsDirectional.all(16).
       final containerWithPadding = tester.widget<Container>(
         find.byWidgetPredicate((w) =>
-            w is Container &&
-            w.padding == const EdgeInsetsDirectional.all(16)),
+            w is Container && w.padding == const EdgeInsetsDirectional.all(16)),
       );
       expect(containerWithPadding.padding, isA<EdgeInsetsDirectional>());
       expect(containerWithPadding.padding, const EdgeInsetsDirectional.all(16));

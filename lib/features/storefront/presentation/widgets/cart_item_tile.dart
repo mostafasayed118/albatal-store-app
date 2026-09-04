@@ -99,10 +99,9 @@ class CartItemTile extends StatelessWidget {
                           style: TextButton.styleFrom(
                             foregroundColor: scheme.error,
                             minimumSize: const Size(44, 44),
-                            padding:
-                                const EdgeInsetsDirectional.symmetric(horizontal: 12),
-                            textStyle:
-                                Theme.of(context).textTheme.labelLarge,
+                            padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 12),
+                            textStyle: Theme.of(context).textTheme.labelLarge,
                           ),
                           child: Text(l.remove),
                         ),
@@ -115,10 +114,9 @@ class CartItemTile extends StatelessWidget {
                           },
                           style: TextButton.styleFrom(
                             minimumSize: const Size(44, 44),
-                            padding:
-                                const EdgeInsetsDirectional.symmetric(horizontal: 12),
-                            textStyle:
-                                Theme.of(context).textTheme.labelLarge,
+                            padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 12),
+                            textStyle: Theme.of(context).textTheme.labelLarge,
                           ),
                           icon: const Icon(Icons.bookmark_border, size: 18),
                           label: Text(l.saveForLater),

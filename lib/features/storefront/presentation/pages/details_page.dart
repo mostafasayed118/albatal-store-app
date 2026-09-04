@@ -91,8 +91,8 @@ class DetailsPage extends StatelessWidget {
                 WishlistToggleIcon(productId: p.id),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
                           behavior: SnackBarBehavior.floating,
                           content: Text(l.shareLinkCopied))),
                   icon: const Icon(Icons.share_outlined),

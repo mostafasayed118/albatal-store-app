@@ -53,9 +53,9 @@ class OrderCard extends StatelessWidget {
                   child: Text(
                     _statusLabel(o.status, l),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ],

@@ -32,16 +32,14 @@ class CartSummary extends StatelessWidget {
         padding: const EdgeInsetsDirectional.symmetric(vertical: 4),
         child: Row(
           children: [
-            Text(label,
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
             const Spacer(),
             Text(value,
                 style: (bold
                         ? Theme.of(context).textTheme.titleSmall
                         : Theme.of(context).textTheme.bodyMedium)
                     ?.copyWith(
-                        fontWeight:
-                            bold ? FontWeight.w700 : FontWeight.w400)),
+                        fontWeight: bold ? FontWeight.w700 : FontWeight.w400)),
           ],
         ),
       );

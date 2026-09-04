@@ -36,8 +36,10 @@ class PromoBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             l.wovenForDistinction,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: scheme.onPrimary, height: 1.15),
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(color: scheme.onPrimary, height: 1.15),
           ),
           const Spacer(),
           AppButton(
