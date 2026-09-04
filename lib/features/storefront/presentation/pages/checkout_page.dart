@@ -47,8 +47,10 @@ class CheckoutPage extends StatelessWidget {
     final consumer = BlocConsumer<CheckoutCubit, CheckoutState>(
       listener: (context, s) {
         if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
+          // Empty (never fake) when the session lapsed — PaymentMethodPage
+          // blocks with a sign-in error instead of charging a dead address.
           final email =
-              SupabaseConfig.currentUser?.email ?? 'customer@example.com';
+              SupabaseConfig.currentUser?.email?.trim() ?? '';
           context.push('/payment-method', extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
