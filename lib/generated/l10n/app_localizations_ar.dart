@@ -144,6 +144,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentMethod => 'طريقة الدفع';
 
   @override
+  String get paid => 'مدفوع';
+
+  @override
   String get addNewAddress => 'إضافة عنوان جديد';
 
   @override
@@ -413,6 +416,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderSummary => 'ملخص الطلب';
+
+  @override
+  String get estimatedTotalsNote =>
+      'إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.';
 
   @override
   String itemsInCart(int count) {
@@ -751,7 +758,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get emailSupport => 'دعم البريد الإلكتروني';
 
   @override
-  String get emailSupportAddress => 'support@albatal.com';
+  String get emailSupportAddress => 'al3tar66@gmail.com';
 
   @override
   String get faq => 'الأسئلة الشائعة';

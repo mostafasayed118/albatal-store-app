@@ -144,6 +144,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentMethod => 'Payment Method';
 
   @override
+  String get paid => 'Paid';
+
+  @override
   String get addNewAddress => 'Add New Address';
 
   @override
@@ -414,6 +417,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderSummary => 'Order Summary';
+
+  @override
+  String get estimatedTotalsNote =>
+      'Estimated totals — the final amount is confirmed at payment.';
 
   @override
   String itemsInCart(int count) {
@@ -755,7 +762,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailSupport => 'Email Support';
 
   @override
-  String get emailSupportAddress => 'support@albatal.com';
+  String get emailSupportAddress => 'al3tar66@gmail.com';
 
   @override
   String get faq => 'Frequently Asked Questions';

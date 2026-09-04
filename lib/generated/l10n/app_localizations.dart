@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'Payment Method'**
   String get paymentMethod;
 
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
   /// No description provided for @addNewAddress.
   ///
   /// In en, this message translates to:
@@ -877,6 +883,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Order Summary'**
   String get orderSummary;
+
+  /// No description provided for @estimatedTotalsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated totals — the final amount is confirmed at payment.'**
+  String get estimatedTotalsNote;
 
   /// Number of items in the cart for checkout review
   ///
@@ -1541,7 +1553,7 @@ abstract class AppLocalizations {
   /// No description provided for @emailSupportAddress.
   ///
   /// In en, this message translates to:
-  /// **'support@albatal.com'**
+  /// **'al3tar66@gmail.com'**
   String get emailSupportAddress;
 
   /// No description provided for @faq.
