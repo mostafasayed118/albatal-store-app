@@ -133,6 +133,18 @@ class CheckoutPage extends StatelessWidget {
               ],
               BlocBuilder<CartCubit, CartState>(
                   builder: (_, cart) => CartSummary(cart)),
+              // Local math is an estimate: the server computes the final
+              // total (live-found 2026-09-04: review showed 1365 while
+              // the server charged 1290).
+              Padding(
+                padding: const EdgeInsetsDirectional.only(top: 8),
+                child: Text(l.estimatedTotalsNote,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant)),
+              ),
               // Show server-returned totals once the order is created — Stitch summary card.
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
