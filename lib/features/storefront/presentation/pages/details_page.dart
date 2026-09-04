@@ -92,7 +92,9 @@ class DetailsPage extends StatelessWidget {
                 IconButton(
                   tooltip: l.shareProduct,
                   onPressed: () => ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(l.shareLinkCopied))),
+                      .showSnackBar(SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          content: Text(l.shareLinkCopied))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],

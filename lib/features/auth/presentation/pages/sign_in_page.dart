@@ -60,6 +60,9 @@ class _SignInPageState extends State<SignInPage> {
                   controller: _emailCtrl,
                   decoration: InputDecoration(labelText: l.email),
                   keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  autocorrect: false,
+                  enableSuggestions: false,
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
                       (v == null || !v.contains('@')) ? l.invalidEmail : null,
@@ -70,12 +73,16 @@ class _SignInPageState extends State<SignInPage> {
                   decoration: InputDecoration(
                     labelText: l.password,
                     suffixIcon: IconButton(
+                      tooltip: l.password,
                       onPressed: () => setState(() => _obscure = !_obscure),
                       icon: Icon(
                           _obscure ? Icons.visibility_off : Icons.visibility),
                     ),
                   ),
                   obscureText: _obscure,
+                  autofillHints: const [AutofillHints.password],
+                  autocorrect: false,
+                  enableSuggestions: false,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
                   validator: (v) =>

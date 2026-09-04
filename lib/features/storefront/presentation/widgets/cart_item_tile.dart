@@ -45,6 +45,7 @@ class CartItemTile extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              behavior: SnackBarBehavior.floating,
               content: Text('${l.remove} $name'),
               action: SnackBarAction(
                 label: l.undo,

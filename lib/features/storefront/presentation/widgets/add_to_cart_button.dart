@@ -41,8 +41,9 @@ class AddToCartButton extends StatelessWidget {
                     color: state.color,
                     length: state.length,
                     quantity: state.quantity);
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(l.addedToCart)));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    content: Text(l.addedToCart)));
               }
             : null,
         child: Row(

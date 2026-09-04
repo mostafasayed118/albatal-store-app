@@ -59,8 +59,9 @@ class CheckoutPage extends StatelessWidget {
             'customerEmail': email,
           });
         } else if (s.status == CheckoutStatus.error && s.errorMessage != null) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(s.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(s.errorMessage!)));
         }
       },
       builder: (context, s) {
