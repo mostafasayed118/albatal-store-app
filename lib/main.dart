@@ -15,8 +15,9 @@ import 'shared/services/supabase_config.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configure logger
-  Log.setLevel(LogLevel.debug);
+  // Configure logger: verbose locally, warnings-and-up in release so
+  // Sentry breadcrumbs aren't flooded with debug/info noise.
+  Log.setLevel(kDebugMode ? LogLevel.debug : LogLevel.warning);
   Log.i('App starting...', category: LogCategory.app);
 
   // Set up Bloc observer for state change logging
