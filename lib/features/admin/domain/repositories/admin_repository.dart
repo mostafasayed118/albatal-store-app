@@ -85,5 +85,4 @@ abstract interface class AdminRepository {
 
   /// Get ordered storage paths for a product's images.
   Future<List<String>> getProductImagePaths(String productId);
->>>>>>> origin/master
 }
