@@ -136,11 +136,11 @@ void main() {
 
       expect(find.byType(StitchCategoryChips), findsOneWidget);
 
-      // StitchCategoryChips contract: 72dp track → 72dp SizedBox, 56dp circles, 8dp gaps.
-      // Verify the outer SizedBox height 72 and inner circle BoxDecorations.
+      // StitchCategoryChips contract: 78dp track → 78dp SizedBox, 56dp circles, 8dp gaps.
+      // Verify the outer SizedBox height 78 and inner circle BoxDecorations.
       expect(
         find.byWidgetPredicate(
-          (w) => w is SizedBox && w.height == 72,
+          (w) => w is SizedBox && w.height == 78,
         ),
         findsOneWidget,
       );

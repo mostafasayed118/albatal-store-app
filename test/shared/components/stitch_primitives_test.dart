@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
@@ -81,6 +82,8 @@ void main() {
     final controller = TextEditingController();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: StitchSearchBar(controller: controller)),
       ),
     );
@@ -93,8 +96,10 @@ void main() {
   testWidgets('StitchFlashSaleCard renders product row 120dp with badge',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(
           body: StitchFlashSaleCard(product: _kProduct, discountLabel: '-15%'),
         ),
       ),

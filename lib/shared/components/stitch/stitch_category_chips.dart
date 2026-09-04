@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-/// Stitch circular category chips — 72dp track, 56dp circles.
+/// Stitch circular category chips — 78dp track, 56dp circles.
 ///
 /// Stitch HTML uses horizontal pill chips; this maps to circular tactile
-/// chips per Section 4 token map: active fill #B0F0D6 + stroke #064E3B,
-/// inactive fill [ColorScheme.surfaceContainerHighest] + stroke
+/// chips per Section 4 token map: active fill primaryContainer + stroke
+/// primary, inactive fill [ColorScheme.surfaceContainerHighest] + stroke
 /// [ColorScheme.outlineVariant]. 56dp circle, 8dp gap, 4dp label gap,
 /// InkSparkle via theme + [EdgeInsetsDirectional] for RTL.
+/// The 78dp track fits the 12px labelSmall line (16px) under the circle
+/// with 2px slack for font rounding.
 class StitchCategoryChips extends StatelessWidget {
   const StitchCategoryChips({
     super.key,
@@ -28,7 +30,7 @@ class StitchCategoryChips extends StatelessWidget {
     final activeFill = scheme.primaryContainer;
     final activeStroke = scheme.primary;
     return SizedBox(
-      height: 72,
+      height: 78,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
@@ -68,7 +70,7 @@ class StitchCategoryChips extends StatelessWidget {
                       size: 22,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     cat,
                     style: textTheme.labelSmall?.copyWith(
