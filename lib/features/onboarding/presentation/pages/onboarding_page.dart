@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
 
@@ -141,8 +142,8 @@ final class _OnboardingStepView extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: isDark ? .3 : .12),
-                      Colors.transparent,
+                      AppColors.black.withValues(alpha: isDark ? .3 : .12),
+                      AppColors.transparent,
                     ],
                   ),
                 ),
@@ -155,12 +156,13 @@ final class _OnboardingStepView extends StatelessWidget {
                     source: 'assets/images/onboarding/logo.svg',
                     fit: BoxFit.contain,
                     colorFilter: isDark
-                        ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
+                        ? const ColorFilter.mode(
+                            AppColors.white, BlendMode.srcIn)
                         : null,
                     placeholder: Text(
                       'AL BATAL ELITE',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
+                        color: AppColors.white,
                         letterSpacing: 1.5,
                       ),
                     ),

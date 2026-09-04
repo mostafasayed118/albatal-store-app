@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/theme/app_colors.dart';
+
 /// A subtle procedural fabric-weave texture painted over a base color.
 ///
 /// This is intentionally *honest* placeholder art — not a photograph or a
@@ -29,7 +31,8 @@ class FabricWeavePainter extends CustomPainter {
       Paint()..color = baseColor,
     );
 
-    final lineColor = threadColor ?? Color.lerp(baseColor, Colors.white, 0.15)!;
+    final lineColor =
+        threadColor ?? Color.lerp(baseColor, AppColors.white, 0.15)!;
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = 1.0

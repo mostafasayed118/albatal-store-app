@@ -11,6 +11,7 @@ import 'shared/services/e2e_sentry_probe.dart';
 import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
+import 'shared/theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,7 +116,8 @@ class _BootstrapErrorApp extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const Icon(Icons.error_outline,
+                    size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 const Text(
                   'Unable to start the app',

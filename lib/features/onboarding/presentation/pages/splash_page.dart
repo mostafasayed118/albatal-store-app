@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
 
@@ -80,10 +80,10 @@ class _SplashPageState extends State<SplashPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.primaryStitch,
+                      AppColors.primary,
                       colorScheme.primaryContainer,
-                      const Color(0xFF002117),
-                      AppTheme.primaryStitch,
+                      AppColors.darkOnPrimary,
+                      AppColors.primary,
                     ],
                     stops: const [0, .35, .7, 1],
                   ),
@@ -113,7 +113,7 @@ class _SplashPageState extends State<SplashPage>
                             source: 'assets/images/onboarding/logo.svg',
                             fit: BoxFit.contain,
                             colorFilter: const ColorFilter.mode(
-                                Colors.white, BlendMode.srcIn),
+                                AppColors.white, BlendMode.srcIn),
                             placeholder: Icon(
                               Icons.auto_awesome,
                               size: 112,

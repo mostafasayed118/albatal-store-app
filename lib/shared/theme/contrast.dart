@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// Returns a legible icon color for content drawn over [background].
 ///
 /// Fabric swatches span cream to charcoal, so a fixed white glyph vanishes
@@ -7,6 +9,6 @@ import 'package:flutter/material.dart';
 /// above ~4.5:1 on both ends without per-product tuning.
 Color onSwatchColor(Color background) {
   return background.computeLuminance() > 0.45
-      ? const Color(0xFF1A1C1C)
-      : Colors.white;
+      ? AppColors.textPrimary
+      : AppColors.white;
 }

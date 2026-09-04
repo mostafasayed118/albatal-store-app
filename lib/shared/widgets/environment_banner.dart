@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+import '../theme/app_colors.dart';
+
 /// Shows a colored banner at the top in development builds.
 class EnvironmentBanner extends StatelessWidget {
   const EnvironmentBanner({super.key, required this.child});
@@ -21,9 +23,9 @@ class EnvironmentBanner extends StatelessWidget {
       location: BannerLocation.topEnd,
       // Deep umber keeps white 10px-bold text above 4.5:1
       // (raw orange fails contrast).
-      color: const Color(0xFF7C2D12),
+      color: AppColors.warning,
       textStyle: const TextStyle(
-          color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          color: AppColors.white, fontSize: 10, fontWeight: FontWeight.bold),
       child: child,
     );
   }

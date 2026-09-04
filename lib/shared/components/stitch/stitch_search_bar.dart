@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../extensions/build_context_x.dart';
+import '../../theme/app_colors.dart';
 
 /// Stitch search bar — rounded-full, surfaceContainerLow #F3F3F3, mic action.
 ///
@@ -29,12 +30,12 @@ class StitchSearchBar extends StatelessWidget {
   final String? hintText;
   final EdgeInsetsGeometry padding;
 
-  static const _fill = Color(0xFFF3F3F3);
+  static const _fill = AppColors.surfaceContainerLow;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final fill = scheme.surfaceContainerLow == Colors.white
+    final fill = scheme.surfaceContainerLow == AppColors.surface
         ? _fill
         : scheme.surfaceContainerLow;
     return Padding(

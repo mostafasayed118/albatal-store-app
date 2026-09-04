@@ -7,6 +7,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Image manager for a single product — grid, upload, reorder, delete.
@@ -262,14 +263,14 @@ class _IconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black54,
+      color: AppColors.scrim,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 16, color: Colors.white),
+          child: Icon(icon, size: 16, color: AppColors.white),
         ),
       ),
     );
