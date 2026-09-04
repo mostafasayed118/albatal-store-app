@@ -67,7 +67,10 @@ class OrderCard extends StatelessWidget {
             if (isActive)
               StatusProgress(status: o.status, scheme: scheme)
             else
-              Text('${l.delivered} · ${_fmtDate(o.placedAt)}',
+              // Closed orders show their own outcome + date — never a
+              // hardcoded 'Delivered' (live-found 2026-09-04: just-paid
+              // orders read 'Delivered · today').
+              Text('${_closedLabel(o.status, l)} · ${_fmtDate(o.placedAt)}',
                   style: TextStyle(color: scheme.primary)),
           ],
         ),
@@ -78,13 +81,19 @@ class OrderCard extends StatelessWidget {
   String _statusLabel(OrderStatus s, AppLocalizations l) => switch (s) {
         OrderStatus.pending => l.placed,
         OrderStatus.placed => l.placed,
-        OrderStatus.paid => l.placed,
+        OrderStatus.paid => l.paid,
         OrderStatus.processing => l.placed,
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
         OrderStatus.refunded => l.cancelled,
         OrderStatus.expired => l.cancelled,
+      };
+
+  String _closedLabel(OrderStatus s, AppLocalizations l) => switch (s) {
+        OrderStatus.delivered => l.delivered,
+        OrderStatus.paid => l.paid,
+        _ => l.cancelled,
       };
 }
 
