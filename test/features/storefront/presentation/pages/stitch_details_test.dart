@@ -2,8 +2,10 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/storefront/data/local_catalog_repository.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import '../../../../fixtures/local_catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -57,6 +59,9 @@ class _StubRepo implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
   List<String> get defaultCategories => const ['All', 'Silk', 'Cotton'];
 }
 
@@ -98,7 +103,7 @@ void main() {
 
     testWidgets(
         'gallery is clipped to the 16dp card radius and the CTA sits '
-        'in a 72dp gold bottom bar', (tester) async {
+        'in an auto-height gold bottom bar with a 50px button', (tester) async {
       await tester.pumpWidget(detailsHarness('silk-01'));
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -122,7 +127,8 @@ void main() {
         const Color(0xFF904D00),
       );
 
-      // CTA bar: Container height 72 wrapping the button.
+      // CTA bar: auto-height Container (fits the 50px DESIGN CTA)
+      // wrapping the button — the legacy fixed 72px pin is gone.
       expect(
         find.ancestor(
           of: find.byType(FilledButton),
@@ -130,7 +136,12 @@ void main() {
             (w) => w is Container && w.constraints?.maxHeight == 72,
           ),
         ),
-        findsOneWidget,
+        findsNothing,
+      );
+      expect(
+        button.style?.minimumSize?.resolve(const {})?.height,
+        50,
+        reason: 'CTA keeps the 50px DESIGN touch-height contract',
       );
     });
 
@@ -153,8 +164,18 @@ void main() {
 
   group('Task 2 deferred wiring (spec section 5)', () {
     Widget homeHarness() => _app(
-          builder: (_) => BlocProvider(
-            create: (_) => CatalogCubit(const _StubRepo())..load(),
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => CatalogCubit(const _StubRepo())..load(),
+              ),
+              BlocProvider(
+                create: (_) => AuthCubit(
+                  authRepository: StubAuthRepository(),
+                  profileRepository: StubProfileRepository(),
+                )..checkSession(),
+              ),
+            ],
             child: const HomePage(),
           ),
         );

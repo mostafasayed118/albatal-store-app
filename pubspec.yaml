@@ -5,39 +5,43 @@ version: 0.1.0+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
-  flutter: ">=3.19.0"
+  flutter: ">=3.22.0"
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  flutter_svg: ^2.0.17
   bloc: ^9.1.0
   equatable: ^2.0.7
   flutter_bloc: ^9.1.1
-  get_it: ^8.0.3
-  go_router: ^16.2.1
+  get_it: ^9.2.1
+  go_router: ^17.5.0
   intl: ^0.20.2
-  sentry_flutter: ^9.0.0
+  sentry_flutter: ^9.28.0
   shared_preferences: ^2.5.3
   cached_network_image: ^3.3.1
   supabase_flutter: ^2.8.4
   url_launcher: ^6.2.5
+  uuid: ^4.5.1 # product-image storage key generation (StorageService)
   webview_flutter: ^4.10.0
-  # TODO: bump supabase_flutter 2.16→2.17.2, sentry 9.25→9.27, intl 0.20.2→0.20.3 after CI green
+  # intl 0.20.3 requires a newer flutter_localizations pin; revisit after next Flutter stable.
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   bloc_test: ^10.0.0
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  fake_async: ^1.3.1 # deterministic Timer tests (paymob realtime fallback)
 
 flutter:
   uses-material-design: true
   generate: true
   assets:
     - assets/images/
+    - assets/images/onboarding/
   fonts:
     - family: Montserrat
       fonts:

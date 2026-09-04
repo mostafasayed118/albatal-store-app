@@ -31,10 +31,13 @@ class VariantSelector extends StatelessWidget {
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: product.colors
                         .map((x) => ChoiceChip(
                               label: Text(x),
                               selected: state.color == x,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.padded,
                               onSelected: (_) => cubit.color(x),
                             ))
                         .toList(),
@@ -58,10 +61,13 @@ class VariantSelector extends StatelessWidget {
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: product.sizes
                         .map((x) => ChoiceChip(
                               label: Text(x),
                               selected: state.length == x,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.padded,
                               onSelected: (_) => cubit.length(x),
                             ))
                         .toList(),

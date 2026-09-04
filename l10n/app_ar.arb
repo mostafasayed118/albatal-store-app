@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "ar",
   "appTitle": "البطل إيليت",
   "brandName": "البطل إيليت",
@@ -130,10 +130,10 @@
   "composition": "التركيب",
   "origin": "المنشأ",
   "care": "العناية",
-  "goodMorning": "صباح الخير، أحمد",
+  "goodMorning": "صباح الخير، {name}",
   "openSettings": "فتح الإعدادات",
   "successTitle": "نجاح!",
-  "orderPlacedBody": "تم placed طلبك. سن informك بالتحديثات.",
+  "orderPlacedBody": "تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.",
   "itemsCount": "{count} عناصر",
   "@itemsCount": {
     "description": "عدد العناصر في الطلب",
@@ -278,7 +278,7 @@
   "whatsappSupport": "دعم واتساب",
   "whatsappSupportDescription": "تحدث معنا عبر واتساب",
   "emailSupport": "دعم البريد الإلكتروني",
-  "emailSupportAddress": "support@albatal.com",
+  "emailSupportAddress": "al3tar66@gmail.com",
   "faq": "الأسئلة الشائعة",
   "faqDescription": "ابحث عن إجابات للأسئلة الشائعة",
   "products": "المنتجات",
@@ -304,5 +304,27 @@
         "type": "String"
       }
     }
-  }
+  },
+  "onboardingExquisiteTitle": "أقمشة فاخرة",
+  "onboardingExquisiteBody": "اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.",
+  "onboardingCraftsmanshipTitle": "حرفية أصيلة",
+  "onboardingCraftsmanshipBody": "كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.",
+  "onboardingExcellenceTitle": "مصمم للتميّز",
+  "onboardingExcellenceBody": "اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.",
+  "onboardingNext": "التالي",
+  "onboardingSkip": "تخطي",
+  "onboardingGetStarted": "ابدأ الآن",
+  "paid": "مدفوع",
+  "goodMorningGuest": "صباح الخير",
+  "estimatedTotalsNote": "إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.",
+  "serverConfirmedTotals": "الإجماليات المؤكدة من الخادم",
+  "orderReferenceMissing": "تعذر المتابعة: مرجع الطلب مفقود.",
+  "customerEmailMissing": "تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.",
+  "paymentLinkInvalid": "رابط الدفع غير صالح. يرجى المحاولة مجددًا.",
+  "paymentSucceededNoReference": "نجح الدفع لكن مرجع الطلب مفقود.",
+  "paymentCancelledRetry": "تم إلغاء الدفع. يمكنك المحاولة مجددًا.",
+  "paymentExpiredRetry": "انتهت صلاحية الدفع. يمكنك المحاولة مجددًا.",
+  "paymentTimedOutRetry": "انتهت مهلة التحقق من الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.",
+  "paymentFailedRetry": "فشل الدفع. يمكنك المحاولة مجددًا.",
+  "adminAccessRequired": "يلزم الوصول كمسؤول"
 }

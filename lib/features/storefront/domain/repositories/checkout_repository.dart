@@ -1,5 +1,6 @@
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
+import '../../../payments/domain/entities/payment.dart';
 import '../entities/pending_order.dart';
 
 /// Domain port for the checkout flow.
@@ -10,7 +11,7 @@ import '../entities/pending_order.dart';
 abstract interface class CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   });

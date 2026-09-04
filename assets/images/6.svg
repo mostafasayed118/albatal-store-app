@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#75430e"/><stop offset=".45" stop-color="#e1a33d"/><stop offset="1" stop-color="#b57a2a"/></linearGradient>
+    <pattern id="silk" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)"><path d="M0 5h18M0 14h18" stroke="#fff0ae" stroke-opacity=".24" stroke-width="3"/></pattern>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path d="M-50 120C100 240 140 80 280 180s130 200 300 100v280H-50Z" fill="#fff0ae" opacity=".16"/>
+  <rect width="512" height="512" fill="url(#silk)"/>
+</svg>

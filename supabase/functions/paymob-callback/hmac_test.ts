@@ -14,6 +14,7 @@ import {
 } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
   buildHmacPayload,
+  canonicalValuesFromTransaction,
   computeHmac,
   constantTimeEquals,
   PAYMOB_HMAC_FIELDS,
@@ -111,4 +112,85 @@ Deno.test("verifyHmac rejects wrong secret", async () => {
   const hmac = await computeHmac(values, "correct-secret");
   const ok = await verifyHmac(values, "wrong-secret", hmac);
   assertEquals(ok, false);
+});
+
+Deno.test("canonicalValuesFromTransaction flattens obj payload to signed map", () => {
+  const obj = {
+    amount_cents: 129000,
+    created_at: "2026-08-24T00:12:23.862215",
+    currency: "EGP",
+    error_occured: false,
+    has_parent_transaction: false,
+    id: 521025723,
+    integration_id: 5783474,
+    is_3d_secure: true,
+    is_auth: false,
+    is_capture: false,
+    is_refunded: false,
+    is_standalone_payment: true,
+    is_voided: false,
+    order: { id: 593650832 },
+    owner: 2404605,
+    pending: false,
+    source_data: { pan: "2346", sub_type: "MasterCard", type: "card" },
+    success: true,
+  };
+  const values = canonicalValuesFromTransaction(obj);
+  assertEquals(values.order, "593650832");
+  assertEquals(values.source_data_pan, "2346");
+  assertEquals(values.source_data_sub_type, "MasterCard");
+  assertEquals(values.source_data_type, "card");
+  assertEquals(values.success, "true");
+  assertEquals(values.is_3d_secure, "true");
+  assertEquals(values.amount_cents, "129000");
+});
+
+Deno.test("obj-wrapped and flat shapes produce identical canonical payloads", async () => {
+  const fromObj = canonicalValuesFromTransaction({
+    amount_cents: 129000,
+    created_at: "2026-08-24T00:12:23",
+    currency: "EGP",
+    error_occured: false,
+    has_parent_transaction: false,
+    id: 1,
+    integration_id: 5783474,
+    is_3d_secure: false,
+    is_auth: false,
+    is_capture: false,
+    is_refunded: false,
+    is_standalone_payment: true,
+    is_voided: false,
+    order: { id: 42 },
+    owner: 7,
+    pending: false,
+    source_data: { pan: "2346", sub_type: "MasterCard", type: "card" },
+    success: true,
+  });
+  const flat: Record<string, string> = {
+    amount_cents: "129000",
+    created_at: "2026-08-24T00:12:23",
+    currency: "EGP",
+    error_occured: "false",
+    has_parent_transaction: "false",
+    id: "1",
+    integration_id: "5783474",
+    is_3d_secure: "false",
+    is_auth: "false",
+    is_capture: "false",
+    is_refunded: "false",
+    is_standalone_payment: "true",
+    is_voided: "false",
+    order: "42",
+    owner: "7",
+    pending: "false",
+    source_data_pan: "2346",
+    source_data_sub_type: "MasterCard",
+    source_data_type: "card",
+    success: "true",
+  };
+  assertEquals(buildHmacPayload(fromObj), buildHmacPayload(flat));
+  const secret = "unit-secret";
+  const hmac = await computeHmac(fromObj, secret);
+  assertEquals(await verifyHmac(fromObj, secret, hmac), true);
+  assertEquals(await verifyHmac(flat, secret, hmac), true);
 });

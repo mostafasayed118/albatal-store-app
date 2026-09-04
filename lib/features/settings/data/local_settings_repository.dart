@@ -1,16 +1,19 @@
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/settings_repository.dart';
 
+/// Persists preferences as plain strings — no Flutter types here either.
+///
+/// Stored values are unchanged from before the domain purification
+/// (`system`/`light`/`dark`, `en`/`ar`), so existing user preferences
+/// remain valid with no migration.
 final class LocalSettingsRepository implements SettingsRepository {
   LocalSettingsRepository(this._preferences);
 
   static const _themeModeKey = 'theme_mode';
   static const _localeKey = 'locale';
-  static const _supportedLanguageCodes = {'en', 'ar'};
 
   final SharedPreferences _preferences;
 
@@ -19,33 +22,26 @@ final class LocalSettingsRepository implements SettingsRepository {
     try {
       final savedTheme = _preferences.getString(_themeModeKey);
       final savedLanguage = _preferences.getString(_localeKey);
-      final themeMode = ThemeMode.values
-              .where((mode) => mode.name == savedTheme)
-              .firstOrNull ??
-          ThemeMode.system;
-      final languageCode = _supportedLanguageCodes.contains(savedLanguage)
-          ? savedLanguage!
-          : 'en';
-      return Success(
-          AppSettings(themeMode: themeMode, locale: Locale(languageCode)));
+      final themeMode = AppThemeMode.values
+          .where((mode) => mode.name == savedTheme)
+          .firstOrNull ??
+          AppThemeMode.system;
+      final locale = AppLocale.fromLanguageCode(savedLanguage);
+      return Success(AppSettings(themeMode: themeMode, locale: locale));
     } catch (error) {
       return Failure(AppError('Unable to read app preferences.', cause: error));
     }
   }
 
   @override
-  Future<Result<void>> saveThemeMode(ThemeMode themeMode) => _write(
+  Future<Result<void>> saveThemeMode(AppThemeMode themeMode) => _write(
         () => _preferences.setString(_themeModeKey, themeMode.name),
       );
 
   @override
-  Future<Result<void>> saveLocale(Locale locale) {
-    if (!_supportedLanguageCodes.contains(locale.languageCode)) {
-      return Future.value(const Failure(AppError('Unsupported language.')));
-    }
-    return _write(
-        () => _preferences.setString(_localeKey, locale.languageCode));
-  }
+  Future<Result<void>> saveLocale(AppLocale locale) => _write(
+        () => _preferences.setString(_localeKey, locale.languageCode),
+      );
 
   Future<Result<void>> _write(Future<bool> Function() operation) async {
     try {

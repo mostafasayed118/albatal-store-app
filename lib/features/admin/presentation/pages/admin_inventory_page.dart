@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Admin inventory — low stock alerts, stock editing.
@@ -56,30 +57,28 @@ class _AdminInventoryPageState extends State<AdminInventoryPage> {
 
 class _StockTile extends StatelessWidget {
   const _StockTile({required this.product});
-  final Map<String, dynamic> product;
+
+  final LowStockVariant product;
 
   @override
   Widget build(BuildContext context) {
-    final name = product['product_name'] as String? ?? 'Unknown';
-    final size = product['variant_size'] as String? ?? '';
-    final color = product['variant_color'] as String? ?? '';
-    final stock = product['current_stock'] as int? ?? 0;
+    final scheme = Theme.of(context).colorScheme;
 
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: stock == 0
-              ? Theme.of(context).colorScheme.error.withValues(alpha: .12)
-              : Theme.of(context).colorScheme.secondary.withValues(alpha: .12),
-          child: Text('$stock',
+          backgroundColor: product.stock == 0
+              ? scheme.error.withValues(alpha: .12)
+              : scheme.secondary.withValues(alpha: .12),
+          child: Text('${product.stock}',
               style: TextStyle(
-                  color: stock == 0
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.secondary,
+                  color: product.stock == 0
+                      ? scheme.error
+                      : scheme.secondary,
                   fontWeight: FontWeight.bold)),
         ),
-        title: Text(name),
-        subtitle: Text('$size / $color'),
+        title: Text(product.productName),
+        subtitle: Text(product.variantLabel),
         trailing: IconButton(
           icon: const Icon(Icons.edit),
           onPressed: () => _showStockDialog(context, product),
@@ -88,9 +87,8 @@ class _StockTile extends StatelessWidget {
     );
   }
 
-  void _showStockDialog(BuildContext context, Map<String, dynamic> product) {
-    final ctrl = TextEditingController(
-        text: (product['current_stock'] as int? ?? 0).toString());
+  void _showStockDialog(BuildContext context, LowStockVariant product) {
+    final ctrl = TextEditingController(text: product.stock.toString());
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -110,7 +108,7 @@ class _StockTile extends StatelessWidget {
             onPressed: () {
               final newStock = int.tryParse(ctrl.text) ?? 0;
               context.read<AdminCubit>().updateStock(
-                    product['id'] as String,
+                    product.variantId,
                     newStock,
                   );
               Navigator.pop(context);

@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "en",
   "appTitle": "Al Batal Elite",
   "brandName": "Al Batal Elite",
@@ -130,7 +130,7 @@
   "composition": "Composition",
   "origin": "Origin",
   "care": "Care",
-  "goodMorning": "Good morning, Ahmed",
+  "goodMorning": "Good morning, {name}",
   "openSettings": "Open settings",
   "successTitle": "Success!",
   "orderPlacedBody": "Your order has been placed. We will keep you updated.",
@@ -278,7 +278,7 @@
   "whatsappSupport": "WhatsApp Support",
   "whatsappSupportDescription": "Chat with us on WhatsApp",
   "emailSupport": "Email Support",
-  "emailSupportAddress": "support@albatal.com",
+  "emailSupportAddress": "al3tar66@gmail.com",
   "faq": "Frequently Asked Questions",
   "faqDescription": "Find answers to common questions",
   "products": "Products",
@@ -304,5 +304,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "onboardingExquisiteTitle": "Exquisite Fabrics",
+  "onboardingExquisiteBody": "Discover a curated collection of the world's finest silks, linens, and velvets.",
+  "onboardingCraftsmanshipTitle": "Artisanal Craftsmanship",
+  "onboardingCraftsmanshipBody": "Every thread is woven with precision and heritage to ensure unparalleled quality.",
+  "onboardingExcellenceTitle": "Tailored for Excellence",
+  "onboardingExcellenceBody": "Experience the luxury of fabrics designed for those who settle for nothing less than elite.",
+  "onboardingNext": "Next",
+  "onboardingSkip": "Skip",
+  "onboardingGetStarted": "Get Started",
+  "paid": "Paid",
+  "@goodMorning": {
+    "name": {
+      "type": "String"
+    }
+  },
+  "goodMorningGuest": "Good morning",
+  "estimatedTotalsNote": "Estimated totals — the final amount is confirmed at payment.",
+  "serverConfirmedTotals": "Server-confirmed totals",
+  "orderReferenceMissing": "Unable to continue: the order reference is missing.",
+  "customerEmailMissing": "Unable to continue: the customer email is missing. Please sign in again.",
+  "paymentLinkInvalid": "The payment checkout link is invalid. Please retry.",
+  "paymentSucceededNoReference": "Payment succeeded but the order reference is missing.",
+  "paymentCancelledRetry": "Payment cancelled. You can retry.",
+  "paymentExpiredRetry": "Payment expired. You can retry.",
+  "paymentTimedOutRetry": "Payment verification timed out. Please check your orders before retrying.",
+  "paymentFailedRetry": "Payment failed. You can retry.",
+  "adminAccessRequired": "Admin access required"
 }

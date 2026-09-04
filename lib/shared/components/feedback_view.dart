@@ -35,7 +35,7 @@ final class FeedbackView extends StatelessWidget {
           l10n.retry
         ),
     };
-    return Center(
+    final view = Center(
         child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -54,5 +54,11 @@ final class FeedbackView extends StatelessWidget {
         ],
       ]),
     ));
+    // Loading announces itself to screen readers; static content does not
+    // need a live region.
+    if (type == FeedbackViewType.loading) {
+      return Semantics(liveRegion: true, label: l10n.loading, child: view);
+    }
+    return view;
   }
 }

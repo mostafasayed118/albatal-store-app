@@ -56,8 +56,10 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     final scheme = Theme.of(context).colorScheme;
     final total = (widget.args['total'] as Money?) ?? Money.zero;
     final orderId = (widget.args['orderId'] as String?)?.trim() ?? '';
+    // No fake fallback: an empty email blocks below with a clear error
+    // instead of silently sending an unreachable address to the provider.
     final customerEmail =
-        (widget.args['customerEmail'] as String?) ?? 'customer@example.com';
+        (widget.args['customerEmail'] as String?)?.trim() ?? '';
 
     // Production: create a PaymentCubit from the registered
     // [PaymentService] (or an injected [paymentService]) and
@@ -70,15 +72,15 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           previous.status != current.status ||
           previous.checkoutUrl != current.checkoutUrl,
       listener: (context, state) {
+        final l = context.l10n;
         if (state.status == PaymentStatus.awaitingVerification &&
             !_checkoutOpened) {
           final checkoutUrl = state.checkoutUrl;
           if (checkoutUrl == null ||
               !PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
             context.read<PaymentCubit>().cancel();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content:
-                  Text('The payment checkout link is invalid. Please retry.'),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l.paymentLinkInvalid),
             ));
             return;
           }
@@ -88,9 +90,8 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
             !_successNavigated) {
           final successOrderId = state.orderId.trim();
           if (successOrderId.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content:
-                  Text('Payment succeeded but the order reference is missing.'),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l.paymentSucceededNoReference),
             ));
             return;
           }
@@ -115,23 +116,23 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           if (checkoutWasOpen && context.canPop()) context.pop();
           final message = state.errorMessage ??
               switch (state.status) {
-                PaymentStatus.cancelled => 'Payment cancelled. You can retry.',
-                PaymentStatus.expired => 'Payment expired. You can retry.',
-                PaymentStatus.timedOut =>
-                  'Payment verification timed out. Please check your orders before retrying.',
-                _ => 'Payment failed. You can retry.',
+                PaymentStatus.cancelled => l.paymentCancelledRetry,
+                PaymentStatus.expired => l.paymentExpiredRetry,
+                PaymentStatus.timedOut => l.paymentTimedOutRetry,
+                _ => l.paymentFailedRetry,
               };
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(message)));
         }
       },
       builder: (context, state) {
-        if (orderId.isEmpty) {
+        if (orderId.isEmpty || customerEmail.isEmpty) {
           return Scaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
             body: Center(
-              child:
-                  Text('Unable to continue: the order reference is missing.'),
+              child: Text(orderId.isEmpty
+                  ? l.orderReferenceMissing
+                  : l.customerEmailMissing),
             ),
           );
         }
