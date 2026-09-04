@@ -49,8 +49,7 @@ class CheckoutPage extends StatelessWidget {
         if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
           // Empty (never fake) when the session lapsed — PaymentMethodPage
           // blocks with a sign-in error instead of charging a dead address.
-          final email =
-              SupabaseConfig.currentUser?.email?.trim() ?? '';
+          final email = SupabaseConfig.currentUser?.email?.trim() ?? '';
           context.push('/payment-method', extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
@@ -233,15 +232,14 @@ class CheckoutPage extends StatelessWidget {
           value: _checkoutCubit, child: page);
     }
     return BlocProvider<CheckoutCubit>(
-      create: (_) =>
-          CheckoutCubit(
-            _checkoutRepository ?? getIt<CheckoutRepository>(),
-            // GetIt always carries SharedPreferences in the real app;
-            // widget tests pump this page without the locator.
-            prefs: getIt.isRegistered<SharedPreferences>()
-                ? getIt<SharedPreferences>()
-                : null,
-          ),
+      create: (_) => CheckoutCubit(
+        _checkoutRepository ?? getIt<CheckoutRepository>(),
+        // GetIt always carries SharedPreferences in the real app;
+        // widget tests pump this page without the locator.
+        prefs: getIt.isRegistered<SharedPreferences>()
+            ? getIt<SharedPreferences>()
+            : null,
+      ),
       child: page,
     );
   }

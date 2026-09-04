@@ -36,8 +36,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       _error = null;
     });
     try {
-      final paths = await getIt<AdminRepository>()
-          .getProductImagePaths(widget.productId);
+      final paths =
+          await getIt<AdminRepository>().getProductImagePaths(widget.productId);
       if (!mounted) return;
       setState(() {
         _paths = paths;
@@ -70,8 +70,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     } catch (e) {
       if (!mounted) return;
       Log.e('Admin image save failed', error: e);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save images. Please try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to save images. Please try again.')));
     }
   }
 
