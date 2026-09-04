@@ -115,9 +115,20 @@ class CheckoutPage extends StatelessWidget {
                       ),
                       if (addressError) ...[
                         const SizedBox(height: 4),
-                        Text(l.validationSelectAddress,
-                            style:
-                                TextStyle(color: scheme.error, fontSize: 12)),
+                        Row(
+                          children: [
+                            Icon(Icons.error_outline,
+                                size: 16, color: scheme.error),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(l.validationSelectAddress,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: scheme.error)),
+                            ),
+                          ],
+                        ),
                       ],
                     ],
                   ),
@@ -176,14 +187,15 @@ class CheckoutPage extends StatelessWidget {
             ],
           ),
           bottomNavigationBar: Container(
-            height: 72,
             padding: const EdgeInsetsDirectional.all(16),
             decoration: BoxDecoration(color: scheme.surface),
             child: FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.secondary,
                 foregroundColor: scheme.onSecondary,
-                minimumSize: const Size.fromHeight(40),
+                // 72dp bar − 2×16dp padding = 40dp slot; keep the 50px
+                // DESIGN CTA contract by letting the bar grow.
+                minimumSize: const Size.fromHeight(50),
                 shape: const RoundedRectangleBorder(
                     borderRadius: AppTheme.controlRadius),
                 textStyle: Theme.of(context).textTheme.labelLarge,

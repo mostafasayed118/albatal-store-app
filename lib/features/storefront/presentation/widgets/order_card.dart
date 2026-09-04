@@ -52,10 +52,9 @@ class OrderCard extends StatelessWidget {
                   ),
                   child: Text(
                     _statusLabel(o.status, l),
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: scheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -71,7 +70,10 @@ class OrderCard extends StatelessWidget {
               // hardcoded 'Delivered' (live-found 2026-09-04: just-paid
               // orders read 'Delivered · today').
               Text('${_closedLabel(o.status, l)} · ${_fmtDate(o.placedAt)}',
-                  style: TextStyle(color: scheme.primary)),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: scheme.primary)),
           ],
         ),
       ),

@@ -23,7 +23,6 @@ class AddToCartButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = state.product!;
     return Container(
-      height: 72,
       padding: const EdgeInsetsDirectional.all(16),
       decoration: BoxDecoration(color: scheme.surface),
       child: FilledButton(
@@ -31,8 +30,8 @@ class AddToCartButton extends StatelessWidget {
           backgroundColor: state.inStock ? scheme.secondary : scheme.outline,
           foregroundColor:
               state.inStock ? scheme.onSecondary : scheme.onSurfaceVariant,
-          // 72dp bar − 2×16dp padding = 40dp button height.
-          minimumSize: const Size.fromHeight(40),
+          // DESIGN CTA contract: 50px minimum touch height.
+          minimumSize: const Size.fromHeight(50),
           shape: const RoundedRectangleBorder(
               borderRadius: AppTheme.controlRadius),
         ),

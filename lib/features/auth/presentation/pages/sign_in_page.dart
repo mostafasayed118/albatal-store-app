@@ -42,7 +42,7 @@ class _SignInPageState extends State<SignInPage> {
           }
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsetsDirectional.all(24),
           child: Form(
             key: _formKey,
             child: Column(
@@ -53,7 +53,8 @@ class _SignInPageState extends State<SignInPage> {
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 Text(l.signInSubtitle,
-                    style: TextStyle(color: scheme.onSurfaceVariant)),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant)),
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailCtrl,

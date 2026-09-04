@@ -49,11 +49,10 @@ class RelatedCard extends StatelessWidget {
                       ),
                       Text(
                         product.price.format(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: scheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ],
                   ),

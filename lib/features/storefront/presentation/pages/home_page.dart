@@ -75,19 +75,13 @@ class _HomePageState extends State<HomePage> {
                 firstName == null
                     ? l.goodMorningGuest
                     : l.goodMorning(firstName),
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: scheme.onSurface.withValues(alpha: .6)),
               ),
               Text(
                 l.brandName,
-                style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.15,
-                    color: scheme.primary),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: scheme.primary, letterSpacing: 1.15),
               ),
             ],
           ),
@@ -144,6 +138,10 @@ class _HomePageState extends State<HomePage> {
                         StitchSearchBar(
                           controller: _searchController,
                           onChanged: catalog.updateQuery,
+                          // Outer SliverPadding already gutters 16 — keep
+                          // vertical rhythm only to avoid a 32px double inset.
+                          padding:
+                              const EdgeInsetsDirectional.symmetric(vertical: 8),
                         ),
                         if (state.query.isEmpty &&
                             state.recentQueries.isNotEmpty) ...[
