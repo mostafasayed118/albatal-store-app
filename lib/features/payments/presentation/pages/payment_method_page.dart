@@ -56,8 +56,10 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     final scheme = Theme.of(context).colorScheme;
     final total = (widget.args['total'] as Money?) ?? Money.zero;
     final orderId = (widget.args['orderId'] as String?)?.trim() ?? '';
+    // No fake fallback: an empty email blocks below with a clear error
+    // instead of silently sending an unreachable address to the provider.
     final customerEmail =
-        (widget.args['customerEmail'] as String?) ?? 'customer@example.com';
+        (widget.args['customerEmail'] as String?)?.trim() ?? '';
 
     // Production: create a PaymentCubit from the registered
     // [PaymentService] (or an injected [paymentService]) and
@@ -126,12 +128,13 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
         }
       },
       builder: (context, state) {
-        if (orderId.isEmpty) {
+        if (orderId.isEmpty || customerEmail.isEmpty) {
           return Scaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
             body: Center(
-              child:
-                  Text('Unable to continue: the order reference is missing.'),
+              child: Text(orderId.isEmpty
+                  ? 'Unable to continue: the order reference is missing.'
+                  : 'Unable to continue: the customer email is missing. Please sign in again.'),
             ),
           );
         }

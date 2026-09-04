@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/checkout_repository.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
@@ -179,7 +180,8 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   }) async {
     // Reuse the in-session key on retry, fall back to a persisted key
     // restored after an app restart, or generate a fresh one.
-    final key = state.idempotencyKey ?? _restoredKey() ?? _generateIdempotencyKey();
+    final key =
+        state.idempotencyKey ?? _restoredKey() ?? _generateIdempotencyKey();
     _persistIdempotencyKey(key);
     emit(state.copyWith(
       status: CheckoutStatus.creatingOrder,
@@ -234,9 +236,11 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         await _createAttempt(cartItems: cartItems, allowFreshRetry: false);
       }
     } catch (e) {
+      // Generic user message — raw exception stays in logs only.
+      Log.e('Create pending order failed', error: e);
       emit(state.copyWith(
         status: CheckoutStatus.error,
-        errorMessage: 'Failed to create order: $e',
+        errorMessage: 'Failed to create order. Please try again.',
       ));
     }
   }
@@ -256,6 +260,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     _clearPersistedKey();
     emit(state.copyWith(status: CheckoutStatus.success));
   }
+
   void markError(String message) =>
       emit(state.copyWith(status: CheckoutStatus.error, errorMessage: message));
 }

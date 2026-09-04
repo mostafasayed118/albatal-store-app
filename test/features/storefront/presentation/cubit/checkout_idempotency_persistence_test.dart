@@ -47,8 +47,7 @@ void main() {
       await cubit.close();
     });
 
-    test('new cubit restores persisted key within TTL (app restart)',
-        () async {
+    test('new cubit restores persisted key within TTL (app restart)', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final repoA = _StubCheckoutRepo();
@@ -133,12 +132,10 @@ void main() {
   });
 
   group('dead-order recovery (restored key hits cancelled order)', () {
-    test('discards the dead key and retries once with a fresh key',
-        () async {
+    test('discards the dead key and retries once with a fresh key', () async {
       SharedPreferences.setMockInitialValues({
         'checkout_idempotency_key': 'cko-stale-dead-key',
-        'checkout_idempotency_key_ts':
-            DateTime.now().millisecondsSinceEpoch,
+        'checkout_idempotency_key_ts': DateTime.now().millisecondsSinceEpoch,
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _SequencedCheckoutRepo();
@@ -162,12 +159,10 @@ void main() {
       await cubit.close();
     });
 
-    test('no retry loop when the fresh order is also non-pending',
-        () async {
+    test('no retry loop when the fresh order is also non-pending', () async {
       SharedPreferences.setMockInitialValues({
         'checkout_idempotency_key': 'cko-stale-dead-key',
-        'checkout_idempotency_key_ts':
-            DateTime.now().millisecondsSinceEpoch,
+        'checkout_idempotency_key_ts': DateTime.now().millisecondsSinceEpoch,
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _AlwaysDeadCheckoutRepo();

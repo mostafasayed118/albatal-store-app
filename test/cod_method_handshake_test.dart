@@ -97,8 +97,7 @@ void main() {
 
       expect(service.calls, ['set-method:ord-037-2:cod']);
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage,
-          'This order can no longer be modified.');
+      expect(cubit.state.errorMessage, 'This order can no longer be modified.');
 
       await cubit.close();
     });

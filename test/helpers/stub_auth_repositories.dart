@@ -26,8 +26,7 @@ class StubAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Result<void>> resetPassword(String email) async =>
-      const Success(null);
+  Future<Result<void>> resetPassword(String email) async => const Success(null);
 
   @override
   Future<Result<void>> updatePassword(String newPassword) async =>

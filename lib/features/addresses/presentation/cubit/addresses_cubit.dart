@@ -21,6 +21,7 @@ final class AddressesState extends Equatable {
 final class AddressesCubit extends Cubit<AddressesState> {
   AddressesCubit(this._repository) : super(const AddressesState());
   final AddressRepository _repository;
+
   /// Reload persisted addresses.
   ///
   /// By default this is a startup fill: if the user already acted
@@ -42,8 +43,8 @@ final class AddressesCubit extends Cubit<AddressesState> {
                     a.isEmpty ? AddressesStatus.empty : AddressesStatus.ready,
                 addresses: a));
           } else {
-            emit(AddressesState(
-                status: AddressesStatus.ready, addresses: live));
+            emit(
+                AddressesState(status: AddressesStatus.ready, addresses: live));
           }
         },
         failure: (e) => emit(AddressesState(

@@ -4,6 +4,7 @@ import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Variant editor for a single product — lists variants, add/edit via dialog.
@@ -163,8 +164,12 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                         setDlgState(() => saving = false);
                       } catch (e) {
                         if (!ctx.mounted) return;
+                        // Generic user message — raw exception stays in logs only.
+                        Log.e('Admin variant save failed', error: e);
                         ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text('Failed to save variant: $e')),
+                          const SnackBar(
+                              content: Text(
+                                  'Failed to save variant. Please try again.')),
                         );
                         setDlgState(() => saving = false);
                       }
