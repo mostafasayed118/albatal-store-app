@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../cubit/catalog_cubit.dart';
+import 'product_image_resolver.dart';
 
 /// Grid of category tiles with image backgrounds.
 class CategoryGrid extends StatelessWidget {
@@ -61,8 +62,10 @@ class CategoryGrid extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (p.imageAsset != null)
-                    Image.asset(p.imageAsset!, fit: BoxFit.cover),
+                  ProductImageResolver(
+                    imageColor: p.imageColor,
+                    asset: p.imageAsset,
+                  ),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'product_image_resolver.dart';
+
 /// Full-screen zoom gallery with page view and interactive viewer.
 class ZoomGallery extends StatefulWidget {
   const ZoomGallery({
@@ -50,10 +52,17 @@ class _ZoomGalleryState extends State<ZoomGallery> {
           minScale: 0.5,
           maxScale: 4.0,
           child: Center(
+            // Zoom-specific empty affordance (translucent on black);
+            // real images go through the shared resolver so a http URL
+            // or failed asset load cannot crash the zoom screen.
             child: widget.images[i].isEmpty
                 ? Icon(Icons.texture,
                     color: Colors.white.withValues(alpha: .5), size: 120)
-                : Image.asset(widget.images[i], fit: BoxFit.contain),
+                : ProductImageResolver(
+                    imageColor: widget.imageColor,
+                    asset: widget.images[i],
+                    fit: BoxFit.contain,
+                  ),
           ),
         ),
       ),
