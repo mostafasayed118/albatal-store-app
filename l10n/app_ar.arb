@@ -89,7 +89,9 @@
   "@fabricsFound": {
     "description": "عدد الأقمشة الموجودة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "مجموعة الحرير الجديدة",
@@ -104,7 +106,9 @@
   "@curatedFabrics": {
     "description": "عدد الأقمشة المختارة في فئة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "تأكيد",
@@ -114,7 +118,9 @@
   "@discountPercent": {
     "description": "تسمية نسبة الخصم",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "توصيل سريع",
@@ -132,7 +138,9 @@
   "@itemsCount": {
     "description": "عدد العناصر في الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "مراجعة الطلب",
@@ -148,7 +156,9 @@
   "@itemsInCart": {
     "description": "عدد العناصر في السلة لمراجعة الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "تأكيد والدفع",
@@ -172,7 +182,9 @@
   "@onlyLeft": {
     "description": "تحذير مخزون منخفض",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "المرتجعات",
@@ -216,7 +228,6 @@
   "selectPaymentMethod": "اختر طريقة الدفع",
   "payWithCard": "الدفع بالبطاقة",
   "payWithCardDescription": "بطاقة ائتمان أو خصم عبر Paymob",
-  "cashOnDelivery": "الدفع عند الاستلام",
   "cashOnDeliveryDescription": "ادفع عند وصول طلبك",
   "payNow": "ادفع الآن",
   "completePayment": "إكمال الدفع",
@@ -250,7 +261,6 @@
   "processing": "قيد المعالجة",
   "allStockLevelsHealthy": "جميع مستويات المخزون سليمة",
   "catalogManagement": "إدارة الكتالوج",
-  "categories": "الفئات",
   "manageCategories": "إدارة الفئات",
   "productImages": "صور المنتجات",
   "manageProductImages": "إدارة صور المنتجات",
@@ -275,7 +285,24 @@
   "order": "الطلب",
   "items": "عناصر",
   "noAddressProvided": "لم يتم توفير عنوان",
-  "noResultsFound": "لم يتم العثور على نتائج",
-  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
-  "comingSoon": "قريباً"
+  "comingSoon": "قريباً",
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "update": "تحديث",
+  "updateStock": "تحديث المخزون",
+  "newStockLevel": "مستوى المخزون الجديد",
+  "courierName": "اسم شركة الشحن",
+  "trackingNumber": "رقم التتبع",
+  "addTrackingDetails": "إضافة تفاصيل التتبع",
+  "orderStatusUpdatedTo": "تم تحديث حالة الطلب إلى {statusName}",
+  "orderMarkedAsShipped": "تم وضع علامة تم الشحن على الطلب",
+  "returnToPayment": "العودة إلى الدفع",
+  "invalidCheckoutLink": "رابط الدفع غير صالح. يرجى العودة والمحاولة مرة أخرى.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  }
 }

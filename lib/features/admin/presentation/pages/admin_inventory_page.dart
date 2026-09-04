@@ -94,16 +94,17 @@ class _StockTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Update Stock'),
+        title: Text(context.l10n.updateStock),
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'New stock level'),
+          decoration:
+              InputDecoration(labelText: context.l10n.newStockLevel),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -114,7 +115,7 @@ class _StockTile extends StatelessWidget {
                   );
               Navigator.pop(context);
             },
-            child: const Text('Update'),
+            child: Text(context.l10n.update),
           ),
         ],
       ),

@@ -89,7 +89,9 @@
   "@fabricsFound": {
     "description": "Number of fabrics found",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "NEW SILK COLLECTION",
@@ -104,7 +106,9 @@
   "@curatedFabrics": {
     "description": "Number of curated fabrics in a category",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "Confirm",
@@ -114,7 +118,9 @@
   "@discountPercent": {
     "description": "Discount percentage label",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "Express Delivery",
@@ -132,7 +138,9 @@
   "@itemsCount": {
     "description": "Number of items in an order",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "Review Order",
@@ -148,7 +156,9 @@
   "@itemsInCart": {
     "description": "Number of items in the cart for checkout review",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "Confirm & Pay",
@@ -172,7 +182,9 @@
   "@onlyLeft": {
     "description": "Low stock warning",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "Returns",
@@ -216,7 +228,6 @@
   "selectPaymentMethod": "Select Payment Method",
   "payWithCard": "Pay with Card",
   "payWithCardDescription": "Credit or Debit Card via Paymob",
-  "cashOnDelivery": "Cash on Delivery",
   "cashOnDeliveryDescription": "Pay when your order arrives",
   "payNow": "Pay Now",
   "completePayment": "Complete Payment",
@@ -250,7 +261,6 @@
   "processing": "Processing",
   "allStockLevelsHealthy": "All stock levels are healthy",
   "catalogManagement": "Catalog Management",
-  "categories": "Categories",
   "manageCategories": "Manage Categories",
   "productImages": "Product Images",
   "manageProductImages": "Manage Product Images",
@@ -275,5 +285,24 @@
   "order": "Order",
   "items": "items",
   "noAddressProvided": "No address provided",
-  "comingSoon": "Coming Soon"
+  "comingSoon": "Coming Soon",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "update": "Update",
+  "updateStock": "Update Stock",
+  "newStockLevel": "New stock level",
+  "courierName": "Courier Name",
+  "trackingNumber": "Tracking Number",
+  "addTrackingDetails": "Add Tracking Details",
+  "orderStatusUpdatedTo": "Order status updated to {statusName}",
+  "orderMarkedAsShipped": "Order marked as shipped",
+  "returnToPayment": "Return to payment",
+  "invalidCheckoutLink": "The payment checkout link is invalid. Please return and retry.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -742,4 +743,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming Soon';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get update => 'Update';
+
+  @override
+  String get updateStock => 'Update Stock';
+
+  @override
+  String get newStockLevel => 'New stock level';
+
+  @override
+  String get courierName => 'Courier Name';
+
+  @override
+  String get trackingNumber => 'Tracking Number';
+
+  @override
+  String get addTrackingDetails => 'Add Tracking Details';
+
+  @override
+  String orderStatusUpdatedTo(String statusName) {
+    return 'Order status updated to $statusName';
+  }
+
+  @override
+  String get orderMarkedAsShipped => 'Order marked as shipped';
+
+  @override
+  String get returnToPayment => 'Return to payment';
+
+  @override
+  String get invalidCheckoutLink =>
+      'The payment checkout link is invalid. Please return and retry.';
 }

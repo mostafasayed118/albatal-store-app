@@ -63,7 +63,7 @@ import 'app_localizations_en.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en')
+    Locale('en'),
   ];
 
   /// No description provided for @appTitle.
@@ -1525,6 +1525,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming Soon'**
   String get comingSoon;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
+
+  /// No description provided for @updateStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Stock'**
+  String get updateStock;
+
+  /// No description provided for @newStockLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'New stock level'**
+  String get newStockLevel;
+
+  /// No description provided for @courierName.
+  ///
+  /// In en, this message translates to:
+  /// **'Courier Name'**
+  String get courierName;
+
+  /// No description provided for @trackingNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Number'**
+  String get trackingNumber;
+
+  /// No description provided for @addTrackingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Tracking Details'**
+  String get addTrackingDetails;
+
+  /// No description provided for @orderStatusUpdatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Order status updated to {statusName}'**
+  String orderStatusUpdatedTo(String statusName);
+
+  /// No description provided for @orderMarkedAsShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Order marked as shipped'**
+  String get orderMarkedAsShipped;
+
+  /// No description provided for @returnToPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to payment'**
+  String get returnToPayment;
+
+  /// No description provided for @invalidCheckoutLink.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment checkout link is invalid. Please return and retry.'**
+  String get invalidCheckoutLink;
 }
 
 class _AppLocalizationsDelegate
@@ -1554,8 +1626,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

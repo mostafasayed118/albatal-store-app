@@ -62,7 +62,11 @@ class PaymobPaymentService implements PaymentService {
 
       return PaymentPending(checkoutUrl: checkoutUrl);
     } catch (e) {
-      return PaymentFailed(message: 'Payment initialization failed: $e');
+      // Scrubbed: never surface raw provider/transport exceptions to the
+      // UI (they can leak URLs, tokens, or internal details).
+      return const PaymentFailed(
+        message: 'Payment could not be started. Please try again.',
+      );
     }
   }
 

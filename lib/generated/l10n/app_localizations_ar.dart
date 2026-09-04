@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -738,4 +739,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get comingSoon => 'قريباً';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get update => 'تحديث';
+
+  @override
+  String get updateStock => 'تحديث المخزون';
+
+  @override
+  String get newStockLevel => 'مستوى المخزون الجديد';
+
+  @override
+  String get courierName => 'اسم شركة الشحن';
+
+  @override
+  String get trackingNumber => 'رقم التتبع';
+
+  @override
+  String get addTrackingDetails => 'إضافة تفاصيل التتبع';
+
+  @override
+  String orderStatusUpdatedTo(String statusName) {
+    return 'تم تحديث حالة الطلب إلى $statusName';
+  }
+
+  @override
+  String get orderMarkedAsShipped => 'تم وضع علامة تم الشحن على الطلب';
+
+  @override
+  String get returnToPayment => 'العودة إلى الدفع';
+
+  @override
+  String get invalidCheckoutLink =>
+      'رابط الدفع غير صالح. يرجى العودة والمحاولة مرة أخرى.';
 }
