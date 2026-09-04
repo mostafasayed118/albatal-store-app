@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../extensions/build_context_x.dart';
+import '../../theme/app_colors.dart';
+
 /// Stitch search bar — rounded-full, surfaceContainerLow #F3F3F3, mic action.
 ///
 /// Maps Stitch HTML `rounded-full` + `bg-[#f3f3f3]` to Flutter pill
@@ -14,6 +17,10 @@ class StitchSearchBar extends StatelessWidget {
     this.onMicTap,
     this.hintText,
     this.onSubmitted,
+    this.padding = const EdgeInsetsDirectional.symmetric(
+      horizontal: 16,
+      vertical: 8,
+    ),
   });
 
   final TextEditingController controller;
@@ -21,20 +28,18 @@ class StitchSearchBar extends StatelessWidget {
   final VoidCallback? onMicTap;
   final ValueChanged<String>? onSubmitted;
   final String? hintText;
+  final EdgeInsetsGeometry padding;
 
-  static const _fill = Color(0xFFF3F3F3);
+  static const _fill = AppColors.surfaceContainerLow;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final fill = scheme.surfaceContainerLow == Colors.white
+    final fill = scheme.surfaceContainerLow == AppColors.surface
         ? _fill
         : scheme.surfaceContainerLow;
     return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      padding: padding,
       child: Container(
         decoration: BoxDecoration(
           color: fill,
@@ -74,12 +79,13 @@ class StitchSearchBar extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Voice search',
+              tooltip: context.l10n.voiceSearch,
               onPressed: onMicTap ??
                   () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Voice search coming soon'),
+                      SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        content: Text(context.l10n.comingSoon),
                       ),
                     );
                   },

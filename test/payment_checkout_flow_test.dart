@@ -41,6 +41,13 @@ class _FlowStub implements PaymentService {
   }
 
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) {
     lastOrderId = orderId;
     return _controller.stream;

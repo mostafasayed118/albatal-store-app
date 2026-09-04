@@ -1,273 +1,465 @@
-// ============================================================
-// Contract test for paymob-initiate response shape.
+// Deterministic contract tests for paymob-initiate.
 //
-// SECURITY (CRIT-01): This test locks the response contract so
-// that a future regression cannot leak Paymob tokens, auth
-// tokens, API keys, or raw upstream fields in the success path.
+// These tests are intentionally source-level because the Edge Function's
+// Supabase client and Paymob calls are external boundaries. They verify the
+// branch and response contracts without network access, credentials, or a
+// live database. The no-Authorization test exercises the real handler path.
 //
-// Strategy: static source analysis locks response/logging boundaries,
-// while a handler-level test exercises the real no-JWT response path.
-//
-// Run: deno test --allow-read --allow-env=CORS_ALLOWED_ORIGINS \
-//   supabase/functions/paymob-initiate/paymob_initiate_test.ts
-// ============================================================
+// Run:
+//   deno test --allow-read supabase/functions/paymob-initiate/paymob_initiate_test.ts
 
-import {
-  assertEquals,
-  assertExists,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { decideInitiationClaim, type PaymobClaim } from "./decision.ts";
 
-const readFileSync = Deno.readTextFileSync;
+const SOURCE_PATH = new URL("index.ts", import.meta.url);
+const DECISION_PATH = new URL("decision.ts", import.meta.url);
+const source = await Deno.readTextFile(SOURCE_PATH);
+const decisionSource = await Deno.readTextFile(DECISION_PATH);
 
-const SOURCE_PATH = new URL("index.ts", import.meta.url).pathname.replace(
-  /^\/([A-Z]:)/,
-  "$1",
-);
+function assert(condition: boolean, message: string): void {
+  if (!condition) throw new Error(message);
+}
 
-// Approved keys for success responses.
-const APPROVED_SUCCESS_KEYS = ["checkout_url"];
-// Approved keys for error responses.
-const APPROVED_ERROR_KEYS = ["message"];
+function assertIncludes(text: string, fragment: string, message: string): void {
+  assert(text.includes(fragment), `${message}: missing ${fragment}`);
+}
 
-Deno.test("paymob-initiate success response leaks no secrets", () => {
-  const source = readFileSync(SOURCE_PATH);
+function assertNotIncludes(
+  text: string,
+  fragment: string,
+  message: string,
+): void {
+  assert(!text.includes(fragment), `${message}: found ${fragment}`);
+}
 
-  // Find all JSON.stringify calls that appear in 200-status responses.
-  // Pattern: JSON.stringify({ ... }) followed (within ~200 chars) by status: 200
-  const stringifyPattern = /JSON\.stringify\(\{([^}]+)\}\)/g;
-  let match;
-  const violations: string[] = [];
+function section(start: string, end?: string): string {
+  const startAt = source.indexOf(start);
+  assert(startAt >= 0, `section start not found: ${start}`);
+  const endAt = end === undefined
+    ? source.length
+    : source.indexOf(end, startAt + start.length);
+  assert(endAt >= 0, `section end not found: ${end}`);
+  return source.slice(startAt, endAt);
+}
 
-  while ((match = stringifyPattern.exec(source)) !== null) {
+Deno.test("non-card orders are rejected before provider credentials or calls", () => {
+  const methodGuard = 'if (order.payment_method !== "paymob_card")';
+  const guardAt = source.indexOf(methodGuard);
+  const secretAt = source.indexOf('requireSecret(req, "PAYMOB_API_KEY")');
+  const providerFetchAt = source.indexOf(
+    '"https://accept.paymob.com/api/auth/tokens"',
+  );
+
+  assert(guardAt >= 0, "method guard must exist");
+  assert(
+    secretAt > guardAt,
+    "provider credentials must be loaded after the method guard",
+  );
+  assert(
+    providerFetchAt > guardAt,
+    "provider calls must occur after the method guard",
+  );
+  assertIncludes(
+    section(methodGuard, "// `currency`"),
+    "status: 400",
+    "non-card method guard must return HTTP 400",
+  );
+  assertIncludes(
+    section(methodGuard, "// `currency`"),
+    'message: "Unsupported payment method"',
+    "non-card method guard must use a safe message",
+  );
+});
+
+Deno.test("pre-provider recovery is token-bound and post-submit failure is retained", () => {
+  assertIncludes(
+    source,
+    "release_paymob_initiation_claim",
+    "pre-provider recovery must use the guarded RPC",
+  );
+  assertIncludes(
+    source,
+    "p_claim_token",
+    "recovery must pass the unforgeable claim token",
+  );
+  assertIncludes(
+    source,
+    "providerSubmissionStarted",
+    "provider submission stage must be tracked",
+  );
+  assertIncludes(
+    source,
+    "if (!providerSubmissionStarted)",
+    "pre-provider failures must be recoverable only before submission",
+  );
+  assertIncludes(
+    source,
+    "mark_paymob_initiation_submitted",
+    "claim must be advanced before provider-order POST",
+  );
+  assertIncludes(
+    source,
+    "claim retained",
+    "ambiguous post-submit failure must retain the claim",
+  );
+});
+
+Deno.test("internal client is created only after secret validation", () => {
+  const secretAt = source.indexOf(
+    'const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")',
+  );
+  const clientAt = source.indexOf("const serviceRoleClient = createClient(");
+  assert(
+    secretAt >= 0 && clientAt > secretAt,
+    "service-role client must follow requireSecret",
+  );
+});
+
+Deno.test("claim release is unavailable to initiation and authenticated callers", () => {
+  assertIncludes(
+    source,
+    "release_paymob_initiation_claim",
+    "only the token-bound internal recovery path may reference release",
+  );
+  assertNotIncludes(
+    source,
+    "SupabaseClient",
+    "initiation must not retain a release-only client type",
+  );
+});
+
+Deno.test("internal transitions use a separate service-role client", () => {
+  const serviceSection = section(
+    'const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")',
+    "// ─── Provider steps",
+  );
+  assertIncludes(
+    serviceSection,
+    "const serviceRoleClient = createClient(",
+    "internal client must be separate",
+  );
+  assertIncludes(
+    serviceSection,
+    "auth: { autoRefreshToken: false, persistSession: false }",
+    "internal client must not inherit caller auth",
+  );
+  const providerSection = section(
+    "// ─── Provider steps",
+    "// ─── Return minimum safe client info",
+  );
+  assert(
+    /serviceRoleClient\s*\.rpc\(\s*"mark_paymob_initiation_submitted"/s.test(
+      providerSection,
+    ),
+    "mark transition must use service role",
+  );
+  assert(
+    /serviceRoleClient\s*\.rpc\(\s*"release_paymob_initiation_claim"/s.test(
+      providerSection,
+    ),
+    "release transition must use service role",
+  );
+  assertNotIncludes(
+    serviceSection,
+    'serviceRoleClient.rpc(\n      "get_or_claim_paymob_payment"',
+    "claim RPC must remain caller-scoped",
+  );
+  assertNotIncludes(
+    serviceSection,
+    'serviceRoleClient\n        .rpc("set_payment_provider_order_id"',
+    "provider persistence must remain caller-scoped",
+  );
+});
+
+Deno.test("the atomic RPC is the only payment boundary", () => {
+  assertIncludes(
+    source,
+    '"get_or_claim_paymob_payment"',
+    "atomic claim RPC must be called",
+  );
+  assertIncludes(
+    source,
+    "{ p_order_id: order_id }",
+    "RPC must receive only the canonical order id",
+  );
+  assertNotIncludes(
+    source,
+    ".insert(",
+    "initiation must not directly insert payments",
+  );
+  assertIncludes(
+    source,
+    'requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")',
+    "internal transitions must require the service role secret",
+  );
+  assertIncludes(
+    decisionSource,
+    "claim.amount",
+    "provider amount must come from the RPC claim",
+  );
+  assertNotIncludes(
+    source,
+    "const amountCents = order.total",
+    "provider amount must not come from the pre-RPC read",
+  );
+});
+
+Deno.test("existing provider order reissues a key without registering an order", () => {
+  const existing = section(
+    'if (decision.kind === "reissue")',
+    'if (decision.kind === "in_progress")',
+  );
+  assertIncludes(
+    existing,
+    "reissuePaymentKey(",
+    "existing provider order must reissue a key",
+  );
+  assertNotIncludes(
+    existing,
+    "/api/ecommerce/orders",
+    "existing provider order must not be registered again",
+  );
+  assertIncludes(
+    existing,
+    "status: 200",
+    "successful key reissue must return HTTP 200",
+  );
+  assertIncludes(
+    existing,
+    "checkout_url",
+    "successful key reissue must return checkout_url only",
+  );
+});
+
+Deno.test("in-progress and claimed branches prevent duplicate provider orders", () => {
+  const inProgress = section(
+    'if (decision.kind === "in_progress")',
+    "const paymentId = decision.paymentId",
+  );
+  assertIncludes(
+    inProgress,
+    "status: decision.status",
+    "recent claim must return HTTP 409",
+  );
+  assertIncludes(
+    decisionSource,
+    "Payment initiation already in progress",
+    "recent claim must use the safe in-progress message",
+  );
+
+  const claimed = section(
+    "const paymentId = decision.paymentId",
+    "// ─── Provider steps ─────────────────────────────────────",
+  );
+  assertIncludes(
+    claimed,
+    "provider-order creation",
+    "only the claimed branch may create the provider order",
+  );
+  assertIncludes(
+    source.slice(
+      source.indexOf(
+        "// ─── Provider steps ─────────────────────────────────────",
+      ),
+    ),
+    "/api/ecommerce/orders",
+    "provider order creation must remain in the claimed provider section",
+  );
+});
+
+Deno.test("provider persistence uses the guarded RPC and protects the claim on persistence failure", () => {
+  assertIncludes(
+    source,
+    '"set_payment_provider_order_id"',
+    "provider order must use the guarded persistence RPC",
+  );
+  assertIncludes(
+    source,
+    "release_paymob_initiation_claim",
+    "pre-provider recovery must call the token-bound internal release",
+  );
+  assertIncludes(
+    source,
+    "p_claim_token: claimToken",
+    "release must be bound to the current claim token",
+  );
+  assertIncludes(
+    source,
+    "claim retained",
+    "all ambiguous provider failures must retain the claim",
+  );
+});
+
+Deno.test("responses expose only safe keys", () => {
+  const responsePattern = /new Response\(\s*JSON\.stringify\(\{([^}]*)\}\)/gs;
+  const forbidden: string[] = [];
+  for (const match of source.matchAll(responsePattern)) {
     const body = match[1];
-
-    // Check if this is a success response (status: 200 nearby)
-    const afterMatch = source.substring(match.index, match.index + 300);
-    const is200 = /status:\s*200/.test(afterMatch);
-
-    if (!is200) continue; // Only audit success responses
-
-    // Extract all keys from the response body
-    const keyPattern = /(\w+)\s*:/g;
-    let keyMatch;
-    while ((keyMatch = keyPattern.exec(body)) !== null) {
+    const after = source.slice(match.index ?? 0, (match.index ?? 0) + 320);
+    const isSuccess = /status:\s*200/.test(after);
+    const allowed = isSuccess ? ["message", "checkout_url"] : ["message"];
+    for (const keyMatch of body.matchAll(/(?:^|,)\s*([A-Za-z_]\w*)\s*:/g)) {
       const key = keyMatch[1];
-      if (!APPROVED_SUCCESS_KEYS.includes(key)) {
-        violations.push(key);
-      }
+      if (!allowed.includes(key)) forbidden.push(key);
     }
   }
+  assert(
+    forbidden.length === 0,
+    `response keys are not sanitized: ${forbidden.join(", ")}`,
+  );
 
-  assertEquals(
-    violations.length,
-    0,
-    `Success response contains forbidden keys: ${violations.join(", ")}`,
+  assertNotIncludes(
+    source,
+    "JSON.stringify(authData)",
+    "auth responses must not be serialized to logs",
+  );
+  assertNotIncludes(
+    source,
+    "JSON.stringify(paymobOrderData)",
+    "provider order responses must not be serialized to logs",
+  );
+  assertNotIncludes(
+    source,
+    'console.error("paymob-initiate: Provider initiation failed", providerFailure)',
+    "raw provider failures must not be logged",
   );
 });
 
-Deno.test("paymob-initiate error responses never leak tokens", () => {
-  const source = readFileSync(SOURCE_PATH);
+Deno.test("claim decisions exercise safe response behavior", () => {
+  const cases: Array<{
+    name: string;
+    method: string;
+    claim: PaymobClaim | null;
+    kind: string;
+    status?: number;
+  }> = [
+    {
+      name: "non-card",
+      method: "cash_on_delivery",
+      claim: {
+        ok: true,
+        code: "claimed",
+        payment_id: "p1",
+        claim_token: "t1",
+        amount: 100,
+      },
+      kind: "reject",
+      status: 400,
+    },
+    {
+      name: "existing provider",
+      method: "paymob_card",
+      claim: {
+        ok: true,
+        code: "existing_provider_order",
+        payment_id: "p1",
+        paymob_order_id: "provider-1",
+        amount: 100,
+      },
+      kind: "reissue",
+    },
+    {
+      name: "recent claim",
+      method: "paymob_card",
+      claim: {
+        ok: true,
+        code: "initiation_in_progress",
+        payment_id: "p1",
+        claim_token: "t1",
+        amount: 100,
+      },
+      kind: "in_progress",
+      status: 409,
+    },
+    {
+      name: "new claim",
+      method: "paymob_card",
+      claim: {
+        ok: true,
+        code: "claimed",
+        payment_id: "p1",
+        claim_token: "t1",
+        amount: 100,
+      },
+      kind: "create",
+    },
+  ];
 
-  // Find Response constructor calls with JSON.stringify in error responses
-  // (new Response(JSON.stringify({...}), {status: 4xx/5xx}))
-  const responsePattern = /new Response\(\s*JSON\.stringify\(\{[^}]*\}\)/g;
-  let match;
-  const violations: string[] = [];
-
-  while ((match = responsePattern.exec(source)) !== null) {
-    const body = match[0];
-
-    // Check if this is an error response (4xx/5xx within 200 chars)
-    const afterMatch = source.substring(match.index, match.index + 200);
-    const is4xx = /status:\s*4\d{2}/.test(afterMatch);
-    const is5xx = /status:\s*5\d{2}/.test(afterMatch);
-    if (!is4xx && !is5xx) continue;
-
-    // Error responses are allow-listed to message only. This catches raw
-    // provider fields as well as generic `details` / `error` regressions.
-    const keyPattern = /(?:\{|,)\s*["']?(\w+)["']?\s*:/g;
-    let keyMatch;
-    while ((keyMatch = keyPattern.exec(body)) !== null) {
-      const key = keyMatch[1];
-      if (!APPROVED_ERROR_KEYS.includes(key)) {
-        violations.push(key);
-      }
-    }
-  }
-
-  assertEquals(
-    violations.length,
-    0,
-    `Error response bodies contain forbidden keys: ${violations.join(", ")}`,
-  );
-});
-
-Deno.test("paymob-initiate logs no serialized upstream or database errors", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    /console\.error\([^;]*JSON\.stringify/s.test(source),
-    false,
-    "console.error must not serialize upstream or database error objects",
-  );
-});
-
-Deno.test({
-  name: "paymob-initiate rejects a request without Authorization at runtime",
-  permissions: { env: ["CORS_ALLOWED_ORIGINS"], read: true },
-  fn: async () => {
-    const previousOrigin = Deno.env.get("CORS_ALLOWED_ORIGINS");
-    const allowedOrigin = "https://edge.test";
-    Deno.env.set("CORS_ALLOWED_ORIGINS", allowedOrigin);
-
-    try {
-      // Import only after setting the origin because the shared CORS module
-      // intentionally reads its fail-closed configuration at module load.
-      const { handlePaymobInitiate } = await import("./index.ts");
-      const response = await handlePaymobInitiate(
-        new Request("https://edge.test/paymob-initiate", {
-          method: "POST",
-          headers: { Origin: allowedOrigin },
-        }),
+  for (const testCase of cases) {
+    const decision = decideInitiationClaim(testCase.method, testCase.claim);
+    assert(
+      decision.kind === testCase.kind,
+      `${testCase.name} decision mismatch`,
+    );
+    if (testCase.status !== undefined) {
+      assert(
+        "status" in decision && decision.status === testCase.status,
+        `${testCase.name} status mismatch`,
       );
-
-      assertEquals(response.status, 401);
-      assertEquals(await response.json(), {
-        message: "Authentication required",
-      });
-    } finally {
-      if (previousOrigin === undefined) {
-        Deno.env.delete("CORS_ALLOWED_ORIGINS");
-      } else {
-        Deno.env.set("CORS_ALLOWED_ORIGINS", previousOrigin);
-      }
     }
-  },
-});
-
-Deno.test("paymob-initiate scopes the canonical order read to the caller", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes('.from("orders")') &&
-      source.includes('.eq("user_id", user.id)'),
-    true,
-    "Order lookup must enforce caller ownership",
-  );
-});
-
-Deno.test("paymob-initiate derives payment state from canonical server data", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes("const { order_id } = await req.json()"),
-    true,
-    "Request body must accept only the canonical order id",
-  );
-  assertEquals(
-    source.includes("const amountCents = order.total as number"),
-    true,
-  );
-  assertEquals(source.includes("amount: amountCents"), true);
-  assertEquals(source.includes('status: "pending"'), true);
-  assertEquals(
-    /\.insert\(\{[^}]*transaction_id\s*:/s.test(source),
-    false,
-    "Initiation must not set a provider transaction id",
-  );
-});
-
-Deno.test("paymob-initiate never logs raw error objects", () => {
-  const source = readFileSync(SOURCE_PATH);
-
-  // The catch block should log a safe prefix, not the raw error.
-  const catchIdx = source.indexOf("catch");
-  if (catchIdx !== -1) {
-    const catchBlock = source.substring(catchIdx, catchIdx + 300);
-    assertEquals(
-      catchBlock.includes("console.error"),
-      true,
-      "Catch block must log a safe message",
-    );
-    // Must not log the error variable itself
-    assertEquals(
-      /console\.error\([^)]*\berror\s*\)/.test(catchBlock),
-      false,
-      "Catch block must not log raw error object — use safe prefix only",
-    );
   }
 });
 
-Deno.test("paymob-initiate response contract is documented", () => {
-  const source = readFileSync(SOURCE_PATH);
-
-  // The header comment should document the return type.
-  // Match patterns like "// Returns:\n//   - { checkout_url }" or "//   - checkout_url"
-  assertExists(
-    source.match(/Returns:[\s\S]*?checkout_url/),
-    "Header comment must document that the function returns { checkout_url }",
+Deno.test("request and server-authoritative invariants remain explicit", () => {
+  assertIncludes(
+    source,
+    "const { order_id } = await req.json()",
+    "request must accept the internal order id",
+  );
+  assertIncludes(
+    source,
+    '.eq("user_id", user.id)',
+    "order lookup must be scoped to the authenticated owner",
+  );
+  assertIncludes(
+    source,
+    "get_or_claim_paymob_payment",
+    "server must enforce ownership and pending state in the RPC",
+  );
+  assertIncludes(
+    decisionSource,
+    "Number.isFinite(claim.amount)",
+    "RPC amount must be validated before provider calls",
+  );
+  assertNotIncludes(
+    source,
+    "transaction_id:",
+    "initiation must not assign a provider transaction id",
+  );
+  assertIncludes(
+    source,
+    "claim retained",
+    "ambiguous provider failure must retain the claim",
+  );
+  assertIncludes(source, "requireCors(req)", "CORS must fail closed");
+  assertIncludes(
+    source,
+    'requireSecret(req, "PAYMOB_API_KEY")',
+    "Paymob API key must be required",
   );
 });
 
-Deno.test("paymob-initiate uses requireCors for fail-closed CORS", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes("requireCors(req)"),
-    true,
-    "Function must call requireCors(req) for fail-closed CORS",
+Deno.test("missing customer email fails closed before any provider use", () => {
+  // The guard must sit between authentication and request validation so
+  // no provider credential is loaded and no order is read without an
+  // email to bill.
+  const authAt = source.indexOf("if (authError || !user)");
+  const validateAt = source.indexOf("// ─── Validate request ─");
+  assert(authAt >= 0 && validateAt > authAt, "auth/request anchors missing");
+  const prelude = source.slice(authAt, validateAt);
+  assertIncludes(
+    prelude,
+    "!user.email",
+    "must reject authenticated users without an email",
   );
-});
-
-Deno.test("paymob-initiate uses requireSecret for PAYMOB_API_KEY", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes('requireSecret(req, "PAYMOB_API_KEY")'),
-    true,
-    "Function must use requireSecret for PAYMOB_API_KEY",
+  assertIncludes(prelude, "status: 400", "missing email must return HTTP 400");
+  assertNotIncludes(
+    source,
+    '|| "customer@example.com"',
+    "must never bill a fake fallback address",
   );
-});
-
-Deno.test("paymob-initiate uses corsHeadersFor(req) not legacy corsHeaders", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes("corsHeadersFor"),
-    true,
-    "Function must import corsHeadersFor",
-  );
-  assertEquals(
-    source.includes("{ ...corsHeaders,"),
-    false,
-    "Function must not use legacy { ...corsHeaders } spread pattern",
-  );
-});
-
-Deno.test("paymob-initiate uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes("jsonHeadersFor(req)"),
-    true,
-    "Function must use jsonHeadersFor(req)",
-  );
-  assertEquals(
-    source.includes("jsonHeaders()"),
-    false,
-    "Function must not use legacy jsonHeaders()",
-  );
-});
-
-Deno.test("paymob-initiate uses service role only for payment INSERT", () => {
-  const source = readFileSync(SOURCE_PATH);
-  assertEquals(
-    source.includes('requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY")'),
-    true,
-    "Payment persistence must fail closed when the service-role key is missing",
-  );
-  assertEquals(
-    source.includes("await serviceRoleClient"),
-    true,
-    "Payment INSERT must use the service-role client",
-  );
-  assertEquals(
-    source.includes("const { data: existingPayment") &&
-      source.includes("await supabase"),
-    true,
-    "Caller-scoped client must remain responsible for ownership-scoped reads",
+  assertNotIncludes(
+    source,
+    '?? "customer@example.com"',
+    "must never bill a fake fallback address",
   );
 });

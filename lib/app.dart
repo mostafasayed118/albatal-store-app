@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'features/addresses/domain/repositories/address_repository.dart';
 import 'features/addresses/presentation/cubit/addresses_cubit.dart';
@@ -8,6 +9,8 @@ import 'features/admin/presentation/cubit/admin_cubit.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/repositories/profile_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/onboarding/domain/repositories/onboarding_repository.dart';
+import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
@@ -21,16 +24,53 @@ import 'features/storefront/presentation/cubit/orders_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
+import 'shared/routing/auth_refresh_notifier.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/theme/app_theme.dart';
 import 'shared/widgets/environment_banner.dart';
 
-final class AlBatalApp extends StatelessWidget {
+final class AlBatalApp extends StatefulWidget {
   const AlBatalApp({super.key});
+
+  @override
+  State<AlBatalApp> createState() => _AlBatalAppState();
+}
+
+final class _AlBatalAppState extends State<AlBatalApp> {
+  late final AuthCubit _authCubit;
+  late final AuthRefreshNotifier _authRefreshNotifier;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authCubit = AuthCubit(
+      authRepository: getIt<AuthRepository>(),
+      profileRepository: getIt<ProfileRepository>(),
+    )..checkSession();
+    _authRefreshNotifier = AuthRefreshNotifier(_authCubit.stream);
+    _router = createAppRouter(
+      _authCubit,
+      refreshListenable: _authRefreshNotifier,
+    );
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _authRefreshNotifier.dispose();
+    _authCubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
         providers: [
+          BlocProvider(
+              create: (_) => OnboardingCubit(
+                    getIt<OnboardingRepository>(),
+                  )),
           BlocProvider(
               create: (_) =>
                   SettingsCubit(getIt<SettingsRepository>())..load()),
@@ -49,11 +89,7 @@ final class AlBatalApp extends StatelessWidget {
           BlocProvider(
               create: (_) =>
                   AddressesCubit(getIt<AddressRepository>())..load()),
-          BlocProvider(
-              create: (_) => AuthCubit(
-                    authRepository: getIt<AuthRepository>(),
-                    profileRepository: getIt<ProfileRepository>(),
-                  )..checkSession()),
+          BlocProvider.value(value: _authCubit),
           BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
         ],
         child: BlocBuilder<SettingsCubit, SettingsState>(
@@ -69,7 +105,7 @@ final class AlBatalApp extends StatelessWidget {
                   localizationsDelegates:
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
-                  routerConfig: appRouter,
+                  routerConfig: _router,
                   builder: (context, child) => EnvironmentBanner(child: child!),
                 )));
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/product.dart';
-import 'product_image_placeholder.dart';
+import 'product_image_resolver.dart';
 import 'zoom_gallery.dart';
 
 /// Horizontal page-view gallery with dot indicators.
@@ -38,11 +38,11 @@ class _ImageGalleryState extends State<ImageGallery> {
             onPageChanged: (i) => setState(() => _current = i),
             itemBuilder: (_, i) => GestureDetector(
               onTap: () => _showZoomed(context, i),
-              child: ProductImagePlaceholder(
+              // Shared resolver: handles http URLs and load failures
+              // that a bare asset render would crash on.
+              child: ProductImageResolver(
                 imageColor: widget.product.imageColor,
-                imageAsset: _allImages[i].isEmpty ? null : _allImages[i],
-                constraints: const BoxConstraints.expand(height: 300),
-                size: 80,
+                asset: _allImages[i].isEmpty ? null : _allImages[i],
               ),
             ),
           ),

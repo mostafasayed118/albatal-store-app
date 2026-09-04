@@ -1,6 +1,15 @@
 # Al Batal Elite
 
+[![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
+[![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
+![Tests](https://img.shields.io/badge/tests-285%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-52%25-yellow)
+
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
+
+| Home | Categories |
+|------|-----------|
+| ![Home screen](docs/screenshots/home.png) | ![Categories screen](docs/screenshots/categories.png) |
 
 ---
 
@@ -29,15 +38,14 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Storage** — product images (public) and avatars (private)
 - **Admin support** — admin role for catalog/order management
 
-> **Note on local persistence:** Cart, wishlist, addresses, and orders are
-> currently persisted locally on-device via SharedPreferences (offline-first).
-> Cloud sync for these collections is planned but not yet wired — the
-> Supabase repository implementations were removed in favor of shipping a
-> reliable local-first experience first.
->
-> Catalog data shown in the app is also local mock seed data. Supabase remains
-> the authority for authentication, profiles, admin operations, checkout, and
-> Paymob payment processing.
+> **Note on local persistence:** Cart, wishlist, and addresses are persisted
+> locally on-device via SharedPreferences (offline-first). The product
+> **catalog, orders, admin operations, checkout, and Paymob payments are fully
+> Supabase-backed** — catalog embeds product images from Storage, orders read
+> live through Realtime, and checkout runs through server-side RPCs. Cloud
+> sync for cart/wishlist/addresses is planned (the domain repository
+> interfaces already exist so Cubits won't change when Supabase
+> implementations are wired).
 
 ---
 
@@ -124,7 +132,7 @@ cp config/env.staging.json config/env.staging.local.json
 # Edit config/env.staging.local.json:
 #   SUPABASE_URL, SUPABASE_ANON_KEY, (optional) SENTRY_DSN
 
-# 3. Run the 14 numbered migrations in Supabase SQL Editor, in order.
+# 3. Run the numbered migrations (001–035) in Supabase SQL Editor, in order.
 # See docs/supabase-integration.md for the migration list and helper scripts.
 
 # 4. Deploy the Edge Functions used by the configured flows.
@@ -187,7 +195,7 @@ unzip -p build/app/outputs/flutter-apk/app-release.apk | grep -a "PAYMOB_" | hea
 ### Required Steps
 1. Create a project at [supabase.com](https://supabase.com)
 2. Copy Project URL and anon key into `config/env.staging.local.json` (gitignored)
-3. Run the 14 numbered SQL migrations in order via SQL Editor
+3. Run the numbered SQL migrations (001–035) in order via SQL Editor
 4. Enable Email provider in Authentication → Providers
 5. Deploy the Edge Functions required by the enabled payment and notification flows
 6. Set Paymob + service secrets via `supabase functions secrets set` (server-only)
@@ -258,11 +266,21 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-Tests cover:
-- Cubit state transitions (Cart, Catalog, Orders, Auth)
+**285 Flutter tests** cover:
+- Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin)
 - Product entity logic (stock, discount, inStock)
 - Cross-cubit interactions (wishlist ↔ cart)
 - Auth state properties and Profile entity
+- Payment security (no client-side verification, URL guard, token redaction)
+- Asset rules (SVG-only runtime images), l10n completeness, navigation
+
+**Backend test suites** (`supabase/tests/`, run against staging):
+- RLS adversarial — 44/44
+- Race conditions — 53/53
+- COD contract — 14/14
+- Paymob sandbox — 21/21 (incl. real closed transactions)
+- Payment initiation contract — 39/39
+- Edge Function Deno tests — 70+ assertions
 
 ---
 

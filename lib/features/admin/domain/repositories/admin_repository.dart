@@ -49,4 +49,41 @@ abstract interface class AdminRepository {
 
   /// Update variant stock by variant id.
   Future<Result<void>> updateStock(String variantId, int newStock);
+
+  // ─── Catalog Management (T1) ─────────────────────────────
+
+  /// Create or update a product. Returns the product id.
+  Future<String> adminUpsertProduct({
+    String? id,
+    required String name,
+    required String slug,
+    String? description,
+    String? composition,
+    required String categoryId,
+    required double basePrice,
+    required bool isActive,
+  });
+
+  /// Create or update a variant for a product. Returns the variant id.
+  Future<String> adminUpsertVariant({
+    required String productId,
+    required String size,
+    required String color,
+    required int stock,
+    double? priceOverride,
+  });
+
+  /// Replace all images for a product with the given storage paths.
+  Future<void> adminSetProductImages(
+      String productId, List<String> storagePaths);
+
+  /// Get currently active flash sales (window filter).
+  Future<List<Map<String, dynamic>>> getActiveFlashSales();
+
+  /// Get all variants for [productId], ordered by size.
+  Future<List<Map<String, dynamic>>> getVariants(String productId);
+
+  /// Get ordered storage paths for a product's images.
+  Future<List<String>> getProductImagePaths(String productId);
+>>>>>>> origin/master
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../widgets/cart_item_tile.dart';
@@ -19,6 +20,15 @@ class CartPage extends StatelessWidget {
       appBar: AppBar(title: Text(l.myCart)),
       body: BlocBuilder<CartCubit, CartState>(
         builder: (context, s) {
+          if (s.status == CartStatus.loading) {
+            return const FeedbackView(type: FeedbackViewType.loading);
+          }
+          if (s.status == CartStatus.error) {
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: () => context.read<CartCubit>().restore(force: true),
+            );
+          }
           if (s.items.isEmpty) {
             return EmptyStateView(
               icon: Icons.shopping_bag_outlined,
