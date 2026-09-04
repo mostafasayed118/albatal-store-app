@@ -1,15 +1,18 @@
-import '../../../../core/entities/product.dart';
-import '../../../../core/error/app_error.dart';
-import '../../../../core/error/result.dart';
-import '../domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+
 import 'products_data.dart';
 
 /// Local in-memory catalog repository backed by the fixed [products] constant.
 ///
-/// This is the real implementation behind `CatalogRepository` for the mock
-/// storefront. It always succeeds, making it trivial — but the Cubit still
-/// talks through `Result<List<Product>>` so swapping in a remote API later
-/// means changing this file, not the Cubit or the UI.
+/// Test double only — located under `test/` for the same reason as
+/// [products]: a previous home in `lib/features/storefront/data/` caused
+/// it to be compiled into release builds even though no production code
+/// referenced it. It always succeeds; the Cubit still talks through
+/// `Result<List<Product>>` so a remote implementation can be swapped in
+/// without touching the Cubit or UI.
 final class LocalCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>

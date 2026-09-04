@@ -1,6 +1,12 @@
-import '../../../core/entities/money.dart';
-import '../../../core/entities/product.dart';
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
 
+/// Fixed product catalog used ONLY by tests (widget tests, cubit tests,
+/// and the in-memory [LocalCatalogRepository] test double).
+///
+/// Deliberately located under `test/` — a previous home in
+/// `lib/features/storefront/data/` caused this data to be compiled into
+/// release builds even though no production code referenced it.
 const products = <Product>[
   Product(
       id: 'silk-01',
