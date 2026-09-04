@@ -19,8 +19,21 @@ export '../../domain/entities/catalog_filters.dart'
 
 enum CatalogStatus { initial, loading, ready, error }
 
+/// Immutable catalog UI state with memoized derived views.
+///
+/// MEMOIZATION CONTRACT: [allProducts] is treated as immutable after
+/// construction (the cubit always assigns a freshly built list), so the
+/// O(n) derived getters ([visible], [availableColors],
+/// [categoryProductCount], price bounds, [productsInCategory]) compute
+/// once per state instance and reuse their result afterwards — grid and
+/// list builders call them on every frame. Memo fields are deliberately
+/// NOT part of [props]; equal states always derive equal views.
+///
+/// This is why the constructor is no longer `const`: memoization needs
+/// per-instance lazy fields, and Equatable equality still works because
+/// those fields are never compared.
 final class CatalogState extends Equatable {
-  const CatalogState({
+  CatalogState({
     this.status = CatalogStatus.initial,
     this.allProducts = const [],
     this.categories = const [],
@@ -44,52 +57,92 @@ final class CatalogState extends Equatable {
 
   bool get hasActiveFilters => filters.hasActiveFilters;
 
-  /// Unique colors extracted from all products (by name derived from imageColor).
+  /// Lazy storage for the derived views. Held in one final container so
+  /// [CatalogState] keeps every field final (the class stays @immutable
+  /// clean) while individual views fill in on first use.
+  final _CatalogMemos _m = _CatalogMemos();
+
+  // ─── Memoized derived views ────────────────────────────────
+  // Plain lazy fields + explicit null checks: no clever idioms, the
+  // pattern is identical for every getter below.
+
   List<String> get availableColors {
-    final colors = <String>{};
-    for (final p in allProducts) {
-      colors.add(catalogColorName(p.imageColor));
+    var cached = _m.availableColors;
+    if (cached == null) {
+      final colors = <String>{};
+      for (final p in allProducts) {
+        colors.add(catalogColorName(p.imageColor));
+      }
+      cached = colors.toList()..sort();
+      _m.availableColors = cached;
     }
-    return colors.toList()..sort();
+    return cached;
   }
 
-  /// Price bounds computed from the full catalog.
-  Money get catalogPriceMin => allProducts.isEmpty
-      ? Money.zero
-      : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
-  Money get catalogPriceMax => allProducts.isEmpty
-      ? CatalogConstants.unboundedMax
-      : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+  Money get catalogPriceMin {
+    var cached = _m.priceMin;
+    if (cached == null) {
+      cached = allProducts.isEmpty
+          ? Money.zero
+          : allProducts.map((p) => p.price).reduce((a, b) => a < b ? a : b);
+      _m.priceMin = cached;
+    }
+    return cached;
+  }
 
-  /// Products in a specific category (excluding "All").
+  Money get catalogPriceMax {
+    var cached = _m.priceMax;
+    if (cached == null) {
+      cached = allProducts.isEmpty
+          ? CatalogConstants.unboundedMax
+          : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+      _m.priceMax = cached;
+    }
+    return cached;
+  }
+
   List<Product> productsInCategory(String category) =>
-      allProducts.where((p) => p.category == category).toList();
+      _m.byCategory.putIfAbsent(
+        category,
+        () => allProducts.where((p) => p.category == category).toList(),
+      );
 
-  /// Product count per category (excluding "All").
   Map<String, int> get categoryProductCount {
-    final map = <String, int>{};
-    for (final p in allProducts) {
-      map[p.category] = (map[p.category] ?? 0) + 1;
+    var cached = _m.categoryCount;
+    if (cached == null) {
+      final map = <String, int>{};
+      for (final p in allProducts) {
+        map[p.category] = (map[p.category] ?? 0) + 1;
+      }
+      cached = map;
+      _m.categoryCount = cached;
     }
-    return map;
+    return cached;
   }
 
+  /// Filtered + sorted product list. Memoized per [CatalogFilters] value —
+  /// the filters object is immutable with value equality, so a changed
+  /// filter key invalidates the cache and identical filters reuse it.
   List<Product> get visible {
-    final filtered = allProducts.where(filters.matches).toList();
-
-    switch (filters.sort) {
-      case CatalogSort.featured:
-        break;
-      case CatalogSort.priceLowToHigh:
-        filtered.sort((a, b) => a.price.compareTo(b.price));
-      case CatalogSort.priceHighToLow:
-        filtered.sort((a, b) => b.price.compareTo(a.price));
-      case CatalogSort.name:
-        filtered.sort((a, b) => a.name.compareTo(b.name));
-      case CatalogSort.newest:
-        filtered.sort((a, b) => b.id.compareTo(a.id));
+    final current = filters;
+    if (_m.visible == null || _m.visibleKey != current) {
+      final filtered = allProducts.where(current.matches).toList();
+      switch (current.sort) {
+        case CatalogSort.featured:
+          break;
+        case CatalogSort.priceLowToHigh:
+          filtered.sort((a, b) => a.price.compareTo(b.price));
+        case CatalogSort.priceHighToLow:
+          filtered.sort((a, b) => b.price.compareTo(a.price));
+        case CatalogSort.name:
+          filtered.sort((a, b) => a.name.compareTo(b.name));
+        case CatalogSort.newest:
+          filtered.sort((a, b) => b.id.compareTo(a.id));
+      }
+      _m.visible = filtered;
+      _m.visibleKey = current;
     }
-    return filtered;
+    return _m.visible!;
   }
 
   CatalogState copyWith({
@@ -129,10 +182,22 @@ final class CatalogState extends Equatable {
       ];
 }
 
+/// Per-state lazy storage for [CatalogState]'s derived views. Mutable by
+/// design but never compared in equality — see [CatalogState] docs.
+class _CatalogMemos {
+  List<String>? availableColors;
+  Money? priceMin;
+  Money? priceMax;
+  Map<String, int>? categoryCount;
+  List<Product>? visible;
+  CatalogFilters? visibleKey;
+  final Map<String, List<Product>> byCategory = {};
+}
+
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
-        super(const CatalogState()) {
+        super(CatalogState()) {
     // Legacy hero countdown (saleSeconds) — will be removed when flash_sales table lands.
     // Gated to avoid needless ticks: only ticks while saleSeconds > 0,
     // cancelled deterministically in close().
