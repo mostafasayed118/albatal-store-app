@@ -437,3 +437,29 @@ Deno.test("request and server-authoritative invariants remain explicit", () => {
     "Paymob API key must be required",
   );
 });
+
+Deno.test("missing customer email fails closed before any provider use", () => {
+  // The guard must sit between authentication and request validation so
+  // no provider credential is loaded and no order is read without an
+  // email to bill.
+  const authAt = source.indexOf("if (authError || !user)");
+  const validateAt = source.indexOf("// ─── Validate request ─");
+  assert(authAt >= 0 && validateAt > authAt, "auth/request anchors missing");
+  const prelude = source.slice(authAt, validateAt);
+  assertIncludes(
+    prelude,
+    "!user.email",
+    "must reject authenticated users without an email",
+  );
+  assertIncludes(prelude, "status: 400", "missing email must return HTTP 400");
+  assertNotIncludes(
+    source,
+    '|| "customer@example.com"',
+    "must never bill a fake fallback address",
+  );
+  assertNotIncludes(
+    source,
+    '?? "customer@example.com"',
+    "must never bill a fake fallback address",
+  );
+});
