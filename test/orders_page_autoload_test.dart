@@ -78,7 +78,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('SERVER-PENDING-1'), findsOneWidget,
-          reason: 'server pending order must be visible without manual refresh');
+          reason:
+              'server pending order must be visible without manual refresh');
 
       await cubit.close();
     });

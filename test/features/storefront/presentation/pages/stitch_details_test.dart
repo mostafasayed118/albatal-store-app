@@ -165,9 +165,9 @@ void main() {
               ),
               BlocProvider(
                 create: (_) => AuthCubit(
-                      authRepository: StubAuthRepository(),
-                      profileRepository: StubProfileRepository(),
-                    )..checkSession(),
+                  authRepository: StubAuthRepository(),
+                  profileRepository: StubProfileRepository(),
+                )..checkSession(),
               ),
             ],
             child: const HomePage(),

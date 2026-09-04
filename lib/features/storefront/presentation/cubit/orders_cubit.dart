@@ -41,13 +41,11 @@ final class OrdersState extends Equatable {
           o.status == OrderStatus.shipped)
       .toList()
     ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get completed =>
-      orders
-          .where((o) =>
-              o.status == OrderStatus.paid ||
-              o.status == OrderStatus.delivered)
-          .toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get completed => orders
+      .where((o) =>
+          o.status == OrderStatus.paid || o.status == OrderStatus.delivered)
+      .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
   List<Order> get cancelled => orders
       .where((o) =>
           o.status == OrderStatus.cancelled ||

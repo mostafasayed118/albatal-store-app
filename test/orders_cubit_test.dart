@@ -220,8 +220,8 @@ void _tabMappingTests() {
   group('OrdersState tab mapping (live-found 2026-09-03)', () {
     test('paid orders land in completed (were invisible)', () {
       const state = OrdersState();
-      final s = state.copyWith(
-          orders: [_orderWithStatus('p1', OrderStatus.paid)]);
+      final s =
+          state.copyWith(orders: [_orderWithStatus('p1', OrderStatus.paid)]);
       expect(s.completed.map((o) => o.id), ['p1']);
       expect(s.active, isEmpty);
       expect(s.cancelled, isEmpty);
