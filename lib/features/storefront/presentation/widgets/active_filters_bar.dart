@@ -22,22 +22,23 @@ class ActiveFiltersBar extends StatelessWidget {
     final catalog = context.read<CatalogCubit>();
     final chips = <Widget>[];
 
-    if (state.category != 'All') {
+    if (state.filters.category != 'All') {
       chips.add(_filterChip(
-        label: state.category,
+        label: state.filters.category,
         onDeleted: () => catalog.select('All'),
       ));
     }
-    if (state.colorFilter.isNotEmpty) {
+    if (state.filters.colorFilter.isNotEmpty) {
       chips.add(_filterChip(
-        label: state.colorFilter,
-        onDeleted: () => catalog.setColorFilter(state.colorFilter),
+        label: state.filters.colorFilter,
+        onDeleted: () => catalog.setColorFilter(state.filters.colorFilter),
       ));
     }
-    if (state.priceMin > Money.zero ||
-        state.priceMax < const Money.egp(999999)) {
+    if (state.filters.priceMin > Money.zero ||
+        state.filters.priceMax < const Money.egp(999999)) {
       chips.add(_filterChip(
-        label: '${state.priceMin.format()} – ${state.priceMax.format()}',
+        label:
+            '${state.filters.priceMin.format()} – ${state.filters.priceMax.format()}',
         onDeleted: () =>
             catalog.setPriceRange(Money.zero, const Money.egp(999999)),
       ));

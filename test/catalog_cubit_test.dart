@@ -60,7 +60,7 @@ CatalogState seededState([CatalogSort sort = CatalogSort.featured]) =>
       status: CatalogStatus.ready,
       allProducts: products,
       categories: categories,
-      sort: sort,
+      filters: CatalogFilters(sort: sort),
     );
 
 void main() {
@@ -112,7 +112,7 @@ void main() {
       act: (cubit) => cubit.updateQuery('VELVET'),
       wait: const Duration(milliseconds: 400),
       verify: (cubit) {
-        expect(cubit.state.query, 'VELVET');
+        expect(cubit.state.filters.query, 'VELVET');
         expect(cubit.state.visible, hasLength(2));
         expect(cubit.state.visible.every((p) => p.name.contains('Velvet')),
             isTrue);
@@ -152,9 +152,9 @@ void main() {
       },
       wait: const Duration(milliseconds: 400),
       verify: (cubit) {
-        expect(cubit.state.category, 'All');
-        expect(cubit.state.query, '');
-        expect(cubit.state.sort, CatalogSort.featured);
+        expect(cubit.state.filters.category, 'All');
+        expect(cubit.state.filters.query, '');
+        expect(cubit.state.filters.sort, CatalogSort.featured);
       },
     );
 
@@ -195,7 +195,7 @@ void main() {
       seed: seededState,
       act: (cubit) => cubit.setColorFilter('Emerald'),
       verify: (cubit) {
-        expect(cubit.state.colorFilter, 'Emerald');
+        expect(cubit.state.filters.colorFilter, 'Emerald');
         expect(cubit.state.visible, hasLength(1));
         expect(cubit.state.visible.first.name, 'Royal Emerald Silk');
       },
@@ -210,7 +210,7 @@ void main() {
         cubit.setColorFilter('Emerald');
       },
       verify: (cubit) {
-        expect(cubit.state.colorFilter, isEmpty);
+        expect(cubit.state.filters.colorFilter, isEmpty);
         expect(cubit.state.visible.length, 9);
       },
     );
@@ -224,8 +224,8 @@ void main() {
       act: (cubit) =>
           cubit.setPriceRange(const Money.egp(500), const Money.egp(800)),
       verify: (cubit) {
-        expect(cubit.state.priceMin, const Money.egp(500));
-        expect(cubit.state.priceMax, const Money.egp(800));
+        expect(cubit.state.filters.priceMin, const Money.egp(500));
+        expect(cubit.state.filters.priceMax, const Money.egp(800));
         for (final p in cubit.state.visible) {
           expect(
               p.price.minorUnits,
@@ -243,7 +243,7 @@ void main() {
       seed: seededState,
       act: (cubit) => cubit.selectSort(CatalogSort.newest),
       verify: (cubit) {
-        expect(cubit.state.sort, CatalogSort.newest);
+        expect(cubit.state.filters.sort, CatalogSort.newest);
         final ids = cubit.state.visible.map((p) => p.id).toList();
         for (var i = 0; i < ids.length - 1; i++) {
           expect(ids[i].compareTo(ids[i + 1]), greaterThanOrEqualTo(0));
@@ -281,12 +281,12 @@ void main() {
       },
       wait: const Duration(milliseconds: 100),
       verify: (cubit) {
-        expect(cubit.state.category, 'All');
-        expect(cubit.state.colorFilter, isEmpty);
-        expect(cubit.state.priceMin, Money.zero);
-        expect(cubit.state.priceMax, const Money.egp(999999));
-        expect(cubit.state.query, isEmpty);
-        expect(cubit.state.sort, CatalogSort.featured);
+        expect(cubit.state.filters.category, 'All');
+        expect(cubit.state.filters.colorFilter, isEmpty);
+        expect(cubit.state.filters.priceMin, Money.zero);
+        expect(cubit.state.filters.priceMax, const Money.egp(999999));
+        expect(cubit.state.filters.query, isEmpty);
+        expect(cubit.state.filters.sort, CatalogSort.featured);
         expect(cubit.state.visible.length, 9);
       },
     );

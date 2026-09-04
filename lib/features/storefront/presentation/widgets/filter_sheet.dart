@@ -32,13 +32,13 @@ class _FilterSheetState extends State<FilterSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.state.category;
-    _selectedColor = widget.state.colorFilter;
+    _selectedCategory = widget.state.filters.category;
+    _selectedColor = widget.state.filters.colorFilter;
     final min = widget.state.catalogPriceMin.majorUnits;
     final max = widget.state.catalogPriceMax.majorUnits;
     _priceRange = RangeValues(
-      widget.state.priceMin.majorUnits.clamp(min, max),
-      widget.state.priceMax.majorUnits.clamp(min, max),
+      widget.state.filters.priceMin.majorUnits.clamp(min, max),
+      widget.state.filters.priceMax.majorUnits.clamp(min, max),
     );
   }
 

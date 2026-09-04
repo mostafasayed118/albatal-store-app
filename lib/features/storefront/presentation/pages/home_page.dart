@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                           controller: _searchController,
                           onChanged: catalog.updateQuery,
                         ),
-                        if (state.query.isEmpty &&
+                        if (state.filters.query.isEmpty &&
                             state.recentQueries.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           Wrap(
@@ -135,7 +135,7 @@ class _HomePageState extends State<HomePage> {
                         const PromoBanner(),
                         const SizedBox(height: 24),
                         StitchCategoryChips(
-                          selected: state.category,
+                          selected: state.filters.category,
                           onSelect: catalog.select,
                           categories: state.categories,
                         ),
@@ -192,7 +192,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           PopupMenuButton<CatalogSort>(
                             tooltip: l.sortProducts,
-                            initialValue: state.sort,
+                            initialValue: state.filters.sort,
                             onSelected: catalog.selectSort,
                             itemBuilder: (_) => CatalogSort.values
                                 .map((sort) => PopupMenuItem(
@@ -200,7 +200,7 @@ class _HomePageState extends State<HomePage> {
                                 .toList(),
                             child: Chip(
                               avatar: const Icon(Icons.sort, size: 18),
-                              label: Text(state.sort.label),
+                              label: Text(state.filters.sort.label),
                             ),
                           ),
                         ],
