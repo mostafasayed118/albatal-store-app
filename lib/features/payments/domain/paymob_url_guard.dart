@@ -40,6 +40,17 @@ class PaymobUrlGuard {
         host.endsWith('.paymobsolutions.com');
   }
 
+  /// True when the checkout WebView may navigate to [url].
+  ///
+  /// The in-page counterpart of [isSafePaymobCheckoutUrl] — deliberately
+  /// the same rules (HTTPS on a Paymob-owned host), implemented by
+  /// delegation so the host allowlist lives in exactly ONE place. The
+  /// checkout page's navigation delegate used to keep its own inline
+  /// copy of these checks, which could silently drift from this list
+  /// (audit finding: duplicated allowlist).
+  static bool isSafeWebViewNavigationTarget(String url) =>
+      isSafePaymobCheckoutUrl(url);
+
   /// Redact the payment token from [url] so a safe, host-only label
   /// can be logged without leaking the sensitive token.
   static String redact(String url) {

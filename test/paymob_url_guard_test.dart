@@ -62,6 +62,35 @@ void main() {
     });
   });
 
+  group('PaymobUrlGuard.isSafeWebViewNavigationTarget', () {
+    test('delegates to the same rules as the entry-point guard (HTTPS only)', () {
+      expect(
+        PaymobUrlGuard.isSafeWebViewNavigationTarget(
+          'http://accept.paymob.com/iframes/1?payment_token=x',
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects navigation to a non-Paymob host', () {
+      expect(
+        PaymobUrlGuard.isSafeWebViewNavigationTarget(
+          'https://evil.example.com/steal?token=x',
+        ),
+        isFalse,
+      );
+    });
+
+    test('allows navigation within Paymob hosts', () {
+      expect(
+        PaymobUrlGuard.isSafeWebViewNavigationTarget(
+          'https://accept.paymob.com/api/acceptance/iframes/85679?payment_token=abc',
+        ),
+        isTrue,
+      );
+    });
+  });
+
   group('PaymobUrlGuard.redact', () {
     test('redacts the payment_token query param so it is safe to log', () {
       const url =

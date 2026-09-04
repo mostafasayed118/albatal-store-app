@@ -2,6 +2,26 @@
 
 Last run: 2026-09-04T00:00:00Z
 
+## New — 2026-09-04: audit residual fixes (settings domain purity + duplication)
+
+Branch `fix/audit-residuals-settings-gallery` (worktree `.trees/audit-residuals`, cut from master @ ac69c54).
+
+- **Settings domain purified**: `settings_repository.dart` no longer imports
+  `package:flutter/material.dart`. Domain owns `AppThemeMode` + `AppLocale`
+  (closed enum, unknown language codes degrade to English); the cubit is the
+  single Material mapping boundary. Persisted keys/values unchanged
+  (`system/light/dark`, `en/ar`) — zero migration, and unsupported locales are
+  now unrepresentable at the type level.
+- **Paymob allowlist deduplicated**: checkout WebView navigation now delegates
+  to `PaymobUrlGuard.isSafeWebViewNavigationTarget` (same rules as the
+  entry-point guard) instead of an inline second copy of the host list.
+- **Product-image pipeline deduplicated**: new `ProductImageResolver` replaces
+  the copy-pasted null/http/asset chain in both stitch cards, and upgrades
+  gallery/zoom/category grid from bare `Image.asset` (release-crash on http
+  URLs / failed loads) to the same guarded pipeline.
+- **Verification** (Flutter 3.47.2, CI-matching): `flutter analyze` clean;
+  `flutter test` 249/249 (243 + 3 nav-guard + 3 domain tests). Incidental tool
+  side effects restored to HEAD. Not pushed — human-gated.
 ## New — 2026-09-04
 
 ### L2: Audit issue #2 — relocate test-only catalog fixtures out of lib/
