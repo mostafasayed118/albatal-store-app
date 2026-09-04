@@ -383,7 +383,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get successTitle => 'نجاح!';
 
   @override
-  String get orderPlacedBody => 'تم placed طلبك. سن informك بالتحديثات.';
+  String get orderPlacedBody =>
+      'تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.';
 
   @override
   String itemsCount(int count) {
