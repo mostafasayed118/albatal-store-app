@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Admin order queue — filter by status, view orders.
@@ -28,18 +28,23 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       appBar: AppBar(
         title: Text(l.orderQueue),
         actions: [
-          PopupMenuButton<String?>(
+          PopupMenuButton<AdminOrderStatus?>(
             icon: const Icon(Icons.filter_list),
             onSelected: (status) {
               context.read<AdminCubit>().loadOrders(status: status);
             },
             itemBuilder: (_) => [
               PopupMenuItem(value: null, child: Text(l.allOrders)),
-              PopupMenuItem(value: 'placed', child: Text(l.placed)),
-              PopupMenuItem(value: 'processing', child: Text(l.processing)),
-              PopupMenuItem(value: 'shipped', child: Text(l.shipped)),
-              PopupMenuItem(value: 'delivered', child: Text(l.delivered)),
-              PopupMenuItem(value: 'cancelled', child: Text(l.cancelled)),
+              PopupMenuItem(
+                  value: AdminOrderStatus.placed, child: Text(l.placed)),
+              PopupMenuItem(
+                  value: AdminOrderStatus.processing, child: Text(l.processing)),
+              PopupMenuItem(
+                  value: AdminOrderStatus.shipped, child: Text(l.shipped)),
+              PopupMenuItem(
+                  value: AdminOrderStatus.delivered, child: Text(l.delivered)),
+              PopupMenuItem(
+                  value: AdminOrderStatus.cancelled, child: Text(l.cancelled)),
             ],
           ),
         ],
@@ -76,21 +81,21 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
 
 class _OrderTile extends StatelessWidget {
   const _OrderTile({required this.order});
-  final Map<String, dynamic> order;
+
+  final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final status = order['status'] as String? ?? 'unknown';
-    final total = Money(order['total'] as int? ?? 0).format();
-    final customerName =
-        order['profiles']?['full_name'] as String? ?? 'Unknown';
-    final itemCount = (order['order_items'] as List?)?.length ?? 0;
+    final status = order.status;
+    final total = order.total.format();
+    final customerName = order.customerName ?? 'Unknown';
+    final itemCount = order.itemCount ?? order.items.length;
 
     return Card(
       child: ListTile(
-        onTap: () => context.push('/admin/orders/${order['id']}'),
+        onTap: () => context.push('/admin/orders/${order.id}'),
         leading: CircleAvatar(
           backgroundColor: _statusColor(status, scheme).withValues(alpha: .12),
           child: Icon(_statusIcon(status),
@@ -99,7 +104,7 @@ class _OrderTile extends StatelessWidget {
         title: Row(
           children: [
             Expanded(
-              child: Text('#${order['id'].toString().substring(0, 8)}...',
+              child: Text('#${order.shortId}...',
                   style: Theme.of(context).textTheme.titleSmall),
             ),
             Text(total,
@@ -113,38 +118,44 @@ class _OrderTile extends StatelessWidget {
     );
   }
 
-  Color _statusColor(String status, ColorScheme scheme) {
+  Color _statusColor(AdminOrderStatus status, ColorScheme scheme) {
     switch (status) {
-      case 'placed':
+      case AdminOrderStatus.placed:
         return scheme.secondary;
-      case 'processing':
+      case AdminOrderStatus.pending:
+      case AdminOrderStatus.paid:
+      case AdminOrderStatus.processing:
         return scheme.tertiary;
-      case 'shipped':
+      case AdminOrderStatus.shipped:
         return scheme.primary;
-      case 'delivered':
+      case AdminOrderStatus.delivered:
         // Success tone from the token palette — never a raw Material
         // color (dark-mode + contrast safe, single-accent rule).
         return scheme.tertiary;
-      case 'cancelled':
+      case AdminOrderStatus.cancelled:
+      case AdminOrderStatus.refunded:
         return scheme.error;
-      default:
+      case AdminOrderStatus.unknown:
         return scheme.outline;
     }
   }
 
-  IconData _statusIcon(String status) {
+  IconData _statusIcon(AdminOrderStatus status) {
     switch (status) {
-      case 'placed':
+      case AdminOrderStatus.placed:
         return Icons.receipt_long;
-      case 'processing':
+      case AdminOrderStatus.pending:
+      case AdminOrderStatus.paid:
+      case AdminOrderStatus.processing:
         return Icons.autorenew;
-      case 'shipped':
+      case AdminOrderStatus.shipped:
         return Icons.local_shipping;
-      case 'delivered':
+      case AdminOrderStatus.delivered:
         return Icons.check_circle;
-      case 'cancelled':
+      case AdminOrderStatus.cancelled:
+      case AdminOrderStatus.refunded:
         return Icons.cancel;
-      default:
+      case AdminOrderStatus.unknown:
         return Icons.help_outline;
     }
   }

@@ -1,6 +1,8 @@
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_catalog_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_image_manager_page.dart';
@@ -27,24 +29,28 @@ class FakeAdminRepository implements AdminRepository {
   Future<bool> isCurrentUserAdmin() async => isAdmin;
 
   @override
-  Future<List<Map<String, dynamic>>> getAllOrders(
-          {String? status, int limit = 50}) async =>
-      [];
+  Future<Result<List<AdminOrder>>> getAllOrders(
+          {AdminOrderStatus? status, int limit = 50}) async =>
+      const Success([]);
 
   @override
-  Future<Map<String, dynamic>?> getOrderDetails(String orderId) async => null;
+  Future<Result<AdminOrder?>> getOrderDetails(String orderId) async =>
+      const Success(null);
 
   @override
-  Future<void> updateOrderStatus(String orderId, String status,
-      {String? trackingNumber}) async {}
+  Future<Result<void>> updateOrderStatus(
+          String orderId, AdminOrderStatus status,
+          {String? trackingNumber}) async =>
+      const Success(null);
 
   @override
-  Future<List<Map<String, dynamic>>> getLowStockProducts(
+  Future<Result<List<LowStockVariant>>> getLowStockProducts(
           {int threshold = 5}) async =>
-      [];
+      const Success([]);
 
   @override
-  Future<void> updateStock(String variantId, int newStock) async {}
+  Future<Result<void>> updateStock(String variantId, int newStock) async =>
+      const Success(null);
 
   @override
   Future<String> adminUpsertProduct({

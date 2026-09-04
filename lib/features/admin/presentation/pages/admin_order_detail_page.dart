@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Admin order detail — view items, update status, add tracking.
 class AdminOrderDetailPage extends StatefulWidget {
   const AdminOrderDetailPage({super.key, required this.orderId});
+
   final String orderId;
 
   @override
@@ -56,14 +58,14 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
 
 class _OrderStatusCard extends StatelessWidget {
   const _OrderStatusCard({required this.order});
-  final Map<String, dynamic> order;
+
+  final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final status = order['status'] as String? ?? 'unknown';
-    final total = Money(order['total'] as int? ?? 0).format();
-    final paymentMethod = order['payment_method'] as String? ?? 'Unknown';
+    final total = order.total.format();
+    final paymentMethod = order.paymentMethod ?? 'Unknown';
 
     return Card(
       child: Padding(
@@ -84,7 +86,7 @@ class _OrderStatusCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(status.toUpperCase(),
+                  child: Text(order.status.name.toUpperCase(),
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary)),
@@ -94,23 +96,27 @@ class _OrderStatusCard extends StatelessWidget {
             const Divider(),
             _DetailRow(l.total, total),
             _DetailRow(l.paymentMethod, paymentMethod),
-            _DetailRow(l.placedAt,
-                order['placed_at']?.toString().substring(0, 19) ?? ''),
+            _DetailRow(l.placedAt, _formatPlacedAt(order.placedAt)),
           ],
         ),
       ),
     );
   }
+
+  /// Renders the server timestamp for the detail card.
+  static String _formatPlacedAt(DateTime placedAt) =>
+      DateFormat('yyyy-MM-dd HH:mm:ss').format(placedAt);
 }
 
 class _OrderItemsCard extends StatelessWidget {
   const _OrderItemsCard({required this.order});
-  final Map<String, dynamic> order;
+
+  final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final items = (order['order_items'] as List?) ?? [];
+    final items = order.items;
 
     return Card(
       child: Padding(
@@ -122,10 +128,10 @@ class _OrderItemsCard extends StatelessWidget {
             const Divider(),
             ...items.map((item) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(item['product_name'] ?? 'Unknown'),
-                  subtitle: Text('${item['size']} / ${item['color']}'),
+                  title: Text(item.productName),
+                  subtitle: Text('${item.size} / ${item.color}'),
                   trailing: Text(
-                      '×${item['quantity']} · ${Money(item['unit_price'] as int? ?? 0).format()}'),
+                      '×${item.quantity} · ${item.unitPrice.format()}'),
                 )),
           ],
         ),
@@ -136,12 +142,13 @@ class _OrderItemsCard extends StatelessWidget {
 
 class _DeliveryAddressCard extends StatelessWidget {
   const _DeliveryAddressCard({required this.order});
-  final Map<String, dynamic> order;
+
+  final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final address = order['address_snapshot'] as Map<String, dynamic>?;
+    final address = order.address;
 
     return Card(
       child: Padding(
@@ -153,9 +160,9 @@ class _DeliveryAddressCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium),
             const Divider(),
             if (address != null) ...[
-              Text(address['recipient'] ?? ''),
-              Text('${address['line'] ?? ''}, ${address['city'] ?? ''}'),
-              Text(address['country'] ?? ''),
+              Text(address.recipient),
+              Text(address.singleLine),
+              Text(address.country),
             ] else
               Text(l.noAddressProvided),
           ],
@@ -165,14 +172,45 @@ class _DeliveryAddressCard extends StatelessWidget {
   }
 }
 
+/// Status-transition actions for the detail view, derived from the typed
+/// [AdminOrder] guards (`canConfirm`, `canCancel`, `canShip`, `canDeliver`)
+/// instead of string comparisons scattered through the UI.
 class _FulfillmentActions extends StatelessWidget {
   const _FulfillmentActions({required this.order});
-  final Map<String, dynamic> order;
+
+  final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final status = order['status'] as String? ?? 'unknown';
+
+    final actions = <Widget>[
+      if (order.canConfirm)
+        _ActionTile(
+          icon: Icons.autorenew,
+          title: l.confirmOrder,
+          onTap: () => _updateStatus(context, AdminOrderStatus.processing),
+        ),
+      if (order.canShip)
+        _ActionTile(
+          icon: Icons.local_shipping,
+          title: l.markAsShipped,
+          onTap: () => _showTrackingDialog(context),
+        ),
+      if (order.canDeliver)
+        _ActionTile(
+          icon: Icons.check_circle,
+          title: l.markAsDelivered,
+          onTap: () => _updateStatus(context, AdminOrderStatus.delivered),
+        ),
+      if (order.canCancel)
+        _ActionTile(
+          icon: Icons.cancel,
+          title: l.cancelOrder,
+          color: Theme.of(context).colorScheme.error,
+          onTap: () => _updateStatus(context, AdminOrderStatus.cancelled),
+        ),
+    ];
 
     return Card(
       child: Padding(
@@ -183,64 +221,21 @@ class _FulfillmentActions extends StatelessWidget {
             Text(l.fulfillmentActions,
                 style: Theme.of(context).textTheme.titleMedium),
             const Divider(),
-            if (status == 'paid') ...[
-              _ActionTile(
-                icon: Icons.autorenew,
-                title: l.confirmOrder,
-                onTap: () => _updateStatus(context, 'processing'),
-              ),
-              _ActionTile(
-                icon: Icons.cancel,
-                title: l.cancelOrder,
-                color: Theme.of(context).colorScheme.error,
-                onTap: () => _updateStatus(context, 'cancelled'),
-              ),
-            ] else if (status == 'placed') ...[
-              _ActionTile(
-                icon: Icons.autorenew,
-                title: l.confirmOrder,
-                onTap: () => _updateStatus(context, 'processing'),
-              ),
-              _ActionTile(
-                icon: Icons.cancel,
-                title: l.cancelOrder,
-                color: Theme.of(context).colorScheme.error,
-                onTap: () => _updateStatus(context, 'cancelled'),
-              ),
-            ] else if (status == 'processing') ...[
-              _ActionTile(
-                icon: Icons.local_shipping,
-                title: l.markAsShipped,
-                onTap: () => _showTrackingDialog(context),
-              ),
-              _ActionTile(
-                icon: Icons.cancel,
-                title: l.cancelOrder,
-                color: Theme.of(context).colorScheme.error,
-                onTap: () => _updateStatus(context, 'cancelled'),
-              ),
-            ] else if (status == 'shipped') ...[
-              _ActionTile(
-                icon: Icons.check_circle,
-                title: l.markAsDelivered,
-                onTap: () => _updateStatus(context, 'delivered'),
-              ),
-            ] else ...[
-              Text(l.noActionsAvailable),
-            ],
+            ...actions,
+            if (actions.isEmpty) Text(l.noActionsAvailable),
           ],
         ),
       ),
     );
   }
 
-  void _updateStatus(BuildContext context, String status) {
+  void _updateStatus(BuildContext context, AdminOrderStatus status) {
     context.read<AdminCubit>().updateOrderStatus(
-          order['id'] as String,
+          order.id,
           status,
         );
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Order status updated to $status')),
+      SnackBar(content: Text('Order status updated to ${status.name}')),
     );
   }
 
@@ -262,7 +257,8 @@ class _FulfillmentActions extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: trackingCtrl,
-                decoration: const InputDecoration(labelText: 'Tracking Number'),
+                decoration:
+                    const InputDecoration(labelText: 'Tracking Number'),
               ),
             ],
           ),
@@ -275,8 +271,8 @@ class _FulfillmentActions extends StatelessWidget {
           FilledButton(
             onPressed: () {
               context.read<AdminCubit>().updateOrderStatus(
-                    order['id'] as String,
-                    'shipped',
+                    order.id,
+                    AdminOrderStatus.shipped,
                     trackingNumber: trackingCtrl.text,
                   );
               Navigator.pop(context);

@@ -1,13 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/error/app_error.dart';
+import '../../../../core/error/result.dart';
+import '../domain/entities/admin_order.dart';
+import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_repository.dart';
+import 'admin_mappers.dart';
 
 /// Supabase-backed implementation of [AdminRepository].
 ///
-/// Wraps the Supabase client and translates RPC/table responses into
-/// the `Map<String, dynamic>` shape the admin pages already consume.
-/// This is the single place that knows about Supabase in the admin
-/// feature — the cubit and UI depend only on [AdminRepository].
+/// The only place in the admin feature that knows about Supabase. Raw
+/// rows/RPC payloads are mapped to typed entities by [AdminMappers] and
+/// every failure is returned as `Result.failure` — no exceptions cross
+/// the repository boundary.
 final class SupabaseAdminRepository implements AdminRepository {
   SupabaseAdminRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -18,67 +23,108 @@ final class SupabaseAdminRepository implements AdminRepository {
   Future<bool> isCurrentUserAdmin() async {
     final user = _client.auth.currentUser;
     if (user == null) return false;
-    final response = await _client
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-    return response['is_admin'] as bool? ?? false;
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+      return response['is_admin'] as bool? ?? false;
+    } catch (e) {
+      // A failed permission probe must not grant admin. Catches broadly
+      // because malformed payloads raise TypeError (an Error, not an
+      // Exception) that must never escape the repository boundary.
+      return false;
+    }
   }
 
   // ─── Order Fulfillment ──────────────────────────────────
 
   @override
-  Future<List<Map<String, dynamic>>> getAllOrders({
-    String? status,
+  Future<Result<List<AdminOrder>>> getAllOrders({
+    AdminOrderStatus? status,
     int limit = 50,
   }) async {
-    final query = _client.from('orders').select('*, profiles(full_name)');
-    final filtered = status != null ? query.eq('status', status) : query;
-    final result =
-        await filtered.order('placed_at', ascending: false).limit(limit);
-    return (result as List).cast<Map<String, dynamic>>();
+    try {
+      final query = _client.from('orders').select('*, profiles(full_name)');
+      final filtered =
+          status != null ? query.eq('status', status.dbValue) : query;
+      final rows = await filtered
+          .order('placed_at', ascending: false)
+          .limit(limit);
+      return Success((rows as List)
+          .whereType<Map<String, dynamic>>()
+          // Rows without a string id cannot be navigated to; skip them.
+          .where((r) => r['id'] is String)
+          .map(AdminMappers.orderFromRow)
+          .toList());
+    } catch (e) {
+      return Failure(AppError('Failed to load orders', cause: e));
+    }
   }
 
   @override
-  Future<Map<String, dynamic>?> getOrderDetails(String orderId) async {
-    final response = await _client
-        .from('orders')
-        .select('*, order_items(*), profiles(full_name)')
-        .eq('id', orderId)
-        .single();
-    return response;
+  Future<Result<AdminOrder?>> getOrderDetails(String orderId) async {
+    try {
+      final row = await _client
+          .from('orders')
+          .select('*, order_items(*), profiles(full_name)')
+          .eq('id', orderId)
+          .maybeSingle();
+      if (row == null) return const Success(null);
+      return Success(AdminMappers.orderDetailFromRow(row));
+    } catch (e) {
+      return Failure(AppError('Failed to load order', cause: e));
+    }
   }
 
   @override
-  Future<void> updateOrderStatus(
+  Future<Result<void>> updateOrderStatus(
     String orderId,
-    String status, {
+    AdminOrderStatus status, {
     String? trackingNumber,
   }) async {
-    await _client.rpc('update_order_status', params: {
-      'p_order_id': orderId,
-      'p_new_status': status,
-      'p_tracking_number': trackingNumber,
-    });
+    if (status == AdminOrderStatus.unknown) {
+      return const Failure(AppError('Unknown order status'));
+    }
+    try {
+      await _client.rpc('update_order_status', params: {
+        'p_order_id': orderId,
+        'p_new_status': status.dbValue,
+        'p_tracking_number': trackingNumber,
+      });
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update order status', cause: e));
+    }
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getLowStockProducts({
+  Future<Result<List<LowStockVariant>>> getLowStockProducts({
     int threshold = 5,
   }) async {
-    final response = await _client
-        .rpc('get_low_stock_products', params: {'p_threshold': threshold});
-    return (response as List).cast<Map<String, dynamic>>();
+    try {
+      final response = await _client
+          .rpc('get_low_stock_products', params: {'p_threshold': threshold});
+      return Success(
+          AdminMappers.lowStockVariantsFromRows(response as List<dynamic>));
+    } catch (e) {
+      return Failure(AppError('Failed to load low stock products', cause: e));
+    }
   }
 
   // ─── Variant Management ─────────────────────────────────
 
   @override
-  Future<void> updateStock(String variantId, int newStock) async {
-    await _client
-        .from('product_variants')
-        .update({'stock': newStock}).eq('id', variantId);
+  Future<Result<void>> updateStock(String variantId, int newStock) async {
+    try {
+      await _client
+          .from('product_variants')
+          .update({'stock': newStock}).eq('id', variantId);
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update stock', cause: e));
+    }
   }
 
   // ─── Catalog Management (T1) ─────────────────────────────
