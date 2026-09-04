@@ -96,7 +96,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 Padding(
                   padding: const EdgeInsetsDirectional.only(top: 4, bottom: 4),
                   child: StitchCategoryChips(
-                    selected: state.category,
+                    selected: state.filters.category,
                     categories: state.categories,
                     onSelect: catalog.select,
                   ),
@@ -143,14 +143,14 @@ class _CatalogPageState extends State<CatalogPage> {
 
   int _activeFilterCount(CatalogState state) {
     var count = 0;
-    if (state.category != 'All') {
+    if (state.filters.category != 'All') {
       count++;
     }
-    if (state.colorFilter.isNotEmpty) {
+    if (state.filters.colorFilter.isNotEmpty) {
       count++;
     }
-    if (state.priceMin > Money.zero ||
-        state.priceMax < CatalogConstants.unboundedMax) {
+    if (state.filters.priceMin > Money.zero ||
+        state.filters.priceMax < CatalogConstants.unboundedMax) {
       count++;
     }
     return count;
@@ -169,7 +169,7 @@ class _CatalogPageState extends State<CatalogPage> {
       builder: (_) => FilterSheet(
         state: state,
         onApply: (category, color, priceMin, priceMax) {
-          if (category != state.category) catalog.select(category);
+          if (category != state.filters.category) catalog.select(category);
           catalog.setColorFilter(color);
           catalog.setPriceRange(priceMin, priceMax);
         },

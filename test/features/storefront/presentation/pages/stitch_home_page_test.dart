@@ -145,6 +145,6 @@ void main() {
     await tester.pump();
 
     final context = tester.element(find.byType(HomePage));
-    expect(context.read<CatalogCubit>().state.category, 'Silk');
+    expect(context.read<CatalogCubit>().state.filters.category, 'Silk');
   });
 }

@@ -24,79 +24,23 @@ final class CatalogState extends Equatable {
     this.status = CatalogStatus.initial,
     this.allProducts = const [],
     this.categories = const [],
-    CatalogFilters? filters,
-    // Deprecated individual filter params — kept for backward compat.
-    // Stored as overrides and merged lazily in [filters] getter to keep
-    // the const constructor valid (Dart disallows `??` with variable inside
-    // a const object creation for the derived field).
-    String? category,
-    String? query,
-    CatalogSort? sort,
-    String? colorFilter,
-    Money? priceMin,
-    Money? priceMax,
+    this.filters = const CatalogFilters(),
     this.carouselIndex = 0,
     this.saleSeconds = 14362,
     this.recentQueries = const [],
     this.flashEnd,
     this.flashRemaining,
-  })  : _rawFilters = filters ?? const CatalogFilters(),
-        _category = category,
-        _query = query,
-        _sort = sort,
-        _colorFilter = colorFilter,
-        _priceMin = priceMin,
-        _priceMax = priceMax;
+  });
 
   final CatalogStatus status;
   final List<Product> allProducts;
   final List<String> categories;
-  final CatalogFilters _rawFilters;
-  final String? _category;
-  final String? _query;
-  final CatalogSort? _sort;
-  final String? _colorFilter;
-  final Money? _priceMin;
-  final Money? _priceMax;
+  final CatalogFilters filters;
   final int carouselIndex;
   final int saleSeconds;
   final List<String> recentQueries;
   final DateTime? flashEnd;
   final Duration? flashRemaining;
-
-  /// Effective filters — merges overrides when deprecated ctor params were used.
-  CatalogFilters get filters {
-    if (_category == null &&
-        _query == null &&
-        _sort == null &&
-        _colorFilter == null &&
-        _priceMin == null &&
-        _priceMax == null) {
-      return _rawFilters;
-    }
-    return CatalogFilters(
-      category: _category ?? _rawFilters.category,
-      query: _query ?? _rawFilters.query,
-      sort: _sort ?? _rawFilters.sort,
-      colorFilter: _colorFilter ?? _rawFilters.colorFilter,
-      priceMin: _priceMin ?? _rawFilters.priceMin,
-      priceMax: _priceMax ?? _rawFilters.priceMax,
-    );
-  }
-
-  // Backward-compat getters so existing tests/pages (state.category etc) keep working.
-  @Deprecated('Use filters.category')
-  String get category => filters.category;
-  @Deprecated('Use filters.query')
-  String get query => filters.query;
-  @Deprecated('Use filters.sort')
-  CatalogSort get sort => filters.sort;
-  @Deprecated('Use filters.colorFilter')
-  String get colorFilter => filters.colorFilter;
-  @Deprecated('Use filters.priceMin')
-  Money get priceMin => filters.priceMin;
-  @Deprecated('Use filters.priceMax')
-  Money get priceMax => filters.priceMax;
 
   bool get hasActiveFilters => filters.hasActiveFilters;
 
@@ -153,53 +97,23 @@ final class CatalogState extends Equatable {
     List<Product>? allProducts,
     List<String>? categories,
     CatalogFilters? filters,
-    @Deprecated('Use filters') String? category,
-    @Deprecated('Use filters') String? query,
-    @Deprecated('Use filters') CatalogSort? sort,
     int? carouselIndex,
     int? saleSeconds,
     List<String>? recentQueries,
-    @Deprecated('Use filters') String? colorFilter,
-    @Deprecated('Use filters') Money? priceMin,
-    @Deprecated('Use filters') Money? priceMax,
-    bool clearColorFilter = false,
-    bool resetPrice = false,
     DateTime? flashEnd,
     Duration? flashRemaining,
-  }) {
-    var effectiveFilters = filters ?? this.filters;
-    final hasDeprecated = category != null ||
-        query != null ||
-        sort != null ||
-        colorFilter != null ||
-        priceMin != null ||
-        priceMax != null ||
-        clearColorFilter ||
-        resetPrice;
-    if (hasDeprecated) {
-      effectiveFilters = effectiveFilters.copyWith(
-        category: category,
-        query: query,
-        sort: sort,
-        colorFilter: colorFilter,
-        priceMin: priceMin,
-        priceMax: priceMax,
-        clearColorFilter: clearColorFilter,
-        resetPrice: resetPrice,
+  }) =>
+      CatalogState(
+        status: status ?? this.status,
+        allProducts: allProducts ?? this.allProducts,
+        categories: categories ?? this.categories,
+        filters: filters ?? this.filters,
+        carouselIndex: carouselIndex ?? this.carouselIndex,
+        saleSeconds: saleSeconds ?? this.saleSeconds,
+        recentQueries: recentQueries ?? this.recentQueries,
+        flashEnd: flashEnd ?? this.flashEnd,
+        flashRemaining: flashRemaining ?? this.flashRemaining,
       );
-    }
-    return CatalogState(
-      status: status ?? this.status,
-      allProducts: allProducts ?? this.allProducts,
-      categories: categories ?? this.categories,
-      filters: effectiveFilters,
-      carouselIndex: carouselIndex ?? this.carouselIndex,
-      saleSeconds: saleSeconds ?? this.saleSeconds,
-      recentQueries: recentQueries ?? this.recentQueries,
-      flashEnd: flashEnd ?? this.flashEnd,
-      flashRemaining: flashRemaining ?? this.flashRemaining,
-    );
-  }
 
   @override
   List<Object?> get props => [
@@ -278,11 +192,12 @@ final class CatalogCubit extends Cubit<CatalogState> {
       emit(state.copyWith(filters: state.filters.copyWith(sort: sort)));
 
   void setColorFilter(String color) {
-    if (color == state.colorFilter) {
+    if (color == state.filters.colorFilter) {
       emit(state.copyWith(
           filters: state.filters.copyWith(clearColorFilter: true)));
     } else {
-      emit(state.copyWith(filters: state.filters.copyWith(colorFilter: color)));
+      emit(state.copyWith(
+          filters: state.filters.copyWith(colorFilter: color)));
     }
   }
 
