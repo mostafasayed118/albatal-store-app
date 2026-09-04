@@ -122,6 +122,16 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
       );
     }
 
+    // Fail closed when the authenticated user has no email (e.g. phone
+    // auth). Paymob requires a real billing email — never substitute a
+    // fake address. Checked here, before any order read or provider use.
+    if (!user.email) {
+      return new Response(
+        JSON.stringify({ message: "Customer email is required" }),
+        { status: 400, headers: jsonHeadersFor(req) },
+      );
+    }
+
     // ─── Validate request ────────────────────────────────────
     // The client sends only the internal order id. Amount,
     // currency, and customer identity are read from the DB.
@@ -183,7 +193,7 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
     const lastName = recipientParts.slice(1).join(" ") || "Customer";
     const billingData = {
       apartment: addr?.apartment || "NA",
-      email: user.email || "customer@example.com",
+      email: user.email,
       floor: addr?.floor || "NA",
       first_name: firstName || "Customer",
       street: addr?.line || addr?.street || "NA",
@@ -263,7 +273,7 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
         integrationId,
         decision.paymobOrderId,
         decision.amount,
-        user.email ?? "customer@example.com",
+        user.email,
         billingData,
       );
       if (!reused.ok) {

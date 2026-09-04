@@ -132,7 +132,8 @@ class PaymentCubit extends Cubit<PaymentState> {
 
       final methodResult = await _paymentService.setOrderPaymentMethod(
         orderId: state.orderId,
-        method: 'cod',
+        // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
+        method: PaymentMethod.cashOnDelivery.serverValue,
       );
       if (methodResult case PaymentFailed(:final message)) {
         emit(state.copyWith(

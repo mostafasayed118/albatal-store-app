@@ -3,6 +3,7 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -17,7 +18,7 @@ class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -89,8 +90,9 @@ void main() {
     blocTest<CheckoutCubit, CheckoutState>(
       'payment changes payment method',
       build: () => CheckoutCubit(StubCheckoutRepository()),
-      act: (cubit) => cubit.payment('Cash on Delivery'),
-      verify: (cubit) => expect(cubit.state.payment, 'Cash on Delivery'),
+      act: (cubit) => cubit.payment(PaymentMethod.cashOnDelivery),
+      verify: (cubit) =>
+          expect(cubit.state.payment, PaymentMethod.cashOnDelivery),
     );
   });
 

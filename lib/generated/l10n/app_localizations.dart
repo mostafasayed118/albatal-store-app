@@ -1585,6 +1585,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming Soon'**
   String get comingSoon;
+
+  /// No description provided for @serverConfirmedTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-confirmed totals'**
+  String get serverConfirmedTotals;
+
+  /// No description provided for @orderReferenceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to continue: the order reference is missing.'**
+  String get orderReferenceMissing;
+
+  /// No description provided for @customerEmailMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to continue: the customer email is missing. Please sign in again.'**
+  String get customerEmailMissing;
+
+  /// No description provided for @paymentLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment checkout link is invalid. Please retry.'**
+  String get paymentLinkInvalid;
+
+  /// No description provided for @paymentSucceededNoReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment succeeded but the order reference is missing.'**
+  String get paymentSucceededNoReference;
+
+  /// No description provided for @paymentCancelledRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment cancelled. You can retry.'**
+  String get paymentCancelledRetry;
+
+  /// No description provided for @paymentExpiredRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment expired. You can retry.'**
+  String get paymentExpiredRetry;
+
+  /// No description provided for @paymentTimedOutRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment verification timed out. Please check your orders before retrying.'**
+  String get paymentTimedOutRetry;
+
+  /// No description provided for @paymentFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. You can retry.'**
+  String get paymentFailedRetry;
+
+  /// No description provided for @adminAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin access required'**
+  String get adminAccessRequired;
 }
 
 class _AppLocalizationsDelegate

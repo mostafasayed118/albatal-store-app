@@ -288,5 +288,15 @@
   "order": "Order",
   "items": "items",
   "noAddressProvided": "No address provided",
-  "comingSoon": "Coming Soon"
+  "comingSoon": "Coming Soon",
+  "serverConfirmedTotals": "Server-confirmed totals",
+  "orderReferenceMissing": "Unable to continue: the order reference is missing.",
+  "customerEmailMissing": "Unable to continue: the customer email is missing. Please sign in again.",
+  "paymentLinkInvalid": "The payment checkout link is invalid. Please retry.",
+  "paymentSucceededNoReference": "Payment succeeded but the order reference is missing.",
+  "paymentCancelledRetry": "Payment cancelled. You can retry.",
+  "paymentExpiredRetry": "Payment expired. You can retry.",
+  "paymentTimedOutRetry": "Payment verification timed out. Please check your orders before retrying.",
+  "paymentFailedRetry": "Payment failed. You can retry.",
+  "adminAccessRequired": "Admin access required"
 }

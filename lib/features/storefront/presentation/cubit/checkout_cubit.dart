@@ -6,6 +6,7 @@ import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/services/logger.dart';
+import '../../../payments/domain/entities/payment.dart';
 import '../../domain/repositories/checkout_repository.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
@@ -13,7 +14,7 @@ enum CheckoutStatus { initial, creatingOrder, placing, success, error }
 final class CheckoutState extends Equatable {
   const CheckoutState({
     this.status = CheckoutStatus.initial,
-    this.payment = 'Credit Card',
+    this.payment = PaymentMethod.paymobCard,
     this.selectedAddress,
     this.errorMessage,
     this.pendingOrderId,
@@ -25,7 +26,7 @@ final class CheckoutState extends Equatable {
   });
 
   final CheckoutStatus status;
-  final String payment;
+  final PaymentMethod payment;
   final Address? selectedAddress;
   final String? errorMessage;
   final String? pendingOrderId;
@@ -49,7 +50,7 @@ final class CheckoutState extends Equatable {
 
   CheckoutState copyWith({
     CheckoutStatus? status,
-    String? payment,
+    PaymentMethod? payment,
     Address? selectedAddress,
     bool clearAddress = false,
     String? errorMessage,
@@ -102,7 +103,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   static const _persistTsStorage = 'checkout_idempotency_key_ts';
   static const _idempotencyTtl = Duration(hours: 24);
 
-  void payment(String value) => emit(state.copyWith(payment: value));
+  void payment(PaymentMethod value) => emit(state.copyWith(payment: value));
 
   void selectAddress(Address address) =>
       emit(state.copyWith(selectedAddress: address));

@@ -2,12 +2,20 @@ import '../../../../core/entities/money.dart';
 
 /// Supported payment methods for the Egyptian market.
 enum PaymentMethod {
-  paymobCard('Paymob Card', 'Credit/Debit Card via Paymob'),
-  cashOnDelivery('Cash on Delivery', 'Pay on delivery');
+  paymobCard('Paymob Card', 'Credit/Debit Card via Paymob', 'paymob_card'),
+  cashOnDelivery('Cash on Delivery', 'Pay on delivery', 'cod');
 
-  const PaymentMethod(this.label, this.description);
+  const PaymentMethod(this.label, this.description, this.serverValue);
   final String label;
   final String description;
+
+  /// Canonical method string stored in `orders.payment_method`.
+  ///
+  /// The server gates on these exact values: `paymob-initiate` and the
+  /// 035 claim RPC require `'paymob_card'`; COD confirm RPCs match
+  /// `'%cash%'`/`'%cod%'`; 037/039 allowlist `('cod','card')`.
+  /// Always send [serverValue] — never a display string or literal.
+  final String serverValue;
 }
 
 /// Result of a payment operation.
