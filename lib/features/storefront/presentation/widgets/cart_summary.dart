@@ -13,27 +13,33 @@ class CartSummary extends StatelessWidget {
     final l = context.l10n;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsetsDirectional.all(16),
         child: Column(
           children: [
-            _row(l.subtotal, money(state.subtotal)),
-            _row(l.shipping, money(state.shipping)),
+            _row(context, l.subtotal, money(state.subtotal)),
+            _row(context, l.shipping, money(state.shipping)),
             const Divider(),
-            _row(l.total, money(state.total), bold: true),
+            _row(context, l.total, money(state.total), bold: true),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, String value, {bool bold = false}) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _row(BuildContext context, String label, String value,
+          {bool bold = false}) =>
+      Padding(
+        padding: const EdgeInsetsDirectional.symmetric(vertical: 4),
         child: Row(
           children: [
-            Text(label),
+            Text(label, style: Theme.of(context).textTheme.bodyMedium),
             const Spacer(),
             Text(value,
-                style: TextStyle(fontWeight: bold ? FontWeight.bold : null)),
+                style: (bold
+                        ? Theme.of(context).textTheme.titleSmall
+                        : Theme.of(context).textTheme.bodyMedium)
+                    ?.copyWith(
+                        fontWeight: bold ? FontWeight.w700 : FontWeight.w400)),
           ],
         ),
       );

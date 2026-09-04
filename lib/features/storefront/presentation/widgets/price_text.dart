@@ -19,22 +19,23 @@ class PriceText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           money(amount),
-          style:
-              style ?? TextStyle(color: primary, fontWeight: FontWeight.bold),
+          style: style ??
+              textTheme.labelLarge?.copyWith(
+                  color: scheme.primary, fontWeight: FontWeight.w700),
         ),
         if (showStrikeThrough && strikeThroughAmount != null) ...[
           const SizedBox(width: 8),
           Text(
             money(strikeThroughAmount!),
-            style: TextStyle(
-              color:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: .5),
+            style: textTheme.labelSmall?.copyWith(
+              color: scheme.onSurface.withValues(alpha: .5),
               decoration: TextDecoration.lineThrough,
             ),
           ),

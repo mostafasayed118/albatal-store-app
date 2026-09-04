@@ -20,6 +20,108 @@ class _StubCatalogRepository implements CatalogRepository {
   @override
   Product? findProductById(String id) => null;
   @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
+
+class _RepositoryFailureCatalog implements CatalogRepository {
+  @override
+  Future<Result<List<Product>>> fetchProducts() async =>
+      Failure(AppError('database unavailable'));
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All']);
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      Failure(AppError('database unavailable'));
+  @override
+  Product? findProductById(String id) => null;
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
+
+class _RelatedFetchThrowsCatalog implements CatalogRepository {
+  static const requestedProduct = Product(
+    id: 'requested',
+    name: 'Requested',
+    category: 'Silk',
+    price: Money.egp(100),
+    imageColor: 0xFF000000,
+  );
+
+  var _fetchProductsCalls = 0;
+
+  @override
+  Future<Result<List<Product>>> fetchProducts() async {
+    _fetchProductsCalls++;
+    if (_fetchProductsCalls == 2) {
+      throw StateError('related products unavailable');
+    }
+    return const Success([requestedProduct]);
+  }
+
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All']);
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async {
+    final result = await fetchProducts();
+    return result.when(
+      success: (products) => Success(products.single),
+      failure: Failure.new,
+    );
+  }
+
+  @override
+  Product? findProductById(String id) => requestedProduct;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
+
+class _RelatedFetchFailureCatalog implements CatalogRepository {
+  static const requestedProduct = _RelatedFetchThrowsCatalog.requestedProduct;
+
+  var _fetchProductsCalls = 0;
+
+  @override
+  Future<Result<List<Product>>> fetchProducts() async {
+    _fetchProductsCalls++;
+    if (_fetchProductsCalls == 2) {
+      return Failure(AppError('related products unavailable'));
+    }
+    return const Success([requestedProduct]);
+  }
+
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['All']);
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async {
+    final result = await fetchProducts();
+    return result.when(
+      success: (products) => Success(products.single),
+      failure: Failure.new,
+    );
+  }
+
+  @override
+  Product? findProductById(String id) => requestedProduct;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
   List<String> get defaultCategories => const ['All'];
 }
 
@@ -124,6 +226,71 @@ void main() {
   });
 
   group('ProductDetailsCubit', () {
+    blocTest<ProductDetailsCubit, DetailsState>(
+      'emits loading and notFound when the requested id is absent',
+      build: () => ProductDetailsCubit(_StubCatalogRepository()),
+      act: (cubit) => cubit.loadProduct('missing'),
+      expect: () => [
+        const DetailsState(status: DetailsStatus.loading),
+        const DetailsState(status: DetailsStatus.notFound),
+      ],
+    );
+
+    blocTest<ProductDetailsCubit, DetailsState>(
+      'emits loading and error with a safe message when the repository fails',
+      build: () => ProductDetailsCubit(_RepositoryFailureCatalog()),
+      act: (cubit) => cubit.loadProduct('product'),
+      expect: () => [
+        const DetailsState(status: DetailsStatus.loading),
+        const DetailsState(
+          status: DetailsStatus.error,
+          errorMessage: 'Unable to load product details.',
+        ),
+      ],
+    );
+
+    blocTest<ProductDetailsCubit, DetailsState>(
+      'preserves the primary product when related products throw',
+      build: () => ProductDetailsCubit(_RelatedFetchThrowsCatalog()),
+      act: (cubit) => cubit.loadProduct('requested'),
+      expect: () => [
+        const DetailsState(status: DetailsStatus.loading),
+        DetailsState(
+          status: DetailsStatus.ready,
+          product: _RelatedFetchThrowsCatalog.requestedProduct,
+          color: _RelatedFetchThrowsCatalog.requestedProduct.colors.first,
+          length: _RelatedFetchThrowsCatalog.requestedProduct.sizes.first,
+        ),
+      ],
+      verify: (cubit) {
+        expect(
+            cubit.state.product, _RelatedFetchThrowsCatalog.requestedProduct);
+        expect(cubit.state.relatedProducts, isEmpty);
+      },
+    );
+
+    blocTest<ProductDetailsCubit, DetailsState>(
+      'preserves the primary product when related products return a failure',
+      build: () => ProductDetailsCubit(_RelatedFetchFailureCatalog()),
+      act: (cubit) => cubit.loadProduct('requested'),
+      expect: () => [
+        const DetailsState(status: DetailsStatus.loading),
+        DetailsState(
+          status: DetailsStatus.ready,
+          product: _RelatedFetchFailureCatalog.requestedProduct,
+          color: _RelatedFetchFailureCatalog.requestedProduct.colors.first,
+          length: _RelatedFetchFailureCatalog.requestedProduct.sizes.first,
+        ),
+      ],
+      verify: (cubit) {
+        expect(
+          cubit.state.product,
+          _RelatedFetchFailureCatalog.requestedProduct,
+        );
+        expect(cubit.state.relatedProducts, isEmpty);
+      },
+    );
+
     blocTest<ProductDetailsCubit, DetailsState>(
       'changes color',
       build: () => ProductDetailsCubit(_StubCatalogRepository()),

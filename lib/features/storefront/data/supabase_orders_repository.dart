@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/address.dart';
 import '../../../core/entities/money.dart';
@@ -6,6 +6,7 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
+import '../../../shared/services/logger.dart';
 import '../domain/repositories/orders_repository.dart';
 
 /// Supabase-backed orders repository.
@@ -26,6 +27,7 @@ final class SupabaseOrdersRepository implements OrdersRepository {
   Future<Result<List<Order>>> readOrders() async {
     try {
       final userId = _client.auth.currentUser?.id;
+      Log.w('readOrders: userId=$userId');
       if (userId == null) {
         return Failure(AppError('Not authenticated'));
       }
@@ -41,9 +43,11 @@ final class SupabaseOrdersRepository implements OrdersRepository {
             )
           ''').eq('user_id', userId).order('placed_at', ascending: false);
 
+      Log.w('readOrders: got ${rows.length} rows');
       final orders = rows.map(_mapOrder).toList();
       return Success(orders);
     } on Exception catch (e) {
+      Log.e('readOrders failed', error: e);
       return Failure(AppError('Failed to load orders', cause: e));
     }
   }

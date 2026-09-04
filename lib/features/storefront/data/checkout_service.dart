@@ -4,6 +4,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../payments/domain/entities/payment.dart';
 import '../domain/entities/pending_order.dart';
 import '../domain/repositories/checkout_repository.dart';
 
@@ -34,7 +35,7 @@ class CheckoutService implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -42,7 +43,10 @@ class CheckoutService implements CheckoutRepository {
       final response = await _client.rpc(
         'create_checkout_order',
         params: {
-          'p_payment_method': paymentMethod,
+          // Single source of truth: the enum's serverValue matches the
+          // strings the server gates on ('paymob_card' for 035/initiate,
+          // 'cod' for COD confirm). Never send display strings.
+          'p_payment_method': paymentMethod.serverValue,
           'p_address': addressSnapshot,
           'p_items': items
               .map((item) => {

@@ -167,3 +167,56 @@ export async function verifyHmac(
   const expected = await computeHmac(values, secret);
   return constantTimeEquals(expected, receivedHmac);
 }
+
+/**
+ * Normalize a transaction object (the `obj` payload of the
+ * transaction-processed callback, or a raw JSON body) into the
+ * flat string map the canonical HMAC expects.
+ *
+ * Paymob's processed callback nests two of the signed fields:
+ *   • `order` is an object — the signed value is `order.id`.
+ *   • `source_data` is an object — the signed values are
+ *     `source_data.pan`, `source_data.sub_type`,
+ *     `source_data.type`.
+ * Booleans are rendered as the lowercase strings Paymob signs
+ * ("true"/"false"); null/undefined become the empty string.
+ *
+ * Flat (redirect-style) shapes are accepted too, so one
+ * extractor serves every documented body variant.
+ */
+export function canonicalValuesFromTransaction(
+  txn: Record<string, unknown>,
+): Record<string, string> {
+  const pick = (v: unknown): string => {
+    if (v === null || v === undefined) return "";
+    if (typeof v === "boolean") return v ? "true" : "false";
+    return String(v);
+  };
+  const src = (txn.source_data ?? null) as Record<string, unknown> | null;
+  const order = txn.order;
+  return {
+    amount_cents: pick(txn.amount_cents),
+    created_at: pick(txn.created_at),
+    currency: pick(txn.currency),
+    error_occured: pick(txn.error_occured),
+    has_parent_transaction: pick(txn.has_parent_transaction),
+    id: pick(txn.id),
+    integration_id: pick(txn.integration_id),
+    is_3d_secure: pick(txn.is_3d_secure),
+    is_auth: pick(txn.is_auth),
+    is_capture: pick(txn.is_capture),
+    is_refunded: pick(txn.is_refunded),
+    is_standalone_payment: pick(txn.is_standalone_payment),
+    is_voided: pick(txn.is_voided),
+    order:
+      order !== null && typeof order === "object"
+        ? pick((order as Record<string, unknown>).id)
+        : pick(order),
+    owner: pick(txn.owner),
+    pending: pick(txn.pending),
+    source_data_pan: pick(src?.pan ?? txn.source_data_pan),
+    source_data_sub_type: pick(src?.sub_type ?? txn.source_data_sub_type),
+    source_data_type: pick(src?.type ?? txn.source_data_type),
+    success: pick(txn.success),
+  };
+}

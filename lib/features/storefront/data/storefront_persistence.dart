@@ -8,6 +8,7 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../shared/extensions/iterable_x.dart';
 import '../domain/repositories/cart_repository.dart';
+import 'product_mapper.dart';
 
 /// SharedPreferences-backed persistence for the storefront feature.
 ///
@@ -113,19 +114,7 @@ extension OrderCodec on Order {
         'id': o.id,
         'items': o.items
             .map((i) => {
-                  'product': {
-                    'id': i.product.id,
-                    'name': i.product.name,
-                    'category': i.product.category,
-                    'price': i.product.price.minorUnits,
-                    'imageColor': i.product.imageColor,
-                    'imageAsset': i.product.imageAsset,
-                    'oldPrice': i.product.oldPrice?.minorUnits,
-                    'description': i.product.description,
-                    'composition': i.product.composition,
-                    'care': i.product.care,
-                    'origin': i.product.origin,
-                  },
+                  'product': ProductCodec.encode(i.product),
                   'color': i.color,
                   'length': i.length,
                   'quantity': i.quantity,
@@ -156,21 +145,7 @@ extension OrderCodec on Order {
         .map((line) {
           final pRaw = line['product'];
           if (pRaw is! Map) return null;
-          final product = Product(
-            id: pRaw['id'] as String,
-            name: pRaw['name'] as String,
-            category: pRaw['category'] as String,
-            price: Money((pRaw['price'] as num).toInt()),
-            imageColor: (pRaw['imageColor'] as num).toInt(),
-            imageAsset: pRaw['imageAsset'] as String?,
-            oldPrice: pRaw['oldPrice'] == null
-                ? null
-                : Money((pRaw['oldPrice'] as num).toInt()),
-            description: pRaw['description'] as String?,
-            composition: pRaw['composition'] as String?,
-            care: pRaw['care'] as String?,
-            origin: pRaw['origin'] as String?,
-          );
+          final product = ProductCodec.decode(pRaw);
           return CartItem(
             product: product,
             color: line['color'] as String,

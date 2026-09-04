@@ -2,7 +2,9 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import '../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -28,7 +30,7 @@ class _StubRepo implements CatalogRepository {
           price: Money.egp(1290),
           oldPrice: Money.egp(1520),
           imageColor: 0xFF176B57,
-          imageAsset: 'assets/images/1.png',
+          imageAsset: 'assets/images/1.svg',
           rating: 4.8,
           reviewCount: 124,
         ),
@@ -55,6 +57,9 @@ class _StubRepo implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
   List<String> get defaultCategories =>
       const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
 }
@@ -77,6 +82,11 @@ Widget _harness({
           BlocProvider(create: (_) => CatalogCubit(const _StubRepo())..load()),
           BlocProvider(create: (_) => WishlistCubit(store)),
           BlocProvider(create: (_) => CartCubit(store)),
+          BlocProvider(
+              create: (_) => AuthCubit(
+                    authRepository: StubAuthRepository(),
+                    profileRepository: StubProfileRepository(),
+                  )..checkSession()),
         ],
         child: const HomePage(),
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -53,11 +52,10 @@ class OrderCard extends StatelessWidget {
                   ),
                   child: Text(
                     _statusLabel(o.status, l),
-                    style: TextStyle(
-                      color: scheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ],
@@ -68,19 +66,14 @@ class OrderCard extends StatelessWidget {
             if (isActive)
               StatusProgress(status: o.status, scheme: scheme)
             else
-              Text('${l.delivered} · ${_fmtDate(o.placedAt)}',
-                  style: TextStyle(color: scheme.primary)),
-            if (isActive) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton.icon(
-                  onPressed: () => context.read<OrdersCubit>().advance(o.id),
-                  icon: const Icon(Icons.arrow_forward, size: 18),
-                  label: Text(l.advanceOrder),
-                ),
-              ),
-            ],
+              // Closed orders show their own outcome + date — never a
+              // hardcoded 'Delivered' (live-found 2026-09-04: just-paid
+              // orders read 'Delivered · today').
+              Text('${_closedLabel(o.status, l)} · ${_fmtDate(o.placedAt)}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: scheme.primary)),
           ],
         ),
       ),
@@ -90,12 +83,19 @@ class OrderCard extends StatelessWidget {
   String _statusLabel(OrderStatus s, AppLocalizations l) => switch (s) {
         OrderStatus.pending => l.placed,
         OrderStatus.placed => l.placed,
-        OrderStatus.paid => l.placed,
+        OrderStatus.paid => l.paid,
         OrderStatus.processing => l.placed,
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,
         OrderStatus.refunded => l.cancelled,
+        OrderStatus.expired => l.cancelled,
+      };
+
+  String _closedLabel(OrderStatus s, AppLocalizations l) => switch (s) {
+        OrderStatus.delivered => l.delivered,
+        OrderStatus.paid => l.paid,
+        _ => l.cancelled,
       };
 }
 

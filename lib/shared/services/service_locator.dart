@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
-import 'package:get_it/get_it.dart';
+﻿import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'storage_service.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
@@ -13,15 +13,16 @@ import '../../features/auth/data/supabase_auth_repository.dart';
 import '../../features/auth/data/supabase_profile_repository.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/repositories/profile_repository.dart';
+import '../../features/onboarding/data/local_onboarding_repository.dart';
+import '../../features/onboarding/domain/repositories/onboarding_repository.dart';
 import '../../features/payments/data/paymob_payment_service.dart';
 import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
-import '../../features/storefront/data/local_orders_repository.dart';
-import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
+import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
@@ -48,6 +49,8 @@ Future<void> configureDependencies() async {
     ..registerSingleton<SharedPreferences>(preferences)
     ..registerLazySingleton<SettingsRepository>(
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<OnboardingRepository>(
+        () => LocalOnboardingRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AddressRepository>(
         () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())
@@ -63,12 +66,16 @@ Future<void> configureDependencies() async {
         () => LocalCartRepository(getIt<LocalStorefrontPersistence>()))
     ..registerLazySingleton<WishlistRepository>(
         () => LocalWishlistRepository(getIt<LocalStorefrontPersistence>()))
-    // Server-backed orders in production; local fallback in debug.
-    ..registerLazySingleton<OrdersRepository>(() => kDebugMode
-        ? LocalOrdersRepository(getIt<LocalStorefrontPersistence>())
-        : SupabaseOrdersRepository())
+    // Server-backed orders in ALL builds: checkout creates orders
+    // server-side via the `create_checkout_order` RPC (CheckoutService
+    // is registered unconditionally above), so the orders list must
+    // read from the server too. A local fallback here made debug
+    // builds show a permanently empty orders screen (live-found
+    // 2026-09-03).
+    ..registerLazySingleton<OrdersRepository>(() => SupabaseOrdersRepository())
     ..registerLazySingleton<CatalogRepository>(() =>
         SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
+    ..registerLazySingleton<StorageService>(() => StorageService())
     // Crash reporting: Use Sentry when DSN is configured, NoOp otherwise.
     ..registerLazySingleton<CrashReportingService>(() {
       if (EnvConfig.sentryDsn.isNotEmpty) {

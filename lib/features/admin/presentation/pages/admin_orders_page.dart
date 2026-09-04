@@ -100,11 +100,11 @@ class _OrderTile extends StatelessWidget {
           children: [
             Expanded(
               child: Text('#${order['id'].toString().substring(0, 8)}...',
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                  style: Theme.of(context).textTheme.titleSmall),
             ),
             Text(total,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: scheme.primary)),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700, color: scheme.primary)),
           ],
         ),
         subtitle: Text('$customerName · $itemCount ${l.items}'),
@@ -122,7 +122,9 @@ class _OrderTile extends StatelessWidget {
       case 'shipped':
         return scheme.primary;
       case 'delivered':
-        return Colors.green;
+        // Success tone from the token palette — never a raw Material
+        // color (dark-mode + contrast safe, single-accent rule).
+        return scheme.tertiary;
       case 'cancelled':
         return scheme.error;
       default:
