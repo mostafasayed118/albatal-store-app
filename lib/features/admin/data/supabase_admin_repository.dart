@@ -80,4 +80,85 @@ final class SupabaseAdminRepository implements AdminRepository {
         .from('product_variants')
         .update({'stock': newStock}).eq('id', variantId);
   }
+
+  // ─── Catalog Management (T1) ─────────────────────────────
+
+  @override
+  Future<String> adminUpsertProduct({
+    String? id,
+    required String name,
+    required String slug,
+    String? description,
+    String? composition,
+    required String categoryId,
+    required double basePrice,
+    required bool isActive,
+  }) async {
+    final res = await _client.rpc('admin_upsert_product', params: {
+      'p_id': id,
+      'p_name': name,
+      'p_slug': slug,
+      'p_description': description,
+      'p_composition': composition,
+      'p_category_id': categoryId,
+      'p_base_price': basePrice,
+      'p_is_active': isActive,
+    });
+    return res as String;
+  }
+
+  @override
+  Future<String> adminUpsertVariant({
+    required String productId,
+    required String size,
+    required String color,
+    required int stock,
+    double? priceOverride,
+  }) async {
+    final res = await _client.rpc('admin_upsert_variant', params: {
+      'p_product_id': productId,
+      'p_size': size,
+      'p_color': color,
+      'p_stock': stock,
+      'p_price_override': priceOverride,
+    });
+    return res as String;
+  }
+
+  @override
+  Future<void> adminSetProductImages(
+      String productId, List<String> storagePaths) async {
+    await _client.rpc('admin_set_product_images', params: {
+      'p_product_id': productId,
+      'p_paths': storagePaths,
+    });
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async {
+    final res = await _client.rpc('get_active_flash_sales');
+    return (res as List).cast<Map<String, dynamic>>();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getVariants(String productId) async {
+    final res = await _client
+        .from('product_variants')
+        .select()
+        .eq('product_id', productId)
+        .order('size');
+    return (res as List).cast<Map<String, dynamic>>();
+  }
+
+  @override
+  Future<List<String>> getProductImagePaths(String productId) async {
+    final res = await _client
+        .from('product_images')
+        .select('storage_path')
+        .eq('product_id', productId)
+        .order('sort_order');
+    return (res as List)
+        .map((e) => (e as Map<String, dynamic>)['storage_path'] as String)
+        .toList();
+  }
 }

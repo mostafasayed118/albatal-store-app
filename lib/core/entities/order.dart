@@ -12,6 +12,8 @@ import 'product.dart';
 /// [pending] = created but not yet paid (server-side checkout flow).
 /// [paid] = payment confirmed by webhook (transitions to [placed] or
 /// [processing] for fulfillment).
+/// [expired] = pending order whose payment window lapsed (server-side
+/// expiry cron). Terminal: shown under cancelled.
 enum OrderStatus {
   pending,
   placed,
@@ -20,7 +22,8 @@ enum OrderStatus {
   shipped,
   delivered,
   cancelled,
-  refunded
+  refunded,
+  expired
 }
 
 /// An immutable snapshot of a successfully placed order.

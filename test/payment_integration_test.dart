@@ -34,6 +34,14 @@ class StubPaymentService implements PaymentService {
   }
 
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    return const PaymentSuccess(transactionId: '', amount: Money.zero);
+  }
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }

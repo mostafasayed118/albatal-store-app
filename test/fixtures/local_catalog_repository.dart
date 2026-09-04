@@ -35,4 +35,7 @@ final class LocalCatalogRepository implements CatalogRepository {
 
   @override
   List<String> get defaultCategories => categories;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
 }

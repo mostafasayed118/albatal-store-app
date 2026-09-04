@@ -27,4 +27,12 @@ abstract interface class CatalogRepository {
   /// Synchronous access to the category list used as a fallback when
   /// the cubit hasn't loaded yet (e.g. first-frame render).
   List<String> get defaultCategories;
+
+  /// Active flash sales from `flash_sales` table.
+  ///
+  /// Default implementation returns empty list so existing fakes/stubs
+  /// remain valid without override. Remote implementations (Supabase)
+  /// override to call `rpc('get_active_flash_sales')`.
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() =>
+      Future.value(const []);
 }

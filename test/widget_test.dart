@@ -22,7 +22,13 @@ void main() {
 
   testWidgets('App boots without throwing', (WidgetTester tester) async {
     await tester.pumpWidget(const AlBatalApp());
-    await tester.pump();
+    await tester.pump(); // splash builds
+    // First-run boot lands on /splash (1100ms logo animation) then routes to
+    // /onboarding. Drive the animation out and settle the router so no
+    // ticker/timer is pending at invariant-check time.
+    await tester.pump(const Duration(milliseconds: 1200));
+    await tester.pumpAndSettle();
     expect(find.byType(MaterialApp), findsWidgets);
+    await tester.pumpWidget(const SizedBox.shrink()); // explicit unmount
   });
 }

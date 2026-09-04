@@ -50,7 +50,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -95,6 +95,13 @@ class _StubPayService implements PaymentService {
   @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
       const PaymentFailed(message: 'stub');
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream.empty();
@@ -203,7 +210,7 @@ void main() {
     });
 
     testWidgets(
-        'bottomNavigationBar is Container height 72 EdgeInsetsDirectional.all(16) surface with FilledButton secondary #904D00 controlRadius 8 labelLarge proceedToPayment and hasAddress guard',
+        'bottomNavigationBar is auto-height Container EdgeInsetsDirectional.all(16) surface with FilledButton 50px secondary #904D00 controlRadius 8 labelLarge proceedToPayment and hasAddress guard',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;
@@ -211,17 +218,18 @@ void main() {
       await tester.pumpWidget(_checkoutWithAddressHarness());
       await tester.pump();
 
-      // Height check via constraints finder - Container height 72 is the Stitch bottom bar pattern.
+      // Auto-height bar (fits the 50px DESIGN CTA): no fixed-height
+      // Container constrains the bottom bar anymore.
       expect(
         find.byWidgetPredicate(
             (w) => w is Container && w.constraints?.maxHeight == 72),
-        findsOneWidget,
-        reason: 'Bottom bar Container should have height 72',
+        findsNothing,
+        reason: 'Bottom bar must not pin the legacy fixed 72px height',
       );
       // Padding should be EdgeInsetsDirectional.all(16).
       final containerWithPadding = tester.widget<Container>(
-        find.byWidgetPredicate(
-            (w) => w is Container && w.constraints?.maxHeight == 72),
+        find.byWidgetPredicate((w) =>
+            w is Container && w.padding == const EdgeInsetsDirectional.all(16)),
       );
       expect(containerWithPadding.padding, isA<EdgeInsetsDirectional>());
       expect(containerWithPadding.padding, const EdgeInsetsDirectional.all(16));
@@ -240,6 +248,8 @@ void main() {
       final shape =
           button.style?.shape?.resolve(const {}) as RoundedRectangleBorder?;
       expect(shape?.borderRadius, const BorderRadius.all(Radius.circular(8)));
+      // DESIGN CTA contract: 50px minimum touch height.
+      expect(button.style?.minimumSize?.resolve(const {})?.height, 50);
 
       // Guard: onPressed disabled when no address? In this harness we have address, so should be enabled initially (before creating).
       // Now test guard after clearing address.

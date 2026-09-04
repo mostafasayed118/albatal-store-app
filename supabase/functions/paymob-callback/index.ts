@@ -35,6 +35,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   PAYMOB_HMAC_FIELDS,
   buildHmacPayload,
+  canonicalValuesFromTransaction,
   verifyHmac,
 } from "./hmac.ts";
 import { corsHeadersFor, jsonHeadersFor } from "../_shared/cors.ts";
@@ -79,16 +80,59 @@ Deno.serve(async (req) => {
     // in the exact documented order, NOT from the raw query
     // string. The `hmac` field itself is never part of the
     // signed payload.
-    const receivedHmac = params.get("hmac") ?? "";
-
-    // Collect the canonical field values from the callback.
-    // `source_data_pan` / `source_data_sub_type` /
-    // `source_data_type` are flat fields in the
-    // form-urlencoded body.
+    // Paymob delivers TWO body shapes on this endpoint:
+    //   • Redirect-style POST: flat form-urlencoded fields.
+    //   • Transaction processed callback: an `obj` form field
+    //     holding the transaction as JSON — with nested
+    //     order.id and source_data.{pan,sub_type,type} — plus
+    //     a separate `hmac` field. Raw-JSON bodies
+    //     ({obj:…,hmac:…} or the transaction itself) are
+    //     accepted as well. All shapes normalize into one flat
+    //     string map before verification.
     const values: Record<string, string> = {};
-    for (const field of PAYMOB_HMAC_FIELDS) {
-      values[field] = params.get(field) ?? "";
+    let receivedHmac = params.get("hmac") ?? "";
+    // Paymob's processed callback sends the transaction as a raw
+    // JSON body and carries the signature OUTSIDE the body — as a
+    // query parameter on the callback URL (and some integrations
+    // use a header). Resolution order: body field → query → header.
+    const queryHmac = new URL(req.url).searchParams.get("hmac") ?? "";
+    const headerHmac = req.headers.get("x-paymob-hmac") ?? "";
+    const objRaw = params.get("obj");
+    if (objRaw !== null) {
+      try {
+        const obj = JSON.parse(objRaw);
+        if (typeof obj !== "object" || obj === null) throw new Error("bad obj");
+        Object.assign(values, canonicalValuesFromTransaction(obj as Record<string, unknown>));
+      } catch {
+        console.error("paymob-callback: malformed obj payload");
+        return new Response(
+          JSON.stringify({ message: "Malformed obj payload" }),
+          { status: 400, headers: jsonHeadersFor(req) },
+        );
+      }
+    } else if (body.trimStart().startsWith("{")) {
+      try {
+        const parsed = JSON.parse(body) as Record<string, unknown>;
+        const txn = ("amount_cents" in parsed)
+          ? parsed
+          : (parsed.obj as Record<string, unknown> | undefined);
+        if (typeof txn !== "object" || txn === null) throw new Error("no txn");
+        Object.assign(values, canonicalValuesFromTransaction(txn));
+        receivedHmac = typeof parsed.hmac === "string" ? parsed.hmac : "";
+      } catch {
+        console.error("paymob-callback: malformed JSON body");
+        return new Response(
+          JSON.stringify({ message: "Malformed JSON body" }),
+          { status: 400, headers: jsonHeadersFor(req) },
+        );
+      }
+    } else {
+      for (const field of PAYMOB_HMAC_FIELDS) {
+        values[field] = params.get(field) ?? "";
+      }
     }
+    if (!receivedHmac) receivedHmac = queryHmac;
+    if (!receivedHmac) receivedHmac = headerHmac;
 
     // HIGH-01: constant-time comparison.
     const ok = await verifyHmac(values, hmacSecret, receivedHmac);

@@ -36,6 +36,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeTitle => 'مصنوع للتميّز';
 
   @override
+  String get onboardingExquisiteTitle => 'أقمشة فاخرة';
+
+  @override
+  String get onboardingExquisiteBody =>
+      'اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.';
+
+  @override
+  String get onboardingCraftsmanshipTitle => 'حرفية أصيلة';
+
+  @override
+  String get onboardingCraftsmanshipBody =>
+      'كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.';
+
+  @override
+  String get onboardingExcellenceTitle => 'مصمم للتميّز';
+
+  @override
+  String get onboardingExcellenceBody =>
+      'اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ الآن';
+
+  @override
   String get welcomeBody =>
       'أساس لتجارة إلكترونية راقية بخيارات مدروسة لكل اتجاه ووضع عرض.';
 
@@ -112,6 +142,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentMethod => 'طريقة الدفع';
+
+  @override
+  String get paid => 'مدفوع';
 
   @override
   String get addNewAddress => 'إضافة عنوان جديد';
@@ -336,7 +369,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get care => 'العناية';
 
   @override
-  String get goodMorning => 'صباح الخير، أحمد';
+  String goodMorning(Object name) {
+    return 'صباح الخير، $name';
+  }
+
+  @override
+  String get goodMorningGuest => 'صباح الخير';
 
   @override
   String get openSettings => 'فتح الإعدادات';
@@ -345,7 +383,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get successTitle => 'نجاح!';
 
   @override
-  String get orderPlacedBody => 'تم placed طلبك. سن informك بالتحديثات.';
+  String get orderPlacedBody =>
+      'تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.';
 
   @override
   String itemsCount(int count) {
@@ -378,6 +417,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderSummary => 'ملخص الطلب';
+
+  @override
+  String get estimatedTotalsNote =>
+      'إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.';
 
   @override
   String itemsInCart(int count) {
@@ -716,7 +759,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get emailSupport => 'دعم البريد الإلكتروني';
 
   @override
-  String get emailSupportAddress => 'support@albatal.com';
+  String get emailSupportAddress => 'al3tar66@gmail.com';
 
   @override
   String get faq => 'الأسئلة الشائعة';
@@ -738,4 +781,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get comingSoon => 'قريباً';
+
+  @override
+  String get serverConfirmedTotals => 'الإجماليات المؤكدة من الخادم';
+
+  @override
+  String get orderReferenceMissing => 'تعذر المتابعة: مرجع الطلب مفقود.';
+
+  @override
+  String get customerEmailMissing =>
+      'تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.';
+
+  @override
+  String get paymentLinkInvalid => 'رابط الدفع غير صالح. يرجى المحاولة مجددًا.';
+
+  @override
+  String get paymentSucceededNoReference => 'نجح الدفع لكن مرجع الطلب مفقود.';
+
+  @override
+  String get paymentCancelledRetry => 'تم إلغاء الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get paymentExpiredRetry =>
+      'انتهت صلاحية الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get paymentTimedOutRetry =>
+      'انتهت مهلة التحقق من الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.';
+
+  @override
+  String get paymentFailedRetry => 'فشل الدفع. يمكنك المحاولة مجددًا.';
+
+  @override
+  String get adminAccessRequired => 'يلزم الوصول كمسؤول';
 }

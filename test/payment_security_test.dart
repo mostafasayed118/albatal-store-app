@@ -43,6 +43,13 @@ class _NoVerifyStub implements PaymentService {
       const PaymentFailed(message: 'stub');
 
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
@@ -62,6 +69,14 @@ class _ServerConfirmStub implements PaymentService {
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
       const PaymentSuccess(
           transactionId: 'COD-server-stub-txn', amount: Money.zero);
+
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    return const PaymentSuccess(transactionId: '', amount: Money.zero);
+  }
 
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>

@@ -12,44 +12,53 @@ class RelatedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
+    return Semantics(
+      button: true,
+      label: product.name,
       child: SizedBox(
         width: 140,
+        height: 200,
         child: Card(
           clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ProductImagePlaceholder(
-                  imageColor: product.imageColor,
-                  imageAsset: product.imageAsset,
-                  constraints: const BoxConstraints.expand(),
-                  size: 36,
+          child: InkWell(
+            onTap: onTap,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ProductImagePlaceholder(
+                    imageColor: product.imageColor,
+                    imageAsset: product.imageAsset,
+                    constraints: const BoxConstraints.expand(),
+                    size: 36,
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(product.name,
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    Text(product.price.format(),
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: scheme.primary,
-                            fontWeight: FontWeight.bold)),
-                  ],
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        product.price.format(),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
