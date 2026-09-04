@@ -1,5 +1,40 @@
 # Loop State — Al Batal Elite
 
+Last run: 2026-09-04T00:00:00Z
+
+## New — 2026-09-04
+
+### L2: Audit issue #2 — relocate test-only catalog fixtures out of lib/
+**Branch:** `refactor/relocate-test-fixtures` (worktree
+`.trees/relocate-test-fixtures`, from `master` @ `ac69c54`). Human enabled L2
+for audit issue #2.
+
+**Problem:** `products_data.dart` (269 LOC fixture catalog) and
+`local_catalog_repository.dart` (test-only in-memory repo) lived in
+`lib/features/storefront/data/` but were referenced ONLY from `test/` —
+so both files were compiled into every release build as dead weight.
+
+**Changes:**
+1. Moved both files to `test/fixtures/` (git records them as renames).
+2. Content unchanged except: package imports (`package:al_batal_elite/...`)
+   replacing fragile deep relative paths, plus doc comments stating the
+   test-only location and the release-bundle rationale.
+3. Updated all 16 import sites across 14 test files (11 top-level tests →
+   `fixtures/...`, 3 nested tests → `../../../../fixtures/...`).
+4. Zero remaining references in `lib/` (verified by grep).
+
+**Verification evidence (Flutter 3.47.2 stable — matches CI 3.47.x pin):**
+| Check | Result |
+|-------|--------|
+| `flutter pub get` | OK (worktree-local; lock restored to HEAD) |
+| `flutter analyze` | **No issues found!** (first run caught 3 wrong-depth relative imports in nested tests — fixed to 4 levels) |
+| `flutter test` | **243 passed, 0 failed** — full suite green, zero regressions |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, `GeneratedPluginRegistrant.swift`, `pubspec.lock` |
+
+**Release-bundle effect:** 304 LOC of test-only Dart no longer compiled into
+release builds. No production code touched. **Merge remains human-gated.**
+
+---
 Last run: 2026-09-03T23:04:34+03:00
 
 ## New — 2026-09-03 (test runner and final verification)

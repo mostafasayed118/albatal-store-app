@@ -7,7 +7,7 @@ import 'package:al_batal_elite/features/storefront/domain/entities/pending_order
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
+import 'fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Configurable stub for [CheckoutRepository] that records every
