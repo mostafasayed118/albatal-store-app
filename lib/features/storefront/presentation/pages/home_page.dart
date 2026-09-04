@@ -131,6 +131,11 @@ class _HomePageState extends State<HomePage> {
           return BlocBuilder<WishlistCubit, WishlistState>(
             builder: (context, wishlist) {
               return CustomScrollView(
+                // Dismiss the search keyboard on scroll: an open IME
+                // shrank the viewport into a 7.6px bottom overflow
+                // (live-found 2026-09-04).
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
                   SliverPadding(
                     padding: const EdgeInsetsDirectional.all(16),
