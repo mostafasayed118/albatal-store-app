@@ -38,6 +38,13 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// cart from SharedPreferences without awaiting a network call).
   List<Product>? _cache;
 
+  /// Id → Product index over [_cache] so [findProductById] is O(1) instead
+  /// of a linear scan per cart line during hydration. Rebuilt — never
+  /// mutated in place — by [_setCache], the single choke point for cache
+  /// writes (network fetch, offline restore, and the test helper all
+  /// route through it, so the map can never drift from the list).
+  final Map<String, Product> _productsById = {};
+
   /// Timestamp of the last successful [fetchProducts] call. Used with
   /// [_cacheTTL] to invalidate stale data.
   DateTime? _cacheTimestamp;
@@ -53,6 +60,16 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       _cache != null &&
       _cacheTimestamp != null &&
       DateTime.now().difference(_cacheTimestamp!) < _cacheTTL;
+
+  /// Atomically replaces the in-memory cache and rebuilds the id index.
+  /// If [products] contains duplicate ids the last entry wins.
+  void _setCache(List<Product> products) {
+    _cache = products;
+    _cacheTimestamp = DateTime.now();
+    _productsById
+      ..clear()
+      ..addEntries(products.map((p) => MapEntry(p.id, p)));
+  }
 
   @override
   Future<Result<List<Product>>> fetchProducts() async {
@@ -85,8 +102,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         ));
       }
 
-      _cache = result;
-      _cacheTimestamp = DateTime.now();
+      _setCache(result);
 
       // Persist to SharedPreferences for offline fallback.
       _persistCache(result);
@@ -97,8 +113,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // then fall back to in-memory cache (same session only).
       final persistentCache = _restorePersistentCache();
       if (persistentCache != null) {
-        _cache = persistentCache;
-        _cacheTimestamp = DateTime.now();
+        _setCache(persistentCache);
         return Success(persistentCache);
       }
       final stale = _cache;
@@ -129,13 +144,10 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   @override
   Future<Result<Product>> fetchProductById(String id) async {
-    // Cache fast path — avoids network when fetchProducts() already warmed _cache.
-    final cached = _cache;
-    if (cached != null) {
-      for (final p in cached) {
-        if (p.id == id) return Success(p);
-      }
-    }
+    // O(1) cache fast path — avoids network when fetchProducts() already
+    // warmed the cache.
+    final cached = _productsById[id];
+    if (cached != null) return Success(cached);
 
     try {
       final row = await _client.from('products').select('''
@@ -163,13 +175,9 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   @override
   Product? findProductById(String id) {
-    // Fast path: check the cache populated by fetchProducts.
-    final cached = _cache;
-    if (cached != null) {
-      for (final p in cached) {
-        if (p.id == id) return p;
-      }
-    }
+    // O(1) map lookup over the cache populated by fetchProducts.
+    final hit = _productsById[id];
+    if (hit != null) return hit;
     // Cache miss — this should not happen in normal flow because
     // fetchProducts() is always called first. Return null so the
     // hydration path can skip the missing product gracefully.
@@ -233,10 +241,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   List<Product>? restorePersistentCacheForTest() => _restorePersistentCache();
 
   @visibleForTesting
-  void setCacheForTest(List<Product> products) {
-    _cache = products;
-    _cacheTimestamp = DateTime.now();
-  }
+  void setCacheForTest(List<Product> products) => _setCache(products);
 
   @visibleForTesting
   List<Product>? get cacheForTest => _cache;

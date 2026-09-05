@@ -4,6 +4,51 @@ Last run: 2026-09-04T00:00:00Z
 
 ## New — 2026-09-04
 
+### L2: Audit issue #5 — O(1) product lookup + memoized catalog derived views
+**Branch:** `perf/catalog-id-map-memoization` (worktree
+`.trees/catalog-perf`, from `master` @ `ac69c54`, includes cherry-picked
+`42da7e0` filters migration so the branch contains the final-form
+catalog_cubit regardless of PR #14 merge order). Human enabled L2 for audit
+issue #5.
+
+**Changes:**
+1. `supabase_catalog_repository.dart` — added `_productsById` id→Product
+   map; `findProductById`/`fetchProductById` cache path are now O(1)
+   instead of a linear scan per cart line. All cache writes (network
+   fetch, offline restore, test helper) route through one `_setCache`
+   choke point that rebuilds the index — it can never drift from the list.
+2. `catalog_cubit.dart` — `CatalogState` derived getters (`visible`,
+   `availableColors`, `categoryProductCount`, price bounds,
+   `productsInCategory`) are now memoized: computed once per state
+   instance; `visible` is keyed on the immutable `CatalogFilters` value
+   and recomputes only when filters change. Memos live in a final
+   `_CatalogMemos` container so every CatalogState field stays final
+   (no must_be_immutable warning) and are excluded from `props` — equal
+   states still compare equal.
+3. Constructor is no longer `const` (memoization requires per-instance
+   lazy storage); documented in the class doc. 7 test `const CatalogState`
+   literals migrated.
+4. NEW `catalog_state_memo_test.dart` (6 tests: identical-instance
+   memo proof, filter-key invalidation, sorted recompute, per-category
+   memo, equality-ignores-memos, price bounds).
+5. Supabase repo test +3: index hit/miss + rebuild-after-replacement,
+   offline-restore path rebuilds the index (network stubbed to throw),
+   duplicate-id last-wins policy.
+
+**Verification evidence (Flutter 3.47.2 stable — matches CI 3.47.x pin):**
+| Check | Result |
+|-------|--------|
+| `flutter analyze` | **No issues found!** (fixed must_be_immutable via memo holder; removed 1 unnecessary test import) |
+| `flutter test` | **252 passed, 0 failed** (243 + 6 memo + 3 id-map) |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, registrant, `pubspec.lock` |
+
+**Merge-order note:** branch already contains the filters migration
+(cherry-picked), so merging after PR #14 yields a trivial/no-op conflict on
+catalog_cubit.dart; merging before also resolves cleanly to the same final
+form. **Merge remains human-gated.**
+
+---
+
 ### L2: Audit issue #3 — complete CatalogFilters migration, delete dual-filter shim
 **Branch:** `refactor/catalog-filters-migration` (worktree
 `.trees/catalog-filters`, from `master` @ `ac69c54`). Human enabled L2 for

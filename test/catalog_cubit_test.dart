@@ -76,7 +76,7 @@ void main() {
       build: () => CatalogCubit(StubCatalogRepository()),
       act: (cubit) => cubit.load(),
       expect: () => [
-        const CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.loading),
         isA<CatalogState>()
             .having((s) => s.status, 'status', CatalogStatus.ready)
             .having((s) => s.allProducts.length, 'products', 9)
@@ -89,8 +89,8 @@ void main() {
       build: () => CatalogCubit(FailingCatalogRepository()),
       act: (cubit) => cubit.load(),
       expect: () => [
-        const CatalogState(status: CatalogStatus.loading),
-        const CatalogState(status: CatalogStatus.error),
+        CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.error),
       ],
     );
 
@@ -102,10 +102,10 @@ void main() {
         await cubit.load();
       },
       expect: () => [
-        const CatalogState(status: CatalogStatus.loading),
-        const CatalogState(status: CatalogStatus.error),
-        const CatalogState(status: CatalogStatus.loading),
-        const CatalogState(status: CatalogStatus.error),
+        CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.error),
+        CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.error),
       ],
     );
   });
