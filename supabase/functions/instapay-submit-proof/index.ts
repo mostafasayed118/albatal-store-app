@@ -77,12 +77,15 @@ export async function handleInstapaySubmitProof(
         status: 401,
         headers: jsonHeadersFor(req),
       });
-    }    const body = await req.json();
+    }
+    const body = await req.json();
     const orderId = typeof body.order_id === "string" ? body.order_id : "";
-    const proofBase64 =
-      typeof body.proof_base64 === "string" ? body.proof_base64 : "";
-    const reference =
-      typeof body.reference === "string" ? body.reference.trim() : "";
+    const proofBase64 = typeof body.proof_base64 === "string"
+      ? body.proof_base64
+      : "";
+    const reference = typeof body.reference === "string"
+      ? body.reference.trim()
+      : "";
     // Gallery picks are usually JPEG; allow a small validated set.
     const EXT_CONTENT_TYPES: Record<string, string> = {
       png: "image/png",
@@ -153,10 +156,13 @@ export async function handleInstapaySubmitProof(
     }
 
     if (!contentType) {
-      return new Response(JSON.stringify({ message: "Unsupported proof format" }), {
-        status: 400,
-        headers: jsonHeadersFor(req),
-      });
+      return new Response(
+        JSON.stringify({ message: "Unsupported proof format" }),
+        {
+          status: 400,
+          headers: jsonHeadersFor(req),
+        },
+      );
     }
 
     // Upload to the private bucket under the caller's own folder —
