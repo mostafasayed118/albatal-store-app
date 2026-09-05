@@ -1,6 +1,62 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-06T11:20:00Z
+Last run: 2026-09-06T11:35:00Z
+
+## New — 2026-09-06 (InstaPay implementation — draft PRs #37 + #38)
+Owner approved D1-D4 recommendations and the image_picker dependency in-thread.
+
+- **PR #37 (backend, draft)** `feat/instapay-backend` @ `180a501` — migration 041
+  (allowlist ('cod','card','instapay') preserving 037/039 shape + single-pending-row
+  guarantee; `instapay_proofs` table with owner/admin RLS; private `instapay-proofs`
+  bucket; admin-only `review_instapay_proof` RPC — approve = payments.success +
+  orders.paid in ONE transaction, server-generated txn id; reject = failed;
+  `expire_stale_instapay_payments` 24h expiry); edge functions instapay-initiate
+  (env-configured merchant address, server-authoritative amount, fails closed),
+  instapay-submit-proof (server-located pending payment, size+ext guard, private
+  upload, cannot flip status), instapay-review (delete-account-pattern admin gate,
+  no direct writes); cancel-expired-orders extended. Deno suite 87/87 (3 new
+  contract-test files); deno fmt canonical. **DEPLOY GATE: contains
+  supabase/migrations — human review required before db push (deploy order in PR).**
+- **PR #38 (client, draft)** `feat/instapay-client` — PaymentMethod.instapay;
+  service methods + sealed InstapayInitiation + server-derived InstapayInstructions;
+  PaymentCubit awaitingProof status reusing the single server-status watch (proof
+  submission does NOT flip status, so mid-upload server events are not dropped);
+  InstapayInstructionsPage (stepper stage 2, address copy, amount, optional
+  reference, image_picker attachment, submit-then-pending note; pops itself on
+  terminal status; receives the SAME cubit via route extra — PaymobCheckoutPage
+  pattern); PaymentMethodPage third option + awaitingProof nav + guard re-arm;
+  21 l10n keys EN/AR; image_picker ^1.1.2 (owner-approved). Tests 426/426 (9 new),
+  analyze clean, dart format canonical. **Merge order: #37 first.**
+- Test-infra note: awaiting close() inside a widget-test body hangs on stream
+  teardown under fake_async; the synchronous `cubit.cancel()` idiom cancels the
+  watch timer without hanging.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### INSTAPAY IMPLEMENTATION PLAN — draft PR #36 (docs only, review-gated)
+
+Same playbook as UX-043: plan first, no supabase/ changes until owner
+answers the decision gate. Grounded in verified architecture: Paymob
+webhook-only success writer, COD confirm RPC, 037/039 method allowlist
+('cod','card') as the seam for 'instapay', 034 concurrency boundary,
+client-never-declares-success invariant.
+
+Plan (docs/InstaPay-implementation-plan.md, worktree `.trees/instapay-plan`,
+branch `docs/instapay-plan`, commit 539b849, based on b716bc9): migration
+041 (allowlist + instapay_proofs table, owner RLS, no new statuses),
+three edge functions (initiate w/ env-held merchant address, submit-proof,
+admin-gated review that atomically flips payment+order), client enum/
+service/instructions-page/l10n, admin review queue per D4. Aggregator-
+ready: swapping manual for API confirmation later touches one function.
+
+Owner decision gate (doc §7): D1 confirmation model (rec: manual now),
+D2 expiry window (rec: 24h), D3 proof requirements (rec: screenshot
+required + reference optional), D4 admin queue now vs dashboard (rec:
+dashboard first). STATE.md run-log pushed earlier (b716bc9).
+
+---
 
 ## New — 2026-09-06 (Stitch mockup sync via MCP edit_screens)
 
