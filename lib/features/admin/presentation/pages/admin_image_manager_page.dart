@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/error/app_error.dart';
+import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -36,44 +37,41 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       _loading = true;
       _error = null;
     });
-    try {
-      final paths =
-          await getIt<AdminRepository>().getProductImagePaths(widget.productId);
-      if (!mounted) return;
-      setState(() {
+    final result =
+        await getIt<AdminRepository>().getProductImagePaths(widget.productId);
+    if (!mounted) return;
+    result.when(
+      success: (paths) => setState(() {
         _paths = paths;
         _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      // Generic user message — raw exception stays in logs only.
-      Log.e('Admin image list load failed', error: e);
-      setState(() {
-        _loading = false;
-        _error = 'Failed to load images. Please try again.';
-      });
-    }
+      }),
+      failure: (error) {
+        Log.e('Admin image list load failed', error: error);
+        setState(() {
+          _loading = false;
+          _error = error.message;
+        });
+      },
+    );
   }
 
   Future<void> _persistPaths(List<String> paths) async {
-    try {
-      await getIt<AdminRepository>()
-          .adminSetProductImages(widget.productId, paths);
-      if (!mounted) return;
-      setState(() => _paths = List.of(paths));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Images updated')),
-      );
-    } on AppError catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (e) {
-      if (!mounted) return;
-      Log.e('Admin image save failed', error: e);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Failed to save images. Please try again.')));
-    }
+    final result = await getIt<AdminRepository>()
+        .adminSetProductImages(widget.productId, paths);
+    if (!mounted) return;
+    result.when(
+      success: (_) {
+        setState(() => _paths = List.of(paths));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Images updated')),
+        );
+      },
+      failure: (error) {
+        Log.e('Admin image save failed', error: error);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      },
+    );
   }
 
   Future<void> _uploadImage() async {
@@ -93,9 +91,15 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         'image/jpeg',
       );
       final next = [..._paths, storagePath];
-      await getIt<AdminRepository>()
+      final saveResult = await getIt<AdminRepository>()
           .adminSetProductImages(widget.productId, next);
       if (!mounted) return;
+      if (saveResult case Failure(:final error)) {
+        setState(() => _uploading = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+        return;
+      }
       setState(() {
         _paths = next;
         _uploading = false;

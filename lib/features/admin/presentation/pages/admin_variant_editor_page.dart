@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
-import '../../../../shared/services/logger.dart';
+import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Variant editor for a single product — lists variants, add/edit via dialog.
+///
+/// Consumes the repository's `Result` API via exhaustive switches: no
+/// exceptions are caught here and no raw maps are subscripted (audit
+/// remediation: T1 catalog methods return `Result<T>` of typed entities).
 class AdminVariantEditorPage extends StatefulWidget {
   const AdminVariantEditorPage({super.key, required this.productId});
   final String productId;
@@ -17,7 +20,7 @@ class AdminVariantEditorPage extends StatefulWidget {
 }
 
 class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
-  List<Map<String, dynamic>> _variants = [];
+  List<AdminVariant> _variants = [];
   bool _loading = true;
   String? _error;
 
@@ -32,34 +35,27 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
       _loading = true;
       _error = null;
     });
-    try {
-      final variants =
-          await getIt<AdminRepository>().getVariants(widget.productId);
-      if (!mounted) return;
-      setState(() {
+    final result = await getIt<AdminRepository>().getVariants(widget.productId);
+    if (!mounted) return;
+    result.when(
+      success: (variants) => setState(() {
         _variants = variants;
         _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
+      }),
+      failure: (error) => setState(() {
         _loading = false;
-        _error = e.toString();
-      });
-    }
+        _error = error.message;
+      }),
+    );
   }
 
-  void _showVariantDialog({Map<String, dynamic>? existing}) {
-    final sizeCtrl =
-        TextEditingController(text: existing?['size'] as String? ?? '');
-    final colorCtrl =
-        TextEditingController(text: existing?['color'] as String? ?? '');
+  void _showVariantDialog({AdminVariant? existing}) {
+    final sizeCtrl = TextEditingController(text: existing?.size ?? '');
+    final colorCtrl = TextEditingController(text: existing?.color ?? '');
     final stockCtrl =
-        TextEditingController(text: (existing?['stock'] ?? '').toString());
+        TextEditingController(text: existing?.stock.toString() ?? '');
     final priceCtrl = TextEditingController(
-      text: existing?['price_override']?.toString() ??
-          existing?['price']?.toString() ??
-          '',
+      text: existing?.priceOverride?.toString() ?? '',
     );
     bool saving = false;
 
@@ -141,38 +137,33 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                         return;
                       }
                       setDlgState(() => saving = true);
-                      try {
-                        await getIt<AdminRepository>().adminUpsertVariant(
-                          productId: widget.productId,
-                          size: sizeCtrl.text.trim(),
-                          color: colorCtrl.text.trim(),
-                          stock: stock,
-                          priceOverride: priceOverride,
-                        );
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Variant saved')),
-                        );
-                        _loadVariants();
-                      } on AppError catch (e) {
-                        if (!ctx.mounted) return;
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text(e.message)),
-                        );
-                        setDlgState(() => saving = false);
-                      } catch (e) {
-                        if (!ctx.mounted) return;
-                        // Generic user message — raw exception stays in logs only.
-                        Log.e('Admin variant save failed', error: e);
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  'Failed to save variant. Please try again.')),
-                        );
-                        setDlgState(() => saving = false);
-                      }
+                      final result = await getIt<AdminRepository>()
+                          .adminUpsertVariant(
+                        productId: widget.productId,
+                        size: sizeCtrl.text.trim(),
+                        color: colorCtrl.text.trim(),
+                        stock: stock,
+                        priceOverride: priceOverride,
+                      );
+                      if (!ctx.mounted) return;
+                      result.when(
+                        success: (_) {
+                          Navigator.pop(ctx);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Variant saved')),
+                          );
+                          _loadVariants();
+                        },
+                        failure: (error) {
+                          // Repository messages are fixed, user-facing
+                          // strings — safe to render verbatim.
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: Text(error.message)),
+                          );
+                          setDlgState(() => saving = false);
+                        },
+                      );
                     },
                   ),
           ],
@@ -227,15 +218,12 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                         itemCount: _variants.length,
                         itemBuilder: (ctx, i) {
                           final v = _variants[i];
-                          final size = v['size'] as String? ?? '';
-                          final color = v['color'] as String? ?? '';
-                          final stock = v['stock'] as int? ?? 0;
-                          final price = v['price_override'];
+                          final override = v.priceOverride;
                           return Card(
                             child: ListTile(
-                              title: Text('$size / $color'),
+                              title: Text('${v.size} / ${v.color}'),
                               subtitle: Text(
-                                  'Stock: $stock${price != null ? ' • Override: $price' : ''}'),
+                                  'Stock: ${v.stock}${override != null ? ' • Override: $override' : ''}'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.edit),
                                 onPressed: () =>

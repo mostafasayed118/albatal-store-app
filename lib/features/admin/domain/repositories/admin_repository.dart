@@ -1,5 +1,6 @@
 import '../../../../core/error/result.dart';
 import '../entities/admin_order.dart';
+import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
 
 /// Admin operations for order-queue and inventory management.
@@ -53,7 +54,7 @@ abstract interface class AdminRepository {
   // ─── Catalog Management (T1) ─────────────────────────────
 
   /// Create or update a product. Returns the product id.
-  Future<String> adminUpsertProduct({
+  Future<Result<String>> adminUpsertProduct({
     String? id,
     required String name,
     required String slug,
@@ -65,7 +66,7 @@ abstract interface class AdminRepository {
   });
 
   /// Create or update a variant for a product. Returns the variant id.
-  Future<String> adminUpsertVariant({
+  Future<Result<String>> adminUpsertVariant({
     required String productId,
     required String size,
     required String color,
@@ -74,15 +75,15 @@ abstract interface class AdminRepository {
   });
 
   /// Replace all images for a product with the given storage paths.
-  Future<void> adminSetProductImages(
+  Future<Result<void>> adminSetProductImages(
       String productId, List<String> storagePaths);
 
   /// Get currently active flash sales (window filter).
-  Future<List<Map<String, dynamic>>> getActiveFlashSales();
+  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales();
 
   /// Get all variants for [productId], ordered by size.
-  Future<List<Map<String, dynamic>>> getVariants(String productId);
+  Future<Result<List<AdminVariant>>> getVariants(String productId);
 
   /// Get ordered storage paths for a product's images.
-  Future<List<String>> getProductImagePaths(String productId);
+  Future<Result<List<String>>> getProductImagePaths(String productId);
 }
