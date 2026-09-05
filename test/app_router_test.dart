@@ -31,18 +31,32 @@ void main() {
       (tester) async {
     final harness = await _pumpRouter(tester, initialLocation: '/sign-in');
 
-    harness.router.go('/cart');
+    // /cart is guest-accessible, so /wishlist stands in as the gated route
+    // (same light provider needs as /cart had in this harness).
+    harness.router.go('/wishlist');
     await _settle(tester);
 
     expect(harness.currentPath, '/sign-in');
-    expect(harness.currentQueryParameters['redirect'], '/cart');
+    expect(harness.currentQueryParameters['redirect'], '/wishlist');
+  });
+
+  testWidgets('cart stays public for guests (no sign-in bounce)',
+      (tester) async {
+    final harness = await _pumpRouter(tester, initialLocation: '/sign-in');
+
+    harness.router.go('/cart');
+    await _settle(tester);
+
+    // Guests may review the cart they are building — no redirect.
+    expect(harness.currentPath, '/cart');
+    expect(harness.currentQueryParameters.containsKey('redirect'), isFalse);
   });
 
   testWidgets('auth transition re-evaluates the guarded route', (tester) async {
     final harness = await _pumpRouter(tester, initialLocation: '/sign-in');
 
-    // Unauthenticated: /cart is bounced to sign-in with a return path.
-    harness.router.go('/cart');
+    // Unauthenticated: /wishlist is bounced to sign-in with a return path.
+    harness.router.go('/wishlist');
     await _settle(tester);
     expect(harness.currentPath, '/sign-in');
 
@@ -51,16 +65,16 @@ void main() {
     harness.authRepository.authChanges.add(const Authenticated('user-1'));
     await _settle(tester);
 
-    harness.router.go('/cart');
+    harness.router.go('/wishlist');
     await _settle(tester);
-    expect(harness.currentPath, '/cart');
+    expect(harness.currentPath, '/wishlist');
 
-    // Sign-out: the router must leave /cart on its own (reactive redirect).
+    // Sign-out: the router must leave /wishlist on its own (reactive redirect).
     await harness.authCubit.signOut();
     await _settle(tester);
 
     expect(harness.currentPath, '/sign-in');
-    expect(harness.currentQueryParameters['redirect'], '/cart');
+    expect(harness.currentQueryParameters['redirect'], '/wishlist');
   });
 
   testWidgets('admin routes require an authenticated admin profile',

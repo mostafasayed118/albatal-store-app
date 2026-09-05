@@ -19,9 +19,9 @@ class WishlistToggleIcon extends StatelessWidget {
     return BlocBuilder<WishlistCubit, WishlistState>(
       builder: (_, ws) {
         final saved = ws.ids.contains(productId);
+        // Default IconButton geometry (48dp padded tap target) — the
+        // previous zero constraints shrank this below the touch floor.
         return IconButton(
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
           tooltip: saved ? l.removeFromWishlist : l.addToWishlist,
           onPressed: () => context.read<WishlistCubit>().toggle(productId),
           icon: Icon(
