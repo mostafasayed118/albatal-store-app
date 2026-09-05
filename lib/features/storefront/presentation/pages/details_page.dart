@@ -86,7 +86,9 @@ class DetailsPage extends StatelessWidget {
           }
           return Scaffold(
             appBar: AppBar(
-              title: Text(p.category),
+              // Product name beats a category label for in-page context
+              // (UX-047); long names ellipsize instead of wrapping.
+              title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
               actions: [
                 WishlistToggleIcon(productId: p.id),
                 IconButton(

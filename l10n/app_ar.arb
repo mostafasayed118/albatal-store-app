@@ -316,6 +316,20 @@
   "onboardingGetStarted": "ابدأ الآن",
   "paid": "مدفوع",
   "goodMorningGuest": "صباح الخير",
+  "goodAfternoon": "مساء الخير، {name}",
+  "goodAfternoonGuest": "مساء الخير",
+  "goodEvening": "مساء الخير، {name}",
+  "goodEveningGuest": "مساء الخير",
+  "@goodAfternoon": {
+    "name": {
+      "type": "String"
+    }
+  },
+  "@goodEvening": {
+    "name": {
+      "type": "String"
+    }
+  },
   "estimatedTotalsNote": "إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.",
   "serverConfirmedTotals": "الإجماليات المؤكدة من الخادم",
   "orderReferenceMissing": "تعذر المتابعة: مرجع الطلب مفقود.",

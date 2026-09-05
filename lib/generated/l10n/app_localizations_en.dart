@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -819,6 +820,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get goodMorningGuest => 'Good morning';
+
+  @override
+  String goodAfternoon(Object name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String get goodAfternoonGuest => 'Good afternoon';
+
+  @override
+  String goodEvening(Object name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String get goodEveningGuest => 'Good evening';
 
   @override
   String get estimatedTotalsNote =>

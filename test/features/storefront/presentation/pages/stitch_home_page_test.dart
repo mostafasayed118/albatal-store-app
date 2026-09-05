@@ -189,7 +189,8 @@ void main() {
               )..checkSession(),
             ),
           ],
-          child: const HomePage(),
+          // 09:00 → morning bucket (UX-044).
+          child: HomePage(clock: () => DateTime(2026, 9, 6, 9)),
         ),
       ),
     );

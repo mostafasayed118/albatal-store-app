@@ -30,7 +30,9 @@ void main() {
     await tester.pumpWidget(_harness('silk-01'));
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Royal Emerald Silk'), findsOneWidget);
+    // Product name now leads the AppBar (UX-047) and still appears as the
+    // body title → exactly two occurrences.
+    expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
     expect(find.text('1290 EGY'), findsOneWidget);
     expect(find.text('Add to Cart'), findsOneWidget);
   });
