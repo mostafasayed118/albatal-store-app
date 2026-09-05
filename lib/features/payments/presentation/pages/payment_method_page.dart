@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -141,6 +142,14 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           body: ListView(
             padding: const EdgeInsetsDirectional.all(16),
             children: [
+              // Continuity with checkout's stepper: payment is stage 2 of
+              // Address → Payment → Review (Stitch "Checkout (Updated)").
+              StepIndicator(
+                steps: [l.shippingAddress, l.payment, l.reviewOrder],
+                currentStep: 1,
+                scheme: scheme,
+              ),
+              const SizedBox(height: 24),
               Text(l.selectPaymentMethod,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),

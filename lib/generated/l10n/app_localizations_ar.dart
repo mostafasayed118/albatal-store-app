@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -137,6 +136,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentMethod => 'طريقة الدفع';
 
   @override
+  String get payment => 'الدفع';
+
+  @override
   String get addNewAddress => 'إضافة عنوان جديد';
 
   @override
@@ -249,6 +251,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addToCart => 'أضف إلى السلة';
+
+  @override
+  String addToCartTotal(String total) {
+    return 'أضف إلى السلة - $total';
+  }
 
   @override
   String get addedToCart => 'تمت الإضافة إلى سلتك';

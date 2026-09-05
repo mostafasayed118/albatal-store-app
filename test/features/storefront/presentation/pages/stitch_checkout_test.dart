@@ -141,6 +141,48 @@ Widget _checkoutWithAddressHarness() =>
 void main() {
   group('Task 5 — Checkout Stitch reskin (3528 flow)', () {
     testWidgets(
+        'checkout stepper shows Address → Payment → Review; payment page pins stage 2',
+        (tester) async {
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+          _checkoutHarness(addrRepo: _StubAddrRepo(const [_testAddress])));
+      await tester.pumpAndSettle();
+
+      // Stepper labels appear once (Stitch "Checkout (Updated)" parity).
+      expect(find.text('Shipping Address'), findsWidgets);
+      expect(find.text('Payment'), findsOneWidget);
+      expect(find.text('Review Order'), findsOneWidget);
+
+      // The payment page pins the stepper at stage 2 (Payment).
+      final cubit = PaymentCubit(_StubPayService())
+        ..initPayment(amount: const Money.egp(100), orderId: 'ord-123');
+      final cart = CartCubit(MemoryStorefrontPersistence());
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider.value(
+          value: cart,
+          child: PaymentMethodPage(
+            paymentCubit: cubit,
+            args: const {
+              'orderId': 'ord-123',
+              'total': Money.egp(100),
+              'customerEmail': 'a@b.c',
+            },
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(find.text('Payment'), findsOneWidget);
+      expect(find.text('Review Order'), findsOneWidget);
+      await cubit.close();
+      await cart.close();
+    });
+
+    testWidgets(
         'ListView uses EdgeInsetsDirectional padding.all(16) and Shipping Address Card is surface/outlineVariant 16 clipAntiAlias',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
