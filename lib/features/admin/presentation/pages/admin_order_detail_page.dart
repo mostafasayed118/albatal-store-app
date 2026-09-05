@@ -236,7 +236,7 @@ class _FulfillmentActions extends StatelessWidget {
         );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(context.l10n.orderStatusUpdatedTo(status)),
+        content: Text(context.l10n.orderStatusUpdatedTo(status.name)),
       ),
     );
   }
