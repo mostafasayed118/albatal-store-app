@@ -1,6 +1,675 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-05T00:00:00Z
+Last run: 2026-09-06T11:20:00Z
+
+## New — 2026-09-06 (Stitch mockup sync via MCP edit_screens)
+
+### STITCH MOCKUPS SYNCED TO MERGED UI — 2 of 4 batches verified
+
+Drove `edit_screens` against project 10846693823016291635 (light+dark
+pairs, MOBILE). All four batches returned success text + dispatched
+dom_operations (project.file_update events):
+
+1. **Details CTA total** (7d6fdd… + 98f5ee… dark): "Add to Cart" →
+   "Add to Cart - {qty × price}" — VERIFIED in refetched HTML.
+2. **Profile Settings row + 4-stage order progress** (681d22… +
+   4e05cd… dark): Settings row added; Placed/Confirmed/Shipped/Delivered —
+   VERIFIED in refetched HTML.
+3. **Checkout: remove InstaPay** (211e05…, c6d4e3… dark, b8f36a…
+   updated): success + remove_element op dispatched, but refetched HTML
+   still shows InstaPay after ~7 min (session 11887526196385573079).
+4. **Home: remove voice-search mic** (73e4aa… + 834077… dark): success +
+   op dispatched, refetched HTML still shows the mic (session
+   3386314413125517697).
+
+Batches 3–4 RESOLUTION: owner asked to confirm + re-run. Confirmed via
+API polls (~25 min across both rounds, all 5 affected screens): batches 3
+and 4 did NOT persist — same htmlCode file IDs throughout. Re-dispatched
+both batches (checkout session 15188851587254191629, home session
+8469010802646102213): still not served. Batches 1–2 prove the edit path
+works, so these two sessions likely require interactive review in the
+Stitch web UI (element-removal ops may be gated) or fail silently.
+Remaining lever: open https://stitch.withgoogle.com → project → check
+pending sessions / remove the InstaPay row + mic icon by hand in the
+editor. Canonical intent unchanged: InstaPay row out of checkout mockups,
+mic out of home search, until backend ships InstaPay.
+InstaPay removal is deliberately REVERSE of the mockup's original —
+canonical design now matches the implemented payment surface.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PR #35 MERGED — mockup-parity batch
+
+CI confirmed green on the core checks (Format & Analyze ✅, Flutter Tests
+✅, Setup & Cache ✅, Edge Function Tests ✅, Secret Scan ✅; CodeSnif
+informational). Android Release Build skipped per owner's standing call —
+NOT a merge gate. Merged squash → `4fd5428` (worktree + branch cleaned up,
+local master synced). Master CI Android job left unwatched until owner asks.
+All front-end Stitch divergences now closed on master: 3-stage checkout
+stepper w/ payment-page continuity, live CTA total, 4-stage order progress,
+Profile Settings row. Remaining parity items are backend-gated: InstaPay
+flow, backend emitting `processing`.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### MOCKUP-PARITY BATCH — draft PR #35
+
+Implemented the four front-end items from the parity audit (worktree
+`.trees/mockup-parity`, branch `feat/mockup-parity`, commit cd6be28, based
+on c09940b; 15 files +247/−13):
+
+1. **Checkout stepper** → Address → Payment → Review; `PaymentMethodPage`
+   pins the same stepper at stage 2 (cross-page continuity). `StepIndicator`
+   moved to `shared/components/`.
+2. **Details CTA total** → new `addToCartTotal` l10n key (EN/AR); CTA shows
+   `Add to Cart - {price × qty}` live; plain label for OOS/zero-price.
+3. **Order progress 4 stages** → Placed → Confirmed(processing) → Shipped →
+   Delivered; pending→stage1, paid→stage2, non-trackable → none.
+4. **Profile Settings row** → settings now reachable from Profile (was home
+   app-bar only).
+
+Backend-gated, NOT in PR: InstaPay flow; backend emitting `processing`
+(UI renders it already). Tests: +7 (status_progress mapping ×5,
+stepper continuity, profile→settings), details CTA assertion updated.
+Verified: analyze clean, **417/417 tests**, canonical format.
+
+---
+
+## New — 2026-09-06 (Stitch access via owner-provided API key)
+
+### DESIGN-PARITY AUDIT — Stitch mockups vs implemented Flutter UI
+
+Connected to Google Stitch MCP (stateless JSON-RPC over HTTP;
+X-Goog-Api-Key header; tools/list + tools/call verified). Project
+`10846693823016291635` "Al Batal Fabric E-Commerce" — 30 screens (6 flow
+sets in light+dark, logo set, 12 fabric-texture assets). Fetched the HTML
+for home / categories-profile-orders / details-cart / checkout(+updated)
+and diffed against the implemented pages. Key divergences:
+
+- Bottom nav matches 5-destination spec (Home/Categories/Cart/Wishlist/
+  Profile, cart badge); cart count uses the 99+ cap we shipped (#26).
+- Profile page (implemented) is a lean authenticated menu — mockup's
+  non-auth menu (Notifications, Help & Support, edit-profile affordance,
+  Premium Member badge) not built. Settings is linked from home app bar
+  only, not from profile.
+- Orders: tabs Active/Completed/Cancelled ✅; mockup shows 4-step progress
+  (Placed→Confirmed→Delivered+Shipped); implemented StatusProgress is
+  3-step (placed/shipped/delivered).
+- Details: rating + review count, size guide, variant color/length
+  selector, quantity, express-delivery info ✅. Mockup's CTA computes
+  "Add to Cart - {qty × price} EGY"; implemented shows static
+  "Add to Cart" (total appears only in the cart).
+- Checkout (Updated mockup): 3-step stepper Address→Payment→Summary with
+  radio address picker + InstaPay/COD/Card; implemented is 2-step
+  (Shipping Address→Review) with a separate PaymentMethodPage offering
+  only COD + Paymob card — InstaPay not implemented (server).
+- Home: greeting, dark-mode toggle, flash sale countdown, popular grid,
+  circular category chips ✅. Mockup shows a voice-search mic icon — not
+  implemented.
+- wishlist-empty copy in mockup ("Explore Categories" CTA) vs implemented
+  "Return Home" (#29's dedicated copy) — close; copy choice differs.
+
+Divergence list recorded; no code changed in this run.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PR #34 MERGED — modal frame guards + controller-dispose fixes
+
+CI confirmed green on the core checks (Format & Analyze ✅, Flutter Tests
+✅, Setup & Cache ✅, Edge Function Tests ✅, Secret Scan ✅; CodeSnif
+informational). Android Release Build skipped per owner's standing call —
+NOT a merge gate. Merged squash → `c09940b` (worktree + branch cleaned up,
+local master synced). Master CI's Android job left unwatched until owner
+asks. Dialog-hardening thread complete: #33 (delete dialog) + #34 (all
+text-input modals + admin controller leaks).
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### FIRST-FRAME GUARD EXTENDED TO ALL TEXT-INPUT MODALS — draft PR #34
+
+Applied the #33 settle guard to the remaining tap-opened surfaces that
+mount text fields (worktree `.trees/dialog-guard-all`, branch
+`fix/modal-frame-guards`, commit 5e93f54, based on 46f1d79): admin stock /
+variant / tracking dialogs, addresses edit dialog, and the AddressForm
+bottom sheet. Each awaits `endOfFrame` + `context.mounted` bail before
+pushing its route.
+
+**Follow-up audit (controller disposal), commit a57f26b:** swept every
+TextEditingController in lib/. Found exactly three leaking sites — admin
+stock (1), variant (4), tracking (2) dialog helpers created controllers
+inline and never disposed them (every open leaked for process lifetime).
+Fixed by awaiting the dialog and disposing after the route fully pops
+(covers cancel/confirm/barrier-dismiss-during-save). All other sites
+already correct: auth/search/product-edit state-owned + disposed,
+addresses_page finally-dispose, AddressForm State-dispose, settings
+disposes after await (#33).
+
+Audit finding: `autofocus` no longer exists anywhere in lib/ (the delete
+dialog was the only one; #33 deferred it) — so the settle guard is the
+transferable part; focus-deferral + re-entrancy stay delete-flow-specific.
+Static sheets (size guide, filter sheet) untouched by design. Settings page
+and build_context_x ended with no diff vs merged #33 (kept the canonical
+`context.mounted` idiom — the lint rejects helper abstractions around the
+await).
+
+Verified: analyze clean, **410/410 tests**, canonical format. Draft PR #34
+up; CI unwatched per standing call (Android Release Build also skipped
+pending owner's ask).
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PR #33 MERGED — dialog first-frame guard
+
+CI confirmed green on the core checks (Format & Analyze ✅, Flutter Tests
+✅, Setup & Cache ✅, Edge Function Tests ✅, Secret Scan ✅; CodeSnif
+informational). Android Release Build skipped per owner's standing call
+("don't run it until I ask") — NOT a merge gate for this PR. Merged
+squash → `46f1d79` (branch + worktree cleaned up, local master synced).
+The auto-triggered master CI Android job is likewise left unwatched until
+the owner asks. STATE.md reconciliation: run-log block above + base.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### DIALOG FIRST-FRAME GUARD — draft PR #33
+
+Follow-up on the on-device UX-043 watch item (first delete attempt froze on a
+blank screen at ~3fps; tap seemingly swallowed). Implemented three zero-risk
+guards in `_confirmDeleteAccount` (worktree `.trees/dialog-guard`, branch
+`fix/dialog-first-frame-guard`, commit 18eac92, based on b06abe5):
+
+1. `await WidgetsBinding.instance.endOfFrame` before `showDialog` — don't push
+   the modal route while a janky frame is in flight (no-op when idle).
+2. Deferred keyboard focus: `autofocus: true` → FocusNode + post-frame
+   request, so the IME attach never competes with the dialog's opening frame.
+3. `_deleteDialogOpen` re-entrancy flag (cleared in `finally`) — a repeated
+   tap cannot stack a second dialog.
+
+Tests: new `test/settings_delete_account_test.dart` (2 widget tests: dialog
+opens reliably + cancel returns; confirm disabled until email typed →
+deleteAccount called with typed email → success snackbar). Verified: analyze
+clean, **410/410 tests**, canonical format. Draft PR #33 up; CI unwatched per
+standing call.
+
+---
+
+## New — 2026-09-06 (owner-verified on device)
+
+### UX-043 ON-DEVICE E2E — all 10 checks PASS — thread fully closed
+
+Owner completed the physical-device walk (the last untested leg) on a build
+from 54e93e2. All checks passed, zero Flutter FATALs in logcat:
+
+1. Fresh in-app sign-up → auto signed-in (greeting OK)
+2. Cart badge = 1 + wishlist populated (Royal Emerald Silk)
+3. Settings → Delete account row present (auth-gated, PR #32)
+4. Typed-email confirm dialog copy correct (profile/addresses/wishlist/cart
+   deleted; orders kept)
+5. Delete → success
+6. Session ends — Profile/Wishlist redirect to Sign In
+7. Local cart cleared ("Your cart is waiting…" empty state)
+8. Server footprint erased — auth user 0, profiles 0, wishlist rows 0
+9. Re-login blocked ("Invalid email or password")
+10. App left in clean guest state; zero FATALs
+
+**Watch item (non-reproducing):** first delete attempt froze on a blank
+screen at ~3fps (dialog tap never registered); relaunch recovered with
+state intact and the retry completed cleanly. Owner assessed as
+transient debug-build/device slowness. Recorded here — if it ever
+reproduces in the field, investigate the typed-email dialog's first-frame
+mount under load; no code change made on this single report.
+
+UX-043 is fully deployed + verified on staging: backend #31, client #32,
+migration 040, delete-account function, server-side E2E, and on-device E2E.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### #4–#7 SECURITY DRAFT PRs — audited, CLOSED as superseded
+
+The remaining other-session draft PRs (security/RLS stack: package
+b-freeze-hardening → k-security-grants → l-rls-escalation → l1-rls-harness)
+were audited against master @ 54e93e2 before any merge decision:
+
+- **Stack shape**: 4 stacked branches from base `fee90bb` (160+ commits
+  behind master), 14→17 commits each; #5 ⊇ #4, #6 ⊇ #5, #7 ⊇ #6. PR diffs
+  showed ~176-181 files but that count is the stale cumulative divergence,
+  not unmerged work.
+- **Content already on master (evolved/stronger)**:
+  - RLS-ESC-001 → master migration `029_drop_profiles_update_own.sql` drops
+    the permissive policy + recreates the safe one w/ is_admin guard
+    (supersedes branch `030_fix_profiles_admin_escalation.sql`).
+  - Package K grant repairs → master forward-repair family
+    (026 re-asserts the full privilege matrix; 015/024/025/031/035)
+    (supersedes branch `029_security_grant_repairs.sql`).
+  - Adversarial RLS suite → master already carries run_rls_adversarial.mjs,
+    test_rls_adversarial.sql/.cli.sql, and committed sign-off
+    test_rls_adversarial_results.md (staging, 2026-07-23).
+- **Merging would be harmful**: branch carries duplicate-numbered
+  `029_security_grant_repairs.sql` + `030_fix_profiles_admin_escalation.sql`
+  while master's 029/030 slots are taken → duplicate migration numbers on
+  db push; base-14 commits (interim 40% coverage threshold, old gitleaks
+  allowlist, stale docs, android/R8/url_launcher fixes) long superseded by
+  master's rebuilt CI + docs.
+- **Action**: all four closed as superseded with an evidence comment
+  (per-PR cherry-pick noted as the path if any commit is believed unique).
+  Remote + local branches deleted. **Open PR count now: 0.**
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### #18 ADMIN T1 RESULT REFACTOR — reviewed, rebased, MERGED
+
+Admin PR #18 (other-session track, not ours) reviewed at the ready gate:
+stale against master (base cdf9b09, 9+ merges behind) with an old failed
+CI run (Format & Analyze failure pre-#22). Test-merged conflict-free into a
+scratch worktree; combined tree analyzed clean; the only CI format flags
+were the branch's own 2 generated files (master's committed generated drift
+is a local formatter-version artifact, not #18's doing).
+
+- Rebased `refactor/admin-t1-result` onto master @ 54e93e2 (clean), full
+  verify in `.trees/admin-t1-result`: analyze clean, **408/408 tests**.
+- Substance skim: scope-contained — 6 T1 methods → `Result<T>`, typed
+  `AdminVariant`, defensive mappers, fail-closed upsert validation,
+  error-string leak scrub. No issues.
+- Force-pushed rebase; CI flagged the 2 branch files on format → ran the
+  canonical formatter on them and amended. Re-run fully green (all 7 jobs
+  incl. Android Release Build).
+- **Merged `b06abe5`** (squash). Master CI run 33985103623 at b06abe5:
+  success (all 7 jobs). Scratch `.trees/tmp-merge-admin` removed.
+- STATE.md reconciled: #18's own record landed via its merge; working-copy
+  run-log blocks re-merged additively on top (this file, uncommitted per
+  session practice). Cleanup complete — nothing left in this thread.
+
+---
+
+## New — 2026-09-06 (owner-executed deploy; E2E verified)
+
+### UX-043 DEPLOYED to staging + server-side E2E PASS — closed
+
+### UX-043 DEPLOYED to staging + server-side E2E PASS — closed
+
+Owner merged + deployed end-to-end (documented by owner, verified by me):
+- #31 backend merged (`b3e46cf`) → backup
+  outputs/db-backups/staging-pre040-20260905-210801.sql → db push 040 → FKs
+  verified SET NULL/nullable → delete-account deployed ACTIVE verify_jwt true
+  (unauthenticated probe 401).
+- #32 client merged (`54e93e2`). Local master synced; analyze clean;
+  406/406 tests.
+- Server-side staging E2E (fresh user): guards 401/403/403; COD order
+  950 EGP via RPC; delete → {"deleted":true}; order retained user_id=NULL;
+  profile+addresses cascade-erased; re-login blocked 400; rows cleaned.
+- Master CI run 33983189958 at 54e93e2: success (all 7 jobs).
+
+**Remaining:** in-app device walk (typed-email dialog UX, in-app session
+end, local cart/wishlist wipe) needs a physical device (adb unavailable
+here) — build from 54e93e2 and walk Settings → Delete account. Draft PR #30
+(docs/UX-043 plan) still OPEN — merge as record or close as superseded.
+
+### #30 CLOSED as superseded
+Draft PR #30 (docs plan) closed as superseded — implementation merged +
+deployed via #31/#32; decisions recorded in PRs + STATE.md. Remote branch
+deleted; worktree `.trees/ux043-plan` + local branch removed.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### UX-043 IMPLEMENTED (backend + client) — draft PRs #31 + #32
+
+Owner approved plan recommendations (A block admins, B retain orders +
+payments unlinked, C typed-email re-confirmation).
+
+**PR #31 backend** (`.trees/ux043-backend`, `feat/ux043-account-deletion-backend`,
+commits 273ec9b + a5d9cee): migration 040 (orders.user_id + payments.user_id →
+NULLABLE ON DELETE SET NULL) and edge function `delete-account` (JWT self-only,
+email match vs session user, admin refuse, service-role delete; config.toml
+verify_jwt = true). Deploy (db push + functions deploy) human-gated, NOT run.
+
+**PR #32 client** (`.trees/ux043-client`, `feat/ux043-account-deletion-client`,
+commit d06fa6b, 16 files +367/−1): AuthRepository.deleteAccount + Supabase
+impl (FunctionException body → user-safe messages), AuthCubit.deleteAccount
+(success signs out + clears profile; refusal keeps session), settings
+destructive row (authenticated-only) + typed-email dialog w/ retention
+disclosure, cart/wishlist local wipe on success, WishlistCubit.clearAll(),
+l10n EN/AR (7 keys, AR flagged for native pass), all AuthRepository test
+doubles updated, 2 new cubit tests, settings harness gains AuthCubit.
+
+Local: analyze clean; **406/406 tests**. CI: not yet watched. Client depends
+on #31 deploying first for E2E. Merge + deploy human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### UX-043 account-deletion PLAN — draft PR #30 (docs only)
+
+Only remaining audit item. Backend is human-gated, so produced a review-ready
+implementation plan (docs/UX-043-account-deletion-plan.md, worktree
+`.trees/ux043-plan`, branch `docs/ux043-account-deletion`) as **draft PR #30**.
+
+Key verified findings: orders.user_id NOT NULL ON DELETE RESTRICT blocks hard
+deletes (orders self-contained via address_snapshot + item snapshots);
+addresses/wishlists/cart_items/payments CASCADE off profiles (CASCADE off
+auth.users); notifications SET NULL. Plan proposes: migration 04X relaxing
+orders (+payments per decision) FK to SET NULL, edge function `delete-account`
+(JWT-subject check, admin refuse, admin.deleteUser, avatar cleanup), settings
+danger entry + confirm-dialog, AuthRepository.deleteAccount, l10n EN/AR,
+tests. THREE product decisions await owner input (A admin block, B order/
+payment retention, C re-auth now/later) — flagged in doc + PR body.
+
+No supabase/ or code changes made (gated). Merge human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PR #29 MERGED — microcopy batch on master
+
+Owner approved ready + merge. PR run 33980517073 ✅ (incl. Android). Squash-
+merged as `2c443c4`. Final master CI 33981022257 at `2c443c4`: success —
+all 7 jobs ✅. Cleanup: worktree `.trees/ar-microcopy` removed; branch
+deleted local + remote; local master at `2c443c4`.
+
+Remaining audit item: UX-043 account-deletion plan (backend-gated —
+supabase/ migrations + edge function need human review before any code).
+UI/UX review + i18n microcopy work otherwise fully merged; repo CI green.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### Native-AR microcopy batch — draft PR #29
+
+Worktree `.trees/ar-microcopy`, branch `feat/ar-microcopy`, commit `13ac247`
+(8 files, +101/−19), based on `33aa648`. **Draft PR #29** → master.
+
+- fabricsFound / curatedFabrics / itemsCount → ICU plurals (EN singularizes;
+  AR CLDR zero/one/two/few/many via Intl.pluralLogic).
+- Wishlist empty copy (UX-045): wishlistEmptyTitle/Body keys wired into the
+  wishlist FeedbackView empty state.
+
+AR phrasing flagged for native-AR review in PR (MSA-register, CLDR-consistent
+forms; zero/two/many forms worth tone check). Local: analyze clean;
+**404/404 tests** (7 new in test/microcopy_plural_test.dart incl. AR assertions
+through the real localization delegate; categories_grid_test updated to
+singular '1 curated fabric'); canonical format; l10n regenerated + committed.
+
+CI: not watched (owner instruction). Merge human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PRs #27 + #28 MERGED — remaining UI-review leftovers closed
+
+Owner approved ready + sequential merges after final CI confirmation. Both
+PR runs fully green incl. Android Release Build: #27 run 33978341673 ✅, #28
+run 33978764242 ✅.
+
+Merges (squash):
+- **#27** (remove dead MenuListTile/BottomActionButton) → `df758de`
+- **#28** (unify FeedbackView + EmptyStateView, UX-039) → `33aa648`
+
+#28 stayed CLEAN against the advanced base (no file overlap with #27). Final
+**master CI run 33979317919 at `33aa648`: success — all 7 jobs ✅**;
+intermediate `df758de` run auto-cancelled as superseded (expected).
+
+Cleanup: worktrees `.trees/dead-code`, `.trees/unify-status` removed; branches
+deleted local + remote; local master at `33aa648`.
+
+Remaining audit leftovers: UX-043 account-deletion flow (backend-gated —
+supabase/ migrations + edge function, human review required), native-AR
+microcopy pass (UX-045 wishlist copy + greeting/plural phrasing needs an AR
+reviewer). UI/UX review work otherwise fully merged and CI green.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### Unified status component (UX-039) — draft PR #28
+
+Worktree `.trees/unify-status`, branch `refactor/unify-status-views`, commit
+`9509a16` (5 files, +74/−82), based on `f89dd46`. **Draft PR #28** → master.
+
+Merged `FeedbackView` + `EmptyStateView` into one configurable status view:
+loading/empty/error share one centered layout with a uniform 64dp glyph slot;
+optional icon/title/body/actionLabel overrides; empty CTAs outline, error
+filled; loading live-region semantics kept. The 3 EmptyStateView call sites
+(orders/wishlist/cart) migrated to `FeedbackViewType.empty`; duplicate
+component deleted. Glyph slot 48→64 on old loading/error usages is a
+conscious consistency change (no assertions pinned the old size).
+
+Local: analyze clean; **397/397 tests** (3 new in test/feedback_view_test.dart:
+empty overrides + outline CTA fires, CTA hidden without action, error retry
+unchanged); canonical format.
+
+CI: not watched this run (owner instruction). Merge human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### Dead-code removal — draft PR #27
+
+Worktree `.trees/dead-code`, branch `chore/remove-dead-code`, commit
+`eee1ee9` (−2 files, −368 lines), based on `f89dd46`. Removed unused
+`MenuListTile` + `BottomActionButton` (zero refs outside their own files,
+grep-verified, no barrel exports). **Draft PR #27** → master. Local: analyze
+clean; **394/394 tests** unchanged; canonical format. Pure deletion.
+
+CI: not watched this run per owner instruction (Android job slow). Merge
+human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### PRs #24 + #25 + #26 MERGED — polish queue closed
+
+Owner approved ready + sequential merges after final CI confirmation. All
+three PR runs fully green (incl. Android Release Build): #24 run
+33974922282 ✅, #25 run 33975959096 ✅, #26 run 33976452825 ✅.
+
+Merges (squash):
+- **#24** (P3 polish) → `c972a82`
+- **#25** (filter-sheet color swatches) → `216c1f9`
+- **#26** (badge cap, AppBar title, time-of-day greeting) → `f89dd46`
+
+Each subsequent PR stayed CLEAN against the advanced base (disjoint file
+sets — no rebases needed). Intermediate master runs auto-cancelled as
+superseded; final **master CI run 33977050381 at `f89dd46`: success — all
+7 jobs ✅** including Format & Analyze and Android Release Build.
+
+Cleanup: worktrees `.trees/p3-polish`, `.trees/filter-swatches`,
+`.trees/p3b-polish` removed; branches deleted local + remote; local master
+fast-forwarded to `f89dd46`.
+
+Remaining UI-review leftovers for future batches: dead-code cleanup
+(`MenuListTile`, `BottomActionButton`), merge duplicate FeedbackView /
+EmptyStateView components, UX-043 account-deletion flow (backend work),
+wishlist-empty + AR-greeting/plural copy native-AR pass, UX-045 copy.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### P3 follow-up batch (UX-046/047/044) — draft PR #26
+
+Worktree `.trees/p3b-polish`, branch `feat/p3b-polish-batch`, commit
+`71e20a1` (12 files, +155/−13), based on `c760125`. **Draft PR #26** →
+master (separate from #24/#25 per owner's separate-PR preference). Local:
+analyze clean; **390/390 tests** (385 baseline + 5 new); canonical format.
+
+1. **Cart badge 99+ cap (UX-046)** — pure `cartBadgeLabel(count)` helper in
+   `app_shell.dart`, applied to both Badge labels.
+2. **Details AppBar title (UX-047)** — ready-state AppBar shows ellipsized
+   product name instead of the category label; name now appears twice
+   (AppBar + body title) — `details_page_test` updated to findsNWidgets(2).
+3. **Time-of-day greeting (UX-044)** — `homeGreeting(l10n, firstName, now)`
+   picks morning (05–11:59) / afternoon (12–16:59) / evening (17–04:59)
+   copy; new EN+AR keys goodAfternoon[Guest]/goodEvening[Guest] (AR
+   afternoon+evening both `مساء الخير` — native AR review flagged).
+   `HomePage` gained an injectable `clock` for deterministic tests;
+   stitch_home greeting test pins 09:00.
+
+Tests: `test/home_greeting_test.dart` (bucket boundaries) +
+`test/cart_badge_label_test.dart`; l10n regenerated and committed.
+
+CI: not watched this run (owner instruction — skip slow Android job until
+all work done). Merge human-gated.
+
+---
+
+## New — 2026-09-06 (L2, human-approved)
+
+### Color swatches in the catalog filter sheet — draft PR #25
+
+Worktree `.trees/filter-swatches`, branch `feat/filter-color-swatches`,
+commit `5a8f634` (2 files, +60/−1), based on `c760125` (separate from draft
+PR #24 per owner choice). Color `ChoiceChip`s in `filter_sheet.dart` now
+carry the same `ColorSwatchDot` avatar the PDP variant chips use — one visual
+language for colors across sheet and product page. Local: analyze clean;
+**387/387 tests** (2 new in `test/filter_sheet_swatches_test.dart`: dots per
+color chip, dots persist on select); canonical format. Draft PR #25 → master.
+
+CI: not watched this run per owner instruction (skip slow Android job until
+all work done); confirm fast jobs green before merge. Merge human-gated.
+
+---
+
+## New — 2026-09-05 (L2, human-approved)
+
+### P3 polish batch — draft PR #24 (RTL arrows, spinner, empty states, counts)
+
+Worktree `.trees/p3-polish`, branch `feat/p3-polish-batch`, commit `eafd002`
+(16 files, +148/−32), based on `c760125`. **Draft PR #24** → master. Local:
+analyze clean; **387/387 tests**; canonical format.
+
+1. **RTL arrows (UX-032)** — new `context.directionalForwardIcon` /
+   `directionalTrailingIcon` on `BuildContextX` (glyph swaps in RTL; plain
+   `Icons.arrow_forward`/`chevron_right` never mirror — verified against the
+   Flutter SDK: only IconData with `matchTextDirection: true` mirrors).
+   Applied to all *live* sites: cart proceed-to-checkout, onboarding next,
+   drill-in chevrons in Profile (×4), Settings, Support, 4 admin pages.
+   Checkout/payment arrows already used the correct `matchTextDirection`
+   codepoint pattern — untouched. `MenuListTile` (dead code) untouched.
+2. **Animated loading (UX-030)** — `FeedbackViewType.loading` now renders a
+   `CircularProgressIndicator` in the 48dp slot instead of a frozen hourglass
+   (same footprint, no layout shift).
+3. **Empty-state polish** — wishlist empty icon inventory/stock glyph →
+   `favorite_border` heart; empty cart gains a Continue Shopping CTA
+   (pre-existing `continueShopping` key). Flagged leftover: wishlist empty
+   *copy* still generic (UX-045) — needs native-AR review.
+4. **Category counts** — CategoriesPage grid cards show each family's product
+   count via pre-existing `curatedFabrics` l10n key + `state.categoryProductCount`.
+
+**Tests:** new `test/shared/extensions/build_context_x_test.dart` pins the
+LTR/RTL glyph contract for both helpers; `catalog_states_test` loading assert
+→ `CircularProgressIndicator`; `categories_grid_test` asserts count captions.
+No existing assertions pinned the old chevrons/hourglass/wishlist icon (grep-verified).
+
+**CI (run 33974922282):** Secret Scan, Edge Function Tests, Setup & Cache,
+Flutter Tests, Format & Analyze, Deployment Readiness all ✅. Android Release
+Build job (~7 min) still in_progress at last check — per owner instruction,
+not blocking on it this run; confirm green before merge. PR state: OPEN draft,
+MERGEABLE.
+
+Merge human-gated.
+
+---
+
+## New — 2026-09-05 (L2, human-approved)
+
+### PR #23 MERGED — P2 items on master (`c760125`)
+
+Owner approved ready+merge; squash-merged as `c760125`. **Post-merge master
+CI (run 33973780988): success** — repo CI remains fully green across
+merges. Worktree `.trees/p2-categories` removed; branch deleted local +
+remote; local master synced to `c760125`. Remaining from the L1 review:
+P3 polish (RTL arrow icons, empty-state icons, FeedbackView loading
+spinner, category counts on the new grid cards) and the extended idea of
+color-swatch dots in the catalog filter sheet.
+
+---
+
+## New — 2026-09-05 (L2, human-approved)
+
+### P2 items — draft PR #23 (category grid, color swatches, responsive wishlist)
+
+Worktree `.trees/p2-categories`, branch `feat/p2-categories-grid-and-swatches`,
+commit `b4cf009` (6 files, +396/−18), based on `f75d1db`. **Draft PR #23** →
+master. Audit first: responsive 2/3/4-col grid already existed for home/catalog
+on master (`productGridDelegateForWidth`) — only wishlist still used the fixed
+delegate. CategoriesPage (chip dead-end) and text-only color chips were the
+genuinely open P2 items.
+
+1. **Categories browse grid** — weave-tinted (FabricWeavePainter) category
+   cards under the chips; curated per-family tints + deterministic FNV hue
+   fallback; tap → select category + go /catalog.
+2. **Fabric color swatches** — new `color_swatches.dart`: curated fixture
+   color-name → mid-tone fabric map + `ColorSwatchDot` avatar in the PDP
+   color chips (thin ring keeps pale fabrics visible). Interim client-side
+   until backend carries per-variant hex.
+3. **Wishlist grid** — moved to width-aware delegate (2/3/4 cols).
+
+**Verifier vs CI (run 33973323042):** all 7 jobs ✅ (Android Release Build
+5m19s, Flutter Tests 2m4s, Format & Analyze 55s — the previously broken gate
+stays healthy). Local: analyze clean; **385/385 tests** (376 + 9 new:
+swatch map/determinism/dot, categoryAccent, grid render + tap-to-select).
+
+Merge human-gated.
+
+---
+
+## New — 2026-09-05 (L2, human-approved)
+
+### UI/UX review → P0/P1 funnel+a11y work → format-drift fix; PRs #19/#21/#22 merged
+
+**L1 UI/UX review** of the storefront (theme, shell, router, pages, widgets)
+against DESIGN.md + Stitch assets produced a prioritized report (P0 funnel,
+P1 a11y, P2 IA/responsive, P3 polish). No screenshot capability in this
+environment; analysis code/design-asset based.
+
+**L2 worktrees then trimmed to net-new** after origin/master advanced 102
+commits past local master (base `ac69c54` → `cdf9b09`/`9a77966`) and merged
+most audit work from other sessions (DetailsStatus lifecycle, hero contrast,
+typography/titleSmall, 50px CTAs, padded chips, checkout email-block, etc.).
+Final net-new deltas, all now MERGED to master:
+1. **Guest cart** — `/cart` removed from router `authRequired` (PR #21,
+   commit `3a92e68` via stacked merge).
+2. **Sign-in honors `?redirect=`** — same-app paths only (PR #21). Router
+   tests: guarded-route examples `/cart` → `/wishlist`; new "cart stays
+   public" + `sign_in_redirect_test.dart` cases.
+3. **WishlistToggleIcon tap target** — zeroed constraints removed, 48dp
+   restored (commit `6771e3d`, PR #21).
+
+**Verifier finding:** the repo-wide CI `Format & Analyze` failure was NOT
+PR-related — `dart format --set-exit-if-changed .` drifted on 15
+master-owned files (admin/settings/catalog + tests), reproduced on pristine
+master. Fixed by format-only PR #22 (commit `f75d1db`, 15 files,
+whitespace-only): `dart format .` → gate passes, analyze clean, 376/376
+tests. **CI on #22 fully green (7/7 incl. Android Release Build) and the
+post-merge master run (33972221612) succeeded** — repo CI unblocked.
+
+Local master synced to `f75d1db`. Remaining from the L1 review: P2 (real
+Categories grid, color swatches on PDP, true checkout stepper, responsive
+max-cross-axis grid, onboarding already done upstream) and P3 polish items.
+
+---
 
 ## New — 2026-09-05: T1 admin catalog API migrated to Result + typed entities
 
