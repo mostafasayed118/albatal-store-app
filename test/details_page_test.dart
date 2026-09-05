@@ -34,7 +34,9 @@ void main() {
     // body title → exactly two occurrences.
     expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
     expect(find.text('1290 EGY'), findsOneWidget);
-    expect(find.text('Add to Cart'), findsOneWidget);
+    // CTA shows the live line total (unit price × qty, Stitch parity):
+    // "Add to Cart - 1290 EGY" at the default quantity of 1.
+    expect(find.text('Add to Cart - 1290 EGY'), findsOneWidget);
   });
 
   testWidgets('details page shows wishlist and share buttons',

@@ -120,6 +120,13 @@ class _AuthenticatedProfile extends StatelessWidget {
           trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.push('/support'),
         ),
+        ListTile(
+          leading: const Icon(Icons.settings_outlined),
+          title: Text(l.settings),
+          // Drill-in chevron points in the reading direction (flips in RTL).
+          trailing: Icon(context.directionalTrailingIcon),
+          onTap: () => context.push('/settings'),
+        ),
         const SizedBox(height: 24),
         TextButton.icon(
           onPressed: () async {

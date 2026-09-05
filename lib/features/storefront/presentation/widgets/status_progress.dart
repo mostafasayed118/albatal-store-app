@@ -12,12 +12,22 @@ class StatusProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // Four-stage lifecycle matching the Stitch order-tracking mockup
+    // (Placed → Confirmed → Shipped → Delivered); `processing` is the
+    // app/DB name for the Confirmed stage (order_status enum, migration
+    // 001). Cancelled/refunded/expired have no progress track.
     final steps = [
       (OrderStatus.placed, l.placed),
+      (OrderStatus.processing, l.processing),
       (OrderStatus.shipped, l.shipped),
       (OrderStatus.delivered, l.delivered),
     ];
-    final reached = steps.indexWhere((s) => s.$1 == status);
+    final reached = switch (status) {
+      // pending (created, not yet paid) still shows stage 1 reached.
+      OrderStatus.pending => 0,
+      OrderStatus.paid => 1,
+      _ => steps.indexWhere((s) => s.$1 == status),
+    };
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

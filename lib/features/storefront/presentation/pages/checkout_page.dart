@@ -16,7 +16,7 @@ import '../widgets/address_form.dart';
 import '../widgets/address_picker.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/order_review.dart';
-import '../widgets/step_indicator.dart';
+import '../../../../shared/components/step_indicator.dart';
 
 /// Checkout page — Stitch 3528 flow reskin.
 ///
@@ -73,7 +73,7 @@ class CheckoutPage extends StatelessWidget {
             padding: const EdgeInsetsDirectional.all(16),
             children: [
               StepIndicator(
-                steps: [l.shippingAddress, l.reviewOrder],
+                steps: [l.shippingAddress, l.payment, l.reviewOrder],
                 currentStep: s.hasAddress ? 1 : 0,
                 scheme: scheme,
               ),

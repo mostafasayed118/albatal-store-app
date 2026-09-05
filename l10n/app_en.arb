@@ -41,6 +41,7 @@
   "checkout": "Checkout",
   "shippingAddress": "Shipping Address",
   "paymentMethod": "Payment Method",
+  "payment": "Payment",
   "addNewAddress": "Add New Address",
   "placeOrder": "Place Order",
   "proceedToCheckout": "Proceed to Checkout",
@@ -79,6 +80,14 @@
   "noCancelledOrders": "No cancelled orders",
   "advanceOrder": "Advance Order",
   "addToCart": "Add to Cart",
+  "addToCartTotal": "Add to Cart - {total}",
+  "@addToCartTotal": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "addedToCart": "Added to your cart",
   "movedToCart": "Moved to cart",
   "moveToCart": "Move to Cart",

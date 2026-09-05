@@ -101,6 +101,28 @@ void main() {
       expect(find.byType(SupportPage), findsOneWidget);
     });
 
+    testWidgets('profile links to settings (Stitch parity menu)',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      _settingsCubit = SettingsCubit(LocalSettingsRepository(prefs));
+      await _settingsCubit.load();
+      addTearDown(_settingsCubit.close);
+
+      authRepository.authChanges.add(const Authenticated('user-1'));
+      final router = routerFor('/profile', const []);
+      await tester.pumpWidget(harness(router));
+      await tester.pumpAndSettle();
+
+      // The settings row sits below the fold in the test viewport.
+      await tester.ensureVisible(find.text('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SettingsPage), findsOneWidget);
+    });
+
     testWidgets('settings links to support', (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
