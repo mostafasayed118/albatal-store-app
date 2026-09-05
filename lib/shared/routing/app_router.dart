@@ -14,6 +14,8 @@ import '../../features/auth/presentation/pages/sign_in_page.dart';
 import '../../features/auth/presentation/pages/sign_up_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/onboarding/presentation/pages/splash_page.dart';
+import '../../features/payments/presentation/cubit/payment_cubit.dart';
+import '../../features/payments/presentation/pages/instapay_instructions_page.dart';
 import '../../features/payments/presentation/pages/payment_method_page.dart';
 import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -125,6 +127,12 @@ final _routes = <RouteBase>[
     path: '/paymob-checkout',
     builder: (_, s) =>
         PaymobCheckoutPage(checkoutUrl: s.extra as String? ?? ''),
+  ),
+  GoRoute(
+    path: '/instapay-instructions',
+    builder: (_, s) => InstapayInstructionsPage(
+      cubit: (s.extra as Map<String, dynamic>?)?['cubit'] as PaymentCubit?,
+    ),
   ),
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),

@@ -26,6 +26,7 @@ dependencies:
   url_launcher: ^6.2.5
   uuid: ^4.5.1 # product-image storage key generation (StorageService)
   webview_flutter: ^4.10.0
+  image_picker: ^1.1.2 # InstaPay transfer-proof attachment (D3, PR #36 plan; owner-approved)
   # intl 0.20.3 requires a newer flutter_localizations pin; revisit after next Flutter stable.
 
 dev_dependencies:

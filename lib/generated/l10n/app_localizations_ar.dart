@@ -635,6 +635,60 @@ class AppLocalizationsAr extends AppLocalizations {
   String get payWithCardDescription => 'بطاقة ائتمان أو خصم عبر Paymob';
 
   @override
+  String get instapay => 'انستاباي';
+
+  @override
+  String get instapayDescription =>
+      'حوّل عبر انستاباي ثم أرسل إثبات التحويل للمراجعة';
+
+  @override
+  String get instapayInstructionsTitle => 'أكمل تحويل انستاباي';
+
+  @override
+  String get instapayTransferTo => 'حوّل المبلغ بالضبط إلى';
+
+  @override
+  String get instapayAddressLabel => 'عنوان انستاباي';
+
+  @override
+  String get instapayCopy => 'نسخ';
+
+  @override
+  String get instapayCopied => 'تم نسخ عنوان انستاباي';
+
+  @override
+  String get instapayAmountLabel => 'المبلغ';
+
+  @override
+  String get instapayReferenceLabel => 'رقم مرجع التحويل (اختياري)';
+
+  @override
+  String get instapayReferenceHint => 'مثال: رقم العملية أو آخر 4 أرقام';
+
+  @override
+  String get instapayAttachScreenshot => 'أرفق صورة إثبات التحويل';
+
+  @override
+  String get instapayScreenshotAttached => 'تم إرفاق الصورة';
+
+  @override
+  String get instapaySubmitProof => 'أرسل الإثبات للمراجعة';
+
+  @override
+  String get instapayProofSubmitted => 'تم إرسال الإثبات — سنراجعه قريبًا';
+
+  @override
+  String get instapayProofPendingNote =>
+      'دفعك قيد الانتظار حتى نراجع الإثبات. يمكنك مغادرة الصفحة بأمان — ستجد الحالة في طلباتك.';
+
+  @override
+  String get instapayPickScreenshotError =>
+      'لم نتمكن من اختيار الصورة. حاول مرة أخرى.';
+
+  @override
+  String get instapayFileTooLarge => 'الصورة كبيرة جدًا. أرفق صورة أصغر.';
+
+  @override
   String get cashOnDeliveryDescription => 'ادفع عند وصول طلبك';
 
   @override

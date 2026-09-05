@@ -50,6 +50,7 @@ class PaymentMethodPage extends StatefulWidget {
 class _PaymentMethodPageState extends State<PaymentMethodPage> {
   bool _checkoutOpened = false;
   bool _successNavigated = false;
+  bool _instructionsOpened = false;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +75,11 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           previous.checkoutUrl != current.checkoutUrl,
       listener: (context, state) {
         final l = context.l10n;
+        // A new attempt begins — re-arm the route-open guards so a
+        // retry (or a return via back-navigation) can re-open them.
+        if (state.status == PaymentStatus.processing) {
+          _instructionsOpened = false;
+        }
         if (state.status == PaymentStatus.awaitingVerification &&
             !_checkoutOpened) {
           final checkoutUrl = state.checkoutUrl;
@@ -87,6 +93,15 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           }
           _checkoutOpened = true;
           context.push('/paymob-checkout', extra: checkoutUrl);
+        } else if (state.status == PaymentStatus.awaitingProof &&
+            !_instructionsOpened) {
+          // InstaPay (041): hand the SAME cubit to the instructions
+          // page so the single server-status watch keeps running.
+          // The instructions page pops itself on terminal status and
+          // PaymentMethodPage beneath it surfaces the messaging.
+          _instructionsOpened = true;
+          context.push('/instapay-instructions',
+              extra: {'cubit': context.read<PaymentCubit>()});
         } else if (state.status == PaymentStatus.success &&
             !_successNavigated) {
           final successOrderId = state.orderId.trim();
@@ -114,6 +129,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           // unrelated route.
           final checkoutWasOpen = _checkoutOpened;
           _checkoutOpened = false;
+          _instructionsOpened = false;
           if (checkoutWasOpen && context.canPop()) context.pop();
           final message = state.errorMessage ??
               switch (state.status) {
@@ -178,6 +194,16 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                 onTap: () => context
                     .read<PaymentCubit>()
                     .selectMethod(PaymentMethod.cashOnDelivery),
+              ),
+              const SizedBox(height: 12),
+              _PaymentOption(
+                icon: Icons.currency_exchange,
+                title: l.instapay,
+                subtitle: l.instapayDescription,
+                isSelected: state.selectedMethod == PaymentMethod.instapay,
+                onTap: () => context
+                    .read<PaymentCubit>()
+                    .selectMethod(PaymentMethod.instapay),
               ),
               const SizedBox(height: 32),
               BlocBuilder<PaymentCubit, PaymentState>(

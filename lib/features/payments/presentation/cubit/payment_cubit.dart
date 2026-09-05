@@ -14,6 +14,7 @@ enum PaymentStatus {
   selectingMethod,
   processing,
   awaitingVerification,
+  awaitingProof,
   success,
   failed,
   cancelled,
@@ -30,6 +31,7 @@ final class PaymentState extends Equatable {
     this.transactionId,
     this.errorMessage,
     this.checkoutUrl,
+    this.instructions,
   });
 
   final PaymentStatus status;
@@ -39,6 +41,10 @@ final class PaymentState extends Equatable {
   final String? transactionId;
   final String? errorMessage;
   final String? checkoutUrl;
+
+  /// Server-derived InstaPay transfer details while
+  /// [PaymentStatus.awaitingProof].
+  final InstapayInstructions? instructions;
 
   bool get canProceed => selectedMethod != null;
 
@@ -50,6 +56,7 @@ final class PaymentState extends Equatable {
     String? transactionId,
     String? errorMessage,
     String? checkoutUrl,
+    InstapayInstructions? instructions,
   }) =>
       PaymentState(
         status: status ?? this.status,
@@ -59,6 +66,7 @@ final class PaymentState extends Equatable {
         transactionId: transactionId ?? this.transactionId,
         errorMessage: errorMessage,
         checkoutUrl: checkoutUrl ?? this.checkoutUrl,
+        instructions: instructions ?? this.instructions,
       );
 
   @override
@@ -70,6 +78,7 @@ final class PaymentState extends Equatable {
         transactionId,
         errorMessage,
         checkoutUrl,
+        instructions,
       ];
 }
 
@@ -165,6 +174,35 @@ class PaymentCubit extends Cubit<PaymentState> {
       return;
     }
 
+    // InstaPay — prepare the transfer, then wait for proof upload
+    // (migration 041). Method switch + amount happen server-side.
+    if (state.selectedMethod == PaymentMethod.instapay) {
+      emit(state.copyWith(status: PaymentStatus.processing));
+
+      final initiation = await _paymentService.initiateInstapayPayment(
+        orderId: state.orderId,
+      );
+
+      switch (initiation) {
+        case InstapayReady(:final instructions):
+          emit(state.copyWith(
+            status: PaymentStatus.awaitingProof,
+            instructions: instructions,
+          ));
+          // The payment row stays `pending` until an admin approves
+          // the submitted proof (or the 24h expiry). Subscribe to the
+          // same server-authoritative status stream used for Paymob so
+          // approval/rejection lands without polling.
+          await startWatching(state.orderId);
+        case InstapayUnavailable(:final message):
+          emit(state.copyWith(
+            status: PaymentStatus.failed,
+            errorMessage: message,
+          ));
+      }
+      return;
+    }
+
     // Paymob Card — initiate payment
     emit(state.copyWith(status: PaymentStatus.processing));
 
@@ -197,6 +235,45 @@ class PaymentCubit extends Cubit<PaymentState> {
         ));
       case PaymentCancelled():
         emit(state.copyWith(status: PaymentStatus.cancelled));
+    }
+  }
+
+  /// Submit the transfer proof while [PaymentStatus.awaitingProof].
+  ///
+  /// The status STAYS [PaymentStatus.awaitingProof] for the whole
+  /// upload — flipping to `processing` would make the status watcher
+  /// drop a server event that arrives mid-upload. Re-entrancy is
+  /// prevented by the caller (the page disables its upload button
+  /// while a submission is in flight).
+  ///
+  /// Returns true when the proof was recorded. The payment remains
+  /// `pending` server-side until admin review (or the 24h expiry).
+  Future<bool> submitInstapayProof({
+    required List<int> proofBytes,
+    required String fileExt,
+    String? reference,
+  }) async {
+    if (state.status != PaymentStatus.awaitingProof) return false;
+
+    final result = await _paymentService.submitInstapayProof(
+      orderId: state.orderId,
+      proofBytes: proofBytes,
+      fileExt: fileExt,
+      reference: reference,
+    );
+
+    switch (result) {
+      case PaymentSuccess():
+        return true;
+      case PaymentFailed(:final message):
+        emit(state.copyWith(
+          status: PaymentStatus.failed,
+          errorMessage: message,
+        ));
+        return false;
+      case PaymentPending():
+      case PaymentCancelled():
+        return false;
     }
   }
 
@@ -236,7 +313,9 @@ class PaymentCubit extends Cubit<PaymentState> {
 
     _watchSubscription = _paymentService.watchPaymentStatus(orderId).listen(
       (result) {
-        if (isClosed || state.status != PaymentStatus.awaitingVerification) {
+        if (isClosed ||
+            (state.status != PaymentStatus.awaitingVerification &&
+                state.status != PaymentStatus.awaitingProof)) {
           return;
         }
         switch (result) {
