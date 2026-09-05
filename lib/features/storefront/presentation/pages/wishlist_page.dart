@@ -27,7 +27,9 @@ class WishlistPage extends StatelessWidget {
           }
           if (ws.products.isEmpty) {
             return EmptyStateView(
-              icon: Icons.inventory_2_outlined,
+              // A heart reads as "nothing saved yet" — clearer than a
+              // warehouse/stock glyph for a wishlist.
+              icon: Icons.favorite_border,
               title: l.noItemsFound,
               actionLabel: l.exploreCategories,
               onAction: () => context.go('/categories'),

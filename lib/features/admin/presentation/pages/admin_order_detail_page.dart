@@ -308,7 +308,7 @@ class _ActionTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(context.directionalTrailingIcon),
       onTap: onTap,
     );
   }

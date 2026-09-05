@@ -94,7 +94,7 @@ class _ManagementTile extends StatelessWidget {
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Icon(context.directionalTrailingIcon),
         onTap: onTap,
       ),
     );

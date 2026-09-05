@@ -114,7 +114,7 @@ class _OrderTile extends StatelessWidget {
           ],
         ),
         subtitle: Text('$customerName · $itemCount ${l.items}'),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Icon(context.directionalTrailingIcon),
       ),
     );
   }

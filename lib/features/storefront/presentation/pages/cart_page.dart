@@ -33,6 +33,10 @@ class CartPage extends StatelessWidget {
             return EmptyStateView(
               icon: Icons.shopping_bag_outlined,
               title: l.cartEmptyTitle,
+              // Give the empty cart an exit back into the catalog instead of
+              // dead-ending the user.
+              actionLabel: l.continueShopping,
+              onAction: () => context.go('/catalog'),
             );
           }
           return ListView(
@@ -45,7 +49,8 @@ class CartPage extends StatelessWidget {
               const SizedBox(height: 16),
               AppButton(
                 label: l.proceedToCheckout,
-                icon: Icons.arrow_forward,
+                // Points forward in the reading direction (flips under RTL).
+                icon: context.directionalForwardIcon,
                 onPressed: () => context.push('/checkout'),
               ),
             ],

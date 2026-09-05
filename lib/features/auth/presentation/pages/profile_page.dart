@@ -95,25 +95,29 @@ class _AuthenticatedProfile extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.receipt_long_outlined),
           title: Text(l.myOrders),
-          trailing: const Icon(Icons.chevron_right),
+          // Drill-in chevron points in the reading direction (flips in RTL).
+          trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.push('/profile/orders'),
         ),
         ListTile(
           leading: const Icon(Icons.location_on_outlined),
           title: Text(l.shippingAddresses),
-          trailing: const Icon(Icons.chevron_right),
+          // Drill-in chevron points in the reading direction (flips in RTL).
+          trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.push('/profile/addresses'),
         ),
         ListTile(
           leading: const Icon(Icons.favorite_border),
           title: Text(l.wishlist),
-          trailing: const Icon(Icons.chevron_right),
+          // Drill-in chevron points in the reading direction (flips in RTL).
+          trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.go('/wishlist'),
         ),
         ListTile(
           leading: const Icon(Icons.support_agent_outlined),
           title: Text(l.customerSupport),
-          trailing: const Icon(Icons.chevron_right),
+          // Drill-in chevron points in the reading direction (flips in RTL).
+          trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.push('/support'),
         ),
         const SizedBox(height: 24),

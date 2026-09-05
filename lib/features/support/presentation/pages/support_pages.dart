@@ -152,7 +152,8 @@ class SupportPage extends StatelessWidget {
               leading: const Icon(Icons.help_outline),
               title: Text(l.faq),
               subtitle: Text(l.faqDescription),
-              trailing: const Icon(Icons.chevron_right),
+              // Drill-in chevron points in the reading direction (flips in RTL).
+              trailing: Icon(context.directionalTrailingIcon),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(l.comingSoon)),
