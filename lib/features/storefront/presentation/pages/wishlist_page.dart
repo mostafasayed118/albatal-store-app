@@ -29,9 +29,11 @@ class WishlistPage extends StatelessWidget {
             return FeedbackView(
               type: FeedbackViewType.empty,
               // A heart reads as "nothing saved yet" — clearer than a
-              // warehouse/stock glyph for a wishlist.
+              // warehouse/stock glyph for a wishlist. Wishlist-specific copy
+              // (UX-045) replaces the generic "no items found".
               icon: Icons.favorite_border,
-              title: l.noItemsFound,
+              title: l.wishlistEmptyTitle,
+              body: l.wishlistEmptyBody,
               actionLabel: l.exploreCategories,
               onAction: () => context.go('/categories'),
             );

@@ -163,6 +163,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exploreCategories => 'Explore Categories';
 
   @override
+  String get wishlistEmptyTitle => 'Your wishlist is empty';
+
+  @override
+  String get wishlistEmptyBody =>
+      'Tap the heart on any product to save it here.';
+
+  @override
   String get length => 'Length';
 
   @override
@@ -269,7 +276,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fabricsFound(int count) {
-    return '$count fabrics found';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fabrics found',
+      one: '1 fabric found',
+      zero: 'No fabrics found',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -298,7 +312,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String curatedFabrics(int count) {
-    return '$count curated fabrics';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count curated fabrics',
+      one: '1 curated fabric',
+      zero: 'No curated fabrics',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -353,7 +374,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String itemsCount(int count) {
-    return '$count items';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: '0 items',
+    );
+    return '$_temp0';
   }
 
   @override

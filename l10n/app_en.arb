@@ -50,6 +50,8 @@
   "delivered": "Delivered",
   "noItemsFound": "No items found",
   "exploreCategories": "Explore Categories",
+  "wishlistEmptyTitle": "Your wishlist is empty",
+  "wishlistEmptyBody": "Tap the heart on any product to save it here.",
   "length": "Length",
   "color": "Color",
   "quantity": "Quantity",
@@ -85,7 +87,7 @@
   "clearSearch": "Clear search",
   "popularProducts": "Popular products",
   "sortProducts": "Sort products",
-  "fabricsFound": "{count} fabrics found",
+  "fabricsFound": "{count, plural, =0{No fabrics found} =1{1 fabric found} other{{count} fabrics found}}",
   "@fabricsFound": {
     "description": "Number of fabrics found",
     "placeholders": {
@@ -102,7 +104,7 @@
   "removeFromWishlist": "Removed from wishlist",
   "addToWishlist": "Add to wishlist",
   "fabricCategories": "Fabric Categories",
-  "curatedFabrics": "{count} curated fabrics",
+  "curatedFabrics": "{count, plural, =0{No curated fabrics} =1{1 curated fabric} other{{count} curated fabrics}}",
   "@curatedFabrics": {
     "description": "Number of curated fabrics in a category",
     "placeholders": {
@@ -134,7 +136,7 @@
   "openSettings": "Open settings",
   "successTitle": "Success!",
   "orderPlacedBody": "Your order has been placed. We will keep you updated.",
-  "itemsCount": "{count} items",
+  "itemsCount": "{count, plural, =0{0 items} =1{1 item} other{{count} items}}",
   "@itemsCount": {
     "description": "Number of items in an order",
     "placeholders": {

@@ -398,6 +398,18 @@ abstract class AppLocalizations {
   /// **'Explore Categories'**
   String get exploreCategories;
 
+  /// No description provided for @wishlistEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wishlist is empty'**
+  String get wishlistEmptyTitle;
+
+  /// No description provided for @wishlistEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on any product to save it here.'**
+  String get wishlistEmptyBody;
+
   /// No description provided for @length.
   ///
   /// In en, this message translates to:
@@ -611,7 +623,7 @@ abstract class AppLocalizations {
   /// Number of fabrics found
   ///
   /// In en, this message translates to:
-  /// **'{count} fabrics found'**
+  /// **'{count, plural, =0{No fabrics found} =1{1 fabric found} other{{count} fabrics found}}'**
   String fabricsFound(int count);
 
   /// No description provided for @newSilkCollection.
@@ -665,7 +677,7 @@ abstract class AppLocalizations {
   /// Number of curated fabrics in a category
   ///
   /// In en, this message translates to:
-  /// **'{count} curated fabrics'**
+  /// **'{count, plural, =0{No curated fabrics} =1{1 curated fabric} other{{count} curated fabrics}}'**
   String curatedFabrics(int count);
 
   /// No description provided for @confirmStep.
@@ -761,7 +773,7 @@ abstract class AppLocalizations {
   /// Number of items in an order
   ///
   /// In en, this message translates to:
-  /// **'{count} items'**
+  /// **'{count, plural, =0{0 items} =1{1 item} other{{count} items}}'**
   String itemsCount(int count);
 
   /// No description provided for @reviewOrder.
