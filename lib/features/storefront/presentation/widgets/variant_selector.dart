@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/product_details_cubit.dart';
+import 'color_swatches.dart';
 import 'quantity_stepper.dart';
 import 'stock_badge.dart';
 
@@ -34,6 +35,7 @@ class VariantSelector extends StatelessWidget {
                     runSpacing: 8,
                     children: product.colors
                         .map((x) => ChoiceChip(
+                              avatar: ColorSwatchDot(name: x),
                               label: Text(x),
                               selected: state.color == x,
                               materialTapTargetSize:
