@@ -54,12 +54,14 @@ String? _redirect(AuthState auth, GoRouterState state) {
     return null;
   }
 
+  // Checkout and post-purchase/account screens require a session. Cart is
+  // intentionally public — a guest must be able to review the cart they are
+  // building; the auth gate moves to checkout (UI/UX review P0 funnel fix).
   const authRequired = [
     '/checkout',
     '/profile/orders',
     '/profile/addresses',
     '/wishlist',
-    '/cart',
     '/payment-method',
     '/paymob-checkout',
     '/order-success',

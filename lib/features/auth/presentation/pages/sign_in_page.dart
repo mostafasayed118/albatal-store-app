@@ -25,16 +25,32 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
+  /// Resolves the post-login destination.
+  ///
+  /// The router issues `/sign-in?redirect=<path>` when an auth-required
+  /// route is blocked (e.g. checkout). Honor it so users return to what
+  /// they were doing instead of landing on Home. Only same-app absolute
+  /// paths are accepted — protocol-relative (`//host`) and external URLs
+  /// fall back to `/home`.
+  String _redirectTarget(BuildContext context) {
+    final raw = GoRouterState.of(context).uri.queryParameters['redirect'];
+    if (raw == null || !raw.startsWith('/') || raw.startsWith('//')) {
+      return '/home';
+    }
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final redirectTarget = _redirectTarget(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.signIn)),
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state.isAuthenticated) {
-            context.go('/home');
+            context.go(redirectTarget);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
             ScaffoldMessenger.of(context)
