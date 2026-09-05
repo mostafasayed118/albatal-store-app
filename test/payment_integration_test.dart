@@ -57,7 +57,6 @@ class StubPaymentService implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 void main() {

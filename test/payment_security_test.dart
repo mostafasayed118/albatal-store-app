@@ -65,7 +65,6 @@ class _NoVerifyStub implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 /// Stub that returns server-confirmed success for COD.
@@ -108,7 +107,6 @@ class _ServerConfirmStub implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 void main() {

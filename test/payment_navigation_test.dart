@@ -57,7 +57,6 @@ class _NavStub implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 GoRouter _router(PaymentCubit cubit, CartCubit cart) => _routerWithArgs(

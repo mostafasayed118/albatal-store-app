@@ -74,7 +74,6 @@ class _RecordingPaymentService implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 /// Stub with a Completer to precisely control async timing.
@@ -128,7 +127,6 @@ class _CompleterConfirmService implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 /// Minimal stub implementing PaymentService. Proves the interface requires it.
@@ -170,7 +168,6 @@ class _StubWithCod implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 void main() {

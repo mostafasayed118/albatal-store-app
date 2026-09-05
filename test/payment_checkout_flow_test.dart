@@ -53,7 +53,6 @@ class _FlowStub implements PaymentService {
     return _controller.stream;
   }
 
-  
   @override
   Future<InstapayInitiation> initiateInstapayPayment(
           {required String orderId}) async =>
@@ -67,7 +66,7 @@ class _FlowStub implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-@override
+  @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
       const PaymentFailed(message: 'stub');
 

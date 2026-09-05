@@ -118,7 +118,6 @@ class _StubPayService implements PaymentService {
     String? reference,
   }) async =>
       const PaymentFailed(message: 'stub: not exercised');
-
 }
 
 Widget _checkoutHarness({
