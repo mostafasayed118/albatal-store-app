@@ -92,7 +92,7 @@ class _StockTile extends StatelessWidget {
     await WidgetsBinding.instance.endOfFrame;
     if (!context.mounted) return;
     final ctrl = TextEditingController(text: product.stock.toString());
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(context.l10n.updateStock),
@@ -120,5 +120,7 @@ class _StockTile extends StatelessWidget {
         ],
       ),
     );
+    // Free the field controller once the dialog has closed.
+    ctrl.dispose();
   }
 }

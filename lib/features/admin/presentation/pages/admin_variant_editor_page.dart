@@ -63,7 +63,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     );
     bool saving = false;
 
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
@@ -174,6 +174,13 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
         ),
       ),
     );
+    // The dialog can also close via the barrier while a save is in flight,
+    // so dispose the field controllers only after it has fully popped —
+    // on every path.
+    sizeCtrl.dispose();
+    colorCtrl.dispose();
+    stockCtrl.dispose();
+    priceCtrl.dispose();
   }
 
   @override

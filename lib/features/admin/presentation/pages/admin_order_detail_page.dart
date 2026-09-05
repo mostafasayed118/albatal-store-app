@@ -248,7 +248,7 @@ class _FulfillmentActions extends StatelessWidget {
     if (!context.mounted) return;
     final trackingCtrl = TextEditingController();
     final courierCtrl = TextEditingController();
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(context.l10n.addTrackingDetails),
@@ -292,6 +292,9 @@ class _FulfillmentActions extends StatelessWidget {
         ],
       ),
     );
+    // Free the field controllers once the dialog has closed.
+    trackingCtrl.dispose();
+    courierCtrl.dispose();
   }
 }
 
