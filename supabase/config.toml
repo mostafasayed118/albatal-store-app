@@ -88,3 +88,9 @@ verify_jwt = false
 
 [functions.send-order-notification]
 verify_jwt = false
+
+[functions.delete-account]
+# Called by the Flutter client with the user's own JWT; the
+# function re-verifies the session and refuses admin accounts
+# before deleting with the service role.
+verify_jwt = true
