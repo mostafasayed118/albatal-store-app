@@ -138,73 +138,103 @@ class _DeleteAccountTile extends StatelessWidget {
   }
 }
 
+/// Set while the confirm dialog (and the delete call that follows it) is
+/// on screen, so a second tap on the row — e.g. a slow device eating the
+/// first tap, observed on-device — cannot stack another dialog.
+bool _deleteDialogOpen = false;
+
 /// Confirmation dialog: explains the scope and requires the user to type
 /// their account email (decision C — the server also verifies it).
 Future<void> _confirmDeleteAccount(BuildContext context) async {
-  final l = context.l10n;
-  final messenger = ScaffoldMessenger.of(context);
-  final auth = context.read<AuthCubit>();
-  final cart = context.read<CartCubit>();
-  final wishlist = context.read<WishlistCubit>();
-  final controller = TextEditingController();
+  if (_deleteDialogOpen) return;
+  _deleteDialogOpen = true;
+  try {
+    final l = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthCubit>();
+    final cart = context.read<CartCubit>();
+    final wishlist = context.read<WishlistCubit>();
+    final controller = TextEditingController();
+    // Keyboard focus is deferred until the dialog's first frame is on
+    // screen, so the IME attach never competes with the opening animation
+    // (a known first-frame starvation source on slow devices).
+    final focusNode = FocusNode();
 
-  final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            title: Text(l.deleteAccountTitle),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l.deleteAccountBody),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: l.deleteAccountConfirmHint,
-                    border: const OutlineInputBorder(),
+    // Let the tapped row's frame finish rendering before pushing the modal
+    // route. Pushing a dialog while a janky frame is still in flight can
+    // starve the route's opening frame (observed: blank screen at ~3fps,
+    // the tap never visibly registering). If idle, this completes at once.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (dialogContext.mounted && !focusNode.hasFocus) {
+                focusNode.requestFocus();
+              }
+            });
+            return StatefulBuilder(
+              builder: (context, setState) => AlertDialog(
+                title: Text(l.deleteAccountTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l.deleteAccountBody),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        labelText: l.deleteAccountConfirmHint,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: Text(l.deleteAccountCancel),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(l.deleteAccountCancel),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                      foregroundColor: Theme.of(context).colorScheme.onError,
+                    ),
+                    // Enabled only once the user typed something; the server
+                    // still refuses a mismatched email.
+                    onPressed: controller.text.trim().isEmpty
+                        ? null
+                        : () => Navigator.pop(dialogContext, true),
+                    child: Text(l.deleteAccountConfirm),
+                  ),
+                ],
               ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                ),
-                // Enabled only once the user typed something; the server
-                // still refuses a mismatched email.
-                onPressed: controller.text.trim().isEmpty
-                    ? null
-                    : () => Navigator.pop(dialogContext, true),
-                child: Text(l.deleteAccountConfirm),
-              ),
-            ],
-          ),
-        ),
-      ) ??
-      false;
-  final email = controller.text.trim();
-  controller.dispose();
-  if (!confirmed || email.isEmpty) return;
+            );
+          },
+        ) ??
+        false;
+    final email = controller.text.trim();
+    controller.dispose();
+    focusNode.dispose();
+    if (!confirmed || email.isEmpty) return;
 
-  final result = await auth.deleteAccount(email: email);
-  switch (result) {
-    case Success():
-      // Wipe locally persisted user data (cart/wishlist live on-device and
-      // are guest-accessible, so they must not survive a deleted account).
-      cart.clear();
-      wishlist.clearAll();
-      messenger.showSnackBar(SnackBar(content: Text(l.deleteAccountSuccess)));
-    case Failure(:final error):
-      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    final result = await auth.deleteAccount(email: email);
+    switch (result) {
+      case Success():
+        // Wipe locally persisted user data (cart/wishlist live on-device and
+        // are guest-accessible, so they must not survive a deleted account).
+        cart.clear();
+        wishlist.clearAll();
+        messenger.showSnackBar(SnackBar(content: Text(l.deleteAccountSuccess)));
+      case Failure(:final error):
+        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  } finally {
+    _deleteDialogOpen = false;
   }
 }
