@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/catalog_cubit.dart';
+import 'color_swatches.dart';
 
 /// Bottom sheet with category, color, and price range filters.
 ///
@@ -113,6 +114,10 @@ class _FilterSheetState extends State<FilterSheet> {
                 children: [
                   for (final color in state.availableColors)
                     ChoiceChip(
+                      // Same fabric-color dot as the PDP variant chips, so
+                      // the filter sheet and product page speak one visual
+                      // language for colors.
+                      avatar: ColorSwatchDot(name: color),
                       label: Text(color),
                       selected: _selectedColor == color,
                       onSelected: (_) => setState(() {
