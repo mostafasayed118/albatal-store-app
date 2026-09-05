@@ -50,6 +50,8 @@
   "delivered": "تم التوصيل",
   "noItemsFound": "لا توجد عناصر",
   "exploreCategories": "استكشاف الفئات",
+  "wishlistEmptyTitle": "قائمة مفضلتك فارغة",
+  "wishlistEmptyBody": "اضغط على أيقونة القلب في أي منتج لحفظه هنا.",
   "length": "الطول",
   "color": "اللون",
   "quantity": "الكمية",
@@ -85,7 +87,7 @@
   "clearSearch": "مسح البحث",
   "popularProducts": "المنتجات الشائعة",
   "sortProducts": "ترتيب المنتجات",
-  "fabricsFound": "{count} أقمشة موجودة",
+  "fabricsFound": "{count, plural, zero{لا توجد أقمشة} one{قماش واحد} two{قماشان} few{{count} أقمشة} many{{count} قماشًا} other{{count} قماشًا}}",
   "@fabricsFound": {
     "description": "عدد الأقمشة الموجودة",
     "placeholders": {
@@ -102,7 +104,7 @@
   "removeFromWishlist": "تمت الإزالة من المفضلة",
   "addToWishlist": "إضافة إلى المفضلة",
   "fabricCategories": "فئات الأقمشة",
-  "curatedFabrics": "{count} أقمشة مختارة",
+  "curatedFabrics": "{count, plural, zero{لا أقمشة مختارة} one{قماش مختار واحد} two{قماشان مختاران} few{{count} أقمشة مختارة} many{{count} قماشًا مختارًا} other{{count} قماشًا مختارًا}}",
   "@curatedFabrics": {
     "description": "عدد الأقمشة المختارة في فئة",
     "placeholders": {
@@ -134,7 +136,7 @@
   "openSettings": "فتح الإعدادات",
   "successTitle": "نجاح!",
   "orderPlacedBody": "تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.",
-  "itemsCount": "{count} عناصر",
+  "itemsCount": "{count, plural, zero{لا عناصر} one{عنصر واحد} two{عنصران} few{{count} عناصر} many{{count} عنصرًا} other{{count} عنصرًا}}",
   "@itemsCount": {
     "description": "عدد العناصر في الطلب",
     "placeholders": {

@@ -163,6 +163,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exploreCategories => 'استكشاف الفئات';
 
   @override
+  String get wishlistEmptyTitle => 'قائمة مفضلتك فارغة';
+
+  @override
+  String get wishlistEmptyBody => 'اضغط على أيقونة القلب في أي منتج لحفظه هنا.';
+
+  @override
   String get length => 'الطول';
 
   @override
@@ -269,7 +275,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String fabricsFound(int count) {
-    return '$count أقمشة موجودة';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قماشًا',
+      many: '$count قماشًا',
+      few: '$count أقمشة',
+      two: 'قماشان',
+      one: 'قماش واحد',
+      zero: 'لا توجد أقمشة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -298,7 +314,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String curatedFabrics(int count) {
-    return '$count أقمشة مختارة';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قماشًا مختارًا',
+      many: '$count قماشًا مختارًا',
+      few: '$count أقمشة مختارة',
+      two: 'قماشان مختاران',
+      one: 'قماش مختار واحد',
+      zero: 'لا أقمشة مختارة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -353,7 +379,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String itemsCount(int count) {
-    return '$count عناصر';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصرًا',
+      many: '$count عنصرًا',
+      few: '$count عناصر',
+      two: 'عنصران',
+      one: 'عنصر واحد',
+      zero: 'لا عناصر',
+    );
+    return '$_temp0';
   }
 
   @override

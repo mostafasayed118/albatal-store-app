@@ -103,8 +103,8 @@ void main() {
       expect(inGrid('Velvet'), findsOneWidget);
       expect(inGrid('All'), findsNothing);
       // Each card carries its family's product count (one fixture per
-      // family here, so every caption reads '1 curated fabrics').
-      expect(find.text('1 curated fabrics'), findsNWidgets(3));
+      // family here, so every caption reads the singular form).
+      expect(find.text('1 curated fabric'), findsNWidgets(3));
       // Cards carry the tactile weave tile (painted via CustomPaint).
       expect(
         find.byWidgetPredicate(
