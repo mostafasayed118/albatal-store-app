@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -115,43 +114,41 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       return;
     }
     setState(() => _submitting = true);
-    try {
-      final repo = getIt<AdminRepository>();
-      await repo.adminUpsertProduct(
-        id: widget.productId,
-        name: _nameCtrl.text.trim(),
-        slug: _slugCtrl.text.trim(),
-        description: _descriptionCtrl.text.trim().isEmpty
-            ? null
-            : _descriptionCtrl.text.trim(),
-        composition: _compositionCtrl.text.trim().isEmpty
-            ? null
-            : _compositionCtrl.text.trim(),
-        categoryId: _selectedCategory!,
-        basePrice: price,
-        isActive: _isActive,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(widget.productId == null
-                ? 'Product created'
-                : 'Product updated')),
-      );
-      context.pop(true);
-    } on AppError catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save product: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
+    final result = await getIt<AdminRepository>().adminUpsertProduct(
+      id: widget.productId,
+      name: _nameCtrl.text.trim(),
+      slug: _slugCtrl.text.trim(),
+      description: _descriptionCtrl.text.trim().isEmpty
+          ? null
+          : _descriptionCtrl.text.trim(),
+      composition: _compositionCtrl.text.trim().isEmpty
+          ? null
+          : _compositionCtrl.text.trim(),
+      categoryId: _selectedCategory!,
+      basePrice: price,
+      isActive: _isActive,
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    result.when(
+      success: (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(widget.productId == null
+                  ? 'Product created'
+                  : 'Product updated')),
+        );
+        context.pop(true);
+      },
+      failure: (error) {
+        // Repository messages are fixed, user-facing strings — the raw
+        // exception never reaches the UI (leak scrubbed with the Result
+        // migration).
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      },
+    );
   }
 
   @override
