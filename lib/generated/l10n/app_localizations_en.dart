@@ -626,6 +626,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get payWithCardDescription => 'Credit or Debit Card via Paymob';
 
   @override
+  String get instapay => 'InstaPay';
+
+  @override
+  String get instapayDescription =>
+      'Transfer via InstaPay, then submit the proof for review';
+
+  @override
+  String get instapayInstructionsTitle => 'Complete your InstaPay transfer';
+
+  @override
+  String get instapayTransferTo => 'Transfer the exact amount to';
+
+  @override
+  String get instapayAddressLabel => 'InstaPay address';
+
+  @override
+  String get instapayCopy => 'Copy';
+
+  @override
+  String get instapayCopied => 'InstaPay address copied';
+
+  @override
+  String get instapayAmountLabel => 'Amount';
+
+  @override
+  String get instapayReferenceLabel => 'Transfer reference (optional)';
+
+  @override
+  String get instapayReferenceHint => 'e.g. operation number or last 4 digits';
+
+  @override
+  String get instapayAttachScreenshot => 'Attach transfer screenshot';
+
+  @override
+  String get instapayScreenshotAttached => 'Screenshot attached';
+
+  @override
+  String get instapaySubmitProof => 'Submit proof for review';
+
+  @override
+  String get instapayProofSubmitted =>
+      'Proof submitted — we will review it shortly';
+
+  @override
+  String get instapayProofPendingNote =>
+      'Your payment stays pending until we review the proof. You can safely leave this page — the status appears in your orders.';
+
+  @override
+  String get instapayPickScreenshotError =>
+      'Could not pick the screenshot. Please try again.';
+
+  @override
+  String get instapayFileTooLarge =>
+      'The screenshot is too large. Please attach a smaller image.';
+
+  @override
   String get cashOnDeliveryDescription => 'Pay when your order arrives';
 
   @override

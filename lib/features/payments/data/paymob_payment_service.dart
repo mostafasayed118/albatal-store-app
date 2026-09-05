@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -192,6 +193,137 @@ class PaymobPaymentService implements PaymentService {
     } catch (e) {
       return PaymentFailed(
         message: 'Failed to set payment method. Please try again.',
+        code: 'network_error',
+      );
+    }
+  }
+
+  /// Prepare an InstaPay transfer via the `instapay-initiate` Edge
+  /// Function (migration 041).
+  ///
+  /// The function switches the order's method through the 041
+  /// owner-checked allowlist RPC, then returns the env-configured
+  /// merchant InstaPay address and the server-authoritative amount.
+  /// The client never supplies either.
+  @override
+  Future<InstapayInitiation> initiateInstapayPayment(
+      {required String orderId}) async {
+    try {
+      final response = await _client.functions.invoke(
+        'instapay-initiate',
+        body: {'order_id': orderId},
+      ).timeout(_rpcTimeout);
+
+      if (response.status != 200) {
+        final data = response.data;
+        return InstapayUnavailable(
+          message: data['message'] ?? 'InstaPay is unavailable right now.',
+        );
+      }
+
+      final data = response.data;
+      final paymentId = data['payment_id'] as String? ?? '';
+      final address = data['instapay_address'] as String? ?? '';
+      final amountCents = data['amount'] as int?;
+
+      if (paymentId.isEmpty ||
+          address.isEmpty ||
+          amountCents == null ||
+          amountCents <= 0) {
+        return const InstapayUnavailable(
+          message: 'InstaPay returned an invalid transfer session.',
+        );
+      }
+
+      return InstapayReady(
+        instructions: InstapayInstructions(
+          paymentId: paymentId,
+          instapayAddress: address,
+          amount: Money(amountCents),
+        ),
+      );
+    } on TimeoutException {
+      return const InstapayUnavailable(
+        message:
+            'Server did not respond in time. Please check your orders and try again.',
+        code: 'rpc_timeout',
+      );
+    } catch (e) {
+      Log.e('InstaPay initiate failed',
+          error: e, category: LogCategory.payment);
+      return const InstapayUnavailable(
+        message: 'InstaPay could not be started. Please try again.',
+        code: 'network_error',
+      );
+    }
+  }
+
+  /// Submit a transfer proof via the `instapay-submit-proof` Edge
+  /// Function (migration 041).
+  ///
+  /// The pending payment is located server-side by (order, user);
+  /// the proof lands in the private `instapay-proofs` bucket and the
+  /// payment stays `pending` — success is decided only by admin
+  /// review (or the 24h expiry), never by this call.
+  @override
+  Future<PaymentResult> submitInstapayProof({
+    required String orderId,
+    required List<int> proofBytes,
+    required String fileExt,
+    String? reference,
+  }) async {
+    try {
+      final ext = fileExt.toLowerCase().trim();
+      const allowed = {'png', 'jpg', 'jpeg', 'webp'};
+      if (proofBytes.isEmpty) {
+        return const PaymentFailed(
+          message: 'Attach the transfer screenshot to continue.',
+          code: 'proof_missing',
+        );
+      }
+      if (!allowed.contains(ext)) {
+        return const PaymentFailed(
+          message: 'Unsupported screenshot format.',
+          code: 'unsupported_format',
+        );
+      }
+
+      final response = await _client.functions.invoke(
+        'instapay-submit-proof',
+        body: {
+          'order_id': orderId,
+          'proof_base64': base64Encode(proofBytes),
+          'file_ext': ext,
+          if (reference != null && reference.trim().isNotEmpty)
+            'reference': reference.trim(),
+        },
+      ).timeout(_rpcTimeout);
+
+      if (response.status == 201) {
+        return const PaymentSuccess(transactionId: '', amount: Money.zero);
+      }
+
+      final data = response.data;
+      final message = switch (data['message'] as String?) {
+        'Pending InstaPay payment not found' =>
+          'No pending InstaPay payment found for this order.',
+        'Proof too large' =>
+          'The screenshot is too large. Please attach a smaller image.',
+        'Unsupported proof format' => 'Unsupported screenshot format.',
+        'Upload failed' => 'Could not upload the screenshot. Please try again.',
+        _ => 'Could not submit the proof. Please try again.',
+      };
+      return PaymentFailed(message: message);
+    } on TimeoutException {
+      return const PaymentFailed(
+        message: 'Server did not respond in time. Please try again.',
+        code: 'rpc_timeout',
+      );
+    } catch (e) {
+      Log.e('InstaPay proof submission failed',
+          error: e, category: LogCategory.payment);
+      return const PaymentFailed(
+        message: 'Could not submit the proof. Please try again.',
         code: 'network_error',
       );
     }

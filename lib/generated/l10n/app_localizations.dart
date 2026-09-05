@@ -1244,6 +1244,108 @@ abstract class AppLocalizations {
   /// **'Credit or Debit Card via Paymob'**
   String get payWithCardDescription;
 
+  /// No description provided for @instapay.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay'**
+  String get instapay;
+
+  /// No description provided for @instapayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer via InstaPay, then submit the proof for review'**
+  String get instapayDescription;
+
+  /// No description provided for @instapayInstructionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your InstaPay transfer'**
+  String get instapayInstructionsTitle;
+
+  /// No description provided for @instapayTransferTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer the exact amount to'**
+  String get instapayTransferTo;
+
+  /// No description provided for @instapayAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay address'**
+  String get instapayAddressLabel;
+
+  /// No description provided for @instapayCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get instapayCopy;
+
+  /// No description provided for @instapayCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay address copied'**
+  String get instapayCopied;
+
+  /// No description provided for @instapayAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get instapayAmountLabel;
+
+  /// No description provided for @instapayReferenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer reference (optional)'**
+  String get instapayReferenceLabel;
+
+  /// No description provided for @instapayReferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. operation number or last 4 digits'**
+  String get instapayReferenceHint;
+
+  /// No description provided for @instapayAttachScreenshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach transfer screenshot'**
+  String get instapayAttachScreenshot;
+
+  /// No description provided for @instapayScreenshotAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Screenshot attached'**
+  String get instapayScreenshotAttached;
+
+  /// No description provided for @instapaySubmitProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit proof for review'**
+  String get instapaySubmitProof;
+
+  /// No description provided for @instapayProofSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Proof submitted — we will review it shortly'**
+  String get instapayProofSubmitted;
+
+  /// No description provided for @instapayProofPendingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment stays pending until we review the proof. You can safely leave this page — the status appears in your orders.'**
+  String get instapayProofPendingNote;
+
+  /// No description provided for @instapayPickScreenshotError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not pick the screenshot. Please try again.'**
+  String get instapayPickScreenshotError;
+
+  /// No description provided for @instapayFileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The screenshot is too large. Please attach a smaller image.'**
+  String get instapayFileTooLarge;
+
   /// No description provided for @cashOnDeliveryDescription.
   ///
   /// In en, this message translates to:

@@ -44,6 +44,19 @@ class StubPaymentService implements PaymentService {
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
+  @override
+  Future<InstapayInitiation> initiateInstapayPayment(
+          {required String orderId}) async =>
+      const InstapayUnavailable(message: 'stub: not exercised');
+
+  @override
+  Future<PaymentResult> submitInstapayProof({
+    required String orderId,
+    required List<int> proofBytes,
+    required String fileExt,
+    String? reference,
+  }) async =>
+      const PaymentFailed(message: 'stub: not exercised');
 }
 
 void main() {

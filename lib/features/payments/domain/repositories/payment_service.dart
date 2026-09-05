@@ -42,13 +42,47 @@ abstract interface class PaymentService {
   /// payment screen, so the method must be updated server-side before
   /// [confirmCodPayment] (which requires a COD-like stored method).
   /// Only the order owner may change the method, only while the order
-  /// is `pending`, and only to an allowlisted value (`cod`, `card`).
+  /// is `pending`, and only to an allowlisted value
+  /// (`cod`, `card`, `instapay` — migration 041).
   ///
   /// Returns [PaymentSuccess] (empty transaction ID) on success,
   /// [PaymentFailed] with a machine-readable code otherwise.
   Future<PaymentResult> setOrderPaymentMethod({
     required String orderId,
     required String method,
+  });
+
+  /// Prepare an InstaPay transfer for a pending order (migration 041).
+  ///
+  /// Switches the order's method server-side via the 041 allowlist RPC
+  /// (owner-checked; ensures the single pending 'instapay' payments
+  /// row) and returns the merchant InstaPay address + the
+  /// server-authoritative amount as [InstapayReady]. The address comes
+  /// from the server env and the amount from the DB — neither is ever
+  /// client-supplied.
+  ///
+  /// Returns [InstapayUnavailable] with a machine-readable code when
+  /// the order is not pending/owned, or when InstaPay is not
+  /// configured server-side (the function fails closed).
+  Future<InstapayInitiation> initiateInstapayPayment({required String orderId});
+
+  /// Submit a transfer proof for the pending InstaPay payment of an
+  /// order the caller owns (migration 041).
+  ///
+  /// [proofBytes] is the encoded image picked on the device;
+  /// [fileExt] must be one of the server-validated extensions
+  /// (`png`, `jpg`, `jpeg`, `webp`). [reference] is an optional
+  /// transfer reference number.
+  ///
+  /// The proof lands in the private `instapay-proofs` bucket and the
+  /// payment STAYS `pending` — success is decided only by admin review
+  /// or the 24h expiry. Returns [PaymentSuccess] (empty transaction
+  /// ID) when the proof is recorded.
+  Future<PaymentResult> submitInstapayProof({
+    required String orderId,
+    required List<int> proofBytes,
+    required String fileExt,
+    String? reference,
   });
 
   /// Watch a payment's status as it is updated server-side.
