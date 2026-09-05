@@ -4,6 +4,27 @@ Last run: 2026-09-04T00:00:00Z
 
 ## New — 2026-09-04
 
+### L2: Audit issue #3 — complete CatalogFilters migration, delete dual-filter shim
+**Branch:** `refactor/catalog-filters-migration` (worktree
+`.trees/catalog-filters`, from `master` @ `ac69c54`). Human enabled L2 for
+audit issue #3.
+
+**Problem:** `CatalogState` carried BOTH `CatalogFilters` and six deprecated
+per-filter fields (`category/query/sort/colorFilter/priceMin/priceMax`),
+merged lazily in a `filters` getter — two sources of truth, ~60 lines of
+shim, `@Deprecated` members still consumed by 6 lib files + 2 test files.
+
+**Changes:**
+1. `catalog_cubit.dart` — `CatalogState` is now filters-first ONLY: single
+   `filters` field, no deprecated ctor params/getters/copyWith params/merge
+   getter. `setColorFilter` compares against `state.filters.colorFilter`.
+2. 6 lib consumers migrated to `state.filters.*`: `filter_sheet.dart`,
+   `active_filters_bar.dart`, `catalog_sort_bar.dart`, `catalog_page.dart`,
+   `home_page.dart`, `categories_page.dart`.
+3. Tests migrated: `catalog_cubit_test.dart` (seeded helper now builds
+   `CatalogFilters(sort: ...)`; 15 expectations → `state.filters.*`) and
+   `stitch_home_page_test.dart`.
+4. No behavior change: `CatalogFilters` matching/sorting logic untouched.
 ### L2: Audit issue #4 — scrub Paymob raw-exception leak + localize admin/payment strings
 **Branch:** `fix/scrub-paymob-error-localize-admin` (worktree
 `.trees/audit4-l10n`, from `master` @ `ac69c54`). Human enabled L2 for audit
@@ -123,6 +144,15 @@ so both files were compiled into every release build as dead weight.
 **Verification evidence (Flutter 3.47.2 stable — matches CI 3.47.x pin):**
 | Check | Result |
 |-------|--------|
+| `flutter analyze` | **No issues found!** |
+| `flutter test` | **243 passed, 0 failed** — zero regressions |
+| Deprecated-API grep | 0 hits for `state.category/query/sort/colorFilter/priceMin/priceMax`; 0 `@Deprecated` in CatalogState |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, registrant, `pubspec.lock` |
+
+Net: −60 lines of shim, one source of truth for catalog filters. **Merge
+remains human-gated.**
+
+---
 | `flutter gen-l10n` | OK — 12 new getters in `lib/generated/l10n/` |
 | `flutter analyze` | **No issues found!** |
 | `flutter test` | **244 passed, 0 failed** (243 + new scrub regression test) |

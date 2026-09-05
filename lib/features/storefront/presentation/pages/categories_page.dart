@@ -36,7 +36,7 @@ class CategoriesPage extends StatelessWidget {
             padding: const EdgeInsetsDirectional.symmetric(vertical: 16),
             children: [
               StitchCategoryChips(
-                selected: state.category,
+                selected: state.filters.category,
                 categories: cats,
                 onSelect: (cat) {
                   catalog.select(cat);

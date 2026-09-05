@@ -23,14 +23,14 @@ class CatalogSortBar extends StatelessWidget {
           const Spacer(),
           PopupMenuButton<CatalogSort>(
             tooltip: l.sortProducts,
-            initialValue: state.sort,
+            initialValue: state.filters.sort,
             onSelected: catalog.selectSort,
             itemBuilder: (_) => CatalogSort.values
                 .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
                 .toList(),
             child: Chip(
               avatar: const Icon(Icons.sort, size: 18),
-              label: Text(state.sort.label),
+              label: Text(state.filters.sort.label),
             ),
           ),
         ],
