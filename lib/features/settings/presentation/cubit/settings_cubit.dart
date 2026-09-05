@@ -39,10 +39,9 @@ final class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> changeLocale(Locale locale) => _save(
         optimistic: state.copyWith(locale: locale),
-        persist: () =>
-            _repository.saveLocale(AppLocale.fromLanguageCode(
-              locale.languageCode,
-            )),
+        persist: () => _repository.saveLocale(AppLocale.fromLanguageCode(
+          locale.languageCode,
+        )),
       );
 
   Future<void> _save({
@@ -66,8 +65,7 @@ final class SettingsCubit extends Cubit<SettingsState> {
         AppThemeMode.dark => ThemeMode.dark,
       };
 
-  static AppThemeMode _fromMaterialThemeMode(ThemeMode mode) =>
-      switch (mode) {
+  static AppThemeMode _fromMaterialThemeMode(ThemeMode mode) => switch (mode) {
         ThemeMode.system => AppThemeMode.system,
         ThemeMode.light => AppThemeMode.light,
         ThemeMode.dark => AppThemeMode.dark,

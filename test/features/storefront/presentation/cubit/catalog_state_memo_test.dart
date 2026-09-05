@@ -17,21 +17,21 @@ List<Product> makeProducts(int count) => List.generate(
 
 void main() {
   group('CatalogState — memoized derived views (audit finding #5)', () {
-    test('derived getters return identical instances across repeat calls',
-        () {
+    test('derived getters return identical instances across repeat calls', () {
       final state = CatalogState(allProducts: makeProducts(50));
 
       // First call computes, second call must return the SAME object —
       // proving the memo actually short-circuits recomputation.
       expect(identical(state.visible, state.visible), isTrue);
       expect(identical(state.availableColors, state.availableColors), isTrue);
-      expect(
-          identical(state.categoryProductCount, state.categoryProductCount),
+      expect(identical(state.categoryProductCount, state.categoryProductCount),
           isTrue);
       expect(identical(state.catalogPriceMin, state.catalogPriceMin), isTrue);
       expect(identical(state.catalogPriceMax, state.catalogPriceMax), isTrue);
-      expect(identical(state.productsInCategory('Silk'),
-          state.productsInCategory('Silk')), isTrue);
+      expect(
+          identical(state.productsInCategory('Silk'),
+              state.productsInCategory('Silk')),
+          isTrue);
     });
 
     test('visible list is correct and memo survives repeated reads', () {

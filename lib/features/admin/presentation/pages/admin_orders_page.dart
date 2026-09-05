@@ -38,7 +38,8 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
               PopupMenuItem(
                   value: AdminOrderStatus.placed, child: Text(l.placed)),
               PopupMenuItem(
-                  value: AdminOrderStatus.processing, child: Text(l.processing)),
+                  value: AdminOrderStatus.processing,
+                  child: Text(l.processing)),
               PopupMenuItem(
                   value: AdminOrderStatus.shipped, child: Text(l.shipped)),
               PopupMenuItem(

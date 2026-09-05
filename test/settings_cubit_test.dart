@@ -26,10 +26,8 @@ void main() {
     blocTest<SettingsCubit, SettingsState>(
       'loads persisted settings into ready state',
       build: () => SettingsCubit(FakeSettingsRepository(
-          readResult: const Success(
-              AppSettings(
-                  themeMode: AppThemeMode.dark,
-                  locale: AppLocale.arabic)))),
+          readResult: const Success(AppSettings(
+              themeMode: AppThemeMode.dark, locale: AppLocale.arabic)))),
       act: (cubit) => cubit.load(),
       expect: () => [
         const SettingsState(status: SettingsStatus.loading),
@@ -44,10 +42,8 @@ void main() {
       'retains the optimistic locale and exposes a repository failure',
       build: () {
         final repository = FakeSettingsRepository(
-            readResult: const Success(
-                AppSettings(
-                    themeMode: AppThemeMode.system,
-                    locale: AppLocale.english)))
+            readResult: const Success(AppSettings(
+                themeMode: AppThemeMode.system, locale: AppLocale.english)))
           ..saveResult =
               const Failure(AppError('Unable to save app preferences.'));
         return SettingsCubit(repository);

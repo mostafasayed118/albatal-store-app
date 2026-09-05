@@ -41,8 +41,9 @@ enum AppLocale {
 
   final String languageCode;
 
-  static AppLocale fromLanguageCode(String? code) => AppLocale.values
-      .where((locale) => locale.languageCode == code)
-      .firstOrNull ??
+  static AppLocale fromLanguageCode(String? code) =>
+      AppLocale.values
+          .where((locale) => locale.languageCode == code)
+          .firstOrNull ??
       AppLocale.english;
 }

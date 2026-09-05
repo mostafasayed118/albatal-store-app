@@ -72,9 +72,7 @@ class _StockTile extends StatelessWidget {
               : scheme.secondary.withValues(alpha: .12),
           child: Text('${product.stock}',
               style: TextStyle(
-                  color: product.stock == 0
-                      ? scheme.error
-                      : scheme.secondary,
+                  color: product.stock == 0 ? scheme.error : scheme.secondary,
                   fontWeight: FontWeight.bold)),
         ),
         title: Text(product.productName),
@@ -96,8 +94,7 @@ class _StockTile extends StatelessWidget {
         content: TextField(
           controller: ctrl,
           keyboardType: TextInputType.number,
-          decoration:
-              InputDecoration(labelText: context.l10n.newStockLevel),
+          decoration: InputDecoration(labelText: context.l10n.newStockLevel),
         ),
         actions: [
           TextButton(

@@ -130,8 +130,8 @@ class _OrderItemsCard extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   title: Text(item.productName),
                   subtitle: Text('${item.size} / ${item.color}'),
-                  trailing: Text(
-                      '×${item.quantity} · ${item.unitPrice.format()}'),
+                  trailing:
+                      Text('×${item.quantity} · ${item.unitPrice.format()}'),
                 )),
           ],
         ),
