@@ -8,7 +8,6 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/cart_cubit.dart';
 import '../widgets/cart_item_tile.dart';
 import '../widgets/cart_summary.dart';
-import '../widgets/empty_state_view.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -30,7 +29,8 @@ class CartPage extends StatelessWidget {
             );
           }
           if (s.items.isEmpty) {
-            return EmptyStateView(
+            return FeedbackView(
+              type: FeedbackViewType.empty,
               icon: Icons.shopping_bag_outlined,
               title: l.cartEmptyTitle,
               // Give the empty cart an exit back into the catalog instead of

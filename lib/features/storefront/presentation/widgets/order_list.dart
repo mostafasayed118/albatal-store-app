@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/order.dart';
-import 'empty_state_view.dart';
+import '../../../../shared/components/feedback_view.dart';
 import 'order_card.dart';
 
 /// List of orders with empty state.
@@ -21,7 +21,8 @@ class OrderList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty) {
-      return EmptyStateView(
+      return FeedbackView(
+        type: FeedbackViewType.empty,
         icon: Icons.receipt_long_outlined,
         title: emptyMessage,
       );
