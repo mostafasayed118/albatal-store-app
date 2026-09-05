@@ -15,6 +15,10 @@ class AddressForm extends StatefulWidget {
   /// Shows the form in a modal bottom sheet and returns the entered address
   /// on successful validation, or `null` if the user cancels.
   static Future<Address?> show(BuildContext context) async {
+    // Let the tapped row's frame finish rendering before pushing the sheet;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted) return null;
     final result = await showModalBottomSheet<Address>(
       context: context,
       isScrollControlled: true,

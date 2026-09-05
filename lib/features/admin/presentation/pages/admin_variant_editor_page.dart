@@ -49,7 +49,11 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     );
   }
 
-  void _showVariantDialog({AdminVariant? existing}) {
+  Future<void> _showVariantDialog({AdminVariant? existing}) async {
+    // Let the tapped row's frame finish rendering before pushing the dialog;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     final sizeCtrl = TextEditingController(text: existing?.size ?? '');
     final colorCtrl = TextEditingController(text: existing?.color ?? '');
     final stockCtrl =

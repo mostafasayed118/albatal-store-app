@@ -241,7 +241,11 @@ class _FulfillmentActions extends StatelessWidget {
     );
   }
 
-  void _showTrackingDialog(BuildContext context) {
+  Future<void> _showTrackingDialog(BuildContext context) async {
+    // Let the tapped row's frame finish rendering before pushing the dialog;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted) return;
     final trackingCtrl = TextEditingController();
     final courierCtrl = TextEditingController();
     showDialog(
