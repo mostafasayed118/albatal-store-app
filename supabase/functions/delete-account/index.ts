@@ -81,8 +81,10 @@ async function handleDeleteAccount(req: Request): Promise<Response> {
     }
 
     // ─── Validate request ────────────────────────────────────
-    // Only self-deletion is allowed.
-    const { userId } = await req.json();
+    // Only self-deletion is allowed, and (decision C) the caller must
+    // re-confirm by typing the account email — compared here so a stray
+    // client cannot delete on a guessed/typed mismatch.
+    const { userId, email } = await req.json();
     if (!userId || typeof userId !== "string") {
       return new Response(
         JSON.stringify({ message: "userId is required" }),
@@ -92,6 +94,21 @@ async function handleDeleteAccount(req: Request): Promise<Response> {
     if (userId !== user.id) {
       return new Response(
         JSON.stringify({ message: "Cannot delete another account" }),
+        { status: 403, headers: jsonHeadersFor(req) },
+      );
+    }
+    if (!user.email) {
+      return new Response(
+        JSON.stringify({ message: "Customer email is required" }),
+        { status: 400, headers: jsonHeadersFor(req) },
+      );
+    }
+    if (
+      !email || typeof email !== "string" ||
+      email.trim().toLowerCase() !== user.email.toLowerCase()
+    ) {
+      return new Response(
+        JSON.stringify({ message: "Email does not match this account" }),
         { status: 403, headers: jsonHeadersFor(req) },
       );
     }
