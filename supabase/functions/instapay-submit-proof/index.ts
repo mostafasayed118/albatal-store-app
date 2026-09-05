@@ -77,16 +77,23 @@ export async function handleInstapaySubmitProof(
         status: 401,
         headers: jsonHeadersFor(req),
       });
-    }
-
-    const body = await req.json();
+    }    const body = await req.json();
     const orderId = typeof body.order_id === "string" ? body.order_id : "";
-    const proofBase64 = typeof body.proof_base64 === "string"
-      ? body.proof_base64
-      : "";
-    const reference = typeof body.reference === "string"
-      ? body.reference.trim()
-      : "";
+    const proofBase64 =
+      typeof body.proof_base64 === "string" ? body.proof_base64 : "";
+    const reference =
+      typeof body.reference === "string" ? body.reference.trim() : "";
+    // Gallery picks are usually JPEG; allow a small validated set.
+    const EXT_CONTENT_TYPES: Record<string, string> = {
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      webp: "image/webp",
+    };
+    const fileExt = typeof body.file_ext === "string"
+      ? body.file_ext.toLowerCase()
+      : "png";
+    const contentType = EXT_CONTENT_TYPES[fileExt];
 
     if (!orderId || !proofBase64) {
       return new Response(
@@ -145,12 +152,19 @@ export async function handleInstapaySubmitProof(
       });
     }
 
+    if (!contentType) {
+      return new Response(JSON.stringify({ message: "Unsupported proof format" }), {
+        status: 400,
+        headers: jsonHeadersFor(req),
+      });
+    }
+
     // Upload to the private bucket under the caller's own folder —
     // storage RLS (041) enforces the same layout for reads.
-    const storagePath = `${user.id}/${payment.id}/${Date.now()}.png`;
+    const storagePath = `${user.id}/${payment.id}/${Date.now()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from("instapay-proofs")
-      .upload(storagePath, bytes, { contentType: "image/png" });
+      .upload(storagePath, bytes, { contentType });
 
     if (uploadError) {
       console.error("instapay-submit-proof: upload failed");
