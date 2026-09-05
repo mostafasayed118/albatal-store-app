@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en')
+    Locale('en'),
   ];
 
   /// No description provided for @appTitle.
@@ -1664,6 +1664,30 @@ abstract class AppLocalizations {
   /// **'Good morning'**
   String get goodMorningGuest;
 
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon, {name}'**
+  String goodAfternoon(Object name);
+
+  /// No description provided for @goodAfternoonGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get goodAfternoonGuest;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening, {name}'**
+  String goodEvening(Object name);
+
+  /// No description provided for @goodEveningGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get goodEveningGuest;
+
   /// No description provided for @estimatedTotalsNote.
   ///
   /// In en, this message translates to:
@@ -1758,8 +1782,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

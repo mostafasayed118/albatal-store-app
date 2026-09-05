@@ -321,6 +321,20 @@
     }
   },
   "goodMorningGuest": "Good morning",
+  "goodAfternoon": "Good afternoon, {name}",
+  "goodAfternoonGuest": "Good afternoon",
+  "goodEvening": "Good evening, {name}",
+  "goodEveningGuest": "Good evening",
+  "@goodAfternoon": {
+    "name": {
+      "type": "String"
+    }
+  },
+  "@goodEvening": {
+    "name": {
+      "type": "String"
+    }
+  },
   "estimatedTotalsNote": "Estimated totals — the final amount is confirmed at payment.",
   "serverConfirmedTotals": "Server-confirmed totals",
   "orderReferenceMissing": "Unable to continue: the order reference is missing.",

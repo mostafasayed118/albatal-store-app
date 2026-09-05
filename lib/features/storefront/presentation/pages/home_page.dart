@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
@@ -24,7 +25,11 @@ import '../widgets/promo_banner.dart';
 /// pill search → 180dp gold hero → circular category chips →
 /// flash-sale row with live countdown → 2-col (.68) popular grid.
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.clock});
+
+  /// Injectable time source so greeting tests (and previews) can pin an
+  /// hour of day; defaults to the wall clock.
+  final DateTime Function()? clock;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -73,9 +78,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                firstName == null
-                    ? l.goodMorningGuest
-                    : l.goodMorning(firstName),
+                homeGreeting(l, firstName, (widget.clock ?? DateTime.now)()),
                 style: Theme.of(context)
                     .textTheme
                     .labelLarge
@@ -303,4 +306,26 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+/// Time-of-day greeting copy (UX-044).
+///
+/// Buckets: 05:00–11:59 morning, 12:00–16:59 afternoon, otherwise evening
+/// (17:00–04:59). [firstName] selects the personalized form; `null` picks
+/// the guest form.
+String homeGreeting(AppLocalizations l10n, String? firstName, DateTime now) {
+  final hour = now.hour;
+  if (hour >= 5 && hour < 12) {
+    return firstName == null
+        ? l10n.goodMorningGuest
+        : l10n.goodMorning(firstName);
+  }
+  if (hour >= 12 && hour < 17) {
+    return firstName == null
+        ? l10n.goodAfternoonGuest
+        : l10n.goodAfternoon(firstName);
+  }
+  return firstName == null
+      ? l10n.goodEveningGuest
+      : l10n.goodEvening(firstName);
 }

@@ -35,11 +35,11 @@ final class AppShell extends StatelessWidget {
                       NavigationDestination(
                           icon: Badge(
                               isLabelVisible: cart.count > 0,
-                              label: Text('${cart.count}'),
+                              label: Text(cartBadgeLabel(cart.count)),
                               child: const Icon(Icons.shopping_bag_outlined)),
                           selectedIcon: Badge(
                               isLabelVisible: cart.count > 0,
-                              label: Text('${cart.count}'),
+                              label: Text(cartBadgeLabel(cart.count)),
                               child: const Icon(Icons.shopping_bag)),
                           label: l.cart),
                       NavigationDestination(
@@ -61,3 +61,9 @@ final class AppShell extends StatelessWidget {
     return 0;
   }
 }
+
+/// Badge text for the cart count.
+///
+/// Caps at '99+' (UX-046) so the badge never blows out of shape at
+/// triple-digit quantities.
+String cartBadgeLabel(int count) => count > 99 ? '99+' : '$count';
