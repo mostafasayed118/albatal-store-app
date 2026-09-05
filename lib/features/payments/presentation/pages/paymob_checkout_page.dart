@@ -49,14 +49,14 @@ class _InvalidCheckoutBody extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 56),
               const SizedBox(height: 16),
-              const Text(
-                'The payment checkout link is invalid. Please return and retry.',
+              Text(
+                context.l10n.invalidCheckoutLink,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.pop(),
-                child: const Text('Return to payment'),
+                child: Text(context.l10n.returnToPayment),
               ),
             ],
           ),

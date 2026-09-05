@@ -235,7 +235,9 @@ class _FulfillmentActions extends StatelessWidget {
           status,
         );
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Order status updated to ${status.name}')),
+      SnackBar(
+        content: Text(context.l10n.orderStatusUpdatedTo(status.name)),
+      ),
     );
   }
 
@@ -245,20 +247,21 @@ class _FulfillmentActions extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Add Tracking Details'),
+        title: Text(context.l10n.addTrackingDetails),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: courierCtrl,
-                decoration: const InputDecoration(labelText: 'Courier Name'),
+                decoration:
+                    InputDecoration(labelText: context.l10n.courierName),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: trackingCtrl,
                 decoration:
-                    const InputDecoration(labelText: 'Tracking Number'),
+                    InputDecoration(labelText: context.l10n.trackingNumber),
               ),
             ],
           ),
@@ -266,7 +269,7 @@ class _FulfillmentActions extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -277,10 +280,10 @@ class _FulfillmentActions extends StatelessWidget {
                   );
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order marked as shipped')),
+                SnackBar(content: Text(context.l10n.orderMarkedAsShipped)),
               );
             },
-            child: const Text('Confirm'),
+            child: Text(context.l10n.confirm),
           ),
         ],
       ),

@@ -36,36 +36,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeTitle => 'مصنوع للتميّز';
 
   @override
-  String get onboardingExquisiteTitle => 'أقمشة فاخرة';
-
-  @override
-  String get onboardingExquisiteBody =>
-      'اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.';
-
-  @override
-  String get onboardingCraftsmanshipTitle => 'حرفية أصيلة';
-
-  @override
-  String get onboardingCraftsmanshipBody =>
-      'كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.';
-
-  @override
-  String get onboardingExcellenceTitle => 'مصمم للتميّز';
-
-  @override
-  String get onboardingExcellenceBody =>
-      'اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.';
-
-  @override
-  String get onboardingNext => 'التالي';
-
-  @override
-  String get onboardingSkip => 'تخطي';
-
-  @override
-  String get onboardingGetStarted => 'ابدأ الآن';
-
-  @override
   String get welcomeBody =>
       'أساس لتجارة إلكترونية راقية بخيارات مدروسة لكل اتجاه ووضع عرض.';
 
@@ -142,9 +112,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentMethod => 'طريقة الدفع';
-
-  @override
-  String get paid => 'مدفوع';
 
   @override
   String get addNewAddress => 'إضافة عنوان جديد';
@@ -374,9 +341,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get goodMorningGuest => 'صباح الخير';
-
-  @override
   String get openSettings => 'فتح الإعدادات';
 
   @override
@@ -417,10 +381,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderSummary => 'ملخص الطلب';
-
-  @override
-  String get estimatedTotalsNote =>
-      'إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.';
 
   @override
   String itemsInCart(int count) {
@@ -781,6 +741,85 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get comingSoon => 'قريباً';
+
+  @override
+  String get cancel => 'إلغاء';
+
+  @override
+  String get confirm => 'تأكيد';
+
+  @override
+  String get update => 'تحديث';
+
+  @override
+  String get updateStock => 'تحديث المخزون';
+
+  @override
+  String get newStockLevel => 'مستوى المخزون الجديد';
+
+  @override
+  String get courierName => 'اسم شركة الشحن';
+
+  @override
+  String get trackingNumber => 'رقم التتبع';
+
+  @override
+  String get addTrackingDetails => 'إضافة تفاصيل التتبع';
+
+  @override
+  String orderStatusUpdatedTo(String statusName) {
+    return 'تم تحديث حالة الطلب إلى $statusName';
+  }
+
+  @override
+  String get orderMarkedAsShipped => 'تم وضع علامة تم الشحن على الطلب';
+
+  @override
+  String get returnToPayment => 'العودة إلى الدفع';
+
+  @override
+  String get invalidCheckoutLink =>
+      'رابط الدفع غير صالح. يرجى العودة والمحاولة مرة أخرى.';
+
+  @override
+  String get onboardingExquisiteTitle => 'أقمشة فاخرة';
+
+  @override
+  String get onboardingExquisiteBody =>
+      'اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.';
+
+  @override
+  String get onboardingCraftsmanshipTitle => 'حرفية أصيلة';
+
+  @override
+  String get onboardingCraftsmanshipBody =>
+      'كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.';
+
+  @override
+  String get onboardingExcellenceTitle => 'مصمم للتميّز';
+
+  @override
+  String get onboardingExcellenceBody =>
+      'اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ الآن';
+
+  @override
+  String get paid => 'مدفوع';
+
+  @override
+  String get goodMorningGuest => 'صباح الخير';
+
+  @override
+  String get estimatedTotalsNote =>
+      'إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.';
 
   @override
   String get serverConfirmedTotals => 'الإجماليات المؤكدة من الخادم';

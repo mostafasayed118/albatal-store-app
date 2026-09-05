@@ -63,10 +63,12 @@ class PaymobPaymentService implements PaymentService {
 
       return PaymentPending(checkoutUrl: checkoutUrl);
     } catch (e) {
-      // Generic user message — raw exception stays in logs only.
+      // Scrubbed: never surface raw provider/transport exceptions to the
+      // UI (they can leak URLs, tokens, or internal details).
+      // Structured log keeps the detail diagnostic-only (never in the UI).
       Log.e('Paymob initiate failed', error: e, category: LogCategory.payment);
       return const PaymentFailed(
-        message: 'Payment initialization failed. Please try again.',
+        message: 'Payment could not be started. Please try again.',
       );
     }
   }

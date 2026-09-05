@@ -9,15 +9,6 @@
   "settings": "Settings",
   "settingsSubtitle": "Appearance and language",
   "welcomeTitle": "Crafted for distinction",
-  "onboardingExquisiteTitle": "Exquisite Fabrics",
-  "onboardingExquisiteBody": "Discover a curated collection of the world's finest silks, linens, and velvets.",
-  "onboardingCraftsmanshipTitle": "Artisanal Craftsmanship",
-  "onboardingCraftsmanshipBody": "Every thread is woven with precision and heritage to ensure unparalleled quality.",
-  "onboardingExcellenceTitle": "Tailored for Excellence",
-  "onboardingExcellenceBody": "Experience the luxury of fabrics designed for those who settle for nothing less than elite.",
-  "onboardingNext": "Next",
-  "onboardingSkip": "Skip",
-  "onboardingGetStarted": "Get Started",
   "welcomeBody": "A premium commerce foundation with considered defaults for every direction and display.",
   "foundationReady": "Foundation ready",
   "foundationBody": "Theme, language, routing, and feedback states are in place. Storefront features come next.",
@@ -43,7 +34,6 @@
   "checkout": "Checkout",
   "shippingAddress": "Shipping Address",
   "paymentMethod": "Payment Method",
-  "paid": "Paid",
   "addNewAddress": "Add New Address",
   "placeOrder": "Place Order",
   "proceedToCheckout": "Proceed to Checkout",
@@ -99,7 +89,9 @@
   "@fabricsFound": {
     "description": "Number of fabrics found",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "NEW SILK COLLECTION",
@@ -114,7 +106,9 @@
   "@curatedFabrics": {
     "description": "Number of curated fabrics in a category",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "Confirm",
@@ -124,7 +118,9 @@
   "@discountPercent": {
     "description": "Discount percentage label",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "Express Delivery",
@@ -135,10 +131,6 @@
   "origin": "Origin",
   "care": "Care",
   "goodMorning": "Good morning, {name}",
-  "@goodMorning": {
-    "name": { "type": "String" }
-  },
-  "goodMorningGuest": "Good morning",
   "openSettings": "Open settings",
   "successTitle": "Success!",
   "orderPlacedBody": "Your order has been placed. We will keep you updated.",
@@ -146,7 +138,9 @@
   "@itemsCount": {
     "description": "Number of items in an order",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "Review Order",
@@ -158,12 +152,13 @@
   "useThisAddress": "Use this address",
   "defaultLabel": "Default",
   "orderSummary": "Order Summary",
-  "estimatedTotalsNote": "Estimated totals — the final amount is confirmed at payment.",
   "itemsInCart": "{count} items in cart",
   "@itemsInCart": {
     "description": "Number of items in the cart for checkout review",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "Confirm & Pay",
@@ -187,7 +182,9 @@
   "@onlyLeft": {
     "description": "Low stock warning",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "Returns",
@@ -289,6 +286,42 @@
   "items": "items",
   "noAddressProvided": "No address provided",
   "comingSoon": "Coming Soon",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "update": "Update",
+  "updateStock": "Update Stock",
+  "newStockLevel": "New stock level",
+  "courierName": "Courier Name",
+  "trackingNumber": "Tracking Number",
+  "addTrackingDetails": "Add Tracking Details",
+  "orderStatusUpdatedTo": "Order status updated to {statusName}",
+  "orderMarkedAsShipped": "Order marked as shipped",
+  "returnToPayment": "Return to payment",
+  "invalidCheckoutLink": "The payment checkout link is invalid. Please return and retry.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingExquisiteTitle": "Exquisite Fabrics",
+  "onboardingExquisiteBody": "Discover a curated collection of the world's finest silks, linens, and velvets.",
+  "onboardingCraftsmanshipTitle": "Artisanal Craftsmanship",
+  "onboardingCraftsmanshipBody": "Every thread is woven with precision and heritage to ensure unparalleled quality.",
+  "onboardingExcellenceTitle": "Tailored for Excellence",
+  "onboardingExcellenceBody": "Experience the luxury of fabrics designed for those who settle for nothing less than elite.",
+  "onboardingNext": "Next",
+  "onboardingSkip": "Skip",
+  "onboardingGetStarted": "Get Started",
+  "paid": "Paid",
+  "@goodMorning": {
+    "name": {
+      "type": "String"
+    }
+  },
+  "goodMorningGuest": "Good morning",
+  "estimatedTotalsNote": "Estimated totals — the final amount is confirmed at payment.",
   "serverConfirmedTotals": "Server-confirmed totals",
   "orderReferenceMissing": "Unable to continue: the order reference is missing.",
   "customerEmailMissing": "Unable to continue: the customer email is missing. Please sign in again.",

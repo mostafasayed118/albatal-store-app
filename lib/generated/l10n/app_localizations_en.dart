@@ -36,36 +36,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeTitle => 'Crafted for distinction';
 
   @override
-  String get onboardingExquisiteTitle => 'Exquisite Fabrics';
-
-  @override
-  String get onboardingExquisiteBody =>
-      'Discover a curated collection of the world\'s finest silks, linens, and velvets.';
-
-  @override
-  String get onboardingCraftsmanshipTitle => 'Artisanal Craftsmanship';
-
-  @override
-  String get onboardingCraftsmanshipBody =>
-      'Every thread is woven with precision and heritage to ensure unparalleled quality.';
-
-  @override
-  String get onboardingExcellenceTitle => 'Tailored for Excellence';
-
-  @override
-  String get onboardingExcellenceBody =>
-      'Experience the luxury of fabrics designed for those who settle for nothing less than elite.';
-
-  @override
-  String get onboardingNext => 'Next';
-
-  @override
-  String get onboardingSkip => 'Skip';
-
-  @override
-  String get onboardingGetStarted => 'Get Started';
-
-  @override
   String get welcomeBody =>
       'A premium commerce foundation with considered defaults for every direction and display.';
 
@@ -142,9 +112,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentMethod => 'Payment Method';
-
-  @override
-  String get paid => 'Paid';
 
   @override
   String get addNewAddress => 'Add New Address';
@@ -374,9 +341,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get goodMorningGuest => 'Good morning';
-
-  @override
   String get openSettings => 'Open settings';
 
   @override
@@ -417,10 +381,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderSummary => 'Order Summary';
-
-  @override
-  String get estimatedTotalsNote =>
-      'Estimated totals — the final amount is confirmed at payment.';
 
   @override
   String itemsInCart(int count) {
@@ -784,6 +744,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming Soon';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get update => 'Update';
+
+  @override
+  String get updateStock => 'Update Stock';
+
+  @override
+  String get newStockLevel => 'New stock level';
+
+  @override
+  String get courierName => 'Courier Name';
+
+  @override
+  String get trackingNumber => 'Tracking Number';
+
+  @override
+  String get addTrackingDetails => 'Add Tracking Details';
+
+  @override
+  String orderStatusUpdatedTo(String statusName) {
+    return 'Order status updated to $statusName';
+  }
+
+  @override
+  String get orderMarkedAsShipped => 'Order marked as shipped';
+
+  @override
+  String get returnToPayment => 'Return to payment';
+
+  @override
+  String get invalidCheckoutLink =>
+      'The payment checkout link is invalid. Please return and retry.';
+
+  @override
+  String get onboardingExquisiteTitle => 'Exquisite Fabrics';
+
+  @override
+  String get onboardingExquisiteBody =>
+      'Discover a curated collection of the world\'s finest silks, linens, and velvets.';
+
+  @override
+  String get onboardingCraftsmanshipTitle => 'Artisanal Craftsmanship';
+
+  @override
+  String get onboardingCraftsmanshipBody =>
+      'Every thread is woven with precision and heritage to ensure unparalleled quality.';
+
+  @override
+  String get onboardingExcellenceTitle => 'Tailored for Excellence';
+
+  @override
+  String get onboardingExcellenceBody =>
+      'Experience the luxury of fabrics designed for those who settle for nothing less than elite.';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get goodMorningGuest => 'Good morning';
+
+  @override
+  String get estimatedTotalsNote =>
+      'Estimated totals — the final amount is confirmed at payment.';
 
   @override
   String get serverConfirmedTotals => 'Server-confirmed totals';

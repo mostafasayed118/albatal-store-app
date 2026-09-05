@@ -9,15 +9,6 @@
   "settings": "الإعدادات",
   "settingsSubtitle": "المظهر واللغة",
   "welcomeTitle": "مصنوع للتميّز",
-  "onboardingExquisiteTitle": "أقمشة فاخرة",
-  "onboardingExquisiteBody": "اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.",
-  "onboardingCraftsmanshipTitle": "حرفية أصيلة",
-  "onboardingCraftsmanshipBody": "كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.",
-  "onboardingExcellenceTitle": "مصمم للتميّز",
-  "onboardingExcellenceBody": "اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.",
-  "onboardingNext": "التالي",
-  "onboardingSkip": "تخطي",
-  "onboardingGetStarted": "ابدأ الآن",
   "welcomeBody": "أساس لتجارة إلكترونية راقية بخيارات مدروسة لكل اتجاه ووضع عرض.",
   "foundationReady": "الأساس جاهز",
   "foundationBody": "الوضع والمظهر واللغة والتنقل وحالات الواجهة جاهزة. ميزات المتجر تأتي لاحقاً.",
@@ -43,7 +34,6 @@
   "checkout": "الدفع",
   "shippingAddress": "عنوان الشحن",
   "paymentMethod": "طريقة الدفع",
-  "paid": "مدفوع",
   "addNewAddress": "إضافة عنوان جديد",
   "placeOrder": "تأكيد الطلب",
   "proceedToCheckout": "متابعة إلى الدفع",
@@ -99,7 +89,9 @@
   "@fabricsFound": {
     "description": "عدد الأقمشة الموجودة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "مجموعة الحرير الجديدة",
@@ -114,7 +106,9 @@
   "@curatedFabrics": {
     "description": "عدد الأقمشة المختارة في فئة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "تأكيد",
@@ -124,7 +118,9 @@
   "@discountPercent": {
     "description": "تسمية نسبة الخصم",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "توصيل سريع",
@@ -135,7 +131,6 @@
   "origin": "المنشأ",
   "care": "العناية",
   "goodMorning": "صباح الخير، {name}",
-  "goodMorningGuest": "صباح الخير",
   "openSettings": "فتح الإعدادات",
   "successTitle": "نجاح!",
   "orderPlacedBody": "تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.",
@@ -143,7 +138,9 @@
   "@itemsCount": {
     "description": "عدد العناصر في الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "مراجعة الطلب",
@@ -155,12 +152,13 @@
   "useThisAddress": "استخدم هذا العنوان",
   "defaultLabel": "افتراضي",
   "orderSummary": "ملخص الطلب",
-  "estimatedTotalsNote": "إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.",
   "itemsInCart": "{count} عناصر في السلة",
   "@itemsInCart": {
     "description": "عدد العناصر في السلة لمراجعة الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "تأكيد والدفع",
@@ -184,7 +182,9 @@
   "@onlyLeft": {
     "description": "تحذير مخزون منخفض",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "المرتجعات",
@@ -285,9 +285,38 @@
   "order": "الطلب",
   "items": "عناصر",
   "noAddressProvided": "لم يتم توفير عنوان",
-  "noResultsFound": "لم يتم العثور على نتائج",
-  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
   "comingSoon": "قريباً",
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "update": "تحديث",
+  "updateStock": "تحديث المخزون",
+  "newStockLevel": "مستوى المخزون الجديد",
+  "courierName": "اسم شركة الشحن",
+  "trackingNumber": "رقم التتبع",
+  "addTrackingDetails": "إضافة تفاصيل التتبع",
+  "orderStatusUpdatedTo": "تم تحديث حالة الطلب إلى {statusName}",
+  "orderMarkedAsShipped": "تم وضع علامة تم الشحن على الطلب",
+  "returnToPayment": "العودة إلى الدفع",
+  "invalidCheckoutLink": "رابط الدفع غير صالح. يرجى العودة والمحاولة مرة أخرى.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingExquisiteTitle": "أقمشة فاخرة",
+  "onboardingExquisiteBody": "اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.",
+  "onboardingCraftsmanshipTitle": "حرفية أصيلة",
+  "onboardingCraftsmanshipBody": "كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.",
+  "onboardingExcellenceTitle": "مصمم للتميّز",
+  "onboardingExcellenceBody": "اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.",
+  "onboardingNext": "التالي",
+  "onboardingSkip": "تخطي",
+  "onboardingGetStarted": "ابدأ الآن",
+  "paid": "مدفوع",
+  "goodMorningGuest": "صباح الخير",
+  "estimatedTotalsNote": "إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.",
   "serverConfirmedTotals": "الإجماليات المؤكدة من الخادم",
   "orderReferenceMissing": "تعذر المتابعة: مرجع الطلب مفقود.",
   "customerEmailMissing": "تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.",

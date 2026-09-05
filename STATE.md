@@ -4,6 +4,24 @@ Last run: 2026-09-04T00:00:00Z
 
 ## New — 2026-09-04
 
+### L2: Audit issue #4 — scrub Paymob raw-exception leak + localize admin/payment strings
+**Branch:** `fix/scrub-paymob-error-localize-admin` (worktree
+`.trees/audit4-l10n`, from `master` @ `ac69c54`). Human enabled L2 for audit
+issue #4.
+
+**Part 1 — error scrubbing:** `paymob_payment_service.dart` interpolated the
+raw exception into a user-facing message (`'Payment initialization failed:
+$e'`) — could leak provider URLs/tokens. Replaced with a fixed, safe message;
+regression test added
+(`test/features/payments/data/paymob_payment_service_scrub_test.dart`)
+proving a leaky exception (URL + token) never reaches the message.
+
+**Part 2 — l10n:** 12 new arb keys (en+ar, incl. `orderStatusUpdatedTo`
+with a `{statusName}` placeholder). Localized: admin order-detail dialog
++ snackbars, admin inventory stock dialog, paymob checkout invalid-URL
+body/buttons. No key collisions; placeholder convention matched existing
+usage. Verified no hardcoded source matches remain (only generated files
+contain the literal values, as designed).
 ### L2: Admin layering remediation — typed Order domain + Result repository
 **Branch:** `refactor/admin-typed-order-domain` (worktree
 `.trees/admin-typed-domain`, from `master` @ `ac69c54`). Human enabled L2 for
@@ -105,6 +123,15 @@ so both files were compiled into every release build as dead weight.
 **Verification evidence (Flutter 3.47.2 stable — matches CI 3.47.x pin):**
 | Check | Result |
 |-------|--------|
+| `flutter gen-l10n` | OK — 12 new getters in `lib/generated/l10n/` |
+| `flutter analyze` | **No issues found!** |
+| `flutter test` | **244 passed, 0 failed** (243 + new scrub regression test) |
+| Hardcoded-string grep | source clean; matches only in generated files |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, registrant, `pubspec.lock` |
+
+**Merge remains human-gated.**
+
+---
 | `flutter pub get` | OK (worktree-local; lock restored to HEAD) |
 | `flutter analyze` | **No issues found!** (first run caught 3 wrong-depth relative imports in nested tests — fixed to 4 levels) |
 | `flutter test` | **243 passed, 0 failed** — full suite green, zero regressions |
