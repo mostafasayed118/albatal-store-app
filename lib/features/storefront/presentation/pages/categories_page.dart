@@ -64,8 +64,13 @@ class CategoriesPage extends StatelessWidget {
                   gridDelegate:
                       productGridDelegateForWidth(constraints.maxWidth),
                   itemCount: cats.length,
-                  itemBuilder: (_, i) =>
-                      _CategoryCard(category: cats[i], onTap: openCategory),
+                  itemBuilder: (_, i) => _CategoryCard(
+                    category: cats[i],
+                    // Product count per family, so the card tells the user
+                    // how much there is to browse before they tap.
+                    count: state.categoryProductCount[cats[i]] ?? 0,
+                    onTap: openCategory,
+                  ),
                 ),
               ),
             ],
@@ -79,14 +84,20 @@ class CategoriesPage extends StatelessWidget {
 /// A tactile category card: weave-tinted tile + label, sharing the
 /// product-grid proportions so the page reads as one visual system.
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.category, required this.onTap});
+  const _CategoryCard({
+    required this.category,
+    required this.count,
+    required this.onTap,
+  });
   final String category;
+  final int count;
   final ValueChanged<String> onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l = context.l10n;
     final tint = categoryAccent(category);
     return Card(
       color: scheme.surface,
@@ -115,12 +126,26 @@ class _CategoryCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(10, 10, 10, 10),
-              child: Text(
-                category,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l.curatedFabrics(count),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ],
               ),
             ),
           ],

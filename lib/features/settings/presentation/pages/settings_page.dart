@@ -92,7 +92,8 @@ final class SettingsPage extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.support_agent_outlined),
                 title: Text(context.l10n.customerSupport),
-                trailing: const Icon(Icons.chevron_right),
+                // Drill-in chevron points in the reading direction (flips in RTL).
+                trailing: Icon(context.directionalTrailingIcon),
                 onTap: () => context.push('/support'),
               ),
             ]),

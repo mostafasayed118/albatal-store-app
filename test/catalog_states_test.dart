@@ -77,7 +77,8 @@ void main() {
     await tester.pump();
 
     expect(find.byType(FeedbackView), findsOneWidget);
-    expect(find.byIcon(Icons.hourglass_top_rounded), findsOneWidget);
+    // Loading animates (UX-030): a real spinner, not a static hourglass.
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 }
 

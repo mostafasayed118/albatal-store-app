@@ -14,14 +14,11 @@ final class FeedbackView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final (IconData icon, String title, String body, String? action) =
+    final (IconData? icon, String title, String body, String? action) =
         switch (type) {
-      FeedbackViewType.loading => (
-          Icons.hourglass_top_rounded,
-          l10n.loading,
-          '',
-          null
-        ),
+      // Loading animates (a frozen hourglass reads as a hung app); it keeps
+      // the same slot size so empty/error layouts don't shift.
+      FeedbackViewType.loading => (null, l10n.loading, '', null),
       FeedbackViewType.empty => (
           Icons.inventory_2_outlined,
           l10n.emptyTitle,
@@ -39,7 +36,14 @@ final class FeedbackView extends StatelessWidget {
         child: Padding(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
+        SizedBox(
+          height: 48,
+          width: 48,
+          child: icon == null
+              ? const CircularProgressIndicator(strokeWidth: 3)
+              : Icon(icon,
+                  size: 48, color: Theme.of(context).colorScheme.primary),
+        ),
         const SizedBox(height: 16),
         Text(title,
             style: Theme.of(context).textTheme.titleLarge,

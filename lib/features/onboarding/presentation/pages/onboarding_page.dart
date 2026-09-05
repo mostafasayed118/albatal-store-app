@@ -220,7 +220,8 @@ final class _OnboardingStepView extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 360),
                   child: FilledButton.icon(
                     onPressed: onNext,
-                    icon: const Icon(Icons.arrow_forward),
+                    // Points forward in the reading direction (flips under RTL).
+                    icon: Icon(context.directionalForwardIcon),
                     label: Text(isLastPage
                         ? context.l10n.onboardingGetStarted
                         : context.l10n.onboardingNext),
