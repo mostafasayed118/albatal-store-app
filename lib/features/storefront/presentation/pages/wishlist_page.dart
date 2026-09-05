@@ -33,11 +33,15 @@ class WishlistPage extends StatelessWidget {
               onAction: () => context.go('/categories'),
             );
           }
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: ws.products.length,
-            gridDelegate: productGridDelegate,
-            itemBuilder: (_, i) => WishlistTile(product: ws.products[i]),
+          return LayoutBuilder(
+            builder: (context, constraints) => GridView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: ws.products.length,
+              // Same width-aware delegate as Home/Catalog: 2 cols on phone,
+              // 3 at ≥700, 4 at ≥1000.
+              gridDelegate: productGridDelegateForWidth(constraints.maxWidth),
+              itemBuilder: (_, i) => WishlistTile(product: ws.products[i]),
+            ),
           );
         },
       ),
