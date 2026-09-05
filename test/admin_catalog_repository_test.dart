@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -42,12 +43,13 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  test('adminUpsertProduct calls rpc with correct params', () async {
+  test('adminUpsertProduct calls rpc with correct params and returns Result',
+      () async {
     final client = MockSupabaseClient();
     when(() => client.rpc('admin_upsert_product', params: any(named: 'params')))
         .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>('new-uuid'));
     final repo = SupabaseAdminRepository(client: client);
-    final id = await repo.adminUpsertProduct(
+    final result = await repo.adminUpsertProduct(
       name: 'Thobe',
       slug: 'thobe',
       description: 'd',
@@ -66,6 +68,38 @@ void main() {
           'p_base_price': 100,
           'p_is_active': true,
         })).called(1);
-    expect(id, 'new-uuid');
+    final value = result.when(success: (v) => v, failure: (e) => null);
+    expect(value, 'new-uuid');
+  });
+
+  test('adminUpsertProduct returns Failure (never throws) when rpc fails',
+      () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('admin_upsert_product', params: any(named: 'params')))
+        .thenThrow(Exception('permission denied'));
+    final repo = SupabaseAdminRepository(client: client);
+    final result = await repo.adminUpsertProduct(
+      name: 'Thobe',
+      slug: 'thobe',
+      categoryId: 'cat-1',
+      basePrice: 100,
+      isActive: true,
+    );
+    expect(result, isA<Failure<String>>());
+  });
+
+  test('adminUpsertVariant returns Failure when rpc returns a non-string',
+      () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('admin_upsert_variant', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(42));
+    final repo = SupabaseAdminRepository(client: client);
+    final result = await repo.adminUpsertVariant(
+      productId: 'p1',
+      size: 'M',
+      color: 'Navy',
+      stock: 3,
+    );
+    expect(result, isA<Failure<String>>());
   });
 }

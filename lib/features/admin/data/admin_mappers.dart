@@ -1,5 +1,6 @@
 import '../../../../core/entities/money.dart';
 import '../domain/entities/admin_order.dart';
+import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
 
 /// Maps raw Supabase row/RPC payloads into typed admin domain entities.
@@ -106,6 +107,42 @@ class AdminMappers {
           .map(lowStockVariantFromRow)
           .whereType<LowStockVariant>()
           .toList();
+
+  /// Maps one `product_variants` row into an [AdminVariant].
+  /// Returns null for rows missing the variant id (cannot be edited).
+  static AdminVariant? variantFromRow(Map<String, dynamic> row) {
+    final id = row['id'];
+    if (id is! String || id.isEmpty) return null;
+    final overrideRaw = row['price_override'];
+    return AdminVariant(
+      variantId: id,
+      size: _asString(row['size']) ?? '',
+      color: _asString(row['color']) ?? '',
+      stock: _toInt(row['stock']),
+      priceOverride: overrideRaw is num ? overrideRaw.toDouble() : null,
+    );
+  }
+
+  /// Maps a list of variant rows, skipping unmappable entries.
+  static List<AdminVariant> variantsFromRows(List<dynamic> rows) => rows
+      .whereType<Map<String, dynamic>>()
+      .map(variantFromRow)
+      .whereType<AdminVariant>()
+      .toList();
+
+  /// Extracts non-blank `storage_path` strings from `product_images` rows.
+  /// Blank or mistyped paths are skipped — they render nothing useful.
+  static List<String> imagePathsFromRows(List<dynamic> rows) => rows
+      .whereType<Map<String, dynamic>>()
+      .map((row) => _asString(row['storage_path']))
+      .whereType<String>()
+      .where((path) => path.trim().isNotEmpty)
+      .toList();
+
+  /// Passes flash-sale RPC rows through defensively: only real maps are
+  /// kept, so a mistyped element cannot crash the catalog countdown.
+  static List<Map<String, dynamic>> flashSalesFromRows(List<dynamic> rows) =>
+      rows.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
 
   /// Customer display name: joined `profiles.full_name`, falling back to
   /// a denormalized `customer_name` column; mistyped values are ignored.

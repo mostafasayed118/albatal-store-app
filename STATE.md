@@ -1,6 +1,28 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-04T00:00:00Z
+Last run: 2026-09-05T00:00:00Z
+
+## New — 2026-09-05: T1 admin catalog API migrated to Result + typed entities
+
+Branch `refactor/admin-t1-result` (worktree `.trees/admin-t1-result`, cut from
+master @ cdf9b09, post #16 merge).
+
+- **Domain**: all 6 T1 methods re-typed to `Result<T>` — `adminUpsertProduct`,
+  `adminUpsertVariant`, `adminSetProductImages`, `getActiveFlashSales`,
+  `getVariants` (new typed `AdminVariant` entity), `getProductImagePaths`.
+  The admin repository interface is now 100% Result-based.
+- **Data**: implementations wrapped in try/catch → Failure with fixed,
+  user-facing messages; upserts validate the RPC id (non-empty string) and
+  fail closed; mappers gained `variantsFromRows`, `imagePathsFromRows`,
+  `flashSalesFromRows` (defensive, skip unmappable rows).
+- **Presentation**: all 3 T1 pages consume Results via exhaustive switches;
+  variant editor rewritten on typed entities; incidentally scrubbed a raw
+  `$e` leak in `admin_product_edit_page` ('Failed to save product: $e').
+- **Tests**: navigation fake migrated; rpc-params test upgraded to the Result
+  contract; 2 new failure-path tests (rpc throws; non-string id).
+
+Verification (Flutter 3.47.2): `flutter analyze` clean; `flutter test`
+**375 passed, 0 failed** (373 + 2 new). Not pushed — human-gated.
 
 ## New — 2026-09-04
 

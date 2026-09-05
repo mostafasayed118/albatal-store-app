@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../domain/entities/admin_order.dart';
+import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_repository.dart';
 import 'admin_mappers.dart';
@@ -130,7 +131,7 @@ final class SupabaseAdminRepository implements AdminRepository {
   // ─── Catalog Management (T1) ─────────────────────────────
 
   @override
-  Future<String> adminUpsertProduct({
+  Future<Result<String>> adminUpsertProduct({
     String? id,
     required String name,
     required String slug,
@@ -140,71 +141,102 @@ final class SupabaseAdminRepository implements AdminRepository {
     required double basePrice,
     required bool isActive,
   }) async {
-    final res = await _client.rpc('admin_upsert_product', params: {
-      'p_id': id,
-      'p_name': name,
-      'p_slug': slug,
-      'p_description': description,
-      'p_composition': composition,
-      'p_category_id': categoryId,
-      'p_base_price': basePrice,
-      'p_is_active': isActive,
-    });
-    return res as String;
+    try {
+      final res = await _client.rpc('admin_upsert_product', params: {
+        'p_id': id,
+        'p_name': name,
+        'p_slug': slug,
+        'p_description': description,
+        'p_composition': composition,
+        'p_category_id': categoryId,
+        'p_base_price': basePrice,
+        'p_is_active': isActive,
+      });
+      if (res is! String || res.isEmpty) {
+        return const Failure(AppError('Failed to save product'));
+      }
+      return Success(res);
+    } catch (e) {
+      return Failure(AppError('Failed to save product', cause: e));
+    }
   }
 
   @override
-  Future<String> adminUpsertVariant({
+  Future<Result<String>> adminUpsertVariant({
     required String productId,
     required String size,
     required String color,
     required int stock,
     double? priceOverride,
   }) async {
-    final res = await _client.rpc('admin_upsert_variant', params: {
-      'p_product_id': productId,
-      'p_size': size,
-      'p_color': color,
-      'p_stock': stock,
-      'p_price_override': priceOverride,
-    });
-    return res as String;
+    try {
+      final res = await _client.rpc('admin_upsert_variant', params: {
+        'p_product_id': productId,
+        'p_size': size,
+        'p_color': color,
+        'p_stock': stock,
+        'p_price_override': priceOverride,
+      });
+      if (res is! String || res.isEmpty) {
+        return const Failure(AppError('Failed to save variant'));
+      }
+      return Success(res);
+    } catch (e) {
+      return Failure(AppError('Failed to save variant', cause: e));
+    }
   }
 
   @override
-  Future<void> adminSetProductImages(
+  Future<Result<void>> adminSetProductImages(
       String productId, List<String> storagePaths) async {
-    await _client.rpc('admin_set_product_images', params: {
-      'p_product_id': productId,
-      'p_paths': storagePaths,
-    });
+    try {
+      await _client.rpc('admin_set_product_images', params: {
+        'p_product_id': productId,
+        'p_paths': storagePaths,
+      });
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to save images', cause: e));
+    }
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async {
-    final res = await _client.rpc('get_active_flash_sales');
-    return (res as List).cast<Map<String, dynamic>>();
+  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales() async {
+    try {
+      final res = await _client.rpc('get_active_flash_sales');
+      return Success(AdminMappers.flashSalesFromRows(res as List));
+      // A failed flash-sale fetch is non-critical; still surfaced as a
+      // failure Result so callers can decide (the catalog cubit swallows).
+    } catch (e) {
+      return Failure(AppError('Failed to load flash sales', cause: e));
+    }
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getVariants(String productId) async {
-    final res = await _client
-        .from('product_variants')
-        .select()
-        .eq('product_id', productId)
-        .order('size');
-    return (res as List).cast<Map<String, dynamic>>();
+  Future<Result<List<AdminVariant>>> getVariants(String productId) async {
+    try {
+      final res = await _client
+          .from('product_variants')
+          .select()
+          .eq('product_id', productId)
+          .order('size');
+      return Success(AdminMappers.variantsFromRows(res as List));
+    } catch (e) {
+      return Failure(AppError('Failed to load variants', cause: e));
+    }
   }
 
   @override
-  Future<List<String>> getProductImagePaths(String productId) async {
-    final res = await _client
-        .from('product_images')
-        .select('storage_path')
-        .eq('product_id', productId)
-        .order('sort_order');
-    return (res as List)
-        .map((e) => (e as Map<String, dynamic>)['storage_path'] as String)
-        .toList();
+  Future<Result<List<String>>> getProductImagePaths(String productId) async {
+    try {
+      final res = await _client
+          .from('product_images')
+          .select('storage_path')
+          .eq('product_id', productId)
+          .order('sort_order');
+      return Success(AdminMappers.imagePathsFromRows(res as List));
+    } catch (e) {
+      return Failure(AppError('Failed to load images', cause: e));
+    }
   }
 }

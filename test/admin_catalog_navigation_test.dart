@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_catalog_page.dart';
@@ -22,7 +23,7 @@ import 'package:go_router/go_router.dart';
 class FakeAdminRepository implements AdminRepository {
   FakeAdminRepository({this.isAdmin = true});
   bool isAdmin;
-  List<Map<String, dynamic>> variants = const [];
+  List<AdminVariant> variants = const [];
   List<String> productImagePaths = const [];
 
   @override
@@ -53,7 +54,7 @@ class FakeAdminRepository implements AdminRepository {
       const Success(null);
 
   @override
-  Future<String> adminUpsertProduct({
+  Future<Result<String>> adminUpsertProduct({
     String? id,
     required String name,
     required String slug,
@@ -63,32 +64,34 @@ class FakeAdminRepository implements AdminRepository {
     required double basePrice,
     required bool isActive,
   }) async =>
-      'fake-product-id';
+      const Success('fake-product-id');
 
   @override
-  Future<String> adminUpsertVariant({
+  Future<Result<String>> adminUpsertVariant({
     required String productId,
     required String size,
     required String color,
     required int stock,
     double? priceOverride,
   }) async =>
-      'fake-variant-id';
+      const Success('fake-variant-id');
 
   @override
-  Future<void> adminSetProductImages(
-      String productId, List<String> storagePaths) async {}
+  Future<Result<void>> adminSetProductImages(
+      String productId, List<String> storagePaths) async =>
+      const Success(null);
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [];
+  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales() async =>
+      const Success([]);
 
   @override
-  Future<List<Map<String, dynamic>>> getVariants(String productId) async =>
-      variants;
+  Future<Result<List<AdminVariant>>> getVariants(String productId) async =>
+      Success(variants);
 
   @override
-  Future<List<String>> getProductImagePaths(String productId) async =>
-      productImagePaths;
+  Future<Result<List<String>>> getProductImagePaths(String productId) async =>
+      Success(productImagePaths);
 }
 
 class FakeCatalogRepository implements CatalogRepository {
@@ -276,8 +279,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AdminProductEditPage), findsOneWidget);
 
-    fakeAdmin.variants = [
-      {'id': 'v1', 'size': 'M', 'color': 'Navy', 'stock': 12},
+    fakeAdmin.variants = const [
+      AdminVariant(
+          variantId: 'v1', size: 'M', color: 'Navy', stock: 12),
     ];
     await tester.pumpWidget(
       MaterialApp(
