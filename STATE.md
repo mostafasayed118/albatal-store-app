@@ -217,6 +217,128 @@ release builds. No production code touched. **Merge remains human-gated.**
 
 ---
 Last run: 2026-09-03T23:04:34+03:00
+---
+
+## New — 2026-09-04 (stashed local run — AppColors tokens + merge wave, re-applied after sync)
+
+Last run: 2026-09-04T18:40:00+03:00
+
+## New — 2026-09-04 (centralized AppColors token file — owner-requested, MERGED — owner "marge")
+
+Branch `feat/app-colors-tokens` fast-forward merged into master (`7ba3903` → `5e3864c`, 1 commit `5e3864c` "refactor: centralize color tokens in shared AppColors", 11 files +136/−69, zero conflicts). Post-merge on master: `flutter analyze --no-pub` clean, `flutter test --no-pub -j 1` (NO_PROXY localhost bypass) **330/330 PASS**. Worktree+branch retained for now (not deleted); **Pushed** to `origin/master` on owner order (`7ba3903..5e3864c`), remote verified at `5e3864c`, in sync. Note: pre-existing uncommitted local edit in `home_page.dart` (import reorder + settings-icon `onSurface` alpha tint) sits in the working tree, untouched, not part of this merge.
+
+- NEW `lib/shared/theme/app_colors.dart`: `abstract final class AppColors` — single source of truth mirroring DESIGN.md exactly (brand: primary #003527 / primaryContainer #064E3B / secondary #904D00 / secondaryContainer #FE932C / tertiary #531E00; semantic light: background #F9F9F9, surface, surfaceContainers, textPrimary #1A1C1C, outline/variant, error #BA1A1A, success = #064E3B brand emerald (owner-approved), warning #7C2D12 env-banner umber; dark: darkBackground #121212, darkSurface #1E293B, darkPrimary/OnPrimary/Secondary/OnSecondary, darkText #F0F4F1, darkError #FFB4AB; structural: white/black/scrim(=black54 0x8A000000)/transparent; legacy gold #D97706).
+- `AppTheme` now consumes AppColors — zero duplicated hex. Deprecated `emerald`/`gold`/`terracotta`/`primaryStitch`/`surfaceStitch`/`surfaceContainer*` delegates kept for compat. Unused deprecated `AppTheme.offWhite` (#FAFAFA) removed (verified unreferenced).
+- 10 call sites migrated to tokens: environment_banner (umber+white), splash_page (#002117→darkOnPrimary, primaryStitch→primary, logo white), contrast.dart (#1A1C1C→textPrimary), stitch_search_bar (#F3F3F3→surfaceContainerLow), main.dart (Colors.red→AppColors.error — only value delta, semantic fix 0xF44336→#BA1A1A), onboarding_page, zoom_gallery, fabric_weave_painter, admin_image_manager (black54→scrim). Zero raw `Color(0x`/Material `Colors.*` left in lib outside app_colors.dart.
+- Scope clean: no pubspec/supabase/payments/auth/router/state changes. payments untouched. Generated desktop plugin-registrant churn from `pub get` restored.
+
+**Verification:** `flutter analyze --no-pub` clean; `flutter test --no-pub -j 1` (NO_PROXY localhost bypass) **330/330 PASS** (pre- and post-format, matches master baseline); `dart format lib` applied (4 files whitespace), `--set-exit-if-changed` exit 0; independent verifier sub-agent **APPROVE** (6/6 checks: diff review, hex sweep, analyze, tests, format, tree cleanliness; layer boundaries + secrets PASS; disclosed deltas: error-icon color semantic fix + offWhite removal).
+
+## New — 2026-09-04 (L2 UI/UX fixes MERGED — owner "marge it")
+
+Branch `fix/ui-a11y-responsive` fast-forward merged into master (`0246095` → `7ba3903`, 6 commits, zero conflicts — branch never touched STATE.md). Post-merge on master: `flutter analyze --no-pub` clean, `flutter test --no-pub` **330/330 PASS**. Generated-registrant pub noise restored; tree holds only this STATE.md entry. **Pushed** to `origin/master` on owner order (`0246095..7ba3903`), remote verified at `7ba3903`, in sync.
+
+Worktree `C:\flutter_projects\albatal_store-worktrees\ui-a11y-responsive`, branch `fix/ui-a11y-responsive` on master `0246095`, 6 isolated commits, 28 files (+310/−162 lib/test + format normalization of the same touched files). No pubspec/router/state-shape/supabase/payments-logic changes. **No push, no merge — human-gated.**
+
+| Fix | Commit | Files |
+|---|---|---|
+| Token colors, swatch contrast (`contrast.dart` NEW), 44px heart/cart targets, promo eyebrow `secondaryContainer`, chips theme tokens, banner umber | `803be6f` | contrast.dart, grid/flash cards, chips, promo, cart tile, placeholder, admin_orders, env banner |
+| Theme typography, directional insets, 50px CTAs (bars auto-height), search padding param, l10n voice strings | `7c4039a` | home, checkout, order/related/price/cart/stock/add-to-cart, sign_in, search_bar |
+| `ResponsiveShell` 1200px cap (Home+Catalog), unified grid breakpoints | `201bb71` | responsive_shell.dart, home, catalog |
+| Semantics (heart/add/loading liveRegion), autofill, floating SnackBars, padded ChoiceChips | `6c5cb01` | feedback_view, sign_in, details, add-to-cart, cart tile, checkout, variant_selector |
+| 78px chip track (fixes 2px overflow from 12px label), contract tests → new behavior | `2e0818a` | chips + 4 spec-contract test files |
+| `dart format` on touched files only (whitespace, same 10 files) | `7ba3903` | — |
+
+**Verification:** `flutter analyze` clean (lib + full); `flutter test --no-pub -j 1` (NO_PROXY localhost bypass) **330/330 PASS** (re-run after format commit, still green); mid-run breakage (25 fails: chip 2px overflow + 5 stale spec pins) fixed in-branch; independent verifier sub-agent **APPROVE** (scope, layers, secrets, contrast, test meaningfulness PASS).
+
+**Notes:** (1) `features/payments/` untouched per never-edit rule (only pre-existing secondary-color CTA asserts in checkout test). (2) No ARB changes — reused existing keys (`voiceSearch`, `comingSoon`, wishlist). (3) Deferred/minor (documented in audit): skeleton loaders, AppCard wrapper, `DateFormat` Arabic months, admin hardcoded English strings, ZoomGallery semantics, large-textScaler chip overflow.
+
+## New — 2026-09-04 (L2 audit-fix batch — owner authorized "fix all needed")
+
+Worktree `C:\flutter_projects\albatal_store-worktrees\audit-fixes-2026-09-04`, branch `fix/audit-findings-2026-09-04`, 5 isolated commits on master `5042f8d`. Scope kept to `lib/` + 1 test file; no pubspec/router/state-shape/supabase changes. **No push, no merge — human-gated.**
+
+| Fix | Commit | Files |
+|---|---|---|
+| F3: missing email blocks payment (fake `customer@example.com` removed) + new widget test (TDD red→green) | `ad68d1e` | checkout_page, payment_method_page, payment_navigation_test |
+| F1: generic user errors, raw `$e` to `Log.e` only | `a6cfcc1` | paymob_payment_service, checkout_cubit, 3 admin pages (incl. `_error` state) |
+| F2: auth mapper default → generic (cause still attached at call sites) | `4bf68a4` | supabase_auth_repository |
+| F4: server-totals rows use existing ARB keys (`l.subtotal/shipping/total`) | `80f7d68` | checkout_page |
+| F5: `Log.setLevel` debug only in `kDebugMode` | `87b68c3` | main.dart |
+
+**Verification:** `flutter analyze --no-pub` clean; `flutter test --no-pub` **309/309 PASS** (308 + 1 new); independent verifier sub-agent **APPROVE** (scope, layers, secrets, ARB keys, test meaningfulness all PASS; full suite re-run).
+
+**Notes:** (1) AGENTS "never edit auth/, payments/" read as no *unapproved* edits — explicit "fix all needed" treated as L2 enablement; changes minimal, unmerged, pending review. (2) STATE 2026-08-24 claimed `AuthRepository.currentUserEmail` exists — it does not in current code; F3 uses empty-string guard instead. (3) Proposed-only (need approval): checkout `payment` string→enum unification (state-signature change), new ARB keys for `Server-confirmed totals` header + payment status messages, server-side `customer@example.com` fallback in `paymob-initiate` (supabase/ needs human review).
+
+**Draft PR:** branch pushed to origin; draft PR opened 2026-09-04: https://github.com/mostafasayed118/albatal-store-app/pull/9 (base `master`, 5 commits). Merge remains human-gated — PR stays draft until owner review.
+
+**PR #9 review + CI (2026-09-04, same day):** remote diff verified identical to local (82+/26-, 10 files, head `87b68c3`); review verdict: in-scope, minimal, no secrets/layer violations. CI run 33876901958: Flutter Tests PASS (2m12s), Secret Scan + Edge Tests PASS, but **Format & Analyze FAIL** — `dart format` wanted 12 files. Root cause split: 3 were my hunks (fixed via `f34e03a` "style: dart format touched files", re-verified analyze clean + 309/309, pushed); the other 9 are **pre-existing format drift on clean master** (verified with local SDK too), untouched by this branch. CI re-run 33877515649: 12→9, my files clear. Format gate cannot go green until the 9 are formatted — decision escalated to owner (options: format them in this PR, separate PR, or leave; constraint bars touching unrelated code without approval).
+
+**PR #9 CI resolution (owner: "choose the best" → format in-PR):** applied `dart format` to exactly the 9 drifted files as isolated commit `aa34987` ("style: dart format pre-existing drift, whitespace-only", +23/−31), re-verified locally (`dart format --set-exit-if-changed .` 0 changed, analyze clean, 309/309 tests), pushed. CI run 33878597653: **Format & Analyze PASS, Flutter Tests PASS, Edge Tests PASS, Secret Scan PASS, Deployment Readiness PASS** (Android Release Build pending/skipped on draft). PR MERGEABLE, still draft pending owner review.
+
+**PR #9 marked ready-for-review (owner-approved 2026-09-04):** `gh pr ready 9` executed; state OPEN, `isDraft:false`, MERGEABLE. Merge NOT performed — still requires explicit owner approval.
+
+## New — 2026-09-04 (PR #9 MERGED + round-2 escalated fixes, owner-authorized)
+
+**PR #9 merged** (`gh pr merge --merge`, merge commit `579200e`, master synced). Round-2 worktree `C:\flutter_projects\albatal_store-worktrees\round2-escalated`, branch `fix/round2-escalated`, 3 isolated TDD commits. **Draft PR #10:** https://github.com/mostafasayed118/albatal-store-app/pull/10 (no merge — human-gated).
+
+| Fix | Commit | Notes |
+|---|---|---|
+| A: checkout method unified on `PaymentMethod` enum (`serverValue` `paymob_card`/`cod`) | `53e2159` | State+repo+service+PaymentSection+PaymentCubit; fakes updated; new `checkout_service_test.dart` pins wire strings |
+| B: 10 new ARB keys (en+ar), toolchain regen, usages wired | `aec63f7` | New `l10n_audit_keys_test.dart`; generated files tracked in-repo, never hand-edited |
+| C: paymob-initiate 400 on missing email, fake fallbacks removed | `564ddc5` | New Deno contract test; `deno fmt`/`check` clean; NO deploy performed |
+
+**P0 found by investigation:** card payments broken on staging since 035 hardening — gate requires `payment_method='paymob_card'`, client created `'Credit Card'`, and 037 allowlist `('cod','card')` could never produce it. Fix A stores `paymob_card` at creation. Staging card E2E recommended after merge (last card success predates 035).
+
+**Verification:** analyze clean; `flutter test` **316/316**; deno **13/13**; `dart format` whole-tree clean; verifier **APPROVE** (independent re-runs).
+
+## New — 2026-09-04 (PR #10 review + CI green + staging P0 evidence, read-only)
+
+**PR #10 review:** remote file list (25 files) matches local scope exactly; CI run 33883015080 **ALL GREEN** — Flutter Tests, Format & Analyze, Edge Tests, Secret Scan, Deployment Readiness (Android Release Build draft-pending). PR draft, mergeable, awaiting owner review: https://github.com/mostafasayed118/albatal-store-app/pull/10
+
+**Staging read-only evidence for the card P0** (SELECT-only via `STAGING_DB_URL`, no writes):
+- Orders by method: `paymob_card` ×7 (latest 2026-08-23, pre-035 era), `Credit Card` ×4 (latest today), `cod` ×3 (today).
+- All 4 `Credit Card` orders (incl. today's) are `cancelled` with **zero payment rows** — initiation never got past the gate; consistent with 400-rejection → 15-min expiry.
+- No `paymob_card` payment success since 2026-08-23; today's successes are all COD.
+- Verdict: code gate + staging data strongly support "card broken since 035"; absolute proof needs the write-path E2E (owner decision pending).
+
+**Staging card E2E — PASS (owner-authorized "Run full E2E", 2026-09-04):** server-side chain with fresh staging user, Egyptian Cotton 1m/Cream:
+1. `paymob_card` order via `create_checkout_order` → `paymob-initiate` returned **HTTP 200 + checkout URL** (Paymob sandbox provider order created, test mode) — gate passes for the fixed client flow.
+2. Negative control: legacy `Credit Card` order → **HTTP 400 "Unsupported payment method"** — the live bug reproduced exactly.
+3. Cleanup verified: 0 leftover test orders, variant stock restored 20→20 (one staging auth test user retained, per precedent). No secrets printed; temp scripts removed.
+
+## New — 2026-09-04 (live issues I1–I6 FIXED, owner-authorized "fix all")
+
+Worktree `round3-live-issues`, branch `fix/live-issues-round3` (master base), 4 isolated TDD commits. **Draft PR #11:** https://github.com/mostafasayed118/albatal-store-app/pull/11 (no merge — human-gated). Owner decisions applied: support email `al3tar66@gmail.com` everywhere; entries in Profile + Settings.
+
+| Fix | Commit | Live proof (round3 APK, Infinix X6882) |
+|---|---|---|
+| I2 real contacts via repo + I1 entries | support commit | Support page opens with `al3tar66@gmail.com`, no fakes; tile in Profile |
+| I3 truthful Paid/Cancelled labels | orders commit | Completed tab: `Paid` chip + `Paid · date` on live orders |
+| I4 estimated-totals note | checkout commit | (static text; suite-covered) |
+| I5 Wool chip + I6 keyboard dismiss | catalog commit | 5 chips incl. Wool |
+
+**Verification:** analyze clean; `flutter test` **323/323** (14 new); format clean; verifier **APPROVE**. Zero app FATALs across the walk. Stock reconciled (Cream 20; Emerald-1m 6 with only the paid COD unit out); mustafa session intact; EN/Light restored. I7 (privacy copy) deferred — needs legal input. Note: one edit-tool fuzzy match scrambled `categories_page.dart` closers mid-work; caught by analyzer, file reset to master and re-applied surgically — verify edit diffs immediately (lesson).
+
+**Ported from lost branch `fix/codebase-fixes-2026-08-24` (629c14c, never merged):** AddressForm country now submitted (`address_form_test` asserts Egypt survives — was validated-then-discarded); ARB duplicates removed (`cashOnDelivery`, `categories` ×2 → ×1, values identical); `orderPlacedBody` rewritten in proper Arabic. Already-present on master, not ported: details notFound state, router cleanup, CI pins. PR #11 CI re-run **ALL GREEN** (run 33893213383) after format + port commits; verifier re-APPROVED delta. PR #11: https://github.com/mostafasayed118/albatal-store-app/pull/11 (draft, mergeable, awaiting owner).
+
+## New — 2026-09-04 (merge wave: PR #10 + PR #11 MERGED, dead code + stale branches removed)
+
+Owner: "do all fixes". **PR #10 MERGED** (`83167a6`); **PR #11 rebased cleanly (zero conflicts), CI ALL GREEN (run 33894087655), then MERGED** (`0246095`, master). Deleted dead `payment_section.dart` + `category_grid.dart` (unreferenced; analyze + 330/330 tests prove it). Deleted stale remote branches: `fix/codebase-fixes-2026-08-24` (fully ported/audited), `fix/audit-findings-2026-09-04`, `fix/round2-escalated`, `fix/live-issues-round3`. Master = `0246095`, clean, in sync with origin. I7 privacy copy still open (needs legal input — not fabricated).
+
+## New — 2026-09-04 (full live test: server sweep 15/15 + on-device walk, round2 build)
+
+Device Infinix X6882 (owner's, awake, app focused — proceeded; no WhatsApp interruption). Built `round2-escalated` debug APK (staging), streamed-install OK, session restored (mustafa). After walk: home/EN/Light restored, mustafa still signed in, cart holds 1 Royal Emerald item, wishlist empty, all test rows cleaned (paid COD #2b8527e8 kept as evidence; stock reconciled: Cream 20, Emerald-1m 6 with only the paid unit out).
+
+**Verified working:** home render + dynamic greeting; Silk filter (2 fabrics, discounts); details (4.8/124 + 4.9/87, colors, stock); cart math 1290+75=1365 + badge; checkout default-address auto-select + instant-enabled button; server total on payment screen; **COD E2E success #2b8527e8** (DB: paid/cod/success + txn id); Completed tab lists it; **card initiate → real Paymob WebView loads** (logcat `accept.paymob.com` fingerprint) → back-out returns cleanly; wishlist add/remove; profile intact; Dark apply + full Arabic RTL + EN restore; search live-filter ("2 fabrics found"); server matrix (bad product/qty/variant/address → 400, COD confirm + idempotent already_confirmed-ok, unauth 401s, forged-HMAC 401 + zero state change, owner orders read). Zero app FATALs (only UiAutomation harness flake).
+
+**NEW issues found:**
+- **I2 🔴 Fake support contacts live:** `SupportPage` still opens `wa.me/1234567890`; `LocalSupportRepository` holds different fakes (`wa.me/201000000000`, `support@albatal-store.example`); page bypasses the repository entirely. Root cause: fix commit `629c14c` was pushed on `fix/codebase-fixes-2026-08-24` but **never merged** (`merge-base --is-ancestor` = 1) — fix lost, not reverted.
+- **I1 🟡 Support page unreachable:** `/support` route defined, zero navigation call sites anywhere in `lib/`.
+- **I4 🟡 Local-vs-server totals gap persists:** cart review 1365 (local) vs charged 1290 (server shipping 0); payment screen correctly shows server figure.
+- **I3 🟢 Paid order chip still "Placed"** + "Delivered · date" line for minutes-old paid order (deferred cosmetic, confirmed live).
+- **I5 🟢 Categories screen missing Wool chip** (home shows 5 incl. Wool).
+- **I6 🟢 7.6px bottom RenderFlex overflow** with keyboard open on home search (likely IME overlap; single occurrence).
+- **I7 ℹ️ Paymob fingerprint module** sends device telemetry (inherent to hosted checkout; policy pages are still placeholder text — known gap).
 
 ## New — 2026-09-03 (test runner and final verification)
 

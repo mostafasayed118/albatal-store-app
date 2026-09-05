@@ -1,10 +1,10 @@
 import 'dart:async';
 
+import 'package:al_batal_elite/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
@@ -15,6 +15,7 @@ import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -99,6 +100,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: l.openSettings,
             onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.dark_mode_outlined),
+            color: AppColors.gold,
           ),
         ],
       ),
