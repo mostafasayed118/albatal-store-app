@@ -3,6 +3,10 @@
 // Cancels orders that are still "pending" past their expires_at
 // timestamp and restores reserved stock.
 //
+// Also expires stale pending InstaPay payments (migration 041):
+// pending 'instapay' payments older than 24h (D2) flip to
+// 'expired' via expire_stale_instapay_payments().
+//
 // Schedule: invoke every 5 minutes via pg_cron or Supabase
 // edge-function invocation. This is idempotent — cancelling
 // an already-cancelled order is a no-op.
@@ -90,6 +94,22 @@ Deno.serve(async (req) => {
       // Safe to read again: we already verified presence above.
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
     );
+
+    // InstaPay pending payments (041) self-heal on the same
+    // schedule. The RPC is SECURITY DEFINER and idempotent, uses
+    // FOR UPDATE SKIP LOCKED, and is safe to run concurrently
+    // with user actions. A failure here must not block the main
+    // order-expiry pass — log and continue.
+    const { data: expiredInstapay, error: instapayError } = await supabase
+      .rpc("expire_stale_instapay_payments");
+    if (instapayError) {
+      console.error(
+        "cancel-expired-orders: instapay expiry RPC failed",
+        instapayError.code,
+      );
+    } else if (typeof expiredInstapay === "number" && expiredInstapay > 0) {
+      console.log(`Expired ${expiredInstapay} stale InstaPay payments`);
+    }
 
     // Find expired pending orders.
     const { data: expiredOrders, error: queryError } = await supabase

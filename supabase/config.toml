@@ -94,3 +94,20 @@ verify_jwt = false
 # function re-verifies the session and refuses admin accounts
 # before deleting with the service role.
 verify_jwt = true
+
+[functions.instapay-initiate]
+# Creates a pending InstaPay payment for the caller's own order.
+# Called by the Flutter client with the user's JWT; the function
+# re-verifies ownership + order state before inserting.
+verify_jwt = true
+
+[functions.instapay-submit-proof]
+# Uploads the caller's proof-of-transfer for their own pending
+# InstaPay payment. Client JWT; ownership re-verified in-body.
+verify_jwt = true
+
+[functions.instapay-review]
+# Admin-only accept/reject on submitted proofs. Called with the
+# admin's own JWT; the in-body is-admin check is fail-closed
+# (service role is used only after it passes).
+verify_jwt = true
