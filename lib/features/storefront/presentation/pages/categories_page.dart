@@ -28,9 +28,7 @@ class CategoriesPage extends StatelessWidget {
               onAction: catalog.load,
             );
           }
-          final cats = state.categories.length > 1
-              ? state.categories.sublist(1)
-              : const <String>['Silk', 'Cotton', 'Velvet', 'Linen', 'Wool'];
+          final cats = visibleCategoryChips(state.categories);
           // Stitch circular 56dp horizontal chips — reuses shared primitive.
           // EdgeInsetsDirectional inside StitchCategoryChips ensures RTL mirroring;
           // InkSparkle via AppTheme splashFactory.
@@ -57,4 +55,16 @@ class CategoriesPage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Categories shown as chips: drops a leading 'All' selector when the
+/// catalog provides one, keeps everything otherwise.
+///
+/// A blind `sublist(1)` dropped the Wool category on devices where the
+/// loaded list has no 'All' first entry (live-found 2026-09-04).
+List<String> visibleCategoryChips(List<String> categories) {
+  const defaults = <String>['Silk', 'Cotton', 'Velvet', 'Linen', 'Wool'];
+  if (categories.isEmpty) return defaults;
+  final chips = categories.first == 'All' ? categories.sublist(1) : categories;
+  return chips.isEmpty ? defaults : chips;
 }

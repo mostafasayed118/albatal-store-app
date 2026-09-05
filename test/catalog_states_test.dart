@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
@@ -30,14 +32,27 @@ final class FailingCatalogRepository implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+
+  @override
   List<String> get defaultCategories => const ['All'];
 }
 
 Widget _harness(CatalogRepository repo) => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: BlocProvider(
-        create: (_) => CatalogCubit(repo)..load(),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => CatalogCubit(repo)..load(),
+          ),
+          BlocProvider(
+            create: (_) => AuthCubit(
+              authRepository: StubAuthRepository(),
+              profileRepository: StubProfileRepository(),
+            )..checkSession(),
+          ),
+        ],
         child: const HomePage(),
       ),
     );
@@ -81,6 +96,9 @@ class _NeverCompletesRepository implements CatalogRepository {
 
   @override
   Product? findProductById(String id) => null;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
 
   @override
   List<String> get defaultCategories => const ['All'];

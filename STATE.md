@@ -25,6 +25,121 @@ shim, `@Deprecated` members still consumed by 6 lib files + 2 test files.
    `CatalogFilters(sort: ...)`; 15 expectations → `state.filters.*`) and
    `stitch_home_page_test.dart`.
 4. No behavior change: `CatalogFilters` matching/sorting logic untouched.
+### L2: Audit issue #4 — scrub Paymob raw-exception leak + localize admin/payment strings
+**Branch:** `fix/scrub-paymob-error-localize-admin` (worktree
+`.trees/audit4-l10n`, from `master` @ `ac69c54`). Human enabled L2 for audit
+issue #4.
+
+**Part 1 — error scrubbing:** `paymob_payment_service.dart` interpolated the
+raw exception into a user-facing message (`'Payment initialization failed:
+$e'`) — could leak provider URLs/tokens. Replaced with a fixed, safe message;
+regression test added
+(`test/features/payments/data/paymob_payment_service_scrub_test.dart`)
+proving a leaky exception (URL + token) never reaches the message.
+
+**Part 2 — l10n:** 12 new arb keys (en+ar, incl. `orderStatusUpdatedTo`
+with a `{statusName}` placeholder). Localized: admin order-detail dialog
++ snackbars, admin inventory stock dialog, paymob checkout invalid-URL
+body/buttons. No key collisions; placeholder convention matched existing
+usage. Verified no hardcoded source matches remain (only generated files
+contain the literal values, as designed).
+### L2: Admin layering remediation — typed Order domain + Result repository
+**Branch:** `refactor/admin-typed-order-domain` (worktree
+`.trees/admin-typed-domain`, from `master` @ `ac69c54`). Human enabled L2 for
+audit issue #1 (AdminState untyped `Map<String, dynamic>` models).
+
+**Changes:**
+1. NEW `lib/features/admin/domain/entities/admin_order.dart` — `AdminOrder`,
+   `AdminOrderItem`, `AdminOrderAddress`, `AdminOrderStatus` (safe parse →
+   `unknown`), status-transition guards (`canConfirm/canCancel/canShip/
+   canDeliver`), `shortId`.
+2. NEW `lib/features/admin/domain/entities/low_stock_variant.dart` — typed
+   `LowStockVariant`.
+3. NEW `lib/features/admin/data/admin_mappers.dart` — `AdminMappers`; every
+   raw-row cast lives here; defensive defaults, skips unmappable rows.
+4. `lib/features/admin/domain/repositories/admin_repository.dart` — rewritten
+   Result-based: `getAllOrders/getOrderDetails/updateOrderStatus/
+   getLowStockProducts/updateStock` now return `Result<T>` with typed
+   entities; `updateOrderStatus` rejects `unknown` before any network call.
+5. `lib/features/admin/data/supabase_admin_repository.dart` — maps via
+   `AdminMappers`, returns `Result` (no exceptions cross the boundary);
+   admin probe fails closed on any error; `.maybeSingle()` for details
+   (Success(null) on missing) replaces `.single()` throw path; broad
+   `catch` documented (TypeError is not an Exception).
+6. `lib/features/admin/presentation/cubit/admin_cubit.dart` — typed state
+   (`List<AdminOrder>`, `List<LowStockVariant>`, `AdminOrder?`),
+   `AdminOrderStatus?` filter with `clearStatusFilter`, all repo calls via
+   `Result` switch, explicit `Order not found` for `Success(null)`.
+7. All 4 admin pages consume typed entities (no `Map<String, dynamic>`
+   subscripting in widgets); fulfillment actions driven by typed guards;
+   intl-based timestamp formatting (intl already a direct dep).
+8. NEW `test/features/admin/data/admin_mappers_test.dart` (17 assertions:
+   status parse, queue/detail/address/low-stock mapping, malformed rows,
+   status guards).
+9. NEW `test/features/admin/presentation/cubit/admin_cubit_test.dart`
+   (bloc_test + mocktail: success/failure/not-found paths, typed filter,
+   reload-verify on status/stock updates).
+
+**Layering result:** `Map<String, dynamic>` now appears in the admin feature
+only inside `data/` (mappers + repository). Presentation and domain are
+clean; `lib/app.dart` + `service_locator.dart` needed no changes.
+
+**Verification evidence (Flutter 3.47.2 stable / Dart 3.13.2 — matches the CI 3.47.x pin):**
+| Check | Result |
+|-------|--------|
+| `flutter pub get` | OK (worktree-local; `pubspec.lock` restored to HEAD after) |
+| `flutter analyze` | **No issues found!** (first run: 40 errors → 3 missing/unused imports fixed) |
+| `flutter test` | **270 passed, 0 failed** — 243 pre-existing + 27 new, zero regressions |
+| Test-driven fix | The 2 initial mapper-test failures exposed a real defect: bare `as` casts **throw** TypeError on mistyped payloads instead of degrading. Mappers rewritten to `is` type tests + promotion; behavior now genuinely tested |
+| Layering grep | raw maps confined to `data/` ✔; no cross-feature API breaks ✔ |
+
+**Incidental side effects restored to HEAD:** `.flutter-plugins-dependencies`,
+`analysis_options.yaml` (tool auto-edit),
+`macos/Flutter/GeneratedPluginRegistrant.swift`, `pubspec.lock`.
+l10n: only pre-existing arb getters used; hardcoded admin UI strings left
+for the separate l10n issue. **Merge remains human-gated per AGENTS.md.**
+
+---
+## New — 2026-09-04: audit residual fixes (settings domain purity + duplication)
+
+Branch `fix/audit-residuals-settings-gallery` (worktree `.trees/audit-residuals`, cut from master @ ac69c54).
+
+- **Settings domain purified**: `settings_repository.dart` no longer imports
+  `package:flutter/material.dart`. Domain owns `AppThemeMode` + `AppLocale`
+  (closed enum, unknown language codes degrade to English); the cubit is the
+  single Material mapping boundary. Persisted keys/values unchanged
+  (`system/light/dark`, `en/ar`) — zero migration, and unsupported locales are
+  now unrepresentable at the type level.
+- **Paymob allowlist deduplicated**: checkout WebView navigation now delegates
+  to `PaymobUrlGuard.isSafeWebViewNavigationTarget` (same rules as the
+  entry-point guard) instead of an inline second copy of the host list.
+- **Product-image pipeline deduplicated**: new `ProductImageResolver` replaces
+  the copy-pasted null/http/asset chain in both stitch cards, and upgrades
+  gallery/zoom/category grid from bare `Image.asset` (release-crash on http
+  URLs / failed loads) to the same guarded pipeline.
+- **Verification** (Flutter 3.47.2, CI-matching): `flutter analyze` clean;
+  `flutter test` 249/249 (243 + 3 nav-guard + 3 domain tests). Incidental tool
+  side effects restored to HEAD. Not pushed — human-gated.
+## New — 2026-09-04
+
+### L2: Audit issue #2 — relocate test-only catalog fixtures out of lib/
+**Branch:** `refactor/relocate-test-fixtures` (worktree
+`.trees/relocate-test-fixtures`, from `master` @ `ac69c54`). Human enabled L2
+for audit issue #2.
+
+**Problem:** `products_data.dart` (269 LOC fixture catalog) and
+`local_catalog_repository.dart` (test-only in-memory repo) lived in
+`lib/features/storefront/data/` but were referenced ONLY from `test/` —
+so both files were compiled into every release build as dead weight.
+
+**Changes:**
+1. Moved both files to `test/fixtures/` (git records them as renames).
+2. Content unchanged except: package imports (`package:al_batal_elite/...`)
+   replacing fragile deep relative paths, plus doc comments stating the
+   test-only location and the release-bundle rationale.
+3. Updated all 16 import sites across 14 test files (11 top-level tests →
+   `fixtures/...`, 3 nested tests → `../../../../fixtures/...`).
+4. Zero remaining references in `lib/` (verified by grep).
 
 **Verification evidence (Flutter 3.47.2 stable — matches CI 3.47.x pin):**
 | Check | Result |
@@ -38,6 +153,384 @@ Net: −60 lines of shim, one source of truth for catalog filters. **Merge
 remains human-gated.**
 
 ---
+| `flutter gen-l10n` | OK — 12 new getters in `lib/generated/l10n/` |
+| `flutter analyze` | **No issues found!** |
+| `flutter test` | **244 passed, 0 failed** (243 + new scrub regression test) |
+| Hardcoded-string grep | source clean; matches only in generated files |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, registrant, `pubspec.lock` |
+
+**Merge remains human-gated.**
+
+---
+| `flutter pub get` | OK (worktree-local; lock restored to HEAD) |
+| `flutter analyze` | **No issues found!** (first run caught 3 wrong-depth relative imports in nested tests — fixed to 4 levels) |
+| `flutter test` | **243 passed, 0 failed** — full suite green, zero regressions |
+| Side effects restored | `.flutter-plugins-dependencies`, `analysis_options.yaml`, `GeneratedPluginRegistrant.swift`, `pubspec.lock` |
+
+**Release-bundle effect:** 304 LOC of test-only Dart no longer compiled into
+release builds. No production code touched. **Merge remains human-gated.**
+
+---
+Last run: 2026-09-03T23:04:34+03:00
+
+## New — 2026-09-03 (test runner and final verification)
+
+Root cause of the earlier Flutter test failure was the configured HTTP proxy intercepting localhost WebSocket traffic. Running with `NO_PROXY=localhost,127.0.0.1` and `no_proxy=localhost,127.0.0.1` restored the Flutter test runner.
+
+- Focused catalog and Home regression tests: passed.
+- Full suite: **308 tests passed** with `flutter test --no-pub -j 1` and the localhost proxy bypass.
+- Analyzer: passed with no issues.
+- Physical device smoke: debug APK installed on Infinix X6882, app launched, no Flutter fatal exceptions in logcat.
+- Fixed a test expectation that still assumed the old fixed `productGridDelegate`; it now asserts the responsive delegate at the test viewport width.
+- Added a signed-in profile test harness so the greeting regression is tested against an authenticated profile.
+- Commits now on master: `3d05e4c`, `5cf216b`, `2483080`, `1416db2`, `7589290`, `eafd1af`. Master is ahead of origin by six commits; no push performed.
+- Paymob staging `PAYMOB_IFRAME_ID=1062411` was set on project `zvpjngdgbpnkkqrorkul`; secrets list confirms the name without exposing its value. The callback endpoint is active and returns HTTP 400 for an unsigned empty request, confirming the endpoint is reachable and validation is active.
+- Owner requested commit and push. Master was pushed to GitHub successfully; remote `master` SHA is `0a6c15622ab273ec0360c288cfe8075e0a23ebb3`.
+
+## New — 2026-09-03 (UX polish round — both deferred items FIXED)
+
+**Greeting fix:** "Good morning, Ahmed" was a hardcoded l10n string. Now `goodMorning(name)` (parameterized, first name of the signed-in profile) + `goodMorningGuest` fallback. HomePage watches AuthCubit; 6 test harnesses updated with new `test/helpers/stub_auth_repositories.dart` (unsigned-in stubs).
+
+**Default-address auto-select:** CheckoutPage now wraps a BlocListener<AddressesCubit> that auto-selects the default (isDefault, else first) address when the book loads and nothing is picked — the proceed button is enabled immediately on open. Widget test proves the button auto-enables; all prior checkout tests still green (empty-book path unaffected).
+
+**Verification:** 306/306 tests PASS (13 new since morning: 3 handshake + 5 anti-clobber + 2 dead-order retry + 2 orders autoload + 1 exhaustive tab mapping... plus this round), analyzer clean. Release APK rebuilt (64.7MB) with all fixes. On-device final verification PENDING: the device USB disconnected mid-deploy ("no devices/emulators found") — install the APK at `build/app/outputs/flutter-apk/app-release.apk` when the phone is reconnected, then check: home greeting shows "UI Tester" (signed-in) instead of "Ahmed", and checkout auto-selects the default address with the button enabled.
+
+**Visual verification note:** this model cannot read screenshots (image input unsupported) — pixel-level verification of dark mode/colors needs the owner's eyes. Suggested checks: Settings → Dark (cards/foregrounds switch), Arabic RTL flow, flash-sale countdown styling.
+
+## New — 2026-09-03 (LIVE device test round 2 — 3 bugs found & FIXED, COD E2E proven)
+
+Owner authorized full fix execution. Continued on-device testing (Infinix X6882, staging env).
+
+**BUG-1 FIXED (P0, COD flow):** checkout creates the order BEFORE the customer picks a method (default 'Credit Card'), so `confirm_cod_payment` always rejected `payment_not_cod`.
+- Migration 037 `set_pending_order_payment_method` (SECURITY DEFINER, owner+pending-only, allowlist cod/card).
+- Migration 038: fixed 037's grant matrix — 037 copied the 033/035 service-only REVOKE pattern, but this RPC is CLIENT-called → 403 on every call ("Failed to set payment method"). Correct: REVOKE PUBLIC/anon + GRANT authenticated (same as 018/022/033).
+- Migration 039: switching to 'cod' now also ensures the pending `cash_on_delivery` payments row (026's Decision-2 requires it; orders created with a non-COD method had none → `payment_not_found` even after 038). Idempotent guarded INSERT.
+- PaymentCubit COD branch: setOrderPaymentMethod('cod') → confirmCodPayment, short-circuits on set failure. 7 test stubs updated; contract verifier 20/20.
+
+**BUG-2 RESOLVED (P0, wrong product/total):** root cause = stale-persisted state race — startup `restore()/load()` reads completed LATE and clobbered live user state (cart showed fresh, RPC got stale product/address). Fixed in CartCubit.restore + WishlistCubit.restore + AddressesCubit.load: persisted data applies only to pristine (empty) state unless `force:true` (manual refresh buttons pass it). 5 anti-clobber tests. Secondary finding: the persisted idempotency key resurrected a CANCELLED order — CheckoutCubit now detects non-pending status and retries once with a fresh key (2 tests).
+
+**BUG-3 FIXED (P0, orders screen always empty — the deep one):**
+- OrdersPage never fetched (restore only wired to empty-state button) → auto-load in initState.
+- Status-tab mapping black holes: paid/expired/refunded invisible → paid→completed, expired+refunded→cancelled; added OrderStatus.expired (server enum has it) + exhaustive one-tab-per-status test + order_card label coverage.
+- **DI split was the killer**: debug builds used LocalOrdersRepository while checkout writes server-side → orders screen PERMANENTLY empty in debug. Now SupabaseOrdersRepository in ALL builds. (Isolating this took a cross-audit: RLS simulation via `supabase db query` with role+JWT claims proved the DB returns rows; REST replication with a real anon-key JWT returned the order; the missing readOrders logs proved the local repo was in use; dumpsys exposed a silent INSTALL_FAILED_UPDATE_INCOMPATIBLE that had masked every "release" install.)
+- Also fixed: checkout now PERSISTS newly added addresses (were selected-then-lost), readOrders diagnostic logging.
+
+**VERIFIED LIVE (release build, clean install, fresh user uitest0903b):** onboarding (EN) → home → sign-up (validation caught my mistyped confirm ✓) → sign-in → COD checkout end-to-end → order success (#e2e7a4f9) → **orders screen shows the order** (Completed tab, product name, date) → settings language switch live (EN↔AR RTL) → theme options render. Address persist + auto-select-after-add verified. Dark mode: code+tests verified; pixel-level unverified (this model cannot read screenshots).
+
+**Deferred (owner-visible, minor):** default address not auto-selected on checkout open (P2 UX); greeting uses static l10n name ("Ahmed") not profile name (P3); payment-status label says "Placed" for paid COD orders (cosmetic).
+
+**Verification:** 305/305 tests, analyzer clean, contract verifier 20/20, migrations 037/038/039 applied to staging (parity 38/38). All commits merged to master (through d0ed0a4). Device state: release build installed, logged in as UI Tester, Arabic locale, dark-mode setting = Light (unchanged).
+
+## New — 2026-09-03 (LIVE on-device functional test, Infinix X6882, staging)
+
+Ran full ADB-driven walk (uiautomator + logcat; screenshots unreadable by this model — function/state/data verified, NOT pixels). APK debug built with staging dart-define, installed OK.
+
+**PASS (T1–T13):** splash→home(RTL) → categories → catalog Silk filter (2 real products, prices, discount) → details (rating 4.8, colors, lengths, stock, share) → add-to-cart ×2 variant-dedupe (badge=2) → cart math verified (1290×2=2580+75=2655; ×3=3870→3945) → stepper ± → save-for-later → wishlist (move-to-cart) → account (logged-in as mustafa, session restore across reinstall ✓) → address form (Enter-nav fill, save, auto-select, step-2 advance) → checkout nav + server totals → payment-method screen render. Overflow scan 40 dumps clean; no Flutter FATALs; device-vendor log noise only.
+
+**BUG-1 (P0, code-confirmed): COD flow broken.** Checkout creates the order with `state.payment` default `'Credit Card'` (checkout_page has NO method selector — verified by grep). `confirm_cod_payment` (018) requires method ILIKE cash/cod → rejects with `payment_not_cod` → pay button appears dead (error snackbar transient). Fix: migration 037 `set_pending_order_payment_method` (SECURITY DEFINER, owner+pending only, allowlisted) + PaymentCubit COD branch calls it before confirm + tests. NOT yet implemented.
+
+**BUG-2 (P0/P1, server-evidence): wrong product priced.** Payment screen total = 820 (server-computed `serverTotal`) vs review 1365. Shipping math proves server subtotal was 82000 = Premium Pima Cotton, not Royal Emerald (129000). RPC variant lookup is correctly scoped (product+size+color), so the app likely sent the wrong product_id (wishlist→cart move suspect) OR staging data differs. NEEDS orders-screen confirmation (snapped product_name) — deferred, owner was using the phone.
+
+**UX-GAP (P2):** review screen renders LOCAL cart math (1290+75) while server charges its own figure (820) — review must render server totals post-RPC. Also customer Variant model lacks `price_override` (admin has it) so details can't show variant-level prices.
+
+**PAUSED:** owner actively using device (WhatsApp foregrounded 14:12–14:14); all adb input stopped; one private-chat dump deleted. Resume needs device-free window: orders screen, settings EN/dark, support, search/sort/filters, sign-up, Paymob card WebView, pm-clear splash/onboarding.
+
+## New — 2026-09-03 (production cutover EXECUTED, L2 owner-approved)
+
+Owner asked to run RELEASE_NEXT_STEPS §1 via Supabase CLI + Docker. Executed against production `alxwvyflasewslinufqe`:
+
+| Step | Result |
+|---|---|
+| CLI auth | ✅ v2.109.1, access token present |
+| Link | ✅ linked to `alxwvyflasewslinufqe` |
+| Migration parity | ✅ prod was already at **034** (stale doc assumption ≤030 corrected) |
+| Dry run | ✅ exactly 035 + 036 pending |
+| Backup | ✅ `outputs/db-backups/prod-pre035-036-20260903-124857.sql` 87KB (Docker Desktop started for pg_dump) |
+| db push | ✅ 035 + 036 applied — **35/35 parity, zero pending** |
+| Functions | ✅ all 5 deployed ACTIVE (checkout v36, paymob-initiate v46, paymob-callback v39, cancel-expired-orders v35, send-order-notification v34) |
+| verify_jwt | ✅ checkout+initiate true; callback+cancel+notification false |
+| Secrets | ✅ all 10 app secrets present (names only; CLI shows hashes) |
+| REST smoke | ✅ paymob-initiate no-JWT → HTTP 401 `UNAUTHORIZED_NO_AUTH_HEADER` |
+
+No real payment transaction was created against production. Remaining owner dashboard items: PITR confirm, 2 SQL sanity queries (realtime publication + cron jobs), Paymob integration URL repoint + one sandbox transaction. RELEASE_NEXT_STEPS §1 updated with executed table.
+
+## New — 2026-09-03 (L1 portfolio-completeness audit)
+
+Full-project completeness audit, report-only. No source/config files modified.
+
+### L2 EXECUTION SAME DAY (owner: "نفذ كله")
+
+**1. Audit-remediation batch committed, merged, pushed (`eb2b273` → `447f645` master):**
+- Discovered master already carried 034 (289075b, UTF-8); local untracked 034 was textually identical (UTF-16 only) → deleted duplicate, kept master's.
+- Committed: migration 035 + `paymob-initiate` claim-RPC rewrite + `decision.ts` + `verify_payment_initiation_contract.mjs` + 4 hardened test runners + docs.
+- Merged master into `audit-remediation` (clean, ort); verified; ff-merged to master; pushed.
+- Also deleted untracked unreferenced `assets/images/fabric/hero_silk.webp` + `splash_bg.webp` (broke SVG-only asset rule tests).
+
+**2. README portfolio polish (`32f4578` master, branch `docs/portfolio-readme-2026-09-03`):**
+- CI + Android-release badges, tests/coverage badges, real emulator screenshots (docs/screenshots/{home,categories}.png from stitch-smoke evidence).
+- Accuracy: catalog/orders/admin/checkout/payments ARE Supabase-backed (was falsely listed as local mock); migrations 14→35; testing section expanded with backend suites.
+
+**3. Portfolio completion batch (`4052d84` master, branch `fix/portfolio-completion-2026-09-03`):**
+- `CheckoutCubit`: idempotency key now persisted to SharedPreferences (24h TTL), restored after app restart, cleared on reset/success — closes audit TODO. `checkout_page` wires it via GetIt (`isRegistered`-guarded for widget tests).
+- Migration `036_fix_audit_retention_cron.sql`: `audit-retention-90d` now prunes `state_transitions` (031's job was a daily no-op on nonexistent `audit_logs`). NOT yet applied to any DB.
+- `docs/RELEASE_NEXT_STEPS.md`: production cutover runbook (7 steps), Play Store upload checklist (AAB already built by CI), deferred-T4 email delivery, git-history scrub, product backlog.
+
+**Verification:** `flutter analyze` clean; `flutter test` **290/290 PASS** (5 new persistence tests); `deno check` PASS; `deno test` paymob-initiate **12/12**; `node --check` ×5 PASS; migration contract **39/39**. Secret scan of all diffs: only placeholders.
+
+**Still owner-gated (needs external accounts/credentials):** production `db push` + 5 function deploys + Paymob dashboard repoint (docs/RELEASE_NEXT_STEPS.md §1), Play Console upload (§2), email provider key (§3), git history scrub (§4).
+
+**Complete/strong:** 29 pages across 8 features (incl. 9 admin pages), 51 test files (283 passing), 5 Edge Functions, 35 migrations (001–035), RLS hardened (44/44 adversarial, 53/53 race), real Paymob sandbox transactions closed end-to-end, signed Android APK in CI, RELEASE_GATE verdict GO (staging, 2026-08-24).
+
+**Top gaps found (priority order):**
+1. Branch `audit-remediation` has UNCOMMITTED verified work: migrations 034/035, `paymob-initiate` claim-RPC rewrite + `decision.ts`, 4 hardened test runners, `verify_payment_initiation_contract.mjs` — verified on staging (39/39, 12/12) but not committed/pushed/merged.
+2. Production cutover not executed — prod `alxwvyflasewslinufqe` likely on ≤030, all prod checks `TBD` in `docs/evidence/prod-cutover-031-033/VERIFICATION.md`.
+3. Play Store upload never done (APK artifact ready, Internal Testing pending).
+4. Retail-breadth gaps: no reviews/ratings writes (static seed), no coupons, no refunds flow, `send-order-notification` writes DB rows only (no email/FCM provider), no `analytics_daily` rollup (cron is guarded no-op), no support tickets table, "coming soon" placeholders (FAQ, voice search).
+5. Cloud sync incomplete: cart/wishlist/addresses local-only via SharedPreferences; catalog+orders+admin are Supabase-backed.
+6. Code TODOs: checkout idempotency-key persistence, color names from DB, cached_network_image Cache-Control; `orders.payment_id` used as tracking-number store (schema hack); `audit-retention-90d` cron prunes nonexistent `audit_logs` while real `state_transitions` grows unbounded.
+7. Portfolio polish: README has no screenshots/badges/demo link; no iOS verification or workflow; web/PWA unverified; coverage ~52% (ratchet 50%); old prod DB credential still in git history (rotated; scrub pending).
+
+L1 only — no fixes applied.
+
+## New — 2026-09-02 (L1 report-only scan)
+
+### Albatal workspace scan and audit-remediation verification
+
+Scanned `C:\\flutter_projects` for Albatal-related projects, worktrees, states, guidance, specs, plans, evidence, and source references. No source/config/migration/CI files were modified in this L1 run.
+
+**Workspace findings:**
+- Primary repository: `C:\\flutter_projects\\albatal_store`, branch `audit-remediation`, HEAD `4b3b34b`.
+- Primary worktree is dirty with 2 modified Edge Function files and 3 untracked audit-remediation files: `decision.ts`, migration `034_payment_initiation_and_expiry_hardening.sql`, and `verify_payment_initiation_contract.mjs`.
+- Related directories `albatal-audit-fixes`, `albatal-fixes`, `albatal-merged-verify`, `albatal-review-standards`, `albatal_store_wt_prod`, `albatal-ui-kit`, and `stitch_al_batal_fabric_e_commerce` remain on disk but are no longer valid Git worktrees/repositories (`git` reports invalid/missing worktree metadata). Treat them as read-only artifacts until reconstructed or removed by an approved cleanup task.
+
+**Verification:**
+- `flutter analyze --no-pub`: PASS, no issues found.
+- `git diff --check`: PASS.
+- `node --check supabase/tests/verify_payment_initiation_contract.mjs`: PASS.
+- Migration contract: **37/38 PASS, 1 FAIL** — the contract rejects the migration's pre-provider stale-claim reclamation path.
+- Deno Edge Function checks: type check PASS; contract tests **11/12 PASS, 1 FAIL** due a brittle formatting expectation for the multiline service-role RPC call.
+- No live Supabase or Paymob deployment was performed.
+
+**L2 authorization received 2026-09-02:** owner approved fixing migration 034 and its tests, with Supabase CLI/Docker available if needed. Changes applied in the current `audit-remediation` worktree only; no commit, push, migration apply, or remote deployment performed.
+
+**Remediation:** declared `v_lease INTERVAL '5 minutes'` in migration 034 and strengthened the migration contract to require the declaration and to scope provider-submitted claim exclusivity correctly. Replaced brittle whitespace-sensitive Deno assertions with regex/source-section checks.
+
+**Fresh verification:** migration contract **39/39 PASS**; Deno type check **PASS**; paymob-initiate contract tests **12/12 PASS**; Flutter analyzer **PASS**; `git diff --check` **PASS**. Full Flutter suite executed without proxy variables: **283 passed, 2 failed**, both pre-existing local asset-rule failures for untracked `assets/images/fabric/hero_silk.webp` and `splash_bg.webp`. The initial proxied Flutter run failed at test startup due `Invalid WebSocket upgrade request`; proxy-free execution reached the full suite.
+
+**Local Supabase:** Docker and Supabase CLI are available, but the existing Rosette Supabase project occupies port 54322. An isolated copy was attempted with alternate ports; Supabase CLI still resolved the database port to 54322 and stopped before startup. No database was started or modified.
+
+**Database execution — corrected and applied (2026-09-02):** Owner corrected the staging pooler endpoint from `aws-0-eu-west-1` to `aws-1-eu-west-1` for project `zvpjngdgbpnkkqrorkul`. The migration-number collision was reconciled forward-only: restored `034_lock_audit_trail.sql` and renamed payment hardening to `035_payment_initiation_and_expiry_hardening.sql`. The contract verifier now targets migration 035.
+
+Backups recorded: `outputs/db-backups/staging-pre035-20260902-210030.sql` (88,195 bytes) and `outputs/db-backups/staging-post035-20260902-210502.sql` (99,213 bytes). Dry-run identified only 035; `supabase db push --db-url <corrected-url>` applied 035 successfully. No `--include-all`, linked reset, production deployment, commit, or push was performed.
+
+**Fresh verification against corrected endpoint:** `supabase migration list` reports local/remote parity through 035. `schema_migrations` contains 034 and 035. The three `paymob_initiation_*` columns and `uq_payments_one_pending_card_per_order` exist. The four hardened RPCs are present and SECURITY DEFINER. Local contract remains **39/39 PASS**; Deno type check and paymob-initiate contract tests remain **12/12 PASS**; `git diff --check` passes.
+
+**Current gate:** staging migration 035 and the revised `paymob-initiate` Edge Function are applied and verified. Production deployment, commit, and push remain pending owner approval.
+
+**Edge Function deployment (2026-09-02):** `paymob-initiate` deployed to staging project `zvpjngdgbpnkkqrorkul` successfully, version 6, status ACTIVE, updated at 2026-09-02 18:34:46 UTC. Safe unauthenticated probe returned HTTP 401 `UNAUTHORIZED_NO_AUTH_HEADER`, confirming the function's JWT gate. No authenticated payment creation or Paymob transaction was attempted in this step.
+
+## New — 2026-08-24 (evening)
+
+### Repo hygiene sweep + codebase fix batch (L2, owner-approved "fix all")
+
+Worktree `C:\flutter_projects\albatal-fixes`, branch `fix/codebase-fixes-2026-08-24`
+(based on master `561097e`). Changes UNCOMMITTED pending owner sign-off.
+No push, no merge.
+
+**Phase 1 — Git/worktree cleanup (main repo):**
+| Item | Result |
+|------|--------|
+| Worktrees | 16 → 1. All 15 secondary worktrees removed; 5 dirty ones backed up first to `C:\flutter_projects\worktree-backups-2026-08-24\` (patches + untracked files incl. PACKAGE_D/F evidence docs) |
+| Branches | 17 fully-merged local branches deleted (`git branch -d`); 8 unmerged branches preserved (docs/release-evidence-484a3ea, package-a/b/k/l/l1, post-audit-production-repair, ui-phase-0 ×24 unique commits) |
+| Tags | All four frozen candidates confirmed tag-preserved (`release-candidate/{484a3ea,b74d326,6c8521a,e9a6deb}`) |
+| .gitignore | Added `.agents/`, `.openclaw/`, `.opencode/`, `skills/superpowers/` |
+| Pub cache | Repaired 12 corrupted pub-cache packages on this machine (sentry_flutter, package_info_plus, jni, app_links ×2, gtk, path_provider linux+windows, shared_preferences_windows, url_launcher_windows) — re-downloaded via pub get |
+
+**Phase 2 — Code fixes (worktree diff: 25 substantive files, +181/−241):**
+1. Support contacts unified through `SupportRepository` (owner-supplied:
+   WhatsApp `wa.me/201154580512` Mustafa Sayed, email `al3tar66@gmail.com`);
+   fake `wa.me/1234567890` removed from SupportPage
+2. Wrong-product fallback eliminated: unknown product id → explicit
+   not-found state (+ l10n `productNotFound`) instead of silently showing
+   first catalog product
+3. AddressForm country field actually submitted (was hardcoded `''`)
+4. Layer violation fixed: presentation no longer imports
+   `supabase_config`; new `AuthRepository.currentUserEmail`; fake
+   `customer@example.com` fallback replaced by empty-email guard
+   (sign-in snackbar blocks processPayment)
+5. ARB dedupe (categories/cashOnDelivery ×2 both locales,
+   noResultsFound/tryAdjustingFilters dup ar-only); mixed-language Arabic
+   `orderPlacedBody` rewritten in proper Arabic; support email updated en+ar;
+   generated l10n regenerated
+6. Dead code deleted: `category_grid.dart`, `payment_section.dart`
+7. Router dead-code cleanup (`publicRoutes`/`isPublic` block)
+8. CI pins aligned to 3.47.x (daily-triage, android-release);
+   ci.yml gitleaks-path comment corrected
+9. Doc truth: config/README.md accuracy note (staging anon key committed
+   intentionally, client-safe by design); SUPERSEDED banner atop stale
+   docs/release-readiness.md → RELEASE_GATE.md
+10. Two test stubs gained `currentUserEmail` override (additive only)
+
+**Verification evidence (implementer + independent verifier re-run):**
+| Check | Result |
+|-------|--------|
+| `flutter analyze --no-pub` | **No issues found!** |
+| `dart format --set-exit-if-changed .` | exit 0 |
+| `flutter test` | **275 passed, 0 failed** |
+| Verifier sub-agent | **APPROVE** — intent match 10/10 areas, no layer violations, no secrets, pubspec/supabase untouched |
+
+Non-blocking verifier notes: desktop plugin-registrant churn is EOL-only;
+sign-in snackbar text hardcoded English (l10n nit); unreachable
+externalLink switch arm maps to FAQ strings.
+
+**Owner decision (2026-08-24):** COMMITTED as `629c14c` and PUSHED to
+`origin/fix/codebase-fixes-2026-08-24`. Merge to master remains human-gated;
+PR URL: https://github.com/mostafasayed118/albatal-store-app/pull/new/fix/codebase-fixes-2026-08-24
+
+---
+
+## New — 2026-08-24 (onboarding and SVG runtime assets)
+
+### Stitch onboarding flow and SVG-only app-owned assets — merged from `33389f2`
+
+Added the splash and first-run onboarding flow with persisted completion,
+English/Arabic copy, local SVG Stitch artwork, and routes `/splash` and
+`/onboarding`. Migrated app-owned runtime product imagery to SVG through the
+shared `AppImage` renderer, added `flutter_svg`, and documented/enforced the
+SVG-only rule for `assets/images/` with focused tests.
+
+Static checks passed: `git diff --check`, SVG XML validation, and 14 SVG / 0
+non-SVG runtime assets. Flutter verification was unavailable because the
+execution environment has no Flutter or Dart SDK; `pubspec.lock` requires
+regeneration with `flutter pub get` before analyzer/tests can run.
+
+
+## New — 2026-08-24 (T0+T1 backend platform)
+
+### Backend platform T0+T1 implemented, reviewed, merged to master (L2, owner-approved "1" = subagent-driven + merge locally)
+
+Spec `docs/superpowers/specs/2026-08-24-backend-platform-design.md` (`123cdc1`) ·
+Plan `docs/superpowers/plans/2026-08-24-backend-platform-plan.md` (`bd9b7e2`).
+Executed in worktree `C:/flutter_projects/albatal-platform-t0t1`
+(branch `feat/backend-platform-t0-t1`, 11 commits) via fresh subagent per task
+with spec+quality review loops; **merged to master as `3b42f58` (--no-ff, local only — NOT pushed)**.
+
+| Task | Commit | Result |
+|------|--------|--------|
+| 031 realtime+cron | `98086fc`+`cdfbb34`(fix) | payments→supabase_realtime publication + REPLICA IDENTITY FULL; `batch_expire_pending_orders()` SECURITY DEFINER wrapper (quality review caught zero-arg `expire_pending_order()` cron bug + invalid `REFRESH … IF EXISTS` syntax; both fixed with guarded `$cron$DO $do$…$do$$cron$`); 4 pg_cron jobs |
+| 032 flash_sales+images | `915929d` | flash_sales table RLS active-window policy + partial index; product_images sort index + public-read policy; product-images bucket tightened (public read / admin insert+delete) |
+| 033 admin RPCs | `07a0bad` | assert_admin + admin_upsert_product/variant/set_product_images + get_active_flash_sales; all SECURITY DEFINER search_path=public,pg_temp, REVOKE PUBLIC/anon |
+| StorageService DI | `cde5094` | prefix-guarded buildProductImagePath/uploadProductImage (2 tests) |
+| Admin repo contracts | `a01f577` | AdminRepository +4 methods w/ mocktail param verification |
+| Catalog embed+paymob fallback | `f38753d` | select embeds product_images→getPublicUrl; getActiveFlashSales RPC; watchPaymentStatus 45s fallback poll (5/5+6/6 tests) |
+| Flash banner binding | `6ae40fa` | home_page placeholder removed; server-driven countdown+discount, 60s poll; 13 test files touched for stubs (3/3 new tests) |
+| Admin CRUD pages | `88de741` | 4 pages replace TODO tiles; isCurrentUserAdmin-guarded navigation; 4/4 nav tests |
+| Cutover evidence | `b8cd7db` | VERIFICATION.md 10 sections dry-run scaffold + RELEASE_GATE addendum; prod push owner-gated TBD |
+
+**Verification:** full suite **264/264 PASS** on merged master lineage; `flutter analyze` clean in worktree (master shows 12 pre-existing-style infos incl. depend_on_referenced_packages in new tests — lint-only).
+**Incident during merge:** uncommitted release-wave GO edits in `docs/RELEASE_GATE.md` were found reverted at merge time (cause: external process cleared the file between session start and merge; reflog clean). Recovered verbatim from session-start read snapshot + branch addendum → file restored to GO verdict + T0 addendum, left UNCOMMITTED for owner review as before. All other owner-uncommitted files verified intact.
+**Owner-gated next:** prod cutover runbook staged in `docs/evidence/prod-cutover-031-033/VERIFICATION.md`; commit/push of working tree per your review.
+
+---
+## New — 2026-08-24
+
+### Stitch screen source files downloaded (L1 evidence run)
+
+Stitch design source files (HTML + screenshots) for the 4 flows downloaded to `docs/stitch/screens/`. Worked around WSL→Windows env var boundary (node.exe can’t see WSL env vars) using `node --import` ESM preload. API key in gitignored `secrets-stitch.env` (confirmed). Temp scripts cleaned up. No source code changes, no commits.
+
+---
+
+## New — 2026-08-23 (night)
+
+### E2E gates execution wave 1 (L2, owner-approved "do all you need i approved")
+
+Plan: `docs/superpowers/plans/2026-08-23-e2e-gates-execution-plan.md`. Worktree
+`C:\flutter_projects\albatal-e2e` (branch `fix/e2e-gates-evidence`); verified
+files applied to master working tree **UNCOMMITTED** for owner review. No push,
+no merge, no commits made by agents.
+
+| Item | Result |
+|------|--------|
+| Runner safety guards (plan T1) | `verify_paymob_sandbox.mjs` +20/-1, `run_rls_adversarial.mjs` +21/-1: hardcoded prod connection string REMOVED; both runners now require `STAGING_DB_URL` containing ref `zvpjngdgbpnkkqrorkul`, ABORT otherwise. Guard matrix 6/6 proven (unset / wrong-ref / correct-ref-dummy per file) — proofs: `.superpowers/sdd/2026-08-23-e2e-gates-execution-plan/task-1-guard-proofs.txt` |
+| Race-condition runner (plan T5 prep) | NEW `supabase/tests/run_race_conditions.mjs`: all T-RC01..T-RC14 ported psql→node/pg, single BEGIN/ROLLBACK (zero persistent state), same env guards, second pg Client only for post-cleanup residue check. `node --check` OK. Execution awaits `STAGING_DB_URL` |
+| Sentry probe (plan T6) | NEW `lib/shared/services/e2e_sentry_probe.dart` + `test/e2e_sentry_probe_test.dart` (4 tests) + `main.dart` wiring. Gate = kDebugMode AND dart-define `E2E_SENTRY_PROBE`; proven DEAD BY DEFAULT (flagless launch fired nothing). LIVE on emulator-5556 against staging: event id `1ef12b03f24d413ab3850bbd0ffb81d2` submitted, logcat init+submit captured. Evidence: `docs/evidence/e2e-2026-08-23/sentry-live-event.md`. Owner must visually confirm event in Sentry dashboard |
+| Android artifact re-tie (plan T7) | `docs/evidence/e2e-2026-08-23/android-artifact-retie.md`: CI run `32646592228` @ `ac69c54`, `release-apk` 79,311,899 bytes, SHA-256 `970469542a77822a11372cacf70741d35ff59067b9f4647013d0df5495f404a0` (double-computed), `com.albatal.elite` v1/0.1.0, fail-closed signing quoted from ci.yml. OWNER PICKS candidate SHA: fc0b2a2 vs ac69c54 |
+| Verification this run | `node --check` ×3 PASS · `flutter analyze`: No issues · `flutter test`: **247/247** (243 prior + 4 new probe tests) |
+
+**Still blocked on owner (gate rows cannot be reissued yet):**
+1. **Paymob dashboard** (blocks T4 live + full sandbox flow): staging integration
+   entry, `PAYMOB_IFRAME_ID` secret on new project, callback URL →
+   `https://zvpjngdgbpnkkqrorkul.supabase.co/functions/v1/paymob-callback`,
+   `verify_jwt` OFF for that function.
+2. **Reset staging DB password** → export `STAGING_DB_URL` (unblocks T2 RLS
+   re-run, T3 SQL layers, T4 DB flows, T5 execution).
+3. **Sentry dashboard**: confirm event `1ef12b03…` visible, tagged `source=e2e-probe`.
+4. **URGENT security**: rotate PRODUCTION DB password (`alxwvyflasewslinufqe`) —
+   its credential was committed to git history in a test runner (removed from
+   HEAD this run; history still contains it) and was exposed in session logs.
+
+**Wave 2 progress (same night):** owner rotated the production DB password
+(security item CLOSED). Probe A forged-HMAC executed against staging
+`paymob-callback`: garbage-hmac AND hmac-absent both → **HTTP 401
+`{"message":"Invalid signature"}`** (anon bearer used to pass platform
+`verify_jwt`; wall proven to be the function's own HMAC layer). Zero state
+change possible on this path by construction. Evidence:
+`docs/evidence/e2e-2026-08-23/paymob-probe-a-forged-hmac.md`. Remaining owner
+gates: export `STAGING_DB_URL` · Paymob dashboard 4 steps · Sentry dashboard
+visual confirm of event `1ef12b03…` · candidate SHA pick (fc0b2a2 vs ac69c54).
+
+**Wave 2 EXECUTED (same night, owner supplied `STAGING_DB_URL`):**
+RLS adversarial **44/44 PASS** · Race conditions **53/53 PASS** · COD contract
+**14/14 PASS** (`run_cod_payment.mjs`, new) · Paymob sandbox F1–F4 **21/21
+PASS** incl. hardened cleanup · HTTP probes A/B/C **ALL PASS** (401 forged /
+400 amount_mismatch / 200 already_processed; secret-sync proven). Key findings:
+new project pooler is `aws-1-eu-west-1`; race suite's six initial failures were
+all runner-porting defects fixed against migrations 014/025/026 — zero staging
+DB defects; prior "race evidence" was BLOCKED/DEFERRED so today was the first
+true execution. Full detail: `docs/evidence/e2e-2026-08-23/db-suite-results.md`
++ live function snapshots under `db-function-snapshots/`. Remaining owner gates:
+Paymob dashboard steps (live app-side flow) · Sentry visual confirm · SHA pick.
+
+**Wave 2 FINALE — real payment loop closed (same night):** owner provided
+iframe `1062411`; secret set. Fixed missing staging secret `CORS_ALLOWED_ORIGINS`
+(isolation carryover gap — all edge functions were failing closed 500 for every
+client). Live chain 8/8: signup → checkout RPC → initiate → hosted
+`accept.paymob.com/…/iframes/1062411`. Headless Accept test card APPROVED;
+signed callback `code=success`; DB: order **paid**, payment **success**,
+provider txn **521025723** / order **593650832** persisted.
+Evidence: `db-suite-results.md` §LIVE END-TO-END PAYMENT.
+**Owner must still repoint integration 1062411's callback/redirect URLs from the
+old project to `zvpjngdgbpnkkqrorkul` (dashboard)** — until then real callbacks
+land on production as harmless unmapped no-ops and staging won't auto-flip.
+Sentry visual confirm + SHA pick remain for gate signoff.
+
+**GATE CONSOLIDATED (2026-08-24):** `RELEASE_GATE.md` — candidate designation
+`ac69c54` on staging `zvpjng…` recorded; all technical gates now PASS/VERIFIED
+(COD 14/14, Paymob incl. two real closed transactions, Races 53/53 first-ever
+run, Sentry owner-confirmed, APK re-tied, RLS re-run 44/44, CORS repair noted);
+full execution-record addendum appended. `RELEASE_SIGNOFF.md`: identity table +
+every evidence link filled with real values; four-capacity signature block and
+GO/NO-GO remain intentionally PENDING for the solo owner. **Open item:** Paymob
+integration 1062411 automatic-callback routing NOT independently verified —
+test transaction #2 (post-"fix") still redirected to production and no server
+POST reached staging in a 70s window; bridge-replay closed it manually. One more
+sandbox transaction after owner re-checks the dashboard will settle it.
+
+**OPEN ITEM CLOSED (2026-08-24, final):** automatic callback routing VERIFIED.
+Root cause (proven via field-name-only live capture): Paymob's processed
+callback posts raw JSON with the HMAC as a **query parameter**, not a form
+field. `paymob-callback` fixed: shape-aware extraction (flat / obj-wrapped /
+raw JSON) + HMAC resolution body→query→header; `canonicalValuesFromTransaction`
+added to `hmac.ts` (20/20 tests incl. obj-vs-flat equivalence); deployed.
+**Transaction #5 post-fix flipped paid/success automatically (txn `521080502`)**
+— zero manual action. Diagnostics stripped, debug table dropped, clean final
+deployed. Evidence: `db-suite-results.md` §AUTOMATIC CALLBACK ROUTING.
+**Register state: every technical gate PASS; owner confirmed callback routing and
+Sentry dashboard; candidate SHA `ac69c54` designated.**
+**RELEASE SIGNED — GO (2026-08-24):** four solo-owner approvals recorded via chat
+"sign" — ref `RELEASE-AC69C54-2026-08-24` — in `RELEASE_SIGNOFF.md` and
+`RELEASE_GATE.md` (verdict **GO**). No unresolved P0/P1 exceptions. Build ready
+for Play upload / staged rollout at owner's discretion.
 
 ## New — 2026-08-23 (evening)
 

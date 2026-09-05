@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
@@ -74,67 +76,88 @@ class _CatalogPageState extends State<CatalogPage> {
       body: BlocBuilder<CatalogCubit, CatalogState>(
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
-          return Column(
-            children: [
-              StitchSearchBar(
-                controller: _searchController,
-                hintText: l.searchFabrics,
-                onChanged: catalog.updateQuery,
-                onSubmitted: catalog.updateQuery,
-              ),
-              if (state.hasActiveFilters)
-                ActiveFiltersBar(
-                  state: state,
-                  onClearAll: () {
-                    _searchController.clear();
-                    catalog.clearFilters();
-                  },
+          if (state.status == CatalogStatus.loading ||
+              state.status == CatalogStatus.initial) {
+            return const FeedbackView(type: FeedbackViewType.loading);
+          }
+          if (state.status == CatalogStatus.error) {
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: catalog.load,
+            );
+          }
+          return ResponsiveShell(
+            child: Column(
+              children: [
+                StitchSearchBar(
+                  controller: _searchController,
+                  hintText: l.searchFabrics,
+                  onChanged: catalog.updateQuery,
+                  onSubmitted: catalog.updateQuery,
                 ),
-              // Stitch circular chips (secondary filter row) — mirrors Home but
-              // wired to the same CatalogCubit so chip taps filter the visible grid.
-              if (state.categories.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(top: 4, bottom: 4),
-                  child: StitchCategoryChips(
-                    selected: state.filters.category,
-                    categories: state.categories,
-                    onSelect: catalog.select,
+                if (state.hasActiveFilters)
+                  ActiveFiltersBar(
+                    state: state,
+                    onClearAll: () {
+                      _searchController.clear();
+                      catalog.clearFilters();
+                    },
                   ),
-                ),
-              CatalogSortBar(state: state),
-              Expanded(
-                child: state.visible.isEmpty
-                    ? CatalogEmptyState(
-                        onClear: () {
-                          _searchController.clear();
-                          catalog.clearFilters();
-                        },
-                      )
-                    : BlocBuilder<WishlistCubit, WishlistState>(
-                        builder: (context, wishlist) => GridView.builder(
-                          padding: const EdgeInsetsDirectional.all(16),
-                          itemCount: state.visible.length,
-                          gridDelegate: productGridDelegate,
-                          itemBuilder: (_, i) {
-                            final product = state.visible[i];
-                            return StitchProductGridCard(
-                              product: product,
-                              onTap: () {
-                                final router = GoRouter.maybeOf(context);
-                                if (router != null) {
-                                  context.push('/product/${product.id}');
-                                }
-                              },
-                              onWishlist: () => context
-                                  .read<WishlistCubit>()
-                                  .toggle(product.id),
-                              isWishlisted: wishlist.ids.contains(product.id),
-                            );
+                // Stitch circular chips (secondary filter row) — mirrors Home but
+                // wired to the same CatalogCubit so chip taps filter the visible grid.
+                if (state.categories.isNotEmpty)
+                  Padding(
+                    padding:
+                        const EdgeInsetsDirectional.only(top: 4, bottom: 4),
+                    child: StitchCategoryChips(
+                      selected: state.filters.category,
+                      categories: state.categories,
+                      onSelect: catalog.select,
+                    ),
+                  ),
+                CatalogSortBar(state: state),
+                Expanded(
+                  child: state.visible.isEmpty
+                      ? CatalogEmptyState(
+                          onClear: () {
+                            _searchController.clear();
+                            catalog.clearFilters();
                           },
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) =>
+                              BlocBuilder<WishlistCubit, WishlistState>(
+                            builder: (context, wishlist) => GridView.builder(
+                              padding: const EdgeInsetsDirectional.all(16),
+                              itemCount: state.visible.length,
+                              // Single breakpoint source (grid_delegate.dart):
+                              // 2-col phones, 3-col ≥700, 4-col ≥1000.
+                              gridDelegate: productGridDelegateForWidth(
+                                constraints.maxWidth,
+                              ),
+                              itemBuilder: (_, i) {
+                                final product = state.visible[i];
+                                return StitchProductGridCard(
+                                  product: product,
+                                  onTap: () {
+                                    final router = GoRouter.maybeOf(context);
+                                    if (router != null) {
+                                      context.push('/product/${product.id}');
+                                    }
+                                  },
+                                  onWishlist: () => context
+                                      .read<WishlistCubit>()
+                                      .toggle(product.id),
+                                  isWishlisted:
+                                      wishlist.ids.contains(product.id),
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           );
         },
       ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/components/app_image.dart';
+import '../../../../shared/theme/app_colors.dart';
+
 /// Full-screen zoom gallery with page view and interactive viewer.
 class ZoomGallery extends StatefulWidget {
   const ZoomGallery({
@@ -36,10 +39,10 @@ class _ZoomGalleryState extends State<ZoomGallery> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         title: Text('${_current + 1} / ${widget.images.length}'),
       ),
       body: PageView.builder(
@@ -52,8 +55,14 @@ class _ZoomGalleryState extends State<ZoomGallery> {
           child: Center(
             child: widget.images[i].isEmpty
                 ? Icon(Icons.texture,
-                    color: Colors.white.withValues(alpha: .5), size: 120)
-                : Image.asset(widget.images[i], fit: BoxFit.contain),
+                    color: AppColors.white.withValues(alpha: .5), size: 120)
+                : AppImage(
+                    source: widget.images[i],
+                    fit: BoxFit.contain,
+                    placeholder: Icon(Icons.texture,
+                        color: AppColors.white.withValues(alpha: .5),
+                        size: 120),
+                  ),
           ),
         ),
       ),

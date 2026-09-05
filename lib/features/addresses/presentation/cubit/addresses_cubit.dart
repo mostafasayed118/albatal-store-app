@@ -21,13 +21,32 @@ final class AddressesState extends Equatable {
 final class AddressesCubit extends Cubit<AddressesState> {
   AddressesCubit(this._repository) : super(const AddressesState());
   final AddressRepository _repository;
-  Future<void> load() async {
+
+  /// Reload persisted addresses.
+  ///
+  /// By default this is a startup fill: if the user already acted
+  /// (non-empty book) a late-completing read must NOT clobber live
+  /// state (live-found 2026-09-03: a stale address replaced the fresh
+  /// selection mid-checkout and the server was sent the wrong
+  /// address snapshot). Pass [force] for an explicit manual refresh.
+  Future<void> load({bool force = false}) async {
+    // Capture live data BEFORE the reset emit below: on guard-skip we
+    // must restore it, otherwise the reset would wipe the display.
+    final live = state.addresses;
     emit(const AddressesState());
     final r = await _repository.read();
     r.when(
-        success: (a) => emit(AddressesState(
-            status: a.isEmpty ? AddressesStatus.empty : AddressesStatus.ready,
-            addresses: a)),
+        success: (a) {
+          if (force || live.isEmpty) {
+            emit(AddressesState(
+                status:
+                    a.isEmpty ? AddressesStatus.empty : AddressesStatus.ready,
+                addresses: a));
+          } else {
+            emit(
+                AddressesState(status: AddressesStatus.ready, addresses: live));
+          }
+        },
         failure: (e) => emit(AddressesState(
             status: AddressesStatus.failure, errorMessage: e.message)));
   }

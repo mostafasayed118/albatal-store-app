@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/components/app_image.dart';
+import '../../../../shared/theme/contrast.dart';
 import 'fabric_weave_painter.dart';
 
 /// Fabric swatch stand-in for product imagery.
 ///
-/// When [imageAsset] is non-null, renders the supplied product photo via
-/// `Image.asset` over a faint [imageColor] halo so the tactile identity of
+/// When [imageAsset] is non-null, renders the supplied local SVG or remote
+/// product photo over a faint [imageColor] halo so the tactile identity of
 /// the swatch is preserved during image load-in. When [imageAsset] is null
 /// (e.g. an older serialized order snapshot), falls back to the woven
 /// [FabricWeavePainter] over [imageColor] — preserving visual continuity
@@ -49,17 +51,21 @@ class ProductImagePlaceholder extends StatelessWidget {
               painter: FabricWeavePainter(baseColor: Color(imageColor)),
               size: Size.infinite,
               child: Center(
-                child: Icon(Icons.texture, color: Colors.white, size: size),
+                child: Icon(Icons.texture,
+                    color: onSwatchColor(Color(imageColor)), size: size),
               ),
             )
           : Stack(
               fit: StackFit.expand,
               children: [
                 ColoredBox(color: Color(imageColor)),
-                Image.asset(
-                  imageAsset!,
+                AppImage(
+                  source: imageAsset,
                   fit: BoxFit.cover,
-                  gaplessPlayback: true,
+                  cacheWidth: 720,
+                  cacheHeight: 720,
+                  placeholder: Icon(Icons.texture,
+                      color: onSwatchColor(Color(imageColor)), size: size),
                 ),
               ],
             ),

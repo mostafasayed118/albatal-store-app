@@ -54,6 +54,12 @@ class _GuestProfile extends StatelessWidget {
               onPressed: () => context.push('/sign-up'),
               child: Text(l.signUp),
             ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () => context.push('/support'),
+              icon: const Icon(Icons.support_agent_outlined),
+              label: Text(l.customerSupport),
+            ),
           ],
         ),
       ),
@@ -103,6 +109,12 @@ class _AuthenticatedProfile extends StatelessWidget {
           title: Text(l.wishlist),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.go('/wishlist'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.support_agent_outlined),
+          title: Text(l.customerSupport),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push('/support'),
         ),
         const SizedBox(height: 24),
         TextButton.icon(

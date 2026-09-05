@@ -144,7 +144,9 @@ class SupabaseAuthRepository implements AuthRepository {
       case 'Password should be at least 6 characters':
         return 'Password must be at least 6 characters';
       default:
-        return message;
+        // Never surface unknown provider strings — callers already attach
+        // the original exception as AppError.cause for diagnostics.
+        return 'An unexpected error occurred';
     }
   }
 }

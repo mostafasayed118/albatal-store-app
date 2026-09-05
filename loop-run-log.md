@@ -20,3 +20,14 @@ Append one entry per run. Prune entries older than 30 days.
 ## Recent Runs
 
 <!-- Loop appends below this line -->
+
+{
+  "run_id": "2026-09-02T19:05:00+03:00",
+  "pattern": "daily-triage",
+  "duration_s": 0,
+  "items_found": 7,
+  "actions_taken": 0,
+  "escalations": 1,
+  "tokens_estimate": 0,
+  "outcome": "escalated"
+}

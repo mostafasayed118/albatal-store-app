@@ -35,6 +35,22 @@ abstract interface class PaymentService {
   /// rejection (e.g. order already cancelled, expired, not pending).
   Future<PaymentResult> confirmCodPayment({required String orderId});
 
+  /// Record the customer's chosen payment method on a pending order.
+  ///
+  /// Calls the `set_pending_order_payment_method` RPC. The checkout
+  /// flow creates the order before the customer picks a method on the
+  /// payment screen, so the method must be updated server-side before
+  /// [confirmCodPayment] (which requires a COD-like stored method).
+  /// Only the order owner may change the method, only while the order
+  /// is `pending`, and only to an allowlisted value (`cod`, `card`).
+  ///
+  /// Returns [PaymentSuccess] (empty transaction ID) on success,
+  /// [PaymentFailed] with a machine-readable code otherwise.
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  });
+
   /// Watch a payment's status as it is updated server-side.
   ///
   /// Emits [PaymentSuccess] when the webhook marks the row as `success`,

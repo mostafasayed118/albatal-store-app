@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/theme/app_colors.dart';
+
 /// A subtle procedural fabric-weave texture painted over a base color.
 ///
 /// This is intentionally *honest* placeholder art — not a photograph or a
@@ -7,8 +9,8 @@ import 'package:flutter/material.dart';
 /// pretending to be a real fabric image. It gives the swatch more tactile
 /// presence than a flat color block, and the pattern scales to any size.
 ///
-/// When real product photography is supplied, this painter is removed
-/// and `Image.asset` takes its place — the rest of the widget tree
+/// When a local or remote product image is supplied, this painter is removed
+/// and the shared image renderer takes its place; the rest of the widget tree
 /// is unchanged.
 class FabricWeavePainter extends CustomPainter {
   FabricWeavePainter({
@@ -29,7 +31,8 @@ class FabricWeavePainter extends CustomPainter {
       Paint()..color = baseColor,
     );
 
-    final lineColor = threadColor ?? Color.lerp(baseColor, Colors.white, 0.15)!;
+    final lineColor =
+        threadColor ?? Color.lerp(baseColor, AppColors.white, 0.15)!;
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = 1.0

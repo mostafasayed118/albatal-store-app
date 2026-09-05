@@ -17,7 +17,6 @@ import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.da
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
-import 'package:al_batal_elite/shared/theme/grid_delegate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,7 +34,7 @@ class _StubRepo implements CatalogRepository {
           price: Money.egp(1290),
           oldPrice: Money.egp(1520),
           imageColor: 0xFF176B57,
-          imageAsset: 'assets/images/1.png',
+          imageAsset: 'assets/images/1.svg',
           rating: 4.8,
           reviewCount: 124,
         ),
@@ -78,6 +77,9 @@ class _StubRepo implements CatalogRepository {
 
   @override
   Product? findProductById(String id) => null;
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
 
   @override
   List<String> get defaultCategories =>
@@ -134,11 +136,11 @@ void main() {
 
       expect(find.byType(StitchCategoryChips), findsOneWidget);
 
-      // StitchCategoryChips contract: 72dp track → 72dp SizedBox, 56dp circles, 8dp gaps.
-      // Verify the outer SizedBox height 72 and inner circle BoxDecorations.
+      // StitchCategoryChips contract: 78dp track → 78dp SizedBox, 56dp circles, 8dp gaps.
+      // Verify the outer SizedBox height 78 and inner circle BoxDecorations.
       expect(
         find.byWidgetPredicate(
-          (w) => w is SizedBox && w.height == 72,
+          (w) => w is SizedBox && w.height == 78,
         ),
         findsOneWidget,
       );
@@ -178,11 +180,13 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(StitchSearchBar), findsOneWidget);
-      // Grid should be 2-col .68 using shared delegate (not ProductTile).
+      // Grid should use the width-aware shared delegate (not ProductTile).
       expect(find.byType(StitchProductGridCard), findsNWidgets(4));
-      // Ensure productGridDelegate is wired: GridView uses it.
       final grid = tester.widget<GridView>(find.byType(GridView));
-      expect(grid.gridDelegate, productGridDelegate);
+      final delegate =
+          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, 4);
+      expect(delegate.childAspectRatio, .68);
       // EdgeInsetsDirectional padding on grid.
       expect(grid.padding, isA<EdgeInsetsDirectional>());
 

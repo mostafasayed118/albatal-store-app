@@ -49,14 +49,14 @@ class _InvalidCheckoutBody extends StatelessWidget {
             children: [
               const Icon(Icons.error_outline, size: 56),
               const SizedBox(height: 16),
-              const Text(
-                'The payment checkout link is invalid. Please return and retry.',
+              Text(
+                context.l10n.invalidCheckoutLink,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.pop(),
-                child: const Text('Return to payment'),
+                child: Text(context.l10n.returnToPayment),
               ),
             ],
           ),
@@ -107,16 +107,10 @@ class _CheckoutBodyState extends State<_CheckoutBody> {
             if (mounted) setState(() => _isLoading = false);
           },
           onNavigationRequest: (request) {
-            final uri = Uri.tryParse(request.url);
-            if (uri == null || !uri.isScheme('https')) {
-              return NavigationDecision.prevent;
-            }
-            final host = uri.host.toLowerCase();
-            final isPaymobHost = host == 'accept.paymob.com' ||
-                host == 'secure-egypt.paymob.com' ||
-                host.endsWith('.paymob.com') ||
-                host.endsWith('.paymobsolutions.com');
-            return isPaymobHost
+            // Single source of truth for the host allowlist lives in
+            // [PaymobUrlGuard] — the page must not re-implement it
+            // (audit finding: duplicated allowlist).
+            return PaymobUrlGuard.isSafeWebViewNavigationTarget(request.url)
                 ? NavigationDecision.navigate
                 : NavigationDecision.prevent;
           },

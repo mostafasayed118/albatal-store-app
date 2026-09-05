@@ -41,12 +41,18 @@ final class OrdersState extends Equatable {
           o.status == OrderStatus.shipped)
       .toList()
     ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get completed =>
-      orders.where((o) => o.status == OrderStatus.delivered).toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get cancelled =>
-      orders.where((o) => o.status == OrderStatus.cancelled).toList()
-        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get completed => orders
+      .where((o) =>
+          o.status == OrderStatus.paid || o.status == OrderStatus.delivered)
+      .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  List<Order> get cancelled => orders
+      .where((o) =>
+          o.status == OrderStatus.cancelled ||
+          o.status == OrderStatus.expired ||
+          o.status == OrderStatus.refunded)
+      .toList()
+    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
 
   OrdersState copyWith({
     List<Order>? orders,
@@ -110,25 +116,6 @@ final class OrdersCubit extends Cubit<OrdersState> {
       ));
     }
     return order;
-  }
-
-  Future<void> advance(String orderId) async {
-    final updated = state.orders.map((o) {
-      if (o.id != orderId) return o;
-      return switch (o.status) {
-        OrderStatus.placed => o.copyWith(status: OrderStatus.shipped),
-        OrderStatus.shipped => o.copyWith(status: OrderStatus.delivered),
-        _ => o,
-      };
-    }).toList();
-    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(updated);
-    if (result case Failure(:final error)) {
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
-    }
   }
 
   /// Idempotently merge a server-created order into local history.

@@ -54,12 +54,26 @@ final class CartCubit extends Cubit<CartState> {
   /// isn't available yet (e.g. tests); restore then loads items as-is.
   final ProductLookup? _productLookup;
 
-  Future<void> restore() async {
+  /// Reload persisted items.
+  ///
+  /// By default this is a startup fill: if the user already acted
+  /// (non-empty cart) a late-completing read must NOT clobber live
+  /// state (live-found 2026-09-03: stale persisted items replaced
+  /// fresh selections mid-checkout and the server was sent the
+  /// wrong product). Pass [force] for an explicit manual refresh
+  /// (e.g. the error-state retry button).
+  Future<void> restore({bool force = false}) async {
+    final hadItems = state.items.isNotEmpty;
     emit(state.copyWith(status: CartStatus.loading));
     final result = await _repository.readCart(_productLookup ?? (_) => null);
     switch (result) {
       case Success(:final value):
-        emit(CartState(value, status: CartStatus.ready));
+        if (force || !hadItems) {
+          emit(CartState(value, status: CartStatus.ready));
+        } else {
+          // Keep the user's live items; just leave loading state.
+          emit(state.copyWith(status: CartStatus.ready));
+        }
       case Failure(:final error):
         emit(state.copyWith(
           status: CartStatus.error,

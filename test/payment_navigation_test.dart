@@ -6,7 +6,7 @@ import 'package:al_batal_elite/features/payments/presentation/pages/paymob_check
 import 'package:al_batal_elite/features/payments/presentation/pages/payment_method_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'helpers/memory_storefront_persistence.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
+import 'fixtures/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/order_success_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -35,11 +35,30 @@ class _NavStub implements PaymentService {
       const PaymentFailed(message: 'stub');
 
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
 
-GoRouter _router(PaymentCubit cubit, CartCubit cart) => GoRouter(
+GoRouter _router(PaymentCubit cubit, CartCubit cart) => _routerWithArgs(
+      cubit,
+      cart,
+      const {
+        'orderId': 'ord-server-123',
+        'total': Money.egp(100),
+        'customerEmail': 'a@b.c',
+      },
+    );
+
+GoRouter _routerWithArgs(
+        PaymentCubit cubit, CartCubit cart, Map<String, dynamic> args) =>
+    GoRouter(
       initialLocation: '/payment-method',
       routes: [
         GoRoute(
@@ -48,11 +67,7 @@ GoRouter _router(PaymentCubit cubit, CartCubit cart) => GoRouter(
             value: cart,
             child: PaymentMethodPage(
               paymentCubit: cubit,
-              args: const {
-                'orderId': 'ord-server-123',
-                'total': Money.egp(100),
-                'customerEmail': 'a@b.c',
-              },
+              args: args,
             ),
           ),
         ),
@@ -176,6 +191,24 @@ void main() {
 
       expect(find.byType(PaymobCheckoutPage), findsNothing);
       expect(find.byType(SnackBar), findsOneWidget);
+    });
+
+    testWidgets(
+        'a missing customer email blocks payment instead of using a fake address',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: _routerWithArgs(cubit, cart, const {
+          'orderId': 'ord-server-123',
+          'total': Money.egp(100),
+        }),
+      ));
+      await tester.pumpAndSettle();
+
+      // Blocking error screen, no pay button to proceed with.
+      expect(find.textContaining('Unable to continue'), findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
     });
   });
 

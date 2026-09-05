@@ -15,9 +15,10 @@ final class FakeSettingsRepository implements SettingsRepository {
   @override
   Future<Result<AppSettings>> read() async => readResult;
   @override
-  Future<Result<void>> saveLocale(Locale locale) async => saveResult;
+  Future<Result<void>> saveLocale(AppLocale locale) async => saveResult;
   @override
-  Future<Result<void>> saveThemeMode(ThemeMode themeMode) async => saveResult;
+  Future<Result<void>> saveThemeMode(AppThemeMode themeMode) async =>
+      saveResult;
 }
 
 void main() {
@@ -26,7 +27,9 @@ void main() {
       'loads persisted settings into ready state',
       build: () => SettingsCubit(FakeSettingsRepository(
           readResult: const Success(
-              AppSettings(themeMode: ThemeMode.dark, locale: Locale('ar'))))),
+              AppSettings(
+                  themeMode: AppThemeMode.dark,
+                  locale: AppLocale.arabic)))),
       act: (cubit) => cubit.load(),
       expect: () => [
         const SettingsState(status: SettingsStatus.loading),
@@ -42,7 +45,9 @@ void main() {
       build: () {
         final repository = FakeSettingsRepository(
             readResult: const Success(
-                AppSettings(themeMode: ThemeMode.system, locale: Locale('en'))))
+                AppSettings(
+                    themeMode: AppThemeMode.system,
+                    locale: AppLocale.english)))
           ..saveResult =
               const Failure(AppError('Unable to save app preferences.'));
         return SettingsCubit(repository);

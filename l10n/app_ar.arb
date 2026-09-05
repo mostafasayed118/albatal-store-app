@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "ar",
   "appTitle": "البطل إيليت",
   "brandName": "البطل إيليت",
@@ -89,7 +89,9 @@
   "@fabricsFound": {
     "description": "عدد الأقمشة الموجودة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "مجموعة الحرير الجديدة",
@@ -104,7 +106,9 @@
   "@curatedFabrics": {
     "description": "عدد الأقمشة المختارة في فئة",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "تأكيد",
@@ -114,7 +118,9 @@
   "@discountPercent": {
     "description": "تسمية نسبة الخصم",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "توصيل سريع",
@@ -124,15 +130,17 @@
   "composition": "التركيب",
   "origin": "المنشأ",
   "care": "العناية",
-  "goodMorning": "صباح الخير، أحمد",
+  "goodMorning": "صباح الخير، {name}",
   "openSettings": "فتح الإعدادات",
   "successTitle": "نجاح!",
-  "orderPlacedBody": "تم placed طلبك. سن informك بالتحديثات.",
+  "orderPlacedBody": "تم استلام طلبك، وسنبقيك على اطلاع بآخر المستجدات.",
   "itemsCount": "{count} عناصر",
   "@itemsCount": {
     "description": "عدد العناصر في الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "مراجعة الطلب",
@@ -148,7 +156,9 @@
   "@itemsInCart": {
     "description": "عدد العناصر في السلة لمراجعة الطلب",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "تأكيد والدفع",
@@ -172,7 +182,9 @@
   "@onlyLeft": {
     "description": "تحذير مخزون منخفض",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "المرتجعات",
@@ -216,7 +228,6 @@
   "selectPaymentMethod": "اختر طريقة الدفع",
   "payWithCard": "الدفع بالبطاقة",
   "payWithCardDescription": "بطاقة ائتمان أو خصم عبر Paymob",
-  "cashOnDelivery": "الدفع عند الاستلام",
   "cashOnDeliveryDescription": "ادفع عند وصول طلبك",
   "payNow": "ادفع الآن",
   "completePayment": "إكمال الدفع",
@@ -250,7 +261,6 @@
   "processing": "قيد المعالجة",
   "allStockLevelsHealthy": "جميع مستويات المخزون سليمة",
   "catalogManagement": "إدارة الكتالوج",
-  "categories": "الفئات",
   "manageCategories": "إدارة الفئات",
   "productImages": "صور المنتجات",
   "manageProductImages": "إدارة صور المنتجات",
@@ -268,14 +278,53 @@
   "whatsappSupport": "دعم واتساب",
   "whatsappSupportDescription": "تحدث معنا عبر واتساب",
   "emailSupport": "دعم البريد الإلكتروني",
-  "emailSupportAddress": "support@albatal.com",
+  "emailSupportAddress": "al3tar66@gmail.com",
   "faq": "الأسئلة الشائعة",
   "faqDescription": "ابحث عن إجابات للأسئلة الشائعة",
   "products": "المنتجات",
   "order": "الطلب",
   "items": "عناصر",
   "noAddressProvided": "لم يتم توفير عنوان",
-  "noResultsFound": "لم يتم العثور على نتائج",
-  "tryAdjustingFilters": "حاول تعديل البحث أو التصفيات",
-  "comingSoon": "قريباً"
+  "comingSoon": "قريباً",
+  "cancel": "إلغاء",
+  "confirm": "تأكيد",
+  "update": "تحديث",
+  "updateStock": "تحديث المخزون",
+  "newStockLevel": "مستوى المخزون الجديد",
+  "courierName": "اسم شركة الشحن",
+  "trackingNumber": "رقم التتبع",
+  "addTrackingDetails": "إضافة تفاصيل التتبع",
+  "orderStatusUpdatedTo": "تم تحديث حالة الطلب إلى {statusName}",
+  "orderMarkedAsShipped": "تم وضع علامة تم الشحن على الطلب",
+  "returnToPayment": "العودة إلى الدفع",
+  "invalidCheckoutLink": "رابط الدفع غير صالح. يرجى العودة والمحاولة مرة أخرى.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingExquisiteTitle": "أقمشة فاخرة",
+  "onboardingExquisiteBody": "اكتشف مجموعة مختارة من أرقى أنواع الحرير والكتان والمخمل في العالم.",
+  "onboardingCraftsmanshipTitle": "حرفية أصيلة",
+  "onboardingCraftsmanshipBody": "كل خيط منسوج بدقة وإرث عريق لضمان جودة لا مثيل لها.",
+  "onboardingExcellenceTitle": "مصمم للتميّز",
+  "onboardingExcellenceBody": "اختبر فخامة الأقمشة المصممة لمن لا يقبلون بأقل من النخبة.",
+  "onboardingNext": "التالي",
+  "onboardingSkip": "تخطي",
+  "onboardingGetStarted": "ابدأ الآن",
+  "paid": "مدفوع",
+  "goodMorningGuest": "صباح الخير",
+  "estimatedTotalsNote": "إجماليات تقديرية — يتم تأكيد المبلغ النهائي عند الدفع.",
+  "serverConfirmedTotals": "الإجماليات المؤكدة من الخادم",
+  "orderReferenceMissing": "تعذر المتابعة: مرجع الطلب مفقود.",
+  "customerEmailMissing": "تعذر المتابعة: البريد الإلكتروني مفقود. يرجى تسجيل الدخول مجددًا.",
+  "paymentLinkInvalid": "رابط الدفع غير صالح. يرجى المحاولة مجددًا.",
+  "paymentSucceededNoReference": "نجح الدفع لكن مرجع الطلب مفقود.",
+  "paymentCancelledRetry": "تم إلغاء الدفع. يمكنك المحاولة مجددًا.",
+  "paymentExpiredRetry": "انتهت صلاحية الدفع. يمكنك المحاولة مجددًا.",
+  "paymentTimedOutRetry": "انتهت مهلة التحقق من الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.",
+  "paymentFailedRetry": "فشل الدفع. يمكنك المحاولة مجددًا.",
+  "adminAccessRequired": "يلزم الوصول كمسؤول"
 }

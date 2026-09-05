@@ -6,12 +6,13 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
+import 'fixtures/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/checkout_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -19,8 +20,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class StubAddressRepository implements AddressRepository {
+  StubAddressRepository({this.addresses = const []});
+  final List<Address> addresses;
+
+  factory StubAddressRepository.withAddresses(List<Address> addresses) =>
+      StubAddressRepository(addresses: addresses);
+
   @override
-  Future<Result<List<Address>>> read() async => const Success([]);
+  Future<Result<List<Address>>> read() async => Success(addresses);
   @override
   Future<Result<void>> save(List<Address> addresses) async =>
       const Success(null);
@@ -36,7 +43,7 @@ class StubCheckoutRepository implements CheckoutRepository {
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
-    required String paymentMethod,
+    required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
     String? idempotencyKey,
   }) async {
@@ -107,5 +114,47 @@ void main() {
     expect(find.text('Subtotal'), findsOneWidget);
     expect(find.text('Shipping'), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
+  });
+
+  testWidgets('default address is auto-selected (button enabled)',
+      (WidgetTester tester) async {
+    // Address book arrives with a default address — the checkout must
+    // select it automatically so 'Proceed to Payment' is enabled
+    // (UX fix, live-found 2026-09-03).
+    final persistence = MemoryStorefrontPersistence();
+    final cart = CartCubit(persistence)
+      ..add(products.first, color: 'Emerald', length: '2m', quantity: 1);
+    final repo = StubAddressRepository.withAddresses([
+      const Address(
+          id: 'a1',
+          recipient: 'Default Person',
+          line: '1 Main St',
+          city: 'Cairo',
+          country: 'EG',
+          isDefault: true),
+    ]);
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cart),
+          BlocProvider(create: (_) => WishlistCubit(persistence)),
+          BlocProvider(create: (_) => OrdersCubit(persistence)),
+          BlocProvider(create: (_) => AddressesCubit(repo)..load()),
+        ],
+        child: CheckoutPage(
+          checkoutRepository: StubCheckoutRepository(),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // The default address was auto-selected: the proceed button is enabled.
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Proceed to Payment'),
+    );
+    expect(button.onPressed, isNotNull,
+        reason: 'default address must be auto-selected on open');
   });
 }

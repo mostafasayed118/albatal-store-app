@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "en",
   "appTitle": "Al Batal Elite",
   "brandName": "Al Batal Elite",
@@ -89,7 +89,9 @@
   "@fabricsFound": {
     "description": "Number of fabrics found",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "newSilkCollection": "NEW SILK COLLECTION",
@@ -104,7 +106,9 @@
   "@curatedFabrics": {
     "description": "Number of curated fabrics in a category",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmStep": "Confirm",
@@ -114,7 +118,9 @@
   "@discountPercent": {
     "description": "Discount percentage label",
     "placeholders": {
-      "percent": {"type": "int"}
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "expressDelivery": "Express Delivery",
@@ -124,7 +130,7 @@
   "composition": "Composition",
   "origin": "Origin",
   "care": "Care",
-  "goodMorning": "Good morning, Ahmed",
+  "goodMorning": "Good morning, {name}",
   "openSettings": "Open settings",
   "successTitle": "Success!",
   "orderPlacedBody": "Your order has been placed. We will keep you updated.",
@@ -132,7 +138,9 @@
   "@itemsCount": {
     "description": "Number of items in an order",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reviewOrder": "Review Order",
@@ -148,7 +156,9 @@
   "@itemsInCart": {
     "description": "Number of items in the cart for checkout review",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "confirmAndPay": "Confirm & Pay",
@@ -172,7 +182,9 @@
   "@onlyLeft": {
     "description": "Low stock warning",
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "returns": "Returns",
@@ -216,7 +228,6 @@
   "selectPaymentMethod": "Select Payment Method",
   "payWithCard": "Pay with Card",
   "payWithCardDescription": "Credit or Debit Card via Paymob",
-  "cashOnDelivery": "Cash on Delivery",
   "cashOnDeliveryDescription": "Pay when your order arrives",
   "payNow": "Pay Now",
   "completePayment": "Complete Payment",
@@ -250,7 +261,6 @@
   "processing": "Processing",
   "allStockLevelsHealthy": "All stock levels are healthy",
   "catalogManagement": "Catalog Management",
-  "categories": "Categories",
   "manageCategories": "Manage Categories",
   "productImages": "Product Images",
   "manageProductImages": "Manage Product Images",
@@ -268,12 +278,58 @@
   "whatsappSupport": "WhatsApp Support",
   "whatsappSupportDescription": "Chat with us on WhatsApp",
   "emailSupport": "Email Support",
-  "emailSupportAddress": "support@albatal.com",
+  "emailSupportAddress": "al3tar66@gmail.com",
   "faq": "Frequently Asked Questions",
   "faqDescription": "Find answers to common questions",
   "products": "Products",
   "order": "Order",
   "items": "items",
   "noAddressProvided": "No address provided",
-  "comingSoon": "Coming Soon"
+  "comingSoon": "Coming Soon",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "update": "Update",
+  "updateStock": "Update Stock",
+  "newStockLevel": "New stock level",
+  "courierName": "Courier Name",
+  "trackingNumber": "Tracking Number",
+  "addTrackingDetails": "Add Tracking Details",
+  "orderStatusUpdatedTo": "Order status updated to {statusName}",
+  "orderMarkedAsShipped": "Order marked as shipped",
+  "returnToPayment": "Return to payment",
+  "invalidCheckoutLink": "The payment checkout link is invalid. Please return and retry.",
+  "@orderStatusUpdatedTo": {
+    "placeholders": {
+      "statusName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingExquisiteTitle": "Exquisite Fabrics",
+  "onboardingExquisiteBody": "Discover a curated collection of the world's finest silks, linens, and velvets.",
+  "onboardingCraftsmanshipTitle": "Artisanal Craftsmanship",
+  "onboardingCraftsmanshipBody": "Every thread is woven with precision and heritage to ensure unparalleled quality.",
+  "onboardingExcellenceTitle": "Tailored for Excellence",
+  "onboardingExcellenceBody": "Experience the luxury of fabrics designed for those who settle for nothing less than elite.",
+  "onboardingNext": "Next",
+  "onboardingSkip": "Skip",
+  "onboardingGetStarted": "Get Started",
+  "paid": "Paid",
+  "@goodMorning": {
+    "name": {
+      "type": "String"
+    }
+  },
+  "goodMorningGuest": "Good morning",
+  "estimatedTotalsNote": "Estimated totals — the final amount is confirmed at payment.",
+  "serverConfirmedTotals": "Server-confirmed totals",
+  "orderReferenceMissing": "Unable to continue: the order reference is missing.",
+  "customerEmailMissing": "Unable to continue: the customer email is missing. Please sign in again.",
+  "paymentLinkInvalid": "The payment checkout link is invalid. Please retry.",
+  "paymentSucceededNoReference": "Payment succeeded but the order reference is missing.",
+  "paymentCancelledRetry": "Payment cancelled. You can retry.",
+  "paymentExpiredRetry": "Payment expired. You can retry.",
+  "paymentTimedOutRetry": "Payment verification timed out. Please check your orders before retrying.",
+  "paymentFailedRetry": "Payment failed. You can retry.",
+  "adminAccessRequired": "Admin access required"
 }
