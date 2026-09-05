@@ -7,8 +7,8 @@ void main() {
   group('AdminOrderStatus.fromName', () {
     test('parses valid DB status names', () {
       expect(AdminOrderStatus.fromName('placed'), AdminOrderStatus.placed);
-      expect(AdminOrderStatus.fromName('processing'),
-          AdminOrderStatus.processing);
+      expect(
+          AdminOrderStatus.fromName('processing'), AdminOrderStatus.processing);
     });
 
     test('maps null and unknown values to unknown without throwing', () {
@@ -156,8 +156,8 @@ void main() {
     });
 
     test('returns null when the variant id is missing', () {
-      expect(AdminMappers.lowStockVariantFromRow({'product_name': 'x'}),
-          isNull);
+      expect(
+          AdminMappers.lowStockVariantFromRow({'product_name': 'x'}), isNull);
     });
 
     test('list mapping skips non-map and id-less rows', () {
@@ -200,8 +200,7 @@ void main() {
       expect(orderWith(AdminOrderStatus.processing).canDeliver, isFalse);
     });
 
-    test('placed, paid, and processing can be cancelled; terminal cannot',
-        () {
+    test('placed, paid, and processing can be cancelled; terminal cannot', () {
       expect(orderWith(AdminOrderStatus.placed).canCancel, isTrue);
       expect(orderWith(AdminOrderStatus.paid).canCancel, isTrue);
       expect(orderWith(AdminOrderStatus.processing).canCancel, isTrue);

@@ -55,6 +55,7 @@ final class CatalogState extends Equatable {
   final List<String> recentQueries;
   final DateTime? flashEnd;
   final Duration? flashRemaining;
+
   /// Active flash sales (T1) — raw rows from the repository.
   final List<Map<String, dynamic>> flashSales;
 
@@ -300,8 +301,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
       emit(state.copyWith(
           filters: state.filters.copyWith(clearColorFilter: true)));
     } else {
-      emit(state.copyWith(
-          filters: state.filters.copyWith(colorFilter: color)));
+      emit(state.copyWith(filters: state.filters.copyWith(colorFilter: color)));
     }
   }
 

@@ -29,9 +29,8 @@ void main() {
     blocTest<AdminCubit, AdminState>(
       'emits loading then ready with typed orders on Success',
       build: () {
-        when(() => repo.getAllOrders(status: any(named: 'status')))
-            .thenAnswer((_) async =>
-                Success([_order('o1', AdminOrderStatus.paid)]));
+        when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
+            (_) async => Success([_order('o1', AdminOrderStatus.paid)]));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrders(),
@@ -43,25 +42,26 @@ void main() {
             .having((s) => s.status, 'status', AdminStatus.ready)
             .having((s) => s.orders.length, 'orders.length', 1)
             .having((s) => s.orders[0].id, 'orders[0].id', 'o1')
-            .having(
-                (s) => s.orders[0].status, 'orders[0].status', AdminOrderStatus.paid),
+            .having((s) => s.orders[0].status, 'orders[0].status',
+                AdminOrderStatus.paid),
       ],
     );
 
     blocTest<AdminCubit, AdminState>(
       'emits error with repository message on Failure',
       build: () {
-        when(() => repo.getAllOrders(status: any(named: 'status')))
-            .thenAnswer(
-                (_) async => Failure(AppError('Failed to load orders')));
+        when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
+            (_) async => Failure(AppError('Failed to load orders')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrders(),
       expect: () => [
-        isA<AdminState>().having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
-            .having((s) => s.errorMessage, 'errorMessage', 'Failed to load orders'),
+            .having(
+                (s) => s.errorMessage, 'errorMessage', 'Failed to load orders'),
       ],
     );
 
@@ -77,15 +77,14 @@ void main() {
       },
       act: (cubit) => cubit.loadOrders(status: AdminOrderStatus.shipped),
       expect: () => [
-        isA<AdminState>().having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.ready)
             .having(
                 (s) => s.statusFilter, 'statusFilter', AdminOrderStatus.shipped)
-            .having(
-                (s) => s.filteredOrders.map((o) => o.id).toList(),
-                'filteredOrders',
-                ['o2']),
+            .having((s) => s.filteredOrders.map((o) => o.id).toList(),
+                'filteredOrders', ['o2']),
       ],
     );
   });
@@ -94,13 +93,14 @@ void main() {
     blocTest<AdminCubit, AdminState>(
       'emits ready with selectedOrder when found',
       build: () {
-        when(() => repo.getOrderDetails('o1'))
-            .thenAnswer((_) async => Success(_order('o1', AdminOrderStatus.paid)));
+        when(() => repo.getOrderDetails('o1')).thenAnswer(
+            (_) async => Success(_order('o1', AdminOrderStatus.paid)));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrderDetails('o1'),
       expect: () => [
-        isA<AdminState>().having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.ready)
             .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1'),
@@ -116,7 +116,8 @@ void main() {
       },
       act: (cubit) => cubit.loadOrderDetails('missing'),
       expect: () => [
-        isA<AdminState>().having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
             .having((s) => s.errorMessage, 'errorMessage', 'Order not found'),
@@ -132,10 +133,12 @@ void main() {
       },
       act: (cubit) => cubit.loadOrderDetails('o1'),
       expect: () => [
-        isA<AdminState>().having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
-            .having((s) => s.errorMessage, 'errorMessage', 'Failed to load order'),
+            .having(
+                (s) => s.errorMessage, 'errorMessage', 'Failed to load order'),
       ],
     );
   });
@@ -149,9 +152,8 @@ void main() {
               AdminOrderStatus.processing,
               trackingNumber: null,
             )).thenAnswer((_) async => const Success(null));
-        when(() => repo.getAllOrders(status: any(named: 'status')))
-            .thenAnswer((_) async =>
-                Success([_order('o1', AdminOrderStatus.processing)]));
+        when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
+            (_) async => Success([_order('o1', AdminOrderStatus.processing)]));
         return AdminCubit(repo);
       },
       act: (cubit) =>
@@ -162,8 +164,7 @@ void main() {
               AdminOrderStatus.processing,
               trackingNumber: null,
             )).called(1);
-        verify(() => repo.getAllOrders(status: any(named: 'status')))
-            .called(1);
+        verify(() => repo.getAllOrders(status: any(named: 'status'))).called(1);
       },
     );
 
@@ -171,21 +172,19 @@ void main() {
       'emits error and does not reload on Failure',
       build: () {
         when(() => repo.updateOrderStatus(
-              'o1',
-              AdminOrderStatus.cancelled,
-              trackingNumber: null,
-            )).thenAnswer(
-                (_) async => Failure(AppError('Failed to update order status')));
+                  'o1',
+                  AdminOrderStatus.cancelled,
+                  trackingNumber: null,
+                ))
+            .thenAnswer((_) async =>
+                Failure(AppError('Failed to update order status')));
         return AdminCubit(repo);
       },
-      act: (cubit) =>
-          cubit.updateOrderStatus('o1', AdminOrderStatus.cancelled),
+      act: (cubit) => cubit.updateOrderStatus('o1', AdminOrderStatus.cancelled),
       expect: () => [
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
-            .having(
-                (s) => s.errorMessage,
-                'errorMessage',
+            .having((s) => s.errorMessage, 'errorMessage',
                 'Failed to update order status'),
       ],
     );
@@ -195,8 +194,8 @@ void main() {
     blocTest<AdminCubit, AdminState>(
       'loadLowStockProducts emits typed variants on Success',
       build: () {
-        when(() => repo.getLowStockProducts(threshold: 5)).thenAnswer(
-            (_) async => Success(const [
+        when(() => repo.getLowStockProducts(threshold: 5))
+            .thenAnswer((_) async => Success(const [
                   LowStockVariant(
                     variantId: 'v1',
                     productName: 'Silk',
@@ -235,16 +234,16 @@ void main() {
     blocTest<AdminCubit, AdminState>(
       'updateStock emits error on Failure',
       build: () {
-        when(() => repo.updateStock('v1', 9))
-            .thenAnswer((_) async => Failure(AppError('Failed to update stock')));
+        when(() => repo.updateStock('v1', 9)).thenAnswer(
+            (_) async => Failure(AppError('Failed to update stock')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.updateStock('v1', 9),
       expect: () => [
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
-            .having(
-                (s) => s.errorMessage, 'errorMessage', 'Failed to update stock'),
+            .having((s) => s.errorMessage, 'errorMessage',
+                'Failed to update stock'),
       ],
     );
   });

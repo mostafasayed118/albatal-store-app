@@ -23,8 +23,8 @@ final class LocalSettingsRepository implements SettingsRepository {
       final savedTheme = _preferences.getString(_themeModeKey);
       final savedLanguage = _preferences.getString(_localeKey);
       final themeMode = AppThemeMode.values
-          .where((mode) => mode.name == savedTheme)
-          .firstOrNull ??
+              .where((mode) => mode.name == savedTheme)
+              .firstOrNull ??
           AppThemeMode.system;
       final locale = AppLocale.fromLanguageCode(savedLanguage);
       return Success(AppSettings(themeMode: themeMode, locale: locale));

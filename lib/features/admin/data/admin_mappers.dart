@@ -111,8 +111,7 @@ class AdminMappers {
   /// a denormalized `customer_name` column; mistyped values are ignored.
   static String? _customerName(Map<String, dynamic> row) {
     final profiles = row['profiles'];
-    final fromJoin =
-        profiles is Map ? _asString(profiles['full_name']) : null;
+    final fromJoin = profiles is Map ? _asString(profiles['full_name']) : null;
     return fromJoin ?? _asString(row['customer_name']);
   }
 

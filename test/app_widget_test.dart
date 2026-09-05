@@ -10,8 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 final class TestSettingsRepository implements SettingsRepository {
   @override
   Future<Result<AppSettings>> read() async => const Success(
-      AppSettings(
-          themeMode: AppThemeMode.system, locale: AppLocale.english));
+      AppSettings(themeMode: AppThemeMode.system, locale: AppLocale.english));
   @override
   Future<Result<void>> saveLocale(AppLocale locale) async =>
       const Success(null);

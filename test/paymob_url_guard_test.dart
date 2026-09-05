@@ -63,7 +63,8 @@ void main() {
   });
 
   group('PaymobUrlGuard.isSafeWebViewNavigationTarget', () {
-    test('delegates to the same rules as the entry-point guard (HTTPS only)', () {
+    test('delegates to the same rules as the entry-point guard (HTTPS only)',
+        () {
       expect(
         PaymobUrlGuard.isSafeWebViewNavigationTarget(
           'http://accept.paymob.com/iframes/1?payment_token=x',

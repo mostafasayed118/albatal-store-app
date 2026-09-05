@@ -49,9 +49,8 @@ final class SupabaseAdminRepository implements AdminRepository {
       final query = _client.from('orders').select('*, profiles(full_name)');
       final filtered =
           status != null ? query.eq('status', status.dbValue) : query;
-      final rows = await filtered
-          .order('placed_at', ascending: false)
-          .limit(limit);
+      final rows =
+          await filtered.order('placed_at', ascending: false).limit(limit);
       return Success((rows as List)
           .whereType<Map<String, dynamic>>()
           // Rows without a string id cannot be navigated to; skip them.
