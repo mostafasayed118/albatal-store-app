@@ -85,9 +85,14 @@ class _StockTile extends StatelessWidget {
     );
   }
 
-  void _showStockDialog(BuildContext context, LowStockVariant product) {
+  Future<void> _showStockDialog(
+      BuildContext context, LowStockVariant product) async {
+    // Let the tapped row's frame finish rendering before pushing the dialog;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!context.mounted) return;
     final ctrl = TextEditingController(text: product.stock.toString());
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(context.l10n.updateStock),
@@ -115,5 +120,7 @@ class _StockTile extends StatelessWidget {
         ],
       ),
     );
+    // Free the field controller once the dialog has closed.
+    ctrl.dispose();
   }
 }

@@ -49,7 +49,11 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     );
   }
 
-  void _showVariantDialog({AdminVariant? existing}) {
+  Future<void> _showVariantDialog({AdminVariant? existing}) async {
+    // Let the tapped row's frame finish rendering before pushing the dialog;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     final sizeCtrl = TextEditingController(text: existing?.size ?? '');
     final colorCtrl = TextEditingController(text: existing?.color ?? '');
     final stockCtrl =
@@ -59,7 +63,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     );
     bool saving = false;
 
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
@@ -170,6 +174,13 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
         ),
       ),
     );
+    // The dialog can also close via the barrier while a save is in flight,
+    // so dispose the field controllers only after it has fully popped —
+    // on every path.
+    sizeCtrl.dispose();
+    colorCtrl.dispose();
+    stockCtrl.dispose();
+    priceCtrl.dispose();
   }
 
   @override

@@ -74,6 +74,10 @@ class AddressesPage extends StatelessWidget {
 }
 
 Future<void> _edit(BuildContext context, Address? a) async {
+  // Let the tapped row's frame finish rendering before pushing the dialog;
+  // a slow device can otherwise starve the route's opening frame.
+  await WidgetsBinding.instance.endOfFrame;
+  if (!context.mounted) return;
   final r = TextEditingController(text: a?.recipient);
   final l = TextEditingController(text: a?.line);
   final c = TextEditingController(text: a?.city);
