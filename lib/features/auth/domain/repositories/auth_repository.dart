@@ -41,6 +41,14 @@ abstract interface class AuthRepository {
   /// Sign out and clear the server-side session.
   Future<Result<void>> signOut();
 
+  /// Permanently delete the current account (UX-043).
+  ///
+  /// The server requires re-confirmation: [email] must match the
+  /// authenticated account's email, otherwise the request is refused.
+  /// On success the server-side user is gone; callers should follow with
+  /// [signOut] so the local session is cleared too.
+  Future<Result<void>> deleteAccount({required String email});
+
   /// Stream of meaningful auth state changes.
   ///
   /// Emits `Authenticated(userId)` when a session is established (sign-in,

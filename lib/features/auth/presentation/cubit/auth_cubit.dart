@@ -177,6 +177,30 @@ class AuthCubit extends Cubit<AuthState> {
     ));
   }
 
+  /// Permanently delete the account (UX-043) and clear local auth state.
+  ///
+  /// [email] must match the account email — the server refuses mismatches.
+  /// Returns the outcome so callers can surface the error locally without
+  /// collapsing the whole auth state into [AuthStatus.failure] (that status
+  /// is reserved for the sign-in flow).
+  Future<Result<void>> deleteAccount({required String email}) async {
+    final result = await _authRepository.deleteAccount(email: email);
+    switch (result) {
+      case Success():
+        // The server-side user is gone — clear the local session too.
+        await _authRepository.signOut();
+        emit(state.copyWith(
+          status: AuthStatus.unauthenticated,
+          clearProfile: true,
+        ));
+        return const Success(null);
+      case Failure(:final error):
+        Log.w('Account deletion failed: ${error.message}',
+            category: LogCategory.auth);
+        return Failure(error);
+    }
+  }
+
   /// Clear any error message.
   void clearError() {
     if (state.status == AuthStatus.failure) {

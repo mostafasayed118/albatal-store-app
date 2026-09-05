@@ -53,7 +53,13 @@ void main() {
               path: '/settings',
               builder: (_, __) => BlocProvider.value(
                 value: _settingsCubit,
-                child: const SettingsPage(),
+                child: BlocProvider.value(
+                  // The settings page renders an account-deletion section
+                  // gated on AuthCubit (UX-043); the no-session stub keeps
+                  // it hidden in these navigation tests.
+                  value: authCubit,
+                  child: const SettingsPage(),
+                ),
               ),
             ),
             GoRoute(
@@ -149,6 +155,10 @@ final class _StubAuthRepository implements AuthRepository {
 
   @override
   Future<Result<void>> signOut() async => const Success(null);
+
+  @override
+  Future<Result<void>> deleteAccount({required String email}) async =>
+      const Success(null);
 
   Future<void> close() => authChanges.close();
 }

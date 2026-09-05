@@ -27,6 +27,7 @@ class _StubAuthRepository implements AuthRepository {
     Future<Result<void>> Function(String email)? resetPassword,
     Future<Result<void>> Function(String password)? updatePassword,
     Future<Result<void>> Function()? signOut,
+    Future<Result<void>> Function(String email)? deleteAccount,
     Stream<Authenticated?> Function()? authStateChanges,
   })  : _checkSession = checkSession,
         _signUp = signUp,
@@ -34,6 +35,7 @@ class _StubAuthRepository implements AuthRepository {
         _resetPassword = resetPassword,
         _updatePassword = updatePassword,
         _signOut = signOut,
+        _deleteAccount = deleteAccount,
         _authStateChanges = authStateChanges;
 
   final Future<Result<Authenticated?>> Function()? _checkSession;
@@ -49,6 +51,7 @@ class _StubAuthRepository implements AuthRepository {
   final Future<Result<void>> Function(String email)? _resetPassword;
   final Future<Result<void>> Function(String password)? _updatePassword;
   final Future<Result<void>> Function()? _signOut;
+  final Future<Result<void>> Function(String email)? _deleteAccount;
   final Stream<Authenticated?> Function()? _authStateChanges;
 
   @override
@@ -94,6 +97,12 @@ class _StubAuthRepository implements AuthRepository {
   @override
   Future<Result<void>> signOut() async {
     if (_signOut != null) return await _signOut();
+    return const Success(null);
+  }
+
+  @override
+  Future<Result<void>> deleteAccount({required String email}) async {
+    if (_deleteAccount != null) return await _deleteAccount(email);
     return const Success(null);
   }
 
@@ -297,6 +306,46 @@ void main() {
       await cubit.signOut();
       expect(cubit.state.status, AuthStatus.unauthenticated);
       expect(cubit.state.profile, isNull);
+      await cubit.close();
+    });
+
+    test('deleteAccount success signs out and clears profile state', () async {
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Success(Authenticated('user-1')),
+        ),
+        profileRepository: profileRepo,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'pw');
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.profile, isNotNull);
+
+      final result = await cubit.deleteAccount(email: 'a@b.com');
+      expect(result, isA<Success<void>>());
+      expect(cubit.state.status, AuthStatus.unauthenticated);
+      expect(cubit.state.profile, isNull);
+      await cubit.close();
+    });
+
+    test('deleteAccount failure returns the error and keeps state', () async {
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Success(Authenticated('user-1')),
+          deleteAccount: (_) async =>
+              const Failure(AppError('The email does not match this account')),
+        ),
+        profileRepository: profileRepo,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'pw');
+
+      final result = await cubit.deleteAccount(email: 'wrong@b.com');
+      expect(result, isA<Failure<void>>());
+      expect((result as Failure<void>).error.message,
+          'The email does not match this account');
+      // A refused deletion must not knock the user out of their session.
+      expect(cubit.state.status, AuthStatus.authenticated);
       await cubit.close();
     });
 
