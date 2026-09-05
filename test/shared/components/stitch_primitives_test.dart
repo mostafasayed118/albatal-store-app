@@ -1,9 +1,11 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
+import 'package:al_batal_elite/shared/theme/grid_delegate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,12 +18,25 @@ const _kProduct = Product(
   price: Money.egp(1290),
   oldPrice: Money.egp(1520),
   imageColor: 0xFF176B57,
-  imageAsset: 'assets/images/1.png',
+  imageAsset: 'assets/images/1.svg',
   rating: 4.8,
   reviewCount: 124,
 );
 
 void main() {
+  test('product grid adds columns at responsive breakpoints', () {
+    final phone = productGridDelegateForWidth(390)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+    final tablet = productGridDelegateForWidth(800)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+    final desktop = productGridDelegateForWidth(1200)
+        as SliverGridDelegateWithFixedCrossAxisCount;
+
+    expect(phone.crossAxisCount, 2);
+    expect(tablet.crossAxisCount, 3);
+    expect(desktop.crossAxisCount, 4);
+  });
+
   testWidgets('StitchCategoryChips shows 5 chips, Silk active', (tester) async {
     String selected = 'Silk';
     await tester.pumpWidget(
@@ -67,6 +82,8 @@ void main() {
     final controller = TextEditingController();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: StitchSearchBar(controller: controller)),
       ),
     );
@@ -79,8 +96,10 @@ void main() {
   testWidgets('StitchFlashSaleCard renders product row 120dp with badge',
       (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(
           body: StitchFlashSaleCard(product: _kProduct, discountLabel: '-15%'),
         ),
       ),

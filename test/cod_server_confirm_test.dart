@@ -47,6 +47,17 @@ class _RecordingPaymentService implements PaymentService {
     return _confirmResult;
   }
 
+  final List<(String, String)> methodCalls = [];
+
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    methodCalls.add((orderId, method));
+    return const PaymentSuccess(transactionId: '', amount: Money.zero);
+  }
+
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
@@ -80,6 +91,14 @@ class _CompleterConfirmService implements PaymentService {
   }
 
   @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    return const PaymentSuccess(transactionId: '', amount: Money.zero);
+  }
+
+  @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>
       const Stream<PaymentResult>.empty();
 }
@@ -98,6 +117,14 @@ class _StubWithCod implements PaymentService {
   @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
       const PaymentSuccess(transactionId: 'stub-txn', amount: Money.zero);
+
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    return const PaymentSuccess(transactionId: '', amount: Money.zero);
+  }
 
   @override
   Stream<PaymentResult> watchPaymentStatus(String orderId) =>

@@ -737,8 +737,8 @@ abstract class AppLocalizations {
   /// No description provided for @goodMorning.
   ///
   /// In en, this message translates to:
-  /// **'Good morning, Ahmed'**
-  String get goodMorning;
+  /// **'Good morning, {name}'**
+  String goodMorning(Object name);
 
   /// No description provided for @openSettings.
   ///
@@ -1481,7 +1481,7 @@ abstract class AppLocalizations {
   /// No description provided for @emailSupportAddress.
   ///
   /// In en, this message translates to:
-  /// **'support@albatal.com'**
+  /// **'al3tar66@gmail.com'**
   String get emailSupportAddress;
 
   /// No description provided for @faq.
@@ -1525,6 +1525,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming Soon'**
   String get comingSoon;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
+
+  /// No description provided for @updateStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Stock'**
+  String get updateStock;
+
+  /// No description provided for @newStockLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'New stock level'**
+  String get newStockLevel;
+
+  /// No description provided for @courierName.
+  ///
+  /// In en, this message translates to:
+  /// **'Courier Name'**
+  String get courierName;
+
+  /// No description provided for @trackingNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Number'**
+  String get trackingNumber;
+
+  /// No description provided for @addTrackingDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Tracking Details'**
+  String get addTrackingDetails;
+
+  /// No description provided for @orderStatusUpdatedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Order status updated to {statusName}'**
+  String orderStatusUpdatedTo(String statusName);
+
+  /// No description provided for @orderMarkedAsShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Order marked as shipped'**
+  String get orderMarkedAsShipped;
+
+  /// No description provided for @returnToPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to payment'**
+  String get returnToPayment;
+
+  /// No description provided for @invalidCheckoutLink.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment checkout link is invalid. Please return and retry.'**
+  String get invalidCheckoutLink;
+
+  /// No description provided for @onboardingExquisiteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exquisite Fabrics'**
+  String get onboardingExquisiteTitle;
+
+  /// No description provided for @onboardingExquisiteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover a curated collection of the world\'s finest silks, linens, and velvets.'**
+  String get onboardingExquisiteBody;
+
+  /// No description provided for @onboardingCraftsmanshipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Artisanal Craftsmanship'**
+  String get onboardingCraftsmanshipTitle;
+
+  /// No description provided for @onboardingCraftsmanshipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every thread is woven with precision and heritage to ensure unparalleled quality.'**
+  String get onboardingCraftsmanshipBody;
+
+  /// No description provided for @onboardingExcellenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tailored for Excellence'**
+  String get onboardingExcellenceTitle;
+
+  /// No description provided for @onboardingExcellenceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience the luxury of fabrics designed for those who settle for nothing less than elite.'**
+  String get onboardingExcellenceBody;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get onboardingGetStarted;
+
+  /// No description provided for @paid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get paid;
+
+  /// No description provided for @goodMorningGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get goodMorningGuest;
+
+  /// No description provided for @estimatedTotalsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated totals — the final amount is confirmed at payment.'**
+  String get estimatedTotalsNote;
+
+  /// No description provided for @serverConfirmedTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Server-confirmed totals'**
+  String get serverConfirmedTotals;
+
+  /// No description provided for @orderReferenceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to continue: the order reference is missing.'**
+  String get orderReferenceMissing;
+
+  /// No description provided for @customerEmailMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to continue: the customer email is missing. Please sign in again.'**
+  String get customerEmailMissing;
+
+  /// No description provided for @paymentLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment checkout link is invalid. Please retry.'**
+  String get paymentLinkInvalid;
+
+  /// No description provided for @paymentSucceededNoReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment succeeded but the order reference is missing.'**
+  String get paymentSucceededNoReference;
+
+  /// No description provided for @paymentCancelledRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment cancelled. You can retry.'**
+  String get paymentCancelledRetry;
+
+  /// No description provided for @paymentExpiredRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment expired. You can retry.'**
+  String get paymentExpiredRetry;
+
+  /// No description provided for @paymentTimedOutRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment verification timed out. Please check your orders before retrying.'**
+  String get paymentTimedOutRetry;
+
+  /// No description provided for @paymentFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. You can retry.'**
+  String get paymentFailedRetry;
+
+  /// No description provided for @adminAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin access required'**
+  String get adminAccessRequired;
 }
 
 class _AppLocalizationsDelegate

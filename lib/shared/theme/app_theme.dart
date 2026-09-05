@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// Al Batal Elite's tactile, textile-inspired visual system.
 /// Stitch-exact tokens (phase 0): light scaffold #f9f9f9, primary #003527, see DESIGN.md.
+/// All color values live in [AppColors]; this class only assembles ThemeData.
 abstract final class AppTheme {
-  @Deprecated('Use primaryStitch/surfaceStitch')
-  static const emerald = Color(0xFF064E3B); // alias -> stitch primaryContainer
-  @Deprecated('Use primaryStitch/surfaceStitch')
-  static const gold =
-      Color(0xFFD97706); // legacy accent alias -> stitch secondary
-  @Deprecated('Use primaryStitch/surfaceStitch')
-  static const offWhite =
-      Color(0xFFFAFAFA); // deprecated alias -> stitch scaffold #F9F9F9
-  static const charcoal = Color(0xFF121212);
-  static const slate = Color(0xFF1E293B);
-  static const terracotta = Color(0xFFBA1A1A);
+  @Deprecated('Use AppColors.primaryContainer')
+  static const emerald =
+      AppColors.primaryContainer; // alias -> primaryContainer
+  @Deprecated('Use AppColors.gold')
+  static const gold = AppColors.gold; // legacy accent alias -> secondary
+  static const charcoal = AppColors.darkBackground;
+  static const slate = AppColors.darkSurface;
+  static const terracotta = AppColors.error;
 
   // Stitch-exact light tokens (stitch_get_project designMd)
-  static const primaryStitch = Color(0xFF003527);
-  static const surfaceStitch = Color(0xFFF9F9F9);
-  static const surfaceContainerLow = Color(0xFFF3F3F3);
-  static const surfaceContainerStitch = Color(0xFFEEEEEE);
-  static const surfaceContainerHigh = Color(0xFFE8E8E8);
+  static const primaryStitch = AppColors.primary;
+  static const surfaceStitch = AppColors.background;
+  static const surfaceContainerLow = AppColors.surfaceContainerLow;
+  static const surfaceContainerStitch = AppColors.surfaceContainer;
+  static const surfaceContainerHigh = AppColors.surfaceContainerHigh;
 
   static const cardRadius = BorderRadius.all(Radius.circular(16));
   static const controlRadius = BorderRadius.all(Radius.circular(8));
@@ -28,39 +28,39 @@ abstract final class AppTheme {
   static ThemeData light() => _theme(
         brightness: Brightness.light,
         scheme: const ColorScheme.light(
-          primary: Color(0xFF003527),
-          onPrimary: Colors.white,
-          primaryContainer: Color(0xFF064E3B),
-          secondary: Color(0xFF904D00),
-          secondaryContainer: Color(0xFFFE932C),
-          tertiary: Color(0xFF531E00),
-          surface: Colors.white,
-          surfaceContainerLow: Color(0xFFF3F3F3),
-          surfaceContainer: Color(0xFFEEEEEE),
-          surfaceContainerHigh: Color(0xFFE8E8E8),
-          onSurface: Color(0xFF1A1C1C),
-          error: terracotta,
-          outline: Color(0xFF707974),
-          outlineVariant: Color(0xFFBFC9C3),
+          primary: AppColors.primary,
+          onPrimary: AppColors.onPrimary,
+          primaryContainer: AppColors.primaryContainer,
+          secondary: AppColors.secondary,
+          secondaryContainer: AppColors.secondaryContainer,
+          tertiary: AppColors.tertiary,
+          surface: AppColors.surface,
+          surfaceContainerLow: AppColors.surfaceContainerLow,
+          surfaceContainer: AppColors.surfaceContainer,
+          surfaceContainerHigh: AppColors.surfaceContainerHigh,
+          onSurface: AppColors.textPrimary,
+          error: AppColors.error,
+          outline: AppColors.outline,
+          outlineVariant: AppColors.outlineVariant,
         ),
-        scaffold: Color(0xFFF9F9F9),
-        card: Colors.white,
+        scaffold: AppColors.background,
+        card: AppColors.surface,
       );
 
   static ThemeData dark() => _theme(
         brightness: Brightness.dark,
         scheme: const ColorScheme.dark(
-          primary: Color(0xFF95D3BA),
-          onPrimary: Color(0xFF002117),
-          secondary: Color(0xFFFFB77D),
-          onSecondary: Color(0xFF2F1500),
-          surface: slate,
-          onSurface: Color(0xFFF0F4F1),
-          error: Color(0xFFFFB4AB),
-          outline: Color(0xFFBFC9C3),
+          primary: AppColors.darkPrimary,
+          onPrimary: AppColors.darkOnPrimary,
+          secondary: AppColors.darkSecondary,
+          onSecondary: AppColors.darkOnSecondary,
+          surface: AppColors.darkSurface,
+          onSurface: AppColors.darkText,
+          error: AppColors.darkError,
+          outline: AppColors.darkOutline,
         ),
-        scaffold: charcoal,
-        card: slate,
+        scaffold: AppColors.darkBackground,
+        card: AppColors.darkSurface,
       );
 
   static ThemeData _theme({
@@ -114,14 +114,14 @@ abstract final class AppTheme {
       appBarTheme: AppBarTheme(
           backgroundColor: scaffold,
           foregroundColor: scheme.onSurface,
-          surfaceTintColor: Colors.transparent,
+          surfaceTintColor: AppColors.transparent,
           elevation: 0,
           titleTextStyle: text.titleLarge),
       cardTheme: CardThemeData(
           color: card,
           margin: EdgeInsets.zero,
           elevation: 0,
-          shadowColor: Colors.transparent,
+          shadowColor: AppColors.transparent,
           shape: const RoundedRectangleBorder(borderRadius: cardRadius)),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -159,7 +159,7 @@ abstract final class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         backgroundColor: card,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColors.transparent,
         indicatorColor: scheme.primary.withValues(alpha: .12),
         labelTextStyle: WidgetStatePropertyAll(text.labelSmall),
         elevation: 0,

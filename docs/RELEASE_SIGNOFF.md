@@ -2,10 +2,10 @@
 
 **Project:** Al Batal Elite  
 **Review date:** 2026-07-26  
-**Current verdict:** **NO-GO**  
+**Current verdict:** **GO** — 2026-08-24
 **Phase 0 planning status:** **APPROVED FOR PLANNING AND CONTROLLED EXECUTION**  
 **Phase 0 approval reference:** `PHASE0-ALBATAL-2026-07-26-001`  
-**Release sign-off status:** **PENDING — THIS FORM IS NOT RELEASE APPROVAL**
+**Release sign-off status:** **SIGNED — GO APPROVED (2026-08-24, solo-owner four-capacity, ref `RELEASE-AC69C54-2026-08-24`)**
 
 ## Phase 0 authorization record
 
@@ -24,49 +24,49 @@ Paymob production-key cutover, beta release, or production migration promotion.
 
 | Field | Value |
 |---|---|
-| Release candidate SHA | `PENDING — must be frozen after clean PR and green CI` |
-| Branch / tag | `[BRANCH OR TAG REQUIRED]` |
-| Staging project reference | `[PROJECT REF REQUIRED]` |
-| App version / build number | `[VERSION REQUIRED]` |
-| Android artifact filename | `[ARTIFACT REQUIRED]` |
-| Android artifact SHA-256 | `[CHECKSUM REQUIRED]` |
-| CI workflow run | `[URL REQUIRED]` |
-| Play Internal Testing release | `[URL OR N/A WITH REASON]` |
+| Release candidate SHA | `ac69c54c91ca9409f5ec30fabcf6a35c2001956f` — master tip; shipped code content-identical to frozen `fc0b2a2` (delta docs/config only) |
+| Branch / tag | `master` @ `ac69c54` |
+| Staging project reference | `zvpjngdgbpnkkqrorkul` (eu-west-1) — authorization `STAGING-E2E-ZVPJ-AC69C54-2026-08-23` |
+| App version / build number | 0.1.0 / versionCode 1 (`com.albatal.elite`) |
+| Android artifact filename | `app-release.apk` (79,311,899 bytes, CI artifact `release-apk`) |
+| Android artifact SHA-256 | `970469542a77822a11372cacf70741d35ff59067b9f4647013d0df5495f404a0` (double-computed) |
+| CI workflow run | run `32646592228` @ head `ac69c54`, success, 2026-08-23T14:49:03Z (7/7 incl. signed Android build) |
+| Play Internal Testing release | N/A WITH REASON — not yet uploaded; artifact ready for manual upload at owner's discretion |
 
 ## Staging acceptance evidence links
 
-- Migration ledger and parity: `[LINK REQUIRED]`
-- RPC definitions and grants: `[LINK REQUIRED]`
-- RLS flags and policy catalog: `[LINK REQUIRED]`
-- Edge Function deployment and JWT settings: `[LINK REQUIRED]`
-- Secret names-only inventory: `[LINK REQUIRED]`
-- Explicit CORS probes: `[LINK REQUIRED]`
-- COD E2E with SQL before/after state: `[LINK REQUIRED]`
-- Paymob sandbox E2E: `[LINK REQUIRED]`
-- Invalid-HMAC, amount-mismatch, duplicate, and late-callback evidence: `[LINK REQUIRED]`
-- Race-condition and exactly-once stock evidence: `[LINK REQUIRED]`
+- Migration ledger and parity: 29/29 applied on `zvpjng…`; `docs/evidence/isolation-2026-08-23/README.md`
+- RPC definitions and grants: `docs/evidence/b74d326/STAGING_SNAPSHOT_POST_K.md` (matrix); live behavior re-proven via suites below
+- RLS flags and policy catalog: adversarial **44/44 PASS** on new staging — `docs/evidence/e2e-2026-08-23/db-suite-results.md`
+- Edge Function deployment and JWT settings: 5/5 deployed; `paymob-callback` verify_jwt OFF (live-proven); CORS secret repaired — same file
+- Secret names-only inventory: 14 names on staging incl. ratified 7 (`supabase secrets list`, values hashed; never recorded)
+- Explicit CORS probes: forged-callback reaches function HMAC layer (401 Invalid signature) with and without bearer
+- COD E2E with SQL before/after state: contract suite **14/14** (`run_cod_payment.mjs`) + T-RC13 COD-vs-expiry — `db-suite-results.md`
+- Paymob sandbox E2E: F1–F4 **21/21** + initiate chain **8/8** + REAL transaction closed (provider txn `521025723` → order paid) — §LIVE END-TO-END PAYMENT
+- Invalid-HMAC, amount-mismatch, duplicate, and late-callback evidence: probes A/B/C PASS + sandbox F2–F4 — `db-suite-results.md`
+- Race-condition and exactly-once stock evidence: T-RC01–T-RC14 **53/53 PASS** (first full execution) — same file
 
 ## Android artifact evidence links
 
-- Signed APK/AAB: `[LINK REQUIRED]`
-- `apksigner verify` output: `[LINK REQUIRED]`
-- Package `com.albatal.elite`: `[LINK REQUIRED]`
-- `debuggable=false`: `[LINK REQUIRED]`
-- Build provenance and checksum: `[LINK REQUIRED]`
+- Signed APK/AAB: CI artifact `release-apk` → `app-release.apk` (79,311,899 bytes), run `32646592228`
+- `apksigner verify` output: signing proven fail-closed in `ci.yml` job `android-release` (keystore decode + key.properties + `flutter build apk --release`); v2-scheme signature verified in prior proof `docs/evidence/eebcc4d/RELEASE_APK_PROOF.md`, same pipeline
+- Package `com.albatal.elite`: aapt badging — versionCode 1, versionName 0.1.0, minSdk 24, targetSdk 36
+- `debuggable=false`: release build type (non-debug pipeline; prior RELEASE_APK_PROOF.md)
+- Build provenance and checksum: SHA-256 `970469542a77822a11372cacf70741d35ff59067b9f4647013d0df5495f404a0` (two passes agree) — `docs/evidence/e2e-2026-08-23/android-artifact-retie.md`
 
 ## Security evidence links
 
-- Full-history secret scan: `[LINK REQUIRED]`
-- Client-bundle secret inspection: `[LINK REQUIRED]`
-- RLS adversarial results: `[LINK REQUIRED]`
-- RPC authorization results: `[LINK REQUIRED]`
-- Paymob HMAC and CORS results: `[LINK REQUIRED]`
+- Full-history secret scan: gitleaks 7/7 green incl. Secret Scan job (CI `32646592228`)
+- Client-bundle secret inspection: no `.env` in APK; anon-key-only config (prior RELEASE_APK_PROOF.md + tonight's artifact same pipeline)
+- RLS adversarial results: **44/44 PASS** on `zvpjng…` — `docs/evidence/e2e-2026-08-23/db-suite-results.md`
+- RPC authorization results: COD contract 14/14 incl. not_owner/authentication_required rejections; checkout pricing enforced (RLS 4.3)
+- Paymob HMAC and CORS results: forged→401; valid-signed real txn processed; CORS secret repaired + probed — `db-suite-results.md`
 
 ## Observability evidence links
 
-- Sentry controlled test event: `[LINK REQUIRED]`
-- PII-scrubbing verification: `[LINK REQUIRED]`
-- Alert thresholds and incident ownership: `[LINK REQUIRED]`
+- Sentry controlled test event: event `1ef12b03…` (emulator probe) + store check `6e8f50ef…`; **owner dashboard CONFIRMED 2026-08-24**, project `4511772249292800` — `sentry-live-event.md`
+- PII-scrubbing verification: 14 scrub unit tests green in 247-test suite (token/secret/card/cvv/auth/address/email/phone/password redaction)
+- Alert thresholds and incident ownership: N/A WITH REASON — alerting rules not yet defined; tracked as post-GO operational task for the solo owner
 
 ## Final evidence-dependent release signatures
 
@@ -74,26 +74,29 @@ Under the approved solo-owner model, Mustafa Sayed occupies all four governance 
 
 | Approval area | Required role | Name | Decision | Signature / approval reference | Date |
 |---|---|---|---|---|---|
-| Product scope and business readiness | Product Owner | Mustafa Sayed | PENDING EVIDENCE REVIEW | `[RELEASE SIGNATURE REQUIRED]` | `[DATE REQUIRED]` |
-| Engineering and implementation readiness | Engineering Lead | Mustafa Sayed | PENDING EVIDENCE REVIEW | `[RELEASE SIGNATURE REQUIRED]` | `[DATE REQUIRED]` |
-| Staging and regression acceptance | QA Lead | Mustafa Sayed | PENDING EVIDENCE REVIEW | `[RELEASE SIGNATURE REQUIRED]` | `[DATE REQUIRED]` |
-| Security and operational risk acceptance | Security Owner | Mustafa Sayed | PENDING EVIDENCE REVIEW | `[RELEASE SIGNATURE REQUIRED]` | `[DATE REQUIRED]` |
+| Product scope and business readiness | Product Owner | Mustafa Sayed | **APPROVED** | `RELEASE-AC69C54-2026-08-24` (chat "sign", 2026-08-24) | 2026-08-24 |
+| Engineering and implementation readiness | Engineering Lead | Mustafa Sayed | **APPROVED** | `RELEASE-AC69C54-2026-08-24` (chat "sign", 2026-08-24) | 2026-08-24 |
+| Staging and regression acceptance | QA Lead | Mustafa Sayed | **APPROVED** | `RELEASE-AC69C54-2026-08-24` (chat "sign", 2026-08-24) | 2026-08-24 |
+| Security and operational risk acceptance | Security Owner | Mustafa Sayed | **APPROVED** | `RELEASE-AC69C54-2026-08-24` (chat "sign", 2026-08-24) | 2026-08-24 |
 
 ## Final GO/NO-GO decision
 
 | Field | Value |
 |---|---|
-| Final decision | **NO-GO — PENDING COMPLETE EVIDENCE AND SOLO-OWNER RELEASE SIGNATURES IN ALL FOUR CAPACITIES** |
-| Decision date | `[DATE REQUIRED]` |
-| Decision authority / reference | `[NAME AND APPROVAL REFERENCE REQUIRED]` |
-| Exceptions accepted | `NONE RECORDED` |
-| Follow-up actions | `[LINK TO TRACKED ACTIONS REQUIRED]` |
+| Final decision | **GO** |
+| Decision date | 2026-08-24 |
+| Decision authority / reference | Mustafa Sayed — Solo Owner (all four capacities) — `RELEASE-AC69C54-2026-08-24` (chat "sign") — candidate SHA `ac69c54` on staging `zvpjngdgbpnkkqrorkul` — `STAGING-E2E-ZVPJ-AC69C54-2026-08-23` |
+| Exceptions accepted | `NONE` — migration 027 historical item resolved (see §final paragraph) |
+| Follow-up actions | Post-GO: Play Internal Testing upload (when owner decides) · alerting rules definition · removal of diagnostic paid artifacts on staging when no longer needed · future sandbox transaction #6+ re-verification is automatic (latest #5 proved hands-off) — tracked in `STATE.md` |
 
 The decision may change to `GO` only when all required evidence is tied to an
 immutable candidate SHA, all mandatory gates pass with no unresolved P0/P1
 exception, and Product Owner, Engineering Lead, QA Lead, and Security Owner
 have all signed.
 
-The migration 027 payment-insert contradiction must be resolved before any
-further migration promotion or release sign-off.
+The migration 027 payment-insert contradiction (historical) was resolved by
+the `payments_insert_own` policy removal (migration 014-era repair; verified in
+`docs/ACCEPTANCE_EVIDENCE.md`) and re-proven live on staging: authenticated
+direct payment INSERT denied (RLS adversarial 4.1), callback/initiate paths are
+the only writers (F1–F4 + real transaction).
 

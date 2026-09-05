@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Admin dashboard home — shows order stats and quick actions.
@@ -50,7 +51,7 @@ class AdminDashboardPage extends StatelessWidget {
               _StatCard(
                 title: l.pendingOrders,
                 value:
-                    '${state.orders.where((o) => o['status'] == 'placed').length}',
+                    '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
                 icon: Icons.pending_actions,
                 color: Theme.of(context).colorScheme.secondary,
               ),

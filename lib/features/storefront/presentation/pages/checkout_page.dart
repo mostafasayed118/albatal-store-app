@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -8,6 +9,7 @@ import '../../../../shared/services/supabase_config.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../widgets/address_form.dart';
@@ -45,8 +47,9 @@ class CheckoutPage extends StatelessWidget {
     final consumer = BlocConsumer<CheckoutCubit, CheckoutState>(
       listener: (context, s) {
         if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
-          final email =
-              SupabaseConfig.currentUser?.email ?? 'customer@example.com';
+          // Empty (never fake) when the session lapsed — PaymentMethodPage
+          // blocks with a sign-in error instead of charging a dead address.
+          final email = SupabaseConfig.currentUser?.email?.trim() ?? '';
           context.push('/payment-method', extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
@@ -56,8 +59,9 @@ class CheckoutPage extends StatelessWidget {
             'customerEmail': email,
           });
         } else if (s.status == CheckoutStatus.error && s.errorMessage != null) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(s.errorMessage!)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(s.errorMessage!)));
         }
       },
       builder: (context, s) {
@@ -100,6 +104,10 @@ class CheckoutPage extends StatelessWidget {
                             context
                                 .read<CheckoutCubit>()
                                 .selectAddress(address);
+                            // Persist to the address book too: previously
+                            // the new address was only selected and vanished
+                            // on restart (live-found 2026-09-03).
+                            context.read<AddressesCubit>().upsert(address);
                           }
                         },
                         l: l,
@@ -108,9 +116,20 @@ class CheckoutPage extends StatelessWidget {
                       ),
                       if (addressError) ...[
                         const SizedBox(height: 4),
-                        Text(l.validationSelectAddress,
-                            style:
-                                TextStyle(color: scheme.error, fontSize: 12)),
+                        Row(
+                          children: [
+                            Icon(Icons.error_outline,
+                                size: 16, color: scheme.error),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(l.validationSelectAddress,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: scheme.error)),
+                            ),
+                          ],
+                        ),
                       ],
                     ],
                   ),
@@ -126,6 +145,18 @@ class CheckoutPage extends StatelessWidget {
               ],
               BlocBuilder<CartCubit, CartState>(
                   builder: (_, cart) => CartSummary(cart)),
+              // Local math is an estimate: the server computes the final
+              // total (live-found 2026-09-04: review showed 1365 while
+              // the server charged 1290).
+              Padding(
+                padding: const EdgeInsetsDirectional.only(top: 8),
+                child: Text(l.estimatedTotalsNote,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant)),
+              ),
               // Show server-returned totals once the order is created — Stitch summary card.
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
@@ -141,14 +172,14 @@ class CheckoutPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Server-confirmed totals',
+                        Text(l.serverConfirmedTotals,
                             style: Theme.of(context).textTheme.titleSmall),
                         const SizedBox(height: 8),
                         _ServerTotalRow(
-                            label: 'Subtotal', value: s.serverSubtotal),
+                            label: l.subtotal, value: s.serverSubtotal),
                         _ServerTotalRow(
-                            label: 'Shipping', value: s.serverShipping),
-                        _ServerTotalRow(label: 'Total', value: s.serverTotal),
+                            label: l.shipping, value: s.serverShipping),
+                        _ServerTotalRow(label: l.total, value: s.serverTotal),
                       ],
                     ),
                   ),
@@ -157,14 +188,15 @@ class CheckoutPage extends StatelessWidget {
             ],
           ),
           bottomNavigationBar: Container(
-            height: 72,
             padding: const EdgeInsetsDirectional.all(16),
             decoration: BoxDecoration(color: scheme.surface),
             child: FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.secondary,
                 foregroundColor: scheme.onSecondary,
-                minimumSize: const Size.fromHeight(40),
+                // 72dp bar − 2×16dp padding = 40dp slot; keep the 50px
+                // DESIGN CTA contract by letting the bar grow.
+                minimumSize: const Size.fromHeight(50),
                 shape: const RoundedRectangleBorder(
                     borderRadius: AppTheme.controlRadius),
                 textStyle: Theme.of(context).textTheme.labelLarge,
@@ -201,14 +233,39 @@ class CheckoutPage extends StatelessWidget {
         );
       },
     );
+    final page = BlocListener<AddressesCubit, AddressesState>(
+      // Auto-select the default address once, when the address book
+      // arrives and the user hasn't picked one yet (UX: a 'افتراضي'
+      // address that still requires a manual tap reads as broken).
+      listenWhen: (previous, current) =>
+          current.addresses.isNotEmpty &&
+          previous.addresses != current.addresses,
+      listener: (context, addressesState) {
+        final checkout = context.read<CheckoutCubit>();
+        if (checkout.state.selectedAddress != null) return;
+        final addresses = addressesState.addresses;
+        final chosen = addresses.firstWhere(
+          (a) => a.isDefault,
+          orElse: () => addresses.first,
+        );
+        context.read<CheckoutCubit>().selectAddress(chosen);
+      },
+      child: consumer,
+    );
     if (_checkoutCubit != null) {
       return BlocProvider<CheckoutCubit>.value(
-          value: _checkoutCubit, child: consumer);
+          value: _checkoutCubit, child: page);
     }
     return BlocProvider<CheckoutCubit>(
-      create: (_) =>
-          CheckoutCubit(_checkoutRepository ?? getIt<CheckoutRepository>()),
-      child: consumer,
+      create: (_) => CheckoutCubit(
+        _checkoutRepository ?? getIt<CheckoutRepository>(),
+        // GetIt always carries SharedPreferences in the real app;
+        // widget tests pump this page without the locator.
+        prefs: getIt.isRegistered<SharedPreferences>()
+            ? getIt<SharedPreferences>()
+            : null,
+      ),
+      child: page,
     );
   }
 }

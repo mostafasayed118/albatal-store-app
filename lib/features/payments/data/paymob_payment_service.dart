@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
+import '../../../shared/services/logger.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
 
@@ -62,7 +63,13 @@ class PaymobPaymentService implements PaymentService {
 
       return PaymentPending(checkoutUrl: checkoutUrl);
     } catch (e) {
-      return PaymentFailed(message: 'Payment initialization failed: $e');
+      // Scrubbed: never surface raw provider/transport exceptions to the
+      // UI (they can leak URLs, tokens, or internal details).
+      // Structured log keeps the detail diagnostic-only (never in the UI).
+      Log.e('Paymob initiate failed', error: e, category: LogCategory.payment);
+      return const PaymentFailed(
+        message: 'Payment could not be started. Please try again.',
+      );
     }
   }
 
@@ -139,6 +146,57 @@ class PaymobPaymentService implements PaymentService {
     }
   }
 
+  /// Record the customer's chosen payment method on a pending order.
+  ///
+  /// Calls the `set_pending_order_payment_method` RPC (see migration
+  /// 037). Same 30 s ceiling as [confirmCodPayment].
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'set_pending_order_payment_method',
+        params: {
+          'p_order_id': orderId,
+          'p_method': method,
+        },
+      ).timeout(_rpcTimeout);
+
+      final data = response as Map<String, dynamic>;
+      final ok = data['ok'] as bool? ?? false;
+      final code = data['code'] as String? ?? 'unknown';
+
+      if (ok) {
+        return PaymentSuccess(transactionId: '', amount: Money.zero);
+      }
+
+      final message = switch (code) {
+        'authentication_required' => 'Please sign in to continue.',
+        'invalid_method' => 'Unsupported payment method.',
+        'not_owner' => 'You can only modify your own orders.',
+        'order_not_found' => 'Order not found.',
+        'order_not_pending' =>
+          'This order can no longer be modified. Please check your orders.',
+        _ => 'Failed to set payment method. Please try again.',
+      };
+
+      return PaymentFailed(message: message, code: code);
+    } on TimeoutException {
+      return const PaymentFailed(
+        message:
+            'Server did not respond in time. Please check your orders and try again.',
+        code: 'rpc_timeout',
+      );
+    } catch (e) {
+      return PaymentFailed(
+        message: 'Failed to set payment method. Please try again.',
+        code: 'network_error',
+      );
+    }
+  }
+
   /// Subscribe to the `payments` row for [orderId] via Supabase Realtime.
   ///
   /// The `/paymob-callback` webhook updates the row server-side; this
@@ -152,6 +210,9 @@ class PaymobPaymentService implements PaymentService {
   Stream<PaymentResult> watchPaymentStatus(String orderId) {
     final controller = StreamController<PaymentResult>();
     RealtimeChannel? channel;
+    Timer? fallbackTimer;
+    final completer = Completer<void>();
+    bool hasEmitted = false;
 
     controller.onListen = () {
       channel = _client
@@ -166,28 +227,74 @@ class PaymobPaymentService implements PaymentService {
               value: orderId,
             ),
             callback: (payload) {
+              if (completer.isCompleted) return;
               final newRecord = payload.newRecord;
               final status = newRecord['status'] as String?;
               if (status == 'success') {
                 final transactionId =
                     newRecord['transaction_id'] as String? ?? '';
-                controller.add(PaymentSuccess(
-                  transactionId: transactionId,
-                  amount: Money.zero,
-                ));
+                if (!controller.isClosed && !hasEmitted) {
+                  hasEmitted = true;
+                  if (!completer.isCompleted) completer.complete();
+                  fallbackTimer?.cancel();
+                  controller.add(PaymentSuccess(
+                    transactionId: transactionId,
+                    amount: Money.zero,
+                  ));
+                }
               } else if (status == 'failed') {
-                controller.add(const PaymentFailed(
-                  message: 'Payment was declined by the gateway',
-                ));
+                if (!controller.isClosed && !hasEmitted) {
+                  hasEmitted = true;
+                  if (!completer.isCompleted) completer.complete();
+                  fallbackTimer?.cancel();
+                  controller.add(const PaymentFailed(
+                    message: 'Payment was declined by the gateway',
+                  ));
+                }
               }
               // Other status values (e.g. 'pending') are ignored — the
               // webhook will update the row again when terminal.
             },
           )
           .subscribe();
+
+      fallbackTimer = Timer(const Duration(seconds: 45), () async {
+        if (completer.isCompleted) return;
+        if (controller.isClosed) return;
+        if (hasEmitted) return;
+        try {
+          final row = await _client
+              .from('payments')
+              .select('status, transaction_id')
+              .eq('order_id', orderId)
+              .maybeSingle();
+          if (completer.isCompleted) return;
+          if (controller.isClosed) return;
+          if (hasEmitted) return;
+          if (row == null) return;
+          final status = row['status'] as String?;
+          if (status == 'success') {
+            hasEmitted = true;
+            if (!completer.isCompleted) completer.complete();
+            controller.add(PaymentSuccess(
+              transactionId: row['transaction_id'] as String? ?? '',
+              amount: Money.zero,
+            ));
+          } else if (status == 'failed') {
+            hasEmitted = true;
+            if (!completer.isCompleted) completer.complete();
+            controller.add(const PaymentFailed(
+              message: 'Payment was declined by the gateway',
+            ));
+          }
+        } catch (_) {
+          // Fallback poll failure is silent — realtime may still deliver.
+        }
+      });
     };
 
     controller.onCancel = () {
+      fallbackTimer?.cancel();
       channel?.unsubscribe();
     };
 

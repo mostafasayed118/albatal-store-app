@@ -74,5 +74,8 @@ void main() {
     // Should show the snackbar with the address string.
     expect(find.textContaining('Sara Ahmed'), findsOneWidget);
     expect(find.textContaining('45 Nile Corniche'), findsOneWidget);
+    // The typed country must survive submission (live-found 2026-09-04:
+    // the form validated Country yet popped it as '').
+    expect(find.textContaining('Egypt'), findsOneWidget);
   });
 }

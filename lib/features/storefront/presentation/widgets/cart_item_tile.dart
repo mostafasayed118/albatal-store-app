@@ -45,6 +45,7 @@ class CartItemTile extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              behavior: SnackBarBehavior.floating,
               content: Text('${l.remove} $name'),
               action: SnackBarAction(
                 label: l.undo,
@@ -90,17 +91,19 @@ class CartItemTile extends StatelessWidget {
                     ),
                     Wrap(
                       spacing: 4,
+                      runSpacing: 4,
                       children: [
                         TextButton(
                           onPressed: () =>
                               context.read<CartCubit>().remove(item.key),
                           style: TextButton.styleFrom(
                             foregroundColor: scheme.error,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: Size.zero,
+                            minimumSize: const Size(44, 44),
+                            padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 12),
+                            textStyle: Theme.of(context).textTheme.labelLarge,
                           ),
-                          child: Text(l.remove,
-                              style: const TextStyle(fontSize: 12)),
+                          child: Text(l.remove),
                         ),
                         TextButton.icon(
                           onPressed: () {
@@ -109,9 +112,14 @@ class CartItemTile extends StatelessWidget {
                                 .toggle(item.product.id);
                             context.read<CartCubit>().remove(item.key);
                           },
-                          icon: const Icon(Icons.bookmark_border, size: 14),
-                          label: Text(l.saveForLater,
-                              style: const TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                            padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: 12),
+                            textStyle: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          icon: const Icon(Icons.bookmark_border, size: 18),
+                          label: Text(l.saveForLater),
                         ),
                       ],
                     ),

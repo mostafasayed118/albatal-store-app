@@ -44,12 +44,23 @@ final class WishlistCubit extends Cubit<WishlistState> {
 
   final WishlistRepository _repository;
 
-  Future<void> restore() async {
+  /// Reload persisted wishlist IDs.
+  ///
+  /// By default this is a startup fill: if the user already acted
+  /// (non-empty wishlist) a late-completing read must NOT clobber
+  /// live state. Pass [force] for an explicit manual refresh.
+  Future<void> restore({bool force = false}) async {
+    final hadIds = state.ids.isNotEmpty;
     emit(state.copyWith(status: WishlistStatus.loading));
     final result = await _repository.readWishlist();
     switch (result) {
       case Success(:final value):
-        emit(WishlistState(ids: value, status: WishlistStatus.ready));
+        if (force || !hadIds) {
+          emit(WishlistState(ids: value, status: WishlistStatus.ready));
+        } else {
+          // Keep the user's live wishlist; just leave loading state.
+          emit(state.copyWith(status: WishlistStatus.ready));
+        }
       case Failure(:final error):
         emit(state.copyWith(
           status: WishlistStatus.error,

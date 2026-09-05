@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4c4037"/><stop offset=".5" stop-color="#a38a73"/><stop offset="1" stop-color="#88715f"/></linearGradient>
+    <pattern id="wool" width="32" height="32" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 6h32M0 22h32" stroke="#f0dfc6" stroke-opacity=".17" stroke-width="8"/></pattern>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path d="M-40 380C80 260 180 390 270 220S420 130 550 60v500H-40Z" fill="#f0dfc6" opacity=".12"/>
+  <rect width="512" height="512" fill="url(#wool)"/>
+</svg>

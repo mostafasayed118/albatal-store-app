@@ -2,7 +2,7 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/products_data.dart';
+import 'fixtures/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';

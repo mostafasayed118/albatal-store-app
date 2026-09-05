@@ -43,6 +43,7 @@ final class CatalogState extends Equatable {
     this.recentQueries = const [],
     this.flashEnd,
     this.flashRemaining,
+    this.flashSales = const [],
   });
 
   final CatalogStatus status;
@@ -54,6 +55,8 @@ final class CatalogState extends Equatable {
   final List<String> recentQueries;
   final DateTime? flashEnd;
   final Duration? flashRemaining;
+  /// Active flash sales (T1) — raw rows from the repository.
+  final List<Map<String, dynamic>> flashSales;
 
   bool get hasActiveFilters => filters.hasActiveFilters;
 
@@ -155,6 +158,7 @@ final class CatalogState extends Equatable {
     List<String>? recentQueries,
     DateTime? flashEnd,
     Duration? flashRemaining,
+    List<Map<String, dynamic>>? flashSales,
   }) =>
       CatalogState(
         status: status ?? this.status,
@@ -166,6 +170,7 @@ final class CatalogState extends Equatable {
         recentQueries: recentQueries ?? this.recentQueries,
         flashEnd: flashEnd ?? this.flashEnd,
         flashRemaining: flashRemaining ?? this.flashRemaining,
+        flashSales: flashSales ?? this.flashSales,
       );
 
   @override
@@ -179,6 +184,7 @@ final class CatalogState extends Equatable {
         recentQueries,
         flashEnd,
         flashRemaining,
+        flashSales,
       ];
 }
 
@@ -235,9 +241,42 @@ final class CatalogCubit extends Cubit<CatalogState> {
           allProducts: products,
           categories: cats,
         ));
+        // Integrate flash sales into initial load (T1). Fire-and-forget;
+        // emissions are skipped when sales are empty to keep existing
+        // load tests deterministic.
+        // ignore: discarded_futures
+        loadFlashSales();
       },
       failure: (_) => emit(state.copyWith(status: CatalogStatus.error)),
     );
+  }
+
+  /// Loads active flash sales from the repository and binds the countdown.
+  ///
+  /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
+  /// When a sale is active, the first sale's `endsAt` drives
+  /// [startFlashSale] so the countdown ticks live. Failures are
+  /// swallowed so catalog loading never regresses to error due to a
+  /// flash-sale fetch issue.
+  Future<void> loadFlashSales() async {
+    try {
+      final sales = await _repository.getActiveFlashSales();
+      if (sales.isEmpty && state.flashSales.isEmpty) return;
+      emit(state.copyWith(flashSales: sales));
+      if (sales.isNotEmpty) {
+        final endsAt = _parseFlashEndsAt(sales.first);
+        if (endsAt != null) startFlashSale(end: endsAt);
+      }
+    } catch (_) {
+      // Swallow — flash sales are non-critical.
+    }
+  }
+
+  DateTime? _parseFlashEndsAt(Map<String, dynamic> sale) {
+    final raw = sale['ends_at'] ?? sale['endsAt'] ?? sale['end_at'];
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw);
+    return null;
   }
 
   void select(String category) =>
