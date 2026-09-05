@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
-import '../widgets/empty_state_view.dart';
 import '../widgets/wishlist_tile.dart';
 
 class WishlistPage extends StatelessWidget {
@@ -26,7 +26,8 @@ class WishlistPage extends StatelessWidget {
             });
           }
           if (ws.products.isEmpty) {
-            return EmptyStateView(
+            return FeedbackView(
+              type: FeedbackViewType.empty,
               // A heart reads as "nothing saved yet" — clearer than a
               // warehouse/stock glyph for a wishlist.
               icon: Icons.favorite_border,
