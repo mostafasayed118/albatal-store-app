@@ -265,6 +265,10 @@ final class _StubAuthRepository implements AuthRepository {
   @override
   Future<Result<void>> signOut() async => const Success(null);
 
+  @override
+  Future<Result<void>> deleteAccount({required String email}) async =>
+      const Success(null);
+
   Future<void> close() => authChanges.close();
 }
 

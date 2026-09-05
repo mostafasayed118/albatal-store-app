@@ -113,6 +113,32 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<Result<void>> deleteAccount({required String email}) async {
+    try {
+      final session = _client.auth.currentSession;
+      if (session == null) {
+        return Failure(AppError('Your session expired. Please sign in again.'));
+      }
+      // The edge function re-verifies the JWT and compares [email] against
+      // the account email before deleting with the service role (UX-043).
+      await _client.functions.invoke(
+        'delete-account',
+        body: {'userId': session.user.id, 'email': email},
+      );
+      return const Success(null);
+    } on FunctionException catch (e) {
+      // `details` carries the parsed JSON body, e.g. { message: '...' }.
+      final serverMessage = switch (e.details) {
+        {'message': final String m} => m,
+        _ => e.reasonPhrase ?? '',
+      };
+      return Failure(AppError(_mapDeleteError(serverMessage), cause: e));
+    } catch (e) {
+      return Failure(AppError('An unexpected error occurred', cause: e));
+    }
+  }
+
+  @override
   Stream<Authenticated?> get authStateChanges =>
       _client.auth.onAuthStateChange.asyncExpand((data) {
         final session = data.session;
@@ -148,5 +174,25 @@ class SupabaseAuthRepository implements AuthRepository {
         // the original exception as AppError.cause for diagnostics.
         return 'An unexpected error occurred';
     }
+  }
+
+  /// Map delete-account refusal messages from the edge function to
+  /// user-safe text. Unknown messages collapse to a generic string.
+  String _mapDeleteError(String message) {
+    final m = message.toLowerCase();
+    if (m.contains('email does not match')) {
+      return 'The email does not match this account';
+    }
+    if (m.contains('admin')) {
+      return 'Admin accounts cannot be deleted in the app';
+    }
+    if (m.contains('cannot delete another')) {
+      return 'You can only delete your own account';
+    }
+    if (m.contains('session expired') ||
+        m.contains('authentication required')) {
+      return 'Your session expired. Please sign in again.';
+    }
+    return 'Account deletion failed. Please try again.';
   }
 }

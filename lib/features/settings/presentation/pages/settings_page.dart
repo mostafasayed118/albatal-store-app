@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/result.dart';
+import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../../../features/storefront/presentation/cubit/cart_cubit.dart';
+import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/settings_cubit.dart';
@@ -96,8 +100,111 @@ final class SettingsPage extends StatelessWidget {
                 trailing: Icon(context.directionalTrailingIcon),
                 onTap: () => context.push('/support'),
               ),
+              // Account deletion (UX-043) is only meaningful to a signed-in
+              // user; guests see nothing here.
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, auth) {
+                  if (auth.status != AuthStatus.authenticated) {
+                    return const SizedBox.shrink();
+                  }
+                  return const Column(children: [
+                    SizedBox(height: 32),
+                    Divider(),
+                    SizedBox(height: 8),
+                    _DeleteAccountTile(),
+                  ]);
+                },
+              ),
             ]),
           );
         },
       );
+}
+
+/// Destructive settings row for permanent account deletion (UX-043).
+class _DeleteAccountTile extends StatelessWidget {
+  const _DeleteAccountTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
+    return ListTile(
+      leading: Icon(Icons.delete_outline, color: scheme.error),
+      title: Text(l.deleteAccount,
+          style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+      onTap: () => _confirmDeleteAccount(context),
+    );
+  }
+}
+
+/// Confirmation dialog: explains the scope and requires the user to type
+/// their account email (decision C — the server also verifies it).
+Future<void> _confirmDeleteAccount(BuildContext context) async {
+  final l = context.l10n;
+  final messenger = ScaffoldMessenger.of(context);
+  final auth = context.read<AuthCubit>();
+  final cart = context.read<CartCubit>();
+  final wishlist = context.read<WishlistCubit>();
+  final controller = TextEditingController();
+
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(l.deleteAccountTitle),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.deleteAccountBody),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: l.deleteAccountConfirmHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l.deleteAccountCancel),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                // Enabled only once the user typed something; the server
+                // still refuses a mismatched email.
+                onPressed: controller.text.trim().isEmpty
+                    ? null
+                    : () => Navigator.pop(dialogContext, true),
+                child: Text(l.deleteAccountConfirm),
+              ),
+            ],
+          ),
+        ),
+      ) ??
+      false;
+  final email = controller.text.trim();
+  controller.dispose();
+  if (!confirmed || email.isEmpty) return;
+
+  final result = await auth.deleteAccount(email: email);
+  switch (result) {
+    case Success():
+      // Wipe locally persisted user data (cart/wishlist live on-device and
+      // are guest-accessible, so they must not survive a deleted account).
+      cart.clear();
+      wishlist.clearAll();
+      messenger.showSnackBar(SnackBar(content: Text(l.deleteAccountSuccess)));
+    case Failure(:final error):
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+  }
 }

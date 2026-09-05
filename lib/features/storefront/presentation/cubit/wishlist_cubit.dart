@@ -81,6 +81,12 @@ final class WishlistCubit extends Cubit<WishlistState> {
     _persist(next);
   }
 
+  /// Remove every saved item and clear persistence (account deletion).
+  void clearAll() {
+    emit(const WishlistState(status: WishlistStatus.ready));
+    _persist(const {});
+  }
+
   /// Await persistence and surface any failure as a follow-up error state.
   /// The in-memory state is preserved (user's intent kept for the session)
   /// but the UI is warned the wishlist won't survive a restart.

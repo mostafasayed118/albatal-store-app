@@ -31,6 +31,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings => 'الإعدادات';
 
   @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountTitle => 'حذف الحساب؟';
+
+  @override
+  String get deleteAccountBody =>
+      'سيؤدي هذا إلى حذف ملفك الشخصي وعناوينك وقائمة مفضلتك وسلة مشترياتك نهائيًا. تُحفظ سجلات الطلبات السابقة لأغراض التوصيل والقانون.';
+
+  @override
+  String get deleteAccountConfirmHint => 'اكتب بريدك الإلكتروني للتأكيد';
+
+  @override
+  String get deleteAccountConfirm => 'حذف نهائي';
+
+  @override
+  String get deleteAccountCancel => 'إلغاء';
+
+  @override
+  String get deleteAccountSuccess => 'تم حذف الحساب';
+
+  @override
   String get settingsSubtitle => 'المظهر واللغة';
 
   @override

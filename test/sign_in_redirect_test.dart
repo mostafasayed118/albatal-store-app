@@ -43,6 +43,10 @@ class _StubAuthRepository implements AuthRepository {
   Future<Result<void>> signOut() async => const Success(null);
 
   @override
+  Future<Result<void>> deleteAccount({required String email}) async =>
+      const Success(null);
+
+  @override
   Stream<Authenticated?> get authStateChanges =>
       const Stream<Authenticated?>.empty();
 }

@@ -31,6 +31,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete account?';
+
+  @override
+  String get deleteAccountBody =>
+      'This permanently deletes your profile, addresses, wishlist and cart. Past order records are kept for delivery and legal reasons.';
+
+  @override
+  String get deleteAccountConfirmHint => 'Type your email to confirm';
+
+  @override
+  String get deleteAccountConfirm => 'Delete permanently';
+
+  @override
+  String get deleteAccountCancel => 'Cancel';
+
+  @override
+  String get deleteAccountSuccess => 'Account deleted';
+
+  @override
   String get settingsSubtitle => 'Appearance and language';
 
   @override
