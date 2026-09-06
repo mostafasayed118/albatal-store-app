@@ -115,6 +115,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorTitle => 'حدث خطأ ما';
 
   @override
+  String get errorBody => 'يُرجى التحقق من اتصالك والمحاولة مرة أخرى.';
+
+  @override
   String get loading => 'جارٍ التحميل';
 
   @override
@@ -161,6 +164,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get continueShopping => 'متابعة التسوق';
+
+  @override
+  String get startShopping => 'ابدأ التسوق';
 
   @override
   String get active => 'النشطة';

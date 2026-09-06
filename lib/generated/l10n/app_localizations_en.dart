@@ -115,6 +115,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorTitle => 'Something went wrong';
 
   @override
+  String get errorBody => 'Please check your connection and try again.';
+
+  @override
   String get loading => 'Loading';
 
   @override
@@ -161,6 +164,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get continueShopping => 'Continue Shopping';
+
+  @override
+  String get startShopping => 'Start shopping';
 
   @override
   String get active => 'Active';

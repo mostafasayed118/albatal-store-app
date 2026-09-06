@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/wishlist_cubit.dart';
 
@@ -23,7 +24,10 @@ class WishlistToggleIcon extends StatelessWidget {
         // previous zero constraints shrank this below the touch floor.
         return IconButton(
           tooltip: saved ? l.removeFromWishlist : l.addToWishlist,
-          onPressed: () => context.read<WishlistCubit>().toggle(productId),
+          onPressed: () {
+            hapticTap();
+            context.read<WishlistCubit>().toggle(productId);
+          },
           icon: Icon(
             saved ? Icons.favorite : Icons.favorite_border,
             color: saved ? Theme.of(context).colorScheme.error : null,

@@ -35,7 +35,7 @@ class CartPage extends StatelessWidget {
               title: l.cartEmptyTitle,
               // Give the empty cart an exit back into the catalog instead of
               // dead-ending the user.
-              actionLabel: l.continueShopping,
+              actionLabel: l.startShopping,
               onAction: () => context.go('/catalog'),
             );
           }

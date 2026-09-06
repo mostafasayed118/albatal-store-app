@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../core/utils/currency.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../cubit/cart_cubit.dart';
@@ -42,6 +43,7 @@ class CartItemTile extends StatelessWidget {
         final itemKey = item.key;
         final name = product.name;
         cart.remove(itemKey);
+        hapticWarning();
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -94,8 +96,10 @@ class CartItemTile extends StatelessWidget {
                       runSpacing: 4,
                       children: [
                         TextButton(
-                          onPressed: () =>
-                              context.read<CartCubit>().remove(item.key),
+                          onPressed: () {
+                            hapticWarning();
+                            context.read<CartCubit>().remove(item.key);
+                          },
                           style: TextButton.styleFrom(
                             foregroundColor: scheme.error,
                             minimumSize: const Size(44, 44),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../../components/feedback.dart';
 import '../../theme/contrast.dart';
 import '../app_image.dart';
 
@@ -74,7 +75,12 @@ class StitchProductGridCard extends StatelessWidget {
                           shape: const CircleBorder(),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
-                            onTap: onWishlist,
+                            onTap: onWishlist == null
+                                ? null
+                                : () {
+                                    hapticTap();
+                                    onWishlist!();
+                                  },
                             customBorder: const CircleBorder(),
                             child: SizedBox(
                               width: 44,

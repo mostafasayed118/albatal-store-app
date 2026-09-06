@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
@@ -219,8 +220,13 @@ class _HomePageState extends State<HomePage> {
                           child: StitchFlashSaleCard(
                             product: flashProduct,
                             discountLabel: discountLabel,
-                            onAdd: () =>
-                                context.read<CartCubit>().add(flashProduct),
+                            onAdd: () {
+                              context.read<CartCubit>().add(flashProduct);
+                              // Acknowledge the add — the flash-sale card
+                              // lives far from the cart badge, and a silent
+                              // tap reads as "did that even work?".
+                              showConfirmation(context, l.addedToCart);
+                            },
                             onTap: () =>
                                 context.push('/product/${flashProduct.id}'),
                           ),
@@ -290,9 +296,11 @@ class _HomePageState extends State<HomePage> {
                                 product: product,
                                 onTap: () =>
                                     context.push('/product/${product.id}'),
-                                onWishlist: () => context
-                                    .read<WishlistCubit>()
-                                    .toggle(product.id),
+                                onWishlist: () {
+                                  hapticTap();
+                                  context.read<WishlistCubit>().toggle(
+                                      product.id);
+                                },
                                 isWishlisted: wishlist.ids.contains(product.id),
                               );
                             },

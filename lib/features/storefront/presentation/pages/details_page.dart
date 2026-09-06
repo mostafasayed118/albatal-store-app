@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -49,23 +48,15 @@ class DetailsPage extends StatelessWidget {
           if (s.status == DetailsStatus.notFound) {
             return Scaffold(
               appBar: AppBar(),
-              body: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(l.noResultsFound,
-                          style: Theme.of(context).textTheme.titleLarge,
-                          textAlign: TextAlign.center),
-                      const SizedBox(height: 24),
-                      AppButton(
-                        label: l.returnHome,
-                        onPressed: () => context.go('/'),
-                      ),
-                    ],
-                  ),
-                ),
+              body: FeedbackView(
+                type: FeedbackViewType.empty,
+                // Deep links can point at retired products; say so and
+                // offer the way back (was a bare "no results" text).
+                icon: Icons.search_off,
+                title: l.noResultsFound,
+                body: l.emptyBody,
+                actionLabel: l.returnHome,
+                onAction: () => context.go('/'),
               ),
             );
           }

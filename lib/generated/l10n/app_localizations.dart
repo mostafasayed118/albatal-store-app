@@ -302,6 +302,12 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorTitle;
 
+  /// No description provided for @errorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your connection and try again.'**
+  String get errorBody;
+
   /// No description provided for @loading.
   ///
   /// In en, this message translates to:
@@ -397,6 +403,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue Shopping'**
   String get continueShopping;
+
+  /// No description provided for @startShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Start shopping'**
+  String get startShopping;
 
   /// No description provided for @active.
   ///

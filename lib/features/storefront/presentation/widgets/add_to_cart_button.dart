@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
@@ -47,9 +48,9 @@ class AddToCartButton extends StatelessWidget {
                     color: state.color,
                     length: state.length,
                     quantity: state.quantity);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    content: Text(l.addedToCart)));
+                // Same acknowledgment vocabulary as the home flash-sale
+                // add: physical tick + floating confirmation.
+                showConfirmation(context, l.addedToCart);
               }
             : null,
         child: Row(

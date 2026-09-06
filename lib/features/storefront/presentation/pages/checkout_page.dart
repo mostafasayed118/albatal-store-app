@@ -221,11 +221,10 @@ class CheckoutPage extends StatelessWidget {
                       children: [
                         Text(l.proceedToPayment),
                         const SizedBox(width: 8),
-                        const Icon(
-                            IconData(0xe5cc,
-                                fontFamily: 'MaterialIcons',
-                                matchTextDirection: true),
-                            size: 18),
+                        // Extension flips under RTL; the previous raw
+                        // IconData(0xe5cc) literal pointed backwards in
+                        // Arabic layouts.
+                        Icon(context.directionalForwardIcon, size: 18),
                       ],
                     ),
             ),

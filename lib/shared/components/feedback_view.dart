@@ -64,7 +64,10 @@ final class FeedbackView extends StatelessWidget {
       FeedbackViewType.error => (
           icon: icon ?? Icons.error_outline_rounded,
           title: title ?? l10n.errorTitle,
-          body: body ?? '',
+          // Tell the user what to do next instead of leaving a bare
+          // "something went wrong": the default body points at the
+          // recoverable action (check connection + retry).
+          body: body ?? l10n.errorBody,
           action: actionLabel ?? l10n.retry
         ),
     };
