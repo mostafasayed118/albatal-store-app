@@ -390,24 +390,42 @@ class PaymobPaymentService implements PaymentService {
           )
           .subscribe();
 
-      fallbackTimer = Timer(const Duration(seconds: 45), () async {
-        if (completer.isCompleted) return;
-        if (controller.isClosed) return;
-        if (hasEmitted) return;
+      // Periodic fallback poll (was one-shot). Supabase Realtime
+      // postgres_changes delivery was observed silently broken on
+      // staging (subscriptions accepted, realtime.subscription never
+      // populated, zero events — see
+      // docs/evidence/ffaa420/STAGING_E2E_INSTAPAY.md). A single
+      // 45s poll cannot cover InstaPay, where admin approval happens
+      // at an arbitrary later time, so keep polling until a terminal
+      // status is observed. The 15-minute watch timeout in
+      // PaymentCubit still bounds the total wait; cancelling the
+      // subscription (onListen/onCancel) cancels this timer. The
+      // in-flight guard prevents overlapping polls if a poll is
+      // slower than the interval.
+      var pollInFlight = false;
+      fallbackTimer = Timer.periodic(const Duration(seconds: 45), (_) async {
+        if (pollInFlight ||
+            completer.isCompleted ||
+            controller.isClosed ||
+            hasEmitted) {
+          return;
+        }
+        pollInFlight = true;
         try {
           final row = await _client
               .from('payments')
               .select('status, transaction_id')
               .eq('order_id', orderId)
               .maybeSingle();
-          if (completer.isCompleted) return;
-          if (controller.isClosed) return;
-          if (hasEmitted) return;
-          if (row == null) return;
+          if (completer.isCompleted || controller.isClosed || hasEmitted) {
+            return;
+          }
+          if (row == null) return; // keep polling — nothing yet
           final status = row['status'] as String?;
           if (status == 'success') {
             hasEmitted = true;
             if (!completer.isCompleted) completer.complete();
+            fallbackTimer?.cancel();
             controller.add(PaymentSuccess(
               transactionId: row['transaction_id'] as String? ?? '',
               amount: Money.zero,
@@ -415,12 +433,16 @@ class PaymobPaymentService implements PaymentService {
           } else if (status == 'failed') {
             hasEmitted = true;
             if (!completer.isCompleted) completer.complete();
+            fallbackTimer?.cancel();
             controller.add(const PaymentFailed(
               message: 'Payment was declined by the gateway',
             ));
           }
+          // Other statuses (e.g. 'pending') keep the poll running.
         } catch (_) {
           // Fallback poll failure is silent — realtime may still deliver.
+        } finally {
+          pollInFlight = false;
         }
       });
     };
