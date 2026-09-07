@@ -1,0 +1,151 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+import 'app.dart';
+import 'shared/services/app_bloc_observer.dart';
+import 'shared/services/crash_reporting_service.dart';
+import 'shared/services/e2e_sentry_probe.dart';
+import 'shared/services/env_config.dart';
+import 'shared/services/logger.dart';
+import 'shared/services/service_locator.dart';
+import 'shared/services/supabase_config.dart';
+import 'shared/smoke/smoke_harness.dart';
+import 'shared/theme/app_colors.dart';
+
+/// Runs the app after build-time config + DI bootstrap.
+///
+/// Shared by both entry points:
+/// - `lib/main.dart` — production entry, [exitApp] is null, no harness.
+/// - `lib/main_smoke.dart` — debug-only smoke entry, passes an [exitApp]
+///   hook, which is the signal for `AlBatalApp` to mount the on-device
+///   smoke harness.
+///
+/// Keep this the ONLY place bootstrap order lives, so the smoke build
+/// exercises the exact startup path production does.
+Future<void> bootstrap({SmokeExit? exitApp}) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure logger: verbose locally, warnings-and-up in release so
+  // Sentry breadcrumbs aren't flooded with debug/info noise.
+  Log.setLevel(kDebugMode ? LogLevel.debug : LogLevel.warning);
+  Log.i('App starting...', category: LogCategory.app);
+
+  // Set up Bloc observer for state change logging
+  Bloc.observer = AppBlocObserver();
+
+  // Sentry init per docs — must be awaited before FlutterError binding
+  // and wrap runApp. Keep NoOp fallback when DSN is empty.
+  if (EnvConfig.sentryDsn.isEmpty) {
+    Log.w('Sentry disabled — no DSN', category: LogCategory.app);
+  } else {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = EnvConfig.sentryDsn;
+        options.environment = EnvConfig.environment;
+        options.sendDefaultPii = false;
+        options.attachScreenshot = false;
+        options.tracesSampleRate = 0.1;
+        options.beforeSend = (event, hint) {
+          // Defense-in-depth scrub is handled by SentryCrashReportingService._scrubEvent
+          return event;
+        };
+      },
+    );
+  }
+
+  // Bootstrap Supabase + DI. Either can throw if .env is missing, env
+  // vars are blank, or SharedPreferences fails. Without a guard the app
+  // crashes to a red error screen before runApp. Catch and show a clear
+  // fallback UI so the user sees a message instead of a framework crash.
+  try {
+    Log.i('Initializing Supabase...', category: LogCategory.network);
+    await SupabaseConfig.initialize();
+    Log.i('Supabase ready', category: LogCategory.network);
+
+    Log.i('Configuring dependencies...', category: LogCategory.app);
+    await configureDependencies();
+    Log.i('Dependencies ready', category: LogCategory.app);
+
+    // Crash reporting service complements direct SentryFlutter.init above
+    // and provides NoOp fallback when DSN is empty. init() is a no-op
+    // if Sentry was already initialized.
+    final crashReporter = getIt<CrashReportingService>();
+    crashReporter.init();
+
+    // E2E-only: fires ONE tagged exception into Sentry when built with
+    // --dart-define E2E_SENTRY_PROBE=true AND kDebugMode. Dead code in
+    // every normal build. Must run after crash-reporting init above.
+    fireE2ESentryProbe();
+
+    // Capture Flutter framework errors — must be after Sentry init.
+    FlutterError.onError = (details) {
+      Log.e('Flutter error',
+          error: details.exception, stackTrace: details.stack);
+      crashReporter.captureError(
+        details.exception,
+        details.stack,
+        context: {'library': details.library},
+      );
+    };
+
+    // Capture uncaught async errors.
+    PlatformDispatcher.instance.onError = (error, stackTrace) {
+      Log.e('Uncaught async error', error: error, stackTrace: stackTrace);
+      crashReporter.captureError(error, stackTrace);
+      return true;
+    };
+  } catch (error, stackTrace) {
+    Log.e('Bootstrap failed', error: error, stackTrace: stackTrace);
+    runApp(_BootstrapErrorApp(error: error));
+    return;
+  }
+
+  Log.i('Launching app', category: LogCategory.app);
+  runApp(AlBatalApp(exitApp: exitApp));
+}
+
+/// Minimal fallback shown when Supabase/DI initialization fails.
+///
+/// Deliberately depends on nothing from Supabase, GetIt, or localization,
+/// since any of those may be in an inconsistent state after a failed init.
+class _BootstrapErrorApp extends StatelessWidget {
+  const _BootstrapErrorApp({required this.error});
+
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 64, color: AppColors.error),
+                const SizedBox(height: 16),
+                const Text(
+                  'Unable to start the app',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  kDebugMode
+                      ? '$error'
+                      : 'Please check your configuration and try again.',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

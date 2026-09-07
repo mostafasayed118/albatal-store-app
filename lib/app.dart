@@ -26,11 +26,18 @@ import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
 import 'shared/services/service_locator.dart';
+import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
 import 'shared/widgets/environment_banner.dart';
 
 final class AlBatalApp extends StatefulWidget {
-  const AlBatalApp({super.key});
+  const AlBatalApp({super.key, this.exitApp});
+
+  /// Process-exit hook. Non-null ONLY in the debug smoke build
+  /// (`lib/main_smoke.dart`), whose presence both arms and mounts the
+  /// on-device smoke harness. Production entry points leave it null, so
+  /// the harness never mounts there — the entry point is the gate.
+  final SmokeExit? exitApp;
 
   @override
   State<AlBatalApp> createState() => _AlBatalAppState();
@@ -106,7 +113,14 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                       AppLocalizations.localizationsDelegates,
                   supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: _router,
-                  builder: (context, child) => EnvironmentBanner(child: child!),
+                  builder: (context, child) => EnvironmentBanner(
+                      child: widget.exitApp != null
+                          ? SmokeHarness(
+                              router: _router,
+                              adminCubit: context.read<AdminCubit>(),
+                              exitApp: widget.exitApp,
+                              child: child!)
+                          : child!),
                 )));
   }
 }
