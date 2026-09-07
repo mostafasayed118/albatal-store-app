@@ -74,8 +74,10 @@ class CheckoutService implements CheckoutRepository {
       final message = e.message;
       return Failure(
           AppError(message.isNotEmpty ? message : 'Checkout failed'));
-    } catch (e) {
-      return Failure(AppError('Checkout failed: $e'));
+    } catch (_) {
+      // Never interpolate the raw exception: transport failures can carry
+      // internal URLs and secrets that must not reach the UI (audit P1).
+      return const Failure(AppError('Checkout failed'));
     }
   }
 }
