@@ -6,10 +6,16 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -19,6 +25,7 @@ import 'package:al_batal_elite/features/storefront/presentation/widgets/status_p
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
+import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -96,6 +103,41 @@ void main() {
     expect(harness.currentPath, '/home');
   });
 
+  testWidgets('every admin route resolves under an admin session',
+      (tester) async {
+    final harness = await _pumpRouter(tester, initialLocation: '/sign-in');
+
+    harness.profile.isAdmin = true;
+    harness.authRepository.authChanges.add(const Authenticated('user-1'));
+    await _settle(tester);
+
+    // Regression: the catalog hub pushed /admin/products, /admin/categories,
+    // /admin/images and /admin/variants for months without any of them being
+    // registered — every tile dead-ended on "Page Not Found". This probe
+    // walks each admin path and fails when the router silently redirects
+    // (the GoRouter no-route behavior) instead of landing where it was told.
+    const adminPaths = [
+      '/admin',
+      '/admin/orders',
+      '/admin/orders/o-1',
+      '/admin/inventory',
+      '/admin/catalog',
+      '/admin/products',
+      '/admin/products/new',
+      '/admin/products/p-1',
+      '/admin/categories',
+      '/admin/images/p-1',
+      '/admin/variants/p-1',
+    ];
+    for (final path in adminPaths) {
+      harness.router.go(path);
+      await _settle(tester);
+      expect(harness.currentPath, path,
+          reason: 'admin route "$path" must resolve — a redirect away means '
+              'it is unregistered or double-guarded (Page Not Found dead end)');
+    }
+  });
+
   test('auth refresh notifier stops listening after disposal', () async {
     final controller = StreamController<AuthState>.broadcast();
     final notifier = AuthRefreshNotifier(controller.stream);
@@ -163,6 +205,7 @@ Future<_RouterHarness> _pumpRouter(
 }) async {
   final authRepository = _StubAuthRepository();
   final profileRepository = _StubProfileRepository();
+  final adminRepo = _RouteProbeAdminRepository();
   final authCubit = AuthCubit(
     authRepository: authRepository,
     profileRepository: profileRepository,
@@ -187,7 +230,14 @@ Future<_RouterHarness> _pumpRouter(
     refreshNotifier.dispose();
     await authCubit.close();
     await authRepository.close();
+    if (getIt.isRegistered<AdminRepository>()) {
+      getIt.unregister<AdminRepository>();
+    }
   });
+  if (getIt.isRegistered<AdminRepository>()) {
+    getIt.unregister<AdminRepository>();
+  }
+  getIt.registerSingleton<AdminRepository>(adminRepo);
 
   await tester.pumpWidget(MultiBlocProvider(
     providers: [
@@ -195,6 +245,7 @@ Future<_RouterHarness> _pumpRouter(
       BlocProvider(create: (_) => CatalogCubit(const _StubCatalogRepository())),
       BlocProvider(create: (_) => WishlistCubit(persistence)),
       BlocProvider(create: (_) => CartCubit(persistence)),
+      BlocProvider(create: (_) => AdminCubit(adminRepo)),
     ],
     child: MaterialApp.router(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -307,4 +358,84 @@ final class _StubCatalogRepository implements CatalogRepository {
 
   @override
   Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+}
+
+/// Empty admin repository for the route probe: the admin pages built by
+/// the probed routes only need their repositories to resolve — they show
+/// their own empty/error states, which the assertions never inspect.
+final class _RouteProbeAdminRepository implements AdminRepository {
+  @override
+  Future<bool> isCurrentUserAdmin() async => true;
+
+  @override
+  Future<Result<List<AdminOrder>>> getAllOrders(
+          {AdminOrderStatus? status, int limit = 50}) async =>
+      const Success([]);
+
+  @override
+  Future<Result<AdminOrder?>> getOrderDetails(String orderId) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> updateOrderStatus(
+          String orderId, AdminOrderStatus status,
+          {String? trackingNumber}) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<LowStockVariant>>> getLowStockProducts(
+          {int threshold = 5}) async =>
+      const Success([]);
+
+  @override
+  Future<Result<void>> updateStock(String variantId, int newStock) async =>
+      const Success(null);
+
+  @override
+  Future<Result<String>> adminUpsertProduct({
+    String? id,
+    required String name,
+    required String slug,
+    String? description,
+    String? composition,
+    required String categoryId,
+    required double basePrice,
+    required bool isActive,
+  }) async =>
+      const Success('probe');
+
+  @override
+  Future<Result<String>> adminUpsertVariant({
+    required String productId,
+    required String size,
+    required String color,
+    required int stock,
+    double? priceOverride,
+  }) async =>
+      const Success('probe');
+
+  @override
+  Future<Result<void>> adminSetProductImages(
+          String productId, List<String> storagePaths) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales() async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<AdminVariant>>> getVariants(String productId) async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<String>>> getProductImagePaths(String productId) async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<AdminProduct>>> getAllProducts() async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<AdminCategory>>> getAllCategories() async =>
+      const Success([]);
 }

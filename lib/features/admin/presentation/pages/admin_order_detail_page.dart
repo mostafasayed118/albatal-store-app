@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
@@ -17,6 +19,44 @@ class AdminOrderDetailPage extends StatefulWidget {
 }
 
 class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
+  /// Status transition awaiting repository confirmation — drives the
+  /// verified "updated" snackbar in the listener below.
+  AdminOrderStatus? _awaitedStatus;
+
+  /// Shown under the tracking field when Confirm is pressed with an empty
+  /// input; a shipment must always carry a tracking number. A [ValueNotifier]
+  /// because the dialog is a separate route that does not rebuild when the
+  /// page's setState runs.
+  final List<ValueNotifier<String?>> _dialogErrors = [];
+
+  ValueNotifier<String?> _newDialogError() {
+    final notifier = ValueNotifier<String?>(null);
+    _dialogErrors.add(notifier);
+    return notifier;
+  }
+
+  /// Dialog field controllers awaiting disposal. Freed in [dispose]:
+  /// disposing synchronously when `showDialog` returns pulls the rug
+  /// from under the still-animating dialog's TextFields.
+  final List<TextEditingController> _dialogControllers = [];
+
+  TextEditingController _newDialogController() {
+    final ctrl = TextEditingController();
+    _dialogControllers.add(ctrl);
+    return ctrl;
+  }
+
+  @override
+  void dispose() {
+    for (final ctrl in _dialogControllers) {
+      ctrl.dispose();
+    }
+    for (final notifier in _dialogErrors) {
+      notifier.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -26,31 +66,139 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // Short ids arrive via deep links (bad notifications, stale links);
+    // substring(0, 8) on those used to throw a RangeError on first build.
+    final shortId = widget.orderId.length <= 8
+        ? widget.orderId
+        : widget.orderId.substring(0, 8);
     return Scaffold(
-      appBar: AppBar(
-          title: Text('${l.order} #${widget.orderId.substring(0, 8)}...')),
-      body: BlocBuilder<AdminCubit, AdminState>(
-        builder: (context, state) {
-          if (state.status == AdminStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+      appBar: AppBar(title: Text('${l.order} #$shortId...')),
+      body: BlocListener<AdminCubit, AdminState>(
+        listener: (context, state) {
+          // Optimistic acks lie when the transition fails; confirm only
+          // what the repository actually did.
+          if (state.status == AdminStatus.error) {
+            if (_awaitedStatus != null) {
+              showFloatingError(
+                  context, state.errorMessage ?? context.l10n.errorTitle);
+            }
+            _awaitedStatus = null;
+          } else if (state.status == AdminStatus.ready &&
+              _awaitedStatus != null &&
+              state.selectedOrder?.status == _awaitedStatus) {
+            showConfirmation(context,
+                context.l10n.orderStatusUpdatedTo(_awaitedStatus!.name));
+            _awaitedStatus = null;
           }
-          final order = state.selectedOrder;
-          if (order == null) {
-            return Center(child: Text(l.orderNotFound));
-          }
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _OrderStatusCard(order: order),
-              const SizedBox(height: 16),
-              _OrderItemsCard(order: order),
-              const SizedBox(height: 16),
-              _DeliveryAddressCard(order: order),
-              const SizedBox(height: 16),
-              _FulfillmentActions(order: order),
-            ],
-          );
         },
+        child: BlocBuilder<AdminCubit, AdminState>(
+          builder: (context, state) {
+            if (state.status == AdminStatus.loading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final order = state.selectedOrder;
+            if (order == null) {
+              // Unknown id (stale deep link) must not dead-end: same
+              // language as every other error state, with a way back.
+              return FeedbackView(
+                type: FeedbackViewType.error,
+                title: l.orderNotFound,
+                actionLabel: l.retry,
+                onAction: () =>
+                    context.read<AdminCubit>().loadOrderDetails(widget.orderId),
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _OrderStatusCard(order: order),
+                const SizedBox(height: 16),
+                _OrderItemsCard(order: order),
+                const SizedBox(height: 16),
+                _DeliveryAddressCard(order: order),
+                const SizedBox(height: 16),
+                _FulfillmentActions(
+                  order: order,
+                  onStatusInvoked: (status) => _awaitedStatus = status,
+                  onShipRequested: () => _showTrackingDialog(order),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Opens the tracking dialog for [order]. Lives on the page State (not
+  /// the card) so the field controllers are disposed with the page instead
+  /// of while the dialog's exit animation still has the TextFields mounted.
+  Future<void> _showTrackingDialog(AdminOrder order) async {
+    // Let the tapped row's frame finish rendering before pushing the dialog;
+    // a slow device can otherwise starve the route's opening frame.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final trackingCtrl = _newDialogController();
+    final courierCtrl = _newDialogController();
+    final trackingError = _newDialogError();
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(context.l10n.addTrackingDetails),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: courierCtrl,
+                decoration:
+                    InputDecoration(labelText: context.l10n.courierName),
+              ),
+              const SizedBox(height: 12),
+              ValueListenableBuilder<String?>(
+                valueListenable: trackingError,
+                builder: (context, error, _) => TextField(
+                  controller: trackingCtrl,
+                  onChanged: (_) {
+                    // First keystroke clears a visible rejection.
+                    if (trackingError.value != null) {
+                      trackingError.value = null;
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: context.l10n.trackingNumber,
+                    errorText: error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final tracking = trackingCtrl.text.trim();
+              if (tracking.isEmpty) {
+                hapticWarning();
+                trackingError.value = context.l10n.fieldRequired;
+                return;
+              }
+              hapticWarning();
+              _awaitedStatus = AdminOrderStatus.shipped;
+              context.read<AdminCubit>().updateOrderStatus(
+                    order.id,
+                    AdminOrderStatus.shipped,
+                    trackingNumber: tracking,
+                  );
+              Navigator.pop(context);
+            },
+            child: Text(context.l10n.confirm),
+          ),
+        ],
       ),
     );
   }
@@ -176,9 +324,21 @@ class _DeliveryAddressCard extends StatelessWidget {
 /// [AdminOrder] guards (`canConfirm`, `canCancel`, `canShip`, `canDeliver`)
 /// instead of string comparisons scattered through the UI.
 class _FulfillmentActions extends StatelessWidget {
-  const _FulfillmentActions({required this.order});
+  const _FulfillmentActions({
+    required this.order,
+    required this.onStatusInvoked,
+    required this.onShipRequested,
+  });
 
   final AdminOrder order;
+
+  /// Notified when a transition is requested so the page's listener can
+  /// verify the repository result before confirming it.
+  final ValueChanged<AdminOrderStatus> onStatusInvoked;
+
+  /// Opens the tracking dialog on the page State, which owns the dialog's
+  /// field controller lifecycle.
+  final VoidCallback onShipRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +355,7 @@ class _FulfillmentActions extends StatelessWidget {
         _ActionTile(
           icon: Icons.local_shipping,
           title: l.markAsShipped,
-          onTap: () => _showTrackingDialog(context),
+          onTap: onShipRequested,
         ),
       if (order.canDeliver)
         _ActionTile(
@@ -230,71 +390,15 @@ class _FulfillmentActions extends StatelessWidget {
   }
 
   void _updateStatus(BuildContext context, AdminOrderStatus status) {
+    // The tap acknowledges itself immediately; the "updated" confirmation
+    // is earned by the repository result (see the listener in build), so
+    // a failed transition never claims success.
+    hapticWarning();
+    onStatusInvoked(status);
     context.read<AdminCubit>().updateOrderStatus(
           order.id,
           status,
         );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.orderStatusUpdatedTo(status.name)),
-      ),
-    );
-  }
-
-  Future<void> _showTrackingDialog(BuildContext context) async {
-    // Let the tapped row's frame finish rendering before pushing the dialog;
-    // a slow device can otherwise starve the route's opening frame.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!context.mounted) return;
-    final trackingCtrl = TextEditingController();
-    final courierCtrl = TextEditingController();
-    await showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(context.l10n.addTrackingDetails),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: courierCtrl,
-                decoration:
-                    InputDecoration(labelText: context.l10n.courierName),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: trackingCtrl,
-                decoration:
-                    InputDecoration(labelText: context.l10n.trackingNumber),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              context.read<AdminCubit>().updateOrderStatus(
-                    order.id,
-                    AdminOrderStatus.shipped,
-                    trackingNumber: trackingCtrl.text,
-                  );
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10n.orderMarkedAsShipped)),
-              );
-            },
-            child: Text(context.l10n.confirm),
-          ),
-        ],
-      ),
-    );
-    // Free the field controllers once the dialog has closed.
-    trackingCtrl.dispose();
-    courierCtrl.dispose();
   }
 }
 

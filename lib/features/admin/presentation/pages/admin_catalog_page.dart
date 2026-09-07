@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/app_error.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/logger.dart';
@@ -16,25 +17,19 @@ class AdminCatalogPage extends StatelessWidget {
       final isAdmin = await getIt<AdminRepository>().isCurrentUserAdmin();
       if (!context.mounted) return;
       if (!isAdmin) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.adminAccessRequired)),
-        );
+        showFloatingError(context, context.l10n.adminAccessRequired);
         return;
       }
       context.push(location);
     } on AppError catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      showFloatingError(context, e.message);
     } catch (e) {
       if (!context.mounted) return;
       // Generic user message — raw exception stays in logs only.
       Log.e('Admin access check failed', error: e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Unable to verify admin access. Please try again.')),
-      );
+      showFloatingError(
+          context, 'Unable to verify admin access. Please try again.');
     }
   }
 
@@ -58,17 +53,22 @@ class AdminCatalogPage extends StatelessWidget {
             subtitle: l.manageCategories,
             onTap: () => _guardedPush(context, '/admin/categories'),
           ),
+          // Image and variant management are per-product surfaces
+          // (`/admin/images/:id`, `/admin/variants/:id`) — a product must
+          // be chosen first, so both tiles land on the product list,
+          // which doubles as the picker. (These tiles previously pushed
+          // id-less paths that were never registered: "Page Not Found".)
           _ManagementTile(
             icon: Icons.image_outlined,
             title: l.productImages,
             subtitle: l.manageProductImages,
-            onTap: () => _guardedPush(context, '/admin/images'),
+            onTap: () => _guardedPush(context, '/admin/products'),
           ),
           _ManagementTile(
             icon: Icons.inventory_2_outlined,
             title: l.variants,
             subtitle: l.manageVariantsAndStock,
-            onTap: () => _guardedPush(context, '/admin/variants'),
+            onTap: () => _guardedPush(context, '/admin/products'),
           ),
         ],
       ),

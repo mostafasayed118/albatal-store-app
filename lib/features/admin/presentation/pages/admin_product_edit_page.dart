@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_button.dart';
-import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/services/service_locator.dart';
-import '../../../storefront/domain/repositories/catalog_repository.dart';
+import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Admin product create/edit — calls [AdminRepository.adminUpsertProduct].
@@ -31,10 +32,17 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   late final TextEditingController _compositionCtrl;
   late final TextEditingController _priceCtrl;
   bool _isActive = true;
-  String? _selectedCategory;
-  List<String> _categories = const [];
+
+  /// The product's category, as the `admin_upsert_product` RPC contract
+  /// requires: `categories.id` (a UUID) — NOT the display name.
+  String? _selectedCategoryId;
+  List<AdminCategory> _categories = const [];
   bool _loadingCategories = true;
   bool _submitting = false;
+
+  /// While the product row is being fetched for an edit, the form is
+  /// disabled — a blank "edit" form invites saving an accidental wipe.
+  bool _loadingProduct = false;
 
   @override
   void initState() {
@@ -51,35 +59,96 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       text: price == null ? '' : price.toString(),
     );
     _isActive = d?['is_active'] as bool? ?? true;
-    _selectedCategory =
-        d?['category_id'] as String? ?? d?['category'] as String?;
+    _selectedCategoryId = d?['category_id'] as String?;
+    if (widget.productId != null && d == null) {
+      // Reached by id only (route or picker) — load the row so the
+      // form prefills instead of presenting a blank "edit" form.
+      _loadProduct();
+    }
     _loadCategories();
+  }
+
+  Future<void> _loadProduct() async {
+    setState(() => _loadingProduct = true);
+    final result = await getIt<AdminRepository>().getAllProducts();
+    if (!mounted) return;
+    AdminProduct? product;
+    if (result case Success(:final value)) {
+      for (final p in value) {
+        if (p.id == widget.productId) {
+          product = p;
+          break;
+        }
+      }
+    }
+    if (!mounted) return;
+    if (product == null) {
+      showFloatingError(context, 'Product not found');
+      setState(() => _loadingProduct = false);
+      return;
+    }
+    _nameCtrl.text = product.name;
+    _slugCtrl.text = product.slug;
+    _descriptionCtrl.text = product.description ?? '';
+    _compositionCtrl.text = product.composition ?? '';
+    _priceCtrl.text =
+        product.basePrice == 0 ? '' : _trimTrailingZeros(product.basePrice);
+    _isActive = product.isActive;
+    _selectedCategoryId = product.categoryId;
+    setState(() => _loadingProduct = false);
+  }
+
+  /// Prices render whole-EGP style across the admin surfaces (1890, not
+  /// 1890.0); keep the form consistent when prefilling from the row.
+  static String _trimTrailingZeros(double value) {
+    final s = value.toStringAsFixed(2);
+    return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
   }
 
   Future<void> _loadCategories() async {
     try {
-      final repo = getIt<CatalogRepository>();
-      final result = await repo.fetchCategories();
+      // The admin list (ids + names, including inactive) — not the
+      // storefront name list, which cannot satisfy the RPC's UUID contract.
+      final result = await getIt<AdminRepository>().getAllCategories();
       if (!mounted) return;
       result.when(
-        success: (cats) {
+        success: (categories) {
           setState(() {
-            _categories = cats;
+            _categories = categories;
             _loadingCategories = false;
-            if (_selectedCategory != null &&
-                !_categories.contains(_selectedCategory)) {
-              // Keep existing value even if not in list (e.g. category id).
-              _categories = [..._categories, _selectedCategory!];
-            } else if (_selectedCategory == null && _categories.isNotEmpty) {
-              _selectedCategory = _categories.first;
+            final ids = categories.map((c) => c.id).toSet();
+            if (_selectedCategoryId != null &&
+                !ids.contains(_selectedCategoryId)) {
+              // The product's category vanished from the visible list
+              // (e.g. deactivated): keep it selectable instead of
+              // silently rewriting the product's value on save.
+              _categories = [
+                ..._categories,
+                AdminCategory(
+                  id: _selectedCategoryId!,
+                  name: _selectedCategoryId!,
+                  isActive: true,
+                ),
+              ];
+            } else if (_selectedCategoryId == null && _categories.isNotEmpty) {
+              _selectedCategoryId = _categories.first.id;
             }
           });
         },
         failure: (e) {
           setState(() {
             _loadingCategories = false;
-            _categories =
-                _selectedCategory != null ? [_selectedCategory!] : const [];
+            if (_selectedCategoryId != null) {
+              // Degraded mode: keep the current category selectable so
+              // an edit can still save; the id stands in for the name.
+              _categories = [
+                AdminCategory(
+                  id: _selectedCategoryId!,
+                  name: _selectedCategoryId!,
+                  isActive: true,
+                ),
+              ];
+            }
           });
         },
       );
@@ -99,18 +168,20 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedCategory == null || _selectedCategory!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a category')),
-      );
+    if (_loadingProduct || !_formKey.currentState!.validate()) return;
+    if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
+      showFloatingError(context, 'Please select a category');
       return;
     }
     final price = double.tryParse(_priceCtrl.text.trim());
     if (price == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid price')),
-      );
+      showFloatingError(context, 'Invalid price');
+      return;
+    }
+    if (price <= 0) {
+      // The DB enforces this too (001: base_price > 0), but failing here
+      // gives an inline message instead of a generic save failure.
+      showFloatingError(context, 'Price cannot be negative');
       return;
     }
     setState(() => _submitting = true);
@@ -124,7 +195,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       composition: _compositionCtrl.text.trim().isEmpty
           ? null
           : _compositionCtrl.text.trim(),
-      categoryId: _selectedCategory!,
+      categoryId: _selectedCategoryId!,
       basePrice: price,
       isActive: _isActive,
     );
@@ -132,11 +203,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     setState(() => _submitting = false);
     result.when(
       success: (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(widget.productId == null
-                  ? 'Product created'
-                  : 'Product updated')),
+        showConfirmation(
+          context,
+          widget.productId == null ? 'Product created' : 'Product updated',
         );
         context.pop(true);
       },
@@ -144,19 +213,18 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         // Repository messages are fixed, user-facing strings — the raw
         // exception never reaches the UI (leak scrubbed with the Result
         // migration).
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
-        );
+        showFloatingError(context, error.message);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.productId == null ? l.products : l.products),
+        // The form was previously titled "Products" in both modes —
+        // indistinguishable from the list page in the back stack.
+        title: Text(widget.productId == null ? 'New Product' : 'Edit Product'),
       ),
       body: Form(
         key: _formKey,
@@ -194,12 +262,15 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                         padding: EdgeInsets.all(8),
                         child: CircularProgressIndicator()))
                 : DropdownButtonFormField<String>(
-                    initialValue: _selectedCategory,
+                    // Values are category UUIDs (the RPC contract); the
+                    // display label is the human-readable name.
+                    initialValue: _selectedCategoryId,
                     decoration: const InputDecoration(labelText: 'Category'),
                     items: _categories
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .map((c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)))
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedCategory = v),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
                     validator: (v) =>
                         v == null || v.isEmpty ? 'Required' : null,
                   ),
@@ -222,7 +293,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
               onChanged: (v) => setState(() => _isActive = v),
             ),
             const SizedBox(height: 24),
-            _submitting
+            _submitting || _loadingProduct
                 ? const Center(child: CircularProgressIndicator())
                 : AppButton(
                     label: widget.productId == null

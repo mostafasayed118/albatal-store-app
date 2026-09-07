@@ -4,6 +4,8 @@ import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/app_image.dart';
+import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/logger.dart';
@@ -55,21 +57,20 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     );
   }
 
-  Future<void> _persistPaths(List<String> paths) async {
+  Future<void> _persistPaths(List<String> paths, {String? confirmation}) async {
     final result = await getIt<AdminRepository>()
         .adminSetProductImages(widget.productId, paths);
     if (!mounted) return;
     result.when(
       success: (_) {
         setState(() => _paths = List.of(paths));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Images updated')),
-        );
+        // Confirm only what the repository saved — and say what happened
+        // (an "Images updated" after a delete reads wrong).
+        showConfirmation(context, confirmation ?? 'Images updated');
       },
       failure: (error) {
         Log.e('Admin image save failed', error: error);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        showFloatingError(context, error.message);
       },
     );
   }
@@ -96,32 +97,29 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       if (!mounted) return;
       if (saveResult case Failure(:final error)) {
         setState(() => _uploading = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        showFloatingError(context, error.message);
         return;
       }
       setState(() {
         _paths = next;
         _uploading = false;
       });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Image uploaded')));
+      showConfirmation(context, 'Image uploaded');
     } on AppError catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.message)));
+      showFloatingError(context, e.message);
     } catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
       Log.e('Admin image upload failed', error: e);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upload failed. Please try again.')));
+      showFloatingError(context, 'Upload failed. Please try again.');
     }
   }
 
   void _move(int from, int to) {
     if (to < 0 || to >= _paths.length) return;
+    hapticTap();
     final next = List<String>.of(_paths);
     final item = next.removeAt(from);
     next.insert(to, item);
@@ -129,9 +127,39 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     _persistPaths(next);
   }
 
+  /// A single tap on the small overlay icon must not delete an image:
+  /// confirm first, then confirm the outcome.
   Future<void> _delete(int index) async {
+    hapticWarning();
+    // Let the tapped tile's frame finish rendering before pushing the
+    // dialog (same slow-device guard used by the other admin dialogs).
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete image?'),
+        content: const Text(
+            'This removes the image from the product gallery on the store.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     final next = List<String>.of(_paths)..removeAt(index);
-    await _persistPaths(next);
+    await _persistPaths(next, confirmation: context.l10n.imageRemoved);
   }
 
   @override
@@ -169,7 +197,14 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                     ),
                     Expanded(
                       child: _paths.isEmpty
-                          ? const Center(child: Text('No images yet'))
+                          ? FeedbackView(
+                              type: FeedbackViewType.empty,
+                              title: 'No images yet',
+                              body:
+                                  'Upload the first image so the product has a gallery on the store.',
+                              actionLabel: 'Upload Image',
+                              onAction: _uploadImage,
+                            )
                           : GridView.builder(
                               padding: const EdgeInsets.all(16),
                               gridDelegate:

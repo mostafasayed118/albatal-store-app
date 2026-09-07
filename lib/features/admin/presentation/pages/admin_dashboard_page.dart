@@ -2,13 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Admin dashboard home — shows order stats and quick actions.
-class AdminDashboardPage extends StatelessWidget {
+class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
+
+  @override
+  State<AdminDashboardPage> createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    // The dashboard previously only rendered whatever sat in the cubit;
+    // a fresh session landed on permanently-empty stats. Load on entry,
+    // like every other admin surface. Sequential so a non-admin's final
+    // state is the access-denied error, not a race between loaders.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final cubit = context.read<AdminCubit>();
+      await cubit.loadOrders();
+      if (!mounted) return;
+      await cubit.loadLowStockProducts();
+      if (!mounted) return;
+      await cubit.checkAdmin();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,21 +45,16 @@ class AdminDashboardPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.status == AdminStatus.error) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.error_outline,
-                      size: 48, color: Theme.of(context).colorScheme.error),
-                  const SizedBox(height: 16),
-                  Text(state.errorMessage ?? 'Error'),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.read<AdminCubit>().clearError(),
-                    child: Text(l.retry),
-                  ),
-                ],
-              ),
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              body: state.errorMessage,
+              // Reload the data; the old handler only cleared the error
+              // flag, leaving the dashboard empty on the "retry".
+              onAction: () => context.read<AdminCubit>()
+                ..clearError()
+                ..loadOrders()
+                ..loadLowStockProducts()
+                ..checkAdmin(),
             );
           }
           return ListView(

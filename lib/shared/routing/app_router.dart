@@ -1,10 +1,15 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
 import '../../features/admin/presentation/pages/admin_order_detail_page.dart';
 import '../../features/admin/presentation/pages/admin_orders_page.dart';
+import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
+import '../../features/admin/presentation/pages/admin_products_page.dart';
+import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
 import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -147,6 +152,35 @@ final _routes = <RouteBase>[
   GoRoute(
     path: '/admin/catalog',
     builder: (_, __) => const AdminCatalogPage(),
+  ),
+  // Catalog management destinations (migration-era hub tiles pointed at
+  // these paths, but the routes themselves were never registered — every
+  // tile dead-ended on "Page Not Found").
+  GoRoute(
+    path: '/admin/products',
+    builder: (_, __) => const AdminProductsPage(),
+  ),
+  GoRoute(
+    path: '/admin/products/new',
+    builder: (_, __) => const AdminProductEditPage(),
+  ),
+  GoRoute(
+    path: '/admin/products/:id',
+    builder: (_, s) => AdminProductEditPage(productId: s.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/admin/categories',
+    builder: (_, __) => const AdminCategoriesPage(),
+  ),
+  GoRoute(
+    path: '/admin/images/:id',
+    builder: (_, s) =>
+        AdminImageManagerPage(productId: s.pathParameters['id']!),
+  ),
+  GoRoute(
+    path: '/admin/variants/:id',
+    builder: (_, s) =>
+        AdminVariantEditorPage(productId: s.pathParameters['id']!),
   ),
   GoRoute(path: '/support', builder: (_, __) => const SupportPage()),
   GoRoute(

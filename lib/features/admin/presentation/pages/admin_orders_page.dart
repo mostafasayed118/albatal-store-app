@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
@@ -55,18 +56,21 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           if (state.status == AdminStatus.loading) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (state.status == AdminStatus.error) {
+            // A failed load must not read as an empty queue.
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              body: state.errorMessage,
+              onAction: () => context.read<AdminCubit>().loadOrders(),
+            );
+          }
           final orders = state.filteredOrders;
           if (orders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 64, color: Theme.of(context).colorScheme.outline),
-                  const SizedBox(height: 16),
-                  Text(l.noOrdersFound),
-                ],
-              ),
+            return FeedbackView(
+              type: FeedbackViewType.empty,
+              icon: Icons.receipt_long_outlined,
+              title: l.noOrdersFound,
+              body: l.noOrdersFoundBody,
             );
           }
           return ListView.builder(

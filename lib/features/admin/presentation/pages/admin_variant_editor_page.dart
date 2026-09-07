@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_variant.dart';
@@ -23,6 +24,27 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
   List<AdminVariant> _variants = [];
   bool _loading = true;
   String? _error;
+
+  /// Dialog field controllers awaiting disposal. Freed in [dispose]:
+  /// disposing synchronously when `showDialog` returns pulls the rug
+  /// from under the still-animating dialog's TextFields (a keyboard-dismiss
+  /// MediaQuery rebuild during the exit animation hits the disposed
+  /// controllers).
+  final List<TextEditingController> _dialogControllers = [];
+
+  TextEditingController _newDialogController([String? text]) {
+    final ctrl = TextEditingController(text: text);
+    _dialogControllers.add(ctrl);
+    return ctrl;
+  }
+
+  @override
+  void dispose() {
+    for (final ctrl in _dialogControllers) {
+      ctrl.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -54,12 +76,11 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     // a slow device can otherwise starve the route's opening frame.
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    final sizeCtrl = TextEditingController(text: existing?.size ?? '');
-    final colorCtrl = TextEditingController(text: existing?.color ?? '');
-    final stockCtrl =
-        TextEditingController(text: existing?.stock.toString() ?? '');
-    final priceCtrl = TextEditingController(
-      text: existing?.priceOverride?.toString() ?? '',
+    final sizeCtrl = _newDialogController(existing?.size ?? '');
+    final colorCtrl = _newDialogController(existing?.color ?? '');
+    final stockCtrl = _newDialogController(existing?.stock.toString() ?? '');
+    final priceCtrl = _newDialogController(
+      existing?.priceOverride?.toString() ?? '',
     );
     bool saving = false;
 
@@ -116,17 +137,19 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                     onPressed: () async {
                       if (sizeCtrl.text.trim().isEmpty ||
                           colorCtrl.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                              content: Text('Size and color are required')),
-                        );
+                        showFloatingError(ctx, 'Size and color are required');
                         return;
                       }
                       final stock = int.tryParse(stockCtrl.text.trim());
                       if (stock == null) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Invalid stock')),
-                        );
+                        showFloatingError(ctx, 'Invalid stock');
+                        return;
+                      }
+                      if (stock < 0) {
+                        // The DB enforces this too (001: stock >= 0), but
+                        // failing here gives an inline message instead of a
+                        // generic save failure.
+                        showFloatingError(ctx, 'Stock cannot be negative');
                         return;
                       }
                       final priceOverride = priceCtrl.text.trim().isEmpty
@@ -134,10 +157,15 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                           : double.tryParse(priceCtrl.text.trim());
                       if (priceCtrl.text.trim().isNotEmpty &&
                           priceOverride == null) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                              content: Text('Invalid price override')),
-                        );
+                        showFloatingError(ctx, 'Invalid price override');
+                        return;
+                      }
+                      if (priceOverride != null && priceOverride <= 0) {
+                        // No DB guard existed for price_override until
+                        // migration 044 — this is the first line of defense;
+                        // the CHECK is the last.
+                        showFloatingError(
+                            ctx, 'Price override cannot be negative');
                         return;
                       }
                       setDlgState(() => saving = true);
@@ -154,17 +182,13 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
                         success: (_) {
                           Navigator.pop(ctx);
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Variant saved')),
-                          );
+                          showConfirmation(context, 'Variant saved');
                           _loadVariants();
                         },
                         failure: (error) {
                           // Repository messages are fixed, user-facing
                           // strings — safe to render verbatim.
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: Text(error.message)),
-                          );
+                          showFloatingError(ctx, error.message);
                           setDlgState(() => saving = false);
                         },
                       );
@@ -174,13 +198,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
         ),
       ),
     );
-    // The dialog can also close via the barrier while a save is in flight,
-    // so dispose the field controllers only after it has fully popped —
-    // on every path.
-    sizeCtrl.dispose();
-    colorCtrl.dispose();
-    stockCtrl.dispose();
-    priceCtrl.dispose();
+    // Controllers stay alive on the page State until the page itself is
+    // disposed — the dialog's exit animation may still have them mounted.
   }
 
   @override
