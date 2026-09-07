@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/profile.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../cubit/auth_cubit.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -91,7 +93,30 @@ class _AuthenticatedProfile extends StatelessWidget {
             title: Text(profile?.fullName ?? l.unknownUser),
             subtitle: Text(profile?.phone ?? ''),
           ),
-        ),
+        ), // Stitch mockup (Categories/Profile/Orders) shows a Premium Member
+        // badge under the identity card — now driven by the real,
+        // admin-managed membership_tier (migration 046), so only
+        // premium-tier customers see it.
+        if (profile?.tier == MembershipTier.premium) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.workspace_premium, size: 18, color: AppColors.gold),
+              const SizedBox(width: 6),
+              Text(
+                l.premiumMember,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.gold, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l.premiumFreeShipping,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ],
         const SizedBox(height: 16),
         ListTile(
           leading: const Icon(Icons.receipt_long_outlined),

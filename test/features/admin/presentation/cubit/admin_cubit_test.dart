@@ -18,6 +18,15 @@ AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
       placedAt: DateTime(2026),
     );
 
+AdminOrder _orderForCustomer(String id, String profileId) => AdminOrder(
+      id: id,
+      status: AdminOrderStatus.paid,
+      total: Money.zero,
+      placedAt: DateTime(2026),
+      customerId: profileId,
+      customerTier: 'standard',
+    );
+
 void main() {
   late _MockAdminRepository repo;
 
@@ -337,6 +346,80 @@ void main() {
             .having((s) => s.status, 'status', AdminStatus.error)
             .having((s) => s.errorMessage, 'errorMessage',
                 'Failed to update stock'),
+      ],
+    );
+  });
+
+  group('AdminCubit.setMembershipTier', () {
+    blocTest<AdminCubit, AdminState>(
+      'updates the open order customer tier on Success (no full reload)',
+      seed: () => AdminState(
+        status: AdminStatus.ready,
+        selectedOrder: _orderForCustomer('o1', 'profile-9'),
+      ),
+      build: () {
+        when(() => repo.setMembershipTier('profile-9', 'premium'))
+            .thenAnswer((_) async => const Success(null));
+        return AdminCubit(repo);
+      },
+      act: (cubit) => cubit.setMembershipTier('profile-9', 'premium'),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.selectedOrder?.customerTier, 'tier', 'premium'),
+      ],
+      verify: (_) {
+        verify(() => repo.setMembershipTier('profile-9', 'premium')).called(1);
+      },
+    );
+
+    blocTest<AdminCubit, AdminState>(
+      'no-op selection (same tier) emits nothing',
+      seed: () => AdminState(
+        status: AdminStatus.ready,
+        selectedOrder: _orderForCustomer('o1', 'profile-9'),
+      ),
+      build: () {
+        when(() => repo.setMembershipTier('profile-9', 'standard'))
+            .thenAnswer((_) async => const Success(null));
+        return AdminCubit(repo);
+      },
+      act: (cubit) => cubit.setMembershipTier('profile-9', 'standard'),
+      expect: () => [],
+    );
+
+    blocTest<AdminCubit, AdminState>(
+      'success for another customer never mutates the open order',
+      seed: () => AdminState(
+        status: AdminStatus.ready,
+        selectedOrder: _orderForCustomer('o1', 'profile-9'),
+      ),
+      build: () {
+        when(() => repo.setMembershipTier('profile-OTHER', 'premium'))
+            .thenAnswer((_) async => const Success(null));
+        return AdminCubit(repo);
+      },
+      act: (cubit) => cubit.setMembershipTier('profile-OTHER', 'premium'),
+      expect: () => [],
+    );
+
+    blocTest<AdminCubit, AdminState>(
+      'emits error with repository message on Failure',
+      seed: () => AdminState(
+        status: AdminStatus.ready,
+        selectedOrder: _orderForCustomer('o1', 'profile-9'),
+      ),
+      build: () {
+        when(() => repo.setMembershipTier('profile-9', 'premium'))
+            .thenAnswer((_) async => Failure(AppError('tier change rejected')));
+        return AdminCubit(repo);
+      },
+      act: (cubit) => cubit.setMembershipTier('profile-9', 'premium'),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.error)
+            .having(
+                (s) => s.errorMessage, 'errorMessage', 'tier change rejected'),
       ],
     );
   });

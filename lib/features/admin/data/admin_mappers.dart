@@ -31,6 +31,8 @@ class AdminMappers {
       total: Money(_toInt(row['total'])),
       placedAt: placedAt ?? DateTime.now(),
       customerName: _nonBlank(_customerName(row)),
+      customerId: _customerId(row),
+      customerTier: _customerTier(row),
       paymentMethod: _asString(row['payment_method']),
       itemCount: row['order_items'] is List
           ? (row['order_items'] as List).length
@@ -45,7 +47,8 @@ class AdminMappers {
   }
 
   /// Maps an order-detail row (`orders` + `order_items(*)` +
-  /// `profiles(full_name)`) into a fully-populated [AdminOrder].
+  /// `profiles(id, full_name, membership_tier)`) into a fully-populated
+  /// [AdminOrder].
   static AdminOrder orderDetailFromRow(Map<String, dynamic> row) {
     final itemsRaw = row['order_items'];
     final items = itemsRaw is List
@@ -200,6 +203,24 @@ class AdminMappers {
     final profiles = row['profiles'];
     final fromJoin = profiles is Map ? _asString(profiles['full_name']) : null;
     return fromJoin ?? _asString(row['customer_name']);
+  }
+
+  /// Customer profile id from the joined `profiles` row. The queue query
+  /// doesn't select it; the detail query does, and the tier control needs
+  /// it to address the admin RPC.
+  static String? _customerId(Map<String, dynamic> row) {
+    final profiles = row['profiles'];
+    final id = profiles is Map ? _asString(profiles['id']) : null;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  /// Membership tier of the joined profile. Only 'premium' is treated as
+  /// meaningful: anything else (null, 'standard', unknown value) reads as
+  /// standard, matching [Profile]'s tolerant decoding.
+  static String _customerTier(Map<String, dynamic> row) {
+    final profiles = row['profiles'];
+    final raw = profiles is Map ? _asString(profiles['membership_tier']) : null;
+    return raw == 'premium' ? 'premium' : 'standard';
   }
 
   static String? _asString(Object? value) => value is String ? value : null;

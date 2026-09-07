@@ -136,6 +136,41 @@ void main() {
       });
       expect(order.address, isNull);
     });
+
+    test('maps joined profiles id + membership_tier for the tier control', () {
+      final order = AdminMappers.orderDetailFromRow({
+        'id': 'ord5',
+        'profiles': {
+          'id': 'profile-9',
+          'full_name': 'Sara Ali',
+          'membership_tier': 'premium',
+        },
+      });
+      expect(order.customerId, 'profile-9');
+      expect(order.customerTier, 'premium');
+      expect(order.customerName, 'Sara Ali');
+    });
+
+    test('missing or empty profiles join degrades to null id + standard', () {
+      final absent = AdminMappers.orderDetailFromRow({'id': 'ord6'});
+      expect(absent.customerId, isNull);
+      expect(absent.customerTier, 'standard');
+
+      final emptyId = AdminMappers.orderDetailFromRow({
+        'id': 'ord7',
+        'profiles': {'id': '', 'membership_tier': 'standard'},
+      });
+      expect(emptyId.customerId, isNull);
+      expect(emptyId.customerTier, 'standard');
+    });
+
+    test('unknown tier value reads as standard, never crashes', () {
+      final order = AdminMappers.orderDetailFromRow({
+        'id': 'ord8',
+        'profiles': {'id': 'p', 'membership_tier': 42},
+      });
+      expect(order.customerTier, 'standard');
+    });
   });
 
   group('AdminMappers.lowStockVariantFromRow', () {

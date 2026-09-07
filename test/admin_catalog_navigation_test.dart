@@ -24,6 +24,10 @@ import 'package:go_router/go_router.dart';
 // ─── Fakes ──────────────────────────────────────────────────────
 
 class FakeAdminRepository implements AdminRepository {
+  @override
+  Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
+      const Success(null);
+
   FakeAdminRepository({this.isAdmin = true});
   bool isAdmin;
   List<AdminVariant> variants = const [];

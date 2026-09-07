@@ -173,6 +173,12 @@ void main() {
       when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
           (_) async => Success([_order(orderId, AdminOrderStatus.processing)]));
 
+      // Tall viewport: the customer card sits between the status card and
+      // the fulfillment actions, so the default viewport hides Confirm.
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(harness(
         const AdminOrderDetailPage(orderId: orderId),
       ));
@@ -203,6 +209,10 @@ void main() {
               ))
           .thenAnswer(
               (_) async => Failure(const AppError('transition rejected')));
+
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
       await tester.pumpWidget(harness(
         const AdminOrderDetailPage(orderId: orderId),
@@ -599,6 +609,125 @@ void main() {
       verify(() => repo.adminSetProductImages('pid', any())).called(1);
       expect(find.text('Image removed'), findsOneWidget);
       expect(find.byType(AppImage), findsNothing);
+    });
+  });
+
+  group('AdminOrderDetailPage membership tier control', () {
+    // Detail row carrying the joined profile the tier control operates on.
+    AdminOrder orderWithCustomer(String profileId, String tier) => AdminOrder(
+          id: 'order-tier-1',
+          status: AdminOrderStatus.paid,
+          total: Money.egp(100),
+          placedAt: DateTime(2026),
+          customerName: 'Sara Ali',
+          customerId: profileId,
+          customerTier: tier,
+        );
+
+    void registerTierStubs(String profileId) {
+      when(() => repo.getOrderDetails('order-tier-1')).thenAnswer(
+          (_) async => Success(orderWithCustomer(profileId, 'standard')));
+      when(() => repo.setMembershipTier(profileId, 'premium'))
+          .thenAnswer((_) async => const Success(null));
+    }
+
+    testWidgets('premium customer renders the gold badge and Change control',
+        (tester) async {
+      when(() => repo.getOrderDetails('order-tier-1')).thenAnswer(
+          (_) async => Success(orderWithCustomer('profile-9', 'premium')));
+
+      await tester.pumpWidget(
+        harness(const AdminOrderDetailPage(orderId: 'order-tier-1')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Customer'), findsOneWidget);
+      expect(find.text('Sara Ali'), findsOneWidget);
+      expect(find.text('Premium Member'), findsOneWidget);
+      expect(find.text('Standard Member'), findsNothing);
+      expect(find.byIcon(Icons.workspace_premium), findsOneWidget);
+      expect(find.text('Change'), findsOneWidget);
+    });
+
+    testWidgets(
+        'changing to premium updates the card and confirms after repository success',
+        (tester) async {
+      registerTierStubs('profile-9');
+
+      await tester.pumpWidget(
+        harness(const AdminOrderDetailPage(orderId: 'order-tier-1')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      // The radio lives in the dialog; a plain text find would also match
+      // the card badge underneath. (byType(RadioListTile) would miss:
+      // runtimeType is RadioListTile<String>, and byType is exact.)
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Premium Member'),
+      ));
+      await tester.pump();
+      await tester.tap(find.text('Confirm'));
+      // Settle the dialog's exit animation fully so the badge is asserted
+      // without the (still-animating) dialog duplicating its text.
+      await tester.pumpAndSettle();
+
+      verify(() => repo.setMembershipTier('profile-9', 'premium')).called(1);
+      expect(find.text('Premium Member'), findsOneWidget);
+      expect(find.text('Membership tier updated'), findsOneWidget,
+          reason: 'the ack is earned by the repository result');
+    });
+
+    testWidgets('failed tier change surfaces an error, never a success ack',
+        (tester) async {
+      registerTierStubs('profile-9');
+      when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
+          (_) async => Failure(const AppError('tier change rejected')));
+
+      await tester.pumpWidget(
+        harness(const AdminOrderDetailPage(orderId: 'order-tier-1')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Premium Member'));
+      await tester.pump();
+      await tester.tap(find.text('Confirm'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('tier change rejected'), findsOneWidget);
+      expect(find.text('Membership tier updated'), findsNothing);
+    });
+
+    testWidgets('no Change control without a joined profile id',
+        (tester) async {
+      when(() => repo.getOrderDetails('order-tier-1'))
+          .thenAnswer((_) async => Success(AdminOrder(
+                id: 'order-tier-1',
+                status: AdminOrderStatus.paid,
+                total: Money.egp(100),
+                placedAt: DateTime(2026),
+                customerName: 'Name Only',
+              )));
+
+      await tester.pumpWidget(
+        harness(const AdminOrderDetailPage(orderId: 'order-tier-1')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Customer'), findsOneWidget);
+      expect(find.text('Change'), findsNothing,
+          reason: 'the RPC would have nothing to address');
     });
   });
 }

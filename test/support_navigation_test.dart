@@ -25,12 +25,13 @@ void main() {
   group('Support navigation', () {
     late _StubAuthRepository authRepository;
     late AuthCubit authCubit;
+    final profileRepo = _StubProfileRepository();
 
     setUp(() {
       authRepository = _StubAuthRepository();
       authCubit = AuthCubit(
         authRepository: authRepository,
-        profileRepository: _StubProfileRepository(),
+        profileRepository: profileRepo,
       );
     });
 
@@ -123,6 +124,36 @@ void main() {
       expect(find.byType(SettingsPage), findsOneWidget);
     });
 
+    testWidgets('profile hides the badge for standard-tier customers',
+        (tester) async {
+      profileRepo.tier = MembershipTier.standard;
+      authRepository.sessionUser = const Authenticated('user-1');
+      await authCubit.checkSession();
+      final router = routerFor('/profile', const []);
+      await tester.pumpWidget(harness(router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Premium Member'), findsNothing);
+      expect(find.byIcon(Icons.workspace_premium), findsNothing);
+    });
+
+    testWidgets('profile shows the Premium Member badge for premium tier',
+        (tester) async {
+      profileRepo.tier = MembershipTier.premium;
+      authRepository.sessionUser = const Authenticated('user-1');
+      await authCubit.checkSession();
+      final router = routerFor('/profile', const []);
+      await tester.pumpWidget(harness(router));
+      await tester.pumpAndSettle();
+
+      // ignore: avoid_print
+      print(
+          'DBG status=${authCubit.state.status} tier=${authCubit.state.profile?.tier} badge=${find.text('Premium Member').evaluate().length}');
+      await tester.ensureVisible(find.text('Premium Member'));
+      expect(find.text('Premium Member'), findsOneWidget);
+      expect(find.byIcon(Icons.workspace_premium), findsOneWidget);
+    });
+
     testWidgets('settings links to support', (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -147,11 +178,16 @@ late SettingsCubit _settingsCubit;
 final class _StubAuthRepository implements AuthRepository {
   final authChanges = StreamController<Authenticated?>.broadcast();
 
+  /// When set, [checkSession] resolves with this session — the
+  /// deterministic way to reach an authenticated profile (the stream
+  /// listener path races under pumpAndSettle in widget tests).
+  Authenticated? sessionUser;
+
   @override
   Stream<Authenticated?> get authStateChanges => authChanges.stream;
 
   @override
-  Future<Result<Authenticated?>> checkSession() async => const Success(null);
+  Future<Result<Authenticated?>> checkSession() async => Success(sessionUser);
 
   @override
   Future<Result<AuthOutcome>> signUp({
@@ -186,9 +222,12 @@ final class _StubAuthRepository implements AuthRepository {
 }
 
 final class _StubProfileRepository implements ProfileRepository {
+  /// Tier served by [readProfile] — set per-test to drive badge parity.
+  MembershipTier tier = MembershipTier.standard;
+
   @override
   Future<Result<Profile?>> readProfile(String userId) async =>
-      Success(Profile(id: userId));
+      Success(Profile(id: userId, tier: tier));
 
   @override
   Future<Result<void>> upsertProfile(Profile profile) async =>

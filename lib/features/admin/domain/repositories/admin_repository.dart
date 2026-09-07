@@ -96,4 +96,8 @@ abstract interface class AdminRepository {
   /// Get every category for the catalog management list (read-only
   /// until a category write RPC exists).
   Future<Result<List<AdminCategory>>> getAllCategories();
+
+  /// Set a customer's membership tier via the admin-gated RPC
+  /// (migration 046). The tier drives the Premium badge customers see.
+  Future<Result<void>> setMembershipTier(String profileId, String tier);
 }

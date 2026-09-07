@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -22,6 +23,10 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
   /// Status transition awaiting repository confirmation — drives the
   /// verified "updated" snackbar in the listener below.
   AdminOrderStatus? _awaitedStatus;
+
+  /// Membership-tier change awaiting repository confirmation — same
+  /// verified-ack contract as [_awaitedStatus] for the tier control.
+  String? _awaitedTier;
 
   /// Shown under the tracking field when Confirm is pressed with an empty
   /// input; a shipment must always carry a tracking number. A [ValueNotifier]
@@ -78,17 +83,23 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
           // Optimistic acks lie when the transition fails; confirm only
           // what the repository actually did.
           if (state.status == AdminStatus.error) {
-            if (_awaitedStatus != null) {
+            if (_awaitedStatus != null || _awaitedTier != null) {
               showFloatingError(
                   context, state.errorMessage ?? context.l10n.errorTitle);
             }
             _awaitedStatus = null;
+            _awaitedTier = null;
           } else if (state.status == AdminStatus.ready &&
               _awaitedStatus != null &&
               state.selectedOrder?.status == _awaitedStatus) {
             showConfirmation(context,
                 context.l10n.orderStatusUpdatedTo(_awaitedStatus!.name));
             _awaitedStatus = null;
+          } else if (state.status == AdminStatus.ready &&
+              _awaitedTier != null &&
+              state.selectedOrder?.customerTier == _awaitedTier) {
+            showConfirmation(context, context.l10n.membershipTierUpdated);
+            _awaitedTier = null;
           }
         },
         child: BlocBuilder<AdminCubit, AdminState>(
@@ -112,6 +123,11 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 _OrderStatusCard(order: order),
+                const SizedBox(height: 16),
+                _CustomerCard(
+                  order: order,
+                  onChangeTier: () => _showTierDialog(order),
+                ),
                 const SizedBox(height: 16),
                 _OrderItemsCard(order: order),
                 const SizedBox(height: 16),
@@ -202,6 +218,68 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage> {
       ),
     );
   }
+
+  /// Opens the membership-tier dialog for [order]. Lifecycle belongs to
+  /// the page State for the same reason as the tracking dialog: this is a
+  /// separate route and must not be disposed mid-animation.
+  Future<void> _showTierDialog(AdminOrder order) async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final l = context.l10n;
+    // Captured from the page State's context BEFORE the dialog route is
+    // pushed: the dialog builds above the BlocProvider, so closures inside
+    // it must not resolve the cubit through their own context.
+    final cubit = context.read<AdminCubit>();
+    final currentTier = order.customerTier ?? 'standard';
+    String selection = currentTier;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l.changeMembershipTier),
+          content: RadioGroup<String>(
+            groupValue: selection,
+            onChanged: (value) {
+              if (value != null) setDialogState(() => selection = value);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  value: 'standard',
+                  title: Text(l.standardMember),
+                ),
+                RadioListTile<String>(
+                  value: 'premium',
+                  title: Text(l.premiumMember),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final profileId = order.customerId;
+                if (profileId == null) return;
+                Navigator.pop(dialogContext);
+                if (selection == currentTier) return;
+                // Optimistic nothing; the ack below is earned by the
+                // repository result (see the listener in build).
+                hapticWarning();
+                _awaitedTier = selection;
+                cubit.setMembershipTier(profileId, selection);
+              },
+              child: Text(l.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OrderStatusCard extends StatelessWidget {
@@ -254,6 +332,65 @@ class _OrderStatusCard extends StatelessWidget {
   /// Renders the server timestamp for the detail card.
   static String _formatPlacedAt(DateTime placedAt) =>
       DateFormat('yyyy-MM-dd HH:mm:ss').format(placedAt);
+}
+
+/// Customer identity + membership tier for the order's profile, with the
+/// admin-side tier control (migration 046). Premium styling mirrors the
+/// customer-facing Profile badge so both sides agree on what premium
+/// looks like. The control renders only when the detail query supplied a
+/// profile id — without it the RPC would have nothing to address.
+class _CustomerCard extends StatelessWidget {
+  const _CustomerCard({required this.order, required this.onChangeTier});
+
+  final AdminOrder order;
+  final VoidCallback onChangeTier;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final isPremium = order.customerTier == 'premium';
+    final accent = isPremium
+        ? AppColors.gold
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.customer, style: Theme.of(context).textTheme.titleMedium),
+            const Divider(),
+            Text(order.customerName ?? '—'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  isPremium ? Icons.workspace_premium : Icons.person_outline,
+                  size: 18,
+                  color: accent,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isPremium ? l.premiumMember : l.standardMember,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                if (order.customerId != null)
+                  TextButton.icon(
+                    onPressed: onChangeTier,
+                    icon: const Icon(Icons.tune, size: 18),
+                    label: Text(l.change),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _OrderItemsCard extends StatelessWidget {

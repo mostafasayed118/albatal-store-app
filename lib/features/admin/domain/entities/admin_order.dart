@@ -70,6 +70,8 @@ final class AdminOrder extends Equatable {
     required this.total,
     required this.placedAt,
     this.customerName,
+    this.customerId,
+    this.customerTier,
     this.paymentMethod,
     this.itemCount,
     this.items = const [],
@@ -86,6 +88,16 @@ final class AdminOrder extends Equatable {
   /// Null when the queue query didn't join profiles or the name is blank.
   final String? customerName;
 
+  /// The customer's profile id from the joined `profiles` row. Only the
+  /// detail query selects it — the tier control needs it to address the
+  /// admin RPC; the queue rows deliberately stay narrow.
+  final String? customerId;
+
+  /// Membership tier of the joined profile ('standard' | 'premium'),
+  /// surfaced only by the detail query. Null when the join didn't select
+  /// the column (queue rows) — never guessed from the name.
+  final String? customerTier;
+
   final String? paymentMethod;
 
   /// Number of line items on the order. Present on queue rows (computed
@@ -100,6 +112,31 @@ final class AdminOrder extends Equatable {
   /// Shipping address snapshot fields for the detail view.
   /// Null when the order has no snapshot.
   final AdminOrderAddress? address;
+
+  /// Copy with the mutable display fields admin flows adjust after the
+  /// repository confirms a write (e.g. the tier control). Field subset by
+  /// design — identity/placement fields never change on a row.
+  AdminOrder copyWith({
+    String? customerName,
+    String? customerId,
+    String? customerTier,
+    AdminOrderStatus? status,
+    String? trackingNumber,
+  }) =>
+      AdminOrder(
+        id: id,
+        status: status ?? this.status,
+        total: total,
+        placedAt: placedAt,
+        customerName: customerName ?? this.customerName,
+        customerId: customerId ?? this.customerId,
+        customerTier: customerTier ?? this.customerTier,
+        paymentMethod: paymentMethod,
+        itemCount: itemCount,
+        items: items,
+        trackingNumber: trackingNumber ?? this.trackingNumber,
+        address: address,
+      );
 
   /// Safe first 8 characters of the id for compact UI display.
   String get shortId => id.length <= 8 ? id : id.substring(0, 8);
@@ -124,6 +161,8 @@ final class AdminOrder extends Equatable {
         total,
         placedAt,
         customerName,
+        customerId,
+        customerTier,
         paymentMethod,
         itemCount,
         items,

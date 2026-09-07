@@ -69,7 +69,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     try {
       final row = await _client
           .from('orders')
-          .select('*, order_items(*), profiles(full_name)')
+          .select('*, order_items(*), profiles(id, full_name, membership_tier)')
           .eq('id', orderId)
           .maybeSingle();
       if (row == null) return const Success(null);
@@ -264,6 +264,19 @@ final class SupabaseAdminRepository implements AdminRepository {
       return Success(AdminMappers.imagePathsFromRows(res as List));
     } catch (e) {
       return Failure(AppError('Failed to load images', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<void>> setMembershipTier(String profileId, String tier) async {
+    try {
+      await _client.rpc('admin_set_membership_tier', params: {
+        'p_profile_id': profileId,
+        'p_tier': tier,
+      });
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update membership tier', cause: e));
     }
   }
 }

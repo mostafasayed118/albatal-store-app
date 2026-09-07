@@ -365,6 +365,10 @@ final class _StubCatalogRepository implements CatalogRepository {
 /// their own empty/error states, which the assertions never inspect.
 final class _RouteProbeAdminRepository implements AdminRepository {
   @override
+  Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
+      const Success(null);
+
+  @override
   Future<bool> isCurrentUserAdmin() async => true;
 
   @override

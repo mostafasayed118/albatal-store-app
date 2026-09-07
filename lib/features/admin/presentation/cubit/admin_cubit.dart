@@ -201,6 +201,29 @@ class AdminCubit extends Cubit<AdminState> {
     }
   }
 
+  /// Set a customer's membership tier via the admin-gated RPC
+  /// (migration 046). On success the open order's customer card reflects
+  /// the new tier immediately — the repository confirmed the write before
+  /// this emits, so pages can verify acks against state like every other
+  /// admin transition. Failures surface through the shared error channel.
+  Future<void> setMembershipTier(String profileId, String tier) async {
+    final result = await _adminRepository.setMembershipTier(profileId, tier);
+    switch (result) {
+      case Success():
+        final selected = state.selectedOrder;
+        if (selected != null && selected.customerId == profileId) {
+          emit(state.copyWith(
+            selectedOrder: selected.copyWith(customerTier: tier),
+          ));
+        }
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminStatus.error,
+          errorMessage: error.message,
+        ));
+    }
+  }
+
   /// Clear selected order.
   void clearSelectedOrder() => emit(state.copyWith(clearSelectedOrder: true));
 

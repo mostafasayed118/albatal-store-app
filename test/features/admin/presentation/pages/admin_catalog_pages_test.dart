@@ -19,6 +19,10 @@ import 'package:flutter_test/flutter_test.dart';
 /// are the entry experience for four of the hub's tiles.
 
 class _FakeAdminRepository implements AdminRepository {
+  @override
+  Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
+      const Success(null);
+
   _FakeAdminRepository();
 
   List<AdminProduct> products = const [];
