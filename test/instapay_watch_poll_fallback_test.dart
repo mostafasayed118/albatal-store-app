@@ -178,7 +178,8 @@ class _FakeMaybeSingle extends Fake
   }
 
   @override
-  Stream<Map<String, dynamic>?> asStream() => Future.value(pollRow.row).asStream();
+  Stream<Map<String, dynamic>?> asStream() =>
+      Future.value(pollRow.row).asStream();
 
   @override
   Future<Map<String, dynamic>?> timeout(
@@ -226,7 +227,8 @@ void main() {
           // Flow reached awaitingProof; the watch is armed; exactly one
           // edge function (initiate) was called.
           expect(cubit.state.status, PaymentStatus.awaitingProof);
-          expect(cubit.state.instructions!.instapayAddress, 'instapay@merchant');
+          expect(
+              cubit.state.instructions!.instapayAddress, 'instapay@merchant');
           expect(cubit.state.instructions!.amount, Money(129000));
           expect(channel.subscribed, isTrue);
           expect(channel.registeredChanges, 1);
@@ -326,7 +328,8 @@ void main() {
       });
     });
 
-    test('poll keeps running while the row is absent or pending (periodic, '
+    test(
+        'poll keeps running while the row is absent or pending (periodic, '
         'not one-shot) and stops on close', () {
       fakeAsync((fake) {
         final pollRow = _PollRow();

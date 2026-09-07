@@ -32,7 +32,8 @@ const _products = [
   ),
 ];
 
-Widget _homeHarness(_MockCatalogRepository repo, MemoryStorefrontPersistence store) {
+Widget _homeHarness(
+    _MockCatalogRepository repo, MemoryStorefrontPersistence store) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
@@ -61,7 +62,8 @@ Widget _l10nHarness(Widget child) => MaterialApp(
 
 void main() {
   group('experience polish', () {
-    testWidgets('flash-sale add acknowledges itself with a confirmation and updates the cart',
+    testWidgets(
+        'flash-sale add acknowledges itself with a confirmation and updates the cart',
         (tester) async {
       final repo = _MockCatalogRepository();
       when(() => repo.fetchProducts())
@@ -76,8 +78,9 @@ void main() {
               'starts_at': DateTime.now()
                   .subtract(const Duration(hours: 1))
                   .toIso8601String(),
-              'ends_at':
-                  DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
+              'ends_at': DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .toIso8601String(),
               'is_active': true,
             }
           ]);
@@ -107,7 +110,8 @@ void main() {
       expect(ctx.read<CartCubit>().state.items, hasLength(1));
     });
 
-    testWidgets('empty orders tabs invite the user to keep shopping', (tester) async {
+    testWidgets('empty orders tabs invite the user to keep shopping',
+        (tester) async {
       await tester.pumpWidget(_l10nHarness(OrderList(
         orders: const [],
         emptyMessage: 'No active orders',

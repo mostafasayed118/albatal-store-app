@@ -58,6 +58,100 @@ dashboard first). STATE.md run-log pushed earlier (b716bc9).
 
 ---
 
+## New — 2026-09-07 (backend membership tier — Premium badge is real data now)
+
+Migration 046 (`profiles.membership_tier TEXT NOT NULL DEFAULT
+'standard'` + `profiles_membership_tier_check` IN ('standard','premium')):
+the tier is SERVER-MANAGED — self-service UPDATE pins both is_admin and
+membership_tier to the existing row (003 pattern extended), self-service
+INSERT forces is_admin=false AND tier='standard' (this also closed a
+pre-existing escalation gap: 002's profiles_insert_own allowed inserting
+an own row with is_admin=true), and `admin_set_membership_tier(UUID,
+TEXT)` is the only write path (SECURITY DEFINER, assert_admin-gated,
+REVOKE PUBLIC/anon + GRANT authenticated like every admin RPC).
+
+Client: `MembershipTier` enum on Profile with tolerant `Profile.fromRow`
+(pre-046 rows/unknown values → standard, never crash); `toProfileRow()`
+payload for upserts deliberately excludes is_admin/tier so RLS never
+rejects a name/phone edit; SupabaseProfileRepository uses both;
+`AdminRepository.setMembershipTier` + Supabase impl wire the RPC for the
+future admin UI. ProfilePage badge renders only for premium tier.
+
+Contract test pins the whole 046 contract (constraint lifecycle +
+expression, UPDATE policy pins both columns, INSERT policy forces
+unprivileged, RPC gating/revokes) — a future migration dropping the
+tier guard or the is_admin pin fails CI with the file named. Entity
+tests cover mapping/payload; support-nav tests now cover badge
+show AND hide via a deterministic session stub (stream-delivery path
+races under pumpAndSettle — documented in the stub). 496 passing.
+
+PENDING STAGING APPLY: 046 is not pushed yet (human-gated per
+convention) — until then every customer maps to standard and the badge
+stays hidden, which is the correct default.
+
+---
+
+## New — 2026-09-07 (StitchHeroCarousel built — spec §4 carousel contract closed)
+
+The last unbuilt Stitch primitive now exists:
+`lib/shared/components/stitch/stitch_hero_carousel.dart` — a 180dp
+(16dp-radius) multi-slide PageView with **index dots** (6dp dots, active
+stretches to a 16dp pill, bottom-end directional, tappable, hidden for a
+single slide). Slides share one shape (`StitchHeroSlide`): promo slides
+render the mockup hero exactly (primary gradient, "New Arrival" /
+"20% Off" copy, gold-gradient Shop Now pill with the exact
+#B8860B→#FFFAF0→#B8860B stops); product slides render the featured
+product's image over its swatch with a directional scrim, category
+eyebrow, name, and price, tapping through to details.
+
+Featured wiring: `CatalogState.featuredProducts` (memoized derived view,
+house pattern) — discounted products first (strongest hero story,
+mirroring the mockup's offer slide) then best-rated, capped at 3 so a
+fourth dot never appears. Home composes evergreen promo slide + up to
+three featured products; PromoBanner is deleted (its mockup-exact copy
+moved into the promo slide). Dots carry ValueKeys for tests.
+
+Tests: +9 (slide copy, dot render/tap, swipe reporting incl. the
+PageView boundary-crossing semantics, featured ordering/cap/memo/empty,
+home integration asserting 4 dots). PromoBanner references fully
+retired. 489 passing, analyzer/format clean.
+
+---
+
+## New — 2026-09-07 (Stitch re-audit via MCP — parity gaps closed)
+
+Re-connected to Stitch MCP (project 10846693823016291635, still linked
+in .mcp.json via the local proxy; key supplied per-session, never
+stored in the repo) and re-fetched designMd + all 30 screens.
+Mockup-sync status from the 09-06 run, re-verified against served HTML:
+batches 1–2 confirmed persisted (details CTA total, profile Settings
+row); batches 3–4 (InstaPay removal, mic removal) remain unapplied
+server-side — but InstaPay went LIVE since (migration-era payments
+thread), so checkout mockup and implementation now legitimately match
+again. The mic removal was implemented app-side instead (canonical
+decision): StitchSearchBar no longer renders the mic or accepts
+onMicTap; the "coming soon" toast release blocker is gone.
+
+New parity gaps found and closed on master:
+1. Home hero copy was brand-voice ("Woven for distinction" / "Explore
+   collection") instead of mockup-exact. PromoBanner now renders "New
+   Arrival" / "New Silk Collection" / "20% Off" / gold-gradient "Shop
+   Now" pill (135deg #B8860B→#FFFAF0→#B8860B, exact stops from mockup
+   HTML), keeping the 180dp/16dp hero contract. l10n keys newArrival /
+   percentOff / shopNow added EN+AR; wovenForDistinction /
+   exploreCollection keys retired (were hero-only).
+2. Profile identity card lacked the mockup's Premium Member badge —
+   added (gold workspace_premium icon + label, display-only until a
+   tier exists server-side).
+3. Wishlist empty CTA already "Explore Categories"→/categories
+   (matches); order-success Track+Continue already match; 4-stage order
+   progress already match. Verified, no change.
+
+Tests: mic-absence pinned in stitch_primitives_test; hero copy + badge
+tests added (479 total). Analyzer/format clean.
+
+---
+
 ## New — 2026-09-06 (Stitch mockup sync via MCP edit_screens)
 
 ### STITCH MOCKUPS SYNCED TO MERGED UI — 2 of 4 batches verified
@@ -2062,5 +2156,104 @@ ON CONFLICT (id) DO NOTHING;
 This ensures a profile exists for every authenticated user before attempting the order insert. The ON CONFLICT DO NOTHING makes it idempotent — if the profile already exists (normal case), it silently succeeds.
 
 **Verification:** 170/170 Flutter tests pass, 0 new linter issues.
+
+---
+
+## New — 2026-09-07
+
+### Migration 046 (membership_tier) DEPLOYED to staging — verified live
+
+Owner requested the deploy; executed end-to-end this session (linked project
+`al-batal-staging`, ref `zvpjngdgbpnkkqrorkul`, via `STAGING_DB_URL`).
+
+- **Backup first (house convention):**
+  `outputs/db-backups/staging-pre046-20260907-054204.sql` (schema, 108,816 B)
+  + `...-054204-data.sql` (data-only, 115,193 B). Docker Desktop had to be
+  started for `supabase db dump` (it shells out to a containerized pg_dump).
+- **Push:** `migration list` showed exactly 046 pending (043–045 already
+  recorded); `db push --dry-run` listed only `046_membership_tier.sql`;
+  real push applied it. One benign NOTICE (`profiles_update_own` does not
+  exist, skipping — 003's policy is named `profiles_update_own_safe`, which
+  the migration replaces; the live definition confirms the hardened version
+  took effect).
+- **Structure verified on live DB:** column `membership_tier text NOT NULL
+  DEFAULT 'standard'`; CHECK `profiles_membership_tier_check IN
+  ('standard','premium')`; INSERT policy now `auth.uid()=id AND is_admin=false
+  AND membership_tier='standard'` (closes the 002-era insert-escalation gap);
+  UPDATE policy WITH CHECK pins `is_admin` AND `membership_tier` to the
+  existing row; RPC `admin_set_membership_tier(uuid,text)` SECURITY DEFINER,
+  pinned search_path, EXECUTE revoked from anon/public, granted to
+  authenticated.
+- **Behavior verified live (psql, role-emulated JWTs, all rollbacks):**
+  CHECK rejects `'gold'`; self UPDATE to `premium` → RLS violation; self
+  UPDATE of `full_name` still works (positive control, `UPDATE 1`); anon
+  UPDATE → 0 rows; self INSERT with `is_admin=true, tier='premium'` → RLS
+  violation; admin RPC roundtrip standard→premium→original OK (self-restoring,
+  no data mutated); RPC rejects invalid tier with errcode 22023.
+  Privilege probe 1 (`UPDATE ... 'gold'` on the admin row) was a deliberate
+  superuser CHECK test — it errored before any write, row unchanged.
+
+**Production:** NOT pushed — still owner-gated (same as 043–045).
+
+### Admin membership-tier control shipped (order detail page)
+
+The admin side of migration 046 now has a UI: the order detail page gained a
+**Customer card** (name + membership badge, gold `workspace_premium` styling
+mirroring the customer-facing Profile badge) with a **Change** control that
+opens a radio dialog (Standard/Premium) wired to
+`AdminRepository.setMembershipTier` → `admin_set_membership_tier`.
+
+- **Data:** detail query join widened to `profiles(id, full_name,
+  membership_tier)`; `AdminOrder` gained `customerId`/`customerTier` (queue
+  rows stay narrow; mapper degrades unknown/missing tiers to 'standard',
+  never crashes) + `copyWith` for post-confirm state updates.
+- **Cubit:** `setMembershipTier(profileId, tier)` follows the house
+  verified-ack contract — success updates only the open order's customer
+  tier (no full reload), failures surface through the shared error channel.
+- **UI ack:** same earned-confirmation pattern as status transitions — the
+  "Membership tier updated" snackbar fires only when the repository result
+  lands. Dialog closures capture the cubit from the page State's context
+  (the dialog route sits above the BlocProvider). RadioGroup API used (the
+  SDK deprecates per-tile groupValue/onChanged).
+- **Tests (+11):** mapper tier/id mapping incl. hostile inputs, cubit
+  success/no-op/cross-customer/error, widget badge render + change flow +
+  failure-ack + no-profile-id guard. Two pre-existing detail-page tests
+  needed a tall viewport after the new card pushed actions below the fold.
+  Full suite: 507 passing, analyze/format clean.
+- **Not in scope:** a dedicated customers list page — the tier control
+  lives on the order the admin is already looking at.
+
+### Migration 047 (premium free shipping) DEPLOYED to staging — perk verified live
+
+The Premium perk is real money, applied **server-side** in
+`create_checkout_order` (client-computed discounts would be spoofable):
+
+- **Mechanism:** after `calculate_shipping_fee(...)`, the RPC zeroes
+  `v_shipping` when the caller's `profiles.membership_tier = 'premium'`
+  — read from the profile row, never from the request. Zone logic,
+  free-shipping threshold, and config fallbacks untouched for standard
+  users. Signature unchanged → no client param changes; the response
+  already carries the discounted `shipping`/`total`, so the checkout
+  "server confirmed totals" card just works.
+- **Client:** `CartState.isPremiumMember` (mirrored from AuthCubit via a
+  stream subscription in app.dart) zeroes the shipping ESTIMATE and the
+  local order snapshot for premium members; `CartSummary` shows a gold
+  "Free" line instead of the fee; the Profile page advertises the perk
+  under the badge. The existing estimate disclaimer still covers drift.
+- **Backup + deploy:** `outputs/db-backups/staging-pre047-20260907-064024.sql`
+  → dry-run (047 only) → push → `migration list` shows 047 recorded.
+- **Verified live (single rolled-back transaction, zero footprint):**
+  created a 100 EGP variant via the real `admin_upsert_variant` RPC, then
+  checked out as the same real customer twice — standard:
+  `shipping 7500, total 17500`; flipped premium: `shipping 0,
+  total 10000`. ROLLBACK removed the variant, both probe orders, and the
+  tier flip.
+- **Tests (+5, 512 total):** 047 contract test (perk lives in the newest
+  `create_checkout_order` definition, reads the tier from the profile row,
+  applies after the zone calc, grants unchanged — a later rewrite without
+  the perk would fail the suite); cart cubit estimate math + no-op
+  emission; CartSummary Free/fee widget tests.
+
+**Production:** NOT pushed — owner-gated, same as 043–046.
 
 
