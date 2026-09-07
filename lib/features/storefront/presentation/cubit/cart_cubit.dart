@@ -14,15 +14,28 @@ final class CartState extends Equatable {
     this.items, {
     this.status = CartStatus.initial,
     this.errorMessage,
+    this.isPremiumMember = false,
   });
 
   final List<CartItem> items;
   final CartStatus status;
   final String? errorMessage;
 
+  /// Whether the signed-in customer is a premium member (mirrored from
+  /// AuthCubit — see [CartCubit.setPremiumMember]). Drives the shipping
+  /// ESTIMATE and local order snapshots only: the authoritative perk is
+  /// applied server-side in create_checkout_order (migration 047), so a
+  /// stale flag here can never change what is actually charged.
+  final bool isPremiumMember;
+
   Money get subtotal =>
       items.fold(Money.zero, (value, item) => value + item.lineTotal);
-  Money get shipping => items.isEmpty ? Money.zero : Money.egp(75);
+
+  /// Shipping estimate. Zero for premium members, matching the server's
+  /// free-shipping perk (migration 047); the checkout page carries the
+  /// estimate disclaimer and the server-confirmed totals are what charge.
+  Money get shipping =>
+      items.isEmpty || isPremiumMember ? Money.zero : Money.egp(75);
   Money get total => subtotal + shipping;
   int get count => items.fold(0, (value, item) => value + item.quantity);
 
@@ -30,15 +43,17 @@ final class CartState extends Equatable {
     List<CartItem>? items,
     CartStatus? status,
     String? errorMessage,
+    bool? isPremiumMember,
   }) =>
       CartState(
         items ?? this.items,
         status: status ?? this.status,
         errorMessage: errorMessage,
+        isPremiumMember: isPremiumMember ?? this.isPremiumMember,
       );
 
   @override
-  List<Object?> get props => [items, status, errorMessage];
+  List<Object?> get props => [items, status, errorMessage, isPremiumMember];
 }
 
 final class CartCubit extends Cubit<CartState> {
@@ -47,6 +62,14 @@ final class CartCubit extends Cubit<CartState> {
         super(const CartState([]));
 
   final CartRepository _repository;
+
+  /// Mirror the signed-in customer's membership tier into the estimate
+  /// math (see [CartState.isPremiumMember]). Fired from AuthCubit state
+  /// changes in app.dart; no-op when the tier is unchanged.
+  void setPremiumMember({required bool isPremium}) {
+    if (state.isPremiumMember == isPremium) return;
+    emit(state.copyWith(isPremiumMember: isPremium));
+  }
 
   /// Resolves a product id to a [Product] when restoring the cart.
   /// Injected from outside (e.g. the catalog) so this presentation cubit

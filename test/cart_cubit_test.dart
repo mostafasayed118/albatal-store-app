@@ -30,6 +30,29 @@ void main() {
     verify: (cubit) => expect(cubit.state.total, Money.egp(2655)),
   );
 
+  test('premium members get a zero shipping estimate (migration 047 perk)', () {
+    final cubit = CartCubit(MemoryStorefrontPersistence());
+    cubit.add(products.first, color: 'Emerald', length: '2m');
+    expect(cubit.state.shipping, Money.egp(75),
+        reason: 'standard members still see the flat estimate');
+
+    cubit.setPremiumMember(isPremium: true);
+    expect(cubit.state.shipping, Money.zero);
+    expect(cubit.state.total, cubit.state.subtotal);
+  });
+
+  test('setPremiumMember emits nothing when the tier is unchanged', () async {
+    final cubit = CartCubit(MemoryStorefrontPersistence());
+    var emissions = 0;
+    final sub = cubit.stream.listen((_) => emissions++);
+    cubit.setPremiumMember(isPremium: false);
+    cubit.setPremiumMember(isPremium: false);
+    await Future<void>.delayed(Duration.zero);
+    expect(emissions, 0, reason: 'unchanged tier must not rebuild consumers');
+    await sub.cancel();
+    await cubit.close();
+  });
+
   test('restores configured cart lines and wishlist ids from local storage',
       () async {
     final storage = MemoryStorefrontPersistence();

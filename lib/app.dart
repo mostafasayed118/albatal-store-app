@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/entities/profile.dart';
 import 'features/addresses/domain/repositories/address_repository.dart';
 import 'features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'features/admin/domain/repositories/admin_repository.dart';
@@ -45,12 +48,18 @@ final class AlBatalApp extends StatefulWidget {
 
 final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthCubit _authCubit;
+  late final CartCubit _cartCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final GoRouter _router;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
+    _cartCubit = CartCubit(
+      getIt<CartRepository>(),
+      productLookup: getIt<CatalogRepository>().findProductById,
+    );
     _authCubit = AuthCubit(
       authRepository: getIt<AuthRepository>(),
       profileRepository: getIt<ProfileRepository>(),
@@ -60,10 +69,20 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       _authCubit,
       refreshListenable: _authRefreshNotifier,
     );
+    // Mirror the customer's membership tier into the cart estimate math
+    // (premium = free shipping, migration 047). The authoritative perk
+    // is applied server-side in create_checkout_order; this only keeps
+    // the client's local estimate and order snapshot consistent.
+    _authSub = _authCubit.stream.listen((auth) {
+      _cartCubit.setPremiumMember(
+        isPremium: auth.profile?.tier == MembershipTier.premium,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _router.dispose();
     _authRefreshNotifier.dispose();
     _authCubit.close();
@@ -83,11 +102,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                   SettingsCubit(getIt<SettingsRepository>())..load()),
           BlocProvider(
               create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
-          BlocProvider(
-              create: (_) => CartCubit(
-                    getIt<CartRepository>(),
-                    productLookup: getIt<CatalogRepository>().findProductById,
-                  )..restore()),
+          BlocProvider.value(value: _cartCubit..restore()),
           BlocProvider(
               create: (_) =>
                   WishlistCubit(getIt<WishlistRepository>())..restore()),

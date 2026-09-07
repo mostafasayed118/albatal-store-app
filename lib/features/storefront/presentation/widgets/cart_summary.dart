@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/currency.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../cubit/cart_cubit.dart';
 
 class CartSummary extends StatelessWidget {
@@ -17,7 +18,17 @@ class CartSummary extends StatelessWidget {
         child: Column(
           children: [
             _row(context, l.subtotal, money(state.subtotal)),
-            _row(context, l.shipping, money(state.shipping)),
+            // Premium perk (migration 047): the server zeroes shipping for
+            // premium members; show the perk, not a zero amount.
+            if (state.isPremiumMember)
+              _row(
+                context,
+                l.shipping,
+                l.freeShipping,
+                valueColor: AppColors.gold,
+              )
+            else
+              _row(context, l.shipping, money(state.shipping)),
             const Divider(),
             _row(context, l.total, money(state.total), bold: true),
           ],
@@ -27,7 +38,7 @@ class CartSummary extends StatelessWidget {
   }
 
   Widget _row(BuildContext context, String label, String value,
-          {bool bold = false}) =>
+          {bool bold = false, Color? valueColor}) =>
       Padding(
         padding: const EdgeInsetsDirectional.symmetric(vertical: 4),
         child: Row(
@@ -39,7 +50,8 @@ class CartSummary extends StatelessWidget {
                         ? Theme.of(context).textTheme.titleSmall
                         : Theme.of(context).textTheme.bodyMedium)
                     ?.copyWith(
-                        fontWeight: bold ? FontWeight.w700 : FontWeight.w400)),
+                        fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+                        color: valueColor)),
           ],
         ),
       );
