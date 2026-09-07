@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
@@ -128,6 +129,33 @@ final class SupabaseAdminRepository implements AdminRepository {
   }
 
   // ─── Catalog Management (T1) ─────────────────────────────
+
+  @override
+  Future<Result<List<AdminProduct>>> getAllProducts() async {
+    try {
+      final rows = await _client
+          .from('products')
+          .select('id, name, slug, description, composition, category_id, '
+              'base_price, is_active, categories(name)')
+          .order('name');
+      return Success(AdminMappers.productsFromRows(rows as List<dynamic>));
+    } catch (e) {
+      return Failure(AppError('Failed to load products', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<List<AdminCategory>>> getAllCategories() async {
+    try {
+      final rows = await _client
+          .from('categories')
+          .select('id, name, is_active')
+          .order('sort_order');
+      return Success(AdminMappers.categoriesFromRows(rows as List<dynamic>));
+    } catch (e) {
+      return Failure(AppError('Failed to load categories', cause: e));
+    }
+  }
 
   @override
   Future<Result<String>> adminUpsertProduct({

@@ -1,4 +1,5 @@
 import '../../../../core/error/result.dart';
+import '../entities/admin_catalog.dart';
 import '../entities/admin_order.dart';
 import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
@@ -86,4 +87,13 @@ abstract interface class AdminRepository {
 
   /// Get ordered storage paths for a product's images.
   Future<Result<List<String>>> getProductImagePaths(String productId);
+
+  /// Get every product for the catalog management list — including
+  /// inactive rows, which are exactly what an admin needs to see and
+  /// un-hide. Rows carry the joined category name for display.
+  Future<Result<List<AdminProduct>>> getAllProducts();
+
+  /// Get every category for the catalog management list (read-only
+  /// until a category write RPC exists).
+  Future<Result<List<AdminCategory>>> getAllCategories();
 }

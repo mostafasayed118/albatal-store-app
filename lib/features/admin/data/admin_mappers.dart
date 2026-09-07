@@ -1,4 +1,5 @@
 import '../../../../core/entities/money.dart';
+import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
@@ -143,6 +144,55 @@ class AdminMappers {
   /// kept, so a mistyped element cannot crash the catalog countdown.
   static List<Map<String, dynamic>> flashSalesFromRows(List<dynamic> rows) =>
       rows.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
+
+  /// Maps one `products` row (with joined `categories(name)`) into an
+  /// [AdminProduct].
+  ///
+  /// Precondition: `row['id']` is a non-null String (the repository
+  /// filters id-less rows before calling this, same contract as the
+  /// order queue). The admin catalog list must show inactive products
+  /// too — they are exactly what needs un-hiding — so unlike the
+  /// storefront list there is no active-only filter upstream.
+  static AdminProduct productFromRow(Map<String, dynamic> row) {
+    final category = row['categories'];
+    final basePriceRaw = row['base_price'];
+    return AdminProduct(
+      id: row['id'] as String,
+      name: _asString(row['name']) ?? '',
+      slug: _asString(row['slug']) ?? '',
+      categoryId: _asString(row['category_id']) ?? '',
+      categoryName: category is Map ? _asString(category['name']) ?? '' : '',
+      basePrice: basePriceRaw is num ? basePriceRaw.toDouble() : 0,
+      isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
+      description: _asString(row['description']),
+      composition: _asString(row['composition']),
+    );
+  }
+
+  /// Maps a list of product rows, skipping id-less entries.
+  static List<AdminProduct> productsFromRows(List<dynamic> rows) => rows
+      .whereType<Map<String, dynamic>>()
+      .where((row) => row['id'] is String && (row['id'] as String).isNotEmpty)
+      .map(productFromRow)
+      .toList();
+
+  /// Maps one `categories` row into an [AdminCategory].
+  ///
+  /// Same id precondition as [productFromRow].
+  static AdminCategory categoryFromRow(Map<String, dynamic> row) {
+    return AdminCategory(
+      id: row['id'] as String,
+      name: _asString(row['name']) ?? '',
+      isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
+    );
+  }
+
+  /// Maps a list of category rows, skipping id-less entries.
+  static List<AdminCategory> categoriesFromRows(List<dynamic> rows) => rows
+      .whereType<Map<String, dynamic>>()
+      .where((row) => row['id'] is String && (row['id'] as String).isNotEmpty)
+      .map(categoryFromRow)
+      .toList();
 
   /// Customer display name: joined `profiles.full_name`, falling back to
   /// a denormalized `customer_name` column; mistyped values are ignored.

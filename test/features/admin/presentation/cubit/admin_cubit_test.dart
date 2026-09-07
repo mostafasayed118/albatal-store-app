@@ -169,6 +169,99 @@ void main() {
     );
 
     blocTest<AdminCubit, AdminState>(
+      'refreshes selectedOrder from the reloaded queue on Success',
+      build: () {
+        when(() => repo.updateOrderStatus(
+              'o1',
+              AdminOrderStatus.processing,
+              trackingNumber: null,
+            )).thenAnswer((_) async => const Success(null));
+        when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
+            (_) async => Success([_order('o1', AdminOrderStatus.processing)]));
+        return AdminCubit(repo);
+      },
+      seed: () =>
+          AdminState(selectedOrder: _order('o1', AdminOrderStatus.paid)),
+      act: (cubit) =>
+          cubit.updateOrderStatus('o1', AdminOrderStatus.processing),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading)
+            // Reload emits carry the stale detail until the final one fixes it.
+            .having((s) => s.selectedOrder?.status, 'selectedOrder.status',
+                AdminOrderStatus.paid),
+        // The reload's own ready emit: queue updated, detail still stale.
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.orders[0].status, 'orders[0].status',
+                AdminOrderStatus.processing)
+            .having((s) => s.selectedOrder?.status, 'selectedOrder.status',
+                AdminOrderStatus.paid),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1')
+            .having((s) => s.selectedOrder?.status, 'selectedOrder.status',
+                AdminOrderStatus.processing),
+      ],
+    );
+
+    blocTest<AdminCubit, AdminState>(
+      'clears selectedOrder when the transitioned order left the queue',
+      build: () {
+        when(() => repo.updateOrderStatus(
+              'o1',
+              AdminOrderStatus.cancelled,
+              trackingNumber: null,
+            )).thenAnswer((_) async => const Success(null));
+        // A filtered queue (or changed status outside the filter) that no
+        // longer contains the order must not leave a stale detail behind.
+        when(() => repo.getAllOrders(status: any(named: 'status')))
+            .thenAnswer((_) async => const Success([]));
+        return AdminCubit(repo);
+      },
+      seed: () =>
+          AdminState(selectedOrder: _order('o1', AdminOrderStatus.paid)),
+      act: (cubit) => cubit.updateOrderStatus('o1', AdminOrderStatus.cancelled),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.orders, 'orders', isEmpty)
+            // The reload's own ready emit still carries the stale detail.
+            .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1'),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.selectedOrder, 'selectedOrder', isNull),
+      ],
+    );
+
+    blocTest<AdminCubit, AdminState>(
+      'leaves selectedOrder untouched when a different order changed',
+      build: () {
+        when(() => repo.updateOrderStatus(
+              'o2',
+              AdminOrderStatus.processing,
+              trackingNumber: null,
+            )).thenAnswer((_) async => const Success(null));
+        when(() => repo.getAllOrders(status: any(named: 'status')))
+            .thenAnswer((_) async => const Success([]));
+        return AdminCubit(repo);
+      },
+      seed: () =>
+          AdminState(selectedOrder: _order('o1', AdminOrderStatus.paid)),
+      act: (cubit) =>
+          cubit.updateOrderStatus('o2', AdminOrderStatus.processing),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.loading),
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.ready)
+            .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1'),
+      ],
+    );
+
+    blocTest<AdminCubit, AdminState>(
       'emits error and does not reload on Failure',
       build: () {
         when(() => repo.updateOrderStatus(

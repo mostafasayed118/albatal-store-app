@@ -151,6 +151,16 @@ class AdminCubit extends Cubit<AdminState> {
       case Success():
         // Reload orders after status update so the queue reflects it.
         await loadOrders(status: state.statusFilter);
+        // Refresh the open detail from the reloaded queue: without this,
+        // the status card kept showing the pre-transition status until
+        // the admin left and re-entered the page.
+        if (state.selectedOrder?.id == orderId) {
+          final updated = state.orders.where((o) => o.id == orderId).toList();
+          emit(state.copyWith(
+            selectedOrder: updated.isNotEmpty ? updated.first : null,
+            clearSelectedOrder: updated.isEmpty,
+          ));
+        }
       case Failure(:final error):
         emit(state.copyWith(
           status: AdminStatus.error,

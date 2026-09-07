@@ -208,4 +208,144 @@ void main() {
       expect(orderWith(AdminOrderStatus.cancelled).canCancel, isFalse);
     });
   });
+
+  // Regression: migration 043 added `id` to get_low_stock_products.
+  // Before it, the deployed RPC returned no variant id, so the mapper
+  // skipped every row and the admin Inventory page always showed
+  // "All stock levels are healthy" (staging has variants at stock 0..5).
+  // These tests pin the client contract: an id-bearing row MUST map.
+  group('AdminMappers.lowStockVariantsFromRows (RPC id contract)', () {
+    test('keeps a full post-migration-043 RPC row', () {
+      final variants = AdminMappers.lowStockVariantsFromRows([
+        {
+          'id': '8f539023-31aa-481a-a6a1-6ee5ba987fa6',
+          'product_name': 'Golden Charmeuse Silk',
+          'variant_size': 'M',
+          'variant_color': 'Gold',
+          'current_stock': 1,
+        },
+      ]);
+
+      expect(variants, hasLength(1),
+          reason:
+              'A row shaped like the deployed RPC (with id) must survive mapping');
+      expect(variants.single.variantId, '8f539023-31aa-481a-a6a1-6ee5ba987fa6');
+      expect(variants.single.productName, 'Golden Charmeuse Silk');
+      expect(variants.single.variantLabel, 'M / Gold');
+      expect(variants.single.stock, 1);
+    });
+
+    test('drops the pre-migration-043 shape (no id) instead of lying', () {
+      // The old RPC shape: every row lacks `id`, so mapping must yield
+      // nothing — a row without an id cannot be updated from the
+      // Inventory page, and keeping it would produce a broken edit flow.
+      final variants = AdminMappers.lowStockVariantsFromRows([
+        {
+          'product_name': 'Egyptian Cotton',
+          'variant_size': '1m',
+          'variant_color': 'Natural',
+          'current_stock': 2,
+        },
+      ]);
+
+      expect(variants, isEmpty,
+          reason:
+              'id-less rows are unmappable; an empty result must surface as '
+              'a contract break, not as "all stock levels are healthy"');
+    });
+
+    test('mixed batch keeps only id-bearing rows', () {
+      final variants = AdminMappers.lowStockVariantsFromRows([
+        {'product_name': 'legacy row without id', 'current_stock': 3},
+        {
+          'id': 'v-2',
+          'product_name': 'Irish Linen',
+          'variant_size': '2m',
+          'variant_color': 'White',
+          'current_stock': 4,
+        },
+        'not-a-map',
+      ]);
+
+      expect(variants, hasLength(1));
+      expect(variants.single.variantId, 'v-2');
+    });
+  });
+
+  group('AdminMappers.productsFromRows (admin catalog list)', () {
+    test('maps a full products row with joined category', () {
+      final products = AdminMappers.productsFromRows([
+        {
+          'id': 'p-1',
+          'name': 'Royal Emerald Silk',
+          'slug': 'royal-emerald-silk',
+          'description': 'Woven in the delta',
+          'composition': '100% mulberry silk',
+          'category_id': 'c-1',
+          'base_price': 1890.0,
+          'is_active': true,
+          'categories': {'name': 'Silk'},
+        },
+      ]);
+
+      expect(products, hasLength(1));
+      final p = products.single;
+      expect(p.id, 'p-1');
+      expect(p.name, 'Royal Emerald Silk');
+      expect(p.slug, 'royal-emerald-silk');
+      expect(p.categoryId, 'c-1');
+      expect(p.categoryName, 'Silk');
+      expect(p.basePrice, 1890.0);
+      expect(p.isActive, isTrue);
+      expect(p.statusLabel, 'Active');
+      expect(p.description, 'Woven in the delta');
+    });
+
+    test('degrades mistyped fields to safe defaults', () {
+      final products = AdminMappers.productsFromRows([
+        {
+          'id': 'p-2',
+          'name': 42,
+          'base_price': 'not-a-number',
+          'is_active': 'yes',
+          'categories': 'not-a-map',
+        },
+      ]);
+
+      final p = products.single;
+      expect(p.name, '');
+      expect(p.categoryName, '');
+      expect(p.basePrice, 0);
+      // Inactive is the safe default: a mistyped flag must not hide the
+      // row from the manage list.
+      expect(p.isActive, isFalse);
+      expect(p.statusLabel, 'Inactive');
+    });
+
+    test('skips id-less rows', () {
+      final products = AdminMappers.productsFromRows([
+        {'name': 'no id'},
+        'not-a-map',
+      ]);
+      expect(products, isEmpty);
+    });
+  });
+
+  group('AdminMappers.categoriesFromRows (admin category list)', () {
+    test('maps category rows and skips id-less entries', () {
+      final categories = AdminMappers.categoriesFromRows([
+        {
+          'id': 'c-1',
+          'name': 'Silk',
+          'is_active': true,
+        },
+        {'name': 'no id'},
+      ]);
+
+      expect(categories, hasLength(1));
+      expect(categories.single.id, 'c-1');
+      expect(categories.single.name, 'Silk');
+      expect(categories.single.isActive, isTrue);
+    });
+  });
 }
