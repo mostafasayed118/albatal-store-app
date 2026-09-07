@@ -118,6 +118,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorBody => 'Please check your connection and try again.';
 
   @override
+  String get couldNotOpenLink => 'Couldn\'t open that. Please try again.';
+
+  @override
+  String get imageRemoved => 'Image removed';
+
+  @override
   String get loading => 'Loading';
 
   @override
@@ -243,6 +249,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logOut => 'Log Out';
+
+  @override
+  String get signedOut => 'Signed out';
 
   @override
   String get noActiveOrders => 'No active orders';
@@ -778,10 +787,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noOrdersFound => 'No orders found';
 
   @override
+  String get noOrdersFoundBody =>
+      'New orders will appear here as customers check out.';
+
+  @override
   String get processing => 'Processing';
 
   @override
   String get allStockLevelsHealthy => 'All stock levels are healthy';
+
+  @override
+  String get stockUpdated => 'Stock updated';
 
   @override
   String get catalogManagement => 'Catalog Management';
@@ -888,6 +904,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addTrackingDetails => 'Add Tracking Details';
+
+  @override
+  String get fieldRequired => 'This field is required';
+
+  @override
+  String get enterValidNumber => 'Enter a valid number';
+
+  @override
+  String get stockCannotBeNegative => 'Stock cannot be negative';
 
   @override
   String orderStatusUpdatedTo(String statusName) {

@@ -6,6 +6,7 @@ import '../../../../core/error/result.dart';
 import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../features/storefront/presentation/cubit/cart_cubit.dart';
 import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/settings_cubit.dart';
@@ -42,9 +43,12 @@ final class SettingsPage extends StatelessWidget {
                               groupRegistry:
                                   RadioGroup.maybeOf<ThemeMode>(context),
                             ),
-                            onTap: () => context
-                                .read<SettingsCubit>()
-                                .changeThemeMode(mode),
+                            onTap: () {
+                              hapticTap();
+                              context
+                                  .read<SettingsCubit>()
+                                  .changeThemeMode(mode);
+                            },
                             title: Text(switch (mode) {
                               ThemeMode.system => context.l10n.themeSystem,
                               ThemeMode.light => context.l10n.themeLight,
@@ -69,9 +73,12 @@ final class SettingsPage extends StatelessWidget {
                       value: const Locale('en'),
                       groupRegistry: RadioGroup.maybeOf<Locale>(context),
                     ),
-                    onTap: () => context
-                        .read<SettingsCubit>()
-                        .changeLocale(const Locale('en')),
+                    onTap: () {
+                      hapticTap();
+                      context
+                          .read<SettingsCubit>()
+                          .changeLocale(const Locale('en'));
+                    },
                     title: Text(context.l10n.english),
                   ),
                   ListTile(
@@ -79,9 +86,12 @@ final class SettingsPage extends StatelessWidget {
                       value: const Locale('ar'),
                       groupRegistry: RadioGroup.maybeOf<Locale>(context),
                     ),
-                    onTap: () => context
-                        .read<SettingsCubit>()
-                        .changeLocale(const Locale('ar')),
+                    onTap: () {
+                      hapticTap();
+                      context
+                          .read<SettingsCubit>()
+                          .changeLocale(const Locale('ar'));
+                    },
                     title: Text(context.l10n.arabic),
                   ),
                 ]),
@@ -230,9 +240,17 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
         // are guest-accessible, so they must not survive a deleted account).
         cart.clear();
         wishlist.clearAll();
-        messenger.showSnackBar(SnackBar(content: Text(l.deleteAccountSuccess)));
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(l.deleteAccountSuccess)));
       case Failure(:final error):
-        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(error.message)));
     }
   } finally {
     _deleteDialogOpen = false;

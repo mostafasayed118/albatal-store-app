@@ -36,3 +36,19 @@ void showConfirmation(BuildContext context, String message) {
       ),
     );
 }
+
+/// Floating error twin of [showConfirmation]: same shape, warning haptic.
+/// For failures that surface inline (a save that bounced, a link that
+/// would not open) rather than as a full-screen error state. The message
+/// must already be user-facing — raw exceptions stay in logs.
+void showFloatingError(BuildContext context, String message) {
+  hapticWarning();
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
+}

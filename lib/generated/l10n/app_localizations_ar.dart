@@ -118,6 +118,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorBody => 'يُرجى التحقق من اتصالك والمحاولة مرة أخرى.';
 
   @override
+  String get couldNotOpenLink => 'تعذّر فتح ذلك. يُرجى المحاولة مرة أخرى.';
+
+  @override
+  String get imageRemoved => 'تمت إزالة الصورة';
+
+  @override
   String get loading => 'جارٍ التحميل';
 
   @override
@@ -242,6 +248,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logOut => 'تسجيل الخروج';
+
+  @override
+  String get signedOut => 'تم تسجيل الخروج';
 
   @override
   String get noActiveOrders => 'لا توجد طلبات نشطة';
@@ -785,10 +794,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noOrdersFound => 'لا توجد طلبات';
 
   @override
+  String get noOrdersFoundBody =>
+      'ستظهر الطلبات الجديدة هنا عندما يُتم العملاء الشراء.';
+
+  @override
   String get processing => 'قيد المعالجة';
 
   @override
   String get allStockLevelsHealthy => 'جميع مستويات المخزون سليمة';
+
+  @override
+  String get stockUpdated => 'تم تحديث المخزون';
 
   @override
   String get catalogManagement => 'إدارة الكتالوج';
@@ -891,6 +907,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addTrackingDetails => 'إضافة تفاصيل التتبع';
+
+  @override
+  String get fieldRequired => 'هذا الحقل مطلوب';
+
+  @override
+  String get enterValidNumber => 'أدخل رقمًا صالحًا';
+
+  @override
+  String get stockCannotBeNegative => 'لا يمكن أن يكون المخزون سالبًا';
 
   @override
   String orderStatusUpdatedTo(String statusName) {

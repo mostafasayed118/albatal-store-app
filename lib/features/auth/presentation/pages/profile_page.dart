@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -131,7 +132,10 @@ class _AuthenticatedProfile extends StatelessWidget {
         TextButton.icon(
           onPressed: () async {
             await context.read<AuthCubit>().signOut();
-            if (context.mounted) context.go('/home');
+            if (context.mounted) {
+              showConfirmation(context, l.signedOut);
+              context.go('/home');
+            }
           },
           icon: const Icon(Icons.logout),
           label: Text(l.logOut),

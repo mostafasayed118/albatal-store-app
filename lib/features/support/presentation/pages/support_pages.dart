@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -124,6 +125,12 @@ class SupportPage extends StatelessWidget {
                   final uri = Uri.parse(whatsapp!.value!);
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    // The channel that was tapped must acknowledge the
+                    // attempt even when no external app can take it.
+                    if (context.mounted) {
+                      showFloatingError(context, context.l10n.couldNotOpenLink);
+                    }
                   }
                 },
               ),
@@ -142,6 +149,12 @@ class SupportPage extends StatelessWidget {
                   final uri = Uri.parse('mailto:${email.value!}');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    // The channel that was tapped must acknowledge the
+                    // attempt even when no mail app can take it.
+                    if (context.mounted) {
+                      showFloatingError(context, context.l10n.couldNotOpenLink);
+                    }
                   }
                 },
               ),
@@ -155,9 +168,7 @@ class SupportPage extends StatelessWidget {
               // Drill-in chevron points in the reading direction (flips in RTL).
               trailing: Icon(context.directionalTrailingIcon),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(l.comingSoon)),
-                );
+                showConfirmation(context, l.comingSoon);
               },
             ),
           ),

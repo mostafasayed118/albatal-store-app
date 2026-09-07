@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -37,15 +38,14 @@ class _SignUpPageState extends State<SignUpPage> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state.isAuthenticated) {
+            hapticSuccess();
             context.go('/home');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            showFloatingError(context, state.errorMessage!);
           } else if (state.status == AuthStatus.unauthenticated) {
             // Email confirmation required
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(l.checkEmailToVerify)));
+            showConfirmation(context, l.checkEmailToVerify);
             context.go('/sign-in');
           }
         },

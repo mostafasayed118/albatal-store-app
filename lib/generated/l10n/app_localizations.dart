@@ -308,6 +308,18 @@ abstract class AppLocalizations {
   /// **'Please check your connection and try again.'**
   String get errorBody;
 
+  /// No description provided for @couldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that. Please try again.'**
+  String get couldNotOpenLink;
+
+  /// No description provided for @imageRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Image removed'**
+  String get imageRemoved;
+
   /// No description provided for @loading.
   ///
   /// In en, this message translates to:
@@ -559,6 +571,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log Out'**
   String get logOut;
+
+  /// No description provided for @signedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get signedOut;
 
   /// No description provided for @noActiveOrders.
   ///
@@ -1538,6 +1556,12 @@ abstract class AppLocalizations {
   /// **'No orders found'**
   String get noOrdersFound;
 
+  /// No description provided for @noOrdersFoundBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New orders will appear here as customers check out.'**
+  String get noOrdersFoundBody;
+
   /// No description provided for @processing.
   ///
   /// In en, this message translates to:
@@ -1549,6 +1573,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All stock levels are healthy'**
   String get allStockLevelsHealthy;
+
+  /// No description provided for @stockUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock updated'**
+  String get stockUpdated;
 
   /// No description provided for @catalogManagement.
   ///
@@ -1753,6 +1783,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Tracking Details'**
   String get addTrackingDetails;
+
+  /// No description provided for @fieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get fieldRequired;
+
+  /// No description provided for @enterValidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get enterValidNumber;
+
+  /// No description provided for @stockCannotBeNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock cannot be negative'**
+  String get stockCannotBeNegative;
 
   /// No description provided for @orderStatusUpdatedTo.
   ///
