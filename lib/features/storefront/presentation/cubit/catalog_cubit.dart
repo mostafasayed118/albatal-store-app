@@ -6,6 +6,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../domain/entities/catalog_filters.dart';
+import '../../domain/entities/flash_sale.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import 'flash_sale_ticker.dart';
 
@@ -56,8 +57,9 @@ final class CatalogState extends Equatable {
   final DateTime? flashEnd;
   final Duration? flashRemaining;
 
-  /// Active flash sales (T1) — raw rows from the repository.
-  final List<Map<String, dynamic>> flashSales;
+  /// Active flash sales (T1) — typed domain entities mapped from the
+  /// repository; schema knowledge lives in `FlashSaleCodec.fromRow`.
+  final List<FlashSale> flashSales;
 
   bool get hasActiveFilters => filters.hasActiveFilters;
 
@@ -178,7 +180,7 @@ final class CatalogState extends Equatable {
     List<String>? recentQueries,
     DateTime? flashEnd,
     Duration? flashRemaining,
-    List<Map<String, dynamic>>? flashSales,
+    List<FlashSale>? flashSales,
   }) =>
       CatalogState(
         status: status ?? this.status,
@@ -275,29 +277,25 @@ final class CatalogCubit extends Cubit<CatalogState> {
   /// Loads active flash sales from the repository and binds the countdown.
   ///
   /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
-  /// When a sale is active, the first sale's `endsAt` drives
+  /// When the first sale carries an [FlashSale.endsAt], it drives
   /// [startFlashSale] so the countdown ticks live. Failures are
   /// swallowed so catalog loading never regresses to error due to a
   /// flash-sale fetch issue.
   Future<void> loadFlashSales() async {
-    try {
-      final sales = await _repository.getActiveFlashSales();
-      if (sales.isEmpty && state.flashSales.isEmpty) return;
-      emit(state.copyWith(flashSales: sales));
-      if (sales.isNotEmpty) {
-        final endsAt = _parseFlashEndsAt(sales.first);
-        if (endsAt != null) startFlashSale(end: endsAt);
-      }
-    } catch (_) {
-      // Swallow — flash sales are non-critical.
-    }
-  }
-
-  DateTime? _parseFlashEndsAt(Map<String, dynamic> sale) {
-    final raw = sale['ends_at'] ?? sale['endsAt'] ?? sale['end_at'];
-    if (raw is DateTime) return raw;
-    if (raw is String) return DateTime.tryParse(raw);
-    return null;
+    final result = await _repository.getActiveFlashSales();
+    result.when(
+      success: (sales) {
+        if (sales.isEmpty && state.flashSales.isEmpty) return;
+        emit(state.copyWith(flashSales: sales));
+        if (sales.isNotEmpty) {
+          final endsAt = sales.first.endsAt;
+          if (endsAt != null) startFlashSale(end: endsAt);
+        }
+      },
+      failure: (_) {
+        // Swallow — flash sales are non-critical.
+      },
+    );
   }
 
   void select(String category) =>

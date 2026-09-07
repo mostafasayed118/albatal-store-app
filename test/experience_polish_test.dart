@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -70,20 +71,13 @@ void main() {
           .thenAnswer((_) async => const Success(_products));
       when(() => repo.fetchCategories())
           .thenAnswer((_) async => const Success(['All', 'Silk']));
-      when(() => repo.getActiveFlashSales()).thenAnswer((_) async => [
-            {
-              'id': 'flash-1',
-              'product_id': 'p1',
-              'discount_pct': 15,
-              'starts_at': DateTime.now()
-                  .subtract(const Duration(hours: 1))
-                  .toIso8601String(),
-              'ends_at': DateTime.now()
-                  .add(const Duration(hours: 1))
-                  .toIso8601String(),
-              'is_active': true,
-            }
-          ]);
+      when(() => repo.getActiveFlashSales()).thenAnswer((_) async => Success([
+            FlashSale(
+              productId: 'p1',
+              discountPct: 15,
+              endsAt: DateTime.now().add(const Duration(hours: 1)),
+            )
+          ]));
 
       final store = MemoryStorefrontPersistence();
       tester.view.physicalSize = const Size(1000, 3000);

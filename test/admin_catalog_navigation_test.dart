@@ -12,6 +12,7 @@ import 'package:al_batal_elite/features/admin/presentation/pages/admin_image_man
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_product_edit_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_products_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_variant_editor_page.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/app_image.dart';
@@ -147,7 +148,7 @@ class FakeCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const ['Cat A', 'Cat B'];
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
 }
 
 // Minimal fake that avoids Supabase client init.

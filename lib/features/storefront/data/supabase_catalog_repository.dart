@@ -8,6 +8,7 @@ import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 import '../../../shared/services/storage_service.dart';
+import '../domain/entities/flash_sale.dart';
 import '../domain/repositories/catalog_repository.dart';
 import 'product_mapper.dart';
 
@@ -186,12 +187,21 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   /// Fetches currently active flash sales via `get_active_flash_sales` RPC.
   ///
-  /// Returns a list of raw JSON rows — UI can map to domain as needed.
+  /// Rows are mapped via [FlashSaleCodec.fromRow]; rows without a usable
+  /// `product_id` are skipped and transport errors fail closed to [Failure]
+  /// (the cubit treats flash sales as non-critical and keeps the catalog).
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() =>
-      _client.rpc('get_active_flash_sales').then(
-            (value) => (value as List).cast<Map<String, dynamic>>(),
-          );
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async {
+    try {
+      final value = await _client.rpc('get_active_flash_sales');
+      final rows = (value as List).whereType<Map<String, dynamic>>();
+      return Success(
+        rows.map(FlashSaleCodec.fromRow).whereType<FlashSale>().toList(),
+      );
+    } catch (e) {
+      return Failure(AppError('Failed to load flash sales', cause: e));
+    }
+  }
 
   @override
   List<String> get defaultCategories => const [

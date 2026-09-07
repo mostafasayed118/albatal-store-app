@@ -4,6 +4,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import '../../../../fixtures/local_catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -59,7 +60,7 @@ class _StubRepo implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All', 'Silk', 'Cotton'];

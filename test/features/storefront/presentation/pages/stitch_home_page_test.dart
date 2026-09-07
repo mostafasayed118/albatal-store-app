@@ -5,6 +5,7 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -95,20 +96,14 @@ class _StubRepo implements CatalogRepository {
       const ['All', 'Silk', 'Cotton', 'Velvet', 'Linen'];
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => [
-        {
-          'id': 'flash-test',
-          'product_id': 'silk-01',
-          'discount_pct': 15,
-          'starts_at': DateTime.now()
-              .subtract(const Duration(hours: 1))
-              .toIso8601String(),
-          'ends_at': DateTime.now()
-              .add(const Duration(hours: 2, minutes: 45, seconds: 12))
-              .toIso8601String(),
-          'is_active': true,
-        }
-      ];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => Success([
+        FlashSale(
+          productId: 'silk-01',
+          discountPct: 15,
+          endsAt: DateTime.now()
+              .add(const Duration(hours: 2, minutes: 45, seconds: 12)),
+        ),
+      ]);
 }
 
 /// MultiBlocProvider with Wishlist/Cart so the Home grid (spec §5)

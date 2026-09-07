@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 
 import 'products_data.dart';
@@ -37,5 +38,5 @@ final class LocalCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => categories;
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
 }

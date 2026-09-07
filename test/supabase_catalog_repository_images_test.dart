@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/data/supabase_catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -297,11 +298,14 @@ void main() {
         storageService: mockStorage,
       );
 
-      final sales = await repo.getActiveFlashSales();
+      final result = await repo.getActiveFlashSales();
       verify(() => mockClient.rpc('get_active_flash_sales')).called(1);
+      expect(result, isA<Success<List<FlashSale>>>());
+      final sales = (result as Success<List<FlashSale>>).value;
       expect(sales, hasLength(1));
-      expect(sales.first['id'], 'fs1');
-      expect(sales.first['discount_pct'], 15);
+      expect(sales.first.productId, 'p1');
+      expect(sales.first.discountPct, 15);
+      expect(sales.first.endsAt, DateTime.parse('2026-08-25T00:00:00Z'));
     });
 
     test('getActiveFlashSales returns empty list when rpc returns empty',
@@ -315,8 +319,55 @@ void main() {
         storageService: mockStorage,
       );
 
-      final sales = await repo.getActiveFlashSales();
-      expect(sales, isEmpty);
+      final result = await repo.getActiveFlashSales();
+      expect(result, isA<Success<List<FlashSale>>>());
+      expect((result as Success<List<FlashSale>>).value, isEmpty);
+    });
+
+    test('getActiveFlashSales skips rows without a product_id', () async {
+      final rpcData = [
+        {
+          'id': 'fs-bad',
+          'discount_pct': 50,
+          'ends_at': '2026-08-25T00:00:00Z',
+        },
+        {
+          'id': 'fs-good',
+          'product_id': 'p1',
+          'discount_pct': 15,
+          'ends_at': '2026-08-25T00:00:00Z',
+          'is_active': true,
+        },
+      ];
+
+      when(() => mockClient.rpc('get_active_flash_sales'))
+          .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(rpcData));
+
+      final repo = SupabaseCatalogRepository(
+        client: mockClient,
+        preferences: prefs,
+        storageService: mockStorage,
+      );
+
+      final result = await repo.getActiveFlashSales();
+      expect(result, isA<Success<List<FlashSale>>>());
+      final sales = (result as Success<List<FlashSale>>).value;
+      expect(sales, hasLength(1));
+      expect(sales.first.productId, 'p1');
+    });
+
+    test('getActiveFlashSales fails closed when the rpc throws', () async {
+      when(() => mockClient.rpc('get_active_flash_sales'))
+          .thenThrow(Exception('transport down'));
+
+      final repo = SupabaseCatalogRepository(
+        client: mockClient,
+        preferences: prefs,
+        storageService: mockStorage,
+      );
+
+      final result = await repo.getActiveFlashSales();
+      expect(result, isA<Failure<List<FlashSale>>>());
     });
   });
 }

@@ -16,6 +16,7 @@ import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -357,7 +358,7 @@ final class _StubCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const [];
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
 }
 
 /// Empty admin repository for the route probe: the admin pages built by
