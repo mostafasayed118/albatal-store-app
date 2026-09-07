@@ -24,7 +24,8 @@ const DEMOS = [
 const SHOWCASE = ['demo-silk-01', 'demo-cotton-01', 'demo-velvet-01'];
 
 const run = async () => {
-  const { data: products } = await admin.from('products').select('id,slug').in('slug', SHOWCASE);
+  const { data: products, error: productsErr } = await admin.from('products').select('id,slug').in('slug', SHOWCASE);
+  if (productsErr) throw new Error(`products lookup: ${productsErr.message}`);
   console.log(`Showcase products found: ${products?.length ?? 0} (${SHOWCASE.join(',')})`);
   if (DRY) { console.log('DRY RUN — no writes'); return; }
   const userIds = {};
@@ -37,16 +38,39 @@ const run = async () => {
     }
     if (!userId) throw new Error(`No user id for ${d.email}`);
     userIds[d.email] = userId;
-    await admin.from('profiles').upsert({ id: userId, full_name: d.full_name, phone: '+201000000000' }, { onConflict: 'id' });
-    if (d.tier === 'premium') await admin.rpc('admin_set_membership_tier', { p_profile_id: userId, p_tier: 'premium' });
+    const { error: profileErr } = await admin.from('profiles').upsert({ id: userId, full_name: d.full_name, phone: '+201000000000' }, { onConflict: 'id' });
+    if (profileErr) throw new Error(`profiles.upsert(${d.email}): ${profileErr.message}`);
+    // 046 grants admin_set_membership_tier to authenticated ONLY (revoked
+    // from PUBLIC), so a service_role client gets permission-denied on the
+    // RPC. Write the server-managed column directly instead — service_role
+    // bypasses RLS, same as the wishlist/cart writes below.
+    if (d.tier === 'premium') {
+      const { error: tierErr } = await admin
+        .from('profiles')
+        .update({ membership_tier: d.tier, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (tierErr) throw new Error(`membership_tier update (${d.email}): ${tierErr.message}`);
+    }
+    // Read back the server-managed state so a silent grant/RLS regression
+    // can never print success.
+    const { data: prof, error: profErr } = await admin
+      .from('profiles')
+      .select('membership_tier')
+      .eq('id', userId)
+      .maybeSingle();
+    if (profErr) throw new Error(`profiles readback (${d.email}): ${profErr.message}`);
+    if (prof?.membership_tier !== d.tier) {
+      throw new Error(`tier mismatch for ${d.email}: expected ${d.tier}, got ${prof?.membership_tier}`);
+    }
     const { data: existing } = await admin.from('addresses').select('id').eq('user_id', userId).eq('is_default', true).limit(1);
     if (!existing?.length) {
-      await admin.from('addresses').insert({ user_id: userId, recipient: d.full_name, line: '12 Talaat Harb St, Apt 4', city: d.city, country: 'Egypt', is_default: true });
+      const { error: addressErr } = await admin.from('addresses').insert({ user_id: userId, recipient: d.full_name, line: '12 Talaat Harb St, Apt 4', city: d.city, country: 'Egypt', is_default: true });
+      if (addressErr) throw new Error(`addresses.insert(${d.email}): ${addressErr.message}`);
     }
     console.log(`Seeded user ${d.email} tier=${d.tier} id=${userId}`);
   }
   const anon = createClient(URL, ANON, { auth: { persistSession: false } });
-  const { data: variant } = await admin
+  const { data: variant, error: variantErr } = await admin
     .from('product_variants')
     .select('id, product_id, size, color, products!inner(slug)')
     .eq('products.slug', 'demo-cotton-01')
@@ -55,6 +79,7 @@ const run = async () => {
     .gte('stock', 2)
     .limit(1)
     .maybeSingle();
+  if (variantErr) throw new Error(`variant lookup: ${variantErr.message}`);
   let standardOrderId = null;
   let standardIdempotent = false;
   let premiumOrderId = null;
@@ -64,7 +89,8 @@ const run = async () => {
   } else {
     const std = DEMOS.find((x) => x.tier === 'standard');
     const stdAddress = { recipient: std.full_name, line: '12 Talaat Harb St, Apt 4', city: std.city, country: 'Egypt' };
-    await anon.auth.signInWithPassword({ email: std.email, password: std.password });
+    const { error: stdSignInErr } = await anon.auth.signInWithPassword({ email: std.email, password: std.password });
+    if (stdSignInErr) throw new Error(`sign-in ${std.email}: ${stdSignInErr.message}`);
     try {
       const { data: stdOrder, error: stdErr } = await anon.rpc('create_checkout_order', {
         p_payment_method: 'cod',
@@ -81,7 +107,8 @@ const run = async () => {
     }
     const prem = DEMOS.find((x) => x.tier === 'premium');
     const premAddress = { recipient: prem.full_name, line: '12 Talaat Harb St, Apt 4', city: prem.city, country: 'Egypt' };
-    await anon.auth.signInWithPassword({ email: prem.email, password: prem.password });
+    const { error: premSignInErr } = await anon.auth.signInWithPassword({ email: prem.email, password: prem.password });
+    if (premSignInErr) throw new Error(`sign-in ${prem.email}: ${premSignInErr.message}`);
     try {
       const { data: premOrder, error: premErr } = await anon.rpc('create_checkout_order', {
         p_payment_method: 'cod',
@@ -93,11 +120,10 @@ const run = async () => {
       premiumOrderId = premOrder?.order_id ?? null;
       premiumIdempotent = premOrder?.idempotent ?? false;
       console.log(`Premium order order_id=${premiumOrderId} idempotent=${premiumIdempotent}`);
-      try {
-        await anon.rpc('confirm_cod_payment', { p_order_id: premiumOrderId });
-      } catch (e) {
-        console.log(`confirm skipped: ${e.message}`);
-      }
+      // supabase-js returns { error } instead of throwing — a rerun landing
+      // here is expected and safe (order already confirmed).
+      const { error: confirmErr } = await anon.rpc('confirm_cod_payment', { p_order_id: premiumOrderId });
+      if (confirmErr) console.log(`confirm skipped (rerun-safe): ${confirmErr.message}`);
     } finally {
       await anon.auth.signOut();
     }
