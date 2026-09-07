@@ -468,6 +468,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useThisAddress => 'Use this address';
 
   @override
+  String get editAddress => 'Edit address';
+
+  @override
+  String get recipientName => 'Recipient';
+
+  @override
+  String get streetAddress => 'Street address';
+
+  @override
+  String get city => 'City';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get streetAddressRequired => 'Enter a valid street address';
+
+  @override
+  String get cityRequired => 'City is required';
+
+  @override
+  String get countryRequired => 'Country is required';
+
+  @override
+  String get save => 'Save';
+
+  @override
   String get defaultLabel => 'Default';
 
   @override

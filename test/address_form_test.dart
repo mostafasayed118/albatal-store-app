@@ -31,7 +31,7 @@ void main() {
     await tester.tap(find.text('Open Form'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Full name'), findsOneWidget);
+    expect(find.text('Full Name'), findsOneWidget);
     expect(find.text('Street address'), findsOneWidget);
     expect(find.text('City'), findsOneWidget);
     expect(find.text('Country'), findsOneWidget);
@@ -60,7 +60,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Full name'), 'Sara Ahmed');
+        find.widgetWithText(TextFormField, 'Full Name'), 'Sara Ahmed');
     await tester.enterText(find.widgetWithText(TextFormField, 'Street address'),
         '45 Nile Corniche');
     await tester.enterText(find.widgetWithText(TextFormField, 'City'), 'Cairo');

@@ -57,5 +57,32 @@ void main() {
       expect(AppLocalizationsEn().adminAccessRequired, 'Admin access required');
       expect(AppLocalizationsAr().adminAccessRequired.isNotEmpty, isTrue);
     });
+
+    test('address surfaces labels and validators', () {
+      final en = AppLocalizationsEn();
+      final ar = AppLocalizationsAr();
+      expect(en.streetAddress, 'Street address');
+      expect(en.city, 'City');
+      expect(en.country, 'Country');
+      expect(en.recipientName, 'Recipient');
+      expect(en.streetAddressRequired, 'Enter a valid street address');
+      expect(en.cityRequired, 'City is required');
+      expect(en.countryRequired, 'Country is required');
+      expect(en.editAddress, 'Edit address');
+      expect(en.save, 'Save');
+      for (final value in [
+        ar.streetAddress,
+        ar.city,
+        ar.country,
+        ar.recipientName,
+        ar.streetAddressRequired,
+        ar.cityRequired,
+        ar.countryRequired,
+        ar.editAddress,
+        ar.save,
+      ]) {
+        expect(value.isNotEmpty, isTrue);
+      }
+    });
   });
 }

@@ -56,7 +56,7 @@ class DetailsPage extends StatelessWidget {
                 title: l.noResultsFound,
                 body: l.emptyBody,
                 actionLabel: l.returnHome,
-                onAction: () => context.go('/'),
+                onAction: () => context.go('/home'),
               ),
             );
           }
