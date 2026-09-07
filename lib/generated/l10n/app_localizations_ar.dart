@@ -476,6 +476,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get useThisAddress => 'استخدم هذا العنوان';
 
   @override
+  String get editAddress => 'تعديل العنوان';
+
+  @override
+  String get recipientName => 'المستلم';
+
+  @override
+  String get streetAddress => 'عنوان الشارع';
+
+  @override
+  String get city => 'المدينة';
+
+  @override
+  String get country => 'البلد';
+
+  @override
+  String get streetAddressRequired => 'أدخل عنوان شارع صالحًا';
+
+  @override
+  String get cityRequired => 'المدينة مطلوبة';
+
+  @override
+  String get countryRequired => 'البلد مطلوب';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
   String get defaultLabel => 'افتراضي';
 
   @override

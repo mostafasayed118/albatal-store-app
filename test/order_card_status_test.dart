@@ -14,8 +14,9 @@ void main() {
     Future<void> pumpCard(
       WidgetTester tester,
       OrderStatus status,
-      bool isCompleted,
-    ) {
+      bool isCompleted, {
+      Locale? locale,
+    }) {
       final order = Order(
         id: 'ORD-9',
         items: [
@@ -39,6 +40,7 @@ void main() {
         paymentMethod: 'cod',
       );
       return tester.pumpWidget(MaterialApp(
+        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
@@ -70,6 +72,22 @@ void main() {
       await pumpCard(tester, OrderStatus.delivered, true);
       expect(find.text('Delivered'), findsOneWidget);
       expect(find.textContaining('Delivered'), findsNWidgets(2));
+    });
+
+    group('closed date locale', () {
+      // Closed orders render "outcome · date" — the month must follow the
+      // UI locale, never hardcoded English (AR history read "Jan…Dec").
+      testWidgets('en date uses the English month', (tester) async {
+        await pumpCard(tester, OrderStatus.delivered, true);
+        expect(find.textContaining('4 Sep 2026'), findsOneWidget);
+      });
+
+      testWidgets('ar date uses the Arabic month', (tester) async {
+        await pumpCard(tester, OrderStatus.delivered, true,
+            locale: const Locale('ar'));
+        expect(find.textContaining('سبتمبر'), findsOneWidget);
+        expect(find.textContaining('Sep'), findsNothing);
+      });
     });
   });
 }

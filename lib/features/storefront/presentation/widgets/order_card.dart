@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -69,7 +70,8 @@ class OrderCard extends StatelessWidget {
               // Closed orders show their own outcome + date — never a
               // hardcoded 'Delivered' (live-found 2026-09-04: just-paid
               // orders read 'Delivered · today').
-              Text('${_closedLabel(o.status, l)} · ${_fmtDate(o.placedAt)}',
+              Text(
+                  '${_closedLabel(o.status, l)} · ${_fmtDate(o.placedAt, l.localeName)}',
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -99,18 +101,7 @@ class OrderCard extends StatelessWidget {
       };
 }
 
-const _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-];
-String _fmtDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+/// Locale-aware closed-order date — month names follow the UI locale via
+/// intl (the old hardcoded English list leaked "Jan…Dec" into AR history).
+String _fmtDate(DateTime d, String locale) =>
+    DateFormat('d MMM y', locale).format(d);

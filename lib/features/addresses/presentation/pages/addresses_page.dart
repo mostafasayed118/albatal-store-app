@@ -87,15 +87,16 @@ Future<void> _edit(BuildContext context, Address? a) async {
       context: context,
       builder: (d) {
         var submitted = false;
+        final loc = d.l10n;
         final fields = [
-          (r, 'Recipient'),
-          (l, 'Street address'),
-          (c, 'City'),
-          (n, 'Country'),
+          (r, loc.recipientName),
+          (l, loc.streetAddress),
+          (c, loc.city),
+          (n, loc.country),
         ];
         return StatefulBuilder(
           builder: (d, setState) => AlertDialog(
-            title: Text(a == null ? 'Add address' : 'Edit address'),
+            title: Text(a == null ? loc.addAddress : loc.editAddress),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -108,7 +109,7 @@ Future<void> _edit(BuildContext context, Address? a) async {
                         decoration: InputDecoration(
                           labelText: x.$2,
                           errorText: submitted && x.$1.text.trim().isEmpty
-                              ? '${x.$2} is required'
+                              ? loc.fieldRequired
                               : null,
                         ),
                         onChanged: (_) {
@@ -122,7 +123,7 @@ Future<void> _edit(BuildContext context, Address? a) async {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(d),
-                child: const Text('Cancel'),
+                child: Text(loc.cancel),
               ),
               FilledButton(
                 onPressed: () {
@@ -141,7 +142,7 @@ Future<void> _edit(BuildContext context, Address? a) async {
                       ));
                   Navigator.pop(d);
                 },
-                child: const Text('Save'),
+                child: Text(loc.save),
               ),
             ],
           ),
