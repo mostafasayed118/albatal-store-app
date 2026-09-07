@@ -27,13 +27,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           .maybeSingle();
 
       if (response == null) return const Success(null);
-      return Success(Profile(
-        id: response['id'] as String,
-        fullName: response['full_name'] as String? ?? '',
-        phone: response['phone'] as String?,
-        avatarUrl: response['avatar_url'] as String?,
-        isAdmin: response['is_admin'] as bool? ?? false,
-      ));
+      return Success(Profile.fromRow(response));
     } catch (e) {
       return Failure(AppError('Failed to load profile', cause: e));
     }
@@ -42,12 +36,10 @@ class SupabaseProfileRepository implements ProfileRepository {
   @override
   Future<Result<void>> upsertProfile(Profile profile) async {
     try {
-      await _client.from('profiles').upsert({
-        'id': profile.id,
-        'full_name': profile.fullName,
-        'phone': profile.phone,
-        'avatar_url': profile.avatarUrl,
-      });
+      // toProfileRow() deliberately omits is_admin/membership_tier — the
+      // tier is admin-managed (migration 046) and RLS pins privileged
+      // columns to their existing values.
+      await _client.from('profiles').upsert(profile.toProfileRow());
       return const Success(null);
     } catch (e) {
       return Failure(AppError('Failed to save profile', cause: e));

@@ -64,7 +64,8 @@ void main() {
 
     test('props includes all fields', () {
       const profile = Profile(id: 'u1', fullName: 'Test');
-      expect(profile.props, ['u1', 'Test', null, null, false]);
+      expect(profile.props,
+          ['u1', 'Test', null, null, false, MembershipTier.standard]);
     });
   });
 }
