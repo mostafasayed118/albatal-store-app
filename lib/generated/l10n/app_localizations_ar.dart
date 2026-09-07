@@ -235,6 +235,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get premiumMember => 'عضو مميز';
 
   @override
+  String get customer => 'العميل';
+
+  @override
+  String get membershipTier => 'مستوى العضوية';
+
+  @override
+  String get standardMember => 'عضو عادي';
+
+  @override
+  String get changeMembershipTier => 'تغيير مستوى العضوية';
+
+  @override
+  String get membershipTierUpdated => 'تم تحديث مستوى العضوية';
+
+  @override
   String get editProfile => 'تعديل الحساب';
 
   @override
@@ -333,13 +348,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get newArrival => 'وصل حديثًا';
+
+  @override
   String get newSilkCollection => 'مجموعة الحرير الجديدة';
 
   @override
-  String get wovenForDistinction => 'منسوج للتميّز';
+  String get percentOff => 'خصم 20%';
 
   @override
-  String get exploreCollection => 'استكشاف المجموعة';
+  String get shopNow => 'تسوق الآن';
 
   @override
   String get decreaseQuantity => 'تقليل الكمية';
@@ -529,6 +547,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get returnsBody => 'مرتجعات مجانية خلال 30 يوماً من الشراء';
+
+  @override
+  String get freeShipping => 'مجاني';
+
+  @override
+  String get premiumFreeShipping => 'شحن مجاني على كل طلب';
 
   @override
   String get width => 'العرض';
@@ -889,6 +913,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get confirm => 'تأكيد';
+
+  @override
+  String get change => 'تغيير';
 
   @override
   String get update => 'تحديث';

@@ -111,6 +111,25 @@ final class CatalogState extends Equatable {
         () => allProducts.where((p) => p.category == category).toList(),
       );
 
+  /// Hero-carousel picks: discounted products first (a deal is the
+  /// strongest hero story — mirroring the mockup's "20% Off" slide),
+  /// then best-rated, capped at three so a fourth dot never appears.
+  /// Memoized like the other O(n) derived views; empty catalog → empty
+  /// list, so a hero fed solely from this shows nothing (Home falls back
+  /// to the evergreen promo slide).
+  List<Product> get featuredProducts {
+    var cached = _m.featured;
+    if (cached == null) {
+      final discounted = allProducts.where((p) => p.oldPrice != null).toList()
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+      final rest = allProducts.where((p) => p.oldPrice == null).toList()
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+      cached = [...discounted, ...rest].take(3).toList();
+      _m.featured = cached;
+    }
+    return cached;
+  }
+
   Map<String, int> get categoryProductCount {
     var cached = _m.categoryCount;
     if (cached == null) {
@@ -198,6 +217,7 @@ class _CatalogMemos {
   Map<String, int>? categoryCount;
   List<Product>? visible;
   CatalogFilters? visibleKey;
+  List<Product>? featured;
   final Map<String, List<Product>> byCategory = {};
 }
 

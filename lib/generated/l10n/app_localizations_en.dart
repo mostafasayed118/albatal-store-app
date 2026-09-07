@@ -236,6 +236,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumMember => 'Premium Member';
 
   @override
+  String get customer => 'Customer';
+
+  @override
+  String get membershipTier => 'Membership tier';
+
+  @override
+  String get standardMember => 'Standard Member';
+
+  @override
+  String get changeMembershipTier => 'Change membership tier';
+
+  @override
+  String get membershipTierUpdated => 'Membership tier updated';
+
+  @override
   String get editProfile => 'Edit Profile';
 
   @override
@@ -331,13 +346,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get newSilkCollection => 'NEW SILK COLLECTION';
+  String get newArrival => 'New Arrival';
 
   @override
-  String get wovenForDistinction => 'Woven for distinction';
+  String get newSilkCollection => 'New Silk Collection';
 
   @override
-  String get exploreCollection => 'Explore collection';
+  String get percentOff => '20% Off';
+
+  @override
+  String get shopNow => 'Shop Now';
 
   @override
   String get decreaseQuantity => 'Decrease quantity';
@@ -521,6 +539,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get returnsBody => 'Free returns within 30 days of purchase';
+
+  @override
+  String get freeShipping => 'Free';
+
+  @override
+  String get premiumFreeShipping => 'Free shipping on every order';
 
   @override
   String get width => 'Width';
@@ -886,6 +910,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String get change => 'Change';
 
   @override
   String get update => 'Update';

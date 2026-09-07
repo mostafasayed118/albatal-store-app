@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../../extensions/build_context_x.dart';
 import '../../theme/app_colors.dart';
 
-/// Stitch search bar — rounded-full, surfaceContainerLow #F3F3F3, mic action.
+/// Stitch search bar — rounded-full, surfaceContainerLow #F3F3F3.
 ///
 /// Maps Stitch HTML `rounded-full` + `bg-[#f3f3f3]` to Flutter pill
-/// container. Uses [EdgeInsetsDirectional], InkSparkle via [IconButton],
-/// and keeps radii discipline: pill is Stitch-exact `rounded-full` (outside
-/// 16/8/4 scale) documented here, inner TextField border is none.
+/// container. Uses [EdgeInsetsDirectional] and keeps radii discipline:
+/// pill is Stitch-exact `rounded-full` (outside 16/8/4 scale) documented
+/// here, inner TextField border is none.
+///
+/// The mockup's voice-search mic is deliberately NOT rendered: it is a
+/// dead affordance until voice search ships (the "coming soon" toast was
+/// flagged as a release blocker), and the canonical design decision
+/// (STATE.md 2026-09-06) is no mic until then. Restore it together with
+/// real speech-to-text, not before.
 class StitchSearchBar extends StatelessWidget {
   const StitchSearchBar({
     super.key,
     required this.controller,
     this.onChanged,
-    this.onMicTap,
     this.hintText,
     this.onSubmitted,
     this.padding = const EdgeInsetsDirectional.symmetric(
@@ -25,7 +29,6 @@ class StitchSearchBar extends StatelessWidget {
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
-  final VoidCallback? onMicTap;
   final ValueChanged<String>? onSubmitted;
   final String? hintText;
   final EdgeInsetsGeometry padding;
@@ -78,19 +81,11 @@ class StitchSearchBar extends StatelessWidget {
                 ),
               ),
             ),
-            IconButton(
-              tooltip: context.l10n.voiceSearch,
-              onPressed: onMicTap ??
-                  () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        content: Text(context.l10n.comingSoon),
-                      ),
-                    );
-                  },
-              icon: const Icon(Icons.mic_none_rounded),
-            ),
+            // Trailing inset mirrors the leading one so the placeholder
+            // text optically centers in the pill without a trailing icon.
+            // (The mockup's mic is intentionally not rendered — see class
+            // doc: dead affordance until voice search ships.)
+            const SizedBox(width: 12),
           ],
         ),
       ),

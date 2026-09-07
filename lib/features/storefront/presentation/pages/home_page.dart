@@ -11,6 +11,7 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
+import '../../../../shared/components/stitch/stitch_hero_carousel.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -21,7 +22,6 @@ import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
-import '../widgets/promo_banner.dart';
 
 /// Home — Stitch reskin (spec §4/§5):
 /// pill search → 180dp gold hero → circular category chips →
@@ -179,9 +179,26 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ],
                           const SizedBox(height: 20),
-                          // Hero fallback: StitchHeroCarousel is not built yet; PromoBanner
-                          // keeps the 180dp gold-CTA contract until it lands.
-                          const PromoBanner(),
+                          // Stitch multi-slide hero (spec §4): the mockup's
+                          // evergreen promo slide first, then up to three
+                          // featured products (discounted → best-rated, from
+                          // CatalogState.featuredProducts). Index dots included.
+                          StitchHeroCarousel(
+                            slides: [
+                              StitchHeroSlide.promo(
+                                eyebrow: l.newArrival,
+                                title: l.newSilkCollection,
+                                subtitle: l.percentOff,
+                                ctaLabel: l.shopNow,
+                                onTap: () => context.go('/categories'),
+                              ),
+                              for (final p in state.featuredProducts)
+                                StitchHeroSlide.fromProduct(
+                                  p,
+                                  onTap: () => context.push('/product/${p.id}'),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 24),
                           StitchCategoryChips(
                             selected: state.filters.category,
@@ -298,8 +315,9 @@ class _HomePageState extends State<HomePage> {
                                     context.push('/product/${product.id}'),
                                 onWishlist: () {
                                   hapticTap();
-                                  context.read<WishlistCubit>().toggle(
-                                      product.id);
+                                  context
+                                      .read<WishlistCubit>()
+                                      .toggle(product.id);
                                 },
                                 isWishlisted: wishlist.ids.contains(product.id),
                               );

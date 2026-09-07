@@ -89,7 +89,9 @@ void main() {
     );
     expect(find.byType(StitchSearchBar), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.byIcon(Icons.mic_none_rounded), findsOneWidget);
+    // The mockup's mic is deliberately absent (dead affordance until voice
+    // search ships — canonical design decision recorded in STATE.md).
+    expect(find.byIcon(Icons.mic_none_rounded), findsNothing);
     expect(find.byIcon(Icons.search), findsOneWidget);
   });
 

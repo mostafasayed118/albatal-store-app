@@ -542,6 +542,36 @@ abstract class AppLocalizations {
   /// **'Premium Member'**
   String get premiumMember;
 
+  /// No description provided for @customer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get customer;
+
+  /// No description provided for @membershipTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership tier'**
+  String get membershipTier;
+
+  /// No description provided for @standardMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard Member'**
+  String get standardMember;
+
+  /// No description provided for @changeMembershipTier.
+  ///
+  /// In en, this message translates to:
+  /// **'Change membership tier'**
+  String get changeMembershipTier;
+
+  /// No description provided for @membershipTierUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership tier updated'**
+  String get membershipTierUpdated;
+
   /// No description provided for @editProfile.
   ///
   /// In en, this message translates to:
@@ -710,23 +740,29 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{No fabrics found} =1{1 fabric found} other{{count} fabrics found}}'**
   String fabricsFound(int count);
 
+  /// No description provided for @newArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'New Arrival'**
+  String get newArrival;
+
   /// No description provided for @newSilkCollection.
   ///
   /// In en, this message translates to:
-  /// **'NEW SILK COLLECTION'**
+  /// **'New Silk Collection'**
   String get newSilkCollection;
 
-  /// No description provided for @wovenForDistinction.
+  /// No description provided for @percentOff.
   ///
   /// In en, this message translates to:
-  /// **'Woven for distinction'**
-  String get wovenForDistinction;
+  /// **'20% Off'**
+  String get percentOff;
 
-  /// No description provided for @exploreCollection.
+  /// No description provided for @shopNow.
   ///
   /// In en, this message translates to:
-  /// **'Explore collection'**
-  String get exploreCollection;
+  /// **'Shop Now'**
+  String get shopNow;
 
   /// No description provided for @decreaseQuantity.
   ///
@@ -1039,6 +1075,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Free returns within 30 days of purchase'**
   String get returnsBody;
+
+  /// No description provided for @freeShipping.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get freeShipping;
+
+  /// No description provided for @premiumFreeShipping.
+  ///
+  /// In en, this message translates to:
+  /// **'Free shipping on every order'**
+  String get premiumFreeShipping;
 
   /// No description provided for @width.
   ///
@@ -1747,6 +1795,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// No description provided for @change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get change;
 
   /// No description provided for @update.
   ///

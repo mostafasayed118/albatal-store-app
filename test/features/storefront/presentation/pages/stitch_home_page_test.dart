@@ -11,10 +11,10 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/widgets/promo_banner.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
+import 'package:al_batal_elite/shared/components/stitch/stitch_hero_carousel.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
 import 'package:flutter/material.dart';
@@ -148,8 +148,18 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(StitchSearchBar), findsOneWidget);
-    // Hero fallback until StitchHeroCarousel exists.
-    expect(find.byType(PromoBanner), findsOneWidget);
+    // Stitch multi-slide hero: mockup-exact promo slide leads, followed by
+    // featured products (discounted → best-rated, capped at 3). Page 0 is
+    // the promo; product-slide text only exists once swiped, so the
+    // category-name counts below are chip + grid only.
+    expect(find.byType(StitchHeroCarousel), findsOneWidget);
+    expect(find.text('New Arrival'), findsOneWidget);
+    expect(find.text('20% Off'), findsOneWidget);
+    expect(find.text('Shop Now'), findsOneWidget);
+    // 4 dots = evergreen promo + 3 featured (silk-01 discounted leads, then
+    // velvet/cotton by rating) — proves the wiring without swiping.
+    expect(find.byKey(const ValueKey('stitch_hero_dot_0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('stitch_hero_dot_3')), findsOneWidget);
     expect(find.byType(StitchCategoryChips), findsOneWidget);
     // Category names render twice: chip labels + grid card subtitles.
     expect(find.text('Silk'), findsNWidgets(2));
