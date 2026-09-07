@@ -58,6 +58,9 @@ FROM (VALUES
   ('cccc0003-0001-0001-0001-000000000003'::UUID, 'product-images/cccc0003-0001-0001-0001-000000000003/hero.jpg', 0, true)
 ) AS v(product_id, storage_path, sort_order, is_primary)
 JOIN products p ON p.id = v.product_id
+WHERE NOT EXISTS (SELECT 1 FROM product_images WHERE product_id = 'cccc0001-0001-0001-0001-000000000001' AND storage_path = 'product-images/cccc0001-0001-0001-0001-000000000001/hero.jpg')
+  AND NOT EXISTS (SELECT 1 FROM product_images WHERE product_id = 'cccc0002-0001-0001-0001-000000000002' AND storage_path = 'product-images/cccc0002-0001-0001-0001-000000000002/hero.jpg')
+  AND NOT EXISTS (SELECT 1 FROM product_images WHERE product_id = 'cccc0003-0001-0001-0001-000000000003' AND storage_path = 'product-images/cccc0003-0001-0001-0001-000000000003/hero.jpg')
 ON CONFLICT DO NOTHING;
 
 -- ─── Flash sales (active window: yesterday → +7 days, RLS-visible) ──
