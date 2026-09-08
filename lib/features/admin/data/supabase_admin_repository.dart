@@ -228,18 +228,6 @@ final class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales() async {
-    try {
-      final res = await _client.rpc('get_active_flash_sales');
-      return Success(AdminMappers.flashSalesFromRows(res as List));
-      // A failed flash-sale fetch is non-critical; still surfaced as a
-      // failure Result so callers can decide (the catalog cubit swallows).
-    } catch (e) {
-      return Failure(AppError('Failed to load flash sales', cause: e));
-    }
-  }
-
-  @override
   Future<Result<List<AdminVariant>>> getVariants(String productId) async {
     try {
       final res = await _client

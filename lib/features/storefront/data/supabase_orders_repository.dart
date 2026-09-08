@@ -63,15 +63,6 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     }
   }
 
-  @override
-  Future<Result<void>> writeOrders(List<Order> orders) async {
-    // Server-backed repository is read-only from the client side.
-    // Orders are created via the `create_checkout_order` RPC and
-    // updated via Edge Function webhooks. writeOrders is a no-op
-    // here to satisfy the interface contract.
-    return const Success(null);
-  }
-
   static Order _mapOrder(Map<String, dynamic> row) {
     final itemsRaw = row['order_items'];
     final items = itemsRaw is List

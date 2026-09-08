@@ -64,10 +64,4 @@ final class MemoryStorefrontPersistence
   @override
   Future<Result<List<Order>>> readOrders() async =>
       Success(orderRecords.map(OrderCodec.decode).whereType<Order>().toList());
-
-  @override
-  Future<Result<void>> writeOrders(List<Order> orders) async {
-    orderRecords = orders.map(OrderCodec.encode).toList();
-    return const Success(null);
-  }
 }

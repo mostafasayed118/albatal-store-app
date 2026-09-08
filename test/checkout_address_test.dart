@@ -6,7 +6,8 @@ import 'package:al_batal_elite/features/storefront/domain/entities/pending_order
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'helpers/memory_storefront_persistence.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart'
+    show OrderCodec;
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
 import 'fixtures/products_data.dart';
@@ -97,21 +98,21 @@ void main() {
   });
 
   group('OrdersCubit — address snapshot in order', () {
-    test('place() stores the selected address on the order', () async {
-      final cubit = OrdersCubit(
-        MemoryStorefrontPersistence(),
-        generateId: () => 'ORD-ADDR-1',
-      );
-      final cart = CartState([
-        CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m',
-            quantity: 1),
-      ]);
-
-      final order = await cubit.place(
-        cart,
+    test('order carries the selected address snapshot', () {
+      final order = Order(
+        id: 'ORD-ADDR-1',
+        items: [
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 1),
+        ],
+        subtotal: products.first.price,
+        shipping: Money.zero,
+        total: products.first.price,
+        status: OrderStatus.placed,
+        placedAt: DateTime.utc(2026, 1, 1),
         paymentMethod: 'Credit Card',
         address: testAddress,
       );
@@ -121,21 +122,21 @@ void main() {
       expect(order.address!.line, '12 El Tahrir Street');
     });
 
-    test('place() works without an address (null)', () async {
-      final cubit = OrdersCubit(
-        MemoryStorefrontPersistence(),
-        generateId: () => 'ORD-ADDR-2',
-      );
-      final cart = CartState([
-        CartItem(
-            product: products.first,
-            color: 'Emerald',
-            length: '2m',
-            quantity: 1),
-      ]);
-
-      final order = await cubit.place(
-        cart,
+    test('order works without an address (null)', () {
+      final order = Order(
+        id: 'ORD-ADDR-2',
+        items: [
+          CartItem(
+              product: products.first,
+              color: 'Emerald',
+              length: '2m',
+              quantity: 1),
+        ],
+        subtotal: products.first.price,
+        shipping: Money.zero,
+        total: products.first.price,
+        status: OrderStatus.placed,
+        placedAt: DateTime.utc(2026, 1, 1),
         paymentMethod: 'Cash on Delivery',
       );
 
@@ -144,21 +145,27 @@ void main() {
 
     test('address persists through restore', () async {
       final store = MemoryStorefrontPersistence();
-      final a = OrdersCubit(store, generateId: () => 'ORD-PERSIST');
-      await a.place(
-        CartState([
-          CartItem(product: products.first, color: 'Emerald', length: '2m')
-        ]),
-        paymentMethod: 'Credit Card',
-        address: testAddress,
-      );
+      store.orderRecords = [
+        OrderCodec.encode(Order(
+          id: 'ORD-PERSIST',
+          items: [
+            CartItem(product: products.first, color: 'Emerald', length: '2m'),
+          ],
+          subtotal: products.first.price,
+          shipping: Money.zero,
+          total: products.first.price,
+          status: OrderStatus.placed,
+          placedAt: DateTime.utc(2026, 1, 1),
+          paymentMethod: 'Credit Card',
+          address: testAddress,
+        )),
+      ];
 
-      final b = OrdersCubit(store, generateId: () => 'SHOULD-NOT');
+      final b = OrdersCubit(store);
       await b.restore();
 
       expect(b.state.orders.single.address, testAddress);
       expect(b.state.orders.single.address!.recipient, 'Ahmed Mansour');
-      await a.close();
       await b.close();
     });
   });

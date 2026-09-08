@@ -25,10 +25,6 @@ class _RecordingOrdersRepo implements OrdersRepository {
     readCalls++;
     return Success(ordersToReturn);
   }
-
-  @override
-  Future<Result<void>> writeOrders(List<Order> orders) async =>
-      const Success(null);
 }
 
 Widget _harness(OrdersCubit cubit) {

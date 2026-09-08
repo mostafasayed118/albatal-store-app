@@ -96,13 +96,6 @@ final class LocalStorefrontPersistence {
         .whereType<Order>()
         .toList();
   }
-
-  Future<void> writeOrders(List<Order> orders) async {
-    await _preferences.setString(
-      _ordersKey,
-      jsonEncode(orders.map(OrderCodec.encode).toList()),
-    );
-  }
 }
 
 /// Serializes [Order] to/from JSON for the SharedPreferences persistence layer.
