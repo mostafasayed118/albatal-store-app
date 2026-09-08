@@ -139,15 +139,25 @@ void main() {
 
     test('timeout emits timedOut and cancels the watch (no permanent loading)',
         () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
-      cubit.selectMethod(PaymentMethod.paymobCard);
-      await cubit.processPayment(customerEmail: 'a@b.c');
+      // The watch timer is injected: capture its callback and drive it
+      // directly — no test-only API on the cubit, no real wait.
+      void Function()? fireTimeout;
+      final timedCubit = PaymentCubit(
+        service,
+        timerFactory: (Duration duration, void Function() callback) {
+          fireTimeout = callback;
+          return Timer(const Duration(minutes: 15), () {});
+        },
+      );
+      timedCubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      timedCubit.selectMethod(PaymentMethod.paymobCard);
+      await timedCubit.processPayment(customerEmail: 'a@b.c');
 
-      // Drive the timeout callback directly. The cubit exposes the
-      // configured timeout duration; we fire it to avoid a real wait.
-      await cubit.fireWatchTimeoutForTest();
+      fireTimeout!();
 
-      expect(cubit.state.status, PaymentStatus.timedOut);
+      expect(timedCubit.state.status, PaymentStatus.timedOut);
+      expect(timedCubit.state.errorMessage, 'verify_timeout');
+      await timedCubit.close();
     }, timeout: const Timeout(Duration(seconds: 5)));
 
     test('cancel emits cancelled and cancels the watch', () async {
