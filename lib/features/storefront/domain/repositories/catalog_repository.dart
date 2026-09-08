@@ -1,5 +1,6 @@
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
+import '../entities/flash_sale.dart';
 
 /// Abstract data source for the product catalog.
 ///
@@ -30,9 +31,10 @@ abstract interface class CatalogRepository {
 
   /// Active flash sales from `flash_sales` table.
   ///
-  /// Default implementation returns empty list so existing fakes/stubs
+  /// Default implementation returns an empty success so existing fakes/stubs
   /// remain valid without override. Remote implementations (Supabase)
-  /// override to call `rpc('get_active_flash_sales')`.
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() =>
-      Future.value(const []);
+  /// override to call `rpc('get_active_flash_sales')` and map rows via
+  /// `FlashSaleCodec.fromRow`, failing closed on transport errors.
+  Future<Result<List<FlashSale>>> getActiveFlashSales() =>
+      Future.value(const Success<List<FlashSale>>([]));
 }

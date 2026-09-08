@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/product_details_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -20,7 +21,8 @@ class _StubCatalogRepository implements CatalogRepository {
   @override
   Product? findProductById(String id) => null;
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -39,7 +41,8 @@ class _RepositoryFailureCatalog implements CatalogRepository {
   @override
   Product? findProductById(String id) => null;
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -82,7 +85,8 @@ class _RelatedFetchThrowsCatalog implements CatalogRepository {
   Product? findProductById(String id) => requestedProduct;
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -119,7 +123,8 @@ class _RelatedFetchFailureCatalog implements CatalogRepository {
   Product? findProductById(String id) => requestedProduct;
 
   @override
-  Future<List<Map<String, dynamic>>> getActiveFlashSales() async => const [];
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];

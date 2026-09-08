@@ -1,6 +1,7 @@
 import '../../../core/entities/money.dart';
 import '../../../core/entities/product.dart';
 import '../../../shared/services/storage_service.dart';
+import '../domain/entities/flash_sale.dart';
 
 /// Placeholder tint used when a product row carries no image — the value the
 /// network path has always written.
@@ -142,4 +143,34 @@ extension ProductCodec on Product {
         rating: (raw['rating'] as num?)?.toDouble() ?? 0.0,
         reviewCount: (raw['reviewCount'] as num?)?.toInt() ?? 0,
       );
+}
+
+/// Codec for flash-sale rows from the `get_active_flash_sales` RPC.
+///
+/// All parsing is total: rows without a usable `product_id` return `null`
+/// (callers skip them) and every other malformed value degrades to the
+/// entity default — a bad row never throws into the cubit.
+extension FlashSaleCodec on FlashSale {
+  static FlashSale? fromRow(Map<String, dynamic> row) {
+    final productId = row['product_id'];
+    if (productId is! String || productId.isEmpty) return null;
+
+    final discountRaw = row['discount_pct'] ?? row['discountPct'];
+    final discountPct = discountRaw is int
+        ? discountRaw
+        : (discountRaw is num
+            ? discountRaw.toInt()
+            : FlashSale.defaultDiscountPct);
+
+    final endsRaw = row['ends_at'] ?? row['endsAt'] ?? row['end_at'];
+    final endsAt = endsRaw is DateTime
+        ? endsRaw
+        : (endsRaw is String ? DateTime.tryParse(endsRaw) : null);
+
+    return FlashSale(
+      productId: productId,
+      discountPct: discountPct,
+      endsAt: endsAt,
+    );
+  }
 }

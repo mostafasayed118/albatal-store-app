@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -78,19 +79,13 @@ void main() {
   testWidgets('flash sale banner shows server discount 15% (plan Step1)',
       (tester) async {
     // Server returns 15% sale for p1 — matches plan snippet.
-    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => [
-          {
-            'id': 'flash-1',
-            'product_id': 'p1',
-            'discount_pct': 15,
-            'starts_at': DateTime.now()
-                .subtract(const Duration(hours: 1))
-                .toIso8601String(),
-            'ends_at':
-                DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
-            'is_active': true,
-          }
-        ]);
+    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => Success([
+          FlashSale(
+            productId: 'p1',
+            discountPct: 15,
+            endsAt: DateTime.now().add(const Duration(hours: 1)),
+          )
+        ]));
 
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;
@@ -108,25 +103,19 @@ void main() {
     final ctx = tester.element(find.byType(HomePage));
     final cubit = ctx.read<CatalogCubit>();
     expect(cubit.state.flashSales, isNotEmpty);
-    expect(cubit.state.flashSales.first['discount_pct'], 15);
-    expect(cubit.state.flashSales.first['product_id'], 'p1');
+    expect(cubit.state.flashSales.first.discountPct, 15);
+    expect(cubit.state.flashSales.first.productId, 'p1');
   });
 
   testWidgets('flash sale banner shows distinct server discount 22%',
       (tester) async {
-    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => [
-          {
-            'id': 'flash-2',
-            'product_id': 'p1',
-            'discount_pct': 22,
-            'starts_at': DateTime.now()
-                .subtract(const Duration(hours: 1))
-                .toIso8601String(),
-            'ends_at':
-                DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
-            'is_active': true,
-          }
-        ]);
+    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => Success([
+          FlashSale(
+            productId: 'p1',
+            discountPct: 22,
+            endsAt: DateTime.now().add(const Duration(hours: 2)),
+          )
+        ]));
 
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;
@@ -145,18 +134,8 @@ void main() {
 
   testWidgets('flash sale countdown ticks from server endsAt', (tester) async {
     final endsAt = DateTime.now().add(const Duration(hours: 1, minutes: 5));
-    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async => [
-          {
-            'id': 'flash-3',
-            'product_id': 'p1',
-            'discount_pct': 10,
-            'starts_at': DateTime.now()
-                .subtract(const Duration(hours: 1))
-                .toIso8601String(),
-            'ends_at': endsAt.toIso8601String(),
-            'is_active': true,
-          }
-        ]);
+    when(() => mockRepo.getActiveFlashSales()).thenAnswer((_) async =>
+        Success([FlashSale(productId: 'p1', discountPct: 10, endsAt: endsAt)]));
 
     tester.view.physicalSize = const Size(1000, 3000);
     tester.view.devicePixelRatio = 1.0;

@@ -126,12 +126,11 @@ class _HomePageState extends State<HomePage> {
           final flashProduct = flashSale == null
               ? (state.visible.isEmpty ? null : state.visible.first)
               : state.allProducts
-                      .where((p) => p.id == flashSale['product_id'])
+                      .where((p) => p.id == flashSale.productId)
                       .firstOrNull ??
                   (state.visible.isEmpty ? null : state.visible.first);
-          final discountLabel = flashSale == null
-              ? '-15%'
-              : '-${flashSale['discount_pct'] ?? flashSale['discountPct'] ?? 15}%';
+          final discountLabel =
+              flashSale == null ? '-15%' : '-${flashSale.discountPct}%';
           // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
           // ResponsiveShell caps width at 1200px on tablet/desktop.
           return BlocBuilder<WishlistCubit, WishlistState>(
