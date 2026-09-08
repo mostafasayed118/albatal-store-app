@@ -219,7 +219,7 @@ Order _orderWithStatus(String id, OrderStatus status) => Order(
 void _tabMappingTests() {
   group('OrdersState tab mapping (live-found 2026-09-03)', () {
     test('paid orders land in completed (were invisible)', () {
-      const state = OrdersState();
+      final state = OrdersState();
       final s =
           state.copyWith(orders: [_orderWithStatus('p1', OrderStatus.paid)]);
       expect(s.completed.map((o) => o.id), ['p1']);
@@ -228,7 +228,7 @@ void _tabMappingTests() {
     });
 
     test('expired and refunded land in cancelled (were invisible)', () {
-      const state = OrdersState();
+      final state = OrdersState();
       final s = state.copyWith(orders: [
         _orderWithStatus('e1', OrderStatus.expired),
         _orderWithStatus('r1', OrderStatus.refunded),
@@ -239,7 +239,7 @@ void _tabMappingTests() {
     });
 
     test('every OrderStatus is visible in exactly one tab', () {
-      const state = OrdersState();
+      final state = OrdersState();
       for (final status in OrderStatus.values) {
         final s = state.copyWith(orders: [_orderWithStatus('x', status)]);
         final hits = [

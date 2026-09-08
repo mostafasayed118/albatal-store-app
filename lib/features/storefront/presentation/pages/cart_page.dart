@@ -39,21 +39,34 @@ class CartPage extends StatelessWidget {
               onAction: () => context.go('/catalog'),
             );
           }
-          return ListView(
+          // Lazily built: a long cart no longer instantiates every
+          // tile (plus summary + CTA) on each quantity change — only
+          // visible rows build. The trailing footer holds the summary
+          // and checkout action.
+          return ListView.builder(
             // Directional padding keeps RTL layouts mirrored correctly.
             padding: const EdgeInsetsDirectional.all(16),
-            children: [
-              ...s.items.map((i) => CartItemTile(item: i)),
-              const SizedBox(height: 16),
-              CartSummary(s),
-              const SizedBox(height: 16),
-              AppButton(
-                label: l.proceedToCheckout,
-                // Points forward in the reading direction (flips under RTL).
-                icon: context.directionalForwardIcon,
-                onPressed: () => context.push('/checkout'),
-              ),
-            ],
+            itemCount: s.items.length + 1,
+            itemBuilder: (context, index) {
+              if (index < s.items.length) {
+                return CartItemTile(item: s.items[index]);
+              }
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  CartSummary(s),
+                  const SizedBox(height: 16),
+                  AppButton(
+                    label: l.proceedToCheckout,
+                    // Points forward in the reading direction (flips under RTL).
+                    icon: context.directionalForwardIcon,
+                    onPressed: () => context.push('/checkout'),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

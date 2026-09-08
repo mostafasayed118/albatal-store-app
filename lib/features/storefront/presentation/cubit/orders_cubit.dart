@@ -23,7 +23,7 @@ String _defaultOrderId() {
 enum OrdersStatus { initial, loading, ready, error }
 
 final class OrdersState extends Equatable {
-  const OrdersState({
+  OrdersState({
     this.orders = const [],
     this.status = OrdersStatus.ready,
     this.errorMessage,
@@ -33,26 +33,54 @@ final class OrdersState extends Equatable {
   final OrdersStatus status;
   final String? errorMessage;
 
-  List<Order> get active => orders
-      .where((o) =>
-          o.status == OrderStatus.pending ||
-          o.status == OrderStatus.placed ||
-          o.status == OrderStatus.processing ||
-          o.status == OrderStatus.shipped)
-      .toList()
-    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get completed => orders
-      .where((o) =>
-          o.status == OrderStatus.paid || o.status == OrderStatus.delivered)
-      .toList()
-    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
-  List<Order> get cancelled => orders
-      .where((o) =>
-          o.status == OrderStatus.cancelled ||
-          o.status == OrderStatus.expired ||
-          o.status == OrderStatus.refunded)
-      .toList()
-    ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+  /// Lazy storage for the tab views (same pattern as CatalogState's
+  /// `_CatalogMemos`): the orders page reads all three tabs per build,
+  /// so each O(n) filter + O(k log k) sort runs once per state.
+  final _OrdersMemos _m = _OrdersMemos();
+
+  List<Order> get active {
+    var cached = _m.active;
+    if (cached == null) {
+      cached = orders
+          .where((o) =>
+              o.status == OrderStatus.pending ||
+              o.status == OrderStatus.placed ||
+              o.status == OrderStatus.processing ||
+              o.status == OrderStatus.shipped)
+          .toList()
+        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+      _m.active = cached;
+    }
+    return cached;
+  }
+
+  List<Order> get completed {
+    var cached = _m.completed;
+    if (cached == null) {
+      cached = orders
+          .where((o) =>
+              o.status == OrderStatus.paid || o.status == OrderStatus.delivered)
+          .toList()
+        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+      _m.completed = cached;
+    }
+    return cached;
+  }
+
+  List<Order> get cancelled {
+    var cached = _m.cancelled;
+    if (cached == null) {
+      cached = orders
+          .where((o) =>
+              o.status == OrderStatus.cancelled ||
+              o.status == OrderStatus.expired ||
+              o.status == OrderStatus.refunded)
+          .toList()
+        ..sort((a, b) => b.placedAt.compareTo(a.placedAt));
+      _m.cancelled = cached;
+    }
+    return cached;
+  }
 
   OrdersState copyWith({
     List<Order>? orders,
@@ -69,10 +97,18 @@ final class OrdersState extends Equatable {
   List<Object?> get props => [orders, status, errorMessage];
 }
 
+/// Per-state lazy storage for [OrdersState]'s tab views. Mutable by
+/// design but never compared in equality.
+class _OrdersMemos {
+  List<Order>? active;
+  List<Order>? completed;
+  List<Order>? cancelled;
+}
+
 final class OrdersCubit extends Cubit<OrdersState> {
   OrdersCubit(this._repository, {OrderIdGenerator generateId = _defaultOrderId})
       : _generateId = generateId,
-        super(const OrdersState(status: OrdersStatus.initial));
+        super(OrdersState(status: OrdersStatus.initial));
 
   final OrdersRepository _repository;
   final OrderIdGenerator _generateId;

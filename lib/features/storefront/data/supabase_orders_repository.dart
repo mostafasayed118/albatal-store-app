@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/address.dart';
 import '../../../core/entities/money.dart';
@@ -23,6 +23,11 @@ final class SupabaseOrdersRepository implements OrdersRepository {
 
   final SupabaseClient _client;
 
+  /// Upper bound on rows pulled per history fetch (audit P4). The admin
+  /// queue already caps at 50; the storefront now matches instead of
+  /// pulling unbounded history.
+  static const int historyLimit = 50;
+
   @override
   Future<Result<List<Order>>> readOrders() async {
     try {
@@ -34,14 +39,19 @@ final class SupabaseOrdersRepository implements OrdersRepository {
 
       // Fetch orders with embedded items via a join. Supabase PostgREST
       // returns order_items as an array inside each order row.
-      final rows = await _client.from('orders').select('''
+      final rows = await _client
+          .from('orders')
+          .select('''
             id, status, subtotal, shipping, total,
             payment_method, address_snapshot, placed_at,
             order_items(
               product_id, product_name, size, color,
               unit_price, quantity
             )
-          ''').eq('user_id', userId).order('placed_at', ascending: false);
+          ''')
+          .eq('user_id', userId)
+          .order('placed_at', ascending: false)
+          .limit(historyLimit);
 
       Log.w('readOrders: got ${rows.length} rows');
       final orders = rows.map(_mapOrder).toList();
