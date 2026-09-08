@@ -408,5 +408,10 @@
   "paymentExpiredRetry": "Payment expired. You can retry.",
   "paymentTimedOutRetry": "Payment verification timed out. Please check your orders before retrying.",
   "paymentFailedRetry": "Payment failed. You can retry.",
+  "paymentGenericFailure": "Payment failed. Please try again.",
+  "paymentNotPending": "This payment is no longer pending.",
+  "paymentVerifyFailed": "Payment verification failed. Please try again.",
+  "paymentTimeout": "Payment timed out. Please check your orders before retrying.",
+  "orderRefRequired": "Unable to continue: the order reference is missing.",
   "adminAccessRequired": "Admin access required"
 }

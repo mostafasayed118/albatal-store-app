@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// No description provided for @appTitle.
@@ -2084,6 +2084,36 @@ abstract class AppLocalizations {
   /// **'Payment failed. You can retry.'**
   String get paymentFailedRetry;
 
+  /// No description provided for @paymentGenericFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. Please try again.'**
+  String get paymentGenericFailure;
+
+  /// No description provided for @paymentNotPending.
+  ///
+  /// In en, this message translates to:
+  /// **'This payment is no longer pending.'**
+  String get paymentNotPending;
+
+  /// No description provided for @paymentVerifyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment verification failed. Please try again.'**
+  String get paymentVerifyFailed;
+
+  /// No description provided for @paymentTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment timed out. Please check your orders before retrying.'**
+  String get paymentTimeout;
+
+  /// No description provided for @orderRefRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to continue: the order reference is missing.'**
+  String get orderRefRequired;
+
   /// No description provided for @adminAccessRequired.
   ///
   /// In en, this message translates to:
@@ -2118,9 +2148,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

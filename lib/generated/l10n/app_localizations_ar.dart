@@ -1073,5 +1073,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentFailedRetry => 'فشل الدفع. يمكنك المحاولة مجددًا.';
 
   @override
+  String get paymentGenericFailure => 'فشل الدفع. يرجى المحاولة مجددًا.';
+
+  @override
+  String get paymentNotPending => 'هذه الدفعة لم تعد قيد الانتظار.';
+
+  @override
+  String get paymentVerifyFailed =>
+      'فشل التحقق من الدفع. يرجى المحاولة مجددًا.';
+
+  @override
+  String get paymentTimeout =>
+      'انتهت مهلة الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.';
+
+  @override
+  String get orderRefRequired => 'تعذر المتابعة: مرجع الطلب مفقود.';
+
+  @override
   String get adminAccessRequired => 'يلزم الوصول كمسؤول';
 }
