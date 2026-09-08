@@ -154,6 +154,27 @@ void main() {
       await cubit.close();
     });
 
+    test(
+        'COD data-layer failure emits the machine-readable code for the mapper',
+        () async {
+      // Regression: the cubit emitted only the EN message, so the pages'
+      // paymentMessageForCode() never saw the data-layer code and
+      // Arabic users got the English fallback (audit blocker 1).
+      service.setOrderPaymentMethodResult =
+          const PaymentSuccess(transactionId: 'txn-1', amount: Money.zero);
+      service.confirmCodResult = const PaymentFailed(
+        message: 'anything',
+        code: 'payment_not_pending',
+      );
+      final cubit = PaymentCubit(service);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.selectMethod(PaymentMethod.cashOnDelivery);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.failed);
+      expect(cubit.state.errorMessage, 'payment_not_pending');
+      await cubit.close();
+    });
+
     test('injected factory timeout emits verify_timeout code', () async {
       void Function()? fireTimeout;
       Timer captureFactory(Duration d, void Function() cb) {
@@ -191,6 +212,11 @@ class _StubPaymentService implements PaymentService {
   InstapayInitiation instapayResult =
       const InstapayUnavailable(message: 'stub');
 
+  /// COD-path results; defaults keep existing tests' behaviour.
+  PaymentResult setOrderPaymentMethodResult =
+      const PaymentFailed(message: 'stub');
+  PaymentResult confirmCodResult = const PaymentFailed(message: 'stub');
+
   @override
   Future<PaymentResult> initiatePayment({
     required Money amount,
@@ -205,14 +231,14 @@ class _StubPaymentService implements PaymentService {
 
   @override
   Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
-      const PaymentFailed(message: 'stub');
+      confirmCodResult;
 
   @override
   Future<PaymentResult> setOrderPaymentMethod({
     required String orderId,
     required String method,
   }) async =>
-      const PaymentFailed(message: 'stub');
+      setOrderPaymentMethodResult;
 
   @override
   Future<InstapayInitiation> initiateInstapayPayment(

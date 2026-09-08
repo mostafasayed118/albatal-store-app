@@ -238,7 +238,15 @@ class AuthCubit extends Cubit<AuthState> {
             category: LogCategory.auth);
       }
     }
-    await _storefrontPersistence?.clearOrders();
+    // Contained like the address clear above: a platform failure wiping
+    // the orders snapshot must never abort signOut or deleteAccount —
+    // those flows still need to reach emit(unauthenticated).
+    try {
+      await _storefrontPersistence?.clearOrders();
+    } catch (_) {
+      Log.w('clearOrders failed during snapshot wipe',
+          category: LogCategory.auth);
+    }
   }
 
   void _listenToAuthChanges() {

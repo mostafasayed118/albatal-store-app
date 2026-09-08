@@ -160,10 +160,13 @@ class PaymentCubit extends Cubit<PaymentState> {
       // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
       method: PaymentMethod.cashOnDelivery.serverValue,
     );
-    if (methodResult case PaymentFailed(:final message)) {
+    if (methodResult case PaymentFailed(:final message, :final code)) {
       emit(state.copyWith(
         status: PaymentStatus.failed,
-        errorMessage: message,
+        // Machine-readable code first so the pages' paymentMessageForCode()
+        // can localize data-layer failures; null-code results keep the raw
+        // message (mapper's unknown-code fallback).
+        errorMessage: code ?? message,
       ));
       return;
     }
@@ -178,10 +181,10 @@ class PaymentCubit extends Cubit<PaymentState> {
           status: PaymentStatus.success,
           transactionId: transactionId,
         ));
-      case PaymentFailed(:final message):
+      case PaymentFailed(:final message, :final code):
         emit(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: message,
+          errorMessage: code ?? message,
         ));
       case PaymentPending():
       case PaymentCancelled():
@@ -243,10 +246,10 @@ class PaymentCubit extends Cubit<PaymentState> {
           status: PaymentStatus.success,
           transactionId: transactionId,
         ));
-      case PaymentFailed(:final message):
+      case PaymentFailed(:final message, :final code):
         emit(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: message,
+          errorMessage: code ?? message,
         ));
       case PaymentCancelled():
         emit(state.copyWith(status: PaymentStatus.cancelled));
@@ -280,10 +283,10 @@ class PaymentCubit extends Cubit<PaymentState> {
     switch (result) {
       case PaymentSuccess():
         return true;
-      case PaymentFailed(:final message):
+      case PaymentFailed(:final message, :final code):
         emit(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: message,
+          errorMessage: code ?? message,
         ));
         return false;
       case PaymentPending():
@@ -339,10 +342,10 @@ class PaymentCubit extends Cubit<PaymentState> {
               status: PaymentStatus.success,
               transactionId: transactionId,
             ));
-          case PaymentFailed(:final message):
+          case PaymentFailed(:final message, :final code):
             _complete(state.copyWith(
               status: PaymentStatus.failed,
-              errorMessage: message,
+              errorMessage: code ?? message,
             ));
           case PaymentPending():
           case PaymentCancelled():
