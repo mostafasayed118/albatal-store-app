@@ -6,6 +6,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/dialog_controllers.dart';
 
 /// Variant editor for a single product — lists variants, add/edit via dialog.
 ///
@@ -20,29 +21,15 @@ class AdminVariantEditorPage extends StatefulWidget {
   State<AdminVariantEditorPage> createState() => _AdminVariantEditorPageState();
 }
 
-class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
+class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
+    with DialogControllers {
   List<AdminVariant> _variants = [];
   bool _loading = true;
   String? _error;
 
-  /// Dialog field controllers awaiting disposal. Freed in [dispose]:
-  /// disposing synchronously when `showDialog` returns pulls the rug
-  /// from under the still-animating dialog's TextFields (a keyboard-dismiss
-  /// MediaQuery rebuild during the exit animation hits the disposed
-  /// controllers).
-  final List<TextEditingController> _dialogControllers = [];
-
-  TextEditingController _newDialogController([String? text]) {
-    final ctrl = TextEditingController(text: text);
-    _dialogControllers.add(ctrl);
-    return ctrl;
-  }
-
   @override
   void dispose() {
-    for (final ctrl in _dialogControllers) {
-      ctrl.dispose();
-    }
+    disposeDialogControllers();
     super.dispose();
   }
 
@@ -76,10 +63,10 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage> {
     // a slow device can otherwise starve the route's opening frame.
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    final sizeCtrl = _newDialogController(existing?.size ?? '');
-    final colorCtrl = _newDialogController(existing?.color ?? '');
-    final stockCtrl = _newDialogController(existing?.stock.toString() ?? '');
-    final priceCtrl = _newDialogController(
+    final sizeCtrl = newDialogController(existing?.size ?? '');
+    final colorCtrl = newDialogController(existing?.color ?? '');
+    final stockCtrl = newDialogController(existing?.stock.toString() ?? '');
+    final priceCtrl = newDialogController(
       existing?.priceOverride?.toString() ?? '',
     );
     bool saving = false;

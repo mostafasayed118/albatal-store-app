@@ -6,6 +6,7 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/dialog_controllers.dart';
 
 /// Admin inventory — low stock alerts, stock editing.
 class AdminInventoryPage extends StatefulWidget {
@@ -15,20 +16,19 @@ class AdminInventoryPage extends StatefulWidget {
   State<AdminInventoryPage> createState() => _AdminInventoryPageState();
 }
 
-class _AdminInventoryPageState extends State<AdminInventoryPage> {
+class _AdminInventoryPageState extends State<AdminInventoryPage>
+    with DialogControllers {
   /// Stock edit awaiting repository confirmation — drives the verified
   /// "stock updated" snackbar in the listener below.
   bool _awaitingStockUpdate = false;
 
-  /// Dialog field controllers awaiting disposal. Freed in [dispose]:
-  /// disposing synchronously when `showDialog` returns pulls the rug
-  /// from under the still-animating dialog's TextField.
-  final List<TextEditingController> _dialogControllers = [];
-
-  TextEditingController _newDialogController([String? text]) {
-    final ctrl = TextEditingController(text: text);
-    _dialogControllers.add(ctrl);
-    return ctrl;
+  @override
+  void dispose() {
+    disposeDialogControllers();
+    for (final notifier in _dialogErrors) {
+      notifier.dispose();
+    }
+    super.dispose();
   }
 
   /// Stock-entry error shown under the dialog's field when Update is pressed
@@ -41,17 +41,6 @@ class _AdminInventoryPageState extends State<AdminInventoryPage> {
     final notifier = ValueNotifier<String?>(null);
     _dialogErrors.add(notifier);
     return notifier;
-  }
-
-  @override
-  void dispose() {
-    for (final ctrl in _dialogControllers) {
-      ctrl.dispose();
-    }
-    for (final notifier in _dialogErrors) {
-      notifier.dispose();
-    }
-    super.dispose();
   }
 
   @override
@@ -132,7 +121,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage> {
     // a slow device can otherwise starve the route's opening frame.
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    final ctrl = _newDialogController(product.stock.toString());
+    final ctrl = newDialogController(product.stock.toString());
     final entryError = _newDialogError();
     await showDialog<void>(
       context: context,

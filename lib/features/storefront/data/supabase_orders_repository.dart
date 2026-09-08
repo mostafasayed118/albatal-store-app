@@ -6,6 +6,7 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
+import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
 import '../domain/repositories/orders_repository.dart';
 
@@ -113,11 +114,11 @@ final class SupabaseOrdersRepository implements OrdersRepository {
 
   static Address _mapAddress(Map<String, dynamic> json) {
     return Address(
-      id: json['id'] as String? ?? '',
-      recipient: json['recipient'] as String? ?? '',
-      line: json['line'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      country: json['country'] as String? ?? '',
+      id: safeString(json, 'id'),
+      recipient: safeString(json, 'recipient'),
+      line: safeString(json, 'line'),
+      city: safeString(json, 'city'),
+      country: safeString(json, 'country'),
     );
   }
 
