@@ -53,11 +53,11 @@ class AddressesPage extends StatelessWidget {
                         if (v == 'delete') c.remove(a.id);
                         if (v == 'edit') _edit(context, a);
                       },
-                      itemBuilder: (_) => const [
+                      itemBuilder: (_) => [
                         PopupMenuItem(
-                            value: 'default', child: Text('Set as default')),
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            value: 'default', child: Text(l.setAsDefault)),
+                        PopupMenuItem(value: 'edit', child: Text(l.edit)),
+                        PopupMenuItem(value: 'delete', child: Text(l.delete)),
                       ],
                     ),
                   ),

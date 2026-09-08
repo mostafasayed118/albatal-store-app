@@ -19,14 +19,4 @@ final class LocalOrdersRepository implements OrdersRepository {
       return Failure(AppError('Failed to load orders', cause: e));
     }
   }
-
-  @override
-  Future<Result<void>> writeOrders(List<Order> orders) async {
-    try {
-      await _persistence.writeOrders(orders);
-      return const Success(null);
-    } catch (e) {
-      return Failure(AppError('Failed to save orders', cause: e));
-    }
-  }
 }

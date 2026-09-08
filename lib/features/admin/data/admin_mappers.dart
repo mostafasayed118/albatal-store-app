@@ -143,11 +143,6 @@ class AdminMappers {
       .where((path) => path.trim().isNotEmpty)
       .toList();
 
-  /// Passes flash-sale RPC rows through defensively: only real maps are
-  /// kept, so a mistyped element cannot crash the catalog countdown.
-  static List<Map<String, dynamic>> flashSalesFromRows(List<dynamic> rows) =>
-      rows.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
-
   /// Maps one `products` row (with joined `categories(name)`) into an
   /// [AdminProduct].
   ///

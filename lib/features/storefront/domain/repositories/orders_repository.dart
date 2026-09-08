@@ -8,5 +8,4 @@ import '../../../../core/error/result.dart';
 /// Returns [Result] so callers receive errors at this boundary.
 abstract interface class OrdersRepository {
   Future<Result<List<Order>>> readOrders();
-  Future<Result<void>> writeOrders(List<Order> orders);
 }

@@ -96,10 +96,6 @@ class _FakeAdminRepository implements AdminRepository {
       const Success(null);
 
   @override
-  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales() async =>
-      const Success([]);
-
-  @override
   Future<Result<List<AdminVariant>>> getVariants(String productId) async =>
       const Success([]);
 

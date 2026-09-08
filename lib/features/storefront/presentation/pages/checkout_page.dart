@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/supabase_config.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -59,9 +61,17 @@ class CheckoutPage extends StatelessWidget {
             'customerEmail': email,
           });
         } else if (s.status == CheckoutStatus.error && s.errorMessage != null) {
+          // Server-authored messages (e.g. a Postgrest rejection) are kept
+          // verbatim (P1 ruling); generic scrubbed messages map to the
+          // localized retry copy so Arabic users never see English (audit
+          // code-quality finding).
+          final raw = s.errorMessage!;
+          final localized = (raw == 'Checkout failed' ||
+                  raw == 'Failed to create order. Please try again.')
+              ? l.checkoutFailedRetry
+              : raw;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              behavior: SnackBarBehavior.floating,
-              content: Text(s.errorMessage!)));
+              behavior: SnackBarBehavior.floating, content: Text(localized)));
         }
       },
       builder: (context, s) {
@@ -79,61 +89,11 @@ class CheckoutPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               // Stitch Shipping Address card: surface + outlineVariant 1dp radius 16 clipAntiAlias.
-              Card(
-                color: scheme.surface,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppTheme.cardRadius,
-                  side: BorderSide(color: scheme.outlineVariant, width: 1),
-                ),
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l.shippingAddress,
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 8),
-                      AddressPicker(
-                        selectedAddress: s.selectedAddress,
-                        onSelect: (a) =>
-                            context.read<CheckoutCubit>().selectAddress(a),
-                        onAddNew: () async {
-                          final address = await AddressForm.show(context);
-                          if (address != null && context.mounted) {
-                            context
-                                .read<CheckoutCubit>()
-                                .selectAddress(address);
-                            // Persist to the address book too: previously
-                            // the new address was only selected and vanished
-                            // on restart (live-found 2026-09-03).
-                            context.read<AddressesCubit>().upsert(address);
-                          }
-                        },
-                        l: l,
-                        scheme: scheme,
-                        hasError: addressError,
-                      ),
-                      if (addressError) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 16, color: scheme.error),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(l.validationSelectAddress,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: scheme.error)),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+              _ShippingAddressCard(
+                l: l,
+                scheme: scheme,
+                selectedAddress: s.selectedAddress,
+                hasError: addressError,
               ),
               const SizedBox(height: 24),
               if (s.hasAddress) ...[
@@ -160,29 +120,12 @@ class CheckoutPage extends StatelessWidget {
               // Show server-returned totals once the order is created — Stitch summary card.
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
-                Card(
-                  color: scheme.surface,
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppTheme.cardRadius,
-                    side: BorderSide(color: scheme.outlineVariant, width: 1),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l.serverConfirmedTotals,
-                            style: Theme.of(context).textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        _ServerTotalRow(
-                            label: l.subtotal, value: s.serverSubtotal),
-                        _ServerTotalRow(
-                            label: l.shipping, value: s.serverShipping),
-                        _ServerTotalRow(label: l.total, value: s.serverTotal),
-                      ],
-                    ),
-                  ),
+                _ServerTotalsCard(
+                  l: l,
+                  scheme: scheme,
+                  subtotal: s.serverSubtotal,
+                  shipping: s.serverShipping,
+                  total: s.serverTotal,
                 ),
               ],
             ],
@@ -265,6 +208,122 @@ class CheckoutPage extends StatelessWidget {
             : null,
       ),
       child: page,
+    );
+  }
+}
+
+/// Shipping Address card — extracted from [CheckoutPage]'s build (audit
+/// Task 8b) verbatim: same tokens, same children, same behavior.
+class _ShippingAddressCard extends StatelessWidget {
+  const _ShippingAddressCard({
+    required this.l,
+    required this.scheme,
+    required this.selectedAddress,
+    required this.hasError,
+  });
+
+  final AppLocalizations l;
+  final ColorScheme scheme;
+  final Address? selectedAddress;
+  final bool hasError;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: scheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppTheme.cardRadius,
+        side: BorderSide(color: scheme.outlineVariant, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.shippingAddress,
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            AddressPicker(
+              selectedAddress: selectedAddress,
+              onSelect: (a) => context.read<CheckoutCubit>().selectAddress(a),
+              onAddNew: () async {
+                final address = await AddressForm.show(context);
+                if (address != null && context.mounted) {
+                  context.read<CheckoutCubit>().selectAddress(address);
+                  // Persist to the address book too: previously the new
+                  // address was only selected and vanished on restart
+                  // (live-found 2026-09-03).
+                  context.read<AddressesCubit>().upsert(address);
+                }
+              },
+              l: l,
+              scheme: scheme,
+              hasError: hasError,
+            ),
+            if (hasError) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.error_outline, size: 16, color: scheme.error),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(l.validationSelectAddress,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: scheme.error)),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Server-confirmed totals card — extracted verbatim from
+/// [CheckoutPage]'s build (audit Task 8b).
+class _ServerTotalsCard extends StatelessWidget {
+  const _ServerTotalsCard({
+    required this.l,
+    required this.scheme,
+    required this.subtotal,
+    required this.shipping,
+    required this.total,
+  });
+
+  final AppLocalizations l;
+  final ColorScheme scheme;
+  final Money? subtotal;
+  final Money? shipping;
+  final Money? total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: scheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppTheme.cardRadius,
+        side: BorderSide(color: scheme.outlineVariant, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.serverConfirmedTotals,
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            _ServerTotalRow(label: l.subtotal, value: subtotal),
+            _ServerTotalRow(label: l.shipping, value: shipping),
+            _ServerTotalRow(label: l.total, value: total),
+          ],
+        ),
+      ),
     );
   }
 }

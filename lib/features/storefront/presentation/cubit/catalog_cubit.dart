@@ -59,6 +59,14 @@ final class CatalogState extends Equatable {
   /// repository; schema knowledge lives in `FlashSaleCodec.fromRow`.
   final List<FlashSale> flashSales;
 
+  /// Discount label for the first active flash sale (the one the
+  /// storefront renders), or the legacy `'-15%'` placeholder when no
+  /// sale is active. Derived here — not in `HomePage.build` — so the
+  /// fallback lives beside [flashSales] and the page only reads state.
+  String get discountLabel => flashSales.isEmpty
+      ? '-${FlashSale.defaultDiscountPct}%'
+      : '-${flashSales.first.discountPct}%';
+
   bool get hasActiveFilters => filters.hasActiveFilters;
 
   /// Lazy storage for the derived views. Held in one final container so
@@ -260,6 +268,12 @@ final class CatalogCubit extends Cubit<CatalogState> {
   late final FlashSaleTicker _flashTicker;
   Timer? _queryDebounce;
 
+  /// Widget-owned 60s flash poll moved here (audit Task 8a): the poll
+  /// now survives page navigation and dies with the cubit, instead of
+  /// being recreated/disposed on every HomePage mount. Interval and
+  /// fire-and-forget semantics unchanged.
+  Timer? _flashPollTimer;
+
   Future<void> load() async {
     emit(state.copyWith(status: CatalogStatus.loading));
     final productResult = await _repository.fetchProducts();
@@ -289,10 +303,29 @@ final class CatalogCubit extends Cubit<CatalogState> {
   ///
   /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
   /// When the first sale carries an [FlashSale.endsAt], it drives
-  /// [startFlashSale] so the countdown ticks live. Failures are
+  /// [startFlashSale] so the countdown ticks live. When the sales list
+  /// empties on a refresh, the ticker is cancelled (Task 11 gating) so it
+  /// never ticks while [CatalogState.flashSales] is empty. Failures are
   /// swallowed so catalog loading never regresses to error due to a
   /// flash-sale fetch issue.
+  ///
+  /// Also owns the 60s refresh poll (moved from HomePage, audit Task 8a):
+  /// [loadFlashSales] is the entry point both for the initial load and
+  /// for the periodic tick, and [_flashPollTimer] starts on the first
+  /// call and is cancelled in [close].
   Future<void> loadFlashSales() async {
+    // Start the poll once — subsequent calls are refreshes driven by
+    // the poll itself (or explicit retry paths) and must not stack
+    // additional timers.
+    _flashPollTimer ??= Timer.periodic(
+      const Duration(seconds: 60),
+      (_) {
+        // Fire-and-forget: a tick is a refresh, not a state machine
+        // transition; loadFlashSales already guards empty/failed loads.
+        // ignore: discarded_futures
+        loadFlashSales();
+      },
+    );
     final result = await _repository.getActiveFlashSales();
     result.when(
       success: (sales) {
@@ -301,6 +334,12 @@ final class CatalogCubit extends Cubit<CatalogState> {
         if (sales.isNotEmpty) {
           final endsAt = sales.first.endsAt;
           if (endsAt != null) startFlashSale(end: endsAt);
+        } else {
+          // Ticker gating (audit Task 11): the sales list emptied on
+          // refresh — stop the countdown so the 1Hz ticker stays silent
+          // while flashSales is empty. The cubit owns ticker lifecycle
+          // (see flash_sale_ticker.dart).
+          _flashTicker.cancel();
         }
       },
       failure: (_) {
@@ -372,6 +411,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   Future<void> close() {
     _flashTicker.cancel();
     _queryDebounce?.cancel();
+    _flashPollTimer?.cancel();
     return super.close();
   }
 

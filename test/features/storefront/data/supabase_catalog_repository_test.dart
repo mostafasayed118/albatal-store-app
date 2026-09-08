@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -8,6 +10,67 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
+
+/// Query-builder fake that forwards `.select(...)` to a recording
+/// Postgrest builder (mirrors FakeSupabaseQueryBuilder in
+/// supabase_catalog_repository_images_test.dart).
+class _RecordingQueryBuilder extends Fake implements SupabaseQueryBuilder {
+  _RecordingQueryBuilder(this._builder);
+  final PostgrestFilterBuilder<PostgrestList> _builder;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> select([String columns = '*']) =>
+      _builder;
+}
+
+/// Query-chain fake that records every filter/transform call the
+/// repository makes, so the bounded-load contract (`.order('name')` then
+/// `.limit(100)`) can be asserted. Future delegation mirrors
+/// FakePostgrestFilterBuilder in supabase_catalog_repository_images_test.
+class _RecordingPostgrestBuilder extends Fake
+    implements PostgrestFilterBuilder<PostgrestList> {
+  _RecordingPostgrestBuilder(this._value, this.calls);
+
+  final List<Map<String, dynamic>> _value;
+
+  /// Recorded call names, e.g. `eq:is_active=true`, `order:name`,
+  /// `limit:100`.
+  final List<String> calls;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) {
+    calls.add('eq:$column=$value');
+    return this;
+  }
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) {
+    calls.add('order:$column');
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) {
+    calls.add('limit:$count');
+    return this;
+  }
+
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(List<Map<String, dynamic>> value) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(_value).then(onValue, onError: onError);
+  }
+}
 
 void main() {
   group('SupabaseCatalogRepository — persistent cache roundtrip (audit)', () {
@@ -255,6 +318,32 @@ void main() {
       // index resolves the id to the LAST entry.
       expect(repo.cacheForTest, hasLength(2));
       expect(repo.findProductById(v1.id), equals(v2));
+    });
+  });
+
+  group('SupabaseCatalogRepository — bounded catalog load (audit Task 11)', () {
+    test(
+        'fetchProducts requests a deterministic bounded page: .order(name) then .limit(100)',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockClient = _MockSupabaseClient();
+      final calls = <String>[];
+      final fakeBuilder = _RecordingPostgrestBuilder(const [], calls);
+      when(() => mockClient.from('products'))
+          .thenAnswer((_) => _RecordingQueryBuilder(fakeBuilder));
+      final repo = SupabaseCatalogRepository(
+        client: mockClient,
+        preferences: prefs,
+      );
+
+      final result = await repo.fetchProducts();
+
+      expect(result, isA<Success<List<Product>>>());
+      // Deterministic ordering must stay in place.
+      expect(calls, contains('order:name'));
+      // The bound: exactly one limit call — 100 rows on the cold load.
+      expect(calls.where((c) => c.startsWith('limit:')), ['limit:100']);
     });
   });
 }

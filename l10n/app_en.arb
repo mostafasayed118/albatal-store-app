@@ -188,6 +188,9 @@
   "cityRequired": "City is required",
   "countryRequired": "Country is required",
   "save": "Save",
+  "setAsDefault": "Set as default",
+  "edit": "Edit",
+  "delete": "Delete",
   "defaultLabel": "Default",
   "orderSummary": "Order Summary",
   "itemsInCart": "{count} items in cart",
@@ -408,5 +411,12 @@
   "paymentExpiredRetry": "Payment expired. You can retry.",
   "paymentTimedOutRetry": "Payment verification timed out. Please check your orders before retrying.",
   "paymentFailedRetry": "Payment failed. You can retry.",
+  "paymentGenericFailure": "Payment failed. Please try again.",
+  "paymentNotPending": "This payment is no longer pending.",
+  "paymentVerifyFailed": "Payment verification failed. Please try again.",
+  "paymentTimeout": "Payment timed out. Please check your orders before retrying.",
+  "orderRefRequired": "Unable to continue: the order reference is missing.",
+  "checkoutFailedRetry": "Checkout failed. Please try again.",
+  "paymentMethodUnknown": "Unknown",
   "adminAccessRequired": "Admin access required"
 }

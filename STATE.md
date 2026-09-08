@@ -1,6 +1,66 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-06T11:35:00Z
+Last run: 2026-09-08T20:00:00Z
+
+## New — 2026-09-08 (comprehensive audit batch on fix/audit-batch — 569/569, awaiting owner push/PR gates)
+
+Owner enabled L2 full + denylist overrides and chose single-batch delivery. Full
+quality audit (7.5/10, report-only) executed as one worktree branch
+`fix/audit-batch` (worktree .trees/audit-batch, base daa83f7) via
+subagent-driven development: 11 slices, per-task TDD + independent reviews +
+final whole-branch review. Spec: docs/superpowers/specs/2026-09-08-audit-batch-design.md;
+plan: docs/superpowers/plans/2026-09-08-audit-batch.md.
+
+Landed (commits daa83f7..157d67b): payment data boundary — Log.e at both bare
+catches, single terminal emitter (payloads byte-identical, gateway decline stays
+code-less), paymentMessageForCode mapper + 5 l10n keys, cubit emits
+code ?? message at all 5 failed sites so data codes (network_error/rpc_timeout/
+payment_not_pending/payment_not_cod) localize (f23ff63); PaymentCubit split into
+_processCod/_processInstapay/_processCard with injectable timerFactory (nullable
+param + _realTimer static — Timer tear-off cannot be a const default),
+fireWatchTimeoutForTest deleted, cubit-owned codes
+order_ref_required/verify_failed/verify_timeout (84a12c1+amend); dead code —
+OrdersCubit.place/reconcile + writeOrders deleted (OrdersRepository read-only),
+admin getActiveFlashSales duplication deleted, test-only expansion onto direct
+Order construction with intent ported (ebd1146); AddressCodec in core/data with
+strict fromJson + tolerant fromOrderJson + snapshot encode, 3 call-sites delegate
+byte-identically (e855b7b); catalog select const, CatalogState.discountLabel
+(fallback via FlashSale.defaultDiscountPct), 60s poll moved HomePage→CatalogCubit
+(310fb91); checkout split (_ShippingAddressCard/_ServerTotalsCard verbatim),
+2 generic scrubbed strings → checkoutFailedRetry, row-popup keys (d147d5f
+equivalent), paymentMethodUnknown, locale-attached DateFormat, shared fail-soft
+membershipTierFromServerValue, dartdoc on the 2 bare domain repos (7bbb5df);
+security — 8-char passwordValidator, PII clears (addresses+orders) on signOut AND
+deleteAccount success (delete-failure preserves data), userId log deleted,
+row-count log kDebugMode-gated, impl-only clear() methods wired at the
+composition root (94b684f); perf — homeBuildWhen on the outer home builder
+(flashRemaining/flashEnd excluded, every rendered field covered), cubit-side
+ticker gating (no ticks when sales empty), fetchProducts(limit=100)+order kept,
+cache/restore unbounded (42c56d3+amend); clearOrders wipe containment + code
+propagation (f23ff63); COD test expectations migrated to machine codes with all
+isNot-contains leak-guards kept (157d67b). Format-only commit 3d36adb.
+
+Evidence: flutter analyze clean; FULL suite 569/569 (baseline 547 + 22 net-new);
+dart format canonical; secret sweep clean; tree clean. Final whole-branch review:
+2 blockers found and fixed, then APPROVE on scoped re-review. Deferred minors in
+ledger (.superpowers/sdd/2026-09-08-audit-batch/progress.md): AR keys need native
+review (setAsDefault/edit/delete/checkoutFailedRetry/paymentMethodUnknown + 5
+payment keys), l10n_audit_keys not extended, authStateChanges external sign-out
+does not clear snapshots (top follow-up), two LocalAddressRepository instances in
+service_locator, clearOrders containment note resolved in f23ff63.
+
+Rulings (all in ledger): Task 6 (router extra + supabase_config import) REJECTED —
+shared cubit via extra is load-bearing single-watch design (PR #38) and
+SupabaseConfig IS the shared email seam (AuthState/Profile carry no email); Task 8
+implemented inline after 4 empty subagent dispatches (review gate preserved);
+Task 5 test-only scope expansion; Task 3 byte-identical payload over plan's
+illustrative gateway code; Task 10 storage-policy SQL is proposal-only
+(HUMAN-REVIEW — DO NOT APPLY) staged for the PR body with the Supabase
+leaked-password-protection deploy line and 041/046 staging check.
+
+Awaiting owner: push fix/audit-batch + open draft PR (constraints: no push
+without explicit call). Task 6 dropped by ruling (no diff); Task 10 docs-only
+(no commit).
 
 ## New — 2026-09-06 (InstaPay implementation — draft PRs #37 + #38)
 Owner approved D1-D4 recommendations and the image_picker dependency in-thread.

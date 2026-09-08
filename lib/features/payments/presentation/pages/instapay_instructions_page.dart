@@ -11,6 +11,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/payment.dart';
 import '../cubit/payment_cubit.dart';
+import '../payment_error_mapper.dart';
 
 /// InstaPay transfer instructions + proof submission (migration 041).
 ///
@@ -164,7 +165,8 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
               appBar: AppBar(title: Text(l.instapayInstructionsTitle)),
               body: Center(
                 child: Text(
-                  state.errorMessage ?? l.paymentFailedRetry,
+                  paymentMessageForCode(l, state.errorMessage,
+                      state.errorMessage ?? l.paymentFailedRetry),
                   textAlign: TextAlign.center,
                 ),
               ),

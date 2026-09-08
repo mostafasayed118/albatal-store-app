@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/payments/domain/repositories/payment_service.dart';
 import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -73,4 +76,187 @@ void main() {
       expect(PaymentMethod.cashOnDelivery.serverValue, 'cod');
     });
   });
+
+  group('PaymentCubit watch timer factory + code emits', () {
+    late _StubPaymentService service;
+
+    setUp(() {
+      service = _StubPaymentService();
+    });
+
+    tearDown(() async {
+      await service.dispose();
+    });
+
+    test('watch timeout fires via injected timer factory', () async {
+      var fired = false;
+      Timer fakeFactory(Duration d, void Function() cb) {
+        fired = true;
+        cb();
+        return Timer(const Duration(milliseconds: 1), () {});
+      }
+
+      final cubit = PaymentCubit(service, timerFactory: fakeFactory);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      await cubit.startWatching('O1');
+      expect(fired, isTrue);
+      await cubit.close();
+    });
+
+    test('startWatching with blank order ref emits order_ref_required code',
+        () async {
+      for (final blank in ['', '  ']) {
+        final cubit = PaymentCubit(service);
+        cubit.initPayment(amount: Money(100), orderId: 'O1');
+        await cubit.startWatching(blank);
+        expect(cubit.state.status, PaymentStatus.failed);
+        expect(cubit.state.errorMessage, 'order_ref_required');
+        await cubit.close();
+      }
+    });
+
+    test('watch stream error emits verify_failed code', () async {
+      final cubit = PaymentCubit(service);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.selectMethod(PaymentMethod.paymobCard);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.awaitingVerification);
+
+      // Drive the server-status stream to error — the cubit must
+      // surface the verify_failed code, not raw stream details.
+      service.addWatchError(Exception('realtime down'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(cubit.state.status, PaymentStatus.failed);
+      expect(cubit.state.errorMessage, 'verify_failed');
+      await cubit.close();
+    });
+
+    test('watch stream error while awaitingProof is ignored', () async {
+      service.instapayResult = InstapayReady(
+        instructions: InstapayInstructions(
+          paymentId: 'p1',
+          instapayAddress: 'merchant@instapay',
+          amount: Money(100),
+        ),
+      );
+      final cubit = PaymentCubit(service);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.selectMethod(PaymentMethod.instapay);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.awaitingProof);
+
+      // The onError guard is awaitingVerification-only: an error here
+      // must not flip the proof-upload state to failed.
+      service.addWatchError(Exception('realtime down'));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(cubit.state.status, PaymentStatus.awaitingProof);
+      expect(cubit.state.errorMessage, isNull);
+      await cubit.close();
+    });
+
+    test(
+        'COD data-layer failure emits the machine-readable code for the mapper',
+        () async {
+      // Regression: the cubit emitted only the EN message, so the pages'
+      // paymentMessageForCode() never saw the data-layer code and
+      // Arabic users got the English fallback (audit blocker 1).
+      service.setOrderPaymentMethodResult =
+          const PaymentSuccess(transactionId: 'txn-1', amount: Money.zero);
+      service.confirmCodResult = const PaymentFailed(
+        message: 'anything',
+        code: 'payment_not_pending',
+      );
+      final cubit = PaymentCubit(service);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.selectMethod(PaymentMethod.cashOnDelivery);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.failed);
+      expect(cubit.state.errorMessage, 'payment_not_pending');
+      await cubit.close();
+    });
+
+    test('injected factory timeout emits verify_timeout code', () async {
+      void Function()? fireTimeout;
+      Timer captureFactory(Duration d, void Function() cb) {
+        fireTimeout = cb;
+        return Timer(const Duration(minutes: 15), () {});
+      }
+
+      final cubit = PaymentCubit(service, timerFactory: captureFactory);
+      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.selectMethod(PaymentMethod.paymobCard);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.awaitingVerification);
+
+      // Drive the injected timer's callback directly — no test-only API,
+      // no real fifteen-minute wait.
+      fireTimeout!();
+      expect(cubit.state.status, PaymentStatus.timedOut);
+      expect(cubit.state.errorMessage, 'verify_timeout');
+      await cubit.close();
+    });
+  });
+}
+
+/// Minimal stub: card initiation stays pending so the cubit arms the
+/// watch; the broadcast controller lets tests drive server results.
+class _StubPaymentService implements PaymentService {
+  final StreamController<PaymentResult> _controller =
+      StreamController<PaymentResult>.broadcast();
+
+  /// Drive the watched status stream to error.
+  void addWatchError(Object error) => _controller.addError(error);
+
+  /// InstaPay preparation result; defaults to unavailable so existing
+  /// tests keep their behaviour.
+  InstapayInitiation instapayResult =
+      const InstapayUnavailable(message: 'stub');
+
+  /// COD-path results; defaults keep existing tests' behaviour.
+  PaymentResult setOrderPaymentMethodResult =
+      const PaymentFailed(message: 'stub');
+  PaymentResult confirmCodResult = const PaymentFailed(message: 'stub');
+
+  @override
+  Future<PaymentResult> initiatePayment({
+    required Money amount,
+    required PaymentMethod method,
+    required String orderId,
+    required String customerEmail,
+  }) async =>
+      const PaymentPending(
+        checkoutUrl:
+            'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t',
+      );
+
+  @override
+  Future<PaymentResult> confirmCodPayment({required String orderId}) async =>
+      confirmCodResult;
+
+  @override
+  Future<PaymentResult> setOrderPaymentMethod({
+    required String orderId,
+    required String method,
+  }) async =>
+      setOrderPaymentMethodResult;
+
+  @override
+  Future<InstapayInitiation> initiateInstapayPayment(
+          {required String orderId}) async =>
+      instapayResult;
+
+  @override
+  Future<PaymentResult> submitInstapayProof({
+    required String orderId,
+    required List<int> proofBytes,
+    required String fileExt,
+    String? reference,
+  }) async =>
+      const PaymentFailed(message: 'stub');
+
+  @override
+  Stream<PaymentResult> watchPaymentStatus(String orderId) =>
+      _controller.stream;
+
+  Future<void> dispose() => _controller.close();
 }

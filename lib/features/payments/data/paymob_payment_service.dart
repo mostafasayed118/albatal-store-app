@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
@@ -140,7 +141,8 @@ class PaymobPaymentService implements PaymentService {
         code: 'rpc_timeout',
       );
     } catch (e) {
-      return PaymentFailed(
+      Log.e('COD confirm failed', error: e, category: LogCategory.payment);
+      return const PaymentFailed(
         message: 'Failed to confirm payment. Please try again.',
         code: 'network_error',
       );
@@ -191,7 +193,9 @@ class PaymobPaymentService implements PaymentService {
         code: 'rpc_timeout',
       );
     } catch (e) {
-      return PaymentFailed(
+      Log.e('Set order payment method failed',
+          error: e, category: LogCategory.payment);
+      return const PaymentFailed(
         message: 'Failed to set payment method. Please try again.',
         code: 'network_error',
       );
@@ -329,6 +333,31 @@ class PaymobPaymentService implements PaymentService {
     }
   }
 
+  /// Maps a `payments` row to its terminal [PaymentResult].
+  ///
+  /// Single shared mapping for BOTH the realtime callback and the 45s
+  /// fallback poll in [watchPaymentStatus] — identical rows always yield
+  /// identical payloads. Returns null for non-terminal rows
+  /// (`pending`/unknown/missing status) so both callers keep polling.
+  /// Payloads are byte-identical to the pre-refactor inline branches
+  /// (no `code` on the gateway-decline failure — codes unchanged).
+  @visibleForTesting
+  static PaymentResult? terminalResultForRow(Map<String, dynamic> row) {
+    final status = row['status'] as String?;
+    if (status == 'success') {
+      return PaymentSuccess(
+        transactionId: row['transaction_id'] as String? ?? '',
+        amount: Money.zero,
+      );
+    }
+    if (status == 'failed') {
+      return const PaymentFailed(
+        message: 'Payment was declined by the gateway',
+      );
+    }
+    return null;
+  }
+
   /// Subscribe to the `payments` row for [orderId] via Supabase Realtime.
   ///
   /// The `/paymob-callback` webhook updates the row server-side; this
@@ -346,6 +375,17 @@ class PaymobPaymentService implements PaymentService {
     final completer = Completer<void>();
     bool hasEmitted = false;
 
+    // Single shared terminal-emission path for the realtime callback
+    // and the fallback poll below: exactly-once add, cancels the
+    // fallback timer, completes the `done` completer.
+    void emitTerminal(PaymentResult result) {
+      if (completer.isCompleted || controller.isClosed || hasEmitted) return;
+      hasEmitted = true;
+      if (!completer.isCompleted) completer.complete();
+      fallbackTimer?.cancel();
+      controller.add(result);
+    }
+
     controller.onListen = () {
       channel = _client
           .channel('payment-$orderId')
@@ -360,30 +400,9 @@ class PaymobPaymentService implements PaymentService {
             ),
             callback: (payload) {
               if (completer.isCompleted) return;
-              final newRecord = payload.newRecord;
-              final status = newRecord['status'] as String?;
-              if (status == 'success') {
-                final transactionId =
-                    newRecord['transaction_id'] as String? ?? '';
-                if (!controller.isClosed && !hasEmitted) {
-                  hasEmitted = true;
-                  if (!completer.isCompleted) completer.complete();
-                  fallbackTimer?.cancel();
-                  controller.add(PaymentSuccess(
-                    transactionId: transactionId,
-                    amount: Money.zero,
-                  ));
-                }
-              } else if (status == 'failed') {
-                if (!controller.isClosed && !hasEmitted) {
-                  hasEmitted = true;
-                  if (!completer.isCompleted) completer.complete();
-                  fallbackTimer?.cancel();
-                  controller.add(const PaymentFailed(
-                    message: 'Payment was declined by the gateway',
-                  ));
-                }
-              }
+              final result =
+                  PaymobPaymentService.terminalResultForRow(payload.newRecord);
+              if (result != null) emitTerminal(result);
               // Other status values (e.g. 'pending') are ignored — the
               // webhook will update the row again when terminal.
             },
@@ -421,23 +440,8 @@ class PaymobPaymentService implements PaymentService {
             return;
           }
           if (row == null) return; // keep polling — nothing yet
-          final status = row['status'] as String?;
-          if (status == 'success') {
-            hasEmitted = true;
-            if (!completer.isCompleted) completer.complete();
-            fallbackTimer?.cancel();
-            controller.add(PaymentSuccess(
-              transactionId: row['transaction_id'] as String? ?? '',
-              amount: Money.zero,
-            ));
-          } else if (status == 'failed') {
-            hasEmitted = true;
-            if (!completer.isCompleted) completer.complete();
-            fallbackTimer?.cancel();
-            controller.add(const PaymentFailed(
-              message: 'Payment was declined by the gateway',
-            ));
-          }
+          final result = PaymobPaymentService.terminalResultForRow(row);
+          if (result != null) emitTerminal(result);
           // Other statuses (e.g. 'pending') keep the poll running.
         } catch (_) {
           // Fallback poll failure is silent — realtime may still deliver.

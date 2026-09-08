@@ -86,9 +86,15 @@ final class PaymentState extends Equatable {
 
 class PaymentCubit extends Cubit<PaymentState> {
   PaymentCubit(this._paymentService,
-      {Duration watchTimeout = _defaultWatchTimeout})
+      {Duration watchTimeout = _defaultWatchTimeout,
+      Timer Function(Duration duration, void Function() callback)?
+          timerFactory})
       : _watchTimeout = watchTimeout,
+        _timerFactory = timerFactory ?? _realTimer,
         super(const PaymentState());
+
+  static Timer _realTimer(Duration duration, void Function() callback) =>
+      Timer(duration, callback);
 
   /// How long the client waits for the server-authoritative payment
   /// status before declaring [PaymentStatus.timedOut]. The order
@@ -99,6 +105,8 @@ class PaymentCubit extends Cubit<PaymentState> {
   static const _defaultWatchTimeout = Duration(minutes: 15);
 
   final Duration _watchTimeout;
+  final Timer Function(Duration duration, void Function() callback)
+      _timerFactory;
 
   final PaymentService _paymentService;
   // ignore: cancel_subscriptions - cancelled in _stopWatching/_complete/close
@@ -128,7 +136,16 @@ class PaymentCubit extends Cubit<PaymentState> {
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
     if (state.status == PaymentStatus.processing) return;
+    if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
+      return _processCod();
+    }
+    if (state.selectedMethod == PaymentMethod.instapay) {
+      return _processInstapay();
+    }
+    return _processCard(customerEmail: customerEmail);
+  }
 
+  Future<void> _processCod() async {
     // Cash on Delivery — server-confirmed path.
     // The checkout creates the order BEFORE the customer picks a
     // method, so first record the COD choice server-side
@@ -136,73 +153,74 @@ class PaymentCubit extends Cubit<PaymentState> {
     // `confirm_cod_payment` RPC requires a COD-like stored method
     // and would otherwise reject with `payment_not_cod`.
     // The client NEVER declares success without a server response.
-    if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
-      emit(state.copyWith(status: PaymentStatus.processing));
+    emit(state.copyWith(status: PaymentStatus.processing));
 
-      final methodResult = await _paymentService.setOrderPaymentMethod(
-        orderId: state.orderId,
-        // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
-        method: PaymentMethod.cashOnDelivery.serverValue,
-      );
-      if (methodResult case PaymentFailed(:final message)) {
+    final methodResult = await _paymentService.setOrderPaymentMethod(
+      orderId: state.orderId,
+      // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
+      method: PaymentMethod.cashOnDelivery.serverValue,
+    );
+    if (methodResult case PaymentFailed(:final message, :final code)) {
+      emit(state.copyWith(
+        status: PaymentStatus.failed,
+        // Machine-readable code first so the pages' paymentMessageForCode()
+        // can localize data-layer failures; null-code results keep the raw
+        // message (mapper's unknown-code fallback).
+        errorMessage: code ?? message,
+      ));
+      return;
+    }
+
+    final result = await _paymentService.confirmCodPayment(
+      orderId: state.orderId,
+    );
+
+    switch (result) {
+      case PaymentSuccess(:final transactionId):
+        emit(state.copyWith(
+          status: PaymentStatus.success,
+          transactionId: transactionId,
+        ));
+      case PaymentFailed(:final message, :final code):
+        emit(state.copyWith(
+          status: PaymentStatus.failed,
+          errorMessage: code ?? message,
+        ));
+      case PaymentPending():
+      case PaymentCancelled():
+        break;
+    }
+  }
+
+  Future<void> _processInstapay() async {
+    // InstaPay — prepare the transfer, then wait for proof upload
+    // (migration 041). Method switch + amount happen server-side.
+    emit(state.copyWith(status: PaymentStatus.processing));
+
+    final initiation = await _paymentService.initiateInstapayPayment(
+      orderId: state.orderId,
+    );
+
+    switch (initiation) {
+      case InstapayReady(:final instructions):
+        emit(state.copyWith(
+          status: PaymentStatus.awaitingProof,
+          instructions: instructions,
+        ));
+        // The payment row stays `pending` until an admin approves
+        // the submitted proof (or the 24h expiry). Subscribe to the
+        // same server-authoritative status stream used for Paymob so
+        // approval/rejection lands without polling.
+        await startWatching(state.orderId);
+      case InstapayUnavailable(:final message):
         emit(state.copyWith(
           status: PaymentStatus.failed,
           errorMessage: message,
         ));
-        return;
-      }
-
-      final result = await _paymentService.confirmCodPayment(
-        orderId: state.orderId,
-      );
-
-      switch (result) {
-        case PaymentSuccess(:final transactionId):
-          emit(state.copyWith(
-            status: PaymentStatus.success,
-            transactionId: transactionId,
-          ));
-        case PaymentFailed(:final message):
-          emit(state.copyWith(
-            status: PaymentStatus.failed,
-            errorMessage: message,
-          ));
-        case PaymentPending():
-        case PaymentCancelled():
-          break;
-      }
-      return;
     }
+  }
 
-    // InstaPay — prepare the transfer, then wait for proof upload
-    // (migration 041). Method switch + amount happen server-side.
-    if (state.selectedMethod == PaymentMethod.instapay) {
-      emit(state.copyWith(status: PaymentStatus.processing));
-
-      final initiation = await _paymentService.initiateInstapayPayment(
-        orderId: state.orderId,
-      );
-
-      switch (initiation) {
-        case InstapayReady(:final instructions):
-          emit(state.copyWith(
-            status: PaymentStatus.awaitingProof,
-            instructions: instructions,
-          ));
-          // The payment row stays `pending` until an admin approves
-          // the submitted proof (or the 24h expiry). Subscribe to the
-          // same server-authoritative status stream used for Paymob so
-          // approval/rejection lands without polling.
-          await startWatching(state.orderId);
-        case InstapayUnavailable(:final message):
-          emit(state.copyWith(
-            status: PaymentStatus.failed,
-            errorMessage: message,
-          ));
-      }
-      return;
-    }
-
+  Future<void> _processCard({required String customerEmail}) async {
     // Paymob Card — initiate payment
     emit(state.copyWith(status: PaymentStatus.processing));
 
@@ -228,10 +246,10 @@ class PaymentCubit extends Cubit<PaymentState> {
           status: PaymentStatus.success,
           transactionId: transactionId,
         ));
-      case PaymentFailed(:final message):
+      case PaymentFailed(:final message, :final code):
         emit(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: message,
+          errorMessage: code ?? message,
         ));
       case PaymentCancelled():
         emit(state.copyWith(status: PaymentStatus.cancelled));
@@ -265,10 +283,10 @@ class PaymentCubit extends Cubit<PaymentState> {
     switch (result) {
       case PaymentSuccess():
         return true;
-      case PaymentFailed(:final message):
+      case PaymentFailed(:final message, :final code):
         emit(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: message,
+          errorMessage: code ?? message,
         ));
         return false;
       case PaymentPending():
@@ -304,12 +322,12 @@ class PaymentCubit extends Cubit<PaymentState> {
     if (orderId.trim().isEmpty) {
       emit(state.copyWith(
         status: PaymentStatus.failed,
-        errorMessage: 'A valid order reference is required to verify payment.',
+        errorMessage: 'order_ref_required',
       ));
       return;
     }
 
-    _watchTimeoutTimer = Timer(_watchTimeout, _handleWatchTimeout);
+    _watchTimeoutTimer = _timerFactory(_watchTimeout, _handleWatchTimeout);
 
     _watchSubscription = _paymentService.watchPaymentStatus(orderId).listen(
       (result) {
@@ -324,10 +342,10 @@ class PaymentCubit extends Cubit<PaymentState> {
               status: PaymentStatus.success,
               transactionId: transactionId,
             ));
-          case PaymentFailed(:final message):
+          case PaymentFailed(:final message, :final code):
             _complete(state.copyWith(
               status: PaymentStatus.failed,
-              errorMessage: message,
+              errorMessage: code ?? message,
             ));
           case PaymentPending():
           case PaymentCancelled():
@@ -340,18 +358,10 @@ class PaymentCubit extends Cubit<PaymentState> {
         }
         _complete(state.copyWith(
           status: PaymentStatus.failed,
-          errorMessage: 'Unable to verify payment status. Please try again.',
+          errorMessage: 'verify_failed',
         ));
       },
     );
-  }
-
-  /// Fires the verification timeout without waiting fifteen minutes.
-  ///
-  /// This is intentionally public for deterministic Flutter tests; production
-  /// code relies on the timer created by [startWatching].
-  Future<void> fireWatchTimeoutForTest() async {
-    _handleWatchTimeout();
   }
 
   void _handleWatchTimeout() {
@@ -360,8 +370,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     }
     _complete(state.copyWith(
       status: PaymentStatus.timedOut,
-      errorMessage:
-          'Payment verification timed out. Please check your orders before retrying.',
+      errorMessage: 'verify_timeout',
     ));
   }
 

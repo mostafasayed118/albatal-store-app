@@ -38,4 +38,39 @@ void main() {
       expect(message, isNot(contains('SECRET_VALUE')));
     });
   });
+
+  group('PaymobPaymentService — terminal parity (audit task 3)', () {
+    test('realtime and poll terminal paths emit identical results', () async {
+      // Identical terminal rows must map to identical results on both
+      // paths (realtime callback and 45s fallback poll): single
+      // PaymentSuccess(transactionId: TX1); pending rows emit nothing.
+      final viaRealtime = PaymobPaymentService.terminalResultForRow(const {
+        'status': 'success',
+        'transaction_id': 'TX1',
+      });
+      final viaPoll = PaymobPaymentService.terminalResultForRow(const {
+        'status': 'success',
+        'transaction_id': 'TX1',
+      });
+      expect(viaRealtime, isA<PaymentSuccess>());
+      expect((viaRealtime as PaymentSuccess).transactionId, 'TX1');
+      expect(viaPoll, isA<PaymentSuccess>());
+      expect((viaPoll as PaymentSuccess).transactionId, 'TX1');
+    });
+
+    test('failed rows map to gateway decline; pending rows emit nothing',
+        () async {
+      final failed =
+          PaymobPaymentService.terminalResultForRow(const {'status': 'failed'});
+      expect(failed, isA<PaymentFailed>());
+      expect((failed as PaymentFailed).message,
+          'Payment was declined by the gateway');
+      expect(
+          PaymobPaymentService.terminalResultForRow(const {
+            'status': 'pending',
+          }),
+          isNull);
+      expect(PaymobPaymentService.terminalResultForRow(const {}), isNull);
+    });
+  });
 }

@@ -11,7 +11,7 @@
 //   1. processPayment(COD) calls setOrderPaymentMethod('cod') first.
 //   2. confirmCodPayment runs only after the method update succeeds.
 //   3. A failed method update short-circuits: no confirm call,
-//      cubit ends in failed with the server message.
+//      cubit ends in failed with the server machine code.
 //   4. Card flow does NOT touch setOrderPaymentMethod.
 // ============================================================
 
@@ -110,7 +110,9 @@ void main() {
 
       expect(service.calls, ['set-method:ord-037-2:cod']);
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, 'This order can no longer be modified.');
+      // Code-propagation contract: the cubit surfaces the machine code;
+      // localizing it is the presentation mapper's job.
+      expect(cubit.state.errorMessage, 'order_not_pending');
 
       await cubit.close();
     });

@@ -495,6 +495,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String get setAsDefault => 'Set as default';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
   String get defaultLabel => 'Default';
 
   @override
@@ -1070,6 +1079,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentFailedRetry => 'Payment failed. You can retry.';
+
+  @override
+  String get paymentGenericFailure => 'Payment failed. Please try again.';
+
+  @override
+  String get paymentNotPending => 'This payment is no longer pending.';
+
+  @override
+  String get paymentVerifyFailed =>
+      'Payment verification failed. Please try again.';
+
+  @override
+  String get paymentTimeout =>
+      'Payment timed out. Please check your orders before retrying.';
+
+  @override
+  String get orderRefRequired =>
+      'Unable to continue: the order reference is missing.';
+
+  @override
+  String get checkoutFailedRetry => 'Checkout failed. Please try again.';
+
+  @override
+  String get paymentMethodUnknown => 'Unknown';
 
   @override
   String get adminAccessRequired => 'Admin access required';

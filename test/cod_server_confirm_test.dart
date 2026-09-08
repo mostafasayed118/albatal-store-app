@@ -215,7 +215,7 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('no longer be confirmed'));
+      expect(cubit.state.errorMessage, 'order_not_pending');
       await cubit.close();
     });
 
@@ -327,8 +327,7 @@ void main() {
       await processFuture;
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('check your orders'));
-      expect(cubit.state.errorMessage, contains('try again'));
+      expect(cubit.state.errorMessage, 'rpc_timeout');
       await cubit.close();
     }, timeout: const Timeout(Duration(seconds: 5)));
   });
@@ -347,11 +346,11 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('Failed to confirm'));
+      expect(cubit.state.errorMessage, 'network_error');
       await cubit.close();
     });
 
-    test('emits failed with generic message for unknown error code', () async {
+    test('emits failed and forwards unknown error code unchanged', () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message: 'Failed to confirm payment. Please try again.',
@@ -364,13 +363,15 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('Failed to confirm'));
+      // Unknown code passes through unmapped — the presentation mapper
+      // owns the unknown-code fallback to the raw message.
+      expect(cubit.state.errorMessage, 'unknown_error');
       await cubit.close();
     });
   });
 
   group('COD non-owner rejection', () {
-    test('server returns not_owner → failed with safe message', () async {
+    test('server returns not_owner → failed with safe code', () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message: 'You can only confirm your own orders.',
@@ -383,7 +384,7 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('your own orders'));
+      expect(cubit.state.errorMessage, 'not_owner');
       // Must NOT leak the order ID or any internal details.
       expect(cubit.state.errorMessage, isNot(contains('ord-not-owner')));
       await cubit.close();
@@ -391,7 +392,7 @@ void main() {
   });
 
   group('COD non-COD rejection', () {
-    test('server returns payment_not_cod → failed with safe message', () async {
+    test('server returns payment_not_cod → failed with safe code', () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message: 'This order is not a Cash on Delivery order.',
@@ -404,14 +405,13 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('not a Cash on Delivery'));
+      expect(cubit.state.errorMessage, 'payment_not_cod');
       await cubit.close();
     });
   });
 
   group('COD payment_not_found rejection', () {
-    test('server returns payment_not_found → failed with safe message',
-        () async {
+    test('server returns payment_not_found → failed with safe code', () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message: 'No Cash on Delivery payment found for this order.',
@@ -424,7 +424,7 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('No Cash on Delivery payment'));
+      expect(cubit.state.errorMessage, 'payment_not_found');
       // Must NOT leak internal details.
       expect(cubit.state.errorMessage, isNot(contains('ord-no-payment')));
       await cubit.close();
@@ -432,8 +432,7 @@ void main() {
   });
 
   group('COD cancelled order rejection', () {
-    test('server returns order_not_pending → failed with safe message',
-        () async {
+    test('server returns order_not_pending → failed with safe code', () async {
       final service = _RecordingPaymentService();
       service.setConfirmResult(const PaymentFailed(
         message:
@@ -447,7 +446,7 @@ void main() {
       await cubit.processPayment(customerEmail: 'a@b.c');
 
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('no longer be confirmed'));
+      expect(cubit.state.errorMessage, 'order_not_pending');
       // Must NOT leak the order ID.
       expect(cubit.state.errorMessage, isNot(contains('ord-cancelled')));
       await cubit.close();
@@ -509,7 +508,7 @@ void main() {
 
       // Now failed.
       expect(cubit.state.status, PaymentStatus.failed);
-      expect(cubit.state.errorMessage, contains('Order not found'));
+      expect(cubit.state.errorMessage, 'order_not_found');
       await cubit.close();
     });
   });

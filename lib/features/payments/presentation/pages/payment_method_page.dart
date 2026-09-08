@@ -12,6 +12,7 @@ import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
 import '../../domain/paymob_url_guard.dart';
 import '../cubit/payment_cubit.dart';
+import '../payment_error_mapper.dart';
 
 /// Payment method selection page.
 ///
@@ -131,13 +132,17 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           _checkoutOpened = false;
           _instructionsOpened = false;
           if (checkoutWasOpen && context.canPop()) context.pop();
-          final message = state.errorMessage ??
-              switch (state.status) {
-                PaymentStatus.cancelled => l.paymentCancelledRetry,
-                PaymentStatus.expired => l.paymentExpiredRetry,
-                PaymentStatus.timedOut => l.paymentTimedOutRetry,
-                _ => l.paymentFailedRetry,
-              };
+          final message = paymentMessageForCode(
+            l,
+            state.errorMessage,
+            state.errorMessage ??
+                switch (state.status) {
+                  PaymentStatus.cancelled => l.paymentCancelledRetry,
+                  PaymentStatus.expired => l.paymentExpiredRetry,
+                  PaymentStatus.timedOut => l.paymentTimedOutRetry,
+                  _ => l.paymentFailedRetry,
+                },
+          );
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(message)));
         }

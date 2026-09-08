@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:al_batal_elite/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -39,18 +37,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final TextEditingController _searchController;
-  Timer? _flashPollTimer;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    // Bind flash sale banner to server (T1). Initial load + poll every 60s.
+    // Bind flash sale banner to server (T1). The 60s refresh poll is
+    // cubit-owned (CatalogCubit._flashPollTimer) so it survives page
+    // navigation and dies with the cubit, not with this widget.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<CatalogCubit>().loadFlashSales();
-    });
-    _flashPollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (!mounted) return;
       context.read<CatalogCubit>().loadFlashSales();
     });
@@ -58,7 +53,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _flashPollTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -106,6 +100,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: BlocBuilder<CatalogCubit, CatalogState>(
+        buildWhen: homeBuildWhen,
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
@@ -120,8 +115,9 @@ class _HomePageState extends State<HomePage> {
           }
           // Flash sale binding (T1): server-driven. First active sale drives
           // countdown (state.flashRemaining via loadFlashSales → startFlashSale)
-          // and discount label. Product resolved by product_id lookup with
-          // visible.first fallback to keep hero populated even before sales load.
+          // and discount label (state.discountLabel). Product resolved by
+          // product_id lookup with visible.first fallback to keep hero
+          // populated even before sales load.
           final flashSale = state.flashSales.firstOrNull;
           final flashProduct = flashSale == null
               ? (state.visible.isEmpty ? null : state.visible.first)
@@ -129,8 +125,7 @@ class _HomePageState extends State<HomePage> {
                       .where((p) => p.id == flashSale.productId)
                       .firstOrNull ??
                   (state.visible.isEmpty ? null : state.visible.first);
-          final discountLabel =
-              flashSale == null ? '-15%' : '-${flashSale.discountPct}%';
+          final discountLabel = state.discountLabel;
           // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
           // ResponsiveShell caps width at 1200px on tablet/desktop.
           return BlocBuilder<WishlistCubit, WishlistState>(
@@ -333,6 +328,35 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+/// Whether [HomePage]'s outer catalog [BlocBuilder] should rebuild for the
+/// transition [previous] → [current] (audit Task 11).
+///
+/// Compares only the fields this page actually renders: [CatalogStatus],
+/// the product list (drives [CatalogState.visible] and
+/// [CatalogState.featuredProducts]), categories, [CatalogFilters], recent
+/// queries, and [CatalogState.flashSales] (banner presence plus
+/// [CatalogState.discountLabel]).
+///
+/// Deliberately excluded — [CatalogState.flashRemaining] and
+/// [CatalogState.flashEnd]: no widget on this page renders the countdown,
+/// so the ticker's 1Hz emits must not rebuild the whole CustomScrollView.
+/// [CatalogState.carouselIndex] is excluded too — StitchHeroCarousel owns
+/// its page position internally.
+///
+/// List fields are compared by identity: the cubit assigns fresh list
+/// instances only when the underlying data changes (copyWith passes the
+/// same instance through on countdown-only emits), which keeps the
+/// predicate O(1) instead of deep-scanning the catalog on every emit.
+bool homeBuildWhen(CatalogState previous, CatalogState current) {
+  if (previous.status != current.status) return true;
+  if (!identical(previous.allProducts, current.allProducts)) return true;
+  if (previous.categories != current.categories) return true;
+  if (previous.filters != current.filters) return true;
+  if (previous.recentQueries != current.recentQueries) return true;
+  if (previous.flashSales != current.flashSales) return true;
+  return false;
 }
 
 /// Time-of-day greeting copy (UX-044).

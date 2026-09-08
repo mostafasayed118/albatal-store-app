@@ -5,6 +5,14 @@ import 'package:equatable/equatable.dart';
 /// as display data and never writes it through profile upserts.
 enum MembershipTier { standard, premium }
 
+/// Parses the server's tier string (`'standard' | 'premium'`) into the
+/// typed enum, degrading to [MembershipTier.standard] for null or
+/// unknown values — the same fail-soft contract as [Profile.fromRow].
+/// One shared decoder so the admin detail page and profile reads agree
+/// on what a tier string means instead of scattering `== 'premium'`.
+MembershipTier membershipTierFromServerValue(String? raw) =>
+    raw == 'premium' ? MembershipTier.premium : MembershipTier.standard;
+
 /// Customer profile entity.
 final class Profile extends Equatable {
   const Profile({
@@ -50,7 +58,7 @@ final class Profile extends Equatable {
       phone: row['phone'] as String?,
       avatarUrl: row['avatar_url'] as String?,
       isAdmin: row['is_admin'] as bool? ?? false,
-      tier: raw == 'premium' ? MembershipTier.premium : MembershipTier.standard,
+      tier: membershipTierFromServerValue(raw),
     );
   }
 

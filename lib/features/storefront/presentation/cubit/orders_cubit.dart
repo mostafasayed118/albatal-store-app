@@ -3,22 +3,11 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/entities/address.dart';
 import '../../../../core/entities/order.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/repositories/orders_repository.dart';
-import '../cubit/cart_cubit.dart';
 
 export '../../../../core/entities/order.dart';
-
-typedef OrderIdGenerator = String Function();
-
-String _defaultOrderId() {
-  final now = DateTime.now();
-  final suffix =
-      now.millisecondsSinceEpoch.remainder(10000).toString().padLeft(4, '0');
-  return 'ORD-${now.year}-$suffix';
-}
 
 enum OrdersStatus { initial, loading, ready, error }
 
@@ -106,12 +95,10 @@ class _OrdersMemos {
 }
 
 final class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit(this._repository, {OrderIdGenerator generateId = _defaultOrderId})
-      : _generateId = generateId,
-        super(OrdersState(status: OrdersStatus.initial));
+  OrdersCubit(this._repository)
+      : super(OrdersState(status: OrdersStatus.initial));
 
   final OrdersRepository _repository;
-  final OrderIdGenerator _generateId;
 
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
@@ -124,59 +111,6 @@ final class OrdersCubit extends Cubit<OrdersState> {
           status: OrdersStatus.error,
           errorMessage: error.message,
         ));
-    }
-  }
-
-  Future<Order> place(CartState cart,
-      {required String paymentMethod, Address? address}) async {
-    final order = Order(
-      id: _generateId(),
-      items: List.of(cart.items),
-      subtotal: cart.subtotal,
-      shipping: cart.shipping,
-      total: cart.total,
-      status: OrderStatus.placed,
-      placedAt: DateTime.now(),
-      paymentMethod: paymentMethod,
-      address: address,
-    );
-    final next = [order, ...state.orders];
-    emit(OrdersState(orders: next, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(next);
-    if (result case Failure(:final error)) {
-      // Persistence failed — surface to the UI but keep the order in
-      // memory so the session is not corrupted.
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
-    }
-    return order;
-  }
-
-  /// Idempotently merge a server-created order into local history.
-  ///
-  /// Matches by [Order.id]. If an order with the same ID already
-  /// exists, it is replaced (upsert). If not, the order is
-  /// appended. This satisfies spec 02 req 5: "reconcile
-  /// callback/webhook-confirmed orders into local order history
-  /// idempotently."
-  Future<void> reconcile(Order serverOrder) async {
-    final updated = <Order>[
-      for (final o in state.orders)
-        if (o.id == serverOrder.id) serverOrder else o,
-    ];
-    // If no existing order matched, append the server order.
-    if (!updated.any((o) => o.id == serverOrder.id)) {
-      updated.add(serverOrder);
-    }
-    emit(OrdersState(orders: updated, status: OrdersStatus.ready));
-    final result = await _repository.writeOrders(updated);
-    if (result case Failure(:final error)) {
-      emit(state.copyWith(
-        status: OrdersStatus.error,
-        errorMessage: error.message,
-      ));
     }
   }
 }

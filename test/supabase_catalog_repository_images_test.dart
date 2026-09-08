@@ -38,6 +38,13 @@ class FakePostgrestFilterBuilder<T> extends Fake
       this;
 
   @override
+  PostgrestTransformBuilder<T> limit(
+    int count, {
+    String? referencedTable,
+  }) =>
+      this;
+
+  @override
   PostgrestFilterBuilder<T> not(
     String column,
     String operator,

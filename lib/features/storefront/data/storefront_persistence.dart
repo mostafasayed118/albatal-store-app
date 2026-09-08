@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/entities/address.dart';
+import '../../../core/data/address_codec.dart';
 import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
@@ -97,11 +97,14 @@ final class LocalStorefrontPersistence {
         .toList();
   }
 
-  Future<void> writeOrders(List<Order> orders) async {
-    await _preferences.setString(
-      _ordersKey,
-      jsonEncode(orders.map(OrderCodec.encode).toList()),
-    );
+  /// Deletes the local order-history snapshot.
+  ///
+  /// Raw-value semantics like the other writers here; used by the auth
+  /// wipe so a signed-out or deleted device keeps no order PII (audit
+  /// S9). Server orders are unaffected — this only clears the legacy
+  /// on-device snapshot.
+  Future<void> clearOrders() async {
+    await _preferences.remove(_ordersKey);
   }
 }
 
@@ -127,15 +130,7 @@ extension OrderCodec on Order {
         'status': o.status.name,
         'placedAt': o.placedAt.toIso8601String(),
         'paymentMethod': o.paymentMethod,
-        if (o.address != null)
-          'address': {
-            'id': o.address!.id,
-            'recipient': o.address!.recipient,
-            'line': o.address!.line,
-            'city': o.address!.city,
-            'country': o.address!.country,
-            'isDefault': o.address!.isDefault,
-          },
+        if (o.address != null) 'address': AddressCodec.toJson(o.address!),
       };
 
   static Order? decode(Map<Object?, Object?> raw) {
@@ -169,20 +164,8 @@ extension OrderCodec on Order {
       placedAt: DateTime.parse(raw['placedAt'] as String),
       paymentMethod: raw['paymentMethod'] as String,
       address: raw['address'] != null
-          ? _decodeAddress(safeMap(raw['address']))
+          ? AddressCodec.fromOrderJson(safeMap(raw['address']))
           : null,
     );
   }
-
-  /// Decodes a cached address. The outer shape is normalized by [safeMap];
-  /// the required fields below stay strict so corrupt rows fail loud
-  /// instead of silently producing blank addresses.
-  static Address _decodeAddress(Map<String, dynamic> address) => Address(
-        id: address['id'] as String,
-        recipient: address['recipient'] as String,
-        line: address['line'] as String,
-        city: address['city'] as String,
-        country: safeString(address, 'country'),
-        isDefault: safeBool(address, 'isDefault'),
-      );
 }

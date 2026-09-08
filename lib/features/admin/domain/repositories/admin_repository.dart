@@ -79,9 +79,6 @@ abstract interface class AdminRepository {
   Future<Result<void>> adminSetProductImages(
       String productId, List<String> storagePaths);
 
-  /// Get currently active flash sales (window filter).
-  Future<Result<List<Map<String, dynamic>>>> getActiveFlashSales();
-
   /// Get all variants for [productId], ordered by size.
   Future<Result<List<AdminVariant>>> getVariants(String productId);
 

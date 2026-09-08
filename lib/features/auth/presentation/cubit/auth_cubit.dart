@@ -5,9 +5,11 @@ import 'package:equatable/equatable.dart';
 
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/shared/services/logger.dart';
 
 enum AuthStatus {
@@ -60,14 +62,24 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required AuthRepository authRepository,
     required ProfileRepository profileRepository,
+    LocalAddressRepository? localAddressRepository,
+    LocalStorefrontPersistence? storefrontPersistence,
   })  : _authRepository = authRepository,
         _profileRepository = profileRepository,
+        _localAddressRepository = localAddressRepository,
+        _storefrontPersistence = storefrontPersistence,
         super(const AuthState()) {
     _listenToAuthChanges();
   }
 
   final AuthRepository _authRepository;
   final ProfileRepository _profileRepository;
+
+  /// Device-local stores wiped on sign-out / account deletion so no
+  /// address or order PII survives on the device (audit S9). Optional so
+  /// existing call sites stay unchanged; the wipe is a no-op when absent.
+  final LocalAddressRepository? _localAddressRepository;
+  final LocalStorefrontPersistence? _storefrontPersistence;
   StreamSubscription<Authenticated?>? _authSubscription;
 
   /// Check for an existing session on app launch.
@@ -171,6 +183,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// Sign out and clear all account state.
   Future<void> signOut() async {
     await _authRepository.signOut();
+    await _clearLocalSnapshots();
     emit(state.copyWith(
       status: AuthStatus.unauthenticated,
       clearProfile: true,
@@ -189,6 +202,7 @@ class AuthCubit extends Cubit<AuthState> {
       case Success():
         // The server-side user is gone — clear the local session too.
         await _authRepository.signOut();
+        await _clearLocalSnapshots();
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,
@@ -209,6 +223,31 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // ─── Private helpers ───────────────────────────────────
+
+  /// Removes on-device address and order snapshots so a signed-out or
+  /// deleted device holds no personal data (audit S9). Calls the same
+  /// local stores the app reads from — never raw prefs keys. Cart and
+  /// wishlist are deliberately untouched here: they are guest-accessible
+  /// and the settings page already owns their wipe (same UX-043 lane).
+  Future<void> _clearLocalSnapshots() async {
+    final addressClear = _localAddressRepository?.clear();
+    if (addressClear != null) {
+      final result = await addressClear;
+      if (result case Failure(:final error)) {
+        Log.w('Address snapshot clear failed: ${error.message}',
+            category: LogCategory.auth);
+      }
+    }
+    // Contained like the address clear above: a platform failure wiping
+    // the orders snapshot must never abort signOut or deleteAccount —
+    // those flows still need to reach emit(unauthenticated).
+    try {
+      await _storefrontPersistence?.clearOrders();
+    } catch (_) {
+      Log.w('clearOrders failed during snapshot wipe',
+          category: LogCategory.auth);
+    }
+  }
 
   void _listenToAuthChanges() {
     _authSubscription =
