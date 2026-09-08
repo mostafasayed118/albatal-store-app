@@ -21,7 +21,8 @@ class _StubCatalogRepository implements CatalogRepository {
   @override
   Product? findProductById(String id) => null;
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -40,7 +41,8 @@ class _RepositoryFailureCatalog implements CatalogRepository {
   @override
   Product? findProductById(String id) => null;
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -83,7 +85,8 @@ class _RelatedFetchThrowsCatalog implements CatalogRepository {
   Product? findProductById(String id) => requestedProduct;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -120,7 +123,8 @@ class _RelatedFetchFailureCatalog implements CatalogRepository {
   Product? findProductById(String id) => requestedProduct;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];

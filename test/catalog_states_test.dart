@@ -33,7 +33,8 @@ final class FailingCatalogRepository implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];
@@ -100,7 +101,8 @@ class _NeverCompletesRepository implements CatalogRepository {
   Product? findProductById(String id) => null;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 
   @override
   List<String> get defaultCategories => const ['All'];

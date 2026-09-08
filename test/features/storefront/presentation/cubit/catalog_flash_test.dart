@@ -24,7 +24,8 @@ class _StubRepo implements CatalogRepository {
   @override
   List<String> get defaultCategories => const ['All'];
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
 
 void main() {

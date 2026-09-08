@@ -34,7 +34,8 @@ final class StubCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => categories;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
 
 /// Stub repository that always fails.
@@ -58,7 +59,8 @@ final class FailingCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const ['All'];
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
 
 /// Pre-seeded state with products loaded — avoids testing load() in every test.

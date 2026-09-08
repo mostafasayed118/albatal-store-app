@@ -148,7 +148,8 @@ class FakeCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const ['Cat A', 'Cat B'];
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
 
 // Minimal fake that avoids Supabase client init.

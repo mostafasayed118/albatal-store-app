@@ -358,7 +358,8 @@ final class _StubCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const [];
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
 
 /// Empty admin repository for the route probe: the admin pages built by

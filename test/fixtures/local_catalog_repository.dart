@@ -38,5 +38,6 @@ final class LocalCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => categories;
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async => const Success<List<FlashSale>>([]);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
 }
