@@ -40,7 +40,6 @@ final class CatalogState extends Equatable {
     this.categories = const [],
     this.filters = const CatalogFilters(),
     this.carouselIndex = 0,
-    this.saleSeconds = 14362,
     this.recentQueries = const [],
     this.flashEnd,
     this.flashRemaining,
@@ -52,7 +51,6 @@ final class CatalogState extends Equatable {
   final List<String> categories;
   final CatalogFilters filters;
   final int carouselIndex;
-  final int saleSeconds;
   final List<String> recentQueries;
   final DateTime? flashEnd;
   final Duration? flashRemaining;
@@ -176,24 +174,33 @@ final class CatalogState extends Equatable {
     List<String>? categories,
     CatalogFilters? filters,
     int? carouselIndex,
-    int? saleSeconds,
     List<String>? recentQueries,
     DateTime? flashEnd,
     Duration? flashRemaining,
     List<FlashSale>? flashSales,
-  }) =>
-      CatalogState(
-        status: status ?? this.status,
-        allProducts: allProducts ?? this.allProducts,
-        categories: categories ?? this.categories,
-        filters: filters ?? this.filters,
-        carouselIndex: carouselIndex ?? this.carouselIndex,
-        saleSeconds: saleSeconds ?? this.saleSeconds,
-        recentQueries: recentQueries ?? this.recentQueries,
-        flashEnd: flashEnd ?? this.flashEnd,
-        flashRemaining: flashRemaining ?? this.flashRemaining,
-        flashSales: flashSales ?? this.flashSales,
-      );
+  }) {
+    final resolvedProducts = allProducts ?? this.allProducts;
+    final resolvedFilters = filters ?? this.filters;
+    final next = CatalogState(
+      status: status ?? this.status,
+      allProducts: resolvedProducts,
+      categories: categories ?? this.categories,
+      filters: resolvedFilters,
+      carouselIndex: carouselIndex ?? this.carouselIndex,
+      recentQueries: recentQueries ?? this.recentQueries,
+      flashEnd: flashEnd ?? this.flashEnd,
+      flashRemaining: flashRemaining ?? this.flashRemaining,
+      flashSales: flashSales ?? this.flashSales,
+    );
+    // Countdown-only emits (flashRemaining ticks) leave the underlying
+    // data untouched — carry the memoized views over instead of paying
+    // O(n log n) recompute per tick.
+    if (identical(resolvedProducts, this.allProducts) &&
+        resolvedFilters == this.filters) {
+      next._m.adopt(_m);
+    }
+    return next;
+  }
 
   @override
   List<Object?> get props => [
@@ -202,7 +209,6 @@ final class CatalogState extends Equatable {
         categories,
         filters,
         carouselIndex,
-        saleSeconds,
         recentQueries,
         flashEnd,
         flashRemaining,
@@ -221,23 +227,29 @@ class _CatalogMemos {
   CatalogFilters? visibleKey;
   List<Product>? featured;
   final Map<String, List<Product>> byCategory = {};
+
+  /// Carries memoized views to a state built over identical data (see
+  /// [CatalogState.copyWith]). Entries stay valid because the products
+  /// and filters they were derived from have not changed.
+  void adopt(_CatalogMemos other) {
+    availableColors = other.availableColors;
+    priceMin = other.priceMin;
+    priceMax = other.priceMax;
+    categoryCount = other.categoryCount;
+    visible = other.visible;
+    visibleKey = other.visibleKey;
+    featured = other.featured;
+    byCategory.addAll(other.byCategory);
+  }
 }
 
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
         super(CatalogState()) {
-    // Legacy hero countdown (saleSeconds) — will be removed when flash_sales table lands.
-    // Gated to avoid needless ticks: only ticks while saleSeconds > 0,
-    // cancelled deterministically in close().
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (state.saleSeconds == 0) return;
-        emit(state.copyWith(
-            saleSeconds: (state.saleSeconds - 1).clamp(0, 999999).toInt()));
-      },
-    );
+    // Countdown ticking lives in FlashSaleTicker (server-driven); the
+    // legacy 1Hz saleSeconds timer was removed (audit P4) — nothing
+    // consumed it and it rebuilt memo caches every second.
     _flashTicker = FlashSaleTicker(now: _now);
   }
 
@@ -245,9 +257,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   /// Injectable clock so the flash countdown is testable deterministically.
   final DateTime Function() _now;
-  late final Timer _timer;
   late final FlashSaleTicker _flashTicker;
-  Timer? _debounce;
+  Timer? _queryDebounce;
 
   Future<void> load() async {
     emit(state.copyWith(status: CatalogStatus.loading));
@@ -301,14 +312,25 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void select(String category) =>
       emit(state.copyWith(filters: state.filters.copyWith(category: category)));
 
+  /// Live search with a 300ms debounce: each keystroke restarts the
+  /// timer so typing runs one O(n log n) filter pass, not one per
+  /// character. The text field itself is controller-driven, so display
+  /// never lags. Recent queries are recorded in the same fire.
   void updateQuery(String query) {
-    _debounce?.cancel();
-    emit(state.copyWith(filters: state.filters.copyWith(query: query)));
-    if (query.trim().isNotEmpty) {
-      _debounce = Timer(const Duration(milliseconds: 350), () {
-        _recordRecentQuery(query.trim());
-      });
-    }
+    _queryDebounce?.cancel();
+    _queryDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (isClosed) return;
+      final trimmed = query.trim();
+      final recents = trimmed.isEmpty
+          ? state.recentQueries
+          : [trimmed, ...state.recentQueries.where((r) => r != trimmed)]
+              .take(5)
+              .toList();
+      emit(state.copyWith(
+        filters: state.filters.copyWith(query: query),
+        recentQueries: recents,
+      ));
+    });
   }
 
   void selectSort(CatalogSort sort) =>
@@ -326,7 +348,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void setPriceRange(Money min, Money max) => emit(state.copyWith(
       filters: state.filters.copyWith(priceMin: min, priceMax: max)));
 
-  void clearFilters() => emit(state.copyWith(filters: const CatalogFilters()));
+  void clearFilters() {
+    // A pending debounced query must not land after the reset.
+    _queryDebounce?.cancel();
+    emit(state.copyWith(filters: const CatalogFilters()));
+  }
 
   void carousel(int index) => emit(state.copyWith(carouselIndex: index));
 
@@ -342,22 +368,15 @@ final class CatalogCubit extends Cubit<CatalogState> {
     );
   }
 
-  void _recordRecentQuery(String q) {
-    final updated =
-        [q, ...state.recentQueries.where((r) => r != q)].take(5).toList();
-    emit(state.copyWith(recentQueries: updated));
+  @override
+  Future<void> close() {
+    _flashTicker.cancel();
+    _queryDebounce?.cancel();
+    return super.close();
   }
 
   void deleteRecentQuery(String q) {
     emit(state.copyWith(
         recentQueries: state.recentQueries.where((r) => r != q).toList()));
-  }
-
-  @override
-  Future<void> close() {
-    _timer.cancel();
-    _flashTicker.cancel();
-    _debounce?.cancel();
-    return super.close();
   }
 }
