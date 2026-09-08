@@ -51,6 +51,8 @@ Future<void> configureDependencies() async {
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<OnboardingRepository>(
         () => LocalOnboardingRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<LocalAddressRepository>(
+        () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AddressRepository>(
         () => LocalAddressRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())

@@ -1,13 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:al_batal_elite/core/entities/address.dart';
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/order.dart';
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/auth/presentation/pages/sign_up_page.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Hand-rolled stub matching the project's existing test style
 /// (catalog_cubit_test.dart, settings_cubit_test.dart). The declared
@@ -419,5 +427,158 @@ void main() {
       expect(cubit.state.profile?.fullName, 'Ahmed');
       await cubit.close();
     });
+
+    test('signOut clears cached addresses and orders', () async {
+      // Seed the on-device snapshot keys the same way production writes
+      // them, then assert a signed-out device holds no PII snapshots.
+      // Behavioral assertions on real stores over mock prefs — the
+      // wipe must actually delete the keys, not just "be called".
+      SharedPreferences.setMockInitialValues({
+        'saved_addresses_v1': jsonEncode([
+          {
+            'id': 'a1',
+            'recipient': 'Ahmed Hassan',
+            'line': '12 Nile Street',
+            'city': 'Cairo',
+            'country': 'EG',
+            'isDefault': true,
+          },
+        ]),
+        'storefront_orders_v1':
+            jsonEncode([OrderCodec.encode(_seedOrder())]),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final addressRepo = LocalAddressRepository(prefs);
+      final persistence = LocalStorefrontPersistence(prefs);
+
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Success(Authenticated('user-1')),
+        ),
+        profileRepository: profileRepo,
+        localAddressRepository: addressRepo,
+        storefrontPersistence: persistence,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'pw');
+      expect((await addressRepo.read() as Success<List<Address>>).value,
+          isNotEmpty);
+      expect(await persistence.readOrders(), isNotEmpty);
+
+      await cubit.signOut();
+
+      expect((await addressRepo.read() as Success<List<Address>>).value,
+          isEmpty);
+      expect(await persistence.readOrders(), isEmpty);
+      await cubit.close();
+    });
+
+    test('deleteAccount success clears cached addresses and orders',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'saved_addresses_v1': jsonEncode([
+          {
+            'id': 'a1',
+            'recipient': 'Ahmed Hassan',
+            'line': '12 Nile Street',
+            'city': 'Cairo',
+            'country': 'EG',
+            'isDefault': false,
+          },
+        ]),
+        'storefront_orders_v1':
+            jsonEncode([OrderCodec.encode(_seedOrder())]),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final addressRepo = LocalAddressRepository(prefs);
+      final persistence = LocalStorefrontPersistence(prefs);
+
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Success(Authenticated('user-1')),
+        ),
+        profileRepository: profileRepo,
+        localAddressRepository: addressRepo,
+        storefrontPersistence: persistence,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'pw');
+
+      final result = await cubit.deleteAccount(email: 'a@b.com');
+
+      expect(result, isA<Success<void>>());
+      expect((await addressRepo.read() as Success<List<Address>>).value,
+          isEmpty);
+      expect(await persistence.readOrders(), isEmpty);
+      await cubit.close();
+    });
+
+    test('deleteAccount failure keeps cached addresses and orders',
+        () async {
+      SharedPreferences.setMockInitialValues({
+        'saved_addresses_v1': jsonEncode([
+          {
+            'id': 'a1',
+            'recipient': 'Ahmed Hassan',
+            'line': '12 Nile Street',
+            'city': 'Cairo',
+            'country': 'EG',
+            'isDefault': false,
+          },
+        ]),
+        'storefront_orders_v1':
+            jsonEncode([OrderCodec.encode(_seedOrder())]),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final addressRepo = LocalAddressRepository(prefs);
+      final persistence = LocalStorefrontPersistence(prefs);
+
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Success(Authenticated('user-1')),
+          deleteAccount: (_) async =>
+              const Failure(AppError('The email does not match this account')),
+        ),
+        profileRepository: profileRepo,
+        localAddressRepository: addressRepo,
+        storefrontPersistence: persistence,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'pw');
+
+      final result = await cubit.deleteAccount(email: 'wrong@b.com');
+
+      // A refused deletion must not wipe the user's local data.
+      expect(result, isA<Failure<void>>());
+      expect((await addressRepo.read() as Success<List<Address>>).value,
+          isNotEmpty);
+      expect(await persistence.readOrders(), isNotEmpty);
+      await cubit.close();
+    });
+  });
+
+  group('passwordValidator (sign-up password rule)', () {
+    test('rejects passwords shorter than 8 characters', () {
+      expect(passwordValidator(null), isNotNull);
+      expect(passwordValidator('123456'), isNotNull);
+      expect(passwordValidator('1234567'), isNotNull);
+    });
+
+    test('accepts 8 or more characters', () {
+      expect(passwordValidator('12345678'), isNull);
+      expect(passwordValidator('longenough'), isNull);
+    });
   });
 }
+
+/// Minimal decodable order for seeding the local orders snapshot key.
+Order _seedOrder() => Order(
+      id: 'ord-1',
+      items: const [],
+      subtotal: const Money(1000),
+      shipping: const Money(0),
+      total: const Money(1000),
+      status: OrderStatus.placed,
+      placedAt: DateTime.parse('2026-09-01T00:00:00Z'),
+      paymentMethod: 'cod',
+    );

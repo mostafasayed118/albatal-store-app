@@ -96,6 +96,16 @@ final class LocalStorefrontPersistence {
         .whereType<Order>()
         .toList();
   }
+
+  /// Deletes the local order-history snapshot.
+  ///
+  /// Raw-value semantics like the other writers here; used by the auth
+  /// wipe so a signed-out or deleted device keeps no order PII (audit
+  /// S9). Server orders are unaffected — this only clears the legacy
+  /// on-device snapshot.
+  Future<void> clearOrders() async {
+    await _preferences.remove(_ordersKey);
+  }
 }
 
 /// Serializes [Order] to/from JSON for the SharedPreferences persistence layer.

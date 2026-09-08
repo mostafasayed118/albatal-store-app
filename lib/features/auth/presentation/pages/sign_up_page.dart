@@ -6,6 +6,22 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
 
+/// Minimum accepted password length for new accounts (audit S9).
+const int minPasswordLength = 8;
+
+/// Password rule for the sign-up form: at least [minPasswordLength]
+/// characters.
+///
+/// Top-level (not a closure) so the rule is unit-testable without a
+/// widget tree. [tooShortMessage] carries the localized copy from the
+/// page; the fallback exists only so the validator is testable
+/// standalone. Returns null when the value is acceptable.
+String? passwordValidator(String? value, {String? tooShortMessage}) =>
+    (value == null || value.length < minPasswordLength)
+        ? tooShortMessage ??
+            'Password must be at least $minPasswordLength characters'
+        : null;
+
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
@@ -90,7 +106,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   obscureText: _obscure,
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
-                      (v == null || v.length < 6) ? l.passwordTooShort : null,
+                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/address.dart';
@@ -33,7 +34,6 @@ final class SupabaseOrdersRepository implements OrdersRepository {
   Future<Result<List<Order>>> readOrders() async {
     try {
       final userId = _client.auth.currentUser?.id;
-      Log.w('readOrders: userId=$userId');
       if (userId == null) {
         return Failure(AppError('Not authenticated'));
       }
@@ -54,7 +54,9 @@ final class SupabaseOrdersRepository implements OrdersRepository {
           .order('placed_at', ascending: false)
           .limit(historyLimit);
 
-      Log.w('readOrders: got ${rows.length} rows');
+      if (kDebugMode) {
+        Log.w('readOrders: got ${rows.length} rows');
+      }
       final orders = rows.map(_mapOrder).toList();
       return Success(orders);
     } on Exception catch (e) {

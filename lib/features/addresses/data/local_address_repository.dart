@@ -36,4 +36,19 @@ final class LocalAddressRepository implements AddressRepository {
       return Failure(AppError('Unable to save saved addresses.', cause: error));
     }
   }
+
+  /// Removes the whole on-device address book.
+  ///
+  /// Deliberately on the local implementation only (not the domain
+  /// contract): clearing is a device-lifecycle concern for sign-out and
+  /// account deletion (audit S9), not part of the address-book API.
+  Future<Result<void>> clear() async {
+    try {
+      await _preferences.remove(_key);
+      return const Success(null);
+    } catch (error) {
+      return Failure(
+          AppError('Unable to clear saved addresses.', cause: error));
+    }
+  }
 }
