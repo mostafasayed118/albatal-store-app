@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/entities/address.dart';
+import '../../../core/data/address_codec.dart';
 import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
@@ -120,15 +120,7 @@ extension OrderCodec on Order {
         'status': o.status.name,
         'placedAt': o.placedAt.toIso8601String(),
         'paymentMethod': o.paymentMethod,
-        if (o.address != null)
-          'address': {
-            'id': o.address!.id,
-            'recipient': o.address!.recipient,
-            'line': o.address!.line,
-            'city': o.address!.city,
-            'country': o.address!.country,
-            'isDefault': o.address!.isDefault,
-          },
+        if (o.address != null) 'address': AddressCodec.toJson(o.address!),
       };
 
   static Order? decode(Map<Object?, Object?> raw) {
@@ -162,20 +154,8 @@ extension OrderCodec on Order {
       placedAt: DateTime.parse(raw['placedAt'] as String),
       paymentMethod: raw['paymentMethod'] as String,
       address: raw['address'] != null
-          ? _decodeAddress(safeMap(raw['address']))
+          ? AddressCodec.fromOrderJson(safeMap(raw['address']))
           : null,
     );
   }
-
-  /// Decodes a cached address. The outer shape is normalized by [safeMap];
-  /// the required fields below stay strict so corrupt rows fail loud
-  /// instead of silently producing blank addresses.
-  static Address _decodeAddress(Map<String, dynamic> address) => Address(
-        id: address['id'] as String,
-        recipient: address['recipient'] as String,
-        line: address['line'] as String,
-        city: address['city'] as String,
-        country: safeString(address, 'country'),
-        isDefault: safeBool(address, 'isDefault'),
-      );
 }

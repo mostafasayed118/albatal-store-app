@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/data/address_codec.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
@@ -194,13 +195,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         items: cartItems,
         paymentMethod: state.payment,
         addressSnapshot: state.selectedAddress != null
-            ? {
-                'id': state.selectedAddress!.id,
-                'recipient': state.selectedAddress!.recipient,
-                'line': state.selectedAddress!.line,
-                'city': state.selectedAddress!.city,
-                'country': state.selectedAddress!.country,
-              }
+            ? AddressCodec.toSnapshotJson(state.selectedAddress!)
             : {},
         idempotencyKey: key,
       );
