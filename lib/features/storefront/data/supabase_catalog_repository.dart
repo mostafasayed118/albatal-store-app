@@ -56,6 +56,20 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// SharedPreferences key for the persistent catalog cache.
   static const _persistentCacheKey = 'catalog_products_cache_v1';
 
+  /// Shared product select shape (single source of truth). [fetchProducts]
+  /// and [fetchProductById] must return identical column shapes — the
+  /// mapper ([ProductCodec.fromRow]) is written against exactly these
+  /// keys, so a divergence between the two queries would silently change
+  /// the decoded product (e.g. missing images) depending on which path
+  /// loaded it.
+  static const _productSelect = '''
+            id, name, slug, description, composition, care, origin,
+            base_price, old_price, rating, review_count,
+            categories!inner(name),
+            product_variants(product_id, size, color, stock, price_override),
+            product_images(storage_path, sort_order)
+          ''';
+
   /// Whether the cached data is still within the TTL window.
   bool get _cacheIsFresh =>
       _cache != null &&
@@ -82,13 +96,11 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // Single query with embedded variant + image relations. Supabase
       // PostgREST returns variants/images as arrays inside each product row,
       // eliminating extra round-trips.
-      final rows = await _client.from('products').select('''
-            id, name, slug, description, composition, care, origin,
-            base_price, old_price, rating, review_count,
-            categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override),
-            product_images(storage_path, sort_order)
-          ''').eq('is_active', true).order('name');
+      final rows = await _client
+          .from('products')
+          .select(_productSelect)
+          .eq('is_active', true)
+          .order('name');
 
       final result = <Product>[];
       for (final row in rows) {
@@ -151,13 +163,11 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     if (cached != null) return Success(cached);
 
     try {
-      final row = await _client.from('products').select('''
-            id, name, slug, description, composition, care, origin,
-            base_price, old_price, rating, review_count,
-            categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override),
-            product_images(storage_path, sort_order)
-          ''').eq('id', id).single();
+      final row = await _client
+          .from('products')
+          .select(_productSelect)
+          .eq('id', id)
+          .single();
 
       final variantsRaw = row['product_variants'];
       final variants = variantsRaw is List

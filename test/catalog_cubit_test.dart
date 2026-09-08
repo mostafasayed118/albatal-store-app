@@ -312,4 +312,20 @@ void main() {
       cubit.close();
     });
   });
+
+  group('CatalogState — discountLabel', () {
+    test('derives from the first flash sale', () {
+      final s = CatalogState(
+        flashSales: const [
+          FlashSale(productId: 'p1', discountPct: 20),
+          FlashSale(productId: 'p2', discountPct: 30),
+        ],
+      );
+      expect(s.discountLabel, '-20%');
+    });
+
+    test('falls back to the legacy placeholder when no sale is active', () {
+      expect(CatalogState().discountLabel, '-15%');
+    });
+  });
 }
