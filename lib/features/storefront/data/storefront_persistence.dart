@@ -6,6 +6,7 @@ import '../../../core/entities/address.dart';
 import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
+import '../../../core/utils/safe_parse.dart';
 import '../../../shared/extensions/iterable_x.dart';
 import '../domain/repositories/cart_repository.dart';
 import 'product_mapper.dart';
@@ -35,7 +36,7 @@ final class LocalStorefrontPersistence {
     return decoded
         .whereType<Map>()
         .map((line) {
-          final product = productForId(line['productId'] as String? ?? '');
+          final product = productForId(safeString(line, 'productId'));
           final color = line['color'];
           final length = line['length'];
           final quantity = line['quantity'];
@@ -168,15 +169,20 @@ extension OrderCodec on Order {
       placedAt: DateTime.parse(raw['placedAt'] as String),
       paymentMethod: raw['paymentMethod'] as String,
       address: raw['address'] != null
-          ? Address(
-              id: (raw['address'] as Map)['id'] as String,
-              recipient: (raw['address'] as Map)['recipient'] as String,
-              line: (raw['address'] as Map)['line'] as String,
-              city: (raw['address'] as Map)['city'] as String,
-              country: (raw['address'] as Map)['country'] as String? ?? '',
-              isDefault: (raw['address'] as Map)['isDefault'] as bool? ?? false,
-            )
+          ? _decodeAddress(safeMap(raw['address']))
           : null,
     );
   }
+
+  /// Decodes a cached address. The outer shape is normalized by [safeMap];
+  /// the required fields below stay strict so corrupt rows fail loud
+  /// instead of silently producing blank addresses.
+  static Address _decodeAddress(Map<String, dynamic> address) => Address(
+        id: address['id'] as String,
+        recipient: address['recipient'] as String,
+        line: address['line'] as String,
+        city: address['city'] as String,
+        country: safeString(address, 'country'),
+        isDefault: safeBool(address, 'isDefault'),
+      );
 }

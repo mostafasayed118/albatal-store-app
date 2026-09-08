@@ -4,6 +4,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../payments/domain/entities/payment.dart';
 import '../domain/entities/pending_order.dart';
 import '../domain/repositories/checkout_repository.dart';
@@ -67,7 +68,7 @@ class CheckoutService implements CheckoutRepository {
         shipping: Money(data['shipping'] as int),
         total: Money(data['total'] as int),
         expiresAt: DateTime.parse(data['expires_at'] as String),
-        status: data['status'] as String? ?? 'pending',
+        status: safeString(data, 'status', fallback: 'pending'),
         isIdempotentRetry: data['idempotent'] as bool? ?? false,
       ));
     } on PostgrestException catch (e) {

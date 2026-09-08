@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -48,17 +49,17 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   void initState() {
     super.initState();
     final d = widget.initialData;
-    _nameCtrl = TextEditingController(text: d?['name'] as String? ?? '');
-    _slugCtrl = TextEditingController(text: d?['slug'] as String? ?? '');
+    _nameCtrl = TextEditingController(text: safeString(d, 'name'));
+    _slugCtrl = TextEditingController(text: safeString(d, 'slug'));
     _descriptionCtrl =
-        TextEditingController(text: d?['description'] as String? ?? '');
+        TextEditingController(text: safeString(d, 'description'));
     _compositionCtrl =
-        TextEditingController(text: d?['composition'] as String? ?? '');
+        TextEditingController(text: safeString(d, 'composition'));
     final price = d?['base_price'];
     _priceCtrl = TextEditingController(
       text: price == null ? '' : price.toString(),
     );
-    _isActive = d?['is_active'] as bool? ?? true;
+    _isActive = safeBool(d, 'is_active', fallback: true);
     _selectedCategoryId = d?['category_id'] as String?;
     if (widget.productId != null && d == null) {
       // Reached by id only (route or picker) — load the row so the
