@@ -444,8 +444,7 @@ void main() {
             'isDefault': true,
           },
         ]),
-        'storefront_orders_v1':
-            jsonEncode([OrderCodec.encode(_seedOrder())]),
+        'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
       final prefs = await SharedPreferences.getInstance();
       final addressRepo = LocalAddressRepository(prefs);
@@ -467,14 +466,13 @@ void main() {
 
       await cubit.signOut();
 
-      expect((await addressRepo.read() as Success<List<Address>>).value,
-          isEmpty);
+      expect(
+          (await addressRepo.read() as Success<List<Address>>).value, isEmpty);
       expect(await persistence.readOrders(), isEmpty);
       await cubit.close();
     });
 
-    test('deleteAccount success clears cached addresses and orders',
-        () async {
+    test('deleteAccount success clears cached addresses and orders', () async {
       SharedPreferences.setMockInitialValues({
         'saved_addresses_v1': jsonEncode([
           {
@@ -486,8 +484,7 @@ void main() {
             'isDefault': false,
           },
         ]),
-        'storefront_orders_v1':
-            jsonEncode([OrderCodec.encode(_seedOrder())]),
+        'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
       final prefs = await SharedPreferences.getInstance();
       final addressRepo = LocalAddressRepository(prefs);
@@ -507,14 +504,13 @@ void main() {
       final result = await cubit.deleteAccount(email: 'a@b.com');
 
       expect(result, isA<Success<void>>());
-      expect((await addressRepo.read() as Success<List<Address>>).value,
-          isEmpty);
+      expect(
+          (await addressRepo.read() as Success<List<Address>>).value, isEmpty);
       expect(await persistence.readOrders(), isEmpty);
       await cubit.close();
     });
 
-    test('deleteAccount failure keeps cached addresses and orders',
-        () async {
+    test('deleteAccount failure keeps cached addresses and orders', () async {
       SharedPreferences.setMockInitialValues({
         'saved_addresses_v1': jsonEncode([
           {
@@ -526,8 +522,7 @@ void main() {
             'isDefault': false,
           },
         ]),
-        'storefront_orders_v1':
-            jsonEncode([OrderCodec.encode(_seedOrder())]),
+        'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
       final prefs = await SharedPreferences.getInstance();
       final addressRepo = LocalAddressRepository(prefs);

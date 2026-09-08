@@ -165,8 +165,8 @@ void main() {
         isTrue,
       );
       expect(
-        homeBuildWhen(base,
-            base.copyWith(filters: const CatalogFilters(query: 'silk'))),
+        homeBuildWhen(
+            base, base.copyWith(filters: const CatalogFilters(query: 'silk'))),
         isTrue,
       );
       expect(

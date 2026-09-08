@@ -87,7 +87,8 @@ final class PaymentState extends Equatable {
 class PaymentCubit extends Cubit<PaymentState> {
   PaymentCubit(this._paymentService,
       {Duration watchTimeout = _defaultWatchTimeout,
-      Timer Function(Duration duration, void Function() callback)? timerFactory})
+      Timer Function(Duration duration, void Function() callback)?
+          timerFactory})
       : _watchTimeout = watchTimeout,
         _timerFactory = timerFactory ?? _realTimer,
         super(const PaymentState());

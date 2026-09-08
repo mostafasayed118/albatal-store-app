@@ -95,6 +95,7 @@ void main() {
         cb();
         return Timer(const Duration(milliseconds: 1), () {});
       }
+
       final cubit = PaymentCubit(service, timerFactory: fakeFactory);
       cubit.initPayment(amount: Money(100), orderId: 'O1');
       await cubit.startWatching('O1');
@@ -102,8 +103,7 @@ void main() {
       await cubit.close();
     });
 
-    test(
-        'startWatching with blank order ref emits order_ref_required code',
+    test('startWatching with blank order ref emits order_ref_required code',
         () async {
       for (final blank in ['', '  ']) {
         final cubit = PaymentCubit(service);

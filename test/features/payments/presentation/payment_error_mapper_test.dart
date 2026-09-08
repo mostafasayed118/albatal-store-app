@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('known codes map, unknown falls back', () async {
     final l10n = await AppLocalizations.delegate.load(const Locale('en'));
-    expect(paymentMessageForCode(l10n, 'payment_not_pending', 'RAW'), isNot('RAW'));
+    expect(paymentMessageForCode(l10n, 'payment_not_pending', 'RAW'),
+        isNot('RAW'));
     expect(paymentMessageForCode(l10n, null, 'RAW'), 'RAW');
     expect(paymentMessageForCode(l10n, 'no_such_code', 'RAW'), 'RAW');
   });

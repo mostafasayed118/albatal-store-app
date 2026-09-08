@@ -321,8 +321,7 @@ void main() {
     });
   });
 
-  group('SupabaseCatalogRepository — bounded catalog load (audit Task 11)',
-      () {
+  group('SupabaseCatalogRepository — bounded catalog load (audit Task 11)', () {
     test(
         'fetchProducts requests a deterministic bounded page: .order(name) then .limit(100)',
         () async {
