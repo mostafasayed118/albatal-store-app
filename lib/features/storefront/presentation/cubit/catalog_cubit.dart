@@ -303,7 +303,9 @@ final class CatalogCubit extends Cubit<CatalogState> {
   ///
   /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
   /// When the first sale carries an [FlashSale.endsAt], it drives
-  /// [startFlashSale] so the countdown ticks live. Failures are
+  /// [startFlashSale] so the countdown ticks live. When the sales list
+  /// empties on a refresh, the ticker is cancelled (Task 11 gating) so it
+  /// never ticks while [CatalogState.flashSales] is empty. Failures are
   /// swallowed so catalog loading never regresses to error due to a
   /// flash-sale fetch issue.
   ///
@@ -332,6 +334,12 @@ final class CatalogCubit extends Cubit<CatalogState> {
         if (sales.isNotEmpty) {
           final endsAt = sales.first.endsAt;
           if (endsAt != null) startFlashSale(end: endsAt);
+        } else {
+          // Ticker gating (audit Task 11): the sales list emptied on
+          // refresh — stop the countdown so the 1Hz ticker stays silent
+          // while flashSales is empty. The cubit owns ticker lifecycle
+          // (see flash_sale_ticker.dart).
+          _flashTicker.cancel();
         }
       },
       failure: (_) {

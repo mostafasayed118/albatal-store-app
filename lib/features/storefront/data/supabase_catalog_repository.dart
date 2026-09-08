@@ -86,8 +86,16 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       ..addEntries(products.map((p) => MapEntry(p.id, p)));
   }
 
+  /// Loads the active product catalog.
+  ///
+  /// The network query is bounded to [limit] rows (audit Task 11) so a
+  /// large table cannot stall the cold start — the app keeps the first
+  /// ~100 products (`int limit = 100` default keeps every existing
+  /// call-site compiling). `.order('name')` is kept so the bounded page
+  /// is deterministic, and the offline-restore path is untouched (it
+  /// reads the persistent cache, not the DB).
   @override
-  Future<Result<List<Product>>> fetchProducts() async {
+  Future<Result<List<Product>>> fetchProducts({int limit = 100}) async {
     // Return cached data if still fresh — avoids redundant network calls
     // while keeping the in-memory cache warm for synchronous findProductById.
     if (_cacheIsFresh) return Success(_cache!);
@@ -100,7 +108,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           .from('products')
           .select(_productSelect)
           .eq('is_active', true)
-          .order('name');
+          .order('name')
+          .limit(limit);
 
       final result = <Product>[];
       for (final row in rows) {

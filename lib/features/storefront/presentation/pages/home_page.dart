@@ -100,6 +100,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: BlocBuilder<CatalogCubit, CatalogState>(
+        buildWhen: homeBuildWhen,
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
@@ -327,6 +328,35 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+/// Whether [HomePage]'s outer catalog [BlocBuilder] should rebuild for the
+/// transition [previous] → [current] (audit Task 11).
+///
+/// Compares only the fields this page actually renders: [CatalogStatus],
+/// the product list (drives [CatalogState.visible] and
+/// [CatalogState.featuredProducts]), categories, [CatalogFilters], recent
+/// queries, and [CatalogState.flashSales] (banner presence plus
+/// [CatalogState.discountLabel]).
+///
+/// Deliberately excluded — [CatalogState.flashRemaining] and
+/// [CatalogState.flashEnd]: no widget on this page renders the countdown,
+/// so the ticker's 1Hz emits must not rebuild the whole CustomScrollView.
+/// [CatalogState.carouselIndex] is excluded too — StitchHeroCarousel owns
+/// its page position internally.
+///
+/// List fields are compared by identity: the cubit assigns fresh list
+/// instances only when the underlying data changes (copyWith passes the
+/// same instance through on countdown-only emits), which keeps the
+/// predicate O(1) instead of deep-scanning the catalog on every emit.
+bool homeBuildWhen(CatalogState previous, CatalogState current) {
+  if (previous.status != current.status) return true;
+  if (!identical(previous.allProducts, current.allProducts)) return true;
+  if (previous.categories != current.categories) return true;
+  if (previous.filters != current.filters) return true;
+  if (previous.recentQueries != current.recentQueries) return true;
+  if (previous.flashSales != current.flashSales) return true;
+  return false;
 }
 
 /// Time-of-day greeting copy (UX-044).
