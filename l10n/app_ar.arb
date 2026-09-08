@@ -181,6 +181,9 @@
   "cityRequired": "المدينة مطلوبة",
   "countryRequired": "البلد مطلوب",
   "save": "حفظ",
+  "setAsDefault": "تعيين كافتراضي",
+  "edit": "تعديل",
+  "delete": "حذف",
   "defaultLabel": "افتراضي",
   "orderSummary": "ملخص الطلب",
   "itemsInCart": "{count} عناصر في السلة",
@@ -401,5 +404,7 @@
   "paymentVerifyFailed": "فشل التحقق من الدفع. يرجى المحاولة مجددًا.",
   "paymentTimeout": "انتهت مهلة الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.",
   "orderRefRequired": "تعذر المتابعة: مرجع الطلب مفقود.",
+  "checkoutFailedRetry": "فشل إتمام الطلب. يرجى المحاولة مجددًا.",
+  "paymentMethodUnknown": "غير معروف",
   "adminAccessRequired": "يلزم الوصول كمسؤول"
 }

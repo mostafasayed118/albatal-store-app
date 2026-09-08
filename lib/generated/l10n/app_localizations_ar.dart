@@ -503,6 +503,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get save => 'حفظ';
 
   @override
+  String get setAsDefault => 'تعيين كافتراضي';
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
   String get defaultLabel => 'افتراضي';
 
   @override
@@ -1088,6 +1097,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderRefRequired => 'تعذر المتابعة: مرجع الطلب مفقود.';
+
+  @override
+  String get checkoutFailedRetry => 'فشل إتمام الطلب. يرجى المحاولة مجددًا.';
+
+  @override
+  String get paymentMethodUnknown => 'غير معروف';
 
   @override
   String get adminAccessRequired => 'يلزم الوصول كمسؤول';

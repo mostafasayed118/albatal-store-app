@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/entities/profile.dart';
+import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
@@ -18,7 +20,9 @@ class OrderStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final total = order.total.format();
-    final paymentMethod = order.paymentMethod ?? 'Unknown';
+    // Localized fallback — a missing payment method used to render the
+    // hardcoded English 'Unknown' on Arabic-visible paths.
+    final paymentMethod = order.paymentMethod ?? l.paymentMethodUnknown;
 
     return Card(
       child: Padding(
@@ -49,16 +53,19 @@ class OrderStatusCard extends StatelessWidget {
             const Divider(),
             _DetailRow(l.total, total),
             _DetailRow(l.paymentMethod, paymentMethod),
-            _DetailRow(l.placedAt, _formatPlacedAt(order.placedAt)),
+            _DetailRow(l.placedAt, _formatPlacedAt(order.placedAt, l)),
           ],
         ),
       ),
     );
   }
 
-  /// Renders the server timestamp for the detail card.
-  static String _formatPlacedAt(DateTime placedAt) =>
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(placedAt);
+  /// Renders the server timestamp for the detail card. Month/day names
+  /// follow the UI locale via intl (PR #41 pattern) — the old hardcoded
+  /// `'yyyy-MM-dd HH:mm:ss'` was numeric-only, but the shared formatter
+  /// keeps the admin card consistent with the customer order history.
+  static String _formatPlacedAt(DateTime placedAt, AppLocalizations l) =>
+      DateFormat('yyyy-MM-dd HH:mm:ss', l.localeName).format(placedAt);
 }
 
 /// Customer identity + membership tier for the order's profile, with the
@@ -76,7 +83,10 @@ class CustomerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final isPremium = order.customerTier == 'premium';
+    // Typed tier decode (shared with Profile.fromRow) instead of a raw
+    // `== 'premium'` string compare scattered through the UI.
+    final isPremium = membershipTierFromServerValue(order.customerTier) ==
+        MembershipTier.premium;
     final accent = isPremium
         ? AppColors.gold
         : Theme.of(context).colorScheme.onSurfaceVariant;

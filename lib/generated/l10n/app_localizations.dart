@@ -992,6 +992,24 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
+  /// No description provided for @setAsDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get setAsDefault;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
   /// No description provided for @defaultLabel.
   ///
   /// In en, this message translates to:
@@ -2113,6 +2131,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to continue: the order reference is missing.'**
   String get orderRefRequired;
+
+  /// No description provided for @checkoutFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout failed. Please try again.'**
+  String get checkoutFailedRetry;
+
+  /// No description provided for @paymentMethodUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get paymentMethodUnknown;
 
   /// No description provided for @adminAccessRequired.
   ///

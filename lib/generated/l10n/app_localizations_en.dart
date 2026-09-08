@@ -495,6 +495,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String get setAsDefault => 'Set as default';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
   String get defaultLabel => 'Default';
 
   @override
@@ -1088,6 +1097,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get orderRefRequired =>
       'Unable to continue: the order reference is missing.';
+
+  @override
+  String get checkoutFailedRetry => 'Checkout failed. Please try again.';
+
+  @override
+  String get paymentMethodUnknown => 'Unknown';
 
   @override
   String get adminAccessRequired => 'Admin access required';
