@@ -84,5 +84,10 @@ void main() {
         expect(value.isNotEmpty, isTrue);
       }
     });
+    test('offline banner copy', () {
+      expect(
+          AppLocalizationsEn().offlineBannerMessage, 'No internet connection');
+      expect(AppLocalizationsAr().offlineBannerMessage.isNotEmpty, isTrue);
+    });
   });
 }

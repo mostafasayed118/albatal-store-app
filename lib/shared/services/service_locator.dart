@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'storage_service.dart';
+import 'connectivity_gate.dart';
 import 'secure_store.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
@@ -108,6 +109,9 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<CatalogRepository>(() =>
         SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
     ..registerLazySingleton<StorageService>(() => StorageService())
+    // Two-layer offline signal (B1+B2): interface flap + reachability truth.
+    // App-scoped and stateless — widgets observe via their own cubits.
+    ..registerLazySingleton<ConnectivityGate>(() => ConnectivityGate())
     // Crash reporting: Use Sentry when DSN is configured, NoOp otherwise.
     ..registerLazySingleton<CrashReportingService>(() {
       if (EnvConfig.sentryDsn.isNotEmpty) {

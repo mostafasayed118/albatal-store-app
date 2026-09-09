@@ -118,6 +118,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorBody => 'Please check your connection and try again.';
 
   @override
+  String get offlineBannerMessage => 'No internet connection';
+
+  @override
   String get couldNotOpenLink => 'Couldn\'t open that. Please try again.';
 
   @override

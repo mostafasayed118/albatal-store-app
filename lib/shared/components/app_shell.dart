@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 
 import '../../features/storefront/presentation/cubit/cart_cubit.dart';
 import '../extensions/build_context_x.dart';
+import '../services/connectivity_gate.dart';
+import '../services/service_locator.dart';
+import 'offline_banner.dart';
 
 final class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -11,8 +15,20 @@ final class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final gate = getIt<ConnectivityGate>();
     return Scaffold(
-        body: child,
+        body: Column(children: [
+          StreamBuilder<bool>(
+              stream: gate.isOnline,
+              initialData: gate.current,
+              builder: (_, snapshot) => snapshot.data == false
+                  ? OfflineBanner(
+                      message: l.offlineBannerMessage,
+                      retryLabel: l.retry,
+                      onRetry: () => unawaited(gate.recheck()))
+                  : const SizedBox.shrink()),
+          Expanded(child: child),
+        ]),
         bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
             builder: (_, cart) => NavigationBar(
                     selectedIndex: _index(GoRouterState.of(context).uri.path),
