@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/entities/money.dart';
@@ -21,10 +23,21 @@ import '../domain/repositories/checkout_repository.dart';
 /// product/variant identifiers, quantities, the address snapshot,
 /// and an idempotency key. All money is computed server-side.
 class CheckoutService implements CheckoutRepository {
-  CheckoutService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  CheckoutService(
+      {SupabaseClient? client, Duration rpcTimeout = _defaultRpcTimeout})
+      : _client = client ?? Supabase.instance.client,
+        _rpcTimeout = rpcTimeout;
 
   final SupabaseClient _client;
+  final Duration _rpcTimeout;
+
+  /// Bound for the `create_checkout_order` RPC: a hung request must not
+  /// stall checkout forever (hotel-wifi / captive portals / dead
+  /// sockets). A timeout never fabricates an order — it surfaces a
+  /// recoverable failure and the caller retries with the same
+  /// idempotency key, so the server dedupes instead of double-charging
+  /// stock. Overridable for deterministic timeout tests.
+  static const _defaultRpcTimeout = Duration(seconds: 15);
 
   /// Create a pending order via the `create_checkout_order` RPC.
   ///
@@ -59,18 +72,51 @@ class CheckoutService implements CheckoutRepository {
               .toList(),
           if (idempotencyKey != null) 'p_idempotency_key': idempotencyKey,
         },
-      );
+      ).timeout(_rpcTimeout);
 
-      final data = response as Map<String, dynamic>;
+      // The RPC returns a single JSON object; anything else (list, null,
+      // scalar) is a contract violation. [safeMap] normalizes maps and
+      // degrades anything else to empty, so the strict checks below fail
+      // closed instead of throwing a TypeError into the cubit.
+      final data = safeMap(response);
+
+      // Identity + expiry are load-bearing: never default them to a
+      // placeholder that could flow into payment.
+      final orderId = data['order_id'];
+      if (orderId is! String || orderId.isEmpty) {
+        return const Failure(AppError('Checkout failed'));
+      }
+      final expiresRaw = data['expires_at'];
+      final expiresAt =
+          expiresRaw is String ? DateTime.tryParse(expiresRaw) : null;
+      if (expiresAt == null) {
+        return const Failure(AppError('Checkout failed'));
+      }
+
+      // Money is fail-closed too: a missing total must never degrade to
+      // `Money(0)` and proceed to payment. `num` (not `int`) accepts
+      // integer-valued doubles the serializer may produce.
+      final subtotal = data['subtotal'];
+      final shipping = data['shipping'];
+      final total = data['total'];
+      if (subtotal is! num || shipping is! num || total is! num) {
+        return const Failure(AppError('Checkout failed'));
+      }
+
       return Success(PendingOrder(
-        orderId: data['order_id'] as String,
-        subtotal: Money(data['subtotal'] as int),
-        shipping: Money(data['shipping'] as int),
-        total: Money(data['total'] as int),
-        expiresAt: DateTime.parse(data['expires_at'] as String),
+        orderId: orderId,
+        subtotal: Money(subtotal.toInt()),
+        shipping: Money(shipping.toInt()),
+        total: Money(total.toInt()),
+        expiresAt: expiresAt,
         status: safeString(data, 'status', fallback: 'pending'),
-        isIdempotentRetry: data['idempotent'] as bool? ?? false,
+        isIdempotentRetry: safeBool(data, 'idempotent'),
       ));
+    } on TimeoutException {
+      // Hung RPC: safe to retry with the same idempotency key — the
+      // server either never saw the request or never answered it.
+      // Never interpolate: the timeout has no safe detail to show.
+      return const Failure(AppError('Checkout failed'));
     } on PostgrestException catch (e) {
       final message = e.message;
       return Failure(
