@@ -8,7 +8,7 @@ import '../../../core/error/result.dart';
 import '../domain/address.dart';
 import '../domain/repositories/address_repository.dart';
 
-final class LocalAddressRepository implements AddressRepository {
+final class LocalAddressRepository implements ClearableAddressRepository {
   LocalAddressRepository(this._preferences);
   final SharedPreferences _preferences;
   static const _key = 'saved_addresses_v1';
@@ -40,7 +40,15 @@ final class LocalAddressRepository implements AddressRepository {
 
   /// Removes the whole on-device address book.
   ///
-  /// Deliberately on the local implementation only (not the domain
+  /// Implements [ClearableAddressRepository] (the domain wipe port) by
+  /// delegating to [clear], which stays as the local-only API so the
+  /// base address-book contract keeps no device-lifecycle methods.
+  @override
+  Future<Result<void>> clearAddresses() => clear();
+
+  /// Removes the whole on-device address book.
+  ///
+  /// Deliberately on the local implementation only (not the base domain
   /// contract): clearing is a device-lifecycle concern for sign-out and
   /// account deletion (audit S9), not part of the address-book API.
   Future<Result<void>> clear() => Result.guard<void>(

@@ -19,3 +19,16 @@ abstract interface class AddressRepository {
   /// the list (add/edit/remove/default flows) and the store is small.
   Future<Result<void>> save(List<Address> addresses);
 }
+
+/// Narrow wipe capability for the on-device address book.
+///
+/// Kept OFF the base [AddressRepository] contract on purpose: clearing
+/// is a device-lifecycle concern for sign-out and account deletion
+/// (audit S9), not part of the address-book API. Consumers that only
+/// need the wipe (e.g. [AuthCubit]) depend on the base abstraction and
+/// narrow to this interface with `is` — a repository without the
+/// capability is skipped safely instead of crashing.
+abstract interface class ClearableAddressRepository extends AddressRepository {
+  /// Removes the whole on-device address book.
+  Future<Result<void>> clearAddresses();
+}

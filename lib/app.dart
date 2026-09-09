@@ -5,12 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/entities/profile.dart';
-import 'features/addresses/data/local_address_repository.dart';
 import 'features/addresses/domain/repositories/address_repository.dart';
 import 'features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'features/admin/domain/repositories/admin_repository.dart';
 import 'features/admin/presentation/cubit/admin_cubit.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/auth/domain/repositories/order_snapshot_port.dart';
 import 'features/auth/domain/repositories/profile_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/onboarding/domain/repositories/onboarding_repository.dart';
@@ -22,7 +22,6 @@ import 'features/storefront/domain/repositories/cart_repository.dart';
 import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
 import 'features/storefront/domain/repositories/wishlist_repository.dart';
-import 'features/storefront/data/storefront_persistence.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'features/storefront/presentation/cubit/orders_cubit.dart';
@@ -65,8 +64,8 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _authCubit = AuthCubit(
       authRepository: getIt<AuthRepository>(),
       profileRepository: getIt<ProfileRepository>(),
-      localAddressRepository: getIt<LocalAddressRepository>(),
-      storefrontPersistence: getIt<LocalStorefrontPersistence>(),
+      addressRepository: getIt<AddressRepository>(),
+      orderSnapshots: getIt<OrderSnapshotPort>(),
     )..checkSession();
     _authRefreshNotifier = AuthRefreshNotifier(_authCubit.stream);
     _router = createAppRouter(

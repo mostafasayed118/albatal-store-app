@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/supabase_config.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../domain/usecases/place_checkout_order_usecase.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
@@ -51,7 +51,7 @@ class CheckoutPage extends StatelessWidget {
         if (s.status == CheckoutStatus.placing && s.hasPendingOrder) {
           // Empty (never fake) when the session lapsed — PaymentMethodPage
           // blocks with a sign-in error instead of charging a dead address.
-          final email = SupabaseConfig.currentUser?.email?.trim() ?? '';
+          final email = _resolveCustomerEmail();
           context.push('/payment-method', extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
@@ -199,16 +199,27 @@ class CheckoutPage extends StatelessWidget {
           value: _checkoutCubit, child: page);
     }
     return BlocProvider<CheckoutCubit>(
+      // The checkout use-case (idempotency store + TTL + retry policy)
+      // is composed at the root; widget tests pump this page without the
+      // locator and fall back to the cubit's in-memory default.
       create: (_) => CheckoutCubit(
         _checkoutRepository ?? getIt<CheckoutRepository>(),
-        // GetIt always carries SharedPreferences in the real app;
-        // widget tests pump this page without the locator.
-        prefs: getIt.isRegistered<SharedPreferences>()
-            ? getIt<SharedPreferences>()
+        placeOrder: getIt.isRegistered<PlaceCheckoutOrderUseCase>()
+            ? getIt<PlaceCheckoutOrderUseCase>()
             : null,
       ),
       child: page,
     );
+  }
+
+  /// Resolves the signed-in email via the [AuthSessionPort] without
+  /// importing Supabase into the presentation layer. Empty (never fake)
+  /// when the session lapsed or the port is unavailable (widget tests).
+  static String _resolveCustomerEmail() {
+    if (getIt.isRegistered<AuthSessionPort>()) {
+      return getIt<AuthSessionPort>().currentUserEmail()?.trim() ?? '';
+    }
+    return '';
   }
 }
 

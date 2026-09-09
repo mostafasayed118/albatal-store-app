@@ -8,7 +8,9 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/extensions/iterable_x.dart';
+import '../../auth/domain/repositories/order_snapshot_port.dart';
 import '../domain/repositories/cart_repository.dart';
+import '../domain/repositories/idempotency_store.dart';
 import 'product_mapper.dart';
 
 /// SharedPreferences-backed persistence for the storefront feature.
@@ -20,12 +22,20 @@ import 'product_mapper.dart';
 /// is the boundary). Previously this class swallowed all errors and
 /// returned empty data, which hid persistence failures from the
 /// presentation layer.
-final class LocalStorefrontPersistence {
+final class LocalStorefrontPersistence
+    implements IdempotencyStore, OrderSnapshotPort {
   LocalStorefrontPersistence(this._preferences);
 
   static const _cartKey = 'storefront_cart_lines_v1';
   static const _wishlistKey = 'storefront_wishlist_ids_v1';
   static const _ordersKey = 'storefront_orders_v1';
+
+  /// Persisted checkout idempotency key + write timestamp (see
+  /// [IdempotencyStore]). Survives app restarts (crash mid-checkout)
+  /// with a 24h TTL enforced by the checkout use-case so the server
+  /// can return the original pending order instead of a duplicate.
+  static const _idempotencyKeyStorage = 'checkout_idempotency_key';
+  static const _idempotencyTsStorage = 'checkout_idempotency_key_ts';
   final SharedPreferences _preferences;
 
   Future<List<CartItem>> readCart(ProductLookup productForId) async {
@@ -105,6 +115,32 @@ final class LocalStorefrontPersistence {
   /// on-device snapshot.
   Future<void> clearOrders() async {
     await _preferences.remove(_ordersKey);
+  }
+
+  @override
+  Future<void> clearOrderSnapshots() => clearOrders();
+
+  @override
+  String? loadKey() => _preferences.getString(_idempotencyKeyStorage);
+
+  @override
+  int? loadTimestampMs() => _preferences.getInt(_idempotencyTsStorage);
+
+  @override
+  Future<void> saveKey(String key, int timestampMs) async {
+    await _preferences.setString(_idempotencyKeyStorage, key);
+    await _preferences.setInt(_idempotencyTsStorage, timestampMs);
+  }
+
+  @override
+  Future<void> clear() async {
+    // Dispatch both removals synchronously (no await between them): the
+    // legacy cubit fired both `prefs.remove` calls back-to-back, and
+    // fire-and-forget callers (resetForNewAttempt / markSuccess) plus
+    // their tests observe key and timestamp gone immediately.
+    final clearKey = _preferences.remove(_idempotencyKeyStorage);
+    final clearTs = _preferences.remove(_idempotencyTsStorage);
+    await Future.wait([clearKey, clearTs]);
   }
 }
 
