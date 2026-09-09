@@ -7,9 +7,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
+import '../../../shared/services/logger.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 import '../domain/repositories/catalog_repository.dart';
+import '../presentation/catalog_constants.dart';
 import 'product_mapper.dart';
 
 /// Supabase-backed catalog repository.
@@ -223,13 +225,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   }
 
   @override
-  List<String> get defaultCategories => const [
-        'Silk',
-        'Cotton',
-        'Velvet',
-        'Linen',
-        'Wool',
-      ];
+  List<String> get defaultCategories => CatalogConstants.defaults;
 
   // ─── Persistent cache helpers ──────────────────────────────
 
@@ -239,8 +235,9 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     try {
       final encoded = products.map(ProductCodec.encode).toList();
       prefs.setString(_persistentCacheKey, jsonEncode(encoded));
-    } catch (_) {
+    } catch (e) {
       // Best-effort persistence — never crash the app over a cache write.
+      Log.w('Catalog persistent cache write failed: $e');
     }
   }
 
@@ -256,7 +253,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           .whereType<Map<String, dynamic>>()
           .map(ProductCodec.decode)
           .toList();
-    } catch (_) {
+    } catch (e) {
+      Log.w('Catalog persistent cache restore failed: $e');
       return null;
     }
   }

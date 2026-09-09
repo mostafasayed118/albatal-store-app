@@ -18,20 +18,16 @@ final class LocalSettingsRepository implements SettingsRepository {
   final SharedPreferences _preferences;
 
   @override
-  Future<Result<AppSettings>> read() async {
-    try {
-      final savedTheme = _preferences.getString(_themeModeKey);
-      final savedLanguage = _preferences.getString(_localeKey);
-      final themeMode = AppThemeMode.values
-              .where((mode) => mode.name == savedTheme)
-              .firstOrNull ??
-          AppThemeMode.system;
-      final locale = AppLocale.fromLanguageCode(savedLanguage);
-      return Success(AppSettings(themeMode: themeMode, locale: locale));
-    } catch (error) {
-      return Failure(AppError('Unable to read app preferences.', cause: error));
-    }
-  }
+  Future<Result<AppSettings>> read() => Result.guard(() async {
+        final savedTheme = _preferences.getString(_themeModeKey);
+        final savedLanguage = _preferences.getString(_localeKey);
+        final themeMode = AppThemeMode.values
+                .where((mode) => mode.name == savedTheme)
+                .firstOrNull ??
+            AppThemeMode.system;
+        final locale = AppLocale.fromLanguageCode(savedLanguage);
+        return AppSettings(themeMode: themeMode, locale: locale);
+      }, 'Unable to read app preferences.');
 
   @override
   Future<Result<void>> saveThemeMode(AppThemeMode themeMode) => _write(
@@ -44,13 +40,13 @@ final class LocalSettingsRepository implements SettingsRepository {
       );
 
   Future<Result<void>> _write(Future<bool> Function() operation) async {
-    try {
-      final didPersist = await operation();
-      return didPersist
+    final result =
+        await Result.guard(operation, 'Unable to save app preferences.');
+    return result.when(
+      success: (didPersist) => didPersist
           ? const Success(null)
-          : const Failure(AppError('Unable to save app preferences.'));
-    } catch (error) {
-      return Failure(AppError('Unable to save app preferences.', cause: error));
-    }
+          : const Failure(AppError('Unable to save app preferences.')),
+      failure: (error) => Failure(error),
+    );
   }
 }

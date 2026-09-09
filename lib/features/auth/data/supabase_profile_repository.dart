@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:al_batal_elite/core/entities/profile.dart';
-import 'package:al_batal_elite/core/error/app_error.dart';
-import 'package:al_batal_elite/core/error/result.dart';
+import '../../../core/entities/profile.dart';
+import '../../../core/error/app_error.dart';
+import '../../../core/error/result.dart';
 
 import '../domain/repositories/profile_repository.dart';
 

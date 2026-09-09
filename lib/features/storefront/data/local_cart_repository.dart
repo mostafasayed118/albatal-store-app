@@ -1,5 +1,4 @@
 import '../../../core/entities/product.dart';
-import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/cart_repository.dart';
 import 'storefront_persistence.dart';
@@ -15,21 +14,13 @@ final class LocalCartRepository implements CartRepository {
   final LocalStorefrontPersistence _persistence;
 
   @override
-  Future<Result<List<CartItem>>> readCart(ProductLookup productForId) async {
-    try {
-      return Success(await _persistence.readCart(productForId));
-    } catch (e) {
-      return Failure(AppError('Failed to load cart', cause: e));
-    }
-  }
+  Future<Result<List<CartItem>>> readCart(ProductLookup productForId) =>
+      Result.guard(
+          () => _persistence.readCart(productForId), 'Failed to load cart');
 
   @override
-  Future<Result<void>> writeCart(List<CartItem> items) async {
-    try {
-      await _persistence.writeCart(items);
-      return const Success(null);
-    } catch (e) {
-      return Failure(AppError('Failed to save cart', cause: e));
-    }
-  }
+  Future<Result<void>> writeCart(List<CartItem> items) => Result.guard<void>(
+        () => _persistence.writeCart(items),
+        'Failed to save cart',
+      );
 }

@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import 'package:al_batal_elite/core/entities/profile.dart';
-import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
-import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
-import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
-import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
-import 'package:al_batal_elite/shared/services/logger.dart';
+import '../../../../shared/services/logger.dart';
+import '../../../addresses/data/local_address_repository.dart';
+import '../../../../core/entities/profile.dart';
+import '../../../../core/error/result.dart';
+import '../../../storefront/data/storefront_persistence.dart';
+import '../../domain/entities/auth_outcome.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/profile_repository.dart';
 
 enum AuthStatus {
   initial,

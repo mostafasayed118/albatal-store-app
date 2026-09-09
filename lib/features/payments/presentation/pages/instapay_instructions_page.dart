@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/logger.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/payment.dart';
 import '../cubit/payment_cubit.dart';
@@ -85,7 +86,8 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
         _attachedExt = ext;
         _attachedFileName = xfile.name;
       });
-    } catch (_) {
+    } catch (e) {
+      Log.w('InstaPay screenshot pick failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l.instapayPickScreenshotError)),

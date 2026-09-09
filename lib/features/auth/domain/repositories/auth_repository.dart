@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:al_batal_elite/core/error/result.dart';
+import '../../../../core/error/result.dart';
 
 import '../entities/auth_outcome.dart';
 

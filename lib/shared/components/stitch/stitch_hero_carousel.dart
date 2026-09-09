@@ -325,9 +325,9 @@ class _GoldPill extends StatelessWidget {
           begin: Alignment.bottomLeft,
           end: Alignment.topRight,
           colors: [
-            Color(0xFFB8860B), // darkgoldenrod
-            Color(0xFFFFFAF0), // floralwhite
-            Color(0xFFB8860B),
+            AppColors.goldDeep, // darkgoldenrod
+            AppColors.goldPale, // floralwhite
+            AppColors.goldDeep,
           ],
         ),
         borderRadius: BorderRadius.circular(999),

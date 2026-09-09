@@ -11,6 +11,24 @@ sealed class Result<T> {
         Success<T>(:final value) => success(value),
         Failure<T>(:final error) => failure(error),
       };
+
+  /// Runs [action] and maps any throw into a [Failure] with the fixed,
+  /// user-safe [failureMessage] (the raw exception rides along as
+  /// [AppError.cause] for diagnostics, never for display).
+  ///
+  /// Local repositories delegate their try/catch boundaries here so the
+  /// fail-soft message text stays byte-identical in one place per call
+  /// site instead of hand-written in every method.
+  static Future<Result<T>> guard<T>(
+    Future<T> Function() action,
+    String failureMessage,
+  ) async {
+    try {
+      return Success(await action());
+    } catch (e) {
+      return Failure(AppError(failureMessage, cause: e));
+    }
+  }
 }
 
 final class Success<T> extends Result<T> {

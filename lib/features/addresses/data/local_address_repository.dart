@@ -13,28 +13,29 @@ final class LocalAddressRepository implements AddressRepository {
   final SharedPreferences _preferences;
   static const _key = 'saved_addresses_v1';
   @override
-  Future<Result<List<Address>>> read() async {
-    try {
-      final raw = _preferences.getString(_key);
-      if (raw == null) return const Success([]);
-      final values =
-          (jsonDecode(raw) as List).map((v) => v as Map<String, dynamic>);
-      return Success(values.map(AddressCodec.fromJson).toList());
-    } catch (error) {
-      return Failure(AppError('Unable to read saved addresses.', cause: error));
-    }
-  }
+  Future<Result<List<Address>>> read() => Result.guard(() async {
+        final raw = _preferences.getString(_key);
+        if (raw == null) return <Address>[];
+        final values =
+            (jsonDecode(raw) as List).map((v) => v as Map<String, dynamic>);
+        return values.map(AddressCodec.fromJson).toList();
+      }, 'Unable to read saved addresses.');
 
   @override
   Future<Result<void>> save(List<Address> addresses) async {
-    try {
-      final encoded = jsonEncode(addresses.map(AddressCodec.toJson).toList());
-      return await _preferences.setString(_key, encoded)
+    final result = await Result.guard(
+      () async {
+        final encoded = jsonEncode(addresses.map(AddressCodec.toJson).toList());
+        return _preferences.setString(_key, encoded);
+      },
+      'Unable to save saved addresses.',
+    );
+    return result.when(
+      success: (didPersist) => didPersist
           ? const Success(null)
-          : const Failure(AppError('Unable to save saved addresses.'));
-    } catch (error) {
-      return Failure(AppError('Unable to save saved addresses.', cause: error));
-    }
+          : const Failure(AppError('Unable to save saved addresses.')),
+      failure: (error) => Failure(error),
+    );
   }
 
   /// Removes the whole on-device address book.
@@ -42,13 +43,8 @@ final class LocalAddressRepository implements AddressRepository {
   /// Deliberately on the local implementation only (not the domain
   /// contract): clearing is a device-lifecycle concern for sign-out and
   /// account deletion (audit S9), not part of the address-book API.
-  Future<Result<void>> clear() async {
-    try {
-      await _preferences.remove(_key);
-      return const Success(null);
-    } catch (error) {
-      return Failure(
-          AppError('Unable to clear saved addresses.', cause: error));
-    }
-  }
+  Future<Result<void>> clear() => Result.guard<void>(
+        () => _preferences.remove(_key),
+        'Unable to clear saved addresses.',
+      );
 }
