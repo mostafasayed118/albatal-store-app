@@ -6,8 +6,8 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
-import '../cubit/catalog_cubit.dart';
-import '../widgets/color_swatches.dart';
+import '../catalog_constants.dart';
+import '../cubit/catalog_cubit.dart' hide CatalogConstants;
 import '../widgets/fabric_weave_painter.dart';
 
 /// Fabric-category browsing.
@@ -37,7 +37,7 @@ class CategoriesPage extends StatelessWidget {
               onAction: catalog.load,
             );
           }
-          final cats = visibleCategoryChips(state.categories);
+          final cats = CatalogConstants.chipsFor(state.categories);
           void openCategory(String cat) {
             catalog.select(cat);
             final router = GoRouter.maybeOf(context);
@@ -98,7 +98,7 @@ class _CategoryCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final l = context.l10n;
-    final tint = categoryAccent(category);
+    final tint = CatalogConstants.accentFor(category);
     return Card(
       color: scheme.surface,
       clipBehavior: Clip.antiAlias,
@@ -155,30 +155,9 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-/// A tactile mid-tone tint per fabric family, with a deterministic hue
-/// fallback for categories the catalog grows later.
-Color categoryAccent(String category) {
-  const accents = <String, Color>{
-    'Silk': Color(0xFFB08A2E),
-    'Cotton': Color(0xFF7D8B6A),
-    'Velvet': Color(0xFF6E1423),
-    'Linen': Color(0xFFA9824F),
-    'Wool': Color(0xFF4A5058),
-    'Chiffon': Color(0xFF8A7FA8),
-    'Satin': Color(0xFF8C5A6A),
-    'Denim': Color(0xFF2F5A8C),
-  };
-  return accents[category] ?? deterministicTint(category);
-}
+@Deprecated('Use CatalogConstants.accentFor instead.')
+Color categoryAccent(String category) => CatalogConstants.accentFor(category);
 
-/// Categories shown as chips/grid: drops a leading 'All' selector when the
-/// catalog provides one, keeps everything otherwise.
-///
-/// A blind `sublist(1)` dropped the Wool category on devices where the
-/// loaded list has no 'All' first entry (live-found 2026-09-04).
-List<String> visibleCategoryChips(List<String> categories) {
-  const defaults = <String>['Silk', 'Cotton', 'Velvet', 'Linen', 'Wool'];
-  if (categories.isEmpty) return defaults;
-  final chips = categories.first == 'All' ? categories.sublist(1) : categories;
-  return chips.isEmpty ? defaults : chips;
-}
+@Deprecated('Use CatalogConstants.chipsFor instead.')
+List<String> visibleCategoryChips(List<String> categories) =>
+    CatalogConstants.chipsFor(categories);

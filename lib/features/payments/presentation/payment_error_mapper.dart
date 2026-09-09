@@ -1,4 +1,4 @@
-import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import '../../../generated/l10n/app_localizations.dart';
 
 String paymentMessageForCode(
     AppLocalizations l10n, String? code, String fallback) {

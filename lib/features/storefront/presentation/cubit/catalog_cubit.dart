@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../core/error/result.dart';
 import '../../domain/entities/catalog_filters.dart';
 import '../../domain/entities/flash_sale.dart';
 import '../../domain/repositories/catalog_repository.dart';
@@ -176,6 +177,21 @@ final class CatalogState extends Equatable {
     return _m.visible!;
   }
 
+  /// O(1) product lookup over [allProducts] by id.
+  ///
+  /// Backed by a memoized id→product map (built once per state instance,
+  /// carried over by [copyWith] when the product list is unchanged), so
+  /// flash-sale hero resolution and similar id lookups never pay a linear
+  /// scan. Duplicate ids resolve last-wins, matching the repository index.
+  Product? findProductById(String id) {
+    var cached = _m.byId;
+    if (cached == null) {
+      cached = {for (final p in allProducts) p.id: p};
+      _m.byId = cached;
+    }
+    return cached[id];
+  }
+
   CatalogState copyWith({
     CatalogStatus? status,
     List<Product>? allProducts,
@@ -234,6 +250,7 @@ class _CatalogMemos {
   List<Product>? visible;
   CatalogFilters? visibleKey;
   List<Product>? featured;
+  Map<String, Product>? byId;
   final Map<String, List<Product>> byCategory = {};
 
   /// Carries memoized views to a state built over identical data (see
@@ -247,6 +264,7 @@ class _CatalogMemos {
     visible = other.visible;
     visibleKey = other.visibleKey;
     featured = other.featured;
+    byId = other.byId;
     byCategory.addAll(other.byCategory);
   }
 }
@@ -276,8 +294,16 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   Future<void> load() async {
     emit(state.copyWith(status: CatalogStatus.loading));
-    final productResult = await _repository.fetchProducts();
-    final categoryResult = await _repository.fetchCategories();
+    // Parallel fetch (audit residual P4): products and categories are
+    // independent queries, so they run concurrently via Future.wait.
+    // Error semantics unchanged: a products failure is terminal (error),
+    // while a categories failure degrades to the ['All'] fallback.
+    late final Result<List<Product>> productResult;
+    late final Result<List<String>> categoryResult;
+    await Future.wait([
+      _repository.fetchProducts().then((r) => productResult = r),
+      _repository.fetchCategories().then((r) => categoryResult = r),
+    ]);
     productResult.when(
       success: (products) {
         final cats = categoryResult.when(

@@ -1,5 +1,5 @@
-import 'package:al_batal_elite/core/entities/profile.dart';
-import 'package:al_batal_elite/core/error/result.dart';
+import '../../../../core/entities/profile.dart';
+import '../../../../core/error/result.dart';
 
 /// Abstraction for profile persistence.
 ///

@@ -17,6 +17,8 @@ import 'package:al_batal_elite/features/storefront/data/storefront_persistence.d
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/memory_secure_store.dart';
+
 /// Hand-rolled stub matching the project's existing test style
 /// (catalog_cubit_test.dart, settings_cubit_test.dart). The declared
 /// `mocktail` dev dep is intentionally unused to stay consistent.
@@ -429,11 +431,12 @@ void main() {
     });
 
     test('signOut clears cached addresses and orders', () async {
-      // Seed the on-device snapshot keys the same way production writes
-      // them, then assert a signed-out device holds no PII snapshots.
-      // Behavioral assertions on real stores over mock prefs — the
-      // wipe must actually delete the keys, not just "be called".
-      SharedPreferences.setMockInitialValues({
+      // Seed the encrypted on-device snapshot keys the same way
+      // production writes them, then assert a signed-out device holds
+      // no PII snapshots. Behavioral assertions on real stores over a
+      // memory secure backend — the wipe must actually delete the
+      // keys, not just "be called".
+      final secure = MemorySecureStore({
         'saved_addresses_v1': jsonEncode([
           {
             'id': 'a1',
@@ -446,9 +449,11 @@ void main() {
         ]),
         'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
+      SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final addressRepo = LocalAddressRepository(prefs);
-      final persistence = LocalStorefrontPersistence(prefs);
+      final addressRepo = LocalAddressRepository(prefs, secureStore: secure);
+      final persistence =
+          LocalStorefrontPersistence(prefs, secureStore: secure);
 
       final cubit = AuthCubit(
         authRepository: _StubAuthRepository(
@@ -466,6 +471,7 @@ void main() {
 
       await cubit.signOut();
 
+      expect(secure.values, isEmpty);
       expect(
           (await addressRepo.read() as Success<List<Address>>).value, isEmpty);
       expect(await persistence.readOrders(), isEmpty);
@@ -473,7 +479,7 @@ void main() {
     });
 
     test('deleteAccount success clears cached addresses and orders', () async {
-      SharedPreferences.setMockInitialValues({
+      final secure = MemorySecureStore({
         'saved_addresses_v1': jsonEncode([
           {
             'id': 'a1',
@@ -486,9 +492,11 @@ void main() {
         ]),
         'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
+      SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final addressRepo = LocalAddressRepository(prefs);
-      final persistence = LocalStorefrontPersistence(prefs);
+      final addressRepo = LocalAddressRepository(prefs, secureStore: secure);
+      final persistence =
+          LocalStorefrontPersistence(prefs, secureStore: secure);
 
       final cubit = AuthCubit(
         authRepository: _StubAuthRepository(
@@ -504,6 +512,7 @@ void main() {
       final result = await cubit.deleteAccount(email: 'a@b.com');
 
       expect(result, isA<Success<void>>());
+      expect(secure.values, isEmpty);
       expect(
           (await addressRepo.read() as Success<List<Address>>).value, isEmpty);
       expect(await persistence.readOrders(), isEmpty);
@@ -511,7 +520,7 @@ void main() {
     });
 
     test('deleteAccount failure keeps cached addresses and orders', () async {
-      SharedPreferences.setMockInitialValues({
+      final secure = MemorySecureStore({
         'saved_addresses_v1': jsonEncode([
           {
             'id': 'a1',
@@ -524,9 +533,11 @@ void main() {
         ]),
         'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
       });
+      SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final addressRepo = LocalAddressRepository(prefs);
-      final persistence = LocalStorefrontPersistence(prefs);
+      final addressRepo = LocalAddressRepository(prefs, secureStore: secure);
+      final persistence =
+          LocalStorefrontPersistence(prefs, secureStore: secure);
 
       final cubit = AuthCubit(
         authRepository: _StubAuthRepository(
@@ -545,6 +556,7 @@ void main() {
 
       // A refused deletion must not wipe the user's local data.
       expect(result, isA<Failure<void>>());
+      expect(secure.values, hasLength(2));
       expect((await addressRepo.read() as Success<List<Address>>).value,
           isNotEmpty);
       expect(await persistence.readOrders(), isNotEmpty);

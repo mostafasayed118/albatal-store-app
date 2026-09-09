@@ -5,6 +5,7 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -153,7 +154,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
           });
         },
       );
-    } catch (_) {
+    } catch (e) {
+      Log.w('Admin categories load failed: $e');
       if (mounted) setState(() => _loadingCategories = false);
     }
   }

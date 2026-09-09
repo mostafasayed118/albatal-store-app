@@ -47,17 +47,53 @@ class StorageService {
     return _client.storage.from('avatars').getPublicUrl('$userId/$fileName');
   }
 
-  Future<String?> uploadAvatar(File file, String userId) async {
-    final ext = file.path.split('.').last;
-    final storagePath = '$userId/avatar.$ext';
+  /// Extensions the `avatars` bucket accepts (client-side pre-check; the
+  /// server/RLS policy is the authoritative gate).
+  static const avatarAllowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
 
+  /// Client-side avatar size ceiling (5 MB). Oversized files are rejected
+  /// before any bytes leave the device.
+  static const avatarMaxBytes = 5 * 1024 * 1024;
+
+  static String _avatarContentType(String ext) => switch (ext) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+
+  Future<String?> uploadAvatar(File file, String userId) async {
+    // Validate BEFORE touching the network client so bad input fails
+    // closed with [ArgumentError] (unit-testable without Supabase init).
+    if (userId.isEmpty || userId.contains('..')) {
+      throw ArgumentError('invalid userId');
+    }
+    final userSegment = userId.split('/').last.split('\\').last;
+    if (userSegment.isEmpty || userSegment.contains('..')) {
+      throw ArgumentError('invalid userId');
+    }
+    final rawExt = file.path.split('.').last.toLowerCase();
+    if (file.path.split('.').length < 2 ||
+        !avatarAllowedExtensions.contains(rawExt)) {
+      throw ArgumentError('unsupported avatar format');
+    }
+    if (await file.length() > avatarMaxBytes) {
+      throw ArgumentError('avatar too large');
+    }
+    final storagePath = '$userSegment/avatar.$rawExt';
+
+    // Never upsert: an avatar row is immutable-once-written; a repeat
+    // upload surfaces as a storage error instead of silently replacing
+    // the previous file (same fail-closed posture as product images).
     await _client.storage.from('avatars').upload(
           storagePath,
           file,
-          fileOptions: const FileOptions(upsert: true),
+          fileOptions: FileOptions(
+            contentType: _avatarContentType(rawExt),
+            upsert: false,
+          ),
         );
 
-    return getAvatarUrl(userId, 'avatar.$ext');
+    return getAvatarUrl(userSegment, 'avatar.$rawExt');
   }
 
   Future<void> deleteProductImage(String storagePath) async {

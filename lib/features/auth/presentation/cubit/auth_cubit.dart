@@ -3,14 +3,16 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import 'package:al_batal_elite/core/entities/profile.dart';
-import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
-import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
-import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
-import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
-import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
-import 'package:al_batal_elite/shared/services/logger.dart';
+import '../../../../shared/services/logger.dart';
+import '../../../addresses/data/local_address_repository.dart';
+import '../../../addresses/domain/repositories/address_repository.dart';
+import '../../../../core/entities/profile.dart';
+import '../../../../core/error/result.dart';
+import '../../../storefront/data/storefront_persistence.dart';
+import '../../domain/entities/auth_outcome.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/order_snapshot_port.dart';
+import '../../domain/repositories/profile_repository.dart';
 
 enum AuthStatus {
   initial,
@@ -62,12 +64,16 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit({
     required AuthRepository authRepository,
     required ProfileRepository profileRepository,
+    AddressRepository? addressRepository,
+    OrderSnapshotPort? orderSnapshots,
+    // Legacy concrete params (kept for backward compatibility — prefer
+    // the abstractions above; both concretes implement the ports).
     LocalAddressRepository? localAddressRepository,
     LocalStorefrontPersistence? storefrontPersistence,
   })  : _authRepository = authRepository,
         _profileRepository = profileRepository,
-        _localAddressRepository = localAddressRepository,
-        _storefrontPersistence = storefrontPersistence,
+        _addressRepository = addressRepository ?? localAddressRepository,
+        _orderSnapshots = orderSnapshots ?? storefrontPersistence,
         super(const AuthState()) {
     _listenToAuthChanges();
   }
@@ -76,10 +82,15 @@ class AuthCubit extends Cubit<AuthState> {
   final ProfileRepository _profileRepository;
 
   /// Device-local stores wiped on sign-out / account deletion so no
-  /// address or order PII survives on the device (audit S9). Optional so
-  /// existing call sites stay unchanged; the wipe is a no-op when absent.
-  final LocalAddressRepository? _localAddressRepository;
-  final LocalStorefrontPersistence? _storefrontPersistence;
+  /// address or order PII survives on the device (audit S9). Depend on
+  /// the domain abstractions — concretes are wired only at the
+  /// composition root. Optional so existing call sites stay unchanged;
+  /// the wipe is a no-op when absent. The deprecated concrete params
+  /// keep backward compatibility: both concretes implement the ports
+  /// ([LocalAddressRepository] is a [ClearableAddressRepository],
+  /// [LocalStorefrontPersistence] is an [OrderSnapshotPort]).
+  final AddressRepository? _addressRepository;
+  final OrderSnapshotPort? _orderSnapshots;
   StreamSubscription<Authenticated?>? _authSubscription;
 
   /// Check for an existing session on app launch.
@@ -230,9 +241,9 @@ class AuthCubit extends Cubit<AuthState> {
   /// wishlist are deliberately untouched here: they are guest-accessible
   /// and the settings page already owns their wipe (same UX-043 lane).
   Future<void> _clearLocalSnapshots() async {
-    final addressClear = _localAddressRepository?.clear();
-    if (addressClear != null) {
-      final result = await addressClear;
+    final addressRepository = _addressRepository;
+    if (addressRepository is ClearableAddressRepository) {
+      final result = await addressRepository.clearAddresses();
       if (result case Failure(:final error)) {
         Log.w('Address snapshot clear failed: ${error.message}',
             category: LogCategory.auth);
@@ -242,7 +253,7 @@ class AuthCubit extends Cubit<AuthState> {
     // the orders snapshot must never abort signOut or deleteAccount —
     // those flows still need to reach emit(unauthenticated).
     try {
-      await _storefrontPersistence?.clearOrders();
+      await _orderSnapshots?.clearOrderSnapshots();
     } catch (_) {
       Log.w('clearOrders failed during snapshot wipe',
           category: LogCategory.auth);

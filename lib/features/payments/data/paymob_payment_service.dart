@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
+import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
@@ -49,15 +50,19 @@ class PaymobPaymentService implements PaymentService {
       );
 
       if (response.status != 200) {
-        final data = response.data;
-        return PaymentFailed(
-          message: data['message'] ?? 'Payment initiation failed',
+        // `response.data` is untyped (Map, List, or String depending on
+        // the transport): normalize through [safeMap] so a mistyped
+        // payload degrades to the fallback message instead of throwing.
+        final message = safeString(
+          safeMap(response.data),
+          'message',
+          fallback: 'Payment initiation failed',
         );
+        return PaymentFailed(message: message);
       }
 
-      final data = response.data;
-      final checkoutUrl = data['checkout_url'] as String?;
-      if (checkoutUrl == null || checkoutUrl.trim().isEmpty) {
+      final checkoutUrl = safeString(safeMap(response.data), 'checkout_url');
+      if (checkoutUrl.trim().isEmpty) {
         return const PaymentFailed(
           message: 'Payment provider returned an invalid checkout session.',
         );
@@ -103,16 +108,19 @@ class PaymobPaymentService implements PaymentService {
         },
       ).timeout(_rpcTimeout);
 
-      final data = response as Map<String, dynamic>;
-      final ok = data['ok'] as bool? ?? false;
-      final code = data['code'] as String? ?? 'unknown';
+      // The RPC returns a JSON object, but the decoded shape is untyped:
+      // normalize through [safeMap] so a mistyped payload degrades to
+      // `ok: false` + the generic message instead of throwing.
+      final data = safeMap(response);
+      final ok = safeBool(data, 'ok');
+      final code = safeString(data, 'code', fallback: 'unknown');
 
       // The server returns ok=true only for 'confirmed' and
       // 'already_confirmed'. Trust ok as the authoritative signal
       // and use the server-generated transaction_id.
       if (ok) {
         return PaymentSuccess(
-          transactionId: data['transaction_id'] as String? ?? '',
+          transactionId: safeString(data, 'transaction_id'),
           amount: Money.zero,
         );
       }
@@ -167,9 +175,9 @@ class PaymobPaymentService implements PaymentService {
         },
       ).timeout(_rpcTimeout);
 
-      final data = response as Map<String, dynamic>;
-      final ok = data['ok'] as bool? ?? false;
-      final code = data['code'] as String? ?? 'unknown';
+      final data = safeMap(response);
+      final ok = safeBool(data, 'ok');
+      final code = safeString(data, 'code', fallback: 'unknown');
 
       if (ok) {
         return PaymentSuccess(transactionId: '', amount: Money.zero);
@@ -219,21 +227,20 @@ class PaymobPaymentService implements PaymentService {
       ).timeout(_rpcTimeout);
 
       if (response.status != 200) {
-        final data = response.data;
-        return InstapayUnavailable(
-          message: data['message'] ?? 'InstaPay is unavailable right now.',
+        final message = safeString(
+          safeMap(response.data),
+          'message',
+          fallback: 'InstaPay is unavailable right now.',
         );
+        return InstapayUnavailable(message: message);
       }
 
-      final data = response.data;
-      final paymentId = data['payment_id'] as String? ?? '';
-      final address = data['instapay_address'] as String? ?? '';
-      final amountCents = data['amount'] as int?;
+      final data = safeMap(response.data);
+      final paymentId = safeString(data, 'payment_id');
+      final address = safeString(data, 'instapay_address');
+      final amountCents = safeInt(data, 'amount');
 
-      if (paymentId.isEmpty ||
-          address.isEmpty ||
-          amountCents == null ||
-          amountCents <= 0) {
+      if (paymentId.isEmpty || address.isEmpty || amountCents <= 0) {
         return const InstapayUnavailable(
           message: 'InstaPay returned an invalid transfer session.',
         );
@@ -307,8 +314,7 @@ class PaymobPaymentService implements PaymentService {
         return const PaymentSuccess(transactionId: '', amount: Money.zero);
       }
 
-      final data = response.data;
-      final message = switch (data['message'] as String?) {
+      final message = switch (safeString(safeMap(response.data), 'message')) {
         'Pending InstaPay payment not found' =>
           'No pending InstaPay payment found for this order.',
         'Proof too large' =>
@@ -343,10 +349,10 @@ class PaymobPaymentService implements PaymentService {
   /// (no `code` on the gateway-decline failure — codes unchanged).
   @visibleForTesting
   static PaymentResult? terminalResultForRow(Map<String, dynamic> row) {
-    final status = row['status'] as String?;
+    final status = safeString(row, 'status');
     if (status == 'success') {
       return PaymentSuccess(
-        transactionId: row['transaction_id'] as String? ?? '',
+        transactionId: safeString(row, 'transaction_id'),
         amount: Money.zero,
       );
     }

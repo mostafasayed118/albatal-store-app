@@ -2,13 +2,16 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../core/data/address_codec.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../payments/domain/entities/payment.dart';
+import '../../data/memory_idempotency_store.dart';
+import '../../data/storefront_persistence.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../domain/repositories/idempotency_store.dart';
+import '../../domain/usecases/place_checkout_order_usecase.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
 
@@ -92,17 +95,25 @@ final class CheckoutState extends Equatable {
 }
 
 final class CheckoutCubit extends Cubit<CheckoutState> {
-  CheckoutCubit(this._checkoutRepository, {SharedPreferences? prefs})
-      : _prefs = prefs,
+  CheckoutCubit(
+    CheckoutRepository checkoutRepository, {
+    // Legacy persistence param (kept for backward compatibility — prefer
+    // injecting [placeOrder], which already carries its store). Only used
+    // to build the default use-case below; never read directly.
+    SharedPreferences? prefs,
+    PlaceCheckoutOrderUseCase? placeOrder,
+    IdempotencyStore? idempotencyStore,
+  })  : _placeOrder = placeOrder ??
+            PlaceCheckoutOrderUseCase(
+              checkoutRepository: checkoutRepository,
+              idempotencyStore: idempotencyStore ??
+                  (prefs == null
+                      ? MemoryIdempotencyStore()
+                      : LocalStorefrontPersistence(prefs)),
+            ),
         super(const CheckoutState());
 
-  final CheckoutRepository _checkoutRepository;
-  final SharedPreferences? _prefs;
-  int _attemptCounter = 0;
-
-  static const _persistKeyStorage = 'checkout_idempotency_key';
-  static const _persistTsStorage = 'checkout_idempotency_key_ts';
-  static const _idempotencyTtl = Duration(hours: 24);
+  final PlaceCheckoutOrderUseCase _placeOrder;
 
   void payment(PaymentMethod value) => emit(state.copyWith(payment: value));
 
@@ -110,52 +121,6 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(selectedAddress: address));
 
   void clearAddress() => emit(state.copyWith(clearAddress: true));
-
-  /// Generate a stable idempotency key for this checkout attempt.
-  ///
-  /// The key is created once when the user first submits checkout and
-  /// retained in the cubit state. On retry (network failure, user
-  /// taps again) the same key is reused so the server returns the
-  /// original order instead of creating a duplicate. When the user
-  /// navigates away and starts a new checkout, a new cubit (and thus
-  /// a new key) is created.
-  // Persisted idempotency keys survive app restarts (crash mid-checkout)
-  // with a 24h TTL so the server can return the original pending order
-  // instead of creating a duplicate.
-  static int _instanceCounter = 0;
-  final int _instanceId = ++_instanceCounter;
-
-  String _generateIdempotencyKey() {
-    _attemptCounter++;
-    return 'cko-${DateTime.now().millisecondsSinceEpoch}-$_attemptCounter-$_instanceId';
-  }
-
-  /// Returns the persisted idempotency key if it exists and is younger
-  /// than the 24h TTL, otherwise null.
-  String? _restoredKey() {
-    final prefs = _prefs;
-    if (prefs == null) return null;
-    final key = prefs.getString(_persistKeyStorage);
-    final ts = prefs.getInt(_persistTsStorage);
-    if (key == null || ts == null) return null;
-    final age = DateTime.now().millisecondsSinceEpoch - ts;
-    if (age > _idempotencyTtl.inMilliseconds) return null;
-    return key;
-  }
-
-  void _persistIdempotencyKey(String key) {
-    final prefs = _prefs;
-    if (prefs == null) return;
-    prefs.setString(_persistKeyStorage, key);
-    prefs.setInt(_persistTsStorage, DateTime.now().millisecondsSinceEpoch);
-  }
-
-  void _clearPersistedKey() {
-    final prefs = _prefs;
-    if (prefs == null) return;
-    prefs.remove(_persistKeyStorage);
-    prefs.remove(_persistTsStorage);
-  }
 
   /// Create a pending order via the server-side checkout RPC.
   ///
@@ -165,71 +130,40 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// webhook promotes it to "paid" on success, or cancels + restores
   /// stock on failure.
   ///
-  /// The idempotency key is generated on the first call and reused
-  /// on subsequent calls (retries) for the same checkout attempt.
-  /// If a restored key resurrects a dead (non-pending) order, the key
-  /// is discarded and the attempt is retried once with a fresh key so
-  /// checkout never gets stuck on an unpayable order.
+  /// Thin orchestration only: the idempotency key is generated on the
+  /// first call and reused on subsequent calls (retries) for the same
+  /// checkout attempt — that policy lives in [_placeOrder].
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
   }) async {
-    await _createAttempt(cartItems: cartItems, allowFreshRetry: true);
-  }
-
-  Future<void> _createAttempt({
-    required List<CartItem> cartItems,
-    required bool allowFreshRetry,
-  }) async {
-    // Reuse the in-session key on retry, fall back to a persisted key
-    // restored after an app restart, or generate a fresh one.
-    final key =
-        state.idempotencyKey ?? _restoredKey() ?? _generateIdempotencyKey();
-    _persistIdempotencyKey(key);
-    emit(state.copyWith(
-      status: CheckoutStatus.creatingOrder,
-      idempotencyKey: key,
-    ));
-
+    emit(state.copyWith(status: CheckoutStatus.creatingOrder));
     try {
-      final result = await _checkoutRepository.placeOrder(
+      final outcome = await _placeOrder(
         items: cartItems,
         paymentMethod: state.payment,
-        addressSnapshot: state.selectedAddress != null
-            ? AddressCodec.toSnapshotJson(state.selectedAddress!)
-            : {},
-        idempotencyKey: key,
+        address: state.selectedAddress,
+        inSessionKey: state.idempotencyKey,
       );
-
-      final shouldRetryFresh = result.when(
-        success: (pending) {
-          if (pending.status != 'pending' && allowFreshRetry) {
-            _clearPersistedKey();
-            emit(CheckoutState(
-              payment: state.payment,
-              selectedAddress: state.selectedAddress,
-            ));
-            return true;
-          }
-          emit(state.copyWith(
-            status: CheckoutStatus.placing,
-            pendingOrderId: pending.orderId,
-            serverSubtotal: pending.subtotal,
-            serverShipping: pending.shipping,
-            serverTotal: pending.total,
-            expiresAt: pending.expiresAt,
-          ));
-          return false;
-        },
-        failure: (error) {
-          emit(state.copyWith(
-            status: CheckoutStatus.error,
-            errorMessage: error.message,
-          ));
-          return false;
-        },
-      );
-      if (shouldRetryFresh) {
-        await _createAttempt(cartItems: cartItems, allowFreshRetry: false);
+      // The outcome always carries the settled key — including on failure —
+      // so the state key survives failed attempts and retries reuse it
+      // (legacy behavior: the key was emitted before the repository call).
+      if (outcome.isSuccess) {
+        final placed = outcome.pending!;
+        emit(state.copyWith(
+          status: CheckoutStatus.placing,
+          idempotencyKey: outcome.idempotencyKey,
+          pendingOrderId: placed.orderId,
+          serverSubtotal: placed.subtotal,
+          serverShipping: placed.shipping,
+          serverTotal: placed.total,
+          expiresAt: placed.expiresAt,
+        ));
+      } else {
+        emit(state.copyWith(
+          status: CheckoutStatus.error,
+          errorMessage: outcome.error?.message ?? 'Failed to create order.',
+          idempotencyKey: outcome.idempotencyKey,
+        ));
       }
     } catch (e) {
       // Generic user message — raw exception stays in logs only.
@@ -245,7 +179,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// idempotency key (and its persisted copy) so the next
   /// [createPendingOrder] gets a new one.
   void resetForNewAttempt() {
-    _clearPersistedKey();
+    _placeOrder.clearPersistedKey();
     emit(CheckoutState(
       payment: state.payment,
       selectedAddress: state.selectedAddress,
@@ -253,7 +187,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   void markSuccess() {
-    _clearPersistedKey();
+    _placeOrder.clearPersistedKey();
     emit(state.copyWith(status: CheckoutStatus.success));
   }
 

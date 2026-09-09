@@ -49,4 +49,9 @@ abstract final class AppColors {
 
   // Legacy warm accent (DESIGN.md alias; prefer secondary/secondaryContainer).
   static const gold = Color(0xFFD97706);
+
+  // Mockup-exact gold-gradient stops (Stitch hero CTA pill, 135°):
+  // dark goldenrod edges with a floral-white center.
+  static const goldDeep = Color(0xFFB8860B);
+  static const goldPale = Color(0xFFFFFAF0);
 }

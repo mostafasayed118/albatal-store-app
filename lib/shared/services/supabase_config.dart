@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'env_config.dart';
+import 'supabase_secure_storage.dart';
 
 /// Centralized Supabase configuration and initialization.
 ///
@@ -42,7 +43,23 @@ class SupabaseConfig {
           '(or env.production.json) and fill in your Supabase anon key.');
     }
 
-    await Supabase.initialize(url: url, publishableKey: anonKey);
+    await Supabase.initialize(
+      url: url,
+      publishableKey: anonKey,
+      // Encrypted session persistence (residual-P1): the Supabase auth
+      // token + PKCE verifier live in the hardware-backed keystore via
+      // [SecureSessionStorage]/[SecureGotrueStorage] instead of
+      // cleartext SharedPreferences. The session key keeps Supabase's
+      // default `sb-<project>-auth-token` format so the key namespace
+      // is unchanged; a one-time migration in the adapter lifts
+      // pre-existing cleartext sessions into the secure store.
+      authOptions: FlutterAuthClientOptions(
+        localStorage: SecureSessionStorage(
+          persistSessionKey: _persistSessionKey(url),
+        ),
+        pkceAsyncStorage: SecureGotrueStorage(),
+      ),
+    );
 
     if (kDebugMode) {
       debugPrint('✅ Supabase initialized: $url');
@@ -54,4 +71,10 @@ class SupabaseConfig {
 
   /// Whether a user is currently authenticated.
   static bool get isAuthenticated => currentUser != null;
+
+  /// Mirrors Supabase's default session-key format
+  /// (`sb-<project-ref>-auth-token`) so the encrypted store reuses the
+  /// same key namespace the stock SharedPreferences backend used.
+  static String _persistSessionKey(String url) =>
+      'sb-${Uri.parse(url).host.split('.').first}-auth-token';
 }

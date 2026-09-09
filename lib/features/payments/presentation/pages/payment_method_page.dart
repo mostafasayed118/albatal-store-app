@@ -100,9 +100,13 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           // page so the single server-status watch keeps running.
           // The instructions page pops itself on terminal status and
           // PaymentMethodPage beneath it surfaces the messaging.
+          // orderId rides along additively for the page's rehydration
+          // path (route paths unchanged).
           _instructionsOpened = true;
-          context.push('/instapay-instructions',
-              extra: {'cubit': context.read<PaymentCubit>()});
+          context.push('/instapay-instructions', extra: {
+            'cubit': context.read<PaymentCubit>(),
+            'orderId': orderId,
+          });
         } else if (state.status == PaymentStatus.success &&
             !_successNavigated) {
           final successOrderId = state.orderId.trim();

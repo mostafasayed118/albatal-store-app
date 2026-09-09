@@ -12,25 +12,22 @@ final class LocalOnboardingRepository implements OnboardingRepository {
   final SharedPreferences _preferences;
 
   @override
-  Future<Result<bool>> hasCompleted() async {
-    try {
-      return Success(_preferences.getBool(_completedKey) ?? false);
-    } catch (error) {
-      return Failure(
-          AppError('Unable to read onboarding state.', cause: error));
-    }
-  }
+  Future<Result<bool>> hasCompleted() => Result.guard(
+        () async => _preferences.getBool(_completedKey) ?? false,
+        'Unable to read onboarding state.',
+      );
 
   @override
   Future<Result<void>> complete() async {
-    try {
-      final didPersist = await _preferences.setBool(_completedKey, true);
-      return didPersist
+    final result = await Result.guard(
+      () => _preferences.setBool(_completedKey, true),
+      'Unable to save onboarding state.',
+    );
+    return result.when(
+      success: (didPersist) => didPersist
           ? const Success(null)
-          : const Failure(AppError('Unable to save onboarding state.'));
-    } catch (error) {
-      return Failure(
-          AppError('Unable to save onboarding state.', cause: error));
-    }
+          : const Failure(AppError('Unable to save onboarding state.')),
+      failure: (error) => Failure(error),
+    );
   }
 }

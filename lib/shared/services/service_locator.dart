@@ -1,7 +1,8 @@
-﻿import 'package:get_it/get_it.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'storage_service.dart';
+import 'secure_store.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
@@ -10,7 +11,9 @@ import '../../features/addresses/domain/repositories/address_repository.dart';
 import '../../features/admin/data/supabase_admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/auth/data/supabase_auth_repository.dart';
+import '../../features/auth/data/supabase_auth_session_port.dart';
 import '../../features/auth/data/supabase_profile_repository.dart';
+import '../../features/auth/domain/repositories/order_snapshot_port.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/repositories/profile_repository.dart';
 import '../../features/onboarding/data/local_onboarding_repository.dart';
@@ -22,6 +25,9 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
+import '../../features/storefront/domain/repositories/auth_session_port.dart';
+import '../../features/storefront/domain/repositories/idempotency_store.dart';
+import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
@@ -47,14 +53,21 @@ Future<void> configureDependencies() async {
   final preferences = await SharedPreferences.getInstance();
   getIt
     ..registerSingleton<SharedPreferences>(preferences)
+    // Encrypted at-rest store for PII (address book, order snapshots)
+    // and the Supabase session — one shared instance so the auth wipe
+    // and the repos observe the same on-device store.
+    ..registerLazySingleton<SecureStore>(() => FlutterSecureStore())
     ..registerLazySingleton<SettingsRepository>(
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<OnboardingRepository>(
         () => LocalOnboardingRepository(getIt<SharedPreferences>()))
-    ..registerLazySingleton<LocalAddressRepository>(
-        () => LocalAddressRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<LocalAddressRepository>(() =>
+        LocalAddressRepository(getIt<SharedPreferences>(),
+            secureStore: getIt<SecureStore>()))
+    // One shared instance behind both registrations: the auth wipe and
+    // the address book must observe the same on-device store.
     ..registerLazySingleton<AddressRepository>(
-        () => LocalAddressRepository(getIt<SharedPreferences>()))
+        () => getIt<LocalAddressRepository>())
     ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())
     ..registerLazySingleton<AuthRepository>(() => SupabaseAuthRepository())
     ..registerLazySingleton<ProfileRepository>(
@@ -62,8 +75,25 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
     ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
     ..registerLazySingleton<SupportRepository>(() => LocalSupportRepository())
-    ..registerLazySingleton<LocalStorefrontPersistence>(
-        () => LocalStorefrontPersistence(getIt<SharedPreferences>()))
+    ..registerLazySingleton<LocalStorefrontPersistence>(() =>
+        LocalStorefrontPersistence(getIt<SharedPreferences>(),
+            secureStore: getIt<SecureStore>()))
+    // Auth snapshot wipe (audit S9) via the domain port — the cubit
+    // never sees the concrete persistence class.
+    ..registerLazySingleton<OrderSnapshotPort>(
+        () => getIt<LocalStorefrontPersistence>())
+    // Checkout idempotency persistence + orchestration: the cubit and
+    // page resolve these ports, never SharedPreferences directly.
+    ..registerLazySingleton<IdempotencyStore>(
+        () => getIt<LocalStorefrontPersistence>())
+    ..registerLazySingleton<PlaceCheckoutOrderUseCase>(
+        () => PlaceCheckoutOrderUseCase(
+              checkoutRepository: getIt<CheckoutRepository>(),
+              idempotencyStore: getIt<IdempotencyStore>(),
+            ))
+    // Customer email for the payment handoff without Supabase imports
+    // in the presentation layer.
+    ..registerLazySingleton<AuthSessionPort>(() => SupabaseAuthSessionPort())
     ..registerLazySingleton<CartRepository>(
         () => LocalCartRepository(getIt<LocalStorefrontPersistence>()))
     ..registerLazySingleton<WishlistRepository>(

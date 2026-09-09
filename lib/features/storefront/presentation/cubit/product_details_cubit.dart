@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/catalog_repository.dart';
 
 enum DetailsStatus { initial, loading, ready, notFound, error }
@@ -92,7 +93,8 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
                 .toList(),
             failure: (_) => <Product>[],
           );
-        } catch (_) {
+        } catch (e) {
+          Log.w('Product details related fetch failed: $e');
           related = <Product>[];
         }
         emit(_readyState(singleProduct, related));
@@ -120,7 +122,8 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
           errorMessage: 'Unable to load product details.',
         )),
       );
-    } catch (_) {
+    } catch (e) {
+      Log.w('Product details load failed: $e');
       emit(const DetailsState(
         status: DetailsStatus.error,
         errorMessage: 'Unable to load product details.',

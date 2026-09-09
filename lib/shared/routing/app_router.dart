@@ -135,9 +135,16 @@ final _routes = <RouteBase>[
   ),
   GoRoute(
     path: '/instapay-instructions',
-    builder: (_, s) => InstapayInstructionsPage(
-      cubit: (s.extra as Map<String, dynamic>?)?['cubit'] as PaymentCubit?,
-    ),
+    // No path change (router review gate): the shared PaymentCubit
+    // stays load-bearing via `extra['cubit']`; `extra['orderId']` is
+    // carried additively for the page's rehydration path.
+    builder: (_, s) {
+      final extra = s.extra as Map<String, dynamic>?;
+      return InstapayInstructionsPage(
+        cubit: extra?['cubit'] as PaymentCubit?,
+        orderId: extra?['orderId'] as String?,
+      );
+    },
   ),
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),

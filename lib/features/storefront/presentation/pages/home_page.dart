@@ -1,4 +1,4 @@
-import 'package:al_batal_elite/shared/theme/app_colors.dart';
+import '../../../../shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -121,9 +121,7 @@ class _HomePageState extends State<HomePage> {
           final flashSale = state.flashSales.firstOrNull;
           final flashProduct = flashSale == null
               ? (state.visible.isEmpty ? null : state.visible.first)
-              : state.allProducts
-                      .where((p) => p.id == flashSale.productId)
-                      .firstOrNull ??
+              : state.findProductById(flashSale.productId) ??
                   (state.visible.isEmpty ? null : state.visible.first);
           final discountLabel = state.discountLabel;
           // Wishlist drives heart icons — wrap CustomScrollView so SliverGrid stays lazy and reactive.
