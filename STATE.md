@@ -1,6 +1,10 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-08T20:00:00Z
+Last run: 2026-09-09T00:00:00Z
+
+## New — 2026-09-09 (residual audit batch on fix/audit-residual — 632/632, verifier APPROVE, awaiting push/PR gates)
+
+Owner enabled L2 sliced batch + approved flutter_secure_storage, scoped lib/ only with docs proposal for env/migrations. Fresh 6.8/10 audit residuals implemented as 5 commits on worktree .trees/audit-residual (base b20a124): P4 perf 8273575, P5 quality a10c2c5, P3 arch bfd20bf, P1 secure 444d6b8, hardening dd7678f. Evidence: flutter analyze clean, flutter test 632/632 (569→577→589→604→617→632), dart format canonical, git diff --check clean. Verifier APPROVE, no must-fix. Proposal: docs/superpowers/plans/2026-09-09-residual-env-supabase-proposal.md (HUMAN-REVIEW DO NOT APPLY). Awaiting owner: push fix/audit-residual + draft PR (no push per constraints).
 
 ## New — 2026-09-08 (comprehensive audit batch on fix/audit-batch — 569/569, awaiting owner push/PR gates)
 
@@ -92,6 +96,48 @@ Owner approved D1-D4 recommendations and the image_picker dependency in-thread.
   watch timer without hanging.
 
 ---
+
+## New — 2026-09-08 (L2 P5 quality batch ready, verifier APPROVED, unmerged)
+
+P5 done TDD on branch refactor/p5-quality (worktree
+albatal_store-worktrees/refactor-p5-quality, base bc4a9b4, commit
+6496253, 12 files): NEW core/utils/safe_parse (total safeString/safeInt/
+safeBool/safeMap) applied at already-lenient cast sites only (strict
+money/id/date casts kept); NEW admin DialogControllers mixin adopted by
+inventory/variant/order-detail (trio deleted, notifier disposals kept);
+order-detail cards moved verbatim to widgets/order_detail_cards.dart as
+public widgets — page 584→274 lines. Tests: NEW safe_parse (8) +
+dialog_controllers lifecycle (2). Evidence: RED (missing import), GREEN
+all, analyze + whole-repo format clean, full suite 547/547 (537 + 10
+new). Verifier APPROVE, no must-fix. payments/ split excluded per
+binding denylist (needs explicit override); router casts, lints,
+wishlist/home-scan untouched. Owner said push: branch pushed, draft
+PR #45 → master. Owner said merge: marked ready (drafts can't merge),
+CI fully green (Format & Analyze, Flutter Tests 2m55s, Edge, Secret
+Scan, Setup, Readiness, Android 6m37s) → squash-merged `daa83f7`,
+local master fast-forwarded, worktree + branch removed (local+remote).
+
+## New — 2026-09-08 (L2 P4 perf batch ready, verifier APPROVED, unmerged)
+
+P4 done TDD on branch perf/p4-batch (worktree albatal_store-worktrees/
+perf-p4-batch, base a64a391, commit 3225554, 7 files): legacy 1Hz
+saleSeconds timer + dead field removed (zero readers); _CatalogMemos.adopt
+in copyWith preserves derived views across countdown ticks; updateQuery
+300ms-debounced single emit with recents folded in (clearFilters cancels);
+OrdersState tabs memoized via _OrdersMemos (ctor non-const); cart
+ListView(children) → ListView.builder + footer; order history .limit(50).
+Tests: NEW catalog_perf_test (5) + orders-limit test; orders_cubit_test
+const→final. Evidence: RED 5/5, GREEN all, analyze + whole-repo format
+clean, full suite 537/537 (531 + 6 new). Verifier APPROVE; nit noted
+(onSubmitted shares the 300ms debounce — accepted, field is
+controller-driven). Wishlist/home-scan/router untouched. Owner said
+push: branch pushed, draft PR #44 → master. Owner said ready:
+PR #44 marked ready for review. Owner said merge: CI fully green
+(Format & Analyze, Flutter Tests 3m1s, Edge, Secret Scan, Setup,
+Readiness, Android 7m4s) → squash-merged `bc4a9b4`, local master
+fast-forwarded, worktree + branch removed (local+remote).
+
+
 
 ## New — 2026-09-06 (L2, human-approved)
 
