@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'storage_service.dart';
+import 'secure_store.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
@@ -52,12 +53,17 @@ Future<void> configureDependencies() async {
   final preferences = await SharedPreferences.getInstance();
   getIt
     ..registerSingleton<SharedPreferences>(preferences)
+    // Encrypted at-rest store for PII (address book, order snapshots)
+    // and the Supabase session — one shared instance so the auth wipe
+    // and the repos observe the same on-device store.
+    ..registerLazySingleton<SecureStore>(() => FlutterSecureStore())
     ..registerLazySingleton<SettingsRepository>(
         () => LocalSettingsRepository(getIt<SharedPreferences>()))
     ..registerLazySingleton<OnboardingRepository>(
         () => LocalOnboardingRepository(getIt<SharedPreferences>()))
-    ..registerLazySingleton<LocalAddressRepository>(
-        () => LocalAddressRepository(getIt<SharedPreferences>()))
+    ..registerLazySingleton<LocalAddressRepository>(() =>
+        LocalAddressRepository(getIt<SharedPreferences>(),
+            secureStore: getIt<SecureStore>()))
     // One shared instance behind both registrations: the auth wipe and
     // the address book must observe the same on-device store.
     ..registerLazySingleton<AddressRepository>(
@@ -69,8 +75,9 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
     ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
     ..registerLazySingleton<SupportRepository>(() => LocalSupportRepository())
-    ..registerLazySingleton<LocalStorefrontPersistence>(
-        () => LocalStorefrontPersistence(getIt<SharedPreferences>()))
+    ..registerLazySingleton<LocalStorefrontPersistence>(() =>
+        LocalStorefrontPersistence(getIt<SharedPreferences>(),
+            secureStore: getIt<SecureStore>()))
     // Auth snapshot wipe (audit S9) via the domain port — the cubit
     // never sees the concrete persistence class.
     ..registerLazySingleton<OrderSnapshotPort>(

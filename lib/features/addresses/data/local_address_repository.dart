@@ -3,18 +3,25 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/data/address_codec.dart';
-import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 import '../domain/address.dart';
 import '../domain/repositories/address_repository.dart';
 
+import '../../../../shared/services/secure_store.dart';
+
 final class LocalAddressRepository implements ClearableAddressRepository {
-  LocalAddressRepository(this._preferences);
+  LocalAddressRepository(this._preferences, {SecureStore? secureStore})
+      : _secureStore = secureStore ?? FlutterSecureStore();
   final SharedPreferences _preferences;
+
+  /// Encrypted at-rest store for the address book (PII). The prefs
+  /// handle is kept only for the one-time cleartext migration and for
+  /// wiping the legacy key — all live reads/writes go to [_secureStore].
+  final SecureStore _secureStore;
   static const _key = 'saved_addresses_v1';
   @override
   Future<Result<List<Address>>> read() => Result.guard(() async {
-        final raw = _preferences.getString(_key);
+        final raw = await _readWithMigration();
         if (raw == null) return <Address>[];
         final values =
             (jsonDecode(raw) as List).map((v) => v as Map<String, dynamic>);
@@ -26,14 +33,12 @@ final class LocalAddressRepository implements ClearableAddressRepository {
     final result = await Result.guard(
       () async {
         final encoded = jsonEncode(addresses.map(AddressCodec.toJson).toList());
-        return _preferences.setString(_key, encoded);
+        return _secureStore.write(_key, encoded);
       },
       'Unable to save saved addresses.',
     );
     return result.when(
-      success: (didPersist) => didPersist
-          ? const Success(null)
-          : const Failure(AppError('Unable to save saved addresses.')),
+      success: (_) => const Success(null),
       failure: (error) => Failure(error),
     );
   }
@@ -51,8 +56,26 @@ final class LocalAddressRepository implements ClearableAddressRepository {
   /// Deliberately on the local implementation only (not the base domain
   /// contract): clearing is a device-lifecycle concern for sign-out and
   /// account deletion (audit S9), not part of the address-book API.
+  /// Wipes the encrypted entry AND the legacy cleartext prefs key so a
+  /// pre-migration snapshot cannot survive the wipe.
   Future<Result<void>> clear() => Result.guard<void>(
-        () => _preferences.remove(_key),
+        () async {
+          await _secureStore.delete(_key);
+          await _preferences.remove(_key);
+        },
         'Unable to clear saved addresses.',
       );
+
+  /// Reads the encrypted address book, migrating a cleartext legacy
+  /// prefs entry once (write-to-secure then remove prefs) so upgrades
+  /// keep the user's addresses without leaving PII in cleartext.
+  Future<String?> _readWithMigration() async {
+    final secured = await _secureStore.read(_key);
+    if (secured != null) return secured;
+    final legacy = _preferences.getString(_key);
+    if (legacy == null) return null;
+    await _secureStore.write(_key, legacy);
+    await _preferences.remove(_key);
+    return legacy;
+  }
 }

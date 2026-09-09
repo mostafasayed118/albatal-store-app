@@ -8,6 +8,7 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/extensions/iterable_x.dart';
+import '../../../shared/services/secure_store.dart';
 import '../../auth/domain/repositories/order_snapshot_port.dart';
 import '../domain/repositories/cart_repository.dart';
 import '../domain/repositories/idempotency_store.dart';
@@ -15,16 +16,19 @@ import 'product_mapper.dart';
 
 /// SharedPreferences-backed persistence for the storefront feature.
 ///
-/// Used as a delegate by [LocalCartRepository], [LocalWishlistRepository],
-/// and [LocalOrdersRepository]. Returns raw values — error catching and
-/// [Result] wrapping happens at the repository boundary (per Clean
-/// Architecture §1: "mapping logic belongs in the data layer"; the repo
-/// is the boundary). Previously this class swallowed all errors and
-/// returned empty data, which hid persistence failures from the
-/// presentation layer.
+/// Cart lines, wishlist ids, and the checkout idempotency key stay in
+/// plain prefs (non-sensitive). The order-history snapshot carries full
+/// shipping addresses, so it lives in the encrypted [SecureStore]
+/// instead — see [_readOrdersWithMigration]. Returns raw values — error
+/// catching and [Result] wrapping happens at the repository boundary
+/// (per Clean Architecture §1: "mapping logic belongs in the data
+/// layer"; the repo is the boundary). Previously this class swallowed
+/// all errors and returned empty data, which hid persistence failures
+/// from the presentation layer.
 final class LocalStorefrontPersistence
     implements IdempotencyStore, OrderSnapshotPort {
-  LocalStorefrontPersistence(this._preferences);
+  LocalStorefrontPersistence(this._preferences, {SecureStore? secureStore})
+      : _secureStore = secureStore ?? FlutterSecureStore();
 
   static const _cartKey = 'storefront_cart_lines_v1';
   static const _wishlistKey = 'storefront_wishlist_ids_v1';
@@ -37,6 +41,12 @@ final class LocalStorefrontPersistence
   static const _idempotencyKeyStorage = 'checkout_idempotency_key';
   static const _idempotencyTsStorage = 'checkout_idempotency_key_ts';
   final SharedPreferences _preferences;
+
+  /// Encrypted at-rest store for the order-history snapshot (PII: full
+  /// shipping addresses + item history). The prefs handle still owns
+  /// cart/wishlist/idempotency plus the one-time legacy migration and
+  /// legacy-key wipe.
+  final SecureStore _secureStore;
 
   Future<List<CartItem>> readCart(ProductLookup productForId) async {
     final raw = _preferences.getString(_cartKey);
@@ -96,7 +106,7 @@ final class LocalStorefrontPersistence
   }
 
   Future<List<Order>> readOrders() async {
-    final raw = _preferences.getString(_ordersKey);
+    final raw = await _readOrdersWithMigration();
     if (raw == null) return const [];
     final decoded = jsonDecode(raw);
     if (decoded is! List) return const [];
@@ -111,10 +121,25 @@ final class LocalStorefrontPersistence
   ///
   /// Raw-value semantics like the other writers here; used by the auth
   /// wipe so a signed-out or deleted device keeps no order PII (audit
-  /// S9). Server orders are unaffected — this only clears the legacy
-  /// on-device snapshot.
+  /// S9). Wipes the encrypted entry AND the legacy cleartext prefs key
+  /// so a pre-migration snapshot cannot survive the wipe. Server orders
+  /// are unaffected — this only clears the legacy on-device snapshot.
   Future<void> clearOrders() async {
+    await _secureStore.delete(_ordersKey);
     await _preferences.remove(_ordersKey);
+  }
+
+  /// Reads the encrypted order snapshot, migrating a cleartext legacy
+  /// prefs entry once (write-to-secure then remove prefs) so upgrades
+  /// keep the snapshot without leaving PII in cleartext.
+  Future<String?> _readOrdersWithMigration() async {
+    final secured = await _secureStore.read(_ordersKey);
+    if (secured != null) return secured;
+    final legacy = _preferences.getString(_ordersKey);
+    if (legacy == null) return null;
+    await _secureStore.write(_ordersKey, legacy);
+    await _preferences.remove(_ordersKey);
+    return legacy;
   }
 
   @override
@@ -144,7 +169,7 @@ final class LocalStorefrontPersistence
   }
 }
 
-/// Serializes [Order] to/from JSON for the SharedPreferences persistence layer.
+/// Serializes [Order] to/from JSON for the encrypted snapshot store.
 ///
 /// Orders snapshot the full [Product] (not just an ID) so a historical order
 /// stays correct if the catalog later changes price or removes a product. This
