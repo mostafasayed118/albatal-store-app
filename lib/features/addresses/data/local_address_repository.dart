@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/data/address_codec.dart';
 import '../../../core/error/result.dart';
+import '../../../core/utils/safe_parse.dart';
+import '../../../shared/services/logger.dart';
 import '../domain/address.dart';
 import '../domain/repositories/address_repository.dart';
 
@@ -23,9 +25,36 @@ final class LocalAddressRepository implements ClearableAddressRepository {
   Future<Result<List<Address>>> read() => Result.guard(() async {
         final raw = await _readWithMigration();
         if (raw == null) return <Address>[];
-        final values =
-            (jsonDecode(raw) as List).map((v) => v as Map<String, dynamic>);
-        return values.map(AddressCodec.fromJson).toList();
+        // Fail-soft on tampered cache: a corrupt payload yields an empty
+        // book (logged) instead of a Failure — the address book is a
+        // local convenience copy, never authoritative. Transport/secure-
+        // store errors still propagate to [Result.guard] as failures.
+        late final Object? decoded;
+        try {
+          decoded = jsonDecode(raw);
+        } on FormatException catch (e) {
+          Log.w('Saved addresses cache is corrupt; ignoring: $e');
+          return <Address>[];
+        }
+        if (decoded is! List) {
+          Log.w('Saved addresses cache has unexpected shape; ignoring.');
+          return <Address>[];
+        }
+        final addresses = <Address>[];
+        for (final entry in decoded) {
+          final map = safeMap(entry);
+          if (map.isEmpty) {
+            Log.w('Skipping malformed address entry; ignoring.');
+            continue;
+          }
+          final address = AddressCodec.fromJson(map);
+          if (address.id.isEmpty) {
+            Log.w('Skipping address entry with missing id; ignoring.');
+            continue;
+          }
+          addresses.add(address);
+        }
+        return addresses;
       }, 'Unable to read saved addresses.');
 
   @override

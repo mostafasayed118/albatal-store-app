@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/paymob_url_guard.dart';
 
 /// Web view for Paymob hosted checkout.
@@ -97,6 +98,13 @@ class _CheckoutBodyState extends State<_CheckoutBody> {
     // safe placeholder so the payment flow remains testable.
     if (WebViewPlatform.instance == null) return;
     _controller = WebViewController()
+      // Paymob's hosted checkout is a JS-driven iframe flow (3-D Secure
+      // challenges, card-token inputs): it cannot render with JavaScript
+      // disabled, so `unrestricted` is intentional here. The trust
+      // boundary is NOT the JS mode — it is the URL allowlist
+      // ([PaymobUrlGuard], enforced on entry AND on every navigation
+      // below) plus the server-side webhook: success is observed only
+      // through `payments` row updates, never through WebView URLs.
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -113,6 +121,23 @@ class _CheckoutBodyState extends State<_CheckoutBody> {
             return PaymobUrlGuard.isSafeWebViewNavigationTarget(request.url)
                 ? NavigationDecision.navigate
                 : NavigationDecision.prevent;
+          },
+          // SPA-style same-document redirects never hit
+          // [onNavigationRequest]: re-check every URL change against the
+          // same guard. This callback cannot prevent the navigation, so
+          // an off-allowlist URL is logged (token-redacted) for
+          // diagnostics; the payment outcome still comes only from the
+          // server-side `payments` watch, never from this URL.
+          onUrlChange: (change) {
+            final url = change.url;
+            if (url == null) return;
+            if (!PaymobUrlGuard.isSafeWebViewNavigationTarget(url)) {
+              Log.w(
+                'Paymob WebView left the allowlist: '
+                '${PaymobUrlGuard.redact(url)}',
+                category: LogCategory.payment,
+              );
+            }
           },
         ),
       )

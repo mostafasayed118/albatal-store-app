@@ -23,20 +23,24 @@ abstract final class AddressCodec {
         'isDefault': address.isDefault,
       };
 
+  /// Decodes the 6-key address-book shape. Total: missing/mistyped
+  /// values degrade to `''`/`false` instead of throwing, so one tampered
+  /// cache entry can never crash the read — callers skip empty-`id`
+  /// results (see `LocalAddressRepository.read`).
   static Address fromJson(Map<String, dynamic> json) => Address(
-        id: json['id'] as String,
-        recipient: json['recipient'] as String,
-        line: json['line'] as String,
-        city: json['city'] as String,
-        country: json['country'] as String,
-        isDefault: json['isDefault'] as bool? ?? false,
+        id: safeString(json, 'id'),
+        recipient: safeString(json, 'recipient'),
+        line: safeString(json, 'line'),
+        city: safeString(json, 'city'),
+        country: safeString(json, 'country'),
+        isDefault: safeBool(json, 'isDefault'),
       );
 
   static Address fromOrderJson(Map<String, dynamic> json) => Address(
-        id: json['id'] as String,
-        recipient: json['recipient'] as String,
-        line: json['line'] as String,
-        city: json['city'] as String,
+        id: safeString(json, 'id'),
+        recipient: safeString(json, 'recipient'),
+        line: safeString(json, 'line'),
+        city: safeString(json, 'city'),
         country: safeString(json, 'country'),
         isDefault: safeBool(json, 'isDefault'),
       );

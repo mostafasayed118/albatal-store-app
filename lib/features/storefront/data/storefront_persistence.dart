@@ -8,6 +8,7 @@ import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/extensions/iterable_x.dart';
+import '../../../shared/services/logger.dart';
 import '../../../shared/services/secure_store.dart';
 import '../../auth/domain/repositories/order_snapshot_port.dart';
 import '../domain/repositories/cart_repository.dart';
@@ -51,8 +52,19 @@ final class LocalStorefrontPersistence
   Future<List<CartItem>> readCart(ProductLookup productForId) async {
     final raw = _preferences.getString(_cartKey);
     if (raw == null) return const [];
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) return const [];
+    // Fail-soft on tampered cache: corrupt JSON yields an empty cart
+    // (logged), never a throw into the cubit.
+    late final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException catch (e) {
+      Log.w('Cart cache is corrupt; ignoring: $e');
+      return const [];
+    }
+    if (decoded is! List) {
+      Log.w('Cart cache has unexpected shape; ignoring.');
+      return const [];
+    }
     return decoded
         .whereType<Map>()
         .map((line) {
@@ -80,8 +92,18 @@ final class LocalStorefrontPersistence
   Future<Set<String>> readWishlist() async {
     final raw = _preferences.getString(_wishlistKey);
     if (raw == null) return <String>{};
-    final decoded = jsonDecode(raw);
-    return decoded is List ? decoded.whereType<String>().toSet() : <String>{};
+    late final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException catch (e) {
+      Log.w('Wishlist cache is corrupt; ignoring: $e');
+      return <String>{};
+    }
+    if (decoded is! List) {
+      Log.w('Wishlist cache has unexpected shape; ignoring.');
+      return <String>{};
+    }
+    return decoded.whereType<String>().toSet();
   }
 
   Future<void> writeCart(List<CartItem> items) async {
@@ -108,8 +130,17 @@ final class LocalStorefrontPersistence
   Future<List<Order>> readOrders() async {
     final raw = await _readOrdersWithMigration();
     if (raw == null) return const [];
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) return const [];
+    late final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException catch (e) {
+      Log.w('Order snapshot cache is corrupt; ignoring: $e');
+      return const [];
+    }
+    if (decoded is! List) {
+      Log.w('Order snapshot cache has unexpected shape; ignoring.');
+      return const [];
+    }
     return decoded
         .whereType<Map>()
         .map(OrderCodec.decode)
@@ -194,39 +225,73 @@ extension OrderCodec on Order {
         if (o.address != null) 'address': AddressCodec.toJson(o.address!),
       };
 
+  /// Total: never throws — any malformed entry (mistyped fields,
+  /// unparseable timestamp, corrupt nested product) logs and yields
+  /// `null` so the caller skips that order instead of failing the read.
   static Order? decode(Map<Object?, Object?> raw) {
-    final itemsRaw = raw['items'];
-    if (itemsRaw is! List) return null;
-    final items = itemsRaw
-        .whereType<Map>()
-        .map((line) {
-          final pRaw = line['product'];
-          if (pRaw is! Map) return null;
-          final product = ProductCodec.decode(pRaw);
-          return CartItem(
-            product: product,
-            color: line['color'] as String,
-            length: line['length'] as String,
-            quantity: (line['quantity'] as num).toInt().clamp(1, 99).toInt(),
-          );
-        })
-        .whereType<CartItem>()
-        .toList();
-    final status =
-        OrderStatus.values.where((s) => s.name == raw['status']).firstOrNull;
-    if (status == null) return null;
-    return Order(
-      id: raw['id'] as String,
-      items: items,
-      subtotal: Money((raw['subtotal'] as num).toInt()),
-      shipping: Money((raw['shipping'] as num).toInt()),
-      total: Money((raw['total'] as num).toInt()),
-      status: status,
-      placedAt: DateTime.parse(raw['placedAt'] as String),
-      paymentMethod: raw['paymentMethod'] as String,
-      address: raw['address'] != null
-          ? AddressCodec.fromOrderJson(safeMap(raw['address']))
-          : null,
-    );
+    try {
+      final itemsRaw = raw['items'];
+      if (itemsRaw is! List) {
+        Log.w('Order snapshot entry has no items; skipping.');
+        return null;
+      }
+      final items = itemsRaw
+          .whereType<Map>()
+          .map((line) {
+            // Per-line total: a corrupt product snapshot skips that line,
+            // never the whole order (or the whole read).
+            try {
+              final pRaw = line['product'];
+              if (pRaw is! Map) return null;
+              final product = ProductCodec.decode(pRaw);
+              final color = safeString(line, 'color');
+              final length = safeString(line, 'length');
+              if (color.isEmpty || length.isEmpty) return null;
+              return CartItem(
+                product: product,
+                color: color,
+                length: length,
+                quantity: safeInt(line, 'quantity', fallback: 1).clamp(1, 99),
+              );
+            } catch (e) {
+              Log.w('Order snapshot line is corrupt; skipping: $e');
+              return null;
+            }
+          })
+          .whereType<CartItem>()
+          .toList();
+      final status =
+          OrderStatus.values.where((s) => s.name == raw['status']).firstOrNull;
+      if (status == null) {
+        Log.w('Order snapshot entry has unknown status; skipping.');
+        return null;
+      }
+      final id = safeString(raw, 'id');
+      if (id.isEmpty) {
+        Log.w('Order snapshot entry has missing id; skipping.');
+        return null;
+      }
+      final placedAt = DateTime.tryParse(safeString(raw, 'placedAt'));
+      if (placedAt == null) {
+        Log.w('Order snapshot entry has invalid placedAt; skipping.');
+        return null;
+      }
+      final addressMap = safeMap(raw['address']);
+      return Order(
+        id: id,
+        items: items,
+        subtotal: Money(safeInt(raw, 'subtotal')),
+        shipping: Money(safeInt(raw, 'shipping')),
+        total: Money(safeInt(raw, 'total')),
+        status: status,
+        placedAt: placedAt,
+        paymentMethod: safeString(raw, 'paymentMethod'),
+        address:
+            addressMap.isEmpty ? null : AddressCodec.fromOrderJson(addressMap),
+      );
+    } catch (e) {
+      Log.w('Order snapshot entry is corrupt; skipping: $e');
+      return null;
+    }
   }
 }
