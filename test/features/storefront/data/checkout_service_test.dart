@@ -32,6 +32,11 @@ class FakePostgrestFilterBuilder<T> extends Fake
   Future<T> whenComplete(FutureOr<void> Function() action) {
     return Future.value(_value).whenComplete(action);
   }
+
+  @override
+  Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) {
+    return Future.value(_value).timeout(timeLimit, onTimeout: onTimeout);
+  }
 }
 
 Map<String, dynamic> _rpcResponse() => {
