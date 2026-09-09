@@ -102,4 +102,96 @@ void main() {
     );
     expect(result, isA<Failure<String>>());
   });
+
+  test('getAllProducts bounds the query with limit(100) + range page',
+      () async {
+    final client = MockSupabaseClient();
+    final calls = <String>[];
+    final transform = _AdminProductsTransform(calls);
+    final filter = _AdminProductsFilter(calls, transform);
+    when(() => client.from('products'))
+        .thenAnswer((_) => _AdminProductsFrom(filter));
+    final repo = SupabaseAdminRepository(client: client);
+    final ok = await repo
+        .getAllProducts()
+        .then((r) => r.when(success: (_) => true, failure: (_) => false));
+    expect(ok, isTrue);
+    expect(calls, contains('order:name'));
+    expect(calls, contains('limit:100'));
+    expect(calls, contains('range:0-99'));
+  });
+}
+
+/// Query-chain fakes that record every transform the admin repository
+/// applies, so the bounded-load contract (`.order('name')` then
+/// `.limit(100)` + `.range(0, 99)`) can be asserted. Future delegation
+/// mirrors FakePostgrestFilterBuilder above.
+class _AdminProductsFrom extends Fake implements SupabaseQueryBuilder {
+  _AdminProductsFrom(this._filter);
+  final _AdminProductsFilter _filter;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> select([String columns = '*']) =>
+      _filter;
+}
+
+class _AdminProductsFilter extends Fake
+    implements PostgrestFilterBuilder<PostgrestList> {
+  _AdminProductsFilter(this.calls, this._transform);
+  final List<String> calls;
+  final _AdminProductsTransform _transform;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) {
+    calls.add('order:$column');
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) {
+    calls.add('limit:$count');
+    return _transform;
+  }
+
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(PostgrestList value) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(<Map<String, dynamic>>[])
+        .then(onValue, onError: onError);
+  }
+}
+
+class _AdminProductsTransform extends Fake
+    implements PostgrestTransformBuilder<PostgrestList> {
+  _AdminProductsTransform(this.calls);
+  final List<String> calls;
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> range(
+    int from,
+    int to, {
+    String? referencedTable,
+  }) {
+    calls.add('range:$from-$to');
+    return this;
+  }
+
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(PostgrestList value) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(<Map<String, dynamic>>[])
+        .then(onValue, onError: onError);
+  }
 }

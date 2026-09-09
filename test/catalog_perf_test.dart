@@ -1,4 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -183,6 +185,11 @@ void main() {
         isTrue,
       );
     });
+
+    test('ignores carouselIndex-only emits (no widget reads it)', () {
+      final base = homeState();
+      expect(homeBuildWhen(base, base.copyWith(carouselIndex: 1)), isFalse);
+    });
   });
 
   group('P11 — ticker gating', () {
@@ -241,6 +248,88 @@ void main() {
       expect(cubit.state.flashRemaining, remainingAtStop);
 
       await cubit.close();
+    });
+  });
+
+  group('P4 residual — parallel load (Future.wait)', () {
+    MockCatalogRepository repoWith({
+      Result<List<Product>>? productsResult,
+      Result<List<String>>? categoriesResult,
+    }) {
+      final repo = MockCatalogRepository();
+      when(() => repo.fetchProducts()).thenAnswer(
+          (_) async => productsResult ?? Success(List.of(products)));
+      when(() => repo.fetchCategories()).thenAnswer(
+          (_) async => categoriesResult ?? Success(List.of(categories)));
+      when(() => repo.getActiveFlashSales())
+          .thenAnswer((_) async => const Success<List<FlashSale>>([]));
+      return repo;
+    }
+
+    blocTest<CatalogCubit, CatalogState>(
+      'both fetches run and emit loading → ready with products+categories',
+      build: () => CatalogCubit(repoWith()),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        isA<CatalogState>()
+            .having((s) => s.status, 'status', CatalogStatus.ready)
+            .having((s) => s.allProducts.length, 'products', products.length)
+            .having((s) => s.categories, 'categories', categories),
+      ],
+    );
+
+    test('load invokes fetchProducts and fetchCategories exactly once',
+        () async {
+      final repo = repoWith();
+      final cubit = CatalogCubit(repo);
+      await cubit.load();
+      verify(() => repo.fetchProducts()).called(1);
+      verify(() => repo.fetchCategories()).called(1);
+      expect(cubit.state.status, CatalogStatus.ready);
+      await cubit.close();
+    });
+
+    blocTest<CatalogCubit, CatalogState>(
+      'categories failure degrades to [All] while products still land',
+      build: () => CatalogCubit(repoWith(
+        categoriesResult: Failure(AppError('categories down')),
+      )),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        isA<CatalogState>()
+            .having((s) => s.status, 'status', CatalogStatus.ready)
+            .having((s) => s.allProducts.length, 'products', products.length)
+            .having((s) => s.categories, 'categories', const ['All']),
+      ],
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'products failure is terminal (error) even when categories succeed',
+      build: () => CatalogCubit(repoWith(
+        productsResult: Failure(AppError('catalog down')),
+      )),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.error),
+      ],
+    );
+  });
+
+  group('P4 residual — state findProductById O(1)', () {
+    test('resolves by id, null on miss', () {
+      final state = _seeded();
+      expect(state.findProductById(products.first.id), same(products.first));
+      expect(state.findProductById('no-such-id'), isNull);
+    });
+
+    test('countdown-only emits carry the index over (no rescan)', () {
+      final state = _seeded();
+      final before = state.findProductById(products.first.id);
+      final ticked = state.copyWith(flashRemaining: const Duration(seconds: 5));
+      expect(ticked.findProductById(products.first.id), same(before));
     });
   });
 }

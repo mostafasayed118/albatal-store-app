@@ -49,9 +49,16 @@ class ProductImageResolver extends StatelessWidget {
     final url = asset;
     if (url == null || url.isEmpty) return _fallback();
     if (url.startsWith('http')) {
+      // Detail/hero path: full-bleed 1080px decode + disk cache with a
+      // short fade so high-res images pop in without a flash. The grid
+      // card path stays at its own 420px budget (stitch_product_grid_card).
       return CachedNetworkImage(
         imageUrl: url,
         fit: fit,
+        memCacheWidth: 1080,
+        memCacheHeight: 1080,
+        maxWidthDiskCache: 1080,
+        fadeInDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => _fallback(),
         errorWidget: (context, url, error) => _fallback(),
       );

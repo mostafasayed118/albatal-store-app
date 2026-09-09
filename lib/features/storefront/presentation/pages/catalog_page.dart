@@ -12,6 +12,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
+import 'home_page.dart' show homeBuildWhen;
 import '../widgets/active_filters_bar.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/catalog_sort_bar.dart';
@@ -55,12 +56,17 @@ class _CatalogPageState extends State<CatalogPage> {
       appBar: AppBar(
         title: Text(l.categories),
         actions: [
-          BlocBuilder<CatalogCubit, CatalogState>(
-            builder: (context, state) {
-              final activeCount = _activeFilterCount(state);
+          // Selector on the derived badge count only: the 1Hz
+          // flashRemaining ticks must not rebuild this button.
+          BlocSelector<CatalogCubit, CatalogState, int>(
+            selector: _activeFilterCount,
+            builder: (context, activeCount) {
               return IconButton(
                 tooltip: l.filters,
-                onPressed: () => _showFilterSheet(context, state),
+                onPressed: () => _showFilterSheet(
+                  context,
+                  context.read<CatalogCubit>().state,
+                ),
                 icon: activeCount > 0
                     ? Badge(
                         label: Text('$activeCount',
@@ -74,6 +80,9 @@ class _CatalogPageState extends State<CatalogPage> {
         ],
       ),
       body: BlocBuilder<CatalogCubit, CatalogState>(
+        // Shared with HomePage: flashRemaining/flashEnd countdown ticks
+        // must not rebuild the grid (audit residual P4).
+        buildWhen: homeBuildWhen,
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||

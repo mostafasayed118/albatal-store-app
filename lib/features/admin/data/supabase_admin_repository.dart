@@ -133,11 +133,16 @@ final class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<Result<List<AdminProduct>>> getAllProducts() async {
     try {
+      // Bounded like the storefront fetchProducts(limit: 100) so a large
+      // products table cannot stall the admin list: first 100 rows by
+      // name via an explicit range page (audit residual P4).
       final rows = await _client
           .from('products')
           .select('id, name, slug, description, composition, category_id, '
               'base_price, is_active, categories(name)')
-          .order('name');
+          .order('name')
+          .limit(100)
+          .range(0, 99);
       return Success(AdminMappers.productsFromRows(rows as List<dynamic>));
     } catch (e) {
       return Failure(AppError('Failed to load products', cause: e));
