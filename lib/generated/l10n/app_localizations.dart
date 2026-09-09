@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Please check your connection and try again.'**
   String get errorBody;
 
+  /// No description provided for @offlineBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get offlineBannerMessage;
+
   /// No description provided for @couldNotOpenLink.
   ///
   /// In en, this message translates to:

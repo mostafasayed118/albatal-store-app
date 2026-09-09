@@ -35,6 +35,7 @@
   "emptyBody": "When content is available, it will appear here.",
   "errorTitle": "Something went wrong",
   "errorBody": "Please check your connection and try again.",
+  "offlineBannerMessage": "No internet connection",
   "couldNotOpenLink": "Couldn't open that. Please try again.",
   "imageRemoved": "Image removed",
   "loading": "Loading",

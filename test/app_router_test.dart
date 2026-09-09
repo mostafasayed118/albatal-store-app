@@ -27,6 +27,7 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -234,11 +235,20 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<AdminRepository>()) {
       getIt.unregister<AdminRepository>();
     }
+    if (getIt.isRegistered<ConnectivityGate>()) {
+      getIt.unregister<ConnectivityGate>();
+    }
   });
   if (getIt.isRegistered<AdminRepository>()) {
     getIt.unregister<AdminRepository>();
   }
   getIt.registerSingleton<AdminRepository>(adminRepo);
+  // AppShell reads the offline gate from GetIt. Unstarted: current is true,
+  // so the banner stays hidden and routing assertions are unaffected.
+  if (getIt.isRegistered<ConnectivityGate>()) {
+    getIt.unregister<ConnectivityGate>();
+  }
+  getIt.registerSingleton<ConnectivityGate>(ConnectivityGate());
 
   await tester.pumpWidget(MultiBlocProvider(
     providers: [
