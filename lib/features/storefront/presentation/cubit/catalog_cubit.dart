@@ -34,6 +34,11 @@ enum CatalogStatus { initial, loading, ready, error }
 /// This is why the constructor is no longer `const`: memoization needs
 /// per-instance lazy fields, and Equatable equality still works because
 /// those fields are never compared.
+///
+/// COUNTDOWN CONTRACT (audit P3): the flash-sale countdown does NOT live
+/// in this state. 1Hz ticks never emit a [CatalogState] — they flow
+/// through [CatalogCubit.flashCountdown] — so countdown activity can
+/// never cause state inequality or rebuilds anywhere.
 final class CatalogState extends Equatable {
   CatalogState({
     this.status = CatalogStatus.initial,
@@ -42,8 +47,6 @@ final class CatalogState extends Equatable {
     this.filters = const CatalogFilters(),
     this.carouselIndex = 0,
     this.recentQueries = const [],
-    this.flashEnd,
-    this.flashRemaining,
     this.flashSales = const [],
   });
 
@@ -53,8 +56,6 @@ final class CatalogState extends Equatable {
   final CatalogFilters filters;
   final int carouselIndex;
   final List<String> recentQueries;
-  final DateTime? flashEnd;
-  final Duration? flashRemaining;
 
   /// Active flash sales (T1) — typed domain entities mapped from the
   /// repository; schema knowledge lives in `FlashSaleCodec.fromRow`.
@@ -199,8 +200,6 @@ final class CatalogState extends Equatable {
     CatalogFilters? filters,
     int? carouselIndex,
     List<String>? recentQueries,
-    DateTime? flashEnd,
-    Duration? flashRemaining,
     List<FlashSale>? flashSales,
   }) {
     final resolvedProducts = allProducts ?? this.allProducts;
@@ -212,13 +211,11 @@ final class CatalogState extends Equatable {
       filters: resolvedFilters,
       carouselIndex: carouselIndex ?? this.carouselIndex,
       recentQueries: recentQueries ?? this.recentQueries,
-      flashEnd: flashEnd ?? this.flashEnd,
-      flashRemaining: flashRemaining ?? this.flashRemaining,
       flashSales: flashSales ?? this.flashSales,
     );
-    // Countdown-only emits (flashRemaining ticks) leave the underlying
-    // data untouched — carry the memoized views over instead of paying
-    // O(n log n) recompute per tick.
+    // Data-only emits (e.g. a refreshed sales list over the same catalog)
+    // leave the underlying products/filters untouched — carry the
+    // memoized views over instead of paying O(n log n) recompute.
     if (identical(resolvedProducts, this.allProducts) &&
         resolvedFilters == this.filters) {
       next._m.adopt(_m);
@@ -234,8 +231,6 @@ final class CatalogState extends Equatable {
         filters,
         carouselIndex,
         recentQueries,
-        flashEnd,
-        flashRemaining,
         flashSales,
       ];
 }
@@ -286,6 +281,18 @@ final class CatalogCubit extends Cubit<CatalogState> {
   late final FlashSaleTicker _flashTicker;
   Timer? _queryDebounce;
 
+  /// Countdown ticks (audit P3): 1Hz remaining values on a dedicated
+  /// broadcast stream instead of `CatalogState` — ticks never change
+  /// state equality, so no catalog listener ever rebuilds from them.
+  final _flashCountdown = StreamController<Duration>.broadcast();
+
+  /// Live flash-sale countdown; single-value events once per second.
+  /// Emits the initial remaining value immediately on
+  /// [startFlashSale], clamps at `Duration.zero`, and closes with the
+  /// cubit. No widget reads the countdown today; the stream keeps the
+  /// capability available without polluting state equality.
+  Stream<Duration> get flashCountdown => _flashCountdown.stream;
+
   /// Widget-owned 60s flash poll moved here (audit Task 8a): the poll
   /// now survives page navigation and dies with the cubit, instead of
   /// being recreated/disposed on every HomePage mount. Interval and
@@ -329,10 +336,10 @@ final class CatalogCubit extends Cubit<CatalogState> {
   ///
   /// Calls [_repository.getActiveFlashSales] and emits [state.flashSales].
   /// When the first sale carries an [FlashSale.endsAt], it drives
-  /// [startFlashSale] so the countdown ticks live. When the sales list
-  /// empties on a refresh, the ticker is cancelled (Task 11 gating) so it
-  /// never ticks while [CatalogState.flashSales] is empty. Failures are
-  /// swallowed so catalog loading never regresses to error due to a
+  /// [startFlashSale] so ticks flow on [flashCountdown]. When the sales
+  /// list empties on a refresh, the ticker is cancelled (Task 11 gating)
+  /// so it never ticks while [CatalogState.flashSales] is empty. Failures
+  /// are swallowed so catalog loading never regresses to error due to a
   /// flash-sale fetch issue.
   ///
   /// Also owns the 60s refresh poll (moved from HomePage, audit Task 8a):
@@ -423,14 +430,10 @@ final class CatalogCubit extends Cubit<CatalogState> {
 
   /// Starts the flash-sale countdown ending at [end].
   ///
-  /// Delegates ticking to [FlashSaleTicker]; mirrors updates back into
-  /// state via `onTick: (remaining) => emit(state.copyWith(flashRemaining: remaining))`.
+  /// Delegates ticking to [FlashSaleTicker]; remaining values stream on
+  /// [flashCountdown] (audit P3 — state equality is never touched).
   void startFlashSale({required DateTime end}) {
-    emit(state.copyWith(flashEnd: end));
-    _flashTicker.start(
-      end,
-      onTick: (remaining) => emit(state.copyWith(flashRemaining: remaining)),
-    );
+    _flashTicker.start(end, onTick: _flashCountdown.add);
   }
 
   @override
@@ -438,6 +441,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
     _flashTicker.cancel();
     _queryDebounce?.cancel();
     _flashPollTimer?.cancel();
+    // ignore: discarded_futures
+    _flashCountdown.close();
     return super.close();
   }
 
