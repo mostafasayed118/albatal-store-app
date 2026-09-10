@@ -6,16 +6,15 @@ import 'dart:async';
 import '../../features/storefront/presentation/cubit/cart_cubit.dart';
 import '../extensions/build_context_x.dart';
 import '../services/connectivity_gate.dart';
-import '../services/service_locator.dart';
 import 'offline_banner.dart';
 
 final class AppShell extends StatelessWidget {
-  const AppShell({super.key, required this.child});
+  const AppShell({super.key, required this.child, required this.gate});
   final Widget child;
+  final ConnectivityGate gate;
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final gate = getIt<ConnectivityGate>();
     return Scaffold(
         body: Column(children: [
           StreamBuilder<bool>(

@@ -244,11 +244,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                             children: [
                               Text(l.payNow),
                               const SizedBox(width: 8),
-                              const Icon(
-                                  IconData(0xe5cc,
-                                      fontFamily: 'MaterialIcons',
-                                      matchTextDirection: true),
-                                  size: 18),
+                              Icon(context.directionalForwardIcon, size: 18),
                             ],
                           ),
                   );

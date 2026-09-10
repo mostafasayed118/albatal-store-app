@@ -144,6 +144,8 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         address: state.selectedAddress,
         inSessionKey: state.idempotencyKey,
       );
+      // page popped mid-flight: result has no home
+      if (isClosed) return;
       // The outcome always carries the settled key — including on failure —
       // so the state key survives failed attempts and retries reuse it
       // (legacy behavior: the key was emitted before the repository call).
@@ -166,6 +168,8 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         ));
       }
     } catch (e) {
+      // close-triggered StateError is not a failure
+      if (isClosed) return;
       // Generic user message — raw exception stays in logs only.
       Log.e('Create pending order failed', error: e);
       emit(state.copyWith(

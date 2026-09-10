@@ -39,7 +39,16 @@ final class Money extends Equatable {
   // ─── Arithmetic ────────────────────────────────────────────
 
   Money operator +(Money other) => Money(minorUnits + other.minorUnits);
+
+  /// Requires `other.minorUnits <= minorUnits` (asserts in debug via the
+  /// [Money] constructor; use [subtractClamped] for discount math that may
+  /// exceed the total).
   Money operator -(Money other) => Money(minorUnits - other.minorUnits);
+
+  /// Clamped subtraction for discount math; floors at zero instead of
+  /// asserting. Prefer this when the discount may exceed the total.
+  Money subtractClamped(Money other) => Money(
+      minorUnits - other.minorUnits < 0 ? 0 : minorUnits - other.minorUnits);
   Money operator *(int factor) => Money(minorUnits * factor);
 
   // ─── Comparison ────────────────────────────────────────────

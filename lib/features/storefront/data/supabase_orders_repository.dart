@@ -17,8 +17,9 @@ import '../domain/repositories/orders_repository.dart';
 /// (migration 017) restrict rows to the current user or admin, so this
 /// repository needs no additional authorization logic.
 ///
-/// Registered in [service_locator.dart] for non-debug builds. When debug,
-/// [LocalOrdersRepository] is used instead.
+/// Registered in service_locator.dart for ALL builds (a local fallback
+/// once made debug builds show an empty orders screen; see the locator
+/// comment).
 final class SupabaseOrdersRepository implements OrdersRepository {
   SupabaseOrdersRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -91,8 +92,7 @@ final class SupabaseOrdersRepository implements OrdersRepository {
       shipping: Money(safeInt(row, 'shipping')),
       total: Money(safeInt(row, 'total')),
       status: _parseStatus(safeString(row, 'status')),
-      placedAt:
-          safeDateTime(row, 'placed_at') ?? DateTime.now(),
+      placedAt: safeDateTime(row, 'placed_at') ?? DateTime.now(),
       paymentMethod: safeString(row, 'payment_method'),
       address: address,
     );
