@@ -47,7 +47,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const SupportPage(supportRepository: LocalSupportRepository()),
+        home: SupportPage(supportRepository: LocalSupportRepository()),
       ));
       await tester.pumpAndSettle();
 

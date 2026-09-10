@@ -28,6 +28,7 @@ import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
+import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -235,6 +236,9 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<AdminRepository>()) {
       getIt.unregister<AdminRepository>();
     }
+    if (getIt.isRegistered<StorageService>()) {
+      getIt.unregister<StorageService>();
+    }
     if (getIt.isRegistered<ConnectivityGate>()) {
       getIt.unregister<ConnectivityGate>();
     }
@@ -243,6 +247,13 @@ Future<_RouterHarness> _pumpRouter(
     getIt.unregister<AdminRepository>();
   }
   getIt.registerSingleton<AdminRepository>(adminRepo);
+  // The /admin/images/:id builder resolves storage at the composition
+  // root now (audit P1 constructor injection) — the route probe needs it
+  // registered even though its assertions never touch images.
+  if (getIt.isRegistered<StorageService>()) {
+    getIt.unregister<StorageService>();
+  }
+  getIt.registerSingleton<StorageService>(_ProbeStorageService());
   // AppShell reads the offline gate from GetIt. Unstarted: current is true,
   // so the banner stays hidden and routing assertions are unaffected.
   if (getIt.isRegistered<ConnectivityGate>()) {
@@ -346,10 +357,18 @@ final class _StubProfileRepository implements ProfileRepository {
       const Success(null);
 }
 
+/// Storage double for the composition-root resolution in the route
+/// probe: nothing here is asserted, it only has to construct.
+final class _ProbeStorageService extends StorageService {
+  _ProbeStorageService() : super(client: null);
+
+  @override
+  String getProductImageUrl(String storagePath) => 'https://probe/$storagePath';
+}
+
 /// Catalog double with no products: the routing tests only need the cubit to
 /// resolve without network access.
-final class _StubCatalogRepository implements CatalogRepository {
-  const _StubCatalogRepository();
+final class _StubCatalogRepository implements CatalogRepository {  const _StubCatalogRepository();
 
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);

@@ -165,11 +165,11 @@ void main() {
     // Perf: Home uses lazy SliverGrid (no shrinkWrap) via productGridDelegate.
     expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.byType(GridView), findsNothing);
-    // Live countdown from server flash sale (T1) — flashRemaining driven by loadFlashSales.
-    // Pump extra to flush async flash load.
+    // Live countdown from server flash sale (T1) — ticks flow on the
+    // cubit's flashCountdown stream (audit P3), never through state; the
+    // stream contract is pinned in catalog_flash_test.dart (fakeAsync).
+    // Here we only pin the flash surface stays mounted with the sale.
     await tester.pump(const Duration(milliseconds: 100));
-    final ctx = tester.element(find.byType(HomePage));
-    expect(ctx.read<CatalogCubit>().state.flashRemaining, isNotNull);
     // Flash sale card should be visible with server discount.
     expect(find.byType(StitchFlashSaleCard), findsOneWidget);
   });

@@ -44,6 +44,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _MockAdminRepository repo;
+  late _FakeStorageService storage;
 
   setUpAll(() {
     registerFallbackValue(<String>[]);
@@ -552,11 +553,15 @@ void main() {
 
   group('AdminImageManagerPage', () {
     setUp(() {
+      // Dependencies are constructor-injected now (audit P1); the getIt
+      // registrations stay only for other locator-resolving widgets in
+      // this harness.
       registerRepoInGetIt();
       if (getIt.isRegistered<StorageService>()) {
         getIt.unregister<StorageService>();
       }
-      getIt.registerSingleton<StorageService>(_FakeStorageService());
+      storage = _FakeStorageService();
+      getIt.registerSingleton<StorageService>(storage);
     });
 
     testWidgets('empty gallery renders an inviting upload state',
@@ -565,7 +570,8 @@ void main() {
           .thenAnswer((_) async => const Success([]));
 
       await tester.pumpWidget(harness(
-        const AdminImageManagerPage(productId: 'pid'),
+        AdminImageManagerPage(
+            productId: 'pid', repository: repo, storage: storage),
       ));
       await tester.pump();
       await tester.pump();
@@ -587,7 +593,8 @@ void main() {
           .thenAnswer((_) async => const Success(null));
 
       await tester.pumpWidget(harness(
-        const AdminImageManagerPage(productId: 'pid'),
+        AdminImageManagerPage(
+            productId: 'pid', repository: repo, storage: storage),
       ));
       await tester.pump();
       await tester.pump();

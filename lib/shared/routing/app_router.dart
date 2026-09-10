@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
@@ -24,6 +25,10 @@ import '../../features/payments/presentation/pages/instapay_instructions_page.da
 import '../../features/payments/presentation/pages/payment_method_page.dart';
 import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/storefront/domain/repositories/auth_session_port.dart';
+import '../../features/storefront/domain/repositories/catalog_repository.dart';
+import '../../features/storefront/domain/repositories/checkout_repository.dart';
+import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/storefront/presentation/pages/cart_page.dart';
 import '../../features/storefront/presentation/pages/catalog_page.dart';
 import '../../features/storefront/presentation/pages/categories_page.dart';
@@ -33,9 +38,12 @@ import '../../features/storefront/presentation/pages/home_page.dart';
 import '../../features/storefront/presentation/pages/order_success_page.dart';
 import '../../features/storefront/presentation/pages/orders_page.dart';
 import '../../features/storefront/presentation/pages/wishlist_page.dart';
+import '../../features/support/domain/repositories/support_repository.dart';
 import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
 import '../services/navigation_observer.dart';
+import '../services/service_locator.dart';
+import '../services/storage_service.dart';
 import 'auth_refresh_notifier.dart';
 
 GoRouter createAppRouter(
@@ -97,9 +105,21 @@ final _routes = <RouteBase>[
   ]),
   GoRoute(
     path: '/product/:id',
-    builder: (_, s) => DetailsPage(id: s.pathParameters['id']!),
+    builder: (_, s) => DetailsPage(
+      id: s.pathParameters['id']!,
+      catalogRepository: getIt<CatalogRepository>(),
+    ),
   ),
-  GoRoute(path: '/checkout', builder: (_, __) => const CheckoutPage()),
+  GoRoute(
+    path: '/checkout',
+    builder: (_, __) => CheckoutPage(
+      checkoutRepository: getIt<CheckoutRepository>(),
+      placeOrder: getIt.isRegistered<PlaceCheckoutOrderUseCase>()
+          ? getIt<PlaceCheckoutOrderUseCase>()
+          : null,
+      authSession: getIt<AuthSessionPort>(),
+    ),
+  ),
   GoRoute(
     path: '/order-success',
     builder: (_, state) => OrderSuccessPage(
@@ -158,38 +178,53 @@ final _routes = <RouteBase>[
   ),
   GoRoute(
     path: '/admin/catalog',
-    builder: (_, __) => const AdminCatalogPage(),
+    builder: (_, __) => AdminCatalogPage(repository: getIt<AdminRepository>()),
   ),
   // Catalog management destinations (migration-era hub tiles pointed at
   // these paths, but the routes themselves were never registered — every
   // tile dead-ended on "Page Not Found").
   GoRoute(
     path: '/admin/products',
-    builder: (_, __) => const AdminProductsPage(),
+    builder: (_, __) => AdminProductsPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
     path: '/admin/products/new',
-    builder: (_, __) => const AdminProductEditPage(),
+    builder: (_, __) =>
+        AdminProductEditPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
     path: '/admin/products/:id',
-    builder: (_, s) => AdminProductEditPage(productId: s.pathParameters['id']!),
+    builder: (_, s) => AdminProductEditPage(
+      productId: s.pathParameters['id']!,
+      repository: getIt<AdminRepository>(),
+    ),
   ),
   GoRoute(
     path: '/admin/categories',
-    builder: (_, __) => const AdminCategoriesPage(),
+    builder: (_, __) =>
+        AdminCategoriesPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
     path: '/admin/images/:id',
-    builder: (_, s) =>
-        AdminImageManagerPage(productId: s.pathParameters['id']!),
+    builder: (_, s) => AdminImageManagerPage(
+      productId: s.pathParameters['id']!,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies; pages receive them via constructors.
+      repository: getIt<AdminRepository>(),
+      storage: getIt<StorageService>(),
+    ),
   ),
   GoRoute(
     path: '/admin/variants/:id',
-    builder: (_, s) =>
-        AdminVariantEditorPage(productId: s.pathParameters['id']!),
+    builder: (_, s) => AdminVariantEditorPage(
+      productId: s.pathParameters['id']!,
+      repository: getIt<AdminRepository>(),
+    ),
   ),
-  GoRoute(path: '/support', builder: (_, __) => const SupportPage()),
+  GoRoute(
+    path: '/support',
+    builder: (_, __) => SupportPage(supportRepository: getIt<SupportRepository>()),
+  ),
   GoRoute(
     path: '/privacy-policy',
     builder: (_, __) => const PrivacyPolicyPage(),

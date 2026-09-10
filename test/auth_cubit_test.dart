@@ -461,8 +461,8 @@ void main() {
               const Success(Authenticated('user-1')),
         ),
         profileRepository: profileRepo,
-        localAddressRepository: addressRepo,
-        storefrontPersistence: persistence,
+        addressRepository: addressRepo,
+        orderSnapshots: persistence,
       );
       await cubit.signIn(email: 'a@b.com', password: 'pw');
       expect((await addressRepo.read() as Success<List<Address>>).value,
@@ -504,8 +504,8 @@ void main() {
               const Success(Authenticated('user-1')),
         ),
         profileRepository: profileRepo,
-        localAddressRepository: addressRepo,
-        storefrontPersistence: persistence,
+        addressRepository: addressRepo,
+        orderSnapshots: persistence,
       );
       await cubit.signIn(email: 'a@b.com', password: 'pw');
 
@@ -547,8 +547,8 @@ void main() {
               const Failure(AppError('The email does not match this account')),
         ),
         profileRepository: profileRepo,
-        localAddressRepository: addressRepo,
-        storefrontPersistence: persistence,
+        addressRepository: addressRepo,
+        orderSnapshots: persistence,
       );
       await cubit.signIn(email: 'a@b.com', password: 'pw');
 

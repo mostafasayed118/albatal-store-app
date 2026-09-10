@@ -107,7 +107,11 @@ class _SmokeHarnessState extends State<SmokeHarness> {
     // handle is held for the app session (deliberately never closed).
     try {
       _semanticsHandle = SemanticsBinding.instance.ensureSemantics();
-    } catch (_) {}
+    } catch (e) {
+      // Best-effort: uiautomator dumps stay optional, logcat is the
+      // source of truth for smoke runs.
+      debugPrint('[SMOKE] ensureSemantics failed: $e');
+    }
 
     final ctx = SmokeContext(
       router: widget.router,

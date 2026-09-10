@@ -57,13 +57,31 @@ void main() {
       expect(states, isEmpty);
     });
 
-    test('derived views survive countdown-only emits (memo adopt)', () {
+    test('countdown ticks never emit catalog states (memo stays warm)',
+        () async {
+      final cubit = CatalogCubit(MockCatalogRepository());
+      final states = <CatalogState>[];
+      final stateSub = cubit.stream.listen(states.add);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
+
+      cubit.startFlashSale(end: DateTime.now().add(const Duration(hours: 1)));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      // 1Hz ticks flow on the countdown stream only (audit P3).
+      expect(ticks, isNotEmpty);
+      expect(states, isEmpty);
+      // Memos carry over because state identity is untouched by ticks.
       final state = _seeded();
       final visible = state.visible;
+      expect(
+        identical(state.copyWith(carouselIndex: 1).visible, visible),
+        isTrue,
+      );
 
-      final ticked = state.copyWith(flashRemaining: const Duration(seconds: 5));
-
-      expect(identical(ticked.visible, visible), isTrue);
+      await cubit.close();
+      await stateSub.cancel();
+      await tickSub.cancel();
     });
   });
 
@@ -139,19 +157,6 @@ void main() {
           categories: categories,
         );
 
-    test('ignores 1Hz countdown-only emits (flashRemaining / flashEnd)', () {
-      final base = homeState();
-      expect(
-        homeBuildWhen(
-            base, base.copyWith(flashRemaining: const Duration(seconds: 3))),
-        isFalse,
-      );
-      expect(
-        homeBuildWhen(base, base.copyWith(flashEnd: DateTime(2027))),
-        isFalse,
-      );
-    });
-
     test('rebuilds on every field the page actually renders', () {
       final base = homeState();
       expect(
@@ -200,19 +205,21 @@ void main() {
           .thenAnswer((_) async => const Success<List<FlashSale>>([]));
       final cubit = CatalogCubit(repo);
       final states = <CatalogState>[];
-      final sub = cubit.stream.listen(states.add);
+      final stateSub = cubit.stream.listen(states.add);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
 
       await cubit.loadFlashSales();
-      expect(cubit.state.flashRemaining, isNull);
 
-      // Past one tick interval: no countdown state may ever appear.
+      // Past one tick interval: no countdown may ever fire.
       await Future<void>.delayed(const Duration(milliseconds: 1200));
 
-      expect(cubit.state.flashRemaining, isNull);
-      expect(states.where((s) => s.flashRemaining != null), isEmpty);
+      expect(ticks, isEmpty);
+      expect(states, isEmpty);
 
       await cubit.close();
-      await sub.cancel();
+      await stateSub.cancel();
+      await tickSub.cancel();
     });
 
     test('ticker stops ticking when the sales list empties on refresh',
@@ -231,23 +238,27 @@ void main() {
             : const Success<List<FlashSale>>([]);
       });
       final cubit = CatalogCubit(repo);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
 
       await cubit.loadFlashSales();
-      final remainingAtStart = cubit.state.flashRemaining;
-      expect(remainingAtStart, isNotNull);
+      // Stream delivery is a microtask after startFlashSale's synchronous
+      // initial tick — give the event loop a turn before asserting.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(ticks, isNotEmpty);
 
       // Refresh empties the sales list — the countdown must be stopped.
       await cubit.loadFlashSales();
       expect(cubit.state.flashSales, isEmpty);
-      final remainingAtStop = cubit.state.flashRemaining;
-      expect(remainingAtStop, isNotNull);
+      final tickCountAtStop = ticks.length;
 
       // Past two tick intervals: the gated ticker must be silent.
       await Future<void>.delayed(const Duration(milliseconds: 2100));
 
-      expect(cubit.state.flashRemaining, remainingAtStop);
+      expect(ticks.length, tickCountAtStop);
 
       await cubit.close();
+      await tickSub.cancel();
     });
   });
 
@@ -325,10 +336,10 @@ void main() {
       expect(state.findProductById('no-such-id'), isNull);
     });
 
-    test('countdown-only emits carry the index over (no rescan)', () {
+    test('data-preserving emits carry the index over (no rescan)', () {
       final state = _seeded();
       final before = state.findProductById(products.first.id);
-      final ticked = state.copyWith(flashRemaining: const Duration(seconds: 5));
+      final ticked = state.copyWith(carouselIndex: 1);
       expect(ticked.findProductById(products.first.id), same(before));
     });
   });

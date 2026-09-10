@@ -4,10 +4,9 @@ import 'dart:async';
 ///
 /// Owns the periodic [Timer] that ticks once per second and computes the
 /// remaining duration from an injectable clock. The owner (Cubit) stays
-/// responsible for `flashEnd` / `flashRemaining` state but receives updates
-/// via [onTick] / [onDone] callbacks:
-///
-///   `onTick: (remaining) => emit(state.copyWith(flashRemaining: remaining))`
+/// responsible for delivery — countdown values flow through [onTick] /
+/// [onDone] callbacks (catalog: `onTick: _flashCountdown.add` on the
+/// dedicated [CatalogCubit.flashCountdown] stream, audit P3).
 final class FlashSaleTicker {
   FlashSaleTicker({DateTime Function()? now}) : _now = now ?? DateTime.now;
 

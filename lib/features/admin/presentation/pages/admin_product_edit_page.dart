@@ -6,21 +6,25 @@ import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/services/logger.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Admin product create/edit — calls [AdminRepository.adminUpsertProduct].
+///
+/// The repository is constructor-injected (audit P1); the router resolves
+/// it at the composition root.
 class AdminProductEditPage extends StatefulWidget {
   const AdminProductEditPage({
     super.key,
     this.productId,
     this.initialData,
+    required this.repository,
   });
 
   /// When non-null, editing existing product; null means create.
   final String? productId;
   final Map<String, dynamic>? initialData;
+  final AdminRepository repository;
 
   @override
   State<AdminProductEditPage> createState() => _AdminProductEditPageState();
@@ -72,7 +76,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
 
   Future<void> _loadProduct() async {
     setState(() => _loadingProduct = true);
-    final result = await getIt<AdminRepository>().getAllProducts();
+    final result = await widget.repository.getAllProducts();
     if (!mounted) return;
     AdminProduct? product;
     if (result case Success(:final value)) {
@@ -111,7 +115,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     try {
       // The admin list (ids + names, including inactive) — not the
       // storefront name list, which cannot satisfy the RPC's UUID contract.
-      final result = await getIt<AdminRepository>().getAllCategories();
+      final result = await widget.repository.getAllCategories();
       if (!mounted) return;
       result.when(
         success: (categories) {
@@ -188,7 +192,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       return;
     }
     setState(() => _submitting = true);
-    final result = await getIt<AdminRepository>().adminUpsertProduct(
+    final result = await widget.repository.adminUpsertProduct(
       id: widget.productId,
       name: _nameCtrl.text.trim(),
       slug: _slugCtrl.text.trim(),

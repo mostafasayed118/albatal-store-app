@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/entities/address.dart';
+import '../../../core/data/address_codec.dart';
 import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
@@ -57,7 +57,9 @@ final class SupabaseOrdersRepository implements OrdersRepository {
       if (kDebugMode) {
         Log.w('readOrders: got ${rows.length} rows');
       }
-      final orders = rows.map(_mapOrder).toList();
+      // Total decode (audit P2): rows without a usable id are skipped so
+      // one malformed row can never fail the whole history load.
+      final orders = rows.map(_mapOrder).whereType<Order>().toList();
       return Success(orders);
     } on Exception catch (e) {
       Log.e('readOrders failed', error: e);
@@ -65,24 +67,33 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     }
   }
 
-  static Order _mapOrder(Map<String, dynamic> row) {
+  /// Total decode of an order row: every field degrades to the entity
+  /// default instead of throwing; rows without a usable `id` return null
+  /// so callers skip them (audit P2).
+  static Order? _mapOrder(Map<String, dynamic> row) {
+    final id = safeString(row, 'id');
+    if (id.isEmpty) return null;
+
     final itemsRaw = row['order_items'];
     final items = itemsRaw is List
         ? itemsRaw.whereType<Map<String, dynamic>>().map(_mapOrderItem).toList()
         : <CartItem>[];
 
-    final addressRaw = row['address_snapshot'] as Map<String, dynamic>?;
-    final address = addressRaw != null ? _mapAddress(addressRaw) : null;
+    final addressRaw = row['address_snapshot'];
+    final address = addressRaw is Map
+        ? AddressCodec.fromOrderJson(safeMap(addressRaw))
+        : null;
 
     return Order(
-      id: row['id'] as String,
+      id: id,
       items: items,
-      subtotal: Money(row['subtotal'] as int),
-      shipping: Money(row['shipping'] as int),
-      total: Money(row['total'] as int),
-      status: _parseStatus(row['status'] as String),
-      placedAt: DateTime.parse(row['placed_at'] as String),
-      paymentMethod: row['payment_method'] as String,
+      subtotal: Money(safeInt(row, 'subtotal')),
+      shipping: Money(safeInt(row, 'shipping')),
+      total: Money(safeInt(row, 'total')),
+      status: _parseStatus(safeString(row, 'status')),
+      placedAt:
+          safeDateTime(row, 'placed_at') ?? DateTime.now(),
+      paymentMethod: safeString(row, 'payment_method'),
       address: address,
     );
   }
@@ -90,28 +101,18 @@ final class SupabaseOrdersRepository implements OrdersRepository {
   static CartItem _mapOrderItem(Map<String, dynamic> row) {
     return CartItem(
       product: Product(
-        id: row['product_id'] as String,
-        name: row['product_name'] as String,
+        id: safeString(row, 'product_id'),
+        name: safeString(row, 'product_name'),
         category: '',
-        price: Money(row['unit_price'] as int),
+        price: Money(safeInt(row, 'unit_price')),
         imageColor: 0xFF888888,
         sizes: const [],
         colors: const [],
         stock: const {},
       ),
-      color: row['color'] as String,
-      length: row['size'] as String,
-      quantity: row['quantity'] as int,
-    );
-  }
-
-  static Address _mapAddress(Map<String, dynamic> json) {
-    return Address(
-      id: safeString(json, 'id'),
-      recipient: safeString(json, 'recipient'),
-      line: safeString(json, 'line'),
-      city: safeString(json, 'city'),
-      country: safeString(json, 'country'),
+      color: safeString(row, 'color'),
+      length: safeString(row, 'size'),
+      quantity: safeInt(row, 'quantity'),
     );
   }
 

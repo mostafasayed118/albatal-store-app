@@ -15,3 +15,6 @@ linter:
     use_build_context_synchronously: true
     avoid_print: true
     cancel_subscriptions: true
+    # `discarded_futures` was evaluated (audit P5) and rejected: 131 new
+    # info-level violations, mostly fire-and-forget test pumps. Revisit
+    # only with a dedicated cleanup pass.

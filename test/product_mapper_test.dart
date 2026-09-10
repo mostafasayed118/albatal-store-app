@@ -27,12 +27,59 @@ void main() {
       reviewCount: 12,
     );
 
-    expect(ProductCodec.decode(ProductCodec.encode(product)), product);
-    expect(ProductCodec.decode(ProductCodec.encode(product)).price.minorUnits,
-        129900);
+    final decoded = ProductCodec.decode(ProductCodec.encode(product));
+    expect(decoded, product);
+    expect(decoded!.price.minorUnits, 129900);
+    expect(decoded.oldPrice!.minorUnits, 149900);
+  });
+
+  test('decode returns null for a corrupt cache entry without an id', () {
+    expect(ProductCodec.decode(const {}), isNull);
+    expect(ProductCodec.decode({'id': '', 'name': 'Silk'}), isNull);
+  });
+
+  test('fromRow returns null for a row without id or name', () {
+    final storage = _FakeStorageService();
     expect(
-        ProductCodec.decode(ProductCodec.encode(product)).oldPrice!.minorUnits,
-        149900);
+      ProductCodec.fromRow(
+        {'id': '', 'name': 'Silk', 'base_price': 1},
+        const [],
+        storageService: storage,
+      ),
+      isNull,
+    );
+    expect(
+      ProductCodec.fromRow(
+        {'id': 'p1', 'name': '', 'base_price': 1},
+        const [],
+        storageService: storage,
+      ),
+      isNull,
+    );
+  });
+
+  test('fromRow degrades malformed variants and price types instead of '
+      'throwing', () {
+    final product = ProductCodec.fromRow(
+      {
+        'id': 'p1',
+        'name': 'Cotton',
+        'base_price': 'not-a-number',
+        'categories': 'garbage',
+      },
+      [
+        {'size': '', 'color': 'Ruby', 'stock': 3},
+        {'size': 'M', 'color': 'Emerald', 'stock': 'lots'},
+      ],
+      storageService: _FakeStorageService(),
+    );
+
+    expect(product, isNotNull);
+    expect(product!.price.minorUnits, 0);
+    expect(product.category, '');
+    expect(product.sizes, ['M']);
+    expect(product.colors, ['Emerald']);
+    expect(product.stock, {'Emerald-M': 0});
   });
 
   test('fromRow derives sorted variants and deterministically sorted images',
@@ -63,7 +110,7 @@ void main() {
         {'size': 'M', 'color': 'Emerald', 'stock': 6},
       ],
       storageService: _FakeStorageService(),
-    );
+    )!;
 
     expect(product.sizes, ['M', 'S', 'XL']);
     expect(product.colors, ['Emerald', 'Ruby']);

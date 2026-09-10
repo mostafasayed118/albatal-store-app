@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -18,8 +17,13 @@ import '../../domain/repositories/admin_repository.dart';
 /// Create is reached via `/admin/products/new` (a route, not a dialog) so
 /// a deep link or a future shortcut can open the form directly; editing
 /// uses `/admin/products/:id`.
+///
+/// The repository is constructor-injected (audit P1); the router resolves
+/// it at the composition root.
 class AdminProductsPage extends StatefulWidget {
-  const AdminProductsPage({super.key});
+  const AdminProductsPage({super.key, required this.repository});
+
+  final AdminRepository repository;
 
   @override
   State<AdminProductsPage> createState() => _AdminProductsPageState();
@@ -41,7 +45,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       _loading = true;
       _error = null;
     });
-    final result = await getIt<AdminRepository>().getAllProducts();
+    final result = await widget.repository.getAllProducts();
     if (!mounted) return;
     result.when(
       success: (products) => setState(() {

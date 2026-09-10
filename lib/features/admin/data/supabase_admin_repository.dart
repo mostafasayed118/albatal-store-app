@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
@@ -36,6 +37,8 @@ final class SupabaseAdminRepository implements AdminRepository {
       // A failed permission probe must not grant admin. Catches broadly
       // because malformed payloads raise TypeError (an Error, not an
       // Exception) that must never escape the repository boundary.
+      Log.w('Admin permission probe failed; denying admin: $e',
+          category: LogCategory.auth);
       return false;
     }
   }

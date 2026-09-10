@@ -56,8 +56,9 @@ class _CatalogPageState extends State<CatalogPage> {
       appBar: AppBar(
         title: Text(l.categories),
         actions: [
-          // Selector on the derived badge count only: the 1Hz
-          // flashRemaining ticks must not rebuild this button.
+          // Selector on the derived badge count only: countdown ticks
+          // never emit state (audit P3) and identical filter counts
+          // dedupe, so this button stays idle.
           BlocSelector<CatalogCubit, CatalogState, int>(
             selector: _activeFilterCount,
             builder: (context, activeCount) {
@@ -80,8 +81,8 @@ class _CatalogPageState extends State<CatalogPage> {
         ],
       ),
       body: BlocBuilder<CatalogCubit, CatalogState>(
-        // Shared with HomePage: flashRemaining/flashEnd countdown ticks
-        // must not rebuild the grid (audit residual P4).
+        // Shared with HomePage: countdown ticks flow on the cubit's
+        // flashCountdown stream and never emit state (audit P3).
         buildWhen: homeBuildWhen,
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
@@ -134,19 +135,24 @@ class _CatalogPageState extends State<CatalogPage> {
                           },
                         )
                       : LayoutBuilder(
-                          builder: (context, constraints) =>
-                              BlocBuilder<WishlistCubit, WishlistState>(
-                            builder: (context, wishlist) => GridView.builder(
-                              padding: const EdgeInsetsDirectional.all(16),
-                              itemCount: state.visible.length,
-                              // Single breakpoint source (grid_delegate.dart):
-                              // 2-col phones, 3-col ≥700, 4-col ≥1000.
-                              gridDelegate: productGridDelegateForWidth(
-                                constraints.maxWidth,
-                              ),
-                              itemBuilder: (_, i) {
-                                final product = state.visible[i];
-                                return StitchProductGridCard(
+                          builder: (context, constraints) => GridView.builder(
+                            padding: const EdgeInsetsDirectional.all(16),
+                            itemCount: state.visible.length,
+                            // Single breakpoint source (grid_delegate.dart):
+                            // 2-col phones, 3-col ≥700, 4-col ≥1000.
+                            gridDelegate: productGridDelegateForWidth(
+                              constraints.maxWidth,
+                            ),
+                            itemBuilder: (_, i) {
+                              final product = state.visible[i];
+                              // Per-item wishlist isolation (audit P3): the
+                              // heart selector rebuilds one card, not the grid.
+                              return BlocSelector<WishlistCubit, WishlistState,
+                                  bool>(
+                                selector: (wishlist) =>
+                                    wishlist.ids.contains(product.id),
+                                builder: (context, isWishlisted) =>
+                                    StitchProductGridCard(
                                   product: product,
                                   onTap: () {
                                     final router = GoRouter.maybeOf(context);
@@ -157,11 +163,10 @@ class _CatalogPageState extends State<CatalogPage> {
                                   onWishlist: () => context
                                       .read<WishlistCubit>()
                                       .toggle(product.id),
-                                  isWishlisted:
-                                      wishlist.ids.contains(product.id),
-                                );
-                              },
-                            ),
+                                  isWishlisted: isWishlisted,
+                                ),
+                              );
+                            },
                           ),
                         ),
                 ),

@@ -32,17 +32,21 @@ void main() {
   // fake_async fakes package:clock's clock.now(), not raw DateTime.now(),
   // so the cubit takes an injectable clock driven by FakeAsync.elapsed.
   // This keeps the tick assertions deterministic (spec §7).
-  test('flashRemaining ticks every second', () {
+  test('flashCountdown ticks every second (audit P3 stream contract)', () {
     fakeAsync((a) {
       final base = DateTime(2026);
       final cubit = CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
+      final ticks = <Duration>[];
+      final sub = cubit.flashCountdown.listen(ticks.add);
       cubit.startFlashSale(end: base.add(const Duration(seconds: 3)));
-      expect(cubit.state.flashRemaining?.inSeconds, 3);
+      a.flushMicrotasks();
+      expect(ticks.single.inSeconds, 3);
       a.elapse(const Duration(seconds: 1));
-      expect(cubit.state.flashRemaining?.inSeconds, 2);
+      expect(ticks.last.inSeconds, 2);
       a.elapse(const Duration(seconds: 1));
-      expect(cubit.state.flashRemaining?.inSeconds, 1);
+      expect(ticks.last.inSeconds, 1);
       cubit.close();
+      sub.cancel();
     });
   });
 
@@ -50,10 +54,13 @@ void main() {
     fakeAsync((a) {
       final base = DateTime(2026);
       final cubit = CatalogCubit(_StubRepo(), now: () => base.add(a.elapsed));
+      final ticks = <Duration>[];
+      final sub = cubit.flashCountdown.listen(ticks.add);
       cubit.startFlashSale(end: base.add(const Duration(seconds: 1)));
       a.elapse(const Duration(seconds: 2));
-      expect(cubit.state.flashRemaining, Duration.zero);
+      expect(ticks.last, Duration.zero);
       cubit.close();
+      sub.cancel();
     });
   });
 }

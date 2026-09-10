@@ -187,31 +187,40 @@ GoRouter _routerForCatalog({bool isAdmin = true}) {
     initialLocation: '/admin/catalog',
     routes: [
       GoRoute(
-          path: '/admin/catalog', builder: (_, __) => const AdminCatalogPage()),
+          path: '/admin/catalog',
+          builder: (_, __) =>
+              AdminCatalogPage(repository: getIt<AdminRepository>())),
       // Mirror the production routes (see app_router.dart): the hub's
       // Products/Images/Variants tiles land on the product list — the
       // only surface that can supply a productId to the editors.
       GoRoute(
           path: '/admin/products',
-          builder: (_, __) => const AdminProductsPage()),
+          builder: (_, __) =>
+              AdminProductsPage(repository: getIt<AdminRepository>())),
       GoRoute(
           path: '/admin/products/new',
-          builder: (_, __) => const AdminProductEditPage()),
+          builder: (_, __) =>
+              AdminProductEditPage(repository: getIt<AdminRepository>())),
       GoRoute(
           path: '/admin/products/:id',
-          builder: (_, s) =>
-              AdminProductEditPage(productId: s.pathParameters['id'])),
+          builder: (_, s) => AdminProductEditPage(
+              productId: s.pathParameters['id'],
+              repository: getIt<AdminRepository>())),
       GoRoute(
           path: '/admin/categories',
-          builder: (_, __) => const AdminCategoriesPage()),
+          builder: (_, __) =>
+              AdminCategoriesPage(repository: getIt<AdminRepository>())),
       GoRoute(
           path: '/admin/images/:id',
-          builder: (_, s) =>
-              AdminImageManagerPage(productId: s.pathParameters['id']!)),
+          builder: (_, s) => AdminImageManagerPage(
+              productId: s.pathParameters['id']!,
+              repository: getIt<AdminRepository>(),
+              storage: getIt<StorageService>())),
       GoRoute(
           path: '/admin/variants/:id',
-          builder: (_, s) =>
-              AdminVariantEditorPage(productId: s.pathParameters['id']!)),
+          builder: (_, s) => AdminVariantEditorPage(
+              productId: s.pathParameters['id']!,
+              repository: getIt<AdminRepository>())),
     ],
   );
 }
@@ -456,7 +465,8 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const AdminVariantEditorPage(productId: 'pid'),
+      home: AdminVariantEditorPage(
+          productId: 'pid', repository: fake),
     ));
     await tester.pumpAndSettle();
 
@@ -503,7 +513,8 @@ void main() {
         ),
         GoRoute(
           path: '/edit',
-          builder: (_, __) => const AdminProductEditPage(),
+          builder: (_, __) =>
+              AdminProductEditPage(repository: getIt<AdminRepository>()),
         ),
       ],
     );
@@ -587,7 +598,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const AdminProductEditPage(),
+        home: AdminProductEditPage(repository: fakeAdmin),
       ),
     );
     await tester.pumpAndSettle();
@@ -600,7 +611,8 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const AdminVariantEditorPage(productId: 'pid'),
+        home: AdminVariantEditorPage(
+            productId: 'pid', repository: fakeAdmin),
       ),
     );
     await tester.pumpAndSettle();
@@ -613,7 +625,10 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const AdminImageManagerPage(productId: 'pid'),
+        home: AdminImageManagerPage(
+            productId: 'pid',
+            repository: fakeAdmin,
+            storage: getIt<StorageService>()),
       ),
     );
     await tester.pumpAndSettle();

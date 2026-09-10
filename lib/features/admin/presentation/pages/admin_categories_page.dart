@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -15,8 +14,13 @@ import '../../domain/repositories/admin_repository.dart';
 /// (which the product form's category dropdown consumes) and flags
 /// inactive ones. When a category write RPC lands, the edit surface
 /// belongs here.
+///
+/// The repository is constructor-injected (audit P1); the router resolves
+/// it at the composition root.
 class AdminCategoriesPage extends StatefulWidget {
-  const AdminCategoriesPage({super.key});
+  const AdminCategoriesPage({super.key, required this.repository});
+
+  final AdminRepository repository;
 
   @override
   State<AdminCategoriesPage> createState() => _AdminCategoriesPageState();
@@ -38,7 +42,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
       _loading = true;
       _error = null;
     });
-    final result = await getIt<AdminRepository>().getAllCategories();
+    final result = await widget.repository.getAllCategories();
     if (!mounted) return;
     result.when(
       success: (categories) => setState(() {

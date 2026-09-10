@@ -4,17 +4,21 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Admin catalog management — product and category overview.
+///
+/// The repository is constructor-injected (audit P1); the router resolves
+/// it at the composition root.
 class AdminCatalogPage extends StatelessWidget {
-  const AdminCatalogPage({super.key});
+  const AdminCatalogPage({super.key, required this.repository});
+
+  final AdminRepository repository;
 
   Future<void> _guardedPush(BuildContext context, String location) async {
     try {
-      final isAdmin = await getIt<AdminRepository>().isCurrentUserAdmin();
+      final isAdmin = await repository.isCurrentUserAdmin();
       if (!context.mounted) return;
       if (!isAdmin) {
         showFloatingError(context, context.l10n.adminAccessRequired);

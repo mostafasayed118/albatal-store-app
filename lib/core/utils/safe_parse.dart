@@ -32,3 +32,15 @@ Map<String, dynamic> safeMap(Object? value) {
   if (value is Map) return value.map((k, v) => MapEntry('$k', v));
   return const {};
 }
+
+/// Parses an ISO-8601 timestamp for [key] without throwing.
+///
+/// Real [DateTime] values pass through; strings go through
+/// [DateTime.tryParse]; anything else (or an unparseable string) yields
+/// null — the caller decides the fallback.
+DateTime? safeDateTime(Map? map, String key) {
+  final value = map?[key];
+  if (value is DateTime) return value;
+  if (value is String) return DateTime.tryParse(value);
+  return null;
+}

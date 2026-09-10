@@ -150,10 +150,12 @@ void main() {
     // Card should be visible with server discount.
     expect(find.text('-10%'), findsWidgets);
     expect(find.byType(StitchFlashSaleCard), findsOneWidget);
-    // Countdown derived from server endsAt should be active (~1h05m).
-    final ctx = tester.element(find.byType(HomePage));
-    final cubit = ctx.read<CatalogCubit>();
-    expect(cubit.state.flashRemaining, isNotNull);
-    expect(cubit.state.flashRemaining!.inMinutes, greaterThanOrEqualTo(60));
+    // Countdown (audit P3): ticks flow on the cubit's flashCountdown
+    // stream, never through CatalogState — no countdown widget renders
+    // on this page and no per-second state emission may occur. The
+    // stream contract itself is pinned deterministically in
+    // catalog_flash_test.dart (fakeAsync); here we only pin that the
+    // page stays flash-bound with a live server sale.
+    expect(find.text('-10%'), findsWidgets);
   });
 }

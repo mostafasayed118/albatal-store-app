@@ -157,7 +157,7 @@ void main() {
       tester.view.physicalSize = const Size(1080, 1600);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(harness(const AdminProductsPage()));
+      await tester.pumpWidget(harness(AdminProductsPage(repository: repo)));
       // First pump shows the loading spinner; the repository future then
       // resolves into the list.
       await tester.pumpAndSettle();
@@ -174,7 +174,7 @@ void main() {
         (tester) async {
       repo.failProducts = true;
 
-      await tester.pumpWidget(harness(const AdminProductsPage()));
+      await tester.pumpWidget(harness(AdminProductsPage(repository: repo)));
       await tester.pumpAndSettle();
 
       expect(find.text('Failed to load products'), findsOneWidget);
@@ -199,7 +199,7 @@ void main() {
 
     testWidgets('empty catalog renders an inviting create state',
         (tester) async {
-      await tester.pumpWidget(harness(const AdminProductsPage()));
+      await tester.pumpWidget(harness(AdminProductsPage(repository: repo)));
       await tester.pumpAndSettle();
 
       expect(find.text('No products yet'), findsOneWidget);
@@ -214,7 +214,7 @@ void main() {
         AdminCategory(id: 'c-2', name: 'Wool', isActive: false),
       ];
 
-      await tester.pumpWidget(harness(const AdminCategoriesPage()));
+      await tester.pumpWidget(harness(AdminCategoriesPage(repository: repo)));
       await tester.pumpAndSettle();
 
       expect(find.text('Silk'), findsOneWidget);
@@ -226,7 +226,7 @@ void main() {
     testWidgets('failed load offers retry that recovers', (tester) async {
       repo.failCategories = true;
 
-      await tester.pumpWidget(harness(const AdminCategoriesPage()));
+      await tester.pumpWidget(harness(AdminCategoriesPage(repository: repo)));
       await tester.pumpAndSettle();
 
       expect(find.text('Failed to load categories'), findsOneWidget);
@@ -243,7 +243,7 @@ void main() {
 
     testWidgets('empty category table renders an explanatory empty state',
         (tester) async {
-      await tester.pumpWidget(harness(const AdminCategoriesPage()));
+      await tester.pumpWidget(harness(AdminCategoriesPage(repository: repo)));
       await tester.pumpAndSettle();
 
       expect(find.text('No categories yet'), findsOneWidget);

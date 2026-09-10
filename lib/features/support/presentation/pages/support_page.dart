@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/support_channel.dart';
 import '../../domain/repositories/support_repository.dart';
 
@@ -12,19 +11,17 @@ import '../../domain/repositories/support_repository.dart';
 ///
 /// Contact targets come from [SupportRepository] — never hardcoded here
 /// (live-found 2026-09-04: a fake wa.me number shipped in this file).
-/// The optional [supportRepository] override is the test seam (mirrors
-/// the CheckoutPage/PaymentMethodPage convention); production resolves
-/// the GetIt-registered repository.
+/// The repository is constructor-injected (audit P1): the router resolves
+/// it at the composition root; widget tests pass a fake directly.
 class SupportPage extends StatelessWidget {
-  const SupportPage({super.key, this.supportRepository});
+  const SupportPage({super.key, required this.supportRepository});
 
-  final SupportRepository? supportRepository;
+  final SupportRepository supportRepository;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final channels =
-        (supportRepository ?? getIt<SupportRepository>()).getChannels();
+    final channels = supportRepository.getChannels();
     SupportChannel? byKind(SupportChannelKind kind) =>
         channels.where((c) => c.kind == kind).firstOrNull;
     final whatsapp = byKind(SupportChannelKind.whatsapp);

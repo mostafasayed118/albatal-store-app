@@ -4,11 +4,9 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../shared/services/logger.dart';
-import '../../../addresses/data/local_address_repository.dart';
 import '../../../addresses/domain/repositories/address_repository.dart';
 import '../../../../core/entities/profile.dart';
 import '../../../../core/error/result.dart';
-import '../../../storefront/data/storefront_persistence.dart';
 import '../../domain/entities/auth_outcome.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/order_snapshot_port.dart';
@@ -66,14 +64,10 @@ class AuthCubit extends Cubit<AuthState> {
     required ProfileRepository profileRepository,
     AddressRepository? addressRepository,
     OrderSnapshotPort? orderSnapshots,
-    // Legacy concrete params (kept for backward compatibility — prefer
-    // the abstractions above; both concretes implement the ports).
-    LocalAddressRepository? localAddressRepository,
-    LocalStorefrontPersistence? storefrontPersistence,
   })  : _authRepository = authRepository,
         _profileRepository = profileRepository,
-        _addressRepository = addressRepository ?? localAddressRepository,
-        _orderSnapshots = orderSnapshots ?? storefrontPersistence,
+        _addressRepository = addressRepository,
+        _orderSnapshots = orderSnapshots,
         super(const AuthState()) {
     _listenToAuthChanges();
   }
@@ -83,12 +77,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Device-local stores wiped on sign-out / account deletion so no
   /// address or order PII survives on the device (audit S9). Depend on
-  /// the domain abstractions — concretes are wired only at the
-  /// composition root. Optional so existing call sites stay unchanged;
-  /// the wipe is a no-op when absent. The deprecated concrete params
-  /// keep backward compatibility: both concretes implement the ports
-  /// ([LocalAddressRepository] is a [ClearableAddressRepository],
-  /// [LocalStorefrontPersistence] is an [OrderSnapshotPort]).
+  /// the domain abstractions only (audit P1) — concretes are wired
+  /// exclusively at the composition root (`app.dart`). Optional so the
+  /// wipe is a no-op when absent (e.g. focused cubit tests).
   final AddressRepository? _addressRepository;
   final OrderSnapshotPort? _orderSnapshots;
   StreamSubscription<Authenticated?>? _authSubscription;

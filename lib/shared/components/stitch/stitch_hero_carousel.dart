@@ -231,6 +231,12 @@ class _HeroSlideCard extends StatelessWidget {
                   child: AppImage(
                     source: slide.imageAsset,
                     fit: BoxFit.cover,
+                    // Decode budget (audit P3): the 180dp hero slot does
+                    // not need full-resolution source bitmaps — cap at
+                    // ~2x dpr of the phone footprint (grid/flash cards
+                    // follow the same pattern).
+                    cacheWidth: 840,
+                    cacheHeight: 360,
                     placeholder: Icon(
                       Icons.texture,
                       color: Colors.white.withValues(alpha: 0.85),
