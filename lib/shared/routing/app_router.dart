@@ -41,6 +41,7 @@ import '../../features/storefront/presentation/pages/wishlist_page.dart';
 import '../../features/support/domain/repositories/support_repository.dart';
 import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
+import '../services/connectivity_gate.dart';
 import '../services/navigation_observer.dart';
 import '../services/service_locator.dart';
 import '../services/storage_service.dart';
@@ -90,19 +91,23 @@ String? _redirect(AuthState auth, GoRouterState state) {
 final _routes = <RouteBase>[
   GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
   GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
-  ShellRoute(builder: (_, __, child) => AppShell(child: child), routes: [
-    GoRoute(path: '/home', builder: (_, __) => const HomePage()),
-    GoRoute(path: '/categories', builder: (_, __) => const CategoriesPage()),
-    GoRoute(
-      path: '/catalog',
-      builder: (_, s) => CatalogPage(
-        initialQuery: s.uri.queryParameters['q'],
-      ),
-    ),
-    GoRoute(path: '/wishlist', builder: (_, __) => const WishlistPage()),
-    GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
-    GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
-  ]),
+  ShellRoute(
+      builder: (_, __, child) =>
+          AppShell(gate: getIt<ConnectivityGate>(), child: child),
+      routes: [
+        GoRoute(path: '/home', builder: (_, __) => const HomePage()),
+        GoRoute(
+            path: '/categories', builder: (_, __) => const CategoriesPage()),
+        GoRoute(
+          path: '/catalog',
+          builder: (_, s) => CatalogPage(
+            initialQuery: s.uri.queryParameters['q'],
+          ),
+        ),
+        GoRoute(path: '/wishlist', builder: (_, __) => const WishlistPage()),
+        GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
+        GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
+      ]),
   GoRoute(
     path: '/product/:id',
     builder: (_, s) => DetailsPage(
@@ -145,13 +150,15 @@ final _routes = <RouteBase>[
   GoRoute(
     path: '/payment-method',
     builder: (_, s) => PaymentMethodPage(
-      args: s.extra as Map<String, dynamic>? ?? {},
+      args: s.extra is Map<String, dynamic>
+          ? s.extra as Map<String, dynamic>
+          : {},
     ),
   ),
   GoRoute(
     path: '/paymob-checkout',
-    builder: (_, s) =>
-        PaymobCheckoutPage(checkoutUrl: s.extra as String? ?? ''),
+    builder: (_, s) => PaymobCheckoutPage(
+        checkoutUrl: s.extra is String ? s.extra as String : ''),
   ),
   GoRoute(
     path: '/instapay-instructions',
@@ -223,7 +230,8 @@ final _routes = <RouteBase>[
   ),
   GoRoute(
     path: '/support',
-    builder: (_, __) => SupportPage(supportRepository: getIt<SupportRepository>()),
+    builder: (_, __) =>
+        SupportPage(supportRepository: getIt<SupportRepository>()),
   ),
   GoRoute(
     path: '/privacy-policy',

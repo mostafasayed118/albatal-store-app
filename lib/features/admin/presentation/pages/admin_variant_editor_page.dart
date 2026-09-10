@@ -51,8 +51,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
       _loading = true;
       _error = null;
     });
-    final result =
-        await widget.repository.getVariants(widget.productId);
+    final result = await widget.repository.getVariants(widget.productId);
     if (!mounted) return;
     result.when(
       success: (variants) => setState(() {
@@ -164,8 +163,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         return;
                       }
                       setDlgState(() => saving = true);
-                      final result =
-                          await widget.repository.adminUpsertVariant(
+                      final result = await widget.repository.adminUpsertVariant(
                         productId: widget.productId,
                         size: sizeCtrl.text.trim(),
                         color: colorCtrl.text.trim(),

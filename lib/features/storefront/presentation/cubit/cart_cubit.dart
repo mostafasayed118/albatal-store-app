@@ -92,7 +92,9 @@ final class CartCubit extends Cubit<CartState> {
     switch (result) {
       case Success(:final value):
         if (force || !hadItems) {
-          emit(CartState(value, status: CartStatus.ready));
+          emit(CartState(value,
+              status: CartStatus.ready,
+              isPremiumMember: state.isPremiumMember));
         } else {
           // Keep the user's live items; just leave loading state.
           emit(state.copyWith(status: CartStatus.ready));

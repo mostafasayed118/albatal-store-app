@@ -23,7 +23,9 @@ import '../widgets/wishlist_toggle_icon.dart';
 /// tests pass a fake directly.
 class DetailsPage extends StatelessWidget {
   const DetailsPage(
-      {super.key, required this.id, required CatalogRepository catalogRepository})
+      {super.key,
+      required this.id,
+      required CatalogRepository catalogRepository})
       : _catalogRepository = catalogRepository;
 
   final String id;
@@ -35,8 +37,7 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository)
-            ..loadProduct(id),
+      create: (_) => ProductDetailsCubit(_catalogRepository)..loadProduct(id),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
           final p = s.product;

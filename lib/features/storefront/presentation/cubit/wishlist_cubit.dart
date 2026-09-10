@@ -77,7 +77,14 @@ final class WishlistCubit extends Cubit<WishlistState> {
 
   void toggle(String id) {
     final next = {...state.ids}..toggle(id);
-    emit(WishlistState(ids: next, status: WishlistStatus.ready));
+    final removed = state.ids.contains(id);
+    emit(WishlistState(
+      ids: next,
+      status: WishlistStatus.ready,
+      products: removed
+          ? state.products.where((p) => p.id != id).toList()
+          : state.products,
+    ));
     _persist(next);
   }
 

@@ -38,8 +38,14 @@ class EnvConfig {
   /// Sentry DSN. Public identifier; only set when Sentry is approved.
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 
-  /// Current environment name.
-  static String get environment => kDebugMode ? 'development' : 'production';
+  /// Current environment name. Set via `--dart-define=APP_ENV=staging`
+  /// (or in `config/env.*.json` via `--dart-define-from-file`); falls back
+  /// to `development` in debug builds and `production` otherwise.
+  static String get environment {
+    const defined = String.fromEnvironment('APP_ENV');
+    if (defined.isNotEmpty) return defined;
+    return kDebugMode ? 'development' : 'production';
+  }
 
   /// Whether we're in development mode.
   static bool get isDevelopment => kDebugMode;

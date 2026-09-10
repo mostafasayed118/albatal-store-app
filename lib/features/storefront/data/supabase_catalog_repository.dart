@@ -242,6 +242,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     if (prefs == null) return;
     try {
       final encoded = products.map(ProductCodec.encode).toList();
+      // Best-effort cache write; fire-and-forget by design.
+      // ignore: discarded_futures
       prefs.setString(_persistentCacheKey, jsonEncode(encoded));
     } catch (e) {
       // Best-effort persistence — never crash the app over a cache write.

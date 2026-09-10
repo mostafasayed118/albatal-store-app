@@ -4,6 +4,16 @@ import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 
+/// Returns the string value for [key], or null when missing or mistyped.
+///
+/// Unlike [safeString] (which falls back to `''`), optional text fields
+/// degrade to null so callers keep the exact old `as String?` semantics for
+/// well-typed inputs while mistypes degrade instead of throwing [TypeError].
+String? _optStr(Map m, String k) {
+  final v = m[k];
+  return v is String ? v : null;
+}
+
 /// Placeholder tint used when a product row carries no image — the value the
 /// network path has always written.
 const _placeholderImageColor = 0xFF888888;
@@ -64,21 +74,27 @@ extension ProductCodec on Product {
         ? rawImages.whereType<Map<String, dynamic>>().toList()
         : <Map<String, dynamic>>[];
     imageRows.sort((a, b) {
-      final sortOrderComparison = (a['sort_order'] as int? ?? 0)
-          .compareTo(b['sort_order'] as int? ?? 0);
+      final sortOrderComparison =
+          safeInt(a, 'sort_order').compareTo(safeInt(b, 'sort_order'));
       if (sortOrderComparison != 0) {
         return sortOrderComparison;
       }
-      return (a['storage_path'] as String? ?? '')
-          .compareTo(b['storage_path'] as String? ?? '');
+      return safeString(a, 'storage_path')
+          .compareTo(safeString(b, 'storage_path'));
     });
     final imageUrls = imageRows
-        .map((m) => m['storage_path'] as String?)
+        .map((m) {
+          final p = m['storage_path'];
+          return p is String ? p : null;
+        })
         .whereType<String>()
         .where((p) => p.isNotEmpty)
         .map((p) => storageService.getProductImageUrl(p))
         .where((u) => u.isNotEmpty)
         .toList();
+
+    final ratingRaw = row['rating'];
+    final rating = ratingRaw is num ? ratingRaw.toDouble() : 0.0;
 
     return Product(
       id: id,
@@ -89,15 +105,15 @@ extension ProductCodec on Product {
       // imageColor is a placeholder fallback — only used when images empty.
       imageColor: _placeholderImageColor,
       images: imageUrls,
-      description: row['description'] as String?,
-      composition: row['composition'] as String?,
-      care: row['care'] as String?,
-      origin: row['origin'] as String?,
+      description: _optStr(row, 'description'),
+      composition: _optStr(row, 'composition'),
+      care: _optStr(row, 'care'),
+      origin: _optStr(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
       colors: colorSet.toList()..sort(),
       stock: stockMap,
-      rating: (row['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: row['review_count'] as int? ?? 0,
+      rating: rating,
+      reviewCount: safeInt(row, 'review_count'),
     );
   }
 
@@ -147,19 +163,19 @@ extension ProductCodec on Product {
         imageColor:
             (raw['imageColor'] as num?)?.toInt() ?? _placeholderImageColor,
         imageAsset: raw['imageAsset'] as String?,
-        images: (raw['images'] as List?)?.whereType<String>().toList() ??
-            const [],
+        images:
+            (raw['images'] as List?)?.whereType<String>().toList() ?? const [],
         description: raw['description'] as String?,
         composition: raw['composition'] as String?,
         care: raw['care'] as String?,
         origin: raw['origin'] as String?,
-        sizes: (raw['sizes'] as List?)?.whereType<String>().toList() ??
-            const [],
-        colors: (raw['colors'] as List?)?.whereType<String>().toList() ??
-            const [],
+        sizes:
+            (raw['sizes'] as List?)?.whereType<String>().toList() ?? const [],
+        colors:
+            (raw['colors'] as List?)?.whereType<String>().toList() ?? const [],
         stock: safeMap(raw['stock']).map(
-              (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
-            ),
+          (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
+        ),
         rating: (raw['rating'] as num?)?.toDouble() ?? 0.0,
         reviewCount: (raw['reviewCount'] as num?)?.toInt() ?? 0);
   }

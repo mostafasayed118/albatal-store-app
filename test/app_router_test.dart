@@ -368,7 +368,8 @@ final class _ProbeStorageService extends StorageService {
 
 /// Catalog double with no products: the routing tests only need the cubit to
 /// resolve without network access.
-final class _StubCatalogRepository implements CatalogRepository {  const _StubCatalogRepository();
+final class _StubCatalogRepository implements CatalogRepository {
+  const _StubCatalogRepository();
 
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);

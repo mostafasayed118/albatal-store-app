@@ -67,8 +67,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   }
 
   Future<void> _persistPaths(List<String> paths, {String? confirmation}) async {
-    final result = await widget.repository
-        .adminSetProductImages(widget.productId, paths);
+    final result =
+        await widget.repository.adminSetProductImages(widget.productId, paths);
     if (!mounted) return;
     result.when(
       success: (_) {

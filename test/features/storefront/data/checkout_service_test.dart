@@ -115,12 +115,11 @@ void main() {
     expect((result as Success<PendingOrder>).value.total.minorUnits, 136500);
   });
 
-  test('fails closed on a malformed RPC payload instead of throwing',
-      () async {
+  test('fails closed on a malformed RPC payload instead of throwing', () async {
     Future<Result<PendingOrder>> place(Map<String, dynamic> payload) async {
       final client = MockSupabaseClient();
-      when(() => client.rpc('create_checkout_order',
-              params: any(named: 'params')))
+      when(() =>
+              client.rpc('create_checkout_order', params: any(named: 'params')))
           .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(payload));
       final service = CheckoutService(client: client);
       return service.placeOrder(

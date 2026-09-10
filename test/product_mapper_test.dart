@@ -58,7 +58,8 @@ void main() {
     );
   });
 
-  test('fromRow degrades malformed variants and price types instead of '
+  test(
+      'fromRow degrades malformed variants and price types instead of '
       'throwing', () {
     final product = ProductCodec.fromRow(
       {

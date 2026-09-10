@@ -160,6 +160,7 @@ class PaymentCubit extends Cubit<PaymentState> {
       // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
       method: PaymentMethod.cashOnDelivery.serverValue,
     );
+    if (isClosed) return;
     if (methodResult case PaymentFailed(:final message, :final code)) {
       emit(state.copyWith(
         status: PaymentStatus.failed,
@@ -174,6 +175,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     final result = await _paymentService.confirmCodPayment(
       orderId: state.orderId,
     );
+    if (isClosed) return;
 
     switch (result) {
       case PaymentSuccess(:final transactionId):
@@ -200,6 +202,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     final initiation = await _paymentService.initiateInstapayPayment(
       orderId: state.orderId,
     );
+    if (isClosed) return;
 
     switch (initiation) {
       case InstapayReady(:final instructions):
@@ -230,6 +233,7 @@ class PaymentCubit extends Cubit<PaymentState> {
       orderId: state.orderId,
       customerEmail: customerEmail,
     );
+    if (isClosed) return;
 
     switch (result) {
       case PaymentPending(:final checkoutUrl):
@@ -279,6 +283,7 @@ class PaymentCubit extends Cubit<PaymentState> {
       fileExt: fileExt,
       reference: reference,
     );
+    if (isClosed) return false;
 
     switch (result) {
       case PaymentSuccess():

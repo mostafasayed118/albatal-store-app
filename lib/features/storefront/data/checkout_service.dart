@@ -27,17 +27,17 @@ class CheckoutService implements CheckoutRepository {
   final SupabaseClient _client;
 
   /// Minor-unit extractor for server-computed money fields.
-///
-/// JSON numbers arrive as `int` or `double`; both are accepted and
-/// truncated to integer minor units. Anything else (null, string, bool)
-/// yields null so the caller can fail closed.
-int? _minorUnits(Object? value) {
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  return null;
-}
+  ///
+  /// JSON numbers arrive as `int` or `double`; both are accepted and
+  /// truncated to integer minor units. Anything else (null, string, bool)
+  /// yields null so the caller can fail closed.
+  int? _minorUnits(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
+  }
 
-/// Create a pending order via the `create_checkout_order` RPC.
+  /// Create a pending order via the `create_checkout_order` RPC.
   ///
   /// The server validates prices, checks stock, calculates shipping
   /// from the configured shipping-zone logic, decrements stock, and
