@@ -94,4 +94,56 @@ void main() {
         params: captureAny(named: 'params'))).captured;
     expect((captured.single as Map)['p_payment_method'], 'cod');
   });
+
+  test('accepts JSON-decoded double money fields from the RPC', () async {
+    final client = MockSupabaseClient();
+    final response = {..._rpcResponse()};
+    response['subtotal'] = 129000.0;
+    response['total'] = 136500.0;
+    when(() =>
+            client.rpc('create_checkout_order', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(response));
+
+    final service = CheckoutService(client: client);
+    final result = await service.placeOrder(
+      items: _items(),
+      paymentMethod: PaymentMethod.paymobCard,
+      addressSnapshot: const {},
+    );
+
+    expect(result, isA<Success<PendingOrder>>());
+    expect((result as Success<PendingOrder>).value.total.minorUnits, 136500);
+  });
+
+  test('fails closed on a malformed RPC payload instead of throwing',
+      () async {
+    Future<Result<PendingOrder>> place(Map<String, dynamic> payload) async {
+      final client = MockSupabaseClient();
+      when(() => client.rpc('create_checkout_order',
+              params: any(named: 'params')))
+          .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(payload));
+      final service = CheckoutService(client: client);
+      return service.placeOrder(
+        items: _items(),
+        paymentMethod: PaymentMethod.paymobCard,
+        addressSnapshot: const {},
+      );
+    }
+
+    // Missing order id — payment hand-off would be corrupted.
+    expect(
+      await place({..._rpcResponse()}..remove('order_id')),
+      isA<Failure<PendingOrder>>(),
+    );
+    // Money fields are not integers.
+    expect(
+      await place({..._rpcResponse()}..['subtotal'] = 'free'),
+      isA<Failure<PendingOrder>>(),
+    );
+    // Unparseable expiry.
+    expect(
+      await place({..._rpcResponse()}..['expires_at'] = 'not-a-date'),
+      isA<Failure<PendingOrder>>(),
+    );
+  });
 }

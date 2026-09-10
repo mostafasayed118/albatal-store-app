@@ -92,13 +92,36 @@ class Log {
     _log(level, LogCategory.payment, message);
   }
 
+  // ─── PII scrubbing ─────────────────────────────────────
+
+  static final RegExp _emailPattern = RegExp(
+    r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}',
+  );
+
+  /// Phone-like runs: 10+ chars of digits/separator characters, not glued
+  /// to a word character (so UUIDs and timestamps stay intact).
+  static final RegExp _phonePattern = RegExp(
+    r'(?<![\w@])\+?\d[\d\s().-]{8,}\d(?!\w)',
+  );
+
+  /// Replaces email addresses and phone numbers in free text with
+  /// `[email]` / `[phone]`.
+  ///
+  /// Release breadcrumbs leave the device (audit P2), so every message
+  /// passes through here before [Sentry.addBreadcrumb]. Deliberately
+  /// over-redacts: a support ticket id that looks like a phone number is
+  /// cheaper to lose than a customer's PII.
+  static String redact(String message) => message
+      .replaceAllMapped(_emailPattern, (_) => '[email]')
+      .replaceAllMapped(_phonePattern, (_) => '[phone]');
+
   // ─── Private implementation ────────────────────────────
 
   static void _log(LogLevel level, LogCategory category, String message) {
     if (level.index < _minLevel.index) return;
     if (kReleaseMode) {
       Sentry.addBreadcrumb(Breadcrumb(
-        message: message,
+        message: redact(message),
         category: category.name,
         level: switch (level) {
           LogLevel.debug => SentryLevel.debug,

@@ -117,5 +117,31 @@ void main() {
       expect(orders, hasLength(1));
       expect(orders.first.id, 'ord-1');
     });
+
+    test('skips malformed order rows instead of failing the load (audit P2)',
+        () async {
+      final good = _orderRow();
+      final badId = {..._orderRow()}..['id'] = '';
+      final badMoney = {..._orderRow()}
+        ..['id'] = 'ord-3'
+        ..['subtotal'] = 'free';
+      final badDate = {..._orderRow()}
+        ..['id'] = 'ord-4'
+        ..['placed_at'] = 'not-a-date';
+      final filter = FakeOrdersFilterBuilder([good, badId, badMoney, badDate]);
+      when(() => client.from('orders'))
+          .thenAnswer((_) => FakeOrdersQueryBuilder(filter));
+
+      final repo = SupabaseOrdersRepository(client: client);
+      final result = await repo.readOrders();
+
+      expect(result, isA<Success<List<Order>>>());
+      final orders = (result as Success<List<Order>>).value;
+      // id-less rows are skipped; mistyped money/timestamps degrade to the
+      // entity default but keep the row.
+      expect(orders.map((o) => o.id), ['ord-1', 'ord-3', 'ord-4']);
+      expect(orders[1].subtotal.minorUnits, 0);
+      expect(orders[2].placedAt, isA<DateTime>());
+    });
   });
 }

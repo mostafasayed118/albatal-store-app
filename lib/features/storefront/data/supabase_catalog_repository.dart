@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
+import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
@@ -119,11 +120,13 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         final variants = variantsRaw is List
             ? variantsRaw.whereType<Map<String, dynamic>>().toList()
             : <Map<String, dynamic>>[];
-        result.add(ProductCodec.fromRow(
+        final product = ProductCodec.fromRow(
           row,
           variants,
           storageService: _storageService,
-        ));
+        );
+        // Rows without a usable id/name are skipped, not fatal (audit P2).
+        if (product != null) result.add(product);
       }
 
       _setCache(result);
@@ -156,7 +159,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           .order('sort_order');
 
       final names = rows
-          .map((r) => r['name'] as String)
+          .map((r) => safeString(r, 'name'))
           .where((n) => n.isNotEmpty)
           .toList();
 
@@ -186,6 +189,11 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           : <Map<String, dynamic>>[];
       final product =
           ProductCodec.fromRow(row, variants, storageService: _storageService);
+      // A row that came back without a usable id/name is unusable — fail
+      // closed rather than handing the UI a hollow product.
+      if (product == null) {
+        return const Failure(AppError('Failed to load product'));
+      }
       return Success(product);
     } on PostgrestException catch (e) {
       // single() throws PostgrestException (PGRST116) when no row matches.
@@ -252,6 +260,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       return decoded
           .whereType<Map<String, dynamic>>()
           .map(ProductCodec.decode)
+          .whereType<Product>()
           .toList();
     } catch (e) {
       Log.w('Catalog persistent cache restore failed: $e');

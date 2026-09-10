@@ -244,6 +244,8 @@ extension OrderCodec on Order {
               final pRaw = line['product'];
               if (pRaw is! Map) return null;
               final product = ProductCodec.decode(pRaw);
+              // Corrupt product snapshot skips that line, never the order.
+              if (product == null) return null;
               final color = safeString(line, 'color');
               final length = safeString(line, 'length');
               if (color.isEmpty || length.isEmpty) return null;

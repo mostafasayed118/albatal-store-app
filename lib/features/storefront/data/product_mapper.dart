@@ -1,5 +1,6 @@
 import '../../../core/entities/money.dart';
 import '../../../core/entities/product.dart';
+import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 
@@ -18,32 +19,43 @@ const _placeholderImageColor = 0xFF888888;
 extension ProductCodec on Product {
   /// Builds a [Product] from a joined `products` row with `product_variants`
   /// and `product_images` embedded.
-  static Product fromRow(
+  ///
+  /// Total decode (audit P2): every field degrades to the entity default
+  /// instead of throwing, so one malformed row can never crash the whole
+  /// catalog load. Rows without a usable `id` or `name` return null —
+  /// callers skip them (same contract as [FlashSaleCodec.fromRow]).
+  static Product? fromRow(
     Map<String, dynamic> row,
     List<Map<String, dynamic>> variants, {
     required StorageService storageService,
   }) {
-    final basePrice = row['base_price'] as int;
-    final oldPriceRaw = row['old_price'] as int?;
+    final id = safeString(row, 'id');
+    final name = safeString(row, 'name');
+    if (id.isEmpty || name.isEmpty) return null;
 
-    // Derive sizes and colors from variants.
+    final basePrice = safeInt(row, 'base_price');
+    final oldPriceRaw = row['old_price'];
+    final oldPrice = oldPriceRaw is int
+        ? oldPriceRaw
+        : (oldPriceRaw is num ? oldPriceRaw.toInt() : null);
+
+    // Derive sizes and colors from variants. Malformed variant rows are
+    // skipped rather than throwing into the repository.
     final sizeSet = <String>{};
     final colorSet = <String>{};
     final stockMap = <String, int>{};
 
     for (final v in variants) {
-      final size = v['size'] as String;
-      final color = v['color'] as String;
-      final stock = v['stock'] as int;
-
+      final size = safeString(v, 'size');
+      final color = safeString(v, 'color');
+      if (size.isEmpty || color.isEmpty) continue;
       sizeSet.add(size);
       colorSet.add(color);
-      stockMap['$color-$size'] = stock;
+      stockMap['$color-$size'] = safeInt(v, 'stock');
     }
 
     // Category name via the join.
-    final category =
-        (row['categories'] as Map<String, dynamic>?)?['name'] as String? ?? '';
+    final category = safeString(safeMap(row['categories']), 'name');
 
     // TODO: add cached_network_image for Storage URLs with Cache-Control max-age=86400
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
@@ -69,11 +81,11 @@ extension ProductCodec on Product {
         .toList();
 
     return Product(
-      id: row['id'] as String,
-      name: row['name'] as String,
+      id: id,
+      name: name,
       category: category,
       price: Money(basePrice),
-      oldPrice: oldPriceRaw != null ? Money(oldPriceRaw) : null,
+      oldPrice: oldPrice == null ? null : Money(oldPrice),
       // imageColor is a placeholder fallback — only used when images empty.
       imageColor: _placeholderImageColor,
       images: imageUrls,
@@ -117,32 +129,40 @@ extension ProductCodec on Product {
   /// Restores a [Product] written by [encode].
   ///
   /// Missing keys fall back to the same defaults [fromRow] uses, so caches
-  /// written by older builds still decode.
-  static Product decode(Map<Object?, Object?> raw) => Product(
-        id: raw['id'] as String,
-        name: raw['name'] as String,
-        category: raw['category'] as String? ?? '',
-        price: Money((raw['price'] as num).toInt()),
-        oldPrice: raw['oldPrice'] == null
-            ? null
-            : Money((raw['oldPrice'] as num).toInt()),
+  /// written by older builds still decode. Total decode (audit P2): a
+  /// corrupt/tampered cache entry degrades field-by-field instead of
+  /// throwing; entries without a usable `id` return null so callers skip
+  /// them.
+  static Product? decode(Map<Object?, Object?> raw) {
+    final id = raw['id'];
+    if (id is! String || id.isEmpty) return null;
+    return Product(
+        id: id,
+        name: safeString(raw, 'name'),
+        category: safeString(raw, 'category'),
+        price: Money(safeInt(raw, 'price')),
+        oldPrice: raw['oldPrice'] is num
+            ? Money((raw['oldPrice'] as num).toInt())
+            : null,
         imageColor:
             (raw['imageColor'] as num?)?.toInt() ?? _placeholderImageColor,
         imageAsset: raw['imageAsset'] as String?,
-        images: (raw['images'] as List?)?.cast<String>() ?? const [],
+        images: (raw['images'] as List?)?.whereType<String>().toList() ??
+            const [],
         description: raw['description'] as String?,
         composition: raw['composition'] as String?,
         care: raw['care'] as String?,
         origin: raw['origin'] as String?,
-        sizes: (raw['sizes'] as List?)?.cast<String>() ?? const [],
-        colors: (raw['colors'] as List?)?.cast<String>() ?? const [],
-        stock: (raw['stock'] as Map?)?.map(
-              (k, v) => MapEntry(k as String, (v as num).toInt()),
-            ) ??
-            const {},
+        sizes: (raw['sizes'] as List?)?.whereType<String>().toList() ??
+            const [],
+        colors: (raw['colors'] as List?)?.whereType<String>().toList() ??
+            const [],
+        stock: safeMap(raw['stock']).map(
+              (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
+            ),
         rating: (raw['rating'] as num?)?.toDouble() ?? 0.0,
-        reviewCount: (raw['reviewCount'] as num?)?.toInt() ?? 0,
-      );
+        reviewCount: (raw['reviewCount'] as num?)?.toInt() ?? 0);
+  }
 }
 
 /// Codec for flash-sale rows from the `get_active_flash_sales` RPC.

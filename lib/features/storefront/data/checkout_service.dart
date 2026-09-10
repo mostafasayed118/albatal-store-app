@@ -26,7 +26,18 @@ class CheckoutService implements CheckoutRepository {
 
   final SupabaseClient _client;
 
-  /// Create a pending order via the `create_checkout_order` RPC.
+  /// Minor-unit extractor for server-computed money fields.
+///
+/// JSON numbers arrive as `int` or `double`; both are accepted and
+/// truncated to integer minor units. Anything else (null, string, bool)
+/// yields null so the caller can fail closed.
+int? _minorUnits(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return null;
+}
+
+/// Create a pending order via the `create_checkout_order` RPC.
   ///
   /// The server validates prices, checks stock, calculates shipping
   /// from the configured shipping-zone logic, decrements stock, and
@@ -61,15 +72,32 @@ class CheckoutService implements CheckoutRepository {
         },
       );
 
-      final data = response as Map<String, dynamic>;
+      // Total decode (audit P2): the RPC is server-authoritative, but a
+      // malformed payload must degrade to a user-safe Failure instead of
+      // throwing a TypeError into the catch-all below. Fail closed on a
+      // missing order id or expiry — a half-decoded order would corrupt
+      // the payment hand-off.
+      final data = safeMap(response);
+      final orderId = safeString(data, 'order_id');
+      final expiresAt = safeDateTime(data, 'expires_at');
+      final subtotal = _minorUnits(data['subtotal']);
+      final shipping = _minorUnits(data['shipping']);
+      final total = _minorUnits(data['total']);
+      if (orderId.isEmpty ||
+          expiresAt == null ||
+          subtotal == null ||
+          shipping == null ||
+          total == null) {
+        return const Failure(AppError('Checkout failed'));
+      }
       return Success(PendingOrder(
-        orderId: data['order_id'] as String,
-        subtotal: Money(data['subtotal'] as int),
-        shipping: Money(data['shipping'] as int),
-        total: Money(data['total'] as int),
-        expiresAt: DateTime.parse(data['expires_at'] as String),
+        orderId: orderId,
+        subtotal: Money(subtotal),
+        shipping: Money(shipping),
+        total: Money(total),
+        expiresAt: expiresAt,
         status: safeString(data, 'status', fallback: 'pending'),
-        isIdempotentRetry: data['idempotent'] as bool? ?? false,
+        isIdempotentRetry: safeBool(data, 'idempotent'),
       ));
     } on PostgrestException catch (e) {
       final message = e.message;
