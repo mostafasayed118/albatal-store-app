@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'dart:async';
 
 import 'app.dart';
 import 'shared/services/app_bloc_observer.dart';
+import 'shared/services/connectivity_gate.dart';
 import 'shared/services/crash_reporting_service.dart';
 import 'shared/services/e2e_sentry_probe.dart';
 import 'shared/services/env_config.dart';
@@ -78,6 +80,11 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
     // --dart-define E2E_SENTRY_PROBE=true AND kDebugMode. Dead code in
     // every normal build. Must run after crash-reporting init above.
     fireE2ESentryProbe();
+
+    // Start the offline gate (B1+B2): fire-and-forget so a slow seed
+    // probe never delays first frame. Surfaces seed via gate.current
+    // until the probe lands.
+    unawaited(getIt<ConnectivityGate>().start());
 
     // Capture Flutter framework errors — must be after Sentry init.
     FlutterError.onError = (details) {

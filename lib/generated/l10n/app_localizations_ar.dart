@@ -118,6 +118,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorBody => 'يُرجى التحقق من اتصالك والمحاولة مرة أخرى.';
 
   @override
+  String get offlineBannerMessage => 'لا يوجد اتصال بالإنترنت';
+
+  @override
   String get couldNotOpenLink => 'تعذّر فتح ذلك. يُرجى المحاولة مرة أخرى.';
 
   @override
