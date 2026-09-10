@@ -465,8 +465,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: AdminVariantEditorPage(
-          productId: 'pid', repository: fake),
+      home: AdminVariantEditorPage(productId: 'pid', repository: fake),
     ));
     await tester.pumpAndSettle();
 
@@ -611,8 +610,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AdminVariantEditorPage(
-            productId: 'pid', repository: fakeAdmin),
+        home: AdminVariantEditorPage(productId: 'pid', repository: fakeAdmin),
       ),
     );
     await tester.pumpAndSettle();

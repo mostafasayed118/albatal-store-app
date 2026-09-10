@@ -23,7 +23,6 @@ export '../../domain/entities/catalog_filters.dart'
 /// historically imported [CatalogState]/[CatalogStatus] from this file.
 export 'catalog_state.dart';
 
-
 final class CatalogCubit extends Cubit<CatalogState> {
   CatalogCubit(this._repository, {DateTime Function()? now})
       : _now = now ?? DateTime.now,
