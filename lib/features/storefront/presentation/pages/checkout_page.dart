@@ -6,7 +6,6 @@ import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
@@ -31,16 +30,26 @@ import '../../../../shared/components/step_indicator.dart';
 /// The idempotency key is managed by [CheckoutCubit] — generated once per
 /// checkout attempt and reused on retry, so the server returns the original
 /// order instead of creating a duplicate.
+///
+/// Dependencies are constructor-injected (audit P1): the router resolves
+/// them at the composition root. [authSession] is optional — an absent
+/// port (widget tests) yields an empty customer email.
 class CheckoutPage extends StatelessWidget {
-  const CheckoutPage(
-      {super.key,
-      CheckoutRepository? checkoutRepository,
-      CheckoutCubit? checkoutCubit})
-      : _checkoutRepository = checkoutRepository,
-        _checkoutCubit = checkoutCubit;
+  const CheckoutPage({
+    super.key,
+    required CheckoutRepository checkoutRepository,
+    CheckoutCubit? checkoutCubit,
+    PlaceCheckoutOrderUseCase? placeOrder,
+    AuthSessionPort? authSession,
+  })  : _checkoutRepository = checkoutRepository,
+        _checkoutCubit = checkoutCubit,
+        _placeOrder = placeOrder,
+        _authSession = authSession;
 
-  final CheckoutRepository? _checkoutRepository;
+  final CheckoutRepository _checkoutRepository;
   final CheckoutCubit? _checkoutCubit;
+  final PlaceCheckoutOrderUseCase? _placeOrder;
+  final AuthSessionPort? _authSession;
 
   @override
   Widget build(BuildContext context) {
@@ -199,27 +208,23 @@ class CheckoutPage extends StatelessWidget {
           value: _checkoutCubit, child: page);
     }
     return BlocProvider<CheckoutCubit>(
-      // The checkout use-case (idempotency store + TTL + retry policy)
-      // is composed at the root; widget tests pump this page without the
-      // locator and fall back to the cubit's in-memory default.
+      // Widget tests pump this page with a fake repository (or a
+      // pre-built cubit via the .value branch above) instead of the
+      // locator — no getIt fallback.
       create: (_) => CheckoutCubit(
-        _checkoutRepository ?? getIt<CheckoutRepository>(),
-        placeOrder: getIt.isRegistered<PlaceCheckoutOrderUseCase>()
-            ? getIt<PlaceCheckoutOrderUseCase>()
-            : null,
+        _checkoutRepository,
+        placeOrder: _placeOrder,
       ),
       child: page,
     );
   }
 
-  /// Resolves the signed-in email via the [AuthSessionPort] without
-  /// importing Supabase into the presentation layer. Empty (never fake)
-  /// when the session lapsed or the port is unavailable (widget tests).
-  static String _resolveCustomerEmail() {
-    if (getIt.isRegistered<AuthSessionPort>()) {
-      return getIt<AuthSessionPort>().currentUserEmail()?.trim() ?? '';
-    }
-    return '';
+  /// Resolves the signed-in email via the injected [AuthSessionPort]
+  /// without importing Supabase into the presentation layer. Empty
+  /// (never fake) when the port is absent (widget tests) or the session
+  /// lapsed.
+  String _resolveCustomerEmail() {
+    return _authSession?.currentUserEmail()?.trim() ?? '';
   }
 }
 

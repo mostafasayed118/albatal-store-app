@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../widgets/dialog_controllers.dart';
@@ -13,9 +12,17 @@ import '../widgets/dialog_controllers.dart';
 /// Consumes the repository's `Result` API via exhaustive switches: no
 /// exceptions are caught here and no raw maps are subscripted (audit
 /// remediation: T1 catalog methods return `Result<T>` of typed entities).
+///
+/// The repository is constructor-injected (audit P1); the router resolves
+/// it at the composition root.
 class AdminVariantEditorPage extends StatefulWidget {
-  const AdminVariantEditorPage({super.key, required this.productId});
+  const AdminVariantEditorPage({
+    super.key,
+    required this.productId,
+    required this.repository,
+  });
   final String productId;
+  final AdminRepository repository;
 
   @override
   State<AdminVariantEditorPage> createState() => _AdminVariantEditorPageState();
@@ -44,7 +51,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
       _loading = true;
       _error = null;
     });
-    final result = await getIt<AdminRepository>().getVariants(widget.productId);
+    final result =
+        await widget.repository.getVariants(widget.productId);
     if (!mounted) return;
     result.when(
       success: (variants) => setState(() {
@@ -157,7 +165,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                       }
                       setDlgState(() => saving = true);
                       final result =
-                          await getIt<AdminRepository>().adminUpsertVariant(
+                          await widget.repository.adminUpsertVariant(
                         productId: widget.productId,
                         size: sizeCtrl.text.trim(),
                         color: colorCtrl.text.trim(),

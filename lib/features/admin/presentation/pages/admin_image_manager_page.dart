@@ -7,16 +7,25 @@ import '../../../../shared/components/app_image.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Image manager for a single product — grid, upload, reorder, delete.
+///
+/// Dependencies are constructor-injected (audit P1): the router resolves
+/// them at the composition root; pages never touch the locator.
 class AdminImageManagerPage extends StatefulWidget {
-  const AdminImageManagerPage({super.key, required this.productId});
+  const AdminImageManagerPage({
+    super.key,
+    required this.productId,
+    required this.repository,
+    required this.storage,
+  });
   final String productId;
+  final AdminRepository repository;
+  final StorageService storage;
 
   @override
   State<AdminImageManagerPage> createState() => _AdminImageManagerPageState();
@@ -40,7 +49,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       _error = null;
     });
     final result =
-        await getIt<AdminRepository>().getProductImagePaths(widget.productId);
+        await widget.repository.getProductImagePaths(widget.productId);
     if (!mounted) return;
     result.when(
       success: (paths) => setState(() {
@@ -58,7 +67,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   }
 
   Future<void> _persistPaths(List<String> paths, {String? confirmation}) async {
-    final result = await getIt<AdminRepository>()
+    final result = await widget.repository
         .adminSetProductImages(widget.productId, paths);
     if (!mounted) return;
     result.when(
@@ -81,19 +90,18 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     // is exercised and verifiable in tests.
     setState(() => _uploading = true);
     try {
-      final storage = getIt<StorageService>();
       final fileName = 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg';
       // Dummy 1x1 JPEG bytes (SOI + EOI) — sufficient for storage API contract.
       final bytes = <int>[0xFF, 0xD8, 0xFF, 0xD9];
-      final storagePath = await storage.uploadProductImage(
+      final storagePath = await widget.storage.uploadProductImage(
         widget.productId,
         bytes,
         fileName,
         'image/jpeg',
       );
       final next = [..._paths, storagePath];
-      final saveResult = await getIt<AdminRepository>()
-          .adminSetProductImages(widget.productId, next);
+      final saveResult =
+          await widget.repository.adminSetProductImages(widget.productId, next);
       if (!mounted) return;
       if (saveResult case Failure(:final error)) {
         setState(() => _uploading = false);
@@ -219,8 +227,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                 final path = _paths[i];
                                 String url;
                                 try {
-                                  url = getIt<StorageService>()
-                                      .getProductImageUrl(path);
+                                  url = widget.storage.getProductImageUrl(path);
                                 } catch (_) {
                                   url = path;
                                 }

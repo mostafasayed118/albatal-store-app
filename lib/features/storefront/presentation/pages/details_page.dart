@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
@@ -19,13 +18,16 @@ import '../widgets/size_guide_sheet.dart';
 import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
 
+/// Product details. The catalog repository is constructor-injected
+/// (audit P1); the router resolves it at the composition root, widget
+/// tests pass a fake directly.
 class DetailsPage extends StatelessWidget {
   const DetailsPage(
-      {super.key, required this.id, CatalogRepository? catalogRepository})
+      {super.key, required this.id, required CatalogRepository catalogRepository})
       : _catalogRepository = catalogRepository;
 
   final String id;
-  final CatalogRepository? _catalogRepository;
+  final CatalogRepository _catalogRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +35,7 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) =>
-          ProductDetailsCubit(_catalogRepository ?? getIt<CatalogRepository>())
+      create: (_) => ProductDetailsCubit(_catalogRepository)
             ..loadProduct(id),
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
         builder: (context, s) {
