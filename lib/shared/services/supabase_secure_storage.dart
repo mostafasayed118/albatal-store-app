@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'logger.dart';
 import 'secure_store.dart';
 
 /// Supabase session persistence on top of the encrypted [SecureStore].
@@ -33,9 +34,13 @@ final class SecureSessionStorage extends LocalStorage {
       if (legacy == null) return;
       await _store.write(persistSessionKey, legacy);
       await prefs.remove(persistSessionKey);
-    } catch (_) {
+    } catch (e) {
       // Fail-safe: a broken keystore or prefs only means the session
-      // is not restored — auth proceeds as signed-out.
+      // is not restored — auth proceeds as signed-out. Keystore errors
+      // carry op codes, never session values, so the message is safe
+      // to log (release breadcrumbs pass Log.redact).
+      Log.w('Secure session migration failed; continuing signed-out: $e',
+          category: LogCategory.auth);
     }
   }
 
@@ -43,7 +48,9 @@ final class SecureSessionStorage extends LocalStorage {
   Future<bool> hasAccessToken() async {
     try {
       return await _store.read(persistSessionKey) != null;
-    } catch (_) {
+    } catch (e) {
+      Log.w('Secure session check failed; assuming signed-out: $e',
+          category: LogCategory.auth);
       return false;
     }
   }
@@ -52,7 +59,9 @@ final class SecureSessionStorage extends LocalStorage {
   Future<String?> accessToken() async {
     try {
       return await _store.read(persistSessionKey);
-    } catch (_) {
+    } catch (e) {
+      Log.w('Secure session read failed; treating as signed-out: $e',
+          category: LogCategory.auth);
       return null;
     }
   }
@@ -61,8 +70,10 @@ final class SecureSessionStorage extends LocalStorage {
   Future<void> removePersistedSession() async {
     try {
       await _store.delete(persistSessionKey);
-    } catch (_) {
+    } catch (e) {
       // Sign-out must never fail on a keystore error.
+      Log.w('Secure session delete failed during sign-out: $e',
+          category: LogCategory.auth);
     }
   }
 
@@ -89,7 +100,8 @@ final class SecureGotrueStorage extends GotrueAsyncStorage {
   Future<String?> getItem({required String key}) async {
     try {
       return await _store.read(key);
-    } catch (_) {
+    } catch (e) {
+      Log.w('PKCE verifier read failed: $e', category: LogCategory.auth);
       return null;
     }
   }
@@ -102,8 +114,9 @@ final class SecureGotrueStorage extends GotrueAsyncStorage {
   Future<void> removeItem({required String key}) async {
     try {
       await _store.delete(key);
-    } catch (_) {
+    } catch (e) {
       // Removing a stale verifier must never throw into the auth flow.
+      Log.w('PKCE verifier cleanup failed: $e', category: LogCategory.auth);
     }
   }
 }
