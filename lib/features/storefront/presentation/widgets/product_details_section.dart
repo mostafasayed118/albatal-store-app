@@ -15,7 +15,9 @@ class ProductDetailsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     if (product.composition == null &&
         product.origin == null &&
-        product.care == null) {
+        product.care == null &&
+        product.widthCm == null &&
+        product.gsm == null) {
       return const SizedBox.shrink();
     }
     return Column(
@@ -35,6 +37,16 @@ class ProductDetailsSection extends StatelessWidget {
                 icon: Icons.place_outlined,
                 label: l.origin,
                 value: product.origin!),
+          if (product.widthCm != null)
+            InfoRow(
+                icon: Icons.straighten_outlined,
+                label: l.widthLabel,
+                value: l.metersValue(product.widthCm! / 100)),
+          if (product.gsm != null)
+            InfoRow(
+                icon: Icons.line_weight_outlined,
+                label: l.gsmLabel,
+                value: l.gsmValue(product.gsm!)),
         ],
         if (product.care != null) ...[
           const SizedBox(height: 20),

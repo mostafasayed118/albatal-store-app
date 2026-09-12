@@ -173,6 +173,12 @@ final class SupabaseAdminRepository implements AdminRepository {
     required String slug,
     String? description,
     String? composition,
+    String? care,
+    String? origin,
+    int? widthCm,
+    int? gsm,
+    bool? sellByLength,
+    double? minCutMeters,
     required String categoryId,
     required double basePrice,
     required bool isActive,
@@ -187,6 +193,14 @@ final class SupabaseAdminRepository implements AdminRepository {
         'p_category_id': categoryId,
         'p_base_price': basePrice,
         'p_is_active': isActive,
+        // §10 fabric attributes: only sent when set — the pre-051 RPC
+        // rejects unknown named parameters.
+        if (care != null) 'p_care': care,
+        if (origin != null) 'p_origin': origin,
+        if (widthCm != null) 'p_width_cm': widthCm,
+        if (gsm != null) 'p_gsm': gsm,
+        if (sellByLength != null) 'p_sell_by_length': sellByLength,
+        if (minCutMeters != null) 'p_min_cut_meters': minCutMeters,
       });
       if (res is! String || res.isEmpty) {
         return const Failure(AppError('Failed to save product'));

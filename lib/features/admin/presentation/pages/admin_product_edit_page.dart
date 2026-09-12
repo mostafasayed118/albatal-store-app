@@ -39,6 +39,12 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   late final TextEditingController _slugCtrl;
   late final TextEditingController _descriptionCtrl;
   late final TextEditingController _compositionCtrl;
+  late final TextEditingController _careCtrl;
+  late final TextEditingController _originCtrl;
+  late final TextEditingController _widthCtrl;
+  late final TextEditingController _gsmCtrl;
+  late final TextEditingController _minCutCtrl;
+  bool _sellByLength = false;
   late final TextEditingController _priceCtrl;
   bool _isActive = true;
 
@@ -63,6 +69,14 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         TextEditingController(text: safeString(d, 'description'));
     _compositionCtrl =
         TextEditingController(text: safeString(d, 'composition'));
+    _careCtrl = TextEditingController(text: safeString(d, 'care'));
+    _originCtrl = TextEditingController(text: safeString(d, 'origin'));
+    _widthCtrl =
+        TextEditingController(text: safeString(d, 'width_cm'));
+    _gsmCtrl = TextEditingController(text: safeString(d, 'gsm'));
+    _minCutCtrl =
+        TextEditingController(text: safeString(d, 'min_cut_meters'));
+    _sellByLength = safeString(d, 'sell_by_length') == 'true';
     final price = d?['base_price'];
     _priceCtrl = TextEditingController(
       text: price == null ? '' : price.toString(),
@@ -100,6 +114,12 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _slugCtrl.text = product.slug;
     _descriptionCtrl.text = product.description ?? '';
     _compositionCtrl.text = product.composition ?? '';
+    _careCtrl.text = product.care ?? '';
+    _originCtrl.text = product.origin ?? '';
+    _widthCtrl.text = product.widthCm?.toString() ?? '';
+    _gsmCtrl.text = product.gsm?.toString() ?? '';
+    _minCutCtrl.text = product.minCutMeters?.toString() ?? '';
+    _sellByLength = product.sellByLength;
     _priceCtrl.text =
         product.basePrice == 0 ? '' : _trimTrailingZeros(product.basePrice);
     _isActive = product.isActive;
@@ -173,6 +193,11 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _slugCtrl.dispose();
     _descriptionCtrl.dispose();
     _compositionCtrl.dispose();
+    _careCtrl.dispose();
+    _originCtrl.dispose();
+    _widthCtrl.dispose();
+    _gsmCtrl.dispose();
+    _minCutCtrl.dispose();
     _priceCtrl.dispose();
     super.dispose();
   }
@@ -205,6 +230,12 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       composition: _compositionCtrl.text.trim().isEmpty
           ? null
           : _compositionCtrl.text.trim(),
+      care: _careCtrl.text.trim().isEmpty ? null : _careCtrl.text.trim(),
+      origin: _originCtrl.text.trim().isEmpty ? null : _originCtrl.text.trim(),
+      widthCm: int.tryParse(_widthCtrl.text.trim()),
+      gsm: int.tryParse(_gsmCtrl.text.trim()),
+      sellByLength: _sellByLength,
+      minCutMeters: double.tryParse(_minCutCtrl.text.trim()),
       categoryId: _selectedCategoryId!,
       basePrice: price,
       isActive: _isActive,
@@ -266,6 +297,56 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
               decoration: const InputDecoration(labelText: 'Composition'),
             ),
             const SizedBox(height: 16),
+            TextFormField(
+              controller: _careCtrl,
+              decoration: const InputDecoration(labelText: 'Care'),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _originCtrl,
+              decoration: const InputDecoration(labelText: 'Origin'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _widthCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        const InputDecoration(labelText: 'Width (cm)'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _gsmCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        const InputDecoration(labelText: 'Weight (GSM)'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Sell by length (per meter)'),
+              subtitle: const Text(
+                  'Shoppers pick a custom cut length in 0.5 m steps'),
+              value: _sellByLength,
+              onChanged: (v) => setState(() => _sellByLength = v),
+            ),
+            if (_sellByLength) ...[
+              TextFormField(
+                controller: _minCutCtrl,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                    labelText: 'Minimum cut (meters)'),
+              ),
+              const SizedBox(height: 16),
+            ],
             _loadingCategories
                 ? const Center(
                     child: Padding(

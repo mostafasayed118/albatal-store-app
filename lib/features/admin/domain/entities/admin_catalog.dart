@@ -18,6 +18,12 @@ final class AdminProduct {
     required this.isActive,
     this.description,
     this.composition,
+    this.care,
+    this.origin,
+    this.widthCm,
+    this.gsm,
+    this.sellByLength = false,
+    this.minCutMeters,
   });
 
   final String id;
@@ -34,6 +40,12 @@ final class AdminProduct {
 
   final String? description;
   final String? composition;
+  final String? care;
+  final String? origin;
+  final int? widthCm;
+  final int? gsm;
+  final bool sellByLength;
+  final double? minCutMeters;
 
   /// Compact status chip for list rows.
   String get statusLabel => isActive ? 'Active' : 'Inactive';

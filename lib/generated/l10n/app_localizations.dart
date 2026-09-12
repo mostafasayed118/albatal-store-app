@@ -986,6 +986,42 @@ abstract class AppLocalizations {
   /// **'Reject'**
   String get reviewReject;
 
+  /// No description provided for @widthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get widthLabel;
+
+  /// No description provided for @metersValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} m'**
+  String metersValue(num value);
+
+  /// No description provided for @gsmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get gsmLabel;
+
+  /// No description provided for @gsmValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} GSM'**
+  String gsmValue(int value);
+
+  /// No description provided for @cutLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut length'**
+  String get cutLength;
+
+  /// No description provided for @sellByLengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by the meter — minimum cut applies.'**
+  String get sellByLengthNote;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

@@ -480,6 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewReject => 'Reject';
 
   @override
+  String get widthLabel => 'Width';
+
+  @override
+  String metersValue(num value) {
+    return '$value m';
+  }
+
+  @override
+  String get gsmLabel => 'Weight';
+
+  @override
+  String gsmValue(int value) {
+    return '$value GSM';
+  }
+
+  @override
+  String get cutLength => 'Cut length';
+
+  @override
+  String get sellByLengthNote => 'Sold by the meter — minimum cut applies.';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

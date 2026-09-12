@@ -485,6 +485,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reviewReject => 'رفض';
 
   @override
+  String get widthLabel => 'العرض';
+
+  @override
+  String metersValue(num value) {
+    return '$value م';
+  }
+
+  @override
+  String get gsmLabel => 'الوزن';
+
+  @override
+  String gsmValue(int value) {
+    return '$value غرام/م²';
+  }
+
+  @override
+  String get cutLength => 'طول القص';
+
+  @override
+  String get sellByLengthNote => 'يُباع بالمتر — يوجد حد أدنى للقص.';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

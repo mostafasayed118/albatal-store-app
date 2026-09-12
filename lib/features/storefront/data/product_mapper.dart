@@ -9,6 +9,20 @@ import '../domain/entities/flash_sale.dart';
 /// Unlike [safeString] (which falls back to `''`), optional text fields
 /// degrade to null so callers keep the exact old `as String?` semantics for
 /// well-typed inputs while mistypes degrade instead of throwing [TypeError].
+int? _optInt(Map m, String k) {
+  final v = m[k];
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  return null;
+}
+
+double? _optDouble(Map m, String k) {
+  final v = m[k];
+  if (v is double) return v;
+  if (v is num) return v.toDouble();
+  return null;
+}
+
 String? _optStr(Map m, String k) {
   final v = m[k];
   return v is String ? v : null;
@@ -108,6 +122,10 @@ extension ProductCodec on Product {
       description: _optStr(row, 'description'),
       composition: _optStr(row, 'composition'),
       care: _optStr(row, 'care'),
+      widthCm: _optInt(row, 'width_cm'),
+      gsm: _optInt(row, 'gsm'),
+      sellByLength: (row['sell_by_length'] as bool?) ?? false,
+      minCutMeters: _optDouble(row, 'min_cut_meters'),
       origin: _optStr(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
       colors: colorSet.toList()..sort(),
