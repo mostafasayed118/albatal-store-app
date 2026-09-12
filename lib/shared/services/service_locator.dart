@@ -37,9 +37,9 @@ import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
 import 'connectivity_gate.dart';
+import 'image_compressor.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
-import 'image_compressor.dart';
 
 final getIt = GetIt.instance;
 

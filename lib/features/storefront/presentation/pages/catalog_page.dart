@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/feedback_view.dart';
-import '../../../../shared/widgets/skeleton_loaders.dart';import '../../../../shared/components/responsive_shell.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/active_filters_bar.dart';

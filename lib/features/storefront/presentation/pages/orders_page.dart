@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
-import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../cubit/orders_cubit.dart';
 import '../widgets/order_list.dart';
 

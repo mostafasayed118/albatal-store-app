@@ -9,8 +9,8 @@ import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_r
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
-import 'package:al_batal_elite/shared/widgets/skeleton_loaders.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
+import 'package:al_batal_elite/shared/widgets/skeleton_loaders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
