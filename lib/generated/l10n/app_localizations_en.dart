@@ -406,6 +406,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearRecent => 'Clear';
 
   @override
+  String get couponFieldLabel => 'Coupon code';
+
+  @override
+  String get couponApply => 'Apply';
+
+  @override
+  String get couponApplied =>
+      'Coupon applied — the discount is confirmed by the server when you place the order.';
+
+  @override
+  String get couponInvalid => 'This coupon code is not valid.';
+
+  @override
+  String get couponUnavailable => 'Coupons are unavailable right now.';
+
+  @override
+  String get couponRemove => 'Remove coupon';
+
+  @override
+  String get adminCoupons => 'Coupons';
+
+  @override
+  String get manageCoupons => 'Create and manage discount codes';
+
+  @override
+  String get couponCode => 'Code';
+
+  @override
+  String get couponDiscountEgp => 'Discount (EGP)';
+
+  @override
+  String get couponActive => 'Active';
+
+  @override
+  String get adminAddCoupon => 'Add coupon';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

@@ -1,0 +1,84 @@
+import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
+
+import '../../../../core/error/result.dart';
+import '../../domain/entities/admin_coupon.dart';
+import '../../domain/repositories/admin_repository.dart';
+
+enum AdminCouponsStatus { initial, loading, ready, error }
+
+final class AdminCouponsState extends Equatable {
+  const AdminCouponsState({
+    this.status = AdminCouponsStatus.initial,
+    this.coupons = const [],
+    this.errorMessage,
+  });
+
+  final AdminCouponsStatus status;
+  final List<AdminCoupon> coupons;
+  final String? errorMessage;
+
+  AdminCouponsState copyWith({
+    AdminCouponsStatus? status,
+    List<AdminCoupon>? coupons,
+    String? errorMessage,
+  }) =>
+      AdminCouponsState(
+        status: status ?? this.status,
+        coupons: coupons ?? this.coupons,
+        errorMessage: errorMessage,
+      );
+
+  @override
+  List<Object?> get props => [status, coupons, errorMessage];
+}
+
+/// Coupon management for the admin hub (feature-batch §8).
+class AdminCouponsCubit extends Cubit<AdminCouponsState> {
+  AdminCouponsCubit({required AdminRepository repository})
+      : _repository = repository,
+        super(const AdminCouponsState());
+
+  final AdminRepository _repository;
+
+  Future<void> load() async {
+    emit(state.copyWith(status: AdminCouponsStatus.loading));
+    final result = await _repository.fetchCoupons();
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(
+            status: AdminCouponsStatus.ready, coupons: value));
+      case Failure(:final error):
+        emit(state.copyWith(
+            status: AdminCouponsStatus.error, errorMessage: error.message));
+    }
+  }
+
+  Future<void> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async {
+    final result = await _repository.createCoupon(
+      code: code,
+      discountMinor: discountMinor,
+      description: description,
+    );
+    if (result is Success<AdminCoupon>) {
+      await load();
+    }
+  }
+
+  Future<void> setActive(String id, bool active) async {
+    final result = await _repository.setCouponActive(id, active);
+    switch (result) {
+      case Success():
+        emit(state.copyWith(
+            coupons: state.coupons
+                .map((c) => c.id == id ? c.copyWith(active: active) : c)
+                .toList()));
+      case Failure():
+        break; // row keeps its previous toggle state in the UI
+    }
+  }
+}

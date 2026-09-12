@@ -411,6 +411,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get clearRecent => 'مسح';
 
   @override
+  String get couponFieldLabel => 'كود الخصم';
+
+  @override
+  String get couponApply => 'تطبيق';
+
+  @override
+  String get couponApplied =>
+      'تم تطبيق الكود — يثبت الخادم قيمة الخصم عند تأكيد الطلب.';
+
+  @override
+  String get couponInvalid => 'كود الخصم غير صالح.';
+
+  @override
+  String get couponUnavailable => 'أكواد الخصم غير متاحة حاليًا.';
+
+  @override
+  String get couponRemove => 'إزالة الكود';
+
+  @override
+  String get adminCoupons => 'أكواد الخصم';
+
+  @override
+  String get manageCoupons => 'إنشاء وإدارة أكواد الخصم';
+
+  @override
+  String get couponCode => 'الكود';
+
+  @override
+  String get couponDiscountEgp => 'الخصم (جنيه)';
+
+  @override
+  String get couponActive => 'نشط';
+
+  @override
+  String get adminAddCoupon => 'إضافة كود';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

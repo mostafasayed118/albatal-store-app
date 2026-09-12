@@ -20,6 +20,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+      String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
@@ -202,6 +203,7 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+      String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
@@ -221,6 +223,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+      String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);

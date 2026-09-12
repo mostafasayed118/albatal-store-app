@@ -842,6 +842,78 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get clearRecent;
 
+  /// No description provided for @couponFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupon code'**
+  String get couponFieldLabel;
+
+  /// No description provided for @couponApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get couponApply;
+
+  /// No description provided for @couponApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupon applied — the discount is confirmed by the server when you place the order.'**
+  String get couponApplied;
+
+  /// No description provided for @couponInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This coupon code is not valid.'**
+  String get couponInvalid;
+
+  /// No description provided for @couponUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupons are unavailable right now.'**
+  String get couponUnavailable;
+
+  /// No description provided for @couponRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove coupon'**
+  String get couponRemove;
+
+  /// No description provided for @adminCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupons'**
+  String get adminCoupons;
+
+  /// No description provided for @manageCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and manage discount codes'**
+  String get manageCoupons;
+
+  /// No description provided for @couponCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get couponCode;
+
+  /// No description provided for @couponDiscountEgp.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount (EGP)'**
+  String get couponDiscountEgp;
+
+  /// No description provided for @couponActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get couponActive;
+
+  /// No description provided for @adminAddCoupon.
+  ///
+  /// In en, this message translates to:
+  /// **'Add coupon'**
+  String get adminAddCoupon;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

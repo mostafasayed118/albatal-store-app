@@ -147,6 +147,18 @@
   "recentSearches": "Recent searches",
   "searchSuggestions": "Suggestions",
   "clearRecent": "Clear",
+  "couponFieldLabel": "Coupon code",
+  "couponApply": "Apply",
+  "couponApplied": "Coupon applied — the discount is confirmed by the server when you place the order.",
+  "couponInvalid": "This coupon code is not valid.",
+  "couponUnavailable": "Coupons are unavailable right now.",
+  "couponRemove": "Remove coupon",
+  "adminCoupons": "Coupons",
+  "manageCoupons": "Create and manage discount codes",
+  "couponCode": "Code",
+  "couponDiscountEgp": "Discount (EGP)",
+  "couponActive": "Active",
+  "adminAddCoupon": "Add coupon",
   "reorderAdded": "{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}",
   "@reorderAdded": {
     "placeholders": {

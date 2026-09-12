@@ -4,6 +4,7 @@ import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
+import '../domain/entities/admin_coupon.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
@@ -275,4 +276,65 @@ final class SupabaseAdminRepository implements AdminRepository {
       return Failure(AppError('Failed to update membership tier', cause: e));
     }
   }
+
+  // ─── Coupons (feature-batch §8) ─────────────────────────
+
+  @override
+  Future<Result<List<AdminCoupon>>> fetchCoupons() async {
+    try {
+      final rows = await _client
+          .from('coupons')
+          .select('id, code, discount_minor, description, active')
+          .order('created_at', ascending: false);
+      final list = rows as List<dynamic>;
+      return Success(
+        list
+            .map((row) => _couponFromRow(row as Map<String, dynamic>))
+            .toList(),
+      );
+    } catch (e) {
+      return Failure(AppError('Failed to fetch coupons', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async {
+    try {
+      final row = await _client
+          .from('coupons')
+          .upsert({
+            'code': code.trim().toUpperCase(),
+            'discount_minor': discountMinor,
+            if (description != null && description.isNotEmpty)
+              'description': description,
+          })
+          .select('id, code, discount_minor, description, active')
+          .single();
+      return Success(_couponFromRow(row));
+    } catch (e) {
+      return Failure(AppError('Failed to create coupon', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<void>> setCouponActive(String id, bool active) async {
+    try {
+      await _client.from('coupons').update({'active': active}).eq('id', id);
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update coupon', cause: e));
+    }
+  }
 }
+
+AdminCoupon _couponFromRow(Map<String, dynamic> row) => AdminCoupon(
+      id: row['id'] as String,
+      code: (row['code'] as String?)?.toUpperCase() ?? '',
+      discountMinor: (row['discount_minor'] as num?)?.toInt() ?? 0,
+      active: row['active'] as bool? ?? false,
+      description: row['description'] as String?,
+    );

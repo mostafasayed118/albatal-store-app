@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
@@ -19,6 +20,22 @@ import 'package:flutter_test/flutter_test.dart';
 /// are the entry experience for four of the hub's tiles.
 
 class _FakeAdminRepository implements AdminRepository {
+  @override
+  Future<Result<List<AdminCoupon>>> fetchCoupons() async =>
+      const Success(<AdminCoupon>[]);
+
+  @override
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async =>
+      const Failure(AppError('not implemented'));
+
+  @override
+  Future<Result<void>> setCouponActive(String id, bool active) async =>
+      const Success(null);
+
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
       const Success(null);
