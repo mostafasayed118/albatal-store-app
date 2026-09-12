@@ -1,7 +1,7 @@
-import '../domain/repositories/idempotency_store.dart';
+import 'idempotency_store.dart';
 
 /// Non-persisted [IdempotencyStore] for tests and for cubits
-/// constructed without a [SharedPreferences]-backed store.
+/// constructed without a persistent store.
 ///
 /// Keys live only for the instance lifetime, so crash-restart recovery
 /// is unavailable — retries within the session still reuse the key.

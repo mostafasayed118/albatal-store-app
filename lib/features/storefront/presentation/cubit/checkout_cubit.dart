@@ -1,16 +1,14 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../payments/domain/entities/payment.dart';
-import '../../data/memory_idempotency_store.dart';
-import '../../data/storefront_persistence.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/repositories/idempotency_store.dart';
+import '../../domain/repositories/memory_idempotency_store.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
@@ -97,19 +95,12 @@ final class CheckoutState extends Equatable {
 final class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit(
     CheckoutRepository checkoutRepository, {
-    // Legacy persistence param (kept for backward compatibility — prefer
-    // injecting [placeOrder], which already carries its store). Only used
-    // to build the default use-case below; never read directly.
-    SharedPreferences? prefs,
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
   })  : _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(
               checkoutRepository: checkoutRepository,
-              idempotencyStore: idempotencyStore ??
-                  (prefs == null
-                      ? MemoryIdempotencyStore()
-                      : LocalStorefrontPersistence(prefs)),
+              idempotencyStore: idempotencyStore ?? MemoryIdempotencyStore(),
             ),
         super(const CheckoutState());
 
