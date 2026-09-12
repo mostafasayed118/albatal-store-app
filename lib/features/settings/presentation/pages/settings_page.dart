@@ -278,8 +278,8 @@ final class _NotificationToggleTile extends StatelessWidget {
     if (enabled == null) return const SizedBox.shrink();
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      title: const Text('Order notifications'),
-      subtitle: const Text('Confirmations and status updates'),
+      title: Text(context.l10n.orderNotifications),
+      subtitle: Text(context.l10n.orderNotificationsSubtitle),
       value: enabled,
       onChanged: (v) =>
           context.read<SettingsCubit>().toggleOrderNotifications(v),

@@ -457,5 +457,7 @@
   "orderRefRequired": "تعذر المتابعة: مرجع الطلب مفقود.",
   "checkoutFailedRetry": "فشل إتمام الطلب. يرجى المحاولة مجددًا.",
   "paymentMethodUnknown": "غير معروف",
-  "adminAccessRequired": "يلزم الوصول كمسؤول"
+  "adminAccessRequired": "يلزم الوصول كمسؤول",
+  "orderNotifications": "إشعارات الطلبات",
+  "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة"
 }

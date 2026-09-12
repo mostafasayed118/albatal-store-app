@@ -58,6 +58,20 @@ void main() {
       expect(AppLocalizationsAr().adminAccessRequired.isNotEmpty, isTrue);
     });
 
+    test('order-notification opt-in tile (audit 2026-09-13)', () {
+      final en = AppLocalizationsEn();
+      final ar = AppLocalizationsAr();
+      expect(en.orderNotifications, 'Order notifications');
+      expect(en.orderNotificationsSubtitle,
+          'Confirmations and status updates');
+      for (final value in [
+        ar.orderNotifications,
+        ar.orderNotificationsSubtitle,
+      ]) {
+        expect(value.isNotEmpty, isTrue);
+      }
+    });
+
     test('address surfaces labels and validators', () {
       final en = AppLocalizationsEn();
       final ar = AppLocalizationsAr();
