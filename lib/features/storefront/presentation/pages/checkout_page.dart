@@ -81,13 +81,13 @@ class CheckoutPage extends StatelessWidget {
           // localized retry copy so Arabic users never see English (audit
           // code-quality finding).
           final raw = s.errorMessage!;
-          // TODO(review-low): matching is stringly typed because [AppError]
-          // carries no machine-readable code (core/error is owned by the
-          // audit P1/P2 slices). If a `code` field is ever added there,
-          // switch this to code-based mapping — the scrubbed generic
-          // messages matched below are the exact literals emitted by
-          // CheckoutService for local failures.
-          final localized = (raw == 'Checkout failed' ||
+          // Code-based localization (audit 2026-09-13): generic failures
+          // carry [kCheckoutFailedCode]; the English-literal fallback
+          // keeps older call shapes (tests inject bare messages)
+          // localizing too. Server-authored messages pass through
+          // verbatim (P1 ruling).
+          final localized = (s.errorCode == kCheckoutFailedCode ||
+                  raw == 'Checkout failed' ||
                   raw == 'Failed to create order. Please try again.')
               ? l10n.checkoutFailedRetry
               : raw;

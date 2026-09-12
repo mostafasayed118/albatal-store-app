@@ -94,7 +94,8 @@ class CheckoutService implements CheckoutRepository {
           shipping == null ||
           total == null) {
         Log.e('Checkout RPC malformed payload', category: LogCategory.error);
-        return const Failure(AppError('Checkout failed'));
+        return const Failure(
+            AppError('Checkout failed', code: kCheckoutFailedCode));
       }
       return Success(PendingOrder(
         orderId: orderId,
@@ -112,12 +113,16 @@ class CheckoutService implements CheckoutRepository {
       // logs with cause/stack.
       Log.e('Checkout RPC failed', error: e, stackTrace: st);
       final message = _userMessageForPostgrest(e);
-      return Failure(AppError(message, cause: e, stackTrace: st));
+      return Failure(AppError(message,
+          cause: e,
+          stackTrace: st,
+          code: message == 'Checkout failed' ? kCheckoutFailedCode : null));
     } catch (e, st) {
       // Never interpolate the raw exception: transport failures can carry
       // internal URLs and secrets that must not reach the UI (audit P1).
       Log.e('Checkout failed', error: e, stackTrace: st);
-      return Failure(AppError('Checkout failed', cause: e, stackTrace: st));
+      return Failure(AppError('Checkout failed',
+          cause: e, stackTrace: st, code: kCheckoutFailedCode));
     }
   }
 

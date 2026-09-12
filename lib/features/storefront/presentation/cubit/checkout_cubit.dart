@@ -23,6 +23,7 @@ final class CheckoutState extends Equatable {
     this.payment = PaymentMethod.paymobCard,
     this.selectedAddress,
     this.errorMessage,
+    this.errorCode,
     this.pendingOrderId,
     this.serverSubtotal,
     this.serverShipping,
@@ -37,6 +38,11 @@ final class CheckoutState extends Equatable {
   final PaymentMethod payment;
   final Address? selectedAddress;
   final String? errorMessage;
+
+  /// Machine-readable classification of [errorMessage] (e.g.
+  /// [kCheckoutFailedCode]); the page maps it to localized copy
+  /// instead of string-matching (audit 2026-09-13).
+  final String? errorCode;
   final String? pendingOrderId;
   final Money? serverSubtotal;
   final Money? serverShipping;
@@ -69,6 +75,7 @@ final class CheckoutState extends Equatable {
     Address? selectedAddress,
     bool clearAddress = false,
     String? errorMessage,
+    String? errorCode,
     String? pendingOrderId,
     Money? serverSubtotal,
     Money? serverShipping,
@@ -85,6 +92,7 @@ final class CheckoutState extends Equatable {
         selectedAddress:
             clearAddress ? null : (selectedAddress ?? this.selectedAddress),
         errorMessage: errorMessage,
+        errorCode: errorCode,
         pendingOrderId: pendingOrderId ?? this.pendingOrderId,
         serverSubtotal: serverSubtotal ?? this.serverSubtotal,
         serverShipping: serverShipping ?? this.serverShipping,
@@ -102,6 +110,7 @@ final class CheckoutState extends Equatable {
         payment,
         selectedAddress,
         errorMessage,
+        errorCode,
         pendingOrderId,
         serverSubtotal,
         serverShipping,
@@ -240,6 +249,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         emit(state.copyWith(
           status: CheckoutStatus.error,
           errorMessage: outcome.error?.message ?? 'Failed to create order.',
+          errorCode: outcome.error?.code,
           idempotencyKey: outcome.idempotencyKey,
         ));
       }
@@ -251,6 +261,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(
         status: CheckoutStatus.error,
         errorMessage: 'Failed to create order. Please try again.',
+        errorCode: kCheckoutFailedCode,
         idempotencyKey: state.idempotencyKey,
       ));
     }

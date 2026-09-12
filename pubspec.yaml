@@ -38,9 +38,7 @@ dependencies:
   app_links: ^7.2.1 # §5 inbound deep links -> GoRouter
   permission_handler: ^13.0.2 # §12 notification permission gating
   flutter_image_compress: ^2.5.1 # §4 upload compression (fail-open)
-  photo_view: ^0.15.0 # §9 review-photo viewer
   skeletonizer: ^3.0.0 # §3 skeleton loading states
-  flutter_animate: ^4.5.2 # motion (reduced-motion guarded, §17)
   local_auth: ^3.0.2 # §15 biometric app lock
   pdf: ^3.13.0 # §16 branded invoice PDF
   printing: ^5.15.0 # §16 invoice save/share
