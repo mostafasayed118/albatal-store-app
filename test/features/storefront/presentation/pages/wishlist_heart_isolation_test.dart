@@ -20,11 +20,10 @@ import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
-class _StubRepo
-    with FetchRelatedFromProducts
-    implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   @override
-  Future<Result<List<Product>>> fetchProducts() async => const Success(_products);
+  Future<Result<List<Product>>> fetchProducts() async =>
+      const Success(_products);
   @override
   Future<Result<List<String>>> fetchCategories() async => const Success([
         'Silk',

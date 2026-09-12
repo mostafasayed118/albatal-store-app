@@ -16,9 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'helpers/fetch_related_stub.dart';
 
 /// Flash source the test can mutate between polls.
-class _FlashCatalog
-    with FetchRelatedFromProducts
-    implements CatalogRepository {
+class _FlashCatalog with FetchRelatedFromProducts implements CatalogRepository {
   List<FlashSale> sales = const [
     FlashSale(productId: 'p1', discountPct: 20),
   ];
@@ -41,14 +39,14 @@ class _FlashCatalog
   List<String> get defaultCategories => const ['All'];
 
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
-      Success(sales);
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async => Success(sales);
 }
 
 Widget _filterHarness(CatalogState state) => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: FilterSheet(state: state, onApply: (_, __, ___, ____) {})),
+      home: Scaffold(
+          body: FilterSheet(state: state, onApply: (_, __, ___, ____) {})),
     );
 
 void main() {

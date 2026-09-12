@@ -30,16 +30,15 @@ void main() {
     test('rejects non-https, foreign hosts, and exotic schemes', () {
       expect(isAllowedSupportLink(Uri.parse('http://wa.me/201154580512')),
           isFalse);
-      expect(
-          isAllowedSupportLink(Uri.parse('https://evil.com/wa.me/123')),
+      expect(isAllowedSupportLink(Uri.parse('https://evil.com/wa.me/123')),
           isFalse);
       expect(isAllowedSupportLink(Uri.parse('javascript:alert(1)')), isFalse);
       expect(isAllowedSupportLink(Uri.parse('notaurl')), isFalse);
     });
 
     test('accepts mailto links', () {
-      expect(isAllowedSupportLink(Uri.parse('mailto:al3tar66@gmail.com')),
-          isTrue);
+      expect(
+          isAllowedSupportLink(Uri.parse('mailto:al3tar66@gmail.com')), isTrue);
     });
   });
 }

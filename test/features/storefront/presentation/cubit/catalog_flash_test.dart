@@ -12,9 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/fetch_related_stub.dart';
 
-class _StubRepo
-    with FetchRelatedFromProducts
-    implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);
   @override

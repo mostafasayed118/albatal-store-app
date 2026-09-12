@@ -37,9 +37,7 @@ class _SignedInProfileRepository extends StubProfileRepository {
       const Success(Profile(id: 'ui-test-user', fullName: 'UI Tester'));
 }
 
-class _StubRepo
-    with FetchRelatedFromProducts
-    implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   const _StubRepo();
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([
