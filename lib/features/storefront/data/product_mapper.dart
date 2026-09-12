@@ -152,23 +152,31 @@ extension ProductCodec on Product {
   static Product? decode(Map<Object?, Object?> raw) {
     final id = raw['id'];
     if (id is! String || id.isEmpty) return null;
+    // Total decode: mistyped cache values degrade instead of throwing
+    // (one bad entry never fails the whole restore).
+    String? optStr(Object? v) => v is String ? v : null;
+    final priceRaw = raw['price'];
+    final oldPriceRaw = raw['oldPrice'];
+    final imageColorRaw = raw['imageColor'];
+    final ratingRaw = raw['rating'];
+    final reviewRaw = raw['reviewCount'];
     return Product(
         id: id,
         name: safeString(raw, 'name'),
         category: safeString(raw, 'category'),
-        price: Money(safeInt(raw, 'price')),
-        oldPrice: raw['oldPrice'] is num
-            ? Money((raw['oldPrice'] as num).toInt())
+        price: Money(priceRaw is num ? priceRaw.toInt() : 0),
+        oldPrice: oldPriceRaw is num
+            ? Money((oldPriceRaw).toInt())
             : null,
         imageColor:
-            (raw['imageColor'] as num?)?.toInt() ?? _placeholderImageColor,
-        imageAsset: raw['imageAsset'] as String?,
+            imageColorRaw is num ? imageColorRaw.toInt() : _placeholderImageColor,
+        imageAsset: optStr(raw['imageAsset']),
         images:
             (raw['images'] as List?)?.whereType<String>().toList() ?? const [],
-        description: raw['description'] as String?,
-        composition: raw['composition'] as String?,
-        care: raw['care'] as String?,
-        origin: raw['origin'] as String?,
+        description: optStr(raw['description']),
+        composition: optStr(raw['composition']),
+        care: optStr(raw['care']),
+        origin: optStr(raw['origin']),
         sizes:
             (raw['sizes'] as List?)?.whereType<String>().toList() ?? const [],
         colors:
@@ -176,8 +184,8 @@ extension ProductCodec on Product {
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),
-        rating: (raw['rating'] as num?)?.toDouble() ?? 0.0,
-        reviewCount: (raw['reviewCount'] as num?)?.toInt() ?? 0);
+        rating: ratingRaw is num ? ratingRaw.toDouble() : 0.0,
+        reviewCount: reviewRaw is num ? reviewRaw.toInt() : 0);
   }
 }
 

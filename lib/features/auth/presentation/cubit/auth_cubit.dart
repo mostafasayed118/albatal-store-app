@@ -171,21 +171,30 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await _profileRepository.upsertProfile(updated);
     switch (result) {
       case Success():
-        emit(state.copyWith(profile: updated));
+        emit(state.copyWith(profile: updated, errorMessage: null));
       case Failure(:final error):
         Log.w('Profile save failed: ${error.message}',
             category: LogCategory.auth);
-      // Don't change the in-memory profile — the user's edit is preserved
-      // locally even if the server write failed. A future read will
-      // reconcile. Surfacing this as a hard error would lose the user's
-      // input on a transient network blip.
+        // Surface to UI via errorMessage while staying authenticated;
+        // do NOT emit the unpersisted edit (state keeps the last saved
+        // profile so a retry shows honest data).
+        emit(state.copyWith(errorMessage: error.message));
     }
   }
 
   /// Sign out and clear all account state.
+  ///
+  /// Server failure still signs out locally (the session is dead to the
+  /// user) but is logged; snapshot-clear failures are retried once via
+  /// [_clearLocalSnapshots] so no address/order PII survives.
   Future<void> signOut() async {
-    await _authRepository.signOut();
+    final result = await _authRepository.signOut();
+    if (result case Failure(:final error)) {
+      Log.w('Sign-out server failure: ${error.message}',
+          category: LogCategory.auth);
+    }
     await _clearLocalSnapshots();
+    if (isClosed) return;
     emit(state.copyWith(
       status: AuthStatus.unauthenticated,
       clearProfile: true,
@@ -231,13 +240,24 @@ class AuthCubit extends Cubit<AuthState> {
   /// local stores the app reads from — never raw prefs keys. Cart and
   /// wishlist are deliberately untouched here: they are guest-accessible
   /// and the settings page already owns their wipe (same UX-043 lane).
+  ///
+  /// Each wipe is retried once on failure and a still-failing wipe is
+  /// re-scheduled fire-and-forget so transient platform errors don't
+  /// leave PII behind; signOut/deleteAccount never abort on wipe failure.
   Future<void> _clearLocalSnapshots() async {
     final addressRepository = _addressRepository;
     if (addressRepository is ClearableAddressRepository) {
-      final result = await addressRepository.clearAddresses();
-      if (result case Failure(:final error)) {
-        Log.w('Address snapshot clear failed: ${error.message}',
+      var result = await addressRepository.clearAddresses();
+      if (result case Failure(error: final clearError)) {
+        Log.w('Address snapshot clear failed (retrying): ${clearError.message}',
             category: LogCategory.auth);
+        result = await addressRepository.clearAddresses();
+        if (result case Failure(error: final retryError)) {
+          Log.w('Address snapshot clear retry failed: ${retryError.message}',
+              category: LogCategory.auth);
+          // Schedule a late retry — best-effort PII re-wipe.
+          unawaited(addressRepository.clearAddresses());
+        }
       }
     }
     // Contained like the address clear above: a platform failure wiping
@@ -246,8 +266,19 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _orderSnapshots?.clearOrderSnapshots();
     } catch (_) {
-      Log.w('clearOrders failed during snapshot wipe',
+      Log.w('clearOrders failed during snapshot wipe (retrying)',
           category: LogCategory.auth);
+      try {
+        await _orderSnapshots?.clearOrderSnapshots();
+      } catch (_) {
+        Log.w('clearOrders retry failed during snapshot wipe',
+            category: LogCategory.auth);
+        unawaited(
+          Future(() => _orderSnapshots?.clearOrderSnapshots()).catchError(
+            (_) => null,
+          ),
+        );
+      }
     }
   }
 

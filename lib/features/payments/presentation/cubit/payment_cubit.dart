@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../domain/entities/payment.dart';
+import '../../domain/paymob_url_guard.dart';
 import '../../domain/repositories/payment_service.dart';
 
 // ─── States ────────────────────────────────────────────────
@@ -114,7 +115,11 @@ class PaymentCubit extends Cubit<PaymentState> {
   Timer? _watchTimeoutTimer;
 
   /// Initialize payment for an order.
+  ///
+  /// Stops any prior server-status watch first so a re-init never leaks
+  /// the previous order's subscription/timer.
   void initPayment({required Money amount, required String orderId}) {
+    unawaited(_stopWatching());
     emit(PaymentState(
       status: PaymentStatus.selectingMethod,
       amount: amount,
@@ -136,6 +141,11 @@ class PaymentCubit extends Cubit<PaymentState> {
   Future<void> processPayment({required String customerEmail}) async {
     if (state.selectedMethod == null) return;
     if (state.status == PaymentStatus.processing) return;
+    // Block re-initiation while a checkout session is already open or a
+    // proof is pending review — a second initiation would orphan the
+    // first session's watch.
+    if (state.status == PaymentStatus.awaitingVerification) return;
+    if (state.status == PaymentStatus.awaitingProof) return;
     if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
       return _processCod();
     }
@@ -189,8 +199,14 @@ class PaymentCubit extends Cubit<PaymentState> {
           errorMessage: code ?? message,
         ));
       case PaymentPending():
+        // COD confirm never returns pending (server is synchronous);
+        // treat as a terminal failure instead of stranding in processing.
+        emit(state.copyWith(
+          status: PaymentStatus.failed,
+          errorMessage: 'payment_not_pending',
+        ));
       case PaymentCancelled():
-        break;
+        emit(state.copyWith(status: PaymentStatus.cancelled));
     }
   }
 
@@ -237,6 +253,16 @@ class PaymentCubit extends Cubit<PaymentState> {
 
     switch (result) {
       case PaymentPending(:final checkoutUrl):
+        // Trust-boundary: only open Paymob-owned HTTPS checkout URLs
+        // (PaymobUrlGuard). A mistyped/proxied URL fails closed instead
+        // of opening attacker-controlled content in the WebView.
+        if (!PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
+          emit(state.copyWith(
+            status: PaymentStatus.failed,
+            errorMessage: 'network_error',
+          ));
+          return;
+        }
         emit(state.copyWith(
           status: PaymentStatus.awaitingVerification,
           checkoutUrl: checkoutUrl,
@@ -353,11 +379,21 @@ class PaymentCubit extends Cubit<PaymentState> {
               errorMessage: code ?? message,
             ));
           case PaymentPending():
-          case PaymentCancelled():
             break;
+          case PaymentCancelled():
+            // Server-driven terminal (cancelled/expired rows via the
+            // watcher). Ends the client wait; never changes server state.
+            _complete(state.copyWith(
+              status: PaymentStatus.cancelled,
+            ));
         }
       },
       onError: (_, __) {
+        // Intentionally awaitingVerification-only: an error while
+        // awaitingProof must not flip the proof-upload state to failed
+        // (pinned by payment_test.dart); the 24h InstaPay review window
+        // outlives the 15min card watch, so the proof state survives
+        // transient realtime errors and keeps polling.
         if (isClosed || state.status != PaymentStatus.awaitingVerification) {
           return;
         }
@@ -370,6 +406,9 @@ class PaymentCubit extends Cubit<PaymentState> {
   }
 
   void _handleWatchTimeout() {
+    // Intentionally awaitingVerification-only: InstaPay proof review
+    // (24h expiry) outlives the 15min card watch, so awaitingProof
+    // never times out here — the server expiry drives it.
     if (isClosed || state.status != PaymentStatus.awaitingVerification) {
       return;
     }

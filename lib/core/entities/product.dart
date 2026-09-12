@@ -38,7 +38,10 @@ final class Product extends Equatable {
   int? get discountPercent {
     final original = oldPrice;
     if (original == null || original.minorUnits == 0) return null;
-    return ((1 - price.minorUnits / original.minorUnits) * 100).round();
+    final pct = ((1 - price.minorUnits / original.minorUnits) * 100).round();
+    // Clamp negative discounts (price above oldPrice) to zero — a
+    // negative "discount" never displays.
+    return pct < 0 ? 0 : pct;
   }
 
   /// Stock for a specific variant key like "Emerald-2m".
