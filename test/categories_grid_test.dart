@@ -12,22 +12,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/fetch_related_stub.dart';
+
 final _products = [
-  Product(
+  const Product(
     id: 'silk-01',
     name: 'Royal Emerald Silk',
     category: 'Silk',
     price: Money.egp(1290),
     imageColor: 0xFF0B7A4D,
   ),
-  Product(
+  const Product(
     id: 'cotton-01',
     name: 'Airy Cotton',
     category: 'Cotton',
     price: Money.egp(640),
     imageColor: 0xFF7D8B6A,
   ),
-  Product(
+  const Product(
     id: 'velvet-01',
     name: 'Midnight Velvet',
     category: 'Velvet',
@@ -36,7 +38,9 @@ final _products = [
   ),
 ];
 
-class _StubCatalogRepository implements CatalogRepository {
+class _StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Success(List.of(_products));
@@ -50,7 +54,7 @@ class _StubCatalogRepository implements CatalogRepository {
     for (final p in _products) {
       if (p.id == id) return Success(p);
     }
-    return Failure(AppError('not found'));
+    return const Failure(AppError('not found'));
   }
 
   @override

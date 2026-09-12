@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'dart:async';
 
 import 'app.dart';
 import 'shared/services/app_bloc_observer.dart';
@@ -11,6 +12,7 @@ import 'shared/services/crash_reporting_service.dart';
 import 'shared/services/e2e_sentry_probe.dart';
 import 'shared/services/env_config.dart';
 import 'shared/services/logger.dart';
+import 'shared/services/sentry_crash_reporting_service.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
 import 'shared/smoke/smoke_harness.dart';
@@ -37,26 +39,40 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
   // Set up Bloc observer for state change logging
   Bloc.observer = AppBlocObserver();
 
-  // Sentry init per docs — must be awaited before FlutterError binding
-  // and wrap runApp. Keep NoOp fallback when DSN is empty.
-  if (EnvConfig.sentryDsn.isEmpty) {
+  // EnvConfig DSN is a compile-time const (String.fromEnvironment) — read
+  // it once here to decide the launch path; no runtime load ordering.
+  final sentryDsn = EnvConfig.sentryDsn;
+  if (sentryDsn.isEmpty) {
     Log.w('Sentry disabled — no DSN', category: LogCategory.app);
-  } else {
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = EnvConfig.sentryDsn;
-        options.environment = EnvConfig.environment;
-        options.sendDefaultPii = false;
-        options.attachScreenshot = false;
-        options.tracesSampleRate = 0.1;
-        options.beforeSend = (event, hint) {
-          // Defense-in-depth scrub is handled by SentryCrashReportingService._scrubEvent
-          return event;
-        };
-      },
-    );
+    await _bootstrapAndRun(exitApp);
+    return;
   }
 
+  // Sentry init per docs — awaited before FlutterError binding and wraps
+  // runApp via appRunner so the app runs inside Sentry's zone.
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = sentryDsn;
+      options.environment = EnvConfig.environment;
+      options.sendDefaultPii = false;
+      options.attachScreenshot = false;
+      options.tracesSampleRate = 0.1;
+      options.beforeSend = (event, hint) {
+        // Single scrub implementation (defense-in-depth PII scrub).
+        return SentryCrashReportingService.scrubEvent(event);
+      };
+    },
+    appRunner: () => _bootstrapAndRun(exitApp),
+  );
+}
+
+/// Supabase + DI + error-handler bootstrap shared by both launch paths.
+///
+/// Runs inside Sentry's zone when a DSN is configured (via `appRunner`
+/// above), otherwise directly. Keep NoOp fallback: when the DSN is empty
+/// the locator registers [NoOpCrashReportingService] and this is plain
+/// runApp with chained framework handlers.
+Future<void> _bootstrapAndRun(SmokeExit? exitApp) async {
   // Bootstrap Supabase + DI. Either can throw if .env is missing, env
   // vars are blank, or SharedPreferences fails. Without a guard the app
   // crashes to a red error screen before runApp. Catch and show a clear
@@ -71,8 +87,9 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
     Log.i('Dependencies ready', category: LogCategory.app);
 
     // Crash reporting service complements direct SentryFlutter.init above
-    // and provides NoOp fallback when DSN is empty. init() is a no-op
-    // if Sentry was already initialized.
+    // and provides NoOp fallback when DSN is empty. When Sentry is
+    // enabled the outer init already configured beforeSend; this init()
+    // is a no-op for the already-initialized Sentry instance.
     final crashReporter = getIt<CrashReportingService>();
     crashReporter.init();
 
@@ -87,7 +104,14 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
     unawaited(getIt<ConnectivityGate>().start());
 
     // Capture Flutter framework errors — must be after Sentry init.
+    // Chain (don't overwrite) any previous handler (e.g. Sentry's).
+    final prevFlutterOnError = FlutterError.onError;
     FlutterError.onError = (details) {
+      try {
+        prevFlutterOnError?.call(details);
+      } catch (_) {
+        // Never let a previous handler break our capture.
+      }
       Log.e('Flutter error',
           error: details.exception, stackTrace: details.stack);
       crashReporter.captureError(
@@ -97,10 +121,17 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
       );
     };
 
-    // Capture uncaught async errors.
+    // Capture uncaught async errors. Chain the previous dispatcher
+    // handler the same way.
+    final prevDispatcherOnError = PlatformDispatcher.instance.onError;
     PlatformDispatcher.instance.onError = (error, stackTrace) {
       Log.e('Uncaught async error', error: error, stackTrace: stackTrace);
       crashReporter.captureError(error, stackTrace);
+      try {
+        prevDispatcherOnError?.call(error, stackTrace);
+      } catch (_) {
+        // Never let a previous handler break our capture.
+      }
       return true;
     };
   } catch (error, stackTrace) {

@@ -8,19 +8,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _products = [
-  Product(
+  const Product(
     id: 'silk-emerald',
     name: 'Royal Emerald Silk',
     category: 'Silk',
     price: Money.egp(1290),
-    imageColor: 0xFF176B57, // catalogColorName → 'Emerald'
+    imageColor: 0xFF176B57,
+    // Filter chips derive from variant colors (CatalogState.availableColors),
+    // not the placeholder imageColor tint.
+    colors: ['Emerald'],
   ),
-  Product(
+  const Product(
     id: 'silk-amber',
     name: 'Amber Silk',
     category: 'Silk',
     price: Money.egp(1190),
-    imageColor: 0xFFB57A2A, // catalogColorName → 'Amber'
+    imageColor: 0xFFB57A2A,
+    colors: ['Amber'],
   ),
 ];
 

@@ -2,10 +2,11 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
-import '../../../fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../fixtures/products_data.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
 

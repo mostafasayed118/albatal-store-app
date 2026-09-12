@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Phones (<1200px logical) are unaffected. Without this, tablet/desktop
 /// stretches catalog grids edge-to-edge and body lines past ~75 characters.
 /// Apply around top-level scrollables (CustomScrollView, GridView, ListView).
-class ResponsiveShell extends StatelessWidget {
+final class ResponsiveShell extends StatelessWidget {
   const ResponsiveShell({super.key, required this.child});
 
   /// Maximum content width — matches the DESIGN.md desktop breakpoint.

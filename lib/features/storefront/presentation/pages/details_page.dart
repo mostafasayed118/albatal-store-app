@@ -1,4 +1,3 @@
-import '../widgets/name_and_price.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +10,7 @@ import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
+import '../widgets/name_and_price.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';
@@ -38,7 +38,14 @@ class DetailsPage extends StatelessWidget {
 
     return BlocProvider(
       create: (_) => ProductDetailsCubit(_catalogRepository)..loadProduct(id),
+      // Outer builder covers status/product/related only: color/length/
+      // quantity ticks rebuild the selector + CTA below, never the
+      // gallery or the related strip.
       child: BlocBuilder<ProductDetailsCubit, DetailsState>(
+        buildWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.product != current.product ||
+            previous.relatedProducts != current.relatedProducts,
         builder: (context, s) {
           final p = s.product;
           if (s.status == DetailsStatus.loading ||
@@ -110,7 +117,17 @@ class DetailsPage extends StatelessWidget {
                   RatingStars(product: p),
                 ],
                 const SizedBox(height: 20),
-                VariantSelector(product: p, state: s),
+                // Selection-only rebuild: variant/quantity ticks must not
+                // replay the gallery or related builders above.
+                BlocBuilder<ProductDetailsCubit, DetailsState>(
+                  buildWhen: (previous, current) =>
+                      previous.product != current.product ||
+                      previous.color != current.color ||
+                      previous.length != current.length ||
+                      previous.quantity != current.quantity,
+                  builder: (context, vs) =>
+                      VariantSelector(product: p, state: vs),
+                ),
                 const SizedBox(height: 20),
                 DeliveryInfo(l: l, scheme: scheme),
                 if (p.description != null) ...[
@@ -149,8 +166,15 @@ class DetailsPage extends StatelessWidget {
                 const SizedBox(height: 80),
               ],
             ),
-            bottomNavigationBar:
-                AddToCartButton(state: s, l: l, scheme: scheme),
+            bottomNavigationBar: BlocBuilder<ProductDetailsCubit, DetailsState>(
+              buildWhen: (previous, current) =>
+                  previous.product != current.product ||
+                  previous.color != current.color ||
+                  previous.length != current.length ||
+                  previous.quantity != current.quantity,
+              builder: (context, cs) =>
+                  AddToCartButton(state: cs, l: l, scheme: scheme),
+            ),
           );
         },
       ),

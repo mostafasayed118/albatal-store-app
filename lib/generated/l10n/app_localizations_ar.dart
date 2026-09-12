@@ -677,7 +677,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get invalidEmail => 'يرجى إدخال بريد إلكتروني صالح';
 
   @override
-  String get passwordTooShort => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل';
+  String get passwordTooShort => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
 
   @override
   String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
@@ -765,6 +765,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get instapayFileTooLarge => 'الصورة كبيرة جدًا. أرفق صورة أصغر.';
+
+  @override
+  String get instapayFileTypeNotAllowed =>
+      'نوع الملف غير مدعوم. أرفق صورة بصيغة PNG أو JPG أو WebP.';
+
+  @override
+  String get instapayReferenceTooLong =>
+      'المرجع طويل جدًا. يُرجى ألا يتجاوز 64 حرفًا.';
 
   @override
   String get cashOnDeliveryDescription => 'ادفع عند وصول طلبك';

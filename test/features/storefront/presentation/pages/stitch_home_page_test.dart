@@ -1,13 +1,12 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
-import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -22,7 +21,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/stub_auth_repositories.dart';
 
 class _SignedInAuthRepository extends StubAuthRepository {
   @override
@@ -36,7 +37,7 @@ class _SignedInProfileRepository extends StubProfileRepository {
       const Success(Profile(id: 'ui-test-user', fullName: 'UI Tester'));
 }
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   const _StubRepo();
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([
@@ -86,7 +87,7 @@ class _StubRepo implements CatalogRepository {
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

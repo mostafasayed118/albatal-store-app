@@ -1,8 +1,9 @@
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 void main() {
   group('Wishlist ↔ Cart interactions', () {

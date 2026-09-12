@@ -36,7 +36,7 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) {
-        return Failure(AppError('Not authenticated'));
+        return const Failure(AppError('Not authenticated'));
       }
 
       // Fetch orders with embedded items via a join. Supabase PostgREST
@@ -76,8 +76,14 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     if (id.isEmpty) return null;
 
     final itemsRaw = row['order_items'];
+    // Per-row fail-soft: one bad item never fails the whole order —
+    // items without a usable product id are skipped.
     final items = itemsRaw is List
-        ? itemsRaw.whereType<Map<String, dynamic>>().map(_mapOrderItem).toList()
+        ? itemsRaw
+            .whereType<Map<String, dynamic>>()
+            .map(_mapOrderItem)
+            .whereType<CartItem>()
+            .toList()
         : <CartItem>[];
 
     final addressRaw = row['address_snapshot'];
@@ -98,10 +104,12 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     );
   }
 
-  static CartItem _mapOrderItem(Map<String, dynamic> row) {
+  static CartItem? _mapOrderItem(Map<String, dynamic> row) {
+    final productId = safeString(row, 'product_id');
+    if (productId.isEmpty) return null;
     return CartItem(
       product: Product(
-        id: safeString(row, 'product_id'),
+        id: productId,
         name: safeString(row, 'product_name'),
         category: '',
         price: Money(safeInt(row, 'unit_price')),

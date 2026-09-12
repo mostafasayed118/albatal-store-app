@@ -68,6 +68,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
   Future<void> _showVariantDialog({AdminVariant? existing}) async {
     // Let the tapped row's frame finish rendering before pushing the dialog;
     // a slow device can otherwise starve the route's opening frame.
+    // All copy in this dialog is admin-only, intentionally unlocalized
+    // (no ARB keys; the storefront stays localized).
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
     final sizeCtrl = newDialogController(existing?.size ?? '');
@@ -120,7 +122,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
             ),
             saving
                 ? const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
                     child: SizedBox(
                         width: 20,
                         height: 20,
@@ -175,6 +177,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         success: (_) {
                           Navigator.pop(ctx);
                           if (!mounted) return;
+                          // Admin-only, intentionally unlocalized.
                           showConfirmation(context, 'Variant saved');
                           _loadVariants();
                         },
@@ -197,9 +200,9 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.variants)),
+      appBar: AppBar(title: Text(l10n.variants)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -211,6 +214,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                       children: [
                         Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 12),
+                        // Admin-only, intentionally unlocalized.
                         AppButton(label: 'Retry', onPressed: _loadVariants),
                       ],
                     ),
@@ -225,9 +229,11 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                           children: [
                             const Icon(Icons.inventory_2_outlined, size: 48),
                             const SizedBox(height: 12),
+                            // Admin-only, intentionally unlocalized.
                             const Text('No variants yet'),
                             const SizedBox(height: 12),
                             AppButton(
+                                // Admin-only, intentionally unlocalized.
                                 label: 'Add Variant',
                                 onPressed: () => _showVariantDialog()),
                           ],
@@ -244,6 +250,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                           final override = v.priceOverride;
                           return Card(
                             child: ListTile(
+                              // Admin-only, intentionally unlocalized: the
+                              // 'Stock:' / 'Override:' row labels below.
                               title: Text('${v.size} / ${v.color}'),
                               subtitle: Text(
                                   'Stock: ${v.stock}${override != null ? ' • Override: $override' : ''}'),

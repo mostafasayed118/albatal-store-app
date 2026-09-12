@@ -20,6 +20,27 @@ abstract interface class CatalogRepository {
   /// single() throw when not found.
   Future<Result<Product>> fetchProductById(String id);
 
+  /// Category-scoped related-products query.
+  ///
+  /// Default implementation derives from [fetchProducts] so existing
+  /// fakes/stubs remain valid without override. Remote implementations
+  /// (Supabase) override with a bounded category-filtered query instead
+  /// of pulling the full catalog for a related strip.
+  Future<Result<List<Product>>> fetchRelated(
+    String category, {
+    String? excludeId,
+    int limit = 8,
+  }) =>
+      fetchProducts().then(
+        (result) => result.when(
+          success: (all) => Success(all
+              .where((p) => p.category == category && p.id != excludeId)
+              .take(limit)
+              .toList()),
+          failure: Failure.new,
+        ),
+      );
+
   /// Synchronous lookup used by hydration paths (cart restore, wishlist
   /// resolve) that need a [Product] from its id without awaiting a fetch.
   /// Returns `null` when the id is not in the catalog.

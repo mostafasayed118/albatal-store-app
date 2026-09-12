@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
@@ -101,6 +101,13 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
 
   static const _maxProofBytes = 5 * 1024 * 1024; // mirrors the server guard
 
+  /// Extensions the server allowlist accepts. Client-side pre-check only —
+  /// the edge function re-validates (magic-byte check stays server-side).
+  static const _allowedProofExtensions = {'png', 'jpg', 'jpeg', 'webp'};
+
+  /// Reference-field bound (mirrors the server column guard).
+  static const _maxReferenceLength = 64;
+
   @override
   void dispose() {
     _referenceController.dispose();
@@ -123,7 +130,13 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
       );
       if (xfile == null) return;
       final bytes = await xfile.readAsBytes();
-      if (bytes.isEmpty) return;
+      if (bytes.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.instapayPickScreenshotError)),
+        );
+        return;
+      }
       if (bytes.length > _maxProofBytes) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +147,13 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
       final ext = xfile.name.contains('.')
           ? xfile.name.split('.').last.toLowerCase()
           : 'jpg';
+      if (!_allowedProofExtensions.contains(ext)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.instapayFileTypeNotAllowed)),
+        );
+        return;
+      }
       if (!mounted) return;
       setState(() {
         _attachedBytes = bytes;
@@ -154,11 +174,19 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
     final bytes = _attachedBytes;
     final ext = _attachedExt;
     if (cubit == null || bytes == null || ext == null || _submitting) return;
+    final reference = _referenceController.text.trim();
+    if (reference.length > _maxReferenceLength) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.instapayReferenceTooLong)),
+      );
+      return;
+    }
     setState(() => _submitting = true);
     final ok = await cubit.submitInstapayProof(
       proofBytes: bytes,
       fileExt: ext,
-      reference: _referenceController.text,
+      reference: reference,
     );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -298,6 +326,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                     hintText: l.instapayReferenceHint,
                     border: const OutlineInputBorder(),
                   ),
+                  maxLength: _maxReferenceLength,
                   textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: 24),
@@ -305,7 +334,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                         borderRadius: AppTheme.controlRadius),
                   ),
                   icon: Icon(
@@ -334,7 +363,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                   // is live: approval navigates to order success.
                   Card(
                     color: scheme.primaryContainer.withValues(alpha: .3),
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                         borderRadius: AppTheme.controlRadius),
                     child: Padding(
                       padding: const EdgeInsetsDirectional.all(16),
@@ -358,7 +387,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                       backgroundColor: scheme.secondary,
                       foregroundColor: scheme.onSecondary,
                       minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(
+                      shape: const RoundedRectangleBorder(
                           borderRadius: AppTheme.controlRadius),
                       textStyle: Theme.of(context).textTheme.labelLarge,
                     ),

@@ -2,17 +2,18 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/payments/domain/repositories/payment_service.dart';
 import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
-import 'package:al_batal_elite/features/payments/presentation/pages/paymob_checkout_page.dart';
 import 'package:al_batal_elite/features/payments/presentation/pages/payment_method_page.dart';
+import 'package:al_batal_elite/features/payments/presentation/pages/paymob_checkout_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
-import 'helpers/memory_storefront_persistence.dart';
-import 'fixtures/products_data.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/order_success_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 /// Stub payment service: initiation returns a hosted checkout URL and
 /// the watch stream never emits a terminal result (we drive state from

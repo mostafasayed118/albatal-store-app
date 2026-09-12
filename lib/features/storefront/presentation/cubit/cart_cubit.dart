@@ -35,7 +35,7 @@ final class CartState extends Equatable {
   /// free-shipping perk (migration 047); the checkout page carries the
   /// estimate disclaimer and the server-confirmed totals are what charge.
   Money get shipping =>
-      items.isEmpty || isPremiumMember ? Money.zero : Money.egp(75);
+      items.isEmpty || isPremiumMember ? Money.zero : const Money.egp(75);
   Money get total => subtotal + shipping;
   int get count => items.fold(0, (value, item) => value + item.quantity);
 
@@ -109,15 +109,18 @@ final class CartCubit extends Cubit<CartState> {
 
   void add(Product product,
       {String color = 'Emerald', String length = '2m', int quantity = 1}) {
-    final item = CartItem(
-        product: product, color: color, length: length, quantity: quantity);
+    // Ignore non-positive adds; clamp to the 1..99 update contract.
+    if (quantity <= 0) return;
+    final qty = quantity.clamp(1, 99).toInt();
+    final item =
+        CartItem(product: product, color: color, length: length, quantity: qty);
     final old =
         state.items.where((existing) => existing.key == item.key).firstOrNull;
     if (old == null) {
       _emitAndPersist(
           CartState([...state.items, item], status: CartStatus.ready));
     } else {
-      update(item.key, old.quantity + quantity);
+      update(item.key, old.quantity + qty);
     }
   }
 
@@ -141,7 +144,8 @@ final class CartCubit extends Cubit<CartState> {
   /// any failure as a follow-up error state. Persistence errors do NOT
   /// roll back the in-memory state (the user's intent is preserved for the
   /// current session) but are reported so the UI can warn that the cart
-  /// won't survive a restart.
+  /// won't survive a restart. The error emit uses the *current* state
+  /// (not the stale [next]) so a second add during the write isn't clobbered.
   Future<void> _emitAndPersist(CartState next) async {
     emit(next);
     final result = await _repository.writeCart(next.items);
@@ -150,7 +154,8 @@ final class CartCubit extends Cubit<CartState> {
         // No-op: optimistic state already emitted.
         break;
       case Failure(:final error):
-        emit(next.copyWith(
+        if (isClosed) return;
+        emit(state.copyWith(
           status: CartStatus.error,
           errorMessage: 'Cart may not be saved: ${error.message}',
         ));

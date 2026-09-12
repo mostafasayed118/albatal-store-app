@@ -101,7 +101,8 @@ class _AuthenticatedProfile extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.workspace_premium, size: 18, color: AppColors.gold),
+              const Icon(Icons.workspace_premium,
+                  size: 18, color: AppColors.gold),
               const SizedBox(width: 6),
               Text(
                 l.premiumMember,

@@ -26,8 +26,10 @@ final class PaymentStatusWatcher {
   /// (`pending`/unknown/missing status) so both callers keep polling.
   /// Payloads are byte-identical to the pre-refactor inline branches
   /// (no `code` on the gateway-decline failure — codes unchanged).
+  /// `cancelled`/`expired` (and `canceled`) map to [PaymentCancelled] so
+  /// the cubit ends its wait instead of polling until the 15min timeout.
   static PaymentResult? terminalResultForRow(Map<String, dynamic> row) {
-    final status = safeString(row, 'status');
+    final status = safeString(row, 'status').toLowerCase();
     if (status == 'success') {
       return PaymentSuccess(
         transactionId: safeString(row, 'transaction_id'),
@@ -38,6 +40,9 @@ final class PaymentStatusWatcher {
       return const PaymentFailed(
         message: 'Payment was declined by the gateway',
       );
+    }
+    if (status == 'cancelled' || status == 'canceled' || status == 'expired') {
+      return const PaymentCancelled();
     }
     return null;
   }

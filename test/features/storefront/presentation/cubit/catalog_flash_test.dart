@@ -10,7 +10,9 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cu
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _StubRepo implements CatalogRepository {
+import '../../../../helpers/fetch_related_stub.dart';
+
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);
   @override
@@ -18,7 +20,7 @@ class _StubRepo implements CatalogRepository {
       const Success(['All']);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
   @override
   Product? findProductById(String id) => null;
   @override

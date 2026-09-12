@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -6,8 +8,8 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
-import 'package:al_batal_elite/features/admin/presentation/pages/admin_categories_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_catalog_page.dart';
+import 'package:al_batal_elite/features/admin/presentation/pages/admin_categories_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_image_manager_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_product_edit_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_products_page.dart';
@@ -21,6 +23,8 @@ import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+
+import 'helpers/fetch_related_stub.dart';
 
 // ─── Fakes ──────────────────────────────────────────────────────
 
@@ -125,17 +129,19 @@ class FakeAdminRepository implements AdminRepository {
       Success(categories);
 }
 
-class FakeCatalogRepository implements CatalogRepository {
+class FakeCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
-  Future<Result<List<Product>>> fetchProducts() async => Success([]);
+  Future<Result<List<Product>>> fetchProducts() async => const Success([]);
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
-      Success(['Cat A', 'Cat B']);
+      const Success(['Cat A', 'Cat B']);
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('not found'));
+      const Failure(AppError('not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -529,7 +535,8 @@ void main() {
     ));
     // Push (not go) so the form has a page beneath it — the success path
     // pops with a changed signal, mirroring the real list → FAB flow.
-    router.push('/edit');
+    // unawaited: push completes only when the route pops.
+    unawaited(router.push('/edit'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Test Product');

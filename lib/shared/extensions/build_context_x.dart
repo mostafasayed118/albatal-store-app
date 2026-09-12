@@ -3,7 +3,20 @@ import 'package:flutter/material.dart';
 import '../../generated/l10n/app_localizations.dart';
 
 extension BuildContextX on BuildContext {
-  AppLocalizations get l10n => AppLocalizations.of(this)!;
+  /// Localizations for this context. The `!` is guarded by the assert in
+  /// debug builds: a null here means the widget is pumped outside a
+  /// [MaterialApp] wired with [AppLocalizations] (see `lib/app.dart`) —
+  /// in widget tests, wrap the subject with those delegates.
+  AppLocalizations get l10n {
+    final loc = AppLocalizations.of(this);
+    assert(
+      loc != null,
+      'AppLocalizations not found above this BuildContext. '
+      'Pump the widget under a MaterialApp (or mock) configured with '
+      'AppLocalizations.localizationsDelegates + supportedLocales.',
+    );
+    return loc!;
+  }
 
   /// A "proceed / go forward" arrow that points in the reading direction.
   ///

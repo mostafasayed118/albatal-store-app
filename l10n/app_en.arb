@@ -1,4 +1,4 @@
-﻿{
+{
   "@@locale": "en",
   "appTitle": "Al Batal Elite",
   "brandName": "Al Batal Elite",
@@ -260,7 +260,7 @@
   "passwordUpdated": "Password updated successfully",
   "checkEmailToVerify": "Check your email to verify your account",
   "invalidEmail": "Please enter a valid email",
-  "passwordTooShort": "Password must be at least 6 characters",
+  "passwordTooShort": "Password must be at least 8 characters",
   "passwordsDoNotMatch": "Passwords do not match",
   "nameRequired": "Name is required",
   "dontHaveAccount": "Don't have an account?",
@@ -289,6 +289,8 @@
   "instapayProofPendingNote": "Your payment stays pending until we review the proof. You can safely leave this page — the status appears in your orders.",
   "instapayPickScreenshotError": "Could not pick the screenshot. Please try again.",
   "instapayFileTooLarge": "The screenshot is too large. Please attach a smaller image.",
+  "instapayFileTypeNotAllowed": "That file type is not supported. Please attach a PNG, JPG, or WebP image.",
+  "instapayReferenceTooLong": "The reference is too long. Please keep it under 64 characters.",
   "cashOnDeliveryDescription": "Pay when your order arrives",
   "payNow": "Pay Now",
   "completePayment": "Complete Payment",

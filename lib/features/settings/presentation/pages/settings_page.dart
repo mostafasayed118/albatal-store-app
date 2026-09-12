@@ -132,16 +132,16 @@ final class SettingsPage extends StatelessWidget {
 }
 
 /// Destructive settings row for permanent account deletion (UX-043).
-class _DeleteAccountTile extends StatelessWidget {
+final class _DeleteAccountTile extends StatelessWidget {
   const _DeleteAccountTile();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final l = context.l10n;
+    final l10n = context.l10n;
     return ListTile(
       leading: Icon(Icons.delete_outline, color: scheme.error),
-      title: Text(l.deleteAccount,
+      title: Text(l10n.deleteAccount,
           style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
       onTap: () => _confirmDeleteAccount(context),
     );
@@ -159,7 +159,7 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
   if (_deleteDialogOpen) return;
   _deleteDialogOpen = true;
   try {
-    final l = context.l10n;
+    final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
     final auth = context.read<AuthCubit>();
     final cart = context.read<CartCubit>();
@@ -169,13 +169,18 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
     // screen, so the IME attach never competes with the opening animation
     // (a known first-frame starvation source on slow devices).
     final focusNode = FocusNode();
-
     // Let the tapped row's frame finish rendering before pushing the modal
     // route. Pushing a dialog while a janky frame is still in flight can
     // starve the route's opening frame (observed: blank screen at ~3fps,
     // the tap never visibly registering). If idle, this completes at once.
     await WidgetsBinding.instance.endOfFrame;
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      // Never opened the dialog — dispose here so the early return
+      // can't leak them.
+      controller.dispose();
+      focusNode.dispose();
+      return;
+    }
 
     final confirmed = await showDialog<bool>(
           context: context,
@@ -187,18 +192,18 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
             });
             return StatefulBuilder(
               builder: (context, setState) => AlertDialog(
-                title: Text(l.deleteAccountTitle),
+                title: Text(l10n.deleteAccountTitle),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l.deleteAccountBody),
+                    Text(l10n.deleteAccountBody),
                     const SizedBox(height: 16),
                     TextField(
                       controller: controller,
                       focusNode: focusNode,
                       decoration: InputDecoration(
-                        labelText: l.deleteAccountConfirmHint,
+                        labelText: l10n.deleteAccountConfirmHint,
                         border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
@@ -208,7 +213,7 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(dialogContext, false),
-                    child: Text(l.deleteAccountCancel),
+                    child: Text(l10n.deleteAccountCancel),
                   ),
                   FilledButton(
                     style: FilledButton.styleFrom(
@@ -220,7 +225,7 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
                     onPressed: controller.text.trim().isEmpty
                         ? null
                         : () => Navigator.pop(dialogContext, true),
-                    child: Text(l.deleteAccountConfirm),
+                    child: Text(l10n.deleteAccountConfirm),
                   ),
                 ],
               ),
@@ -229,6 +234,8 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
         ) ??
         false;
     final email = controller.text.trim();
+    // Disposed right after the dialog closes (before the network call) —
+    // the timing pinned by settings_delete_account_test.
     controller.dispose();
     focusNode.dispose();
     if (!confirmed || email.isEmpty) return;
@@ -244,7 +251,7 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating,
-              content: Text(l.deleteAccountSuccess)));
+              content: Text(l10n.deleteAccountSuccess)));
       case Failure(:final error):
         messenger
           ..hideCurrentSnackBar()

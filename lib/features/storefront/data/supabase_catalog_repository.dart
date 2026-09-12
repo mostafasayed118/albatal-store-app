@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -132,7 +133,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       _setCache(result);
 
       // Persist to SharedPreferences for offline fallback.
-      _persistCache(result);
+      unawaited(_persistCache(result));
 
       return Success(result);
     } on Exception catch (e) {
@@ -203,6 +204,53 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     }
   }
 
+  /// Category-scoped related-products query.
+  ///
+  /// Filters server-side on the joined `categories.name` (inner join, so
+  /// only products in [category] are returned), excludes [excludeId], and
+  /// bounds the page to [limit] rows — the details strip no longer pulls
+  /// the full catalog. Mapping skips unusable rows like [fetchProducts];
+  /// transport errors fail closed so the cubit keeps the primary product.
+  @override
+  Future<Result<List<Product>>> fetchRelated(
+    String category, {
+    String? excludeId,
+    int limit = 8,
+  }) async {
+    if (category.isEmpty) return const Success(<Product>[]);
+    try {
+      // Filters before transforms: neq lives on the filter builder,
+      // order/limit move to the transform builder (no filter ops after).
+      final filtered = _client
+          .from('products')
+          .select(_productSelect)
+          .eq('is_active', true)
+          .eq('categories.name', category);
+      final scoped = (excludeId != null && excludeId.isNotEmpty)
+          ? filtered.neq('id', excludeId)
+          : filtered;
+      final rows = await scoped.order('name').limit(limit);
+
+      final result = <Product>[];
+      for (final row in rows) {
+        final variantsRaw = row['product_variants'];
+        final variants = variantsRaw is List
+            ? variantsRaw.whereType<Map<String, dynamic>>().toList()
+            : <Map<String, dynamic>>[];
+        final product = ProductCodec.fromRow(
+          row,
+          variants,
+          storageService: _storageService,
+        );
+        // Rows without a usable id/name are skipped, not fatal (audit P2).
+        if (product != null) result.add(product);
+      }
+      return Success(result);
+    } on Exception catch (e) {
+      return Failure(AppError('Failed to load related products', cause: e));
+    }
+  }
+
   @override
   Product? findProductById(String id) {
     // O(1) map lookup over the cache populated by fetchProducts.
@@ -237,14 +285,16 @@ final class SupabaseCatalogRepository implements CatalogRepository {
 
   // ─── Persistent cache helpers ──────────────────────────────
 
-  void _persistCache(List<Product> products) {
+  /// Awaitable cache write so callers can sequence on it in tests and
+  /// the fire-and-forget production path marks the future [unawaited]
+  /// instead of tripping `discarded_futures`.
+  Future<void> _persistCache(List<Product> products) async {
     final prefs = _preferences;
     if (prefs == null) return;
     try {
       final encoded = products.map(ProductCodec.encode).toList();
-      // Best-effort cache write; fire-and-forget by design.
-      // ignore: discarded_futures
-      prefs.setString(_persistentCacheKey, jsonEncode(encoded));
+      // Best-effort cache write — never crash the app over persistence.
+      await prefs.setString(_persistentCacheKey, jsonEncode(encoded));
     } catch (e) {
       // Best-effort persistence — never crash the app over a cache write.
       Log.w('Catalog persistent cache write failed: $e');
@@ -259,11 +309,20 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       if (raw == null) return null;
       final decoded = jsonDecode(raw);
       if (decoded is! List) return null;
-      return decoded
-          .whereType<Map<String, dynamic>>()
-          .map(ProductCodec.decode)
-          .whereType<Product>()
-          .toList();
+      // Per-item fail-soft: a corrupt/tampered entry is skipped, never
+      // fatal to its neighbours (previously one throwing entry discarded
+      // the whole cache via the catch-all below).
+      final products = <Product>[];
+      for (final entry in decoded) {
+        try {
+          if (entry is! Map) continue;
+          final product = ProductCodec.decode(entry as Map<Object?, Object?>);
+          if (product != null) products.add(product);
+        } catch (e) {
+          Log.w('Catalog persistent cache skipping corrupt entry: $e');
+        }
+      }
+      return products;
     } catch (e) {
       Log.w('Catalog persistent cache restore failed: $e');
       return null;
@@ -273,7 +332,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   // ─── Testing helpers ──────────────────────────────────────
 
   @visibleForTesting
-  void persistCacheForTest(List<Product> products) => _persistCache(products);
+  Future<void> persistCacheForTest(List<Product> products) =>
+      _persistCache(products);
 
   @visibleForTesting
   List<Product>? restorePersistentCacheForTest() => _restorePersistentCache();

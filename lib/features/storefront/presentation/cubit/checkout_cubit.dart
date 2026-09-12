@@ -136,6 +136,23 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> createPendingOrder({
     required List<CartItem> cartItems,
   }) async {
+    // Double-tap guard: ignore re-entry while a creation is in flight.
+    if (state.status == CheckoutStatus.creatingOrder ||
+        state.status == CheckoutStatus.placing) {
+      return;
+    }
+    // Empty-cart guard: never call the server with no items.
+    // NOTE: no client-side address guard here on purpose — the server
+    // rejects auth/other conditions before validating the address
+    // (pinned by checkout_cubit_test "unauthorized caller rejection").
+    if (cartItems.isEmpty) {
+      emit(state.copyWith(
+        status: CheckoutStatus.error,
+        errorMessage: 'Your cart is empty.',
+        idempotencyKey: state.idempotencyKey,
+      ));
+      return;
+    }
     emit(state.copyWith(status: CheckoutStatus.creatingOrder));
     try {
       final outcome = await _placeOrder(
@@ -167,14 +184,15 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
           idempotencyKey: outcome.idempotencyKey,
         ));
       }
-    } catch (e) {
+    } catch (e, st) {
       // close-triggered StateError is not a failure
       if (isClosed) return;
       // Generic user message — raw exception stays in logs only.
-      Log.e('Create pending order failed', error: e);
+      Log.e('Create pending order failed', error: e, stackTrace: st);
       emit(state.copyWith(
         status: CheckoutStatus.error,
         errorMessage: 'Failed to create order. Please try again.',
+        idempotencyKey: state.idempotencyKey,
       ));
     }
   }
@@ -182,6 +200,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   /// Reset the checkout state for a new attempt, clearing the
   /// idempotency key (and its persisted copy) so the next
   /// [createPendingOrder] gets a new one.
+  ///
+  /// Deliberately synchronous (pinned by tests): the in-session key is
+  /// gone the moment this returns, and the underlying store's clear is
+  /// synchronous as well.
   void resetForNewAttempt() {
     _placeOrder.clearPersistedKey();
     emit(CheckoutState(

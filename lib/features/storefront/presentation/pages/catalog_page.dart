@@ -12,11 +12,11 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
-import 'home_page.dart' show homeBuildWhen;
 import '../widgets/active_filters_bar.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/catalog_sort_bar.dart';
 import '../widgets/filter_sheet.dart';
+import 'home_page.dart' show homeBuildWhen;
 
 /// Full catalog page with Stitch pill search + 2-col .68 grid via [productGridDelegate].
 class CatalogPage extends StatefulWidget {

@@ -22,9 +22,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   const _StubRepo();
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([
@@ -74,7 +75,7 @@ class _StubRepo implements CatalogRepository {
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

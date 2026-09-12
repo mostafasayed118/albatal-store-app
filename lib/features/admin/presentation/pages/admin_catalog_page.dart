@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,7 +26,7 @@ class AdminCatalogPage extends StatelessWidget {
         showFloatingError(context, context.l10n.adminAccessRequired);
         return;
       }
-      context.push(location);
+      unawaited(context.push(location));
     } on AppError catch (e) {
       if (!context.mounted) return;
       showFloatingError(context, e.message);
@@ -32,6 +34,7 @@ class AdminCatalogPage extends StatelessWidget {
       if (!context.mounted) return;
       // Generic user message — raw exception stays in logs only.
       Log.e('Admin access check failed', error: e);
+      // Admin-only, intentionally unlocalized.
       showFloatingError(
           context, 'Unable to verify admin access. Please try again.');
     }
@@ -39,22 +42,22 @@ class AdminCatalogPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.catalogManagement)),
+      appBar: AppBar(title: Text(l10n.catalogManagement)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ManagementTile(
             icon: Icons.shopping_bag_outlined,
-            title: l.products,
-            subtitle: l.manageProducts,
+            title: l10n.products,
+            subtitle: l10n.manageProducts,
             onTap: () => _guardedPush(context, '/admin/products'),
           ),
           _ManagementTile(
             icon: Icons.category_outlined,
-            title: l.categories,
-            subtitle: l.manageCategories,
+            title: l10n.categories,
+            subtitle: l10n.manageCategories,
             onTap: () => _guardedPush(context, '/admin/categories'),
           ),
           // Image and variant management are per-product surfaces
@@ -64,14 +67,14 @@ class AdminCatalogPage extends StatelessWidget {
           // id-less paths that were never registered: "Page Not Found".)
           _ManagementTile(
             icon: Icons.image_outlined,
-            title: l.productImages,
-            subtitle: l.manageProductImages,
+            title: l10n.productImages,
+            subtitle: l10n.manageProductImages,
             onTap: () => _guardedPush(context, '/admin/products'),
           ),
           _ManagementTile(
             icon: Icons.inventory_2_outlined,
-            title: l.variants,
-            subtitle: l.manageVariantsAndStock,
+            title: l10n.variants,
+            subtitle: l10n.manageVariantsAndStock,
             onTap: () => _guardedPush(context, '/admin/products'),
           ),
         ],
@@ -80,7 +83,7 @@ class AdminCatalogPage extends StatelessWidget {
   }
 }
 
-class _ManagementTile extends StatelessWidget {
+final class _ManagementTile extends StatelessWidget {
   const _ManagementTile({
     required this.icon,
     required this.title,

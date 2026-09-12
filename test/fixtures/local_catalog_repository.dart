@@ -4,6 +4,7 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 
+import '../helpers/fetch_related_stub.dart';
 import 'products_data.dart';
 
 /// Local in-memory catalog repository backed by the fixed [products] constant.
@@ -14,7 +15,9 @@ import 'products_data.dart';
 /// referenced it. It always succeeds; the Cubit still talks through
 /// `Result<List<Product>>` so a remote implementation can be swapped in
 /// without touching the Cubit or UI.
-final class LocalCatalogRepository implements CatalogRepository {
+final class LocalCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Success(List.of(products));
@@ -27,7 +30,7 @@ final class LocalCatalogRepository implements CatalogRepository {
   Future<Result<Product>> fetchProductById(String id) async {
     final product = products.where((p) => p.id == id).firstOrNull;
     if (product != null) return Success(product);
-    return Failure(AppError('Product not found'));
+    return const Failure(AppError('Product not found'));
   }
 
   @override

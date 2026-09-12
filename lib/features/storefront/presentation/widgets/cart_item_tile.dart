@@ -74,6 +74,9 @@ class CartItemTile extends StatelessWidget {
               ProductImagePlaceholder(
                 imageColor: item.product.imageColor,
                 imageAsset: item.product.imageAsset,
+                // 72px slot at ~2x dpr: no full-resolution decode for a
+                // thumbnail.
+                cacheExtent: 144,
                 constraints:
                     const BoxConstraints.tightFor(width: 72, height: 72),
               ),

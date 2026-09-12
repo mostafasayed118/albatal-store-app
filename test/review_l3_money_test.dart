@@ -1,6 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('subtractClamped floors at zero when discount exceeds total', () {

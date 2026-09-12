@@ -70,12 +70,18 @@ final class CatalogState extends Equatable {
   // Plain lazy fields + explicit null checks: no clever idioms, the
   // pattern is identical for every getter below.
 
+  /// Variant color names across the catalog (drives the filter sheet).
+  ///
+  /// Derived from each product's variant [Product.colors] — the server's
+  /// per-variant color set — not the placeholder [Product.imageColor]
+  /// tint, which is a single grey fallback on network-loaded rows and
+  /// collapsed every product to one bucket.
   List<String> get availableColors {
     var cached = _m.availableColors;
     if (cached == null) {
       final colors = <String>{};
       for (final p in allProducts) {
-        colors.add(catalogColorName(p.imageColor));
+        colors.addAll(p.colors);
       }
       cached = colors.toList()..sort();
       _m.availableColors = cached;

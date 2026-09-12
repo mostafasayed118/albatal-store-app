@@ -59,6 +59,10 @@ class _ZoomGalleryState extends State<ZoomGallery> {
                 : AppImage(
                     source: widget.images[i],
                     fit: BoxFit.contain,
+                    // Bounded decode like the detail path: full-screen
+                    // contain never needs more than ~1080px.
+                    cacheWidth: 1080,
+                    cacheHeight: 1080,
                     placeholder: Icon(Icons.texture,
                         color: AppColors.white.withValues(alpha: .5),
                         size: 120),

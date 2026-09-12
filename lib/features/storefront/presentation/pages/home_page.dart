@@ -1,4 +1,3 @@
-import '../../../../shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +13,7 @@ import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
+import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/cart_cubit.dart';

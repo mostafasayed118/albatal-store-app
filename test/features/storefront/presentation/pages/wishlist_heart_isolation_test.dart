@@ -16,12 +16,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
   @override
-  Future<Result<List<Product>>> fetchProducts() async => Success(_products);
+  Future<Result<List<Product>>> fetchProducts() async =>
+      const Success(_products);
   @override
   Future<Result<List<String>>> fetchCategories() async => const Success([
         'Silk',
@@ -29,7 +31,7 @@ class _StubRepo implements CatalogRepository {
       ]);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('not found'));
+      const Failure(AppError('not found'));
   @override
   Product? findProductById(String id) => null;
   @override

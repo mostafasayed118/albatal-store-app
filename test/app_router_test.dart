@@ -11,11 +11,11 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
+import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
@@ -26,14 +26,15 @@ import 'package:al_batal_elite/features/storefront/presentation/widgets/status_p
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
-import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
+import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
+import 'helpers/fetch_related_stub.dart';
 import 'helpers/memory_storefront_persistence.dart';
 
 void main() {
@@ -368,7 +369,9 @@ final class _ProbeStorageService extends StorageService {
 
 /// Catalog double with no products: the routing tests only need the cubit to
 /// resolve without network access.
-final class _StubCatalogRepository implements CatalogRepository {
+final class _StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   const _StubCatalogRepository();
 
   @override

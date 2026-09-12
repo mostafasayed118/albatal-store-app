@@ -1331,7 +1331,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
+  /// **'Password must be at least 8 characters'**
   String get passwordTooShort;
 
   /// No description provided for @passwordsDoNotMatch.
@@ -1501,6 +1501,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The screenshot is too large. Please attach a smaller image.'**
   String get instapayFileTooLarge;
+
+  /// No description provided for @instapayFileTypeNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'That file type is not supported. Please attach a PNG, JPG, or WebP image.'**
+  String get instapayFileTypeNotAllowed;
+
+  /// No description provided for @instapayReferenceTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The reference is too long. Please keep it under 64 characters.'**
+  String get instapayReferenceTooLong;
 
   /// No description provided for @cashOnDeliveryDescription.
   ///

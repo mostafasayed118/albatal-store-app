@@ -44,7 +44,7 @@ void main() {
   group('SupportPage', () {
     testWidgets('renders repository channels, never hardcoded contacts',
         (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: SupportPage(supportRepository: LocalSupportRepository()),

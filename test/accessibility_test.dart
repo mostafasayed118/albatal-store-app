@@ -1,18 +1,18 @@
-import 'helpers/memory_storefront_persistence.dart';
-import 'fixtures/local_catalog_repository.dart';
-import 'helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/extensions/build_context_x.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'fixtures/local_catalog_repository.dart';
+import 'helpers/memory_storefront_persistence.dart';
+import 'helpers/stub_auth_repositories.dart';
 
 Widget _harness({required Locale locale}) {
   SharedPreferences.setMockInitialValues({});

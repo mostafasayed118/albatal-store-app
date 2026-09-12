@@ -33,8 +33,8 @@ final class Money extends Equatable {
 
   /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGY"`.
   /// Uses whole major units (no decimals) to match the existing UI convention.
-  String format({String symbol = 'EGY'}) =>
-      '${(minorUnits / 100).toStringAsFixed(0)} $symbol';
+  /// Truncates (integer division) — fractional minor units never round up.
+  String format({String symbol = 'EGY'}) => '${minorUnits ~/ 100} $symbol';
 
   // ─── Arithmetic ────────────────────────────────────────────
 

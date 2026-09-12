@@ -1,11 +1,12 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 void main() {
   blocTest<CartCubit, CartState>(
@@ -27,13 +28,13 @@ void main() {
             quantity: 2)
       ], status: CartStatus.ready),
     ],
-    verify: (cubit) => expect(cubit.state.total, Money.egp(2655)),
+    verify: (cubit) => expect(cubit.state.total, const Money.egp(2655)),
   );
 
   test('premium members get a zero shipping estimate (migration 047 perk)', () {
     final cubit = CartCubit(MemoryStorefrontPersistence());
     cubit.add(products.first, color: 'Emerald', length: '2m');
-    expect(cubit.state.shipping, Money.egp(75),
+    expect(cubit.state.shipping, const Money.egp(75),
         reason: 'standard members still see the flat estimate');
 
     cubit.setPremiumMember(isPremium: true);

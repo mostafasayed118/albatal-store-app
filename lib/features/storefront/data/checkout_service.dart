@@ -5,6 +5,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
+import '../../../../shared/services/logger.dart';
 import '../../payments/domain/entities/payment.dart';
 import '../domain/entities/pending_order.dart';
 import '../domain/repositories/checkout_repository.dart';
@@ -88,6 +89,7 @@ class CheckoutService implements CheckoutRepository {
           subtotal == null ||
           shipping == null ||
           total == null) {
+        Log.e('Checkout RPC malformed payload', category: LogCategory.error);
         return const Failure(AppError('Checkout failed'));
       }
       return Success(PendingOrder(
@@ -99,14 +101,43 @@ class CheckoutService implements CheckoutRepository {
         status: safeString(data, 'status', fallback: 'pending'),
         isIdempotentRetry: safeBool(data, 'idempotent'),
       ));
-    } on PostgrestException catch (e) {
-      final message = e.message;
-      return Failure(
-          AppError(message.isNotEmpty ? message : 'Checkout failed'));
-    } catch (_) {
+    } on PostgrestException catch (e, st) {
+      // Never surface Postgrest text verbatim (can leak SQL/URLs).
+      // Allowlist-map known safe signals; everything else collapses to
+      // the generic message (Paymob-service pattern). Detail stays in
+      // logs with cause/stack.
+      Log.e('Checkout RPC failed', error: e, stackTrace: st);
+      final message = _userMessageForPostgrest(e);
+      return Failure(AppError(message, cause: e, stackTrace: st));
+    } catch (e, st) {
       // Never interpolate the raw exception: transport failures can carry
       // internal URLs and secrets that must not reach the UI (audit P1).
-      return const Failure(AppError('Checkout failed'));
+      Log.e('Checkout failed', error: e, stackTrace: st);
+      return Failure(AppError('Checkout failed', cause: e, stackTrace: st));
     }
+  }
+
+  /// Allowlist-map of Postgrest failures to user-safe messages.
+  ///
+  /// The RPC raises server-side; only explicitly recognized signals get
+  /// specific copy — unknown codes/messages collapse to generic
+  /// 'Checkout failed' so SQL/URL internals never reach the UI.
+  String _userMessageForPostgrest(PostgrestException e) {
+    final code = (e.code ?? '').toUpperCase();
+    final msg = e.message.toLowerCase();
+    // Known safe signals (keep tiny; expand only with server contract).
+    if (code == '23505' ||
+        msg.contains('duplicate') ||
+        msg.contains('already')) {
+      return 'Checkout failed';
+    }
+    if (msg.contains('insufficient stock') || msg.contains('out of stock')) {
+      return 'Some items are out of stock.';
+    }
+    if (msg.contains('invalid payment method') ||
+        msg.contains('unsupported payment')) {
+      return 'Unsupported payment method.';
+    }
+    return 'Checkout failed';
   }
 }

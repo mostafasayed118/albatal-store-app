@@ -118,7 +118,7 @@ class _CategoryCard extends StatelessWidget {
                   CustomPaint(painter: FabricWeavePainter(baseColor: tint)),
                   // Soft scrim keeps the white glyph legible on any tint.
                   Container(color: Colors.black12),
-                  Center(
+                  const Center(
                     child: Icon(Icons.texture, color: Colors.white, size: 30),
                   ),
                 ],

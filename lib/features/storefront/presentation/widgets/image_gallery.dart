@@ -15,16 +15,33 @@ class ImageGallery extends StatefulWidget {
 
 class _ImageGalleryState extends State<ImageGallery> {
   int _current = 0;
-  late final List<String> _allImages;
+  late List<String> _allImages;
 
   @override
   void initState() {
     super.initState();
-    _allImages = [
-      if (widget.product.imageAsset != null) widget.product.imageAsset!,
-      ...widget.product.images.where((i) => i != widget.product.imageAsset),
+    _allImages = _resolveImages(widget.product);
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The gallery outlived its product (same route, new product — e.g.
+    // a related-tap that reuses the widget): rebuild the image list and
+    // reset the page instead of showing the previous product's photos.
+    if (oldWidget.product != widget.product) {
+      _allImages = _resolveImages(widget.product);
+      _current = 0;
+    }
+  }
+
+  static List<String> _resolveImages(Product product) {
+    final images = [
+      if (product.imageAsset != null) product.imageAsset!,
+      ...product.images.where((i) => i != product.imageAsset),
     ];
-    if (_allImages.isEmpty) _allImages.add('');
+    if (images.isEmpty) images.add('');
+    return images;
   }
 
   @override

@@ -7,6 +7,19 @@ import '../../../../shared/extensions/iterable_x.dart';
 import '../../domain/entities/support_channel.dart';
 import '../../domain/repositories/support_repository.dart';
 
+/// Allowlist for support contact targets.
+///
+/// The WhatsApp channel must be an `https` link on `wa.me` and the email
+/// channel a `mailto:` link. Anything else (`javascript:`, custom schemes,
+/// other hosts, unparseable strings) is rejected so a tampered repository
+/// value is never handed to the OS — the caller shows an error instead.
+/// Top-level (not a closure) so the rule is unit-testable without a
+/// widget tree.
+bool isAllowedSupportLink(Uri uri) {
+  if (uri.scheme == 'mailto') return true;
+  return uri.scheme == 'https' && uri.host.toLowerCase() == 'wa.me';
+}
+
 /// Customer Support page.
 ///
 /// Contact targets come from [SupportRepository] — never hardcoded here
@@ -39,12 +52,14 @@ class SupportPage extends StatelessWidget {
                 subtitle: Text(l.whatsappSupportDescription),
                 trailing: const Icon(Icons.open_in_new),
                 onTap: () async {
-                  final uri = Uri.parse(whatsapp!.value!);
-                  if (await canLaunchUrl(uri)) {
+                  final uri = Uri.tryParse(whatsapp!.value!.trim());
+                  if (uri != null &&
+                      isAllowedSupportLink(uri) &&
+                      await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
-                    // The channel that was tapped must acknowledge the
-                    // attempt even when no external app can take it.
+                    // Rejected targets and launch failures alike must
+                    // acknowledge the tap even when no external app takes it.
                     if (context.mounted) {
                       showFloatingError(context, context.l10n.couldNotOpenLink);
                     }
@@ -63,8 +78,10 @@ class SupportPage extends StatelessWidget {
                 subtitle: Text(email!.value!),
                 trailing: const Icon(Icons.open_in_new),
                 onTap: () async {
-                  final uri = Uri.parse('mailto:${email.value!}');
-                  if (await canLaunchUrl(uri)) {
+                  final uri = Uri.tryParse('mailto:${email.value!.trim()}');
+                  if (uri != null &&
+                      isAllowedSupportLink(uri) &&
+                      await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } else {
                     // The channel that was tapped must acknowledge the

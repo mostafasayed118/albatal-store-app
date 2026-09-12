@@ -10,9 +10,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'fixtures/products_data.dart';
 import 'helpers/instapay_stub.dart';
 import 'helpers/memory_storefront_persistence.dart';
-import 'fixtures/products_data.dart';
 
 void main() {
   group('InstaPay client flow — widgets', () {
@@ -22,7 +22,7 @@ void main() {
 
     setUp(() {
       stub = InstapayStub(
-        initiation: InstapayReady(instructions: readyInstructions),
+        initiation: const InstapayReady(instructions: readyInstructions),
       );
       cubit = buildReadyCubit(stub);
       cart = CartCubit(MemoryStorefrontPersistence())

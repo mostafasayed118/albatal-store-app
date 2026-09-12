@@ -133,7 +133,7 @@ void main() {
       ];
 
       // Persist via repository helper (same logic as fetchProducts success path)
-      repo.persistCacheForTest(products);
+      await repo.persistCacheForTest(products);
 
       // Verify raw JSON was written to SharedPreferences
       final raw = prefs.getString('catalog_products_cache_v1');
@@ -282,7 +282,7 @@ void main() {
 
       // Seed the persistent cache, then make the network throw so
       // fetchProducts() must fall back to it.
-      repo.persistCacheForTest([p]);
+      await repo.persistCacheForTest([p]);
       when(() => mockClient.from(any()))
           .thenThrow(Exception('network offline'));
 
