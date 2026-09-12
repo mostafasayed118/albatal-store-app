@@ -32,7 +32,10 @@ class _StubCheckoutRepo implements CheckoutRepository {
 /// Cubit wired to a [SharedPreferences]-backed idempotency store —
 /// mirrors the production composition in service_locator.dart without
 /// the presentation layer touching the data layer directly.
-CheckoutCubit _persistentCubit(CheckoutRepository repo, SharedPreferences prefs) =>
+CheckoutCubit _persistentCubit(
+  CheckoutRepository repo,
+  SharedPreferences prefs,
+) =>
     CheckoutCubit(
       repo,
       placeOrder: PlaceCheckoutOrderUseCase(
