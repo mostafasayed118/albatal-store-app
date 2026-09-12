@@ -6,6 +6,7 @@ import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
+import '../../../../shared/services/analytics_service.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../payments/domain/entities/payment.dart';
 import '../../data/memory_idempotency_store.dart';
@@ -92,7 +93,8 @@ final class CheckoutState extends Equatable {
         serverTotal: serverTotal ?? this.serverTotal,
         expiresAt: expiresAt ?? this.expiresAt,
         idempotencyKey: idempotencyKey ?? this.idempotencyKey,
-        appliedCoupon: clearCoupon ? null : (appliedCoupon ?? this.appliedCoupon),
+        appliedCoupon:
+            clearCoupon ? null : (appliedCoupon ?? this.appliedCoupon),
         couponMessage: couponMessage,
       );
 
@@ -123,7 +125,9 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
     CouponsRepository? coupons,
+    AnalyticsService? analytics,
   })  : _coupons = coupons,
+        _analytics = analytics,
         _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(
               checkoutRepository: checkoutRepository,
@@ -136,6 +140,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   final PlaceCheckoutOrderUseCase _placeOrder;
   final CouponsRepository? _coupons;
+  final AnalyticsService? _analytics;
 
   /// Validates [code] via the server and attaches it to this attempt.
   ///
@@ -222,6 +227,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       // (legacy behavior: the key was emitted before the repository call).
       if (outcome.isSuccess) {
         final placed = outcome.pending!;
+        _analytics?.log(AnalyticsService.checkoutStart, {
+          'order_id': placed.orderId,
+          'items': cartItems.length,
+        });
         emit(state.copyWith(
           status: CheckoutStatus.placing,
           idempotencyKey: outcome.idempotencyKey,
@@ -268,6 +277,9 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   void markSuccess() {
     _placeOrder.clearPersistedKey();
+    _analytics?.log(AnalyticsService.purchase, {
+      if (state.appliedCoupon != null) 'coupon': state.appliedCoupon!.code,
+    });
     emit(state.copyWith(status: CheckoutStatus.success));
   }
 

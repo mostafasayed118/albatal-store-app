@@ -43,6 +43,7 @@ import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
 import 'connectivity_gate.dart';
 import 'deep_link_service.dart';
+import 'analytics_service.dart';
 import 'image_compressor.dart';
 import 'product_share_service.dart';
 import 'secure_store.dart';
@@ -143,5 +144,7 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<CouponsRepository>(
         () => SupabaseCouponsRepository())
     ..registerLazySingleton<ReviewsRepository>(
-        () => SupabaseReviewsRepository());
+        () => SupabaseReviewsRepository())
+    // §11: first-party funnel analytics (fail-silent).
+    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService());
 }
