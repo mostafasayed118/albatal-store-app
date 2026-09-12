@@ -402,6 +402,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reorder => 'إعادة الطلب';
 
   @override
+  String get recentSearches => 'عمليات البحث الأخيرة';
+
+  @override
+  String get searchSuggestions => 'اقتراحات';
+
+  @override
+  String get clearRecent => 'مسح';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

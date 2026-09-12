@@ -824,6 +824,24 @@ abstract class AppLocalizations {
   /// **'Reorder'**
   String get reorder;
 
+  /// No description provided for @recentSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get recentSearches;
+
+  /// No description provided for @searchSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get searchSuggestions;
+
+  /// No description provided for @clearRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearRecent;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

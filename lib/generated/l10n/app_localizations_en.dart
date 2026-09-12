@@ -397,6 +397,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reorder => 'Reorder';
 
   @override
+  String get recentSearches => 'Recent searches';
+
+  @override
+  String get searchSuggestions => 'Suggestions';
+
+  @override
+  String get clearRecent => 'Clear';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

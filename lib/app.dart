@@ -18,6 +18,7 @@ import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
+import 'features/storefront/data/recent_searches_store.dart';
 import 'features/storefront/domain/repositories/cart_repository.dart';
 import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
@@ -25,6 +26,7 @@ import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'features/storefront/presentation/cubit/orders_cubit.dart';
+import 'features/storefront/presentation/cubit/recent_searches_cubit.dart';
 import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
@@ -56,6 +58,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final CartCubit _cartCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final ReorderCubit _reorderCubit;
+  late final RecentSearchesCubit _recentSearchesCubit;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _deepLinkSub;
@@ -93,6 +96,11 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       catalog: getIt<CatalogRepository>(),
       addToCart: _cartCubit.add,
     );
+    // Recent catalog searches (feature-batch §7): app-scoped like the
+    // reorder cubit so pages stay GetIt-free.
+    _recentSearchesCubit = RecentSearchesCubit(
+      store: getIt<RecentSearchesStore>(),
+    )..load();
     // Inbound deep links (feature-batch §5): parse → navigate. The
     // service swallows plugin errors on platforms without link support
     // so VM tests and web builds degrade to silence.
@@ -122,6 +130,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _router.dispose();
     _authRefreshNotifier.dispose();
     _reorderCubit.close();
+    _recentSearchesCubit.close();
     _authCubit.close();
     super.dispose();
   }
@@ -146,6 +155,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
           BlocProvider.value(value: _reorderCubit),
+          BlocProvider.value(value: _recentSearchesCubit),
           BlocProvider(
               create: (_) =>
                   AddressesCubit(getIt<AddressRepository>())..load()),

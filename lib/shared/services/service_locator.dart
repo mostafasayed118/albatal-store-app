@@ -1,5 +1,7 @@
+
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
@@ -20,6 +22,7 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
+import '../../features/storefront/data/recent_searches_store.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
@@ -130,5 +133,8 @@ Future<void> configureDependencies() async {
     // §5: share sheet + inbound deep links (initial + warm events).
     ..registerLazySingleton<ProductShareService>(
         () => const SharePlusProductShareService())
-    ..registerLazySingleton<DeepLinkService>(() => DeepLinkService());
+    ..registerLazySingleton<DeepLinkService>(() => DeepLinkService())
+    // §7: persisted recent catalog searches.
+    ..registerLazySingleton<RecentSearchesStore>(
+        () => PrefsRecentSearchesStore(getIt<SharedPreferences>()));
 }
