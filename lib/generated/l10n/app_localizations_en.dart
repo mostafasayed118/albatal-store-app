@@ -394,6 +394,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProduct => 'Share product';
 
   @override
+  String shareProductMessage(Object name, Object url) {
+    return '$name — Al Batal Elite\n$url';
+  }
+
+  @override
   String get shareLinkCopied => 'Share link copied';
 
   @override

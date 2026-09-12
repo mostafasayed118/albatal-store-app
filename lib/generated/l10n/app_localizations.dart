@@ -818,6 +818,12 @@ abstract class AppLocalizations {
   /// **'Share product'**
   String get shareProduct;
 
+  /// No description provided for @shareProductMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — Al Batal Elite\n{url}'**
+  String shareProductMessage(Object name, Object url);
+
   /// No description provided for @shareLinkCopied.
   ///
   /// In en, this message translates to:

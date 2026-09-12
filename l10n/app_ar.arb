@@ -136,6 +136,7 @@
   },
   "confirmStep": "تأكيد",
   "shareProduct": "مشاركة المنتج",
+  "shareProductMessage": "{name} — البطل إيليت\n{url}",
   "shareLinkCopied": "تم نسخ رابط المشاركة",
   "discountPercent": "خصم {percent}%",
   "@discountPercent": {

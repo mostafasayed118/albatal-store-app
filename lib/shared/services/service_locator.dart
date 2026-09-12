@@ -37,7 +37,9 @@ import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
 import 'connectivity_gate.dart';
+import 'deep_link_service.dart';
 import 'image_compressor.dart';
+import 'product_share_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
 
@@ -124,5 +126,9 @@ Future<void> configureDependencies() async {
     // Upload-image compression (feature-batch §4). Fail-open by design:
     // an unavailable plugin returns the original bytes.
     ..registerLazySingleton<ImageCompressor>(
-        () => const FlutterImageCompressor());
+        () => const FlutterImageCompressor())
+    // §5: share sheet + inbound deep links (initial + warm events).
+    ..registerLazySingleton<ProductShareService>(
+        () => const SharePlusProductShareService())
+    ..registerLazySingleton<DeepLinkService>(() => DeepLinkService());
 }

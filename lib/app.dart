@@ -29,6 +29,9 @@ import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
+import 'shared/services/deep_link_parser.dart';
+import 'shared/services/deep_link_service.dart';
+import 'shared/services/env_config.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
@@ -53,6 +56,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<Uri>? _deepLinkSub;
 
   @override
   void initState() {
@@ -81,11 +85,32 @@ final class _AlBatalAppState extends State<AlBatalApp> {
         isPremium: auth.profile?.tier == MembershipTier.premium,
       );
     });
+    // Inbound deep links (feature-batch §5): parse → navigate. The
+    // service swallows plugin errors on platforms without link support
+    // so VM tests and web builds degrade to silence.
+    _deepLinkSub = getIt<DeepLinkService>()
+        .incoming()
+        .listen(_handleDeepLink, onError: (Object _) {});
+  }
+
+  void _handleDeepLink(Uri uri) {
+    final link = parseDeepLink(
+      uri,
+      webBase: Uri.parse(EnvConfig.webBaseUrl),
+    );
+    if (link is ProductDeepLink) {
+      _router.push('/product/${Uri.encodeComponent(link.productId)}');
+    } else if (link is CatalogDeepLink) {
+      final q = link.query;
+      _router.push(
+          q == null ? '/catalog' : '/catalog?q=${Uri.encodeComponent(q)}');
+    }
   }
 
   @override
   void dispose() {
     _authSub?.cancel();
+    _deepLinkSub?.cancel();
     _router.dispose();
     _authRefreshNotifier.dispose();
     _authCubit.close();

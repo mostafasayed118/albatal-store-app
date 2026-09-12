@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/product_share_service.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
@@ -93,10 +98,9 @@ class DetailsPage extends StatelessWidget {
                 WishlistToggleIcon(productId: p.id),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          behavior: SnackBarBehavior.floating,
-                          content: Text(l.shareLinkCopied))),
+                  onPressed: () => unawaited(getIt<ProductShareService>()
+                      .shareText(l.shareProductMessage(
+                          p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],

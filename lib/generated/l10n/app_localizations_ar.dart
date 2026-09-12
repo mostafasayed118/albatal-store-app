@@ -399,6 +399,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareProduct => 'مشاركة المنتج';
 
   @override
+  String shareProductMessage(Object name, Object url) {
+    return '$name — البطل إيليت\n$url';
+  }
+
+  @override
   String get shareLinkCopied => 'تم نسخ رابط المشاركة';
 
   @override
