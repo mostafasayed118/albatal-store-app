@@ -9,7 +9,7 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockReviewsRepo extends Mock implements ReviewsRepository {}
 
-Map<String, dynamic> _row({String status = 'approved'}) => {
+Map<String, dynamic> _row() => {
       'id': 'rev-1',
       'product_id': 'p1',
       'rating': 4,
