@@ -35,6 +35,7 @@ final class AddressesCubit extends Cubit<AddressesState> {
     final live = state.addresses;
     emit(const AddressesState());
     final r = await _repository.read();
+    if (isClosed) return;
     r.when(
         success: (a) {
           if (force || live.isEmpty) {
@@ -63,6 +64,7 @@ final class AddressesCubit extends Cubit<AddressesState> {
           : [a.first.copyWith(isDefault: true), ...a.skip(1)];
   Future<void> _persist(List<Address> a) async {
     final r = await _repository.save(a);
+    if (isClosed) return;
     r.when(
         success: (_) => emit(AddressesState(
             status: a.isEmpty ? AddressesStatus.empty : AddressesStatus.ready,

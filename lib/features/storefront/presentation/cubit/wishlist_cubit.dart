@@ -53,6 +53,9 @@ final class WishlistCubit extends Cubit<WishlistState> {
     final hadIds = state.ids.isNotEmpty;
     emit(state.copyWith(status: WishlistStatus.loading));
     final result = await _repository.readWishlist();
+    // Page popped mid-flight (e.g. guest redirected to sign-in): emitting
+    // into a closed cubit throws a StateError.
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         if (force || !hadIds) {
@@ -99,6 +102,7 @@ final class WishlistCubit extends Cubit<WishlistState> {
   /// but the UI is warned the wishlist won't survive a restart.
   Future<void> _persist(Set<String> ids) async {
     final result = await _repository.writeWishlist(ids);
+    if (isClosed) return;
     switch (result) {
       case Success():
         break;

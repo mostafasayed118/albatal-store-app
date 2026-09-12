@@ -20,9 +20,9 @@ class AdminCouponsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminCouponsCubit>(
-      create: (_) => (cubit ??
-          AdminCouponsCubit(repository: getIt<AdminRepository>()))
-        ..load(),
+      create: (_) =>
+          (cubit ?? AdminCouponsCubit(repository: getIt<AdminRepository>()))
+            ..load(),
       child: const _AdminCouponsView(),
     );
   }
@@ -84,53 +84,61 @@ final class _AdminCouponsView extends StatelessWidget {
     );
   }
 
-  void _showCreateSheet(BuildContext context) {
+  Future<void> _showCreateSheet(BuildContext context) async {
     final codeController = TextEditingController();
     final discountController = TextEditingController();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: 16,
-          end: 16,
-          top: 16,
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: 16,
+            end: 16,
+            top: 16,
+            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: codeController,
+                textCapitalization: TextCapitalization.characters,
+                decoration:
+                    InputDecoration(labelText: sheetContext.l10n.couponCode),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: discountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                    labelText: sheetContext.l10n.couponDiscountEgp),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  final code = codeController.text.trim();
+                  final egp = int.tryParse(discountController.text.trim());
+                  if (code.isEmpty || egp == null || egp <= 0) return;
+                  context.read<AdminCouponsCubit>().createCoupon(
+                        code: code,
+                        discountMinor: egp * 100,
+                      );
+                  Navigator.of(sheetContext).pop();
+                },
+                child: Text(sheetContext.l10n.adminAddCoupon),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: codeController,
-              textCapitalization: TextCapitalization.characters,
-              decoration:
-                  InputDecoration(labelText: sheetContext.l10n.couponCode),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: discountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                  labelText: sheetContext.l10n.couponDiscountEgp),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                final code = codeController.text.trim();
-                final egp = int.tryParse(discountController.text.trim());
-                if (code.isEmpty || egp == null || egp <= 0) return;
-                context.read<AdminCouponsCubit>().createCoupon(
-                      code: code,
-                      discountMinor: egp * 100,
-                    );
-                Navigator.of(sheetContext).pop();
-              },
-              child: Text(sheetContext.l10n.adminAddCoupon),
-            ),
-          ],
-        ),
-      ),
-    );
+      );
+    } finally {
+      // Disposed after the sheet is fully popped (covers confirm,
+      // cancel, and barrier dismissal) — same contract as the admin
+      // dialog controllers (PR #34 sweep).
+      codeController.dispose();
+      discountController.dispose();
+    }
   }
 }
 
