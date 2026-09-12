@@ -51,7 +51,7 @@ class _GatedCheckoutRepository implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
-      String? couponCode,
+    String? couponCode,
     String? idempotencyKey,
   }) {
     if (!entered.isCompleted) entered.complete();

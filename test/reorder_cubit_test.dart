@@ -65,8 +65,7 @@ void main() {
     );
   }
 
-  test('re-adds available lines with original color/length/quantity',
-      () async {
+  test('re-adds available lines with original color/length/quantity', () async {
     final cubit = buildCubit({
       'p1': _product('p1', 'Silk', {'Emerald-2m': 5}),
     });

@@ -62,8 +62,7 @@ void main() {
       final en = AppLocalizationsEn();
       final ar = AppLocalizationsAr();
       expect(en.orderNotifications, 'Order notifications');
-      expect(en.orderNotificationsSubtitle,
-          'Confirmations and status updates');
+      expect(en.orderNotificationsSubtitle, 'Confirmations and status updates');
       for (final value in [
         ar.orderNotifications,
         ar.orderNotificationsSubtitle,

@@ -81,8 +81,7 @@ Widget _homeHarness(MemoryStorefrontPersistence store) => MaterialApp(
           BlocProvider(create: (_) => CatalogCubit(_StubRepo())..load()),
           BlocProvider(create: (_) => WishlistCubit(store)),
           BlocProvider(
-              create: (_) =>
-                  RecentSearchesCubit(store: _NoRecentSearches())),
+              create: (_) => RecentSearchesCubit(store: _NoRecentSearches())),
           BlocProvider(create: (_) => CartCubit(store)),
           BlocProvider(
             create: (_) => AuthCubit(
@@ -145,8 +144,7 @@ void main() {
           BlocProvider(create: (_) => CatalogCubit(_StubRepo())..load()),
           BlocProvider(create: (_) => WishlistCubit(store)),
           BlocProvider(
-              create: (_) =>
-                  RecentSearchesCubit(store: _NoRecentSearches())),
+              create: (_) => RecentSearchesCubit(store: _NoRecentSearches())),
         ],
         child: const CatalogPage(),
       ),

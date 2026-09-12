@@ -7,7 +7,6 @@ AdminOrder _order({
   required String id,
   String customer = 'Nour',
   int items = 2,
-
 }) =>
     AdminOrder(
       id: id,
