@@ -155,6 +155,23 @@ final class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async {
+    try {
+      final rows = await _client
+          .from('products')
+          .select('id, name, slug, description, composition, category_id, '
+              'base_price, is_active, categories(name)')
+          .eq('id', productId)
+          .limit(1);
+      final list = rows as List<dynamic>;
+      if (list.isEmpty) return const Success(null);
+      return Success(AdminMappers.productsFromRows(list).first);
+    } catch (e) {
+      return Failure(AppError('Failed to load product', cause: e));
+    }
+  }
+
+  @override
   Future<Result<List<AdminCategory>>> getAllCategories() async {
     try {
       final rows = await _client
@@ -303,9 +320,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           .order('created_at', ascending: false);
       final list = rows as List<dynamic>;
       return Success(
-        list
-            .map((row) => _couponFromRow(row as Map<String, dynamic>))
-            .toList(),
+        list.map((row) => _couponFromRow(row as Map<String, dynamic>)).toList(),
       );
     } catch (e) {
       return Failure(AppError('Failed to fetch coupons', cause: e));
@@ -363,7 +378,8 @@ final class SupabaseAdminRepository implements AdminRepository {
                 name: row['full_name'] as String? ?? '',
                 email: row['email'] as String? ?? '',
                 tier: row['membership_tier'] as String? ?? 'standard',
-                isBlocked: false, // no suspension flag in profiles (§14 read-only)
+                isBlocked:
+                    false, // no suspension flag in profiles (§14 read-only)
               ))
           .where((c) => c.id.isNotEmpty)
           .toList());
@@ -404,8 +420,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     try {
       await _client
           .from('product_reviews')
-          .update({'status': status})
-          .eq('id', id);
+          .update({'status': status}).eq('id', id);
       return const Success(null);
     } catch (e) {
       return Failure(AppError('Failed to update review status', cause: e));

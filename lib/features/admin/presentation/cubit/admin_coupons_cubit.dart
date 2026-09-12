@@ -46,8 +46,7 @@ class AdminCouponsCubit extends Cubit<AdminCouponsState> {
     final result = await _repository.fetchCoupons();
     switch (result) {
       case Success(:final value):
-        emit(state.copyWith(
-            status: AdminCouponsStatus.ready, coupons: value));
+        emit(state.copyWith(status: AdminCouponsStatus.ready, coupons: value));
       case Failure(:final error):
         emit(state.copyWith(
             status: AdminCouponsStatus.error, errorMessage: error.message));

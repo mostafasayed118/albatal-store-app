@@ -84,8 +84,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
               return IconButton(
                 tooltip: l10n.invoiceSave,
                 onPressed: () async {
-                  final bytes =
-                      await const InvoicePdfBuilder().build(order);
+                  final bytes = await const InvoicePdfBuilder().build(order);
                   await Printing.sharePdf(
                       bytes: bytes, filename: 'invoice-${order.id}.pdf');
                 },

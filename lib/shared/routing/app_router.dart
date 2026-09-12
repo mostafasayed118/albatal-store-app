@@ -45,6 +45,7 @@ import '../../features/support/domain/repositories/support_repository.dart';
 import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
 import '../services/connectivity_gate.dart';
+import '../services/image_compressor.dart';
 import '../services/navigation_observer.dart';
 import '../services/service_locator.dart';
 import '../services/storage_service.dart';
@@ -190,7 +191,8 @@ final _routes = <RouteBase>[
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
   GoRoute(path: '/admin/reviews', builder: (_, __) => const AdminReviewsPage()),
   GoRoute(path: '/maintenance', builder: (_, __) => const MaintenancePage()),
-  GoRoute(path: '/admin/customers', builder: (_, __) => const AdminCustomersPage()),
+  GoRoute(
+      path: '/admin/customers', builder: (_, __) => const AdminCustomersPage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
@@ -235,6 +237,10 @@ final _routes = <RouteBase>[
       // dependencies; pages receive them via constructors.
       repository: getIt<AdminRepository>(),
       storage: getIt<StorageService>(),
+      // §4 compression pass on the real upload path (audit 2026-09-13).
+      imageCompressor: getIt.isRegistered<ImageCompressor>()
+          ? getIt<ImageCompressor>()
+          : null,
     ),
   ),
   GoRoute(

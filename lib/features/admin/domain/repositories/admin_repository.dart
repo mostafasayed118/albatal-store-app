@@ -127,6 +127,11 @@ abstract interface class AdminRepository {
   /// un-hide. Rows carry the joined category name for display.
   Future<Result<List<AdminProduct>>> getAllProducts();
 
+  /// Single product for the edit-form prefill — avoids the
+  /// fetch-all-and-scan the page previously did (audit 2026-09-13).
+  /// Null when the id does not exist.
+  Future<Result<AdminProduct?>> getProductById(String productId);
+
   /// Get every category for the catalog management list (read-only
   /// until a category write RPC exists).
   Future<Result<List<AdminCategory>>> getAllCategories();

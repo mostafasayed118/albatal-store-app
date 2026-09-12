@@ -49,7 +49,8 @@ class FakeAdminRepository implements AdminRepository {
 
   @override
   Future<Result<List<({String id, String product, String text, int rating})>>>
-      fetchPendingReviews() async => const Success(<({String id, String product, String text, int rating})>[]);
+      fetchPendingReviews() async => const Success(
+          <({String id, String product, String text, int rating})>[]);
 
   @override
   Future<Result<void>> setReviewStatus(String id, String status) async =>
@@ -58,8 +59,6 @@ class FakeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
       const Success(<AdminCustomer>[]);
-
-
 
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
@@ -155,6 +154,14 @@ class FakeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<String>>> getProductImagePaths(String productId) async =>
       Success(productImagePaths);
+
+  @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async {
+    for (final p in products) {
+      if (p.id == productId) return Success(p);
+    }
+    return const Success(null);
+  }
 
   @override
   Future<Result<List<AdminProduct>>> getAllProducts() async {

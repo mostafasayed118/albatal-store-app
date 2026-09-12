@@ -509,6 +509,10 @@ final class _RouteProbeAdminRepository implements AdminRepository {
       const Success([]);
 
   @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async =>
+      const Success(null);
+
+  @override
   Future<Result<List<AdminProduct>>> getAllProducts() async =>
       const Success([]);
 

@@ -71,11 +71,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         TextEditingController(text: safeString(d, 'composition'));
     _careCtrl = TextEditingController(text: safeString(d, 'care'));
     _originCtrl = TextEditingController(text: safeString(d, 'origin'));
-    _widthCtrl =
-        TextEditingController(text: safeString(d, 'width_cm'));
+    _widthCtrl = TextEditingController(text: safeString(d, 'width_cm'));
     _gsmCtrl = TextEditingController(text: safeString(d, 'gsm'));
-    _minCutCtrl =
-        TextEditingController(text: safeString(d, 'min_cut_meters'));
+    _minCutCtrl = TextEditingController(text: safeString(d, 'min_cut_meters'));
     _sellByLength = safeString(d, 'sell_by_length') == 'true';
     final price = d?['base_price'];
     _priceCtrl = TextEditingController(
@@ -93,20 +91,21 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
 
   Future<void> _loadProduct() async {
     setState(() => _loadingProduct = true);
-    final result = await widget.repository.getAllProducts();
+    // Single-row fetch (audit 2026-09-13): the page previously loaded
+    // the whole bounded products list and linear-scanned for the id.
+    final result = await widget.repository.getProductById(widget.productId!);
     if (!mounted) return;
+    String? failureMessage;
     AdminProduct? product;
-    if (result case Success(:final value)) {
-      for (final p in value) {
-        if (p.id == widget.productId) {
-          product = p;
-          break;
-        }
-      }
+    switch (result) {
+      case Success(:final value):
+        product = value;
+      case Failure(:final error):
+        failureMessage = error.message;
     }
     if (!mounted) return;
     if (product == null) {
-      showFloatingError(context, 'Product not found');
+      showFloatingError(context, failureMessage ?? 'Product not found');
       setState(() => _loadingProduct = false);
       return;
     }
@@ -344,8 +343,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                   child: TextFormField(
                     controller: _widthCtrl,
                     keyboardType: TextInputType.number,
-                    decoration:
-                        const InputDecoration(labelText: 'Width (cm)'),
+                    decoration: const InputDecoration(labelText: 'Width (cm)'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -373,8 +371,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                 controller: _minCutCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                    labelText: 'Minimum cut (meters)'),
+                decoration:
+                    const InputDecoration(labelText: 'Minimum cut (meters)'),
               ),
               const SizedBox(height: 16),
             ],
