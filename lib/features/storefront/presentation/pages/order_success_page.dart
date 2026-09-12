@@ -21,7 +21,10 @@ final class _OrderSuccessPageState extends State<OrderSuccessPage> {
     super.initState();
     // §12: local order confirmation. The service itself is gated by the
     // user's notification opt-in and fails silently when unavailable.
-    getIt<NotificationService>().showOrderNotification(
+    final notifications = getIt.isRegistered<NotificationService>()
+        ? getIt<NotificationService>()
+        : const NoOpNotificationService();
+    notifications.showOrderNotification(
       title: 'Al Batal Elite',
       body: 'Order #${widget.orderId} confirmed',
     );

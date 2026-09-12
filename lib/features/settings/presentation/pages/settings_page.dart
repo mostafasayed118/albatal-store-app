@@ -284,7 +284,10 @@ final class _NotificationToggleTileState
 
   @override
   Widget build(BuildContext context) {
-    final store = getIt<NotificationPrefsStore>();
+    final store = getIt.isRegistered<NotificationPrefsStore>()
+        ? getIt<NotificationPrefsStore>()
+        : null;
+    if (store == null) return const SizedBox.shrink();
     _enabled ??= store.orderNotificationsEnabled;
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
