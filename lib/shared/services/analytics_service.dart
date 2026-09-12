@@ -35,8 +35,10 @@ class AnalyticsService {
   }
 }
 
-/// Writes one row per event via direct insert (RLS: insert-own only,
-/// no reads — aggregates go through the admin-only RPC in 052).
+/// Writes one row per event via direct insert. Column shape matches the
+/// LIVE `analytics_events` table (id, user_id, event, properties,
+/// created_at — verified via REST OpenAPI 2026-09-13): `event` +
+/// `properties`, user_id left null-able per the insert-own RLS.
 class SupabaseAnalyticsSink implements AnalyticsSink {
   SupabaseAnalyticsSink({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
@@ -46,8 +48,8 @@ class SupabaseAnalyticsSink implements AnalyticsSink {
   @override
   Future<void> send(String name, Map<String, dynamic> props) async {
     await _client.from('analytics_events').insert({
-      'name': name,
-      'props': props,
+      'event': name,
+      'properties': props,
     });
     Log.d('analytics: $name', category: LogCategory.app);
   }

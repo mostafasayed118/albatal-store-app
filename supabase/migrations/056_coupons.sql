@@ -1,4 +1,4 @@
--- 049_coupons.sql (feature-batch §8 — REVIEW-GATED PROPOSAL)
+-- 056_coupons.sql (feature-batch §8 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- Promo codes end-to-end:

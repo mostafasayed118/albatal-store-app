@@ -1,4 +1,4 @@
--- 051_fabric_attributes.sql (feature-batch §10 — REVIEW-GATED PROPOSAL)
+-- 058_fabric_attributes.sql (feature-batch §10 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- Fabric-specific commerce data:

@@ -1,4 +1,4 @@
--- 050_product_reviews.sql (feature-batch §9 — REVIEW-GATED PROPOSAL)
+-- 057_product_reviews.sql (feature-batch §9 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- Buy-to-review photo reviews with moderation:

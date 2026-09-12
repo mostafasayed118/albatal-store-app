@@ -1,4 +1,4 @@
--- 048_search_suggestions.sql (feature-batch §7 — REVIEW-GATED PROPOSAL)
+-- 055_search_suggestions.sql (feature-batch §7 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- Server-side fuzzy search suggestions for the catalog search bar.
