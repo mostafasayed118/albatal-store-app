@@ -296,6 +296,37 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
               controller: _compositionCtrl,
               decoration: const InputDecoration(labelText: 'Composition'),
             ),
+            _loadingCategories
+                ? const Center(
+                    child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator()))
+                : DropdownButtonFormField<String>(
+                    // Values are category UUIDs (the RPC contract); the
+                    // display label is the human-readable name.
+                    initialValue: _selectedCategoryId,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    items: _categories
+                        .map((c) =>
+                            DropdownMenuItem(value: c.id, child: Text(c.name)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCategoryId = v),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
+                  ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _priceCtrl,
+              decoration: const InputDecoration(labelText: 'Base Price (EGP)'),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Required';
+                if (double.tryParse(v.trim()) == null) return 'Invalid number';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
             const SizedBox(height: 16),
             TextFormField(
               controller: _careCtrl,
@@ -347,37 +378,6 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
               ),
               const SizedBox(height: 16),
             ],
-            _loadingCategories
-                ? const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: CircularProgressIndicator()))
-                : DropdownButtonFormField<String>(
-                    // Values are category UUIDs (the RPC contract); the
-                    // display label is the human-readable name.
-                    initialValue: _selectedCategoryId,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                    items: _categories
-                        .map((c) =>
-                            DropdownMenuItem(value: c.id, child: Text(c.name)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedCategoryId = v),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Required' : null,
-                  ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _priceCtrl,
-              decoration: const InputDecoration(labelText: 'Base Price (EGP)'),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Required';
-                if (double.tryParse(v.trim()) == null) return 'Invalid number';
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Active'),
               value: _isActive,
