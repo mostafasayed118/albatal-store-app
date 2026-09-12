@@ -5,10 +5,11 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
-import '../../../fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../fixtures/products_data.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 

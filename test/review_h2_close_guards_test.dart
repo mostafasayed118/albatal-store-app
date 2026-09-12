@@ -30,9 +30,9 @@ const _product = Product(
 
 final _serverOrder = PendingOrder(
   orderId: 'ord-h2',
-  subtotal: Money.egp(500),
-  shipping: Money.egp(50),
-  total: Money.egp(550),
+  subtotal: const Money.egp(500),
+  shipping: const Money.egp(50),
+  total: const Money.egp(550),
   expiresAt: DateTime.utc(2026, 1, 1),
 );
 
@@ -121,7 +121,7 @@ void main() {
 
       final pending = cubit.createPendingOrder(
         cartItems: <CartItem>[
-          CartItem(
+          const CartItem(
             product: _product,
             color: 'Emerald',
             length: '2m',
@@ -148,7 +148,7 @@ void main() {
     test('PaymentCubit COD emits nothing after close', () async {
       final service = _GatedPaymentService();
       final cubit = PaymentCubit(service);
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-h2');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-h2');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       // Subscribe after init/select so only in-flight emits count.

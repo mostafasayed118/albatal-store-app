@@ -68,7 +68,7 @@ class _RlsDenyingProfileRepo implements ProfileRepository {
       // Simulate Supabase RLS denying is_admin write: PostgrestException 42501
       // In real DB this is enforced by WITH CHECK (is_admin = false OR auth check)
       // and the redundant policy was removed in migration 029+fix.
-      return Failure(
+      return const Failure(
         AppError(
           'permission denied: cannot set is_admin',
           cause: PostgrestException(

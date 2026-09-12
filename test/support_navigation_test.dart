@@ -66,7 +66,7 @@ void main() {
             GoRoute(
               path: '/support',
               builder: (_, __) =>
-                  SupportPage(supportRepository: LocalSupportRepository()),
+                  const SupportPage(supportRepository: LocalSupportRepository()),
             ),
             ...extra,
           ],

@@ -2,14 +2,13 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../shared/services/secure_store.dart';
 import '../../../core/data/address_codec.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
 import '../domain/address.dart';
 import '../domain/repositories/address_repository.dart';
-
-import '../../../../shared/services/secure_store.dart';
 
 final class LocalAddressRepository implements ClearableAddressRepository {
   LocalAddressRepository(this._preferences, {SecureStore? secureStore})

@@ -21,7 +21,7 @@ import '../../../../helpers/stub_auth_repositories.dart';
 
 class _StubRepo implements CatalogRepository {
   @override
-  Future<Result<List<Product>>> fetchProducts() async => Success(_products);
+  Future<Result<List<Product>>> fetchProducts() async => const Success(_products);
   @override
   Future<Result<List<String>>> fetchCategories() async => const Success([
         'Silk',
@@ -29,7 +29,7 @@ class _StubRepo implements CatalogRepository {
       ]);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('not found'));
+      const Failure(AppError('not found'));
   @override
   Product? findProductById(String id) => null;
   @override

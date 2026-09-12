@@ -14,12 +14,13 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/cart_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/wishlist_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
 
 class _CartRepo implements CartRepository {
   _CartRepo(this.itemsToReturn);

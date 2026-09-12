@@ -30,7 +30,7 @@ void main() {
       );
       final updated = state.copyWith(transactionId: 'TXN-1');
       expect(updated.transactionId, 'TXN-1');
-      expect(updated.amount, Money.egp(1500));
+      expect(updated.amount, const Money.egp(1500));
       expect(updated.selectedMethod, PaymentMethod.paymobCard);
     });
   });
@@ -40,7 +40,7 @@ void main() {
       const result =
           PaymentSuccess(transactionId: 'TXN-1', amount: Money.egp(1500));
       expect(result.transactionId, 'TXN-1');
-      expect(result.amount, Money.egp(1500));
+      expect(result.amount, const Money.egp(1500));
     });
 
     test('PaymentFailed holds message and optional code', () {
@@ -97,7 +97,7 @@ void main() {
       }
 
       final cubit = PaymentCubit(service, timerFactory: fakeFactory);
-      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.initPayment(amount: const Money(100), orderId: 'O1');
       await cubit.startWatching('O1');
       expect(fired, isTrue);
       await cubit.close();
@@ -107,7 +107,7 @@ void main() {
         () async {
       for (final blank in ['', '  ']) {
         final cubit = PaymentCubit(service);
-        cubit.initPayment(amount: Money(100), orderId: 'O1');
+        cubit.initPayment(amount: const Money(100), orderId: 'O1');
         await cubit.startWatching(blank);
         expect(cubit.state.status, PaymentStatus.failed);
         expect(cubit.state.errorMessage, 'order_ref_required');
@@ -117,7 +117,7 @@ void main() {
 
     test('watch stream error emits verify_failed code', () async {
       final cubit = PaymentCubit(service);
-      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.initPayment(amount: const Money(100), orderId: 'O1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
       expect(cubit.state.status, PaymentStatus.awaitingVerification);
@@ -132,7 +132,7 @@ void main() {
     });
 
     test('watch stream error while awaitingProof is ignored', () async {
-      service.instapayResult = InstapayReady(
+      service.instapayResult = const InstapayReady(
         instructions: InstapayInstructions(
           paymentId: 'p1',
           instapayAddress: 'merchant@instapay',
@@ -140,7 +140,7 @@ void main() {
         ),
       );
       final cubit = PaymentCubit(service);
-      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.initPayment(amount: const Money(100), orderId: 'O1');
       cubit.selectMethod(PaymentMethod.instapay);
       await cubit.processPayment(customerEmail: 'a@b.c');
       expect(cubit.state.status, PaymentStatus.awaitingProof);
@@ -167,7 +167,7 @@ void main() {
         code: 'payment_not_pending',
       );
       final cubit = PaymentCubit(service);
-      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.initPayment(amount: const Money(100), orderId: 'O1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
       expect(cubit.state.status, PaymentStatus.failed);
@@ -183,7 +183,7 @@ void main() {
       }
 
       final cubit = PaymentCubit(service, timerFactory: captureFactory);
-      cubit.initPayment(amount: Money(100), orderId: 'O1');
+      cubit.initPayment(amount: const Money(100), orderId: 'O1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
       expect(cubit.state.status, PaymentStatus.awaitingVerification);

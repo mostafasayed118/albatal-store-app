@@ -1,10 +1,9 @@
+import 'package:al_batal_elite/app.dart';
+import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:al_batal_elite/app.dart';
-import 'package:al_batal_elite/shared/services/service_locator.dart';
 
 void main() {
   setUpAll(() async {

@@ -51,9 +51,9 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.inventory)),
+      appBar: AppBar(title: Text(l10n.inventory)),
       body: BlocListener<AdminCubit, AdminState>(
         listener: (context, state) {
           // Optimistic acks lie when the write fails; confirm only what
@@ -94,7 +94,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
                     Icon(Icons.check_circle_outline,
                         size: 64, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 16),
-                    Text(l.allStockLevelsHealthy),
+                    Text(l10n.allStockLevelsHealthy),
                   ],
                 ),
               );
@@ -178,7 +178,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
   }
 }
 
-class _StockTile extends StatelessWidget {
+final class _StockTile extends StatelessWidget {
   const _StockTile({
     required this.product,
     required this.onEditRequested,

@@ -2,13 +2,14 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart'
     show OrderCodec;
 import 'package:al_batal_elite/features/storefront/domain/repositories/orders_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 void main() {
   group('OrdersCubit', () {
@@ -97,7 +98,7 @@ void main() {
 class _FailingOrdersRepository implements OrdersRepository {
   @override
   Future<Result<List<Order>>> readOrders() async =>
-      Failure(AppError('read failed'));
+      const Failure(AppError('read failed'));
 }
 
 Order _orderWithStatus(String id, OrderStatus status) => Order(

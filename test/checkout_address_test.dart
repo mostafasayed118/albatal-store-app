@@ -2,17 +2,18 @@ import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
-import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart'
     show OrderCodec;
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 /// Stub CheckoutRepository that returns a fake pending order.
 class StubCheckoutRepository implements CheckoutRepository {
@@ -27,10 +28,10 @@ class StubCheckoutRepository implements CheckoutRepository {
       orderId: 'ORD-STUB-1',
       subtotal: items.fold(Money.zero,
           (Money v, CartItem i) => v + (i.product.price * i.quantity)),
-      shipping: Money.egp(75),
+      shipping: const Money.egp(75),
       total: items.fold(Money.zero,
               (Money v, CartItem i) => v + (i.product.price * i.quantity)) +
-          Money.egp(75),
+          const Money.egp(75),
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
     ));
   }

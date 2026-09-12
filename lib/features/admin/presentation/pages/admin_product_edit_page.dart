@@ -11,6 +11,9 @@ import '../../domain/repositories/admin_repository.dart';
 
 /// Admin product create/edit — calls [AdminRepository.adminUpsertProduct].
 ///
+/// All copy on this form is admin-only, intentionally unlocalized (no ARB
+/// keys; the storefront stays localized).
+///
 /// The repository is constructor-injected (audit P1); the router resolves
 /// it at the composition root.
 class AdminProductEditPage extends StatefulWidget {

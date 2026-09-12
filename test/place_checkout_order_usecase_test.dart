@@ -75,9 +75,9 @@ PendingOrder _pending(
         {String orderId = 'server-ord-001', String status = 'pending'}) =>
     PendingOrder(
       orderId: orderId,
-      subtotal: Money.egp(500),
-      shipping: Money.egp(50),
-      total: Money.egp(550),
+      subtotal: const Money.egp(500),
+      shipping: const Money.egp(50),
+      total: const Money.egp(550),
       expiresAt: DateTime.parse('2026-01-01T00:00:00Z'),
       status: status,
     );

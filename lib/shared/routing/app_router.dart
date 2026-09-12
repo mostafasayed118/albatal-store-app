@@ -1,8 +1,9 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
-import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
+import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
@@ -11,7 +12,6 @@ import '../../features/admin/presentation/pages/admin_orders_page.dart';
 import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
 import '../../features/admin/presentation/pages/admin_products_page.dart';
 import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
-import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/profile_page.dart';

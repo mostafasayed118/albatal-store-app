@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../../shared/services/logger.dart';
-import '../../../addresses/domain/repositories/address_repository.dart';
 import '../../../../core/entities/profile.dart';
 import '../../../../core/error/result.dart';
+import '../../../../shared/services/logger.dart';
+import '../../../addresses/domain/repositories/address_repository.dart';
 import '../../domain/entities/auth_outcome.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/order_snapshot_port.dart';

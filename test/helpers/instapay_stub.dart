@@ -77,5 +77,5 @@ const readyInstructions = InstapayInstructions(
 );
 
 PaymentCubit buildReadyCubit(InstapayStub stub) => PaymentCubit(stub)
-  ..initPayment(amount: Money.egp(1290), orderId: 'ord-1')
+  ..initPayment(amount: const Money.egp(1290), orderId: 'ord-1')
   ..selectMethod(PaymentMethod.instapay);

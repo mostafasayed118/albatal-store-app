@@ -17,7 +17,7 @@ class _StubCatalogRepository implements CatalogRepository {
       const Success(['All']);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
   @override
   Product? findProductById(String id) => null;
   @override
@@ -31,13 +31,13 @@ class _StubCatalogRepository implements CatalogRepository {
 class _RepositoryFailureCatalog implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
-      Failure(AppError('database unavailable'));
+      const Failure(AppError('database unavailable'));
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       const Success(['All']);
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('database unavailable'));
+      const Failure(AppError('database unavailable'));
   @override
   Product? findProductById(String id) => null;
   @override
@@ -101,7 +101,7 @@ class _RelatedFetchFailureCatalog implements CatalogRepository {
   Future<Result<List<Product>>> fetchProducts() async {
     _fetchProductsCalls++;
     if (_fetchProductsCalls == 2) {
-      return Failure(AppError('related products unavailable'));
+      return const Failure(AppError('related products unavailable'));
     }
     return const Success([requestedProduct]);
   }

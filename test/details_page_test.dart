@@ -1,5 +1,3 @@
-import 'fixtures/local_catalog_repository.dart';
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
@@ -7,6 +5,9 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/local_catalog_repository.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 Widget _harness(String productId) {
   final persistence = MemoryStorefrontPersistence();

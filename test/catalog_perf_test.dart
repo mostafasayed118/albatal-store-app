@@ -3,6 +3,7 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
@@ -12,15 +13,14 @@ import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.
 import 'package:al_batal_elite/features/storefront/presentation/widgets/cart_item_tile.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
-import 'helpers/memory_storefront_persistence.dart';
-import 'fixtures/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 class MockCatalogRepository extends Mock implements CatalogRepository {}
 
@@ -34,9 +34,9 @@ CatalogState _seeded() => CatalogState(
 Order _order(String id, OrderStatus status) => Order(
       id: id,
       items: const [],
-      subtotal: Money.egp(100),
-      shipping: Money.egp(10),
-      total: Money.egp(110),
+      subtotal: const Money.egp(100),
+      shipping: const Money.egp(10),
+      total: const Money.egp(110),
       status: status,
       placedAt: DateTime(2026, 9, 1),
       paymentMethod: 'cod',
@@ -304,7 +304,7 @@ void main() {
     blocTest<CatalogCubit, CatalogState>(
       'categories failure degrades to [All] while products still land',
       build: () => CatalogCubit(repoWith(
-        categoriesResult: Failure(AppError('categories down')),
+        categoriesResult: const Failure(AppError('categories down')),
       )),
       act: (cubit) => cubit.load(),
       expect: () => [
@@ -319,7 +319,7 @@ void main() {
     blocTest<CatalogCubit, CatalogState>(
       'products failure is terminal (error) even when categories succeed',
       build: () => CatalogCubit(repoWith(
-        productsResult: Failure(AppError('catalog down')),
+        productsResult: const Failure(AppError('catalog down')),
       )),
       act: (cubit) => cubit.load(),
       expect: () => [

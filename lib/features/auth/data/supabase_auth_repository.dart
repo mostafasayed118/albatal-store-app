@@ -49,7 +49,7 @@ class SupabaseAuthRepository implements AuthRepository {
       if (response.user != null) {
         return Success(Authenticated(response.user!.id));
       }
-      return Failure(AppError('Sign-up failed. Please try again.'));
+      return const Failure(AppError('Sign-up failed. Please try again.'));
     } on AuthException catch (e) {
       return Failure(AppError(_mapAuthError(e.message), cause: e));
     } catch (e) {
@@ -68,7 +68,7 @@ class SupabaseAuthRepository implements AuthRepository {
         password: password,
       );
       if (response.user == null) {
-        return Failure(AppError('Sign-in failed. Please try again.'));
+        return const Failure(AppError('Sign-in failed. Please try again.'));
       }
       return Success(Authenticated(response.user!.id));
     } on AuthException catch (e) {
@@ -117,7 +117,7 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final session = _client.auth.currentSession;
       if (session == null) {
-        return Failure(AppError('Your session expired. Please sign in again.'));
+        return const Failure(AppError('Your session expired. Please sign in again.'));
       }
       // The edge function re-verifies the JWT and compares [email] against
       // the account email before deleting with the service role (UX-043).

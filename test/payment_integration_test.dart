@@ -76,21 +76,21 @@ void main() {
     });
 
     test('initPayment sets selectingMethod status', () {
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       expect(cubit.state.status, PaymentStatus.selectingMethod);
-      expect(cubit.state.amount, Money.egp(1500));
+      expect(cubit.state.amount, const Money.egp(1500));
       expect(cubit.state.orderId, 'ORD-1');
     });
 
     test('selectMethod updates selected method', () {
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       expect(cubit.state.selectedMethod, PaymentMethod.paymobCard);
       expect(cubit.state.canProceed, isTrue);
     });
 
     test('processPayment with Cash on Delivery calls server RPC', () async {
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
@@ -102,7 +102,7 @@ void main() {
 
     test('processPayment with failure sets error', () async {
       service.setResult(const PaymentFailed(message: 'Insufficient funds'));
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
@@ -115,7 +115,7 @@ void main() {
       service.setResult(const PaymentPending(
         checkoutUrl: 'https://example.com/checkout',
       ));
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
 
       await cubit.processPayment(customerEmail: 'test@test.com');
@@ -126,13 +126,13 @@ void main() {
     });
 
     test('cancel sets cancelled status', () {
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.cancel();
       expect(cubit.state.status, PaymentStatus.cancelled);
     });
 
     test('reset returns to initial state', () {
-      cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
+      cubit.initPayment(amount: const Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       cubit.reset();
       expect(cubit.state.status, PaymentStatus.initial);

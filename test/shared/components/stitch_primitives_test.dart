@@ -98,10 +98,10 @@ void main() {
   testWidgets('StitchFlashSaleCard renders product row 120dp with badge',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(
+        home: Scaffold(
           body: StitchFlashSaleCard(product: _kProduct, discountLabel: '-15%'),
         ),
       ),
@@ -114,7 +114,7 @@ void main() {
   testWidgets('StitchProductGridCard renders product with wishlist heart',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: SizedBox(
             width: 200,

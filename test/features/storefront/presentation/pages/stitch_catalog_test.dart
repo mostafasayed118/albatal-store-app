@@ -74,7 +74,7 @@ class _StubRepo implements CatalogRepository {
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

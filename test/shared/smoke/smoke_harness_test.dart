@@ -1,15 +1,15 @@
+import 'dart:io';
+
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
+import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/smoke/smoke_harness.dart';
 import 'package:al_batal_elite/shared/smoke/smoke_runner.dart';
 import 'package:al_batal_elite/shared/smoke/smoke_scenario.dart';
-import 'package:al_batal_elite/shared/services/service_locator.dart';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +27,7 @@ class _FakeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<AdminOrder>>> getAllOrders(
       {AdminOrderStatus? status, int limit = 50}) async {
-    if (ordersError) return Failure(AppError('offline'));
+    if (ordersError) return const Failure(AppError('offline'));
     return const Success([]);
   }
 

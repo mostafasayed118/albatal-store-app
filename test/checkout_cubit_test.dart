@@ -3,12 +3,13 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
 
 /// Configurable stub for [CheckoutRepository] that records every
 /// call and lets the test control the result, the number of calls,
@@ -40,7 +41,7 @@ class MockCheckoutRepository implements CheckoutRepository {
       address: addressSnapshot,
       idempotencyKey: idempotencyKey,
     ));
-    return result ?? Failure(const AppError('No result configured'));
+    return result ?? const Failure(AppError('No result configured'));
   }
 }
 
@@ -54,9 +55,9 @@ const _testAddress = Address(
 
 final _serverPendingOrder = PendingOrder(
   orderId: 'server-ord-001',
-  subtotal: Money.egp(500),
-  shipping: Money.egp(50),
-  total: Money.egp(550),
+  subtotal: const Money.egp(500),
+  shipping: const Money.egp(50),
+  total: const Money.egp(550),
   expiresAt: DateTime.parse('2026-01-01T00:00:00Z'),
 );
 
@@ -109,9 +110,9 @@ void main() {
 
       expect(cubit.state.status, CheckoutStatus.placing);
       expect(cubit.state.pendingOrderId, 'server-ord-001');
-      expect(cubit.state.serverSubtotal, Money.egp(500));
-      expect(cubit.state.serverShipping, Money.egp(50));
-      expect(cubit.state.serverTotal, Money.egp(550));
+      expect(cubit.state.serverSubtotal, const Money.egp(500));
+      expect(cubit.state.serverShipping, const Money.egp(50));
+      expect(cubit.state.serverTotal, const Money.egp(550));
       expect(cubit.state.idempotencyKey, isNotNull);
     });
 
@@ -119,7 +120,7 @@ void main() {
 
     test('insufficient stock error transitions to error with message',
         () async {
-      repo.result = Failure(const AppError(
+      repo.result = const Failure(AppError(
         'Insufficient stock for Royal Emerald Silk (2m/Emerald). Available: 1',
       ));
       cubit.selectAddress(_testAddress);
@@ -193,9 +194,9 @@ void main() {
       // to placing with the same order.
       repo.result = Success(PendingOrder(
         orderId: 'server-ord-001',
-        subtotal: Money.egp(500),
-        shipping: Money.egp(50),
-        total: Money.egp(550),
+        subtotal: const Money.egp(500),
+        shipping: const Money.egp(50),
+        total: const Money.egp(550),
         expiresAt: DateTime.parse('2026-01-01T00:00:00Z'),
         isIdempotentRetry: true,
       ));
@@ -216,7 +217,7 @@ void main() {
     // ─── Test 4: Rollback / no partial data on failure ────────
 
     test('failure does not set pending order or server totals', () async {
-      repo.result = Failure(const AppError('Stock race: insufficient stock'));
+      repo.result = const Failure(AppError('Stock race: insufficient stock'));
       cubit.selectAddress(_testAddress);
 
       await cubit.createPendingOrder(
@@ -258,7 +259,7 @@ void main() {
 
       // The cubit stores the SERVER total, not the client-computed total.
       final clientTotal = cubit.state.serverTotal;
-      expect(clientTotal, Money.egp(550));
+      expect(clientTotal, const Money.egp(550));
       // The client cart would have computed a different total based on
       // the local product price. The server's total is authoritative.
       expect(clientTotal, isNot(products.first.price * 2));
@@ -273,9 +274,9 @@ void main() {
       // shipping fee based on the address's governorate.
       repo.result = Success(PendingOrder(
         orderId: 'server-ord-002',
-        subtotal: Money.egp(1000),
-        shipping: Money.egp(30), // Different from client's 75
-        total: Money.egp(1030),
+        subtotal: const Money.egp(1000),
+        shipping: const Money.egp(30), // Different from client's 75
+        total: const Money.egp(1030),
         expiresAt: DateTime.parse('2026-01-01T00:00:00Z'),
       ));
       cubit.selectAddress(_testAddress);
@@ -291,14 +292,14 @@ void main() {
       );
 
       // The cubit uses the server's shipping, not the client's.
-      expect(cubit.state.serverShipping, Money.egp(30));
-      expect(cubit.state.serverTotal, Money.egp(1030));
+      expect(cubit.state.serverShipping, const Money.egp(30));
+      expect(cubit.state.serverTotal, const Money.egp(1030));
     });
 
     // ─── Test 7: Unauthorized caller rejection ───────────────
 
     test('unauthorized caller rejection transitions to error', () async {
-      repo.result = Failure(const AppError('Authentication required'));
+      repo.result = const Failure(AppError('Authentication required'));
       // Don't select an address — the server will reject before
       // even validating the address because auth fails.
 

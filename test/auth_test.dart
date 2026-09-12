@@ -42,7 +42,7 @@ void main() {
         profile: profile,
       );
       final updated =
-          state.copyWith(profile: Profile(id: 'u1', fullName: 'Updated'));
+          state.copyWith(profile: const Profile(id: 'u1', fullName: 'Updated'));
       expect(updated.profile!.fullName, 'Updated');
     });
   });

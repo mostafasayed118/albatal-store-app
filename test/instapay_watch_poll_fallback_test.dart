@@ -1,15 +1,14 @@
 import 'dart:async';
 
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/features/payments/data/paymob_payment_service.dart';
+import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ignore: depend_on_referenced_packages – transitive via supabase, needed for the invoke override signature
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:al_batal_elite/core/entities/money.dart';
-import 'package:al_batal_elite/features/payments/data/paymob_payment_service.dart';
-import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
-import 'package:al_batal_elite/features/payments/presentation/cubit/payment_cubit.dart';
 
 // ─── Fakes ─────────────────────────────────────────────────────────
 //
@@ -218,7 +217,7 @@ void main() {
           final cubit = PaymentCubit(service);
 
           fake.run((_) {
-            cubit.initPayment(amount: Money.egp(1290), orderId: 'ord-1');
+            cubit.initPayment(amount: const Money.egp(1290), orderId: 'ord-1');
             cubit.selectMethod(PaymentMethod.instapay);
             unawaited(cubit.processPayment(customerEmail: 'e2e@test.dev'));
           });
@@ -229,7 +228,7 @@ void main() {
           expect(cubit.state.status, PaymentStatus.awaitingProof);
           expect(
               cubit.state.instructions!.instapayAddress, 'instapay@merchant');
-          expect(cubit.state.instructions!.amount, Money(129000));
+          expect(cubit.state.instructions!.amount, const Money(129000));
           expect(channel.subscribed, isTrue);
           expect(channel.registeredChanges, 1);
           expect(functions.calledFunctions, ['instapay-initiate']);
@@ -298,7 +297,7 @@ void main() {
         final cubit = PaymentCubit(service);
 
         fake.run((_) {
-          cubit.initPayment(amount: Money.egp(690), orderId: 'ord-2');
+          cubit.initPayment(amount: const Money.egp(690), orderId: 'ord-2');
           cubit.selectMethod(PaymentMethod.instapay);
           unawaited(cubit.processPayment(customerEmail: 'e2e@test.dev'));
         });
@@ -353,7 +352,7 @@ void main() {
         final cubit = PaymentCubit(service);
 
         fake.run((_) {
-          cubit.initPayment(amount: Money.egp(1290), orderId: 'ord-3');
+          cubit.initPayment(amount: const Money.egp(1290), orderId: 'ord-3');
           cubit.selectMethod(PaymentMethod.instapay);
           unawaited(cubit.processPayment(customerEmail: 'e2e@test.dev'));
         });

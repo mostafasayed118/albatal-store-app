@@ -5,19 +5,20 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
-import 'helpers/memory_storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
-import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
-import 'fixtures/products_data.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/checkout_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 class StubAddressRepository implements AddressRepository {
   StubAddressRepository({this.addresses = const []});

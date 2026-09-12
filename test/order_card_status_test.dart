@@ -20,8 +20,8 @@ void main() {
       final order = Order(
         id: 'ORD-9',
         items: [
-          CartItem(
-              product: const Product(
+          const CartItem(
+              product: Product(
                 id: 'p1',
                 name: 'Royal Emerald Silk',
                 category: 'Silk',

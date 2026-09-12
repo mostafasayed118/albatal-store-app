@@ -36,7 +36,7 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) {
-        return Failure(AppError('Not authenticated'));
+        return const Failure(AppError('Not authenticated'));
       }
 
       // Fetch orders with embedded items via a join. Supabase PostgREST

@@ -8,14 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final _products = [
-  Product(
+  const Product(
     id: 'silk-emerald',
     name: 'Royal Emerald Silk',
     category: 'Silk',
     price: Money.egp(1290),
     imageColor: 0xFF176B57, // catalogColorName → 'Emerald'
   ),
-  Product(
+  const Product(
     id: 'silk-amber',
     name: 'Amber Silk',
     category: 'Silk',

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,19 +7,19 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
-import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
 import '../widgets/address_form.dart';
 import '../widgets/address_picker.dart';
 import '../widgets/cart_summary.dart';
 import '../widgets/order_review.dart';
-import '../../../../shared/components/step_indicator.dart';
 
 /// Checkout page — Stitch 3528 flow reskin.
 ///
@@ -53,7 +55,7 @@ class CheckoutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final consumer = BlocConsumer<CheckoutCubit, CheckoutState>(
       listener: (context, s) {
@@ -75,9 +77,15 @@ class CheckoutPage extends StatelessWidget {
           // localized retry copy so Arabic users never see English (audit
           // code-quality finding).
           final raw = s.errorMessage!;
+          // TODO(review-low): matching is stringly typed because [AppError]
+          // carries no machine-readable code (core/error is owned by the
+          // audit P1/P2 slices). If a `code` field is ever added there,
+          // switch this to code-based mapping — the scrubbed generic
+          // messages matched below are the exact literals emitted by
+          // CheckoutService for local failures.
           final localized = (raw == 'Checkout failed' ||
                   raw == 'Failed to create order. Please try again.')
-              ? l.checkoutFailedRetry
+              ? l10n.checkoutFailedRetry
               : raw;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating, content: Text(localized)));
@@ -87,29 +95,29 @@ class CheckoutPage extends StatelessWidget {
         final addressError = s.status == CheckoutStatus.error && !s.hasAddress;
         final isCreating = s.status == CheckoutStatus.creatingOrder;
         return Scaffold(
-          appBar: AppBar(title: Text(l.checkout)),
+          appBar: AppBar(title: Text(l10n.checkout)),
           body: ListView(
             padding: const EdgeInsetsDirectional.all(16),
             children: [
               StepIndicator(
-                steps: [l.shippingAddress, l.payment, l.reviewOrder],
+                steps: [l10n.shippingAddress, l10n.payment, l10n.reviewOrder],
                 currentStep: s.hasAddress ? 1 : 0,
                 scheme: scheme,
               ),
               const SizedBox(height: 24),
               // Stitch Shipping Address card: surface + outlineVariant 1dp radius 16 clipAntiAlias.
               _ShippingAddressCard(
-                l: l,
+                l10n: l10n,
                 scheme: scheme,
                 selectedAddress: s.selectedAddress,
                 hasError: addressError,
               ),
               const SizedBox(height: 24),
               if (s.hasAddress) ...[
-                Text(l.reviewOrder,
+                Text(l10n.reviewOrder,
                     style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                OrderReview(address: s.selectedAddress!, l: l),
+                OrderReview(address: s.selectedAddress!, l: l10n),
                 const SizedBox(height: 16),
               ],
               BlocBuilder<CartCubit, CartState>(
@@ -119,7 +127,7 @@ class CheckoutPage extends StatelessWidget {
               // the server charged 1290).
               Padding(
                 padding: const EdgeInsetsDirectional.only(top: 8),
-                child: Text(l.estimatedTotalsNote,
+                child: Text(l10n.estimatedTotalsNote,
                     textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
@@ -130,7 +138,7 @@ class CheckoutPage extends StatelessWidget {
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
                 _ServerTotalsCard(
-                  l: l,
+                  l10n: l10n,
                   scheme: scheme,
                   subtotal: s.serverSubtotal,
                   shipping: s.serverShipping,
@@ -171,7 +179,7 @@ class CheckoutPage extends StatelessWidget {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(l.proceedToPayment),
+                        Text(l10n.proceedToPayment),
                         const SizedBox(width: 8),
                         // Extension flips under RTL; the previous raw
                         // IconData(0xe5cc) literal pointed backwards in
@@ -230,15 +238,15 @@ class CheckoutPage extends StatelessWidget {
 
 /// Shipping Address card — extracted from [CheckoutPage]'s build (audit
 /// Task 8b) verbatim: same tokens, same children, same behavior.
-class _ShippingAddressCard extends StatelessWidget {
+final class _ShippingAddressCard extends StatelessWidget {
   const _ShippingAddressCard({
-    required this.l,
+    required this.l10n,
     required this.scheme,
     required this.selectedAddress,
     required this.hasError,
   });
 
-  final AppLocalizations l;
+  final AppLocalizations l10n;
   final ColorScheme scheme;
   final Address? selectedAddress;
   final bool hasError;
@@ -257,7 +265,7 @@ class _ShippingAddressCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.shippingAddress,
+            Text(l10n.shippingAddress,
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             AddressPicker(
@@ -270,10 +278,10 @@ class _ShippingAddressCard extends StatelessWidget {
                   // Persist to the address book too: previously the new
                   // address was only selected and vanished on restart
                   // (live-found 2026-09-03).
-                  context.read<AddressesCubit>().upsert(address);
+                  unawaited(context.read<AddressesCubit>().upsert(address));
                 }
               },
-              l: l,
+              l: l10n,
               scheme: scheme,
               hasError: hasError,
             ),
@@ -284,7 +292,7 @@ class _ShippingAddressCard extends StatelessWidget {
                   Icon(Icons.error_outline, size: 16, color: scheme.error),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(l.validationSelectAddress,
+                    child: Text(l10n.validationSelectAddress,
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
@@ -302,16 +310,16 @@ class _ShippingAddressCard extends StatelessWidget {
 
 /// Server-confirmed totals card — extracted verbatim from
 /// [CheckoutPage]'s build (audit Task 8b).
-class _ServerTotalsCard extends StatelessWidget {
+final class _ServerTotalsCard extends StatelessWidget {
   const _ServerTotalsCard({
-    required this.l,
+    required this.l10n,
     required this.scheme,
     required this.subtotal,
     required this.shipping,
     required this.total,
   });
 
-  final AppLocalizations l;
+  final AppLocalizations l10n;
   final ColorScheme scheme;
   final Money? subtotal;
   final Money? shipping;
@@ -331,12 +339,12 @@ class _ServerTotalsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l.serverConfirmedTotals,
+            Text(l10n.serverConfirmedTotals,
                 style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
-            _ServerTotalRow(label: l.subtotal, value: subtotal),
-            _ServerTotalRow(label: l.shipping, value: shipping),
-            _ServerTotalRow(label: l.total, value: total),
+            _ServerTotalRow(label: l10n.subtotal, value: subtotal),
+            _ServerTotalRow(label: l10n.shipping, value: shipping),
+            _ServerTotalRow(label: l10n.total, value: total),
           ],
         ),
       ),
@@ -344,7 +352,7 @@ class _ServerTotalsCard extends StatelessWidget {
   }
 }
 
-class _ServerTotalRow extends StatelessWidget {
+final class _ServerTotalRow extends StatelessWidget {
   const _ServerTotalRow({required this.label, required this.value});
   final String label;
   final Money? value;
