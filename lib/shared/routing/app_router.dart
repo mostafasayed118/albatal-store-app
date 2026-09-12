@@ -25,6 +25,7 @@ import '../../features/payments/presentation/cubit/payment_cubit.dart';
 import '../../features/payments/presentation/pages/instapay_instructions_page.dart';
 import '../../features/payments/presentation/pages/payment_method_page.dart';
 import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
+import '../../features/settings/presentation/pages/maintenance_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
@@ -187,6 +188,7 @@ final _routes = <RouteBase>[
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
   GoRoute(path: '/admin/reviews', builder: (_, __) => const AdminReviewsPage()),
+  GoRoute(path: '/maintenance', builder: (_, __) => const MaintenancePage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),

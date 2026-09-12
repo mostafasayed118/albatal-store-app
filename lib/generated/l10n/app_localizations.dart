@@ -1022,6 +1022,30 @@ abstract class AppLocalizations {
   /// **'Sold by the meter — minimum cut applies.'**
   String get sellByLengthNote;
 
+  /// No description provided for @maintenanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll be right back'**
+  String get maintenanceTitle;
+
+  /// No description provided for @maintenanceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Al Batal Elite is under maintenance. Please check back soon.'**
+  String get maintenanceBody;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is no longer supported. Please update the app to continue shopping.'**
+  String get updateRequiredBody;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

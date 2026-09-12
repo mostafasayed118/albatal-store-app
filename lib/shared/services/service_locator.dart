@@ -49,6 +49,7 @@ import 'image_compressor.dart';
 import 'notification_service.dart';
 import 'product_share_service.dart';
 import 'push_service.dart';
+import 'remote_config_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
 
@@ -156,5 +157,8 @@ Future<void> configureDependencies() async {
         () => PrefsNotificationStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<NotificationService>(() =>
         LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
-    ..registerLazySingleton<PushService>(() => const PushService());
+    ..registerLazySingleton<PushService>(() => const PushService())
+    // §13: remote config (defaults + TTL cache; advisory only).
+    ..registerLazySingleton<RemoteConfigService>(
+        () => RemoteConfigService());
 }

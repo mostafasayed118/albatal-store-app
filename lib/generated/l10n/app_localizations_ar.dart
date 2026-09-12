@@ -507,6 +507,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sellByLengthNote => 'يُباع بالمتر — يوجد حد أدنى للقص.';
 
   @override
+  String get maintenanceTitle => 'سنعود قريبًا';
+
+  @override
+  String get maintenanceBody =>
+      'تطبيق البطل إيليت تحت الصيانة. يُرجى الزيادة لاحقًا.';
+
+  @override
+  String get updateRequiredTitle => 'تحديث متاح';
+
+  @override
+  String get updateRequiredBody =>
+      'هذه النسخة لم تعد مدعومة. يُرجى تحديث التطبيق للمتابعة.';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

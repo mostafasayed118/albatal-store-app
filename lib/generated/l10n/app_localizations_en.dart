@@ -502,6 +502,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sellByLengthNote => 'Sold by the meter — minimum cut applies.';
 
   @override
+  String get maintenanceTitle => 'We\'ll be right back';
+
+  @override
+  String get maintenanceBody =>
+      'Al Batal Elite is under maintenance. Please check back soon.';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'This version is no longer supported. Please update the app to continue shopping.';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

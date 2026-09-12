@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/remote_config_service.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
@@ -49,7 +51,27 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
-  void _openDestination(OnboardingDestination destination) {
+  Future<void> _openDestination(OnboardingDestination destination) async {
+    if (!mounted) return;
+    // §13: remote config gate. Failures degrade to defaults — the app
+    // never boot-blocks on config availability.
+    final config = getIt.isRegistered<RemoteConfigService>()
+        ? getIt<RemoteConfigService>()
+        : null;
+    if (config != null) {
+      await config.refresh();
+      if (!mounted) return;
+      if (config.maintenanceMode) {
+        if (!mounted) return;
+        context.go('/maintenance');
+        return;
+      }
+      if (await config.updateRequired()) {
+        if (!mounted) return;
+        context.go('/maintenance');
+        return;
+      }
+    }
     if (!mounted) return;
     context.go(
         destination == OnboardingDestination.home ? '/home' : '/onboarding');
