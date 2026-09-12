@@ -352,7 +352,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     try {
       final rows = await _client
           .from('profiles')
-          .select('id, full_name, email, tier, is_blocked')
+          .select('id, full_name, email, membership_tier')
           .order('created_at', ascending: false)
           .limit(500);
       final list = rows as List<dynamic>;
@@ -362,8 +362,8 @@ final class SupabaseAdminRepository implements AdminRepository {
                 id: row['id'] as String? ?? '',
                 name: row['full_name'] as String? ?? '',
                 email: row['email'] as String? ?? '',
-                tier: row['tier'] as String? ?? 'standard',
-                isBlocked: row['is_blocked'] as bool? ?? false,
+                tier: row['membership_tier'] as String? ?? 'standard',
+                isBlocked: false, // no suspension flag in profiles (§14 read-only)
               ))
           .where((c) => c.id.isNotEmpty)
           .toList());
