@@ -18,10 +18,10 @@ import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
-import 'features/storefront/data/recent_searches_store.dart';
 import 'features/storefront/domain/repositories/cart_repository.dart';
 import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
+import 'features/storefront/domain/repositories/recent_searches_store.dart';
 import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -37,6 +37,7 @@ import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
 import 'shared/services/logger.dart';
+import 'shared/services/notification_service.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
@@ -127,8 +128,8 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     if (biometrics == null || !await biometrics.canAuthenticate()) return;
     if (!mounted) return;
     setState(() => _appLockActive = true);
-    final accepted = await biometrics.authenticate(
-        reason: 'Unlock Al Batal Elite');
+    final accepted =
+        await biometrics.authenticate(reason: 'Unlock Al Batal Elite');
     if (!mounted) return;
     setState(() => _appLockActive = false);
     if (!accepted) {
@@ -179,8 +180,15 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                     getIt<OnboardingRepository>(),
                   )),
           BlocProvider(
-              create: (_) =>
-                  SettingsCubit(getIt<SettingsRepository>())..load()),
+              create: (_) => SettingsCubit(
+                    getIt<SettingsRepository>(),
+                    // Composition-root probe: settings tests pump the
+                    // shell without the notification store registered.
+                    notificationPrefs:
+                        getIt.isRegistered<NotificationPrefsStore>()
+                            ? getIt<NotificationPrefsStore>()
+                            : null,
+                  )..load()),
           BlocProvider(
               create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
           BlocProvider.value(value: _cartCubit..restore()),

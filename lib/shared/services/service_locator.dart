@@ -34,6 +34,7 @@ import '../../features/storefront/domain/repositories/checkout_repository.dart';
 import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/idempotency_store.dart';
 import '../../features/storefront/domain/repositories/orders_repository.dart';
+import '../../features/storefront/domain/repositories/recent_searches_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
@@ -142,7 +143,7 @@ Future<void> configureDependencies() async {
     // §5: share sheet + inbound deep links (initial + warm events).
     ..registerLazySingleton<ProductShareService>(
         () => const SharePlusProductShareService())
-    ..registerLazySingleton<DeepLinkService>(() => DeepLinkService())
+    ..registerLazySingleton<DeepLinkService>(() => AppLinksDeepLinkService())
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(
         () => PrefsRecentSearchesStore(getIt<SharedPreferences>()))
@@ -157,15 +158,14 @@ Future<void> configureDependencies() async {
     // fail-silent; push stays a no-op without ONESIGNAL_APP_ID).
     ..registerLazySingleton<NotificationPrefsStore>(
         () => PrefsNotificationStore(getIt<SharedPreferences>()))
-    ..registerLazySingleton<NotificationService>(() =>
-        LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
-    ..registerLazySingleton<PushService>(() => const PushService())
+    ..registerLazySingleton<NotificationService>(
+        () => LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
+    ..registerLazySingleton<PushService>(() => const OneSignalPushService())
     // §15: OAuth sign-in + biometric app lock (both fail-soft).
     ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())
     ..registerLazySingleton<BiometricService>(() => LocalBiometricService())
     ..registerLazySingleton<AppLockPrefsStore>(
         () => PrefsAppLockStore(getIt<SharedPreferences>()))
     // §13: remote config (defaults + TTL cache; advisory only).
-    ..registerLazySingleton<RemoteConfigService>(
-        () => RemoteConfigService());
+    ..registerLazySingleton<RemoteConfigService>(() => RemoteConfigService());
 }

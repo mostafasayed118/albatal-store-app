@@ -12,8 +12,7 @@ const kMaxUploadDimension = 1600;
 
 /// Pure decision logic so the threshold is unit-testable without the
 /// platform channel.
-bool shouldCompress(int byteLength) =>
-    byteLength > kCompressionThresholdBytes;
+bool shouldCompress(int byteLength) => byteLength > kCompressionThresholdBytes;
 
 /// Upload-image compression port. Implementations must be fail-open:
 /// any failure returns the original bytes — an upload must never break

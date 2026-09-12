@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../data/recent_searches_store.dart';
+import '../../domain/repositories/recent_searches_store.dart';
 
 final class RecentSearchesState extends Equatable {
   const RecentSearchesState({this.queries = const []});

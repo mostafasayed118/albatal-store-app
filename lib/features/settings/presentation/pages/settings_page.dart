@@ -9,8 +9,6 @@ import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
-import '../../data/notification_prefs_store.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -268,36 +266,23 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
   }
 }
 
-/// §12: order-notification opt-in. Persists via the notification prefs
-/// store; the local notification service reads it before showing.
-final class _NotificationToggleTile extends StatefulWidget {
+/// §12: order-notification opt-in. State lives in [SettingsCubit] —
+/// the page never touches the DI container or the prefs store directly
+/// (audit 2026-09-13). Hidden entirely when no store was registered.
+final class _NotificationToggleTile extends StatelessWidget {
   const _NotificationToggleTile();
 
   @override
-  State<_NotificationToggleTile> createState() =>
-      _NotificationToggleTileState();
-}
-
-final class _NotificationToggleTileState
-    extends State<_NotificationToggleTile> {
-  bool? _enabled;
-
-  @override
   Widget build(BuildContext context) {
-    final store = getIt.isRegistered<NotificationPrefsStore>()
-        ? getIt<NotificationPrefsStore>()
-        : null;
-    if (store == null) return const SizedBox.shrink();
-    _enabled ??= store.orderNotificationsEnabled;
+    final enabled = context.watch<SettingsCubit>().state.orderNotifications;
+    if (enabled == null) return const SizedBox.shrink();
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
       title: const Text('Order notifications'),
       subtitle: const Text('Confirmations and status updates'),
-      value: _enabled!,
-      onChanged: (v) {
-        store.setOrderNotifications(v);
-        setState(() => _enabled = v);
-      },
+      value: enabled,
+      onChanged: (v) =>
+          context.read<SettingsCubit>().toggleOrderNotifications(v),
     );
   }
 }

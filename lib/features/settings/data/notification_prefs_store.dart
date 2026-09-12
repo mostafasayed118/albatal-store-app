@@ -1,17 +1,14 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Notification opt-in persistence (feature-batch §12).
-abstract interface class NotificationPrefsStore {
-  bool get orderNotificationsEnabled;
-  bool get pushEnabled;
-
-  void setOrderNotifications(bool enabled);
-  void setPush(bool enabled);
-}
+import '../../../../shared/services/notification_service.dart';
 
 const _kOrderNotifications = 'notifications_order_enabled_v1';
 const _kPush = 'notifications_push_enabled_v1';
 
+/// SharedPreferences-backed implementation of the notification opt-in
+/// port defined beside [NotificationService] (consumer-side port — the
+/// shared layer never imports this file, audit 2026-09-13). The
+/// settings feature exposes the toggle through [SettingsCubit].
 final class PrefsNotificationStore implements NotificationPrefsStore {
   PrefsNotificationStore(this._prefs);
 

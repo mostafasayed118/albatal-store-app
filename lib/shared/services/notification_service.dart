@@ -1,7 +1,20 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import '../../features/settings/data/notification_prefs_store.dart';
 import 'logger.dart';
+
+/// Notification opt-in persistence (feature-batch §12).
+///
+/// Consumer-side port (audit 2026-09-13): defined beside its only
+/// consumer so the shared layer never imports a feature's data layer.
+/// The SharedPreferences implementation lives in
+/// `features/settings/data/notification_prefs_store.dart`.
+abstract interface class NotificationPrefsStore {
+  bool get orderNotificationsEnabled;
+  bool get pushEnabled;
+
+  void setOrderNotifications(bool enabled);
+  void setPush(bool enabled);
+}
 
 /// Local notification port (feature-batch §12).
 abstract interface class NotificationService {
@@ -30,7 +43,8 @@ final class LocalNotificationService implements NotificationService {
   final NotificationPrefsStore? _prefs;
   bool _initialized = false;
 
-  static const _androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  static const _androidInit =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
   @override
   Future<void> init() async {

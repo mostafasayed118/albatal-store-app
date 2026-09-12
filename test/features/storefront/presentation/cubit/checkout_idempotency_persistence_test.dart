@@ -3,13 +3,31 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../fixtures/products_data.dart';
+
+/// Production composition: the use case carries the persisted
+/// [LocalStorefrontPersistence] idempotency store, exactly as the
+/// service locator wires it (the cubit no longer takes a `prefs`
+/// param — audit 2026-09-13 re-closed the presentation→data import).
+CheckoutCubit _persistentCubit(
+  CheckoutRepository repo,
+  SharedPreferences prefs,
+) =>
+    CheckoutCubit(
+      repo,
+      placeOrder: PlaceCheckoutOrderUseCase(
+        checkoutRepository: repo,
+        idempotencyStore: LocalStorefrontPersistence(prefs),
+      ),
+    );
 
 class _StubCheckoutRepo implements CheckoutRepository {
   _StubCheckoutRepo();
@@ -20,7 +38,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
-      String? couponCode,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
@@ -36,7 +54,7 @@ void main() {
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -54,7 +72,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final repoA = _StubCheckoutRepo();
-      final cubitA = CheckoutCubit(repoA, prefs: prefs);
+      final cubitA = _persistentCubit(repoA, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -65,7 +83,7 @@ void main() {
 
       // Simulate app restart: new cubit sharing the same SharedPreferences
       final repoB = _StubCheckoutRepo();
-      final cubitB = CheckoutCubit(repoB, prefs: prefs);
+      final cubitB = _persistentCubit(repoB, prefs);
       await cubitB.createPendingOrder(cartItems: items);
 
       expect(repoB.keys.first, firstKey,
@@ -83,7 +101,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _StubCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -99,7 +117,7 @@ void main() {
     test('resetForNewAttempt clears the persisted key', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -118,7 +136,7 @@ void main() {
     test('markSuccess clears the persisted key', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -142,7 +160,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _SequencedCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -169,7 +187,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _AlwaysDeadCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -203,7 +221,7 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
-      String? couponCode,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
@@ -223,7 +241,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
-      String? couponCode,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);

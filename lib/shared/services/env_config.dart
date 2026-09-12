@@ -41,9 +41,8 @@ class EnvConfig {
   /// Public web origin used to build shareable product links
   /// (feature-batch §5). Compile-time const; the same host parses
   /// inbound deep links back into the app (DeepLinkParser).
-  static const String webBaseUrl =
-      String.fromEnvironment('WEB_BASE_URL',
-          defaultValue: 'https://albatal.app');
+  static const String webBaseUrl = String.fromEnvironment('WEB_BASE_URL',
+      defaultValue: 'https://albatal.app');
 
   /// OneSignal app id (feature-batch §12). Empty = push disabled; the
   /// PushService scaffold no-ops so builds without push config work.
