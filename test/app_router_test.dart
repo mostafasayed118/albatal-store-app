@@ -7,6 +7,8 @@ import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
@@ -184,7 +186,11 @@ void main() {
       ),
     ));
 
-    expect(find.byType(TextButton), findsNothing);
+    // §6 refined the blanket rule: the customer-safe Reorder action is
+    // allowed on order cards; status-mutation affordances are not. The
+    // empty-item card renders Reorder disabled (nothing to re-add).
+    expect(find.byType(TextButton), findsOneWidget);
+    expect(find.byIcon(Icons.restart_alt), findsOneWidget);
     expect(find.byIcon(Icons.arrow_forward), findsNothing);
     expect(find.byType(StatusProgress), findsOneWidget);
   });
@@ -400,6 +406,36 @@ final class _StubCatalogRepository
 /// their own empty/error states, which the assertions never inspect.
 final class _RouteProbeAdminRepository implements AdminRepository {
   @override
+  Future<Result<List<AdminCoupon>>> fetchCoupons() async =>
+      const Success(<AdminCoupon>[]);
+
+  @override
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async =>
+      const Failure(AppError('not implemented'));
+
+  @override
+  Future<Result<void>> setCouponActive(String id, bool active) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews() async => const Success(<({String id, String product, String text, int rating})>[]);
+
+  @override
+  Future<Result<void>> setReviewStatus(String id, String status) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
+      const Success(<AdminCustomer>[]);
+
+
+
+  @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
       const Success(null);
 
@@ -437,6 +473,12 @@ final class _RouteProbeAdminRepository implements AdminRepository {
     required String slug,
     String? description,
     String? composition,
+    String? care,
+    String? origin,
+    int? widthCm,
+    int? gsm,
+    bool? sellByLength,
+    double? minCutMeters,
     required String categoryId,
     required double basePrice,
     required bool isActive,

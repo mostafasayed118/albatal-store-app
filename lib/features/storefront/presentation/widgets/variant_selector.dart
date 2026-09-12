@@ -61,19 +61,54 @@ class VariantSelector extends StatelessWidget {
                   Text(l.length,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: product.sizes
-                        .map((x) => ChoiceChip(
-                              label: Text(x),
-                              selected: state.length == x,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.padded,
-                              onSelected: (_) => cubit.length(x),
-                            ))
-                        .toList(),
-                  ),
+                  if (product.sellByLength) ...[
+                    // §10: cut-length stepper for sell-by-the-meter rolls
+                    // (0.5 m steps, min cut clamped in the cubit).
+                    Row(
+                      children: [
+                        IconButton(
+                          tooltip: l.cutLength,
+                          onPressed: () {
+                            final current =
+                                double.tryParse(state.length) ??
+                                    product.minCutMeters ??
+                                    1.0;
+                            cubit.setCutLength(current - 0.5);
+                          },
+                          icon: const Icon(Icons.remove_circle_outline),
+                        ),
+                        Text(
+                            '${(double.tryParse(state.length) ?? product.minCutMeters ?? 1.0).toStringAsFixed(1)} m'),
+                        IconButton(
+                          tooltip: l.cutLength,
+                          onPressed: () {
+                            final current =
+                                double.tryParse(state.length) ??
+                                    product.minCutMeters ??
+                                    1.0;
+                            cubit.setCutLength(current + 0.5);
+                          },
+                          icon: const Icon(Icons.add_circle_outline),
+                        ),
+                      ],
+                    ),
+                    Text(l.sellByLengthNote,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ] else ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: product.sizes
+                          .map((x) => ChoiceChip(
+                                label: Text(x),
+                                selected: state.length == x,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.padded,
+                                onSelected: (_) => cubit.length(x),
+                              ))
+                          .toList(),
+                    ),
+                  ],
                 ],
               ),
             ),

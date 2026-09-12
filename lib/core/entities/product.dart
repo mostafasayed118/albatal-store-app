@@ -16,6 +16,10 @@ final class Product extends Equatable {
     this.composition,
     this.care,
     this.origin,
+    this.widthCm,
+    this.gsm,
+    this.sellByLength = false,
+    this.minCutMeters,
     this.sizes = const ['1m', '2m', '5m'],
     this.colors = const ['Emerald', 'Gold', 'Ivory'],
     this.stock = const {},
@@ -28,6 +32,18 @@ final class Product extends Equatable {
   final int imageColor;
   final Money? oldPrice;
   final String? imageAsset, description, composition, care, origin;
+
+  /// Fabric roll width in cm (feature-batch §10), null = not specified.
+  final int? widthCm;
+
+  /// Fabric weight in grams per square meter (§10).
+  final int? gsm;
+
+  /// When true the shopper picks a custom cut length (0.5 m steps,
+  /// clamped to [minCutMeters]) instead of fixed sizes (§10). The
+  /// metered line is validated server-side by the 051 proposal.
+  final bool sellByLength;
+  final double? minCutMeters;
   final List<String> images;
   final List<String> sizes;
   final List<String> colors;
@@ -63,6 +79,10 @@ final class Product extends Equatable {
         composition,
         care,
         origin,
+        widthCm,
+        gsm,
+        sellByLength,
+        minCutMeters,
         sizes,
         colors,
         stock,

@@ -818,6 +818,294 @@ abstract class AppLocalizations {
   /// **'Share product'**
   String get shareProduct;
 
+  /// No description provided for @reorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder'**
+  String get reorder;
+
+  /// No description provided for @recentSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent searches'**
+  String get recentSearches;
+
+  /// No description provided for @searchSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get searchSuggestions;
+
+  /// No description provided for @clearRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearRecent;
+
+  /// No description provided for @couponFieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupon code'**
+  String get couponFieldLabel;
+
+  /// No description provided for @couponApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get couponApply;
+
+  /// No description provided for @couponApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupon applied — the discount is confirmed by the server when you place the order.'**
+  String get couponApplied;
+
+  /// No description provided for @couponInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This coupon code is not valid.'**
+  String get couponInvalid;
+
+  /// No description provided for @couponUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupons are unavailable right now.'**
+  String get couponUnavailable;
+
+  /// No description provided for @couponRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove coupon'**
+  String get couponRemove;
+
+  /// No description provided for @adminCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Coupons'**
+  String get adminCoupons;
+
+  /// No description provided for @manageCoupons.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and manage discount codes'**
+  String get manageCoupons;
+
+  /// No description provided for @couponCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get couponCode;
+
+  /// No description provided for @couponDiscountEgp.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount (EGP)'**
+  String get couponDiscountEgp;
+
+  /// No description provided for @couponActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get couponActive;
+
+  /// No description provided for @adminAddCoupon.
+  ///
+  /// In en, this message translates to:
+  /// **'Add coupon'**
+  String get adminAddCoupon;
+
+  /// No description provided for @customerReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer reviews'**
+  String get customerReviews;
+
+  /// No description provided for @writeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a review'**
+  String get writeReview;
+
+  /// No description provided for @noReviewsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet — be the first.'**
+  String get noReviewsYet;
+
+  /// No description provided for @reviewPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'How is the fabric?'**
+  String get reviewPlaceholder;
+
+  /// No description provided for @reviewAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get reviewAddPhoto;
+
+  /// No description provided for @reviewPhotoAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo attached'**
+  String get reviewPhotoAdded;
+
+  /// No description provided for @reviewSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get reviewSubmit;
+
+  /// No description provided for @reviewBuyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews are open to customers who received this item.'**
+  String get reviewBuyRequired;
+
+  /// No description provided for @reviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews are unavailable right now.'**
+  String get reviewUnavailable;
+
+  /// No description provided for @reviewModeration.
+  ///
+  /// In en, this message translates to:
+  /// **'Review moderation'**
+  String get reviewModeration;
+
+  /// No description provided for @reviewApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get reviewApprove;
+
+  /// No description provided for @reviewReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reviewReject;
+
+  /// No description provided for @widthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get widthLabel;
+
+  /// No description provided for @metersValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} m'**
+  String metersValue(num value);
+
+  /// No description provided for @gsmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight'**
+  String get gsmLabel;
+
+  /// No description provided for @gsmValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} GSM'**
+  String gsmValue(int value);
+
+  /// No description provided for @cutLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut length'**
+  String get cutLength;
+
+  /// No description provided for @sellByLengthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by the meter — minimum cut applies.'**
+  String get sellByLengthNote;
+
+  /// No description provided for @maintenanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll be right back'**
+  String get maintenanceTitle;
+
+  /// No description provided for @maintenanceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Al Batal Elite is under maintenance. Please check back soon.'**
+  String get maintenanceBody;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is no longer supported. Please update the app to continue shopping.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @adminCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get adminCustomers;
+
+  /// No description provided for @adminSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get adminSearch;
+
+  /// No description provided for @invoiceSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save invoice'**
+  String get invoiceSave;
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @signInWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple'**
+  String get signInWithApple;
+
+  /// No description provided for @oauthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in with this provider is unavailable.'**
+  String get oauthUnavailable;
+
+  /// No description provided for @oauthCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was cancelled.'**
+  String get oauthCancelled;
+
+  /// No description provided for @reorderAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}'**
+  String reorderAdded(int count);
+
+  /// No description provided for @reorderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item is unavailable and was skipped} other{{count} items are unavailable and were skipped}}'**
+  String reorderUnavailable(int count);
+
+  /// No description provided for @shareProductMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — Al Batal Elite\n{url}'**
+  String shareProductMessage(Object name, Object url);
+
   /// No description provided for @shareLinkCopied.
   ///
   /// In en, this message translates to:

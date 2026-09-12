@@ -10,12 +10,15 @@ import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../cubit/catalog_cubit.dart';
+import '../cubit/recent_searches_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/active_filters_bar.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/catalog_sort_bar.dart';
 import '../widgets/filter_sheet.dart';
+import '../widgets/search_suggestions_bar.dart';
 import 'home_page.dart' show homeBuildWhen;
 
 /// Full catalog page with Stitch pill search + 2-col .68 grid via [productGridDelegate].
@@ -52,6 +55,7 @@ class _CatalogPageState extends State<CatalogPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // RecentSearchesCubit is app-scoped (provided in AlBatalApp).
     return Scaffold(
       appBar: AppBar(
         title: Text(l.categories),
@@ -88,7 +92,7 @@ class _CatalogPageState extends State<CatalogPage> {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
               state.status == CatalogStatus.initial) {
-            return const FeedbackView(type: FeedbackViewType.loading);
+            return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
             return FeedbackView(
@@ -99,11 +103,44 @@ class _CatalogPageState extends State<CatalogPage> {
           return ResponsiveShell(
             child: Column(
               children: [
+                BlocBuilder<RecentSearchesCubit, RecentSearchesState>(
+                  builder: (context, recents) {
+                    final q = state.filters.query;
+                    if (q.isEmpty) {
+                      if (recents.queries.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return SearchSuggestionsBar(
+                        label: l.recentSearches,
+                        terms: recents.queries,
+                        onPick: (term) {
+                          _searchController.text = term;
+                          catalog.updateQuery(term);
+                          context.read<RecentSearchesCubit>().record(term);
+                        },
+                        onClear: () =>
+                            context.read<RecentSearchesCubit>().clear(),
+                      );
+                    }
+                    return SearchSuggestionsBar(
+                      label: l.searchSuggestions,
+                      terms: suggestProductNames(state.allProducts, q),
+                      onPick: (term) {
+                        _searchController.text = term;
+                        catalog.updateQuery(term);
+                        context.read<RecentSearchesCubit>().record(term);
+                      },
+                    );
+                  },
+                ),
                 StitchSearchBar(
                   controller: _searchController,
                   hintText: l.searchFabrics,
                   onChanged: catalog.updateQuery,
-                  onSubmitted: catalog.updateQuery,
+                  onSubmitted: (q) {
+                    catalog.updateQuery(q);
+                    context.read<RecentSearchesCubit>().record(q);
+                  },
                 ),
                 if (state.hasActiveFilters)
                   ActiveFiltersBar(

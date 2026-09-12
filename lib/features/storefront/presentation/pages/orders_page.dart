@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../cubit/orders_cubit.dart';
+import '../cubit/reorder_cubit.dart';
 import '../widgets/order_list.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -30,57 +32,73 @@ class _OrdersPageState extends State<OrdersPage> {
     final scheme = Theme.of(context).colorScheme;
     // Hoisted above the BlocBuilder: the controller used to be recreated
     // on every orders emit, resetting the selected tab mid-session.
-    return DefaultTabController(
-      length: 3,
-      child: BlocBuilder<OrdersCubit, OrdersState>(
-        builder: (context, state) {
-          if (state.status == OrdersStatus.loading) {
+    // ReorderCubit is app-scoped (provided in AlBatalApp) — this page
+    // only renders the completion report.
+    return BlocListener<ReorderCubit, ReorderState>(
+      listener: (context, state) {
+        if (state.status != ReorderStatus.done) return;
+        var message = l.reorderAdded(state.addedCount);
+        if (state.skippedNames.isNotEmpty) {
+          message += ' ${l.reorderUnavailable(state.skippedNames.length)}';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(message),
+        ));
+        context.read<ReorderCubit>().reset();
+      },
+      child: DefaultTabController(
+        length: 3,
+        child: BlocBuilder<OrdersCubit, OrdersState>(
+          builder: (context, state) {
+            if (state.status == OrdersStatus.loading) {
+              return Scaffold(
+                appBar: AppBar(title: Text(l.myOrders)),
+                body: const OrdersSkeleton(),
+              );
+            }
+            if (state.status == OrdersStatus.error) {
+              return Scaffold(
+                appBar: AppBar(title: Text(l.myOrders)),
+                body: FeedbackView(
+                  type: FeedbackViewType.error,
+                  onAction: context.read<OrdersCubit>().restore,
+                ),
+              );
+            }
             return Scaffold(
-              appBar: AppBar(title: Text(l.myOrders)),
-              body: const FeedbackView(type: FeedbackViewType.loading),
-            );
-          }
-          if (state.status == OrdersStatus.error) {
-            return Scaffold(
-              appBar: AppBar(title: Text(l.myOrders)),
-              body: FeedbackView(
-                type: FeedbackViewType.error,
-                onAction: context.read<OrdersCubit>().restore,
+              appBar: AppBar(
+                title: Text(l.myOrders),
+                bottom: TabBar(
+                  tabs: [
+                    Tab(text: l.active),
+                    Tab(text: l.completed),
+                    Tab(text: l.cancelled),
+                  ],
+                ),
               ),
-            );
-          }
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(l.myOrders),
-              bottom: TabBar(
-                tabs: [
-                  Tab(text: l.active),
-                  Tab(text: l.completed),
-                  Tab(text: l.cancelled),
+              body: TabBarView(
+                children: [
+                  OrderList(
+                      orders: state.active,
+                      emptyMessage: l.noActiveOrders,
+                      isCompleted: false,
+                      scheme: scheme),
+                  OrderList(
+                      orders: state.completed,
+                      emptyMessage: l.noCompletedOrders,
+                      isCompleted: true,
+                      scheme: scheme),
+                  OrderList(
+                      orders: state.cancelled,
+                      emptyMessage: l.noCancelledOrders,
+                      isCompleted: true,
+                      scheme: scheme),
                 ],
               ),
-            ),
-            body: TabBarView(
-              children: [
-                OrderList(
-                    orders: state.active,
-                    emptyMessage: l.noActiveOrders,
-                    isCompleted: false,
-                    scheme: scheme),
-                OrderList(
-                    orders: state.completed,
-                    emptyMessage: l.noCompletedOrders,
-                    isCompleted: true,
-                    scheme: scheme),
-                OrderList(
-                    orders: state.cancelled,
-                    emptyMessage: l.noCancelledOrders,
-                    isCompleted: true,
-                    scheme: scheme),
-              ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

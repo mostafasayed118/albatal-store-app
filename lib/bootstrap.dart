@@ -12,6 +12,8 @@ import 'shared/services/crash_reporting_service.dart';
 import 'shared/services/e2e_sentry_probe.dart';
 import 'shared/services/env_config.dart';
 import 'shared/services/logger.dart';
+import 'shared/services/notification_service.dart';
+import 'shared/services/push_service.dart';
 import 'shared/services/sentry_crash_reporting_service.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/services/supabase_config.dart';
@@ -102,6 +104,11 @@ Future<void> _bootstrapAndRun(SmokeExit? exitApp) async {
     // probe never delays first frame. Surfaces seed via gate.current
     // until the probe lands.
     unawaited(getIt<ConnectivityGate>().start());
+
+    // §12: notifications + push. Both fail-silent; push no-ops without
+    // a build-time OneSignal app id.
+    unawaited(getIt<PushService>().init());
+    unawaited(getIt<NotificationService>().init());
 
     // Capture Flutter framework errors — must be after Sentry init.
     // Chain (don't overwrite) any previous handler (e.g. Sentry's).

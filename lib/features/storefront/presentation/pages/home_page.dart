@@ -15,6 +15,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
@@ -105,7 +106,7 @@ class _HomePageState extends State<HomePage> {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
               state.status == CatalogStatus.initial) {
-            return const FeedbackView(type: FeedbackViewType.loading);
+            return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
             return FeedbackView(

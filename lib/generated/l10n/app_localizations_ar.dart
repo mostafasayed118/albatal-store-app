@@ -399,6 +399,177 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareProduct => 'مشاركة المنتج';
 
   @override
+  String get reorder => 'إعادة الطلب';
+
+  @override
+  String get recentSearches => 'عمليات البحث الأخيرة';
+
+  @override
+  String get searchSuggestions => 'اقتراحات';
+
+  @override
+  String get clearRecent => 'مسح';
+
+  @override
+  String get couponFieldLabel => 'كود الخصم';
+
+  @override
+  String get couponApply => 'تطبيق';
+
+  @override
+  String get couponApplied =>
+      'تم تطبيق الكود — يثبت الخادم قيمة الخصم عند تأكيد الطلب.';
+
+  @override
+  String get couponInvalid => 'كود الخصم غير صالح.';
+
+  @override
+  String get couponUnavailable => 'أكواد الخصم غير متاحة حاليًا.';
+
+  @override
+  String get couponRemove => 'إزالة الكود';
+
+  @override
+  String get adminCoupons => 'أكواد الخصم';
+
+  @override
+  String get manageCoupons => 'إنشاء وإدارة أكواد الخصم';
+
+  @override
+  String get couponCode => 'الكود';
+
+  @override
+  String get couponDiscountEgp => 'الخصم (جنيه)';
+
+  @override
+  String get couponActive => 'نشط';
+
+  @override
+  String get adminAddCoupon => 'إضافة كود';
+
+  @override
+  String get customerReviews => 'تقييمات العملاء';
+
+  @override
+  String get writeReview => 'اكتب تقييمًا';
+
+  @override
+  String get noReviewsYet => 'لا توجد تقييمات بعد — كن الأول.';
+
+  @override
+  String get reviewPlaceholder => 'كيف كان القماش؟';
+
+  @override
+  String get reviewAddPhoto => 'إضافة صورة';
+
+  @override
+  String get reviewPhotoAdded => 'تم إرفاق الصورة';
+
+  @override
+  String get reviewSubmit => 'إرسال';
+
+  @override
+  String get reviewBuyRequired =>
+      'التقييمات متاحة للعملاء الذين استلموا هذا المنتج.';
+
+  @override
+  String get reviewUnavailable => 'التقييمات غير متاحة حاليًا.';
+
+  @override
+  String get reviewModeration => 'مراجعة التقييمات';
+
+  @override
+  String get reviewApprove => 'موافقة';
+
+  @override
+  String get reviewReject => 'رفض';
+
+  @override
+  String get widthLabel => 'العرض';
+
+  @override
+  String metersValue(num value) {
+    return '$value م';
+  }
+
+  @override
+  String get gsmLabel => 'الوزن';
+
+  @override
+  String gsmValue(int value) {
+    return '$value غرام/م²';
+  }
+
+  @override
+  String get cutLength => 'طول القص';
+
+  @override
+  String get sellByLengthNote => 'يُباع بالمتر — يوجد حد أدنى للقص.';
+
+  @override
+  String get maintenanceTitle => 'سنعود قريبًا';
+
+  @override
+  String get maintenanceBody =>
+      'تطبيق البطل إيليت تحت الصيانة. يُرجى الزيادة لاحقًا.';
+
+  @override
+  String get updateRequiredTitle => 'تحديث متاح';
+
+  @override
+  String get updateRequiredBody =>
+      'هذه النسخة لم تعد مدعومة. يُرجى تحديث التطبيق للمتابعة.';
+
+  @override
+  String get adminCustomers => 'العملاء';
+
+  @override
+  String get adminSearch => 'بحث';
+
+  @override
+  String get invoiceSave => 'حفظ الفاتورة';
+
+  @override
+  String get signInWithGoogle => 'جوجل';
+
+  @override
+  String get signInWithApple => 'آبل';
+
+  @override
+  String get oauthUnavailable => 'تسجيل الدخول بهذا المزوّد غير متاح.';
+
+  @override
+  String get oauthCancelled => 'تم إلغاء تسجيل الدخول.';
+
+  @override
+  String reorderAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تمت إضافة $count أصناف إلى سلتك',
+      one: 'تمت إضافة صنف واحد إلى سلتك',
+      zero: 'لم تتم إضافة أي أصناف إلى سلتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderUnavailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم تخطي $count أصناف غير متاحة',
+      one: 'تم تخطي صنف غير متاح',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shareProductMessage(Object name, Object url) {
+    return '$name — البطل إيليت\n$url';
+  }
+
+  @override
   String get shareLinkCopied => 'تم نسخ رابط المشاركة';
 
   @override

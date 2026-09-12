@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/orders_cubit.dart';
+import '../cubit/reorder_cubit.dart';
 import 'status_progress.dart';
 
 /// Single order card with Stitch surface + outlineVariant border (16dp) + primaryContainer status pill.
@@ -76,6 +78,19 @@ class OrderCard extends StatelessWidget {
                       .textTheme
                       .bodyMedium
                       ?.copyWith(color: scheme.primary)),
+            const SizedBox(height: 4),
+            // §6: one-tap reorder — every line is re-validated against
+            // the live catalog and stock inside ReorderCubit.
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                onPressed: o.items.isEmpty
+                    ? null
+                    : () => context.read<ReorderCubit>().reorder(o),
+                icon: const Icon(Icons.restart_alt),
+                label: Text(l.reorder),
+              ),
+            ),
           ],
         ),
       ),

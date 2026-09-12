@@ -28,7 +28,13 @@ class StitchProductGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    return RepaintBoundary(
+    // §17: screen readers hear one coherent card — name, price and
+    // availability — instead of a scatter of unrelated texts.
+    return Semantics(
+      container: true,
+      button: true,
+      label: '${product.name}, ${product.price.format()}',
+      child: RepaintBoundary(
       child: Card(
         color: scheme.surface,
         shape: RoundedRectangleBorder(
@@ -154,6 +160,7 @@ class StitchProductGridCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

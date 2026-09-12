@@ -2,7 +2,9 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart'
     show OrderCodec;
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'fixtures/products_data.dart';
 import 'helpers/memory_storefront_persistence.dart';
+
+/// OrdersPage depends on the app-scoped ReorderCubit (§6). Harnesses
+/// that pump the page directly provide an inert instance here.
+Widget _withReorderCubit(Widget child) => BlocProvider<ReorderCubit>(
+      create: (_) => ReorderCubit(
+        catalog: _NoCatalog(),
+        addToCart: (_, {color = '', length = '', quantity = 1}) {},
+      ),
+      child: child,
+    );
+
+class _NoCatalog implements CatalogRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
 
 void main() {
   testWidgets('orders page shows a placed order in the Active tab',
@@ -41,7 +58,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: BlocProvider.value(
         value: orders,
-        child: const OrdersPage(),
+        child: _withReorderCubit(const OrdersPage()),
       ),
     ));
     await tester.pumpAndSettle();

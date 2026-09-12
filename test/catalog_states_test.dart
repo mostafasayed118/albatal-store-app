@@ -10,9 +10,11 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cu
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
+import 'package:al_batal_elite/shared/widgets/skeleton_loaders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'helpers/fetch_related_stub.dart';
 import 'helpers/stub_auth_repositories.dart';
@@ -82,9 +84,9 @@ void main() {
     await tester.pumpWidget(_harness(_NeverCompletesRepository()));
     await tester.pump();
 
-    expect(find.byType(FeedbackView), findsOneWidget);
-    // Loading animates (UX-030): a real spinner, not a static hourglass.
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    // §3 feature-batch: loading renders a skeleton grid, not a spinner.
+    expect(find.byType(CatalogSkeleton), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is Bone), findsWidgets);
   });
 }
 

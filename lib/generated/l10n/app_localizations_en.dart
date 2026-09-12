@@ -394,6 +394,177 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProduct => 'Share product';
 
   @override
+  String get reorder => 'Reorder';
+
+  @override
+  String get recentSearches => 'Recent searches';
+
+  @override
+  String get searchSuggestions => 'Suggestions';
+
+  @override
+  String get clearRecent => 'Clear';
+
+  @override
+  String get couponFieldLabel => 'Coupon code';
+
+  @override
+  String get couponApply => 'Apply';
+
+  @override
+  String get couponApplied =>
+      'Coupon applied — the discount is confirmed by the server when you place the order.';
+
+  @override
+  String get couponInvalid => 'This coupon code is not valid.';
+
+  @override
+  String get couponUnavailable => 'Coupons are unavailable right now.';
+
+  @override
+  String get couponRemove => 'Remove coupon';
+
+  @override
+  String get adminCoupons => 'Coupons';
+
+  @override
+  String get manageCoupons => 'Create and manage discount codes';
+
+  @override
+  String get couponCode => 'Code';
+
+  @override
+  String get couponDiscountEgp => 'Discount (EGP)';
+
+  @override
+  String get couponActive => 'Active';
+
+  @override
+  String get adminAddCoupon => 'Add coupon';
+
+  @override
+  String get customerReviews => 'Customer reviews';
+
+  @override
+  String get writeReview => 'Write a review';
+
+  @override
+  String get noReviewsYet => 'No reviews yet — be the first.';
+
+  @override
+  String get reviewPlaceholder => 'How is the fabric?';
+
+  @override
+  String get reviewAddPhoto => 'Add photo';
+
+  @override
+  String get reviewPhotoAdded => 'Photo attached';
+
+  @override
+  String get reviewSubmit => 'Submit';
+
+  @override
+  String get reviewBuyRequired =>
+      'Reviews are open to customers who received this item.';
+
+  @override
+  String get reviewUnavailable => 'Reviews are unavailable right now.';
+
+  @override
+  String get reviewModeration => 'Review moderation';
+
+  @override
+  String get reviewApprove => 'Approve';
+
+  @override
+  String get reviewReject => 'Reject';
+
+  @override
+  String get widthLabel => 'Width';
+
+  @override
+  String metersValue(num value) {
+    return '$value m';
+  }
+
+  @override
+  String get gsmLabel => 'Weight';
+
+  @override
+  String gsmValue(int value) {
+    return '$value GSM';
+  }
+
+  @override
+  String get cutLength => 'Cut length';
+
+  @override
+  String get sellByLengthNote => 'Sold by the meter — minimum cut applies.';
+
+  @override
+  String get maintenanceTitle => 'We\'ll be right back';
+
+  @override
+  String get maintenanceBody =>
+      'Al Batal Elite is under maintenance. Please check back soon.';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'This version is no longer supported. Please update the app to continue shopping.';
+
+  @override
+  String get adminCustomers => 'Customers';
+
+  @override
+  String get adminSearch => 'Search';
+
+  @override
+  String get invoiceSave => 'Save invoice';
+
+  @override
+  String get signInWithGoogle => 'Google';
+
+  @override
+  String get signInWithApple => 'Apple';
+
+  @override
+  String get oauthUnavailable => 'Sign-in with this provider is unavailable.';
+
+  @override
+  String get oauthCancelled => 'Sign-in was cancelled.';
+
+  @override
+  String reorderAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count items to your cart',
+      one: 'Added 1 item to your cart',
+      zero: 'Nothing was added to your cart',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderUnavailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items are unavailable and were skipped',
+      one: '1 item is unavailable and was skipped',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shareProductMessage(Object name, Object url) {
+    return '$name — Al Batal Elite\n$url';
+  }
+
+  @override
   String get shareLinkCopied => 'Share link copied';
 
   @override

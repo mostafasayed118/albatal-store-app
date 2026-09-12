@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -129,7 +130,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
         imageQuality: 80,
       );
       if (xfile == null) return;
-      final bytes = await xfile.readAsBytes();
+      var bytes = await xfile.readAsBytes();
       if (bytes.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -137,6 +138,9 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
         );
         return;
       }
+      // §4: picker imageQuality is only a hint on some platforms; this
+      // is the enforcement pass before the size check and upload.
+      bytes = await getIt<ImageCompressor>().compress(bytes);
       if (bytes.length > _maxProofBytes) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

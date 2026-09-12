@@ -18,6 +18,7 @@ import 'features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'features/settings/domain/repositories/settings_repository.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
+import 'features/storefront/data/recent_searches_store.dart';
 import 'features/storefront/domain/repositories/cart_repository.dart';
 import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
@@ -25,10 +26,17 @@ import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'features/storefront/presentation/cubit/orders_cubit.dart';
+import 'features/storefront/presentation/cubit/recent_searches_cubit.dart';
+import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
+import 'shared/services/biometric_service.dart';
+import 'shared/services/deep_link_parser.dart';
+import 'shared/services/deep_link_service.dart';
+import 'shared/services/env_config.dart';
+import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
@@ -51,8 +59,12 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthCubit _authCubit;
   late final CartCubit _cartCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
+  late final ReorderCubit _reorderCubit;
+  late final RecentSearchesCubit _recentSearchesCubit;
+  bool _appLockActive = false;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<Uri>? _deepLinkSub;
 
   @override
   void initState() {
@@ -81,19 +93,85 @@ final class _AlBatalAppState extends State<AlBatalApp> {
         isPremium: auth.profile?.tier == MembershipTier.premium,
       );
     });
+    // One-tap reorder (feature-batch §6): app-scoped so the orders
+    // surface stays GetIt-free; cart adds flow through the live cubit.
+    _reorderCubit = ReorderCubit(
+      catalog: getIt<CatalogRepository>(),
+      addToCart: _cartCubit.add,
+    );
+    // Recent catalog searches (feature-batch §7): app-scoped like the
+    // reorder cubit so pages stay GetIt-free.
+    _recentSearchesCubit = RecentSearchesCubit(
+      store: getIt<RecentSearchesStore>(),
+    )..load();
+    // Inbound deep links (feature-batch §5): parse → navigate. The
+    // service swallows plugin errors on platforms without link support
+    // so VM tests and web builds degrade to silence.
+    _deepLinkSub = getIt<DeepLinkService>()
+        .incoming()
+        .listen(_handleDeepLink, onError: (Object _) {});
+    // §15: biometric app lock (opt-in). Resolves silently to
+    // unlocked when the device has no biometrics or the store is
+    // unregistered (pre-DI widget tests).
+    _resolveAppLock();
+  }
+
+  Future<void> _resolveAppLock() async {
+    final prefs = getIt.isRegistered<AppLockPrefsStore>()
+        ? getIt<AppLockPrefsStore>()
+        : null;
+    if (prefs == null || !prefs.enabled) return;
+    final biometrics = getIt.isRegistered<BiometricService>()
+        ? getIt<BiometricService>()
+        : null;
+    if (biometrics == null || !await biometrics.canAuthenticate()) return;
+    if (!mounted) return;
+    setState(() => _appLockActive = true);
+    final accepted = await biometrics.authenticate(
+        reason: 'Unlock Al Batal Elite');
+    if (!mounted) return;
+    setState(() => _appLockActive = false);
+    if (!accepted) {
+      Log.i('app lock: authentication not completed');
+    }
+  }
+
+  void _handleDeepLink(Uri uri) {
+    final link = parseDeepLink(
+      uri,
+      webBase: Uri.parse(EnvConfig.webBaseUrl),
+    );
+    if (link is ProductDeepLink) {
+      _router.push('/product/${Uri.encodeComponent(link.productId)}');
+    } else if (link is CatalogDeepLink) {
+      final q = link.query;
+      _router.push(
+          q == null ? '/catalog' : '/catalog?q=${Uri.encodeComponent(q)}');
+    }
   }
 
   @override
   void dispose() {
     _authSub?.cancel();
+    _deepLinkSub?.cancel();
     _router.dispose();
     _authRefreshNotifier.dispose();
+    _reorderCubit.close();
+    _recentSearchesCubit.close();
     _authCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // §15: cold-start app-lock. While the biometric prompt is up the
+    // shell renders a bare lock screen instead of the navigator.
+    if (_appLockActive) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: Center(child: FlutterLogo(size: 72))),
+      );
+    }
     return MultiBlocProvider(
         providers: [
           BlocProvider(
@@ -111,6 +189,8 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                   WishlistCubit(getIt<WishlistRepository>())..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
+          BlocProvider.value(value: _reorderCubit),
+          BlocProvider.value(value: _recentSearchesCubit),
           BlocProvider(
               create: (_) =>
                   AddressesCubit(getIt<AddressRepository>())..load()),

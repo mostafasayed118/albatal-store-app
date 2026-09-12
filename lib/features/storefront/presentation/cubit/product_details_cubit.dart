@@ -165,6 +165,21 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
     emit(state.copyWith(length: value));
   }
 
+  /// §10: custom cut length for sell-by-length fabrics. Clamps to the
+  /// product's minimum cut and snaps to 0.5 m steps; produces the same
+  /// `'<m>m'` length-string contract the cart/checkout already use.
+  void setCutLength(double meters) {
+    final product = state.product;
+    if (product == null || !product.sellByLength) return;
+    final minCut = product.minCutMeters ?? 0.5;
+    var clamped = meters.clamp(minCut, 50.0);
+    // snap to 0.5 m grid (away from zero so 0.4 -> 0.5, not 0.0)
+    final snapped = (clamped * 2).roundToDouble() / 2;
+    clamped = snapped < minCut ? minCut : snapped;
+    emit(state.copyWith(
+        length: clamped.toStringAsFixed(1)));
+  }
+
   void quantity(int value) {
     // Out-of-stock variants pin to 1: the old `stock > 0 ? stock : 99`
     // fallback opened a 1..99 range for a variant that cannot be bought.

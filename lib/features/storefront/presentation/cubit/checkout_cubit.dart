@@ -5,11 +5,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
+import '../../../../core/error/result.dart';
+import '../../../../shared/services/analytics_service.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../payments/domain/entities/payment.dart';
 import '../../data/memory_idempotency_store.dart';
 import '../../data/storefront_persistence.dart';
+import '../../domain/entities/coupon_discount.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../domain/repositories/coupons_repository.dart';
 import '../../domain/repositories/idempotency_store.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
 
@@ -27,6 +31,8 @@ final class CheckoutState extends Equatable {
     this.serverTotal,
     this.expiresAt,
     this.idempotencyKey,
+    this.appliedCoupon,
+    this.couponMessage,
   });
 
   final CheckoutStatus status;
@@ -39,6 +45,13 @@ final class CheckoutState extends Equatable {
   final Money? serverTotal;
   final DateTime? expiresAt;
   final String? idempotencyKey;
+
+  /// Server-validated coupon attached to this checkout attempt (§8).
+  final CouponDiscount? appliedCoupon;
+
+  /// Machine-readable coupon outcome for the page to map to l10n
+  /// (`coupon_invalid` / `coupon_unavailable`), null when settled.
+  final String? couponMessage;
 
   bool get hasAddress => selectedAddress != null;
   bool get hasPendingOrder => pendingOrderId != null && serverTotal != null;
@@ -64,6 +77,9 @@ final class CheckoutState extends Equatable {
     Money? serverTotal,
     DateTime? expiresAt,
     String? idempotencyKey,
+    CouponDiscount? appliedCoupon,
+    bool clearCoupon = false,
+    String? couponMessage,
   }) =>
       CheckoutState(
         status: status ?? this.status,
@@ -77,6 +93,9 @@ final class CheckoutState extends Equatable {
         serverTotal: serverTotal ?? this.serverTotal,
         expiresAt: expiresAt ?? this.expiresAt,
         idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+        appliedCoupon:
+            clearCoupon ? null : (appliedCoupon ?? this.appliedCoupon),
+        couponMessage: couponMessage,
       );
 
   @override
@@ -91,6 +110,8 @@ final class CheckoutState extends Equatable {
         serverTotal,
         expiresAt,
         idempotencyKey,
+        appliedCoupon,
+        couponMessage,
       ];
 }
 
@@ -103,7 +124,11 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     SharedPreferences? prefs,
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
-  })  : _placeOrder = placeOrder ??
+    CouponsRepository? coupons,
+    AnalyticsService? analytics,
+  })  : _coupons = coupons,
+        _analytics = analytics,
+        _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(
               checkoutRepository: checkoutRepository,
               idempotencyStore: idempotencyStore ??
@@ -114,6 +139,39 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         super(const CheckoutState());
 
   final PlaceCheckoutOrderUseCase _placeOrder;
+  final CouponsRepository? _coupons;
+  final AnalyticsService? _analytics;
+
+  /// Validates [code] via the server and attaches it to this attempt.
+  ///
+  /// Validation failures (invalid code, coupons backend not deployed
+  /// yet) set [CheckoutState.couponMessage]; the checkout itself is
+  /// unaffected either way.
+  Future<void> applyCoupon(String code) async {
+    final repo = _coupons;
+    if (repo == null) {
+      emit(state.copyWith(couponMessage: 'coupon_unavailable'));
+      return;
+    }
+    final result = await repo.validate(code);
+    if (isClosed) return;
+    switch (result) {
+      case Success(:final value):
+        emit(state.copyWith(
+          appliedCoupon: value,
+          clearCoupon: false,
+          couponMessage: null,
+        ));
+      case Failure(:final error):
+        emit(state.copyWith(
+          clearCoupon: true,
+          couponMessage: error.message,
+        ));
+    }
+  }
+
+  void clearCoupon() =>
+      emit(state.copyWith(clearCoupon: true, couponMessage: null));
 
   void payment(PaymentMethod value) => emit(state.copyWith(payment: value));
 
@@ -159,6 +217,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         items: cartItems,
         paymentMethod: state.payment,
         address: state.selectedAddress,
+        couponCode: state.appliedCoupon?.code,
         inSessionKey: state.idempotencyKey,
       );
       // page popped mid-flight: result has no home
@@ -168,6 +227,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       // (legacy behavior: the key was emitted before the repository call).
       if (outcome.isSuccess) {
         final placed = outcome.pending!;
+        _analytics?.log(AnalyticsService.checkoutStart, {
+          'order_id': placed.orderId,
+          'items': cartItems.length,
+        });
         emit(state.copyWith(
           status: CheckoutStatus.placing,
           idempotencyKey: outcome.idempotencyKey,
@@ -214,6 +277,9 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
 
   void markSuccess() {
     _placeOrder.clearPersistedKey();
+    _analytics?.log(AnalyticsService.purchase, {
+      if (state.appliedCoupon != null) 'coupon': state.appliedCoupon!.code,
+    });
     emit(state.copyWith(status: CheckoutStatus.success));
   }
 

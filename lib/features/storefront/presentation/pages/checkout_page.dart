@@ -13,6 +13,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
+import '../../domain/repositories/coupons_repository.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
@@ -43,15 +44,18 @@ class CheckoutPage extends StatelessWidget {
     CheckoutCubit? checkoutCubit,
     PlaceCheckoutOrderUseCase? placeOrder,
     AuthSessionPort? authSession,
+    CouponsRepository? couponsRepository,
   })  : _checkoutRepository = checkoutRepository,
         _checkoutCubit = checkoutCubit,
         _placeOrder = placeOrder,
-        _authSession = authSession;
+        _authSession = authSession,
+        _couponsRepository = couponsRepository;
 
   final CheckoutRepository _checkoutRepository;
   final CheckoutCubit? _checkoutCubit;
   final PlaceCheckoutOrderUseCase? _placeOrder;
   final AuthSessionPort? _authSession;
+  final CouponsRepository? _couponsRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +138,12 @@ class CheckoutPage extends StatelessWidget {
                         .bodySmall
                         ?.copyWith(color: scheme.onSurfaceVariant)),
               ),
+              // §8: coupon attach/remove before order creation — the
+              // discount itself is computed server-side only.
+              if (!s.hasPendingOrder) ...[
+                const SizedBox(height: 16),
+                _CouponCard(l10n: l10n),
+              ],
               // Show server-returned totals once the order is created — Stitch summary card.
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
@@ -222,6 +232,7 @@ class CheckoutPage extends StatelessWidget {
       create: (_) => CheckoutCubit(
         _checkoutRepository,
         placeOrder: _placeOrder,
+        coupons: _couponsRepository,
       ),
       child: page,
     );
@@ -238,6 +249,111 @@ class CheckoutPage extends StatelessWidget {
 
 /// Shipping Address card — extracted from [CheckoutPage]'s build (audit
 /// Task 8b) verbatim: same tokens, same children, same behavior.
+/// §8: coupon entry — validation goes through [CheckoutCubit.applyCoupon]
+/// (server `validate_coupon` RPC); server-confirmed discounts appear on
+/// the order summary after creation, never computed here.
+final class _CouponCard extends StatefulWidget {
+  const _CouponCard({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  State<_CouponCard> createState() => _CouponCardState();
+}
+
+final class _CouponCardState extends State<_CouponCard> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  String _messageText(AppLocalizations l10n, String? code) {
+    switch (code) {
+      case 'coupon_invalid':
+        return l10n.couponInvalid;
+      case 'coupon_unavailable':
+        return l10n.couponUnavailable;
+      default:
+        return l10n.couponApplied;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppTheme.cardRadius,
+        side: BorderSide(color: scheme.outlineVariant, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(16),
+        child: BlocBuilder<CheckoutCubit, CheckoutState>(
+          buildWhen: (a, b) =>
+              a.appliedCoupon != b.appliedCoupon ||
+              a.couponMessage != b.couponMessage,
+          builder: (context, s) {
+            final coupon = s.appliedCoupon;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.couponFieldLabel,
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _controller,
+                  textCapitalization: TextCapitalization.characters,
+                  enabled: coupon == null,
+                  decoration: InputDecoration(
+                    hintText: l10n.couponFieldLabel,
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: coupon == null
+                      ? FilledButton(
+                          onPressed: () => context
+                              .read<CheckoutCubit>()
+                              .applyCoupon(_controller.text),
+                          child: Text(l10n.couponApply))
+                      : IconButton(
+                          tooltip: l10n.couponRemove,
+                          onPressed: () {
+                            _controller.clear();
+                            context.read<CheckoutCubit>().clearCoupon();
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                ),
+                if (coupon != null)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(top: 8),
+                    child: Text(l10n.couponApplied,
+                        style: TextStyle(color: scheme.primary)),
+                  ),
+                if (coupon == null && s.couponMessage != null)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(top: 8),
+                    child: Text(_messageText(l10n, s.couponMessage),
+                        style: TextStyle(color: scheme.error)),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 final class _ShippingAddressCard extends StatelessWidget {
   const _ShippingAddressCard({
     required this.l10n,

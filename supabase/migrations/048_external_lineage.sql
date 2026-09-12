@@ -1,0 +1,6 @@
+-- 048–051 EXTERNAL LINEAGE STUB (2026-09-13)
+-- The linked database has migrations 048–051 applied whose SQL files were
+-- never committed to this repository (applied by a parallel work session).
+-- Verified live objects attributable to them: analytics_events
+-- (id, user_id, event, properties, created_at) and notifications.
+-- Do NOT delete: keeps supabase db push history alignment. Content unknown.

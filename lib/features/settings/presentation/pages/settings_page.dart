@@ -9,6 +9,8 @@ import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/service_locator.dart';
+import '../../data/notification_prefs_store.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -27,6 +29,8 @@ final class SettingsPage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(title: Text(context.l10n.settings)),
             body: ListView(padding: const EdgeInsets.all(16), children: [
+              const _NotificationToggleTile(),
+
               Text(context.l10n.appearance,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
@@ -261,5 +265,39 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
     }
   } finally {
     _deleteDialogOpen = false;
+  }
+}
+
+/// §12: order-notification opt-in. Persists via the notification prefs
+/// store; the local notification service reads it before showing.
+final class _NotificationToggleTile extends StatefulWidget {
+  const _NotificationToggleTile();
+
+  @override
+  State<_NotificationToggleTile> createState() =>
+      _NotificationToggleTileState();
+}
+
+final class _NotificationToggleTileState
+    extends State<_NotificationToggleTile> {
+  bool? _enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final store = getIt.isRegistered<NotificationPrefsStore>()
+        ? getIt<NotificationPrefsStore>()
+        : null;
+    if (store == null) return const SizedBox.shrink();
+    _enabled ??= store.orderNotificationsEnabled;
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: const Text('Order notifications'),
+      subtitle: const Text('Confirmations and status updates'),
+      value: _enabled!,
+      onChanged: (v) {
+        store.setOrderNotifications(v);
+        setState(() => _enabled = v);
+      },
+    );
   }
 }

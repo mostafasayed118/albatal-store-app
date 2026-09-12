@@ -1,5 +1,7 @@
 import '../../../../core/error/result.dart';
 import '../entities/admin_catalog.dart';
+import '../entities/admin_coupon.dart';
+import '../entities/admin_customer.dart';
 import '../entities/admin_order.dart';
 import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
@@ -32,6 +34,35 @@ abstract interface class AdminRepository {
   /// Get one order with its line items, or null when not found.
   Future<Result<AdminOrder?>> getOrderDetails(String orderId);
 
+  // ─── Coupons (feature-batch §8) ─────────────────────────
+
+  /// All coupons, newest first (review-gated `coupons` table, 049).
+  Future<Result<List<AdminCoupon>>> fetchCoupons();
+
+  /// Creates or updates a coupon by code (server uppercases codes).
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  });
+
+  /// Enables/disables a coupon without deleting it.
+  Future<Result<void>> setCouponActive(String id, bool active);
+
+  // ─── Customers (feature-batch §14) ──────────────────────
+
+  /// All customer profiles, newest first (admin-only by RLS).
+  Future<Result<List<AdminCustomer>>> fetchCustomers();
+
+  // ─── Review moderation (feature-batch §9) ───────────────
+
+  /// Pending review rows: (id, product, text, rating).
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews();
+
+  /// Sets a review's moderation status (`approved` / `rejected`).
+  Future<Result<void>> setReviewStatus(String id, String status);
+
   /// Update order status with optional tracking number.
   ///
   /// [status] must be a real `order_status` value; [AdminOrderStatus.unknown]
@@ -61,6 +92,12 @@ abstract interface class AdminRepository {
     required String slug,
     String? description,
     String? composition,
+    String? care,
+    String? origin,
+    int? widthCm,
+    int? gsm,
+    bool? sellByLength,
+    double? minCutMeters,
     required String categoryId,
     required double basePrice,
     required bool isActive,

@@ -50,6 +50,7 @@ class CheckoutService implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     try {
@@ -69,6 +70,9 @@ class CheckoutService implements CheckoutRepository {
                     'quantity': item.quantity,
                   })
               .toList(),
+          // §8: only sent when a coupon validated — the pre-049 RPC
+          // would reject an unknown parameter, so absence == compatibility.
+          if (couponCode != null) 'p_coupon_code': couponCode,
           if (idempotencyKey != null) 'p_idempotency_key': idempotencyKey,
         },
       );

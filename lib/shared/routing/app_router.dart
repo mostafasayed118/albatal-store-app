@@ -4,6 +4,7 @@ import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
+import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
@@ -11,6 +12,7 @@ import '../../features/admin/presentation/pages/admin_order_detail_page.dart';
 import '../../features/admin/presentation/pages/admin_orders_page.dart';
 import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
 import '../../features/admin/presentation/pages/admin_products_page.dart';
+import '../../features/admin/presentation/pages/admin_reviews_page.dart';
 import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -24,6 +26,7 @@ import '../../features/payments/presentation/cubit/payment_cubit.dart';
 import '../../features/payments/presentation/pages/instapay_instructions_page.dart';
 import '../../features/payments/presentation/pages/payment_method_page.dart';
 import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
+import '../../features/settings/presentation/pages/maintenance_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
@@ -185,6 +188,9 @@ final _routes = <RouteBase>[
   ),
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
+  GoRoute(path: '/admin/reviews', builder: (_, __) => const AdminReviewsPage()),
+  GoRoute(path: '/maintenance', builder: (_, __) => const MaintenancePage()),
+  GoRoute(path: '/admin/customers', builder: (_, __) => const AdminCustomersPage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
