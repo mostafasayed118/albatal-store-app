@@ -4,6 +4,7 @@ import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
+import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
@@ -189,6 +190,7 @@ final _routes = <RouteBase>[
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
   GoRoute(path: '/admin/reviews', builder: (_, __) => const AdminReviewsPage()),
   GoRoute(path: '/maintenance', builder: (_, __) => const MaintenancePage()),
+  GoRoute(path: '/admin/customers', builder: (_, __) => const AdminCustomersPage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),

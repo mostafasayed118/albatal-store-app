@@ -5,6 +5,7 @@ import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_coupon.dart';
+import '../domain/entities/admin_customer.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
@@ -341,6 +342,33 @@ final class SupabaseAdminRepository implements AdminRepository {
       return const Success(null);
     } catch (e) {
       return Failure(AppError('Failed to update coupon', cause: e));
+    }
+  }
+
+  // ─── Customers (feature-batch §14) ──────────────────────
+
+  @override
+  Future<Result<List<AdminCustomer>>> fetchCustomers() async {
+    try {
+      final rows = await _client
+          .from('profiles')
+          .select('id, full_name, email, tier, is_blocked')
+          .order('created_at', ascending: false)
+          .limit(500);
+      final list = rows as List<dynamic>;
+      return Success(list
+          .map((row) => row as Map<String, dynamic>)
+          .map((row) => AdminCustomer(
+                id: row['id'] as String? ?? '',
+                name: row['full_name'] as String? ?? '',
+                email: row['email'] as String? ?? '',
+                tier: row['tier'] as String? ?? 'standard',
+                isBlocked: row['is_blocked'] as bool? ?? false,
+              ))
+          .where((c) => c.id.isNotEmpty)
+          .toList());
+    } catch (e) {
+      return Failure(AppError('Failed to fetch customers', cause: e));
     }
   }
 

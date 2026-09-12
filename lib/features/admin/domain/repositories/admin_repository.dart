@@ -1,6 +1,7 @@
 import '../../../../core/error/result.dart';
 import '../entities/admin_catalog.dart';
 import '../entities/admin_coupon.dart';
+import '../entities/admin_customer.dart';
 import '../entities/admin_order.dart';
 import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
@@ -47,6 +48,11 @@ abstract interface class AdminRepository {
 
   /// Enables/disables a coupon without deleting it.
   Future<Result<void>> setCouponActive(String id, bool active);
+
+  // ─── Customers (feature-batch §14) ──────────────────────
+
+  /// All customer profiles, newest first (admin-only by RLS).
+  Future<Result<List<AdminCustomer>>> fetchCustomers();
 
   // ─── Review moderation (feature-batch §9) ───────────────
 

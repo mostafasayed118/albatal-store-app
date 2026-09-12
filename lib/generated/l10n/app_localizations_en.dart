@@ -516,6 +516,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'This version is no longer supported. Please update the app to continue shopping.';
 
   @override
+  String get adminCustomers => 'Customers';
+
+  @override
+  String get adminSearch => 'Search';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

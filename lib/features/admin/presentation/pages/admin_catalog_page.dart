@@ -83,6 +83,12 @@ class AdminCatalogPage extends StatelessWidget {
             subtitle: l10n.reviewApprove,
             onTap: () => _guardedPush(context, '/admin/reviews'),
           ),
+          _ManagementTile(
+            icon: Icons.people_outline,
+            title: l10n.adminCustomers,
+            subtitle: l10n.adminSearch,
+            onTap: () => _guardedPush(context, '/admin/customers'),
+          ),
         ],
       ),
     );

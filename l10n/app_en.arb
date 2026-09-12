@@ -191,6 +191,8 @@
   "maintenanceBody": "Al Batal Elite is under maintenance. Please check back soon.",
   "updateRequiredTitle": "Update available",
   "updateRequiredBody": "This version is no longer supported. Please update the app to continue shopping.",
+  "adminCustomers": "Customers",
+  "adminSearch": "Search",
   "reorderAdded": "{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}",
   "@reorderAdded": {
     "placeholders": {

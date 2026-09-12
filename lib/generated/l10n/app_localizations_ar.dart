@@ -521,6 +521,12 @@ class AppLocalizationsAr extends AppLocalizations {
       'هذه النسخة لم تعد مدعومة. يُرجى تحديث التطبيق للمتابعة.';
 
   @override
+  String get adminCustomers => 'العملاء';
+
+  @override
+  String get adminSearch => 'بحث';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

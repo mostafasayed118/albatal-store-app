@@ -8,6 +8,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
@@ -427,6 +428,11 @@ final class _RouteProbeAdminRepository implements AdminRepository {
   @override
   Future<Result<void>> setReviewStatus(String id, String status) async =>
       const Success(null);
+
+  @override
+  Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
+      const Success(<AdminCustomer>[]);
+
 
 
   @override

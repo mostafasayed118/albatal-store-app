@@ -1046,6 +1046,18 @@ abstract class AppLocalizations {
   /// **'This version is no longer supported. Please update the app to continue shopping.'**
   String get updateRequiredBody;
 
+  /// No description provided for @adminCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get adminCustomers;
+
+  /// No description provided for @adminSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get adminSearch;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:
