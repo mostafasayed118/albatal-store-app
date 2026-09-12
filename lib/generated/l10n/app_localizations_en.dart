@@ -522,6 +522,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSearch => 'Search';
 
   @override
+  String get invoiceSave => 'Save invoice';
+
+  @override
   String get signInWithGoogle => 'Google';
 
   @override

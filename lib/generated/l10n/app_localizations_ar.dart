@@ -527,6 +527,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adminSearch => 'بحث';
 
   @override
+  String get invoiceSave => 'حفظ الفاتورة';
+
+  @override
   String get signInWithGoogle => 'جوجل';
 
   @override

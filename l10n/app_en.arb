@@ -193,6 +193,7 @@
   "updateRequiredBody": "This version is no longer supported. Please update the app to continue shopping.",
   "adminCustomers": "Customers",
   "adminSearch": "Search",
+  "invoiceSave": "Save invoice",
   "signInWithGoogle": "Google",
   "signInWithApple": "Apple",
   "oauthUnavailable": "Sign-in with this provider is unavailable.",

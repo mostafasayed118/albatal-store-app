@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:printing/printing.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_order.dart';
+import '../../domain/invoice/invoice_pdf_builder.dart';
 import '../cubit/admin_cubit.dart';
 import '../widgets/dialog_controllers.dart';
 import '../widgets/order_detail_cards.dart';
@@ -67,7 +69,32 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
         ? widget.orderId
         : widget.orderId.substring(0, 8);
     return Scaffold(
-      appBar: AppBar(title: Text('${l10n.order} #$shortId...')),
+      appBar: AppBar(
+        title: Text('${l10n.order} #$shortId...'),
+        actions: [
+          // §16: branded invoice PDF from the loaded detail (requires
+          // line items; hidden until the detail query has resolved them).
+          BlocBuilder<AdminCubit, AdminState>(
+            buildWhen: (a, b) => a.selectedOrder != b.selectedOrder,
+            builder: (context, state) {
+              final order = state.selectedOrder;
+              if (order == null || order.items.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return IconButton(
+                tooltip: l10n.invoiceSave,
+                onPressed: () async {
+                  final bytes =
+                      await const InvoicePdfBuilder().build(order);
+                  await Printing.sharePdf(
+                      bytes: bytes, filename: 'invoice-${order.id}.pdf');
+                },
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+              );
+            },
+          ),
+        ],
+      ),
       body: BlocListener<AdminCubit, AdminState>(
         listener: (context, state) {
           // Optimistic acks lie when the transition fails; confirm only

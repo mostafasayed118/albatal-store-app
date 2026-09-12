@@ -176,6 +176,7 @@
   "updateRequiredBody": "هذه النسخة لم تعد مدعومة. يُرجى تحديث التطبيق للمتابعة.",
   "adminCustomers": "العملاء",
   "adminSearch": "بحث",
+  "invoiceSave": "حفظ الفاتورة",
   "signInWithGoogle": "جوجل",
   "signInWithApple": "آبل",
   "oauthUnavailable": "تسجيل الدخول بهذا المزوّد غير متاح.",

@@ -1058,6 +1058,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get adminSearch;
 
+  /// No description provided for @invoiceSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save invoice'**
+  String get invoiceSave;
+
   /// No description provided for @signInWithGoogle.
   ///
   /// In en, this message translates to:
