@@ -75,3 +75,5 @@ package-lock.json
 
 # Loop engineering
 loop-ledger.json
+
+.trees/
