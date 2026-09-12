@@ -1,4 +1,4 @@
--- 052_analytics_events.sql (feature-batch §11 — REVIEW-GATED PROPOSAL)
+-- 053_analytics_events.sql (feature-batch §11 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- First-party funnel analytics without Firebase: one append-only table,

@@ -1,4 +1,4 @@
--- 052b_app_config.sql (feature-batch §13 — REVIEW-GATED PROPOSAL)
+-- 054_app_config.sql (feature-batch §13 — REVIEW-GATED PROPOSAL)
 -- Owner review required before applying (AGENTS.md migration gate).
 --
 -- Remote configuration: a flat key/value table readable by any client

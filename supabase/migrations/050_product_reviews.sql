@@ -74,7 +74,7 @@ SELECT
   r.text,
   r.photo_url,
   r.created_at,
-  COALESCE(NULLIF(p.display_name, ''), 'Al Batal') AS author_name
+  COALESCE(NULLIF(p.full_name, ''), 'Al Batal') AS author_name
 FROM public.product_reviews r
 LEFT JOIN public.profiles p ON p.id = r.user_id
 WHERE r.status = 'approved';
