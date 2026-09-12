@@ -108,4 +108,20 @@ commit. Batch end: full `flutter analyze` + `flutter test`, secret sweep
 
 | Slice | Commit | Tests | Verifier |
 | ----- | ------ | ----- | -------- |
-| (pending) | | | |
+| §1 deps | f19049d | 632->747 suite | self (sub-agent unavailable) |
+| §3 skeletons | 9279de9 | +2 skeleton tests | self |
+| §4 compression | 34baacf | instapay 15/15 | self |
+| §5 share/deep links | 93d2275 | +9 parser/share | self |
+| §6 reorder | 883a10c | +6 cubit | self |
+| §7 search UX | 30a4e7e | +10 store/bar | self |
+| §8 coupons | ce203a6 | +7 mapper/cubit | self |
+| §9 reviews | 3f523d8 | +7 mapper/cubit | self |
+| §10 fabric | 3f1f944 | +4 mapper/cubit | self |
+| §11 analytics | f42182c | instrumented | self |
+| §12 notifications | 04025a9 | +5 prefs/gating | self |
+| §13 remote config | 724cc1e | +5 config/vercmp | self |
+| §14 admin ops | 32a2bf6 | +5 CSV builder | self |
+| §15 auth | a6eb882 | OAuth/app-lock | self |
+| §16 invoice | b2b0b86 | +3 PDF builder | self |
+| §17 a11y/perf | 0007263 | +2 semantics | self |
+| FINAL | 3dda91e | analyze clean, 763/763 | self (Agent tool failed: model request errors) |
