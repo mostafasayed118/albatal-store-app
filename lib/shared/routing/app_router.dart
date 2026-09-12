@@ -64,8 +64,14 @@ GoRouter createAppRouter(
 String? _redirect(AuthState auth, GoRouterState state) {
   final path = state.uri.path;
 
-  if (path.startsWith('/admin')) {
-    if (!auth.isAuthenticated) return '/sign-in?redirect=$path';
+  String signInRedirect(String target) =>
+      Uri(path: '/sign-in', queryParameters: {'redirect': target}).toString();
+
+  bool matchesAuthRoute(String route) =>
+      path == route || path.startsWith('$route/');
+
+  if (path == '/admin' || path.startsWith('/admin/')) {
+    if (!auth.isAuthenticated) return signInRedirect(path);
     if (auth.profile?.isAdmin != true) return '/home';
     return null;
   }
@@ -80,10 +86,11 @@ String? _redirect(AuthState auth, GoRouterState state) {
     '/wishlist',
     '/payment-method',
     '/paymob-checkout',
+    '/instapay-instructions',
     '/order-success',
   ];
-  if (authRequired.any(path.startsWith) && !auth.isAuthenticated) {
-    return '/sign-in?redirect=$path';
+  if (authRequired.any(matchesAuthRoute) && !auth.isAuthenticated) {
+    return signInRedirect(path);
   }
   return null;
 }
@@ -166,10 +173,13 @@ final _routes = <RouteBase>[
     // stays load-bearing via `extra['cubit']`; `extra['orderId']` is
     // carried additively for the page's rehydration path.
     builder: (_, s) {
-      final extra = s.extra as Map<String, dynamic>?;
+      final extra = s.extra;
+      final map = extra is Map<String, dynamic> ? extra : null;
+      final cubit = map?['cubit'];
+      final orderId = map?['orderId'];
       return InstapayInstructionsPage(
-        cubit: extra?['cubit'] as PaymentCubit?,
-        orderId: extra?['orderId'] as String?,
+        cubit: cubit is PaymentCubit ? cubit : null,
+        orderId: orderId is String ? orderId : null,
       );
     },
   ),

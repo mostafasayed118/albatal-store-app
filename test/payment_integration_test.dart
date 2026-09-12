@@ -112,8 +112,10 @@ void main() {
     });
 
     test('processPayment with pending sets awaitingVerification', () async {
+      // URL must be a Paymob-owned HTTPS host (PaymobUrlGuard fails
+      // closed on anything else since the trust-boundary fix).
       service.setResult(const PaymentPending(
-        checkoutUrl: 'https://example.com/checkout',
+        checkoutUrl: 'https://accept.paymob.com/checkout',
       ));
       cubit.initPayment(amount: Money.egp(1500), orderId: 'ORD-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
@@ -122,7 +124,7 @@ void main() {
 
       expect(cubit.state.status, PaymentStatus.awaitingVerification);
       expect(cubit.state.transactionId, isNull);
-      expect(cubit.state.checkoutUrl, 'https://example.com/checkout');
+      expect(cubit.state.checkoutUrl, 'https://accept.paymob.com/checkout');
     });
 
     test('cancel sets cancelled status', () {

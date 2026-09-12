@@ -27,8 +27,10 @@ abstract class CrashReportingService {
   ///
   /// Redacts any key matching (case-insensitively) the patterns: `token`,
   /// `secret`, `card`, `cvv`, `authorization`, `address`, `email`, `phone`,
-  /// `password`. The value is replaced with `'[REDACTED]'`; all other entries
-  /// are preserved verbatim.
+  /// `password`, `name`, `full_name`, `username`, `reference`. The value is
+  /// replaced with `'[REDACTED]'`; all other entries are preserved verbatim
+  /// except that string values still get value-based PII scrubbing for
+  /// embedded emails/phones.
   ///
   /// This is a static method so it can be unit-tested without instantiating a
   /// provider, and so callers can scrub context before it ever reaches a
@@ -37,17 +39,32 @@ abstract class CrashReportingService {
     if (context == null) return {};
     final scrubbed = <String, dynamic>{};
     final sensitivePattern = RegExp(
-      r'token|secret|card|cvv|authorization|address|email|phone|password',
+      r'token|secret|card|cvv|authorization|address|email|phone|password|name|username|reference',
       caseSensitive: false,
     );
     for (final entry in context.entries) {
       if (sensitivePattern.hasMatch(entry.key)) {
         scrubbed[entry.key] = '[REDACTED]';
       } else {
-        scrubbed[entry.key] = entry.value;
+        scrubbed[entry.key] = _scrubValue(entry.value);
       }
     }
     return scrubbed;
+  }
+
+  /// Value-based PII scrub for free-text values: embedded emails/phones
+  /// are redacted even when the key itself is not sensitive.
+  static Object? _scrubValue(Object? value) {
+    if (value is! String) return value;
+    return value
+        .replaceAll(
+          RegExp(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'),
+          '[email]',
+        )
+        .replaceAll(
+          RegExp(r'(?<![\w@])\+?\d[\d\s().-]{8,}\d(?!\w)'),
+          '[phone]',
+        );
   }
 }
 

@@ -25,8 +25,8 @@ sealed class Result<T> {
   ) async {
     try {
       return Success(await action());
-    } catch (e) {
-      return Failure(AppError(failureMessage, cause: e));
+    } catch (e, st) {
+      return Failure(AppError(failureMessage, cause: e, stackTrace: st));
     }
   }
 }

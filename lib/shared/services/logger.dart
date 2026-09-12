@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../../core/error/app_error.dart';
+
 /// Log levels for filtering output.
 enum LogLevel { debug, info, warning, error }
 
@@ -57,7 +59,12 @@ class Log {
       StackTrace? stackTrace}) {
     _log(LogLevel.error, category, message);
     if (error != null) {
-      _log(LogLevel.error, category, '  Error: $error');
+      // Release breadcrumbs leave the device: never interpolate the raw
+      // error object (it can carry URLs, tokens, or PII). Log the
+      // user-safe AppError message when available, otherwise just the
+      // runtime type; full detail stays in debugPrint/Sentry envelope.
+      final summary = kReleaseMode ? _safeErrorSummary(error) : '$error';
+      _log(LogLevel.error, category, '  Error: $summary');
     }
     if (stackTrace != null) {
       final trace = stackTrace.toString().split('\n').take(10).join('\n');
@@ -114,6 +121,13 @@ class Log {
   static String redact(String message) => message
       .replaceAllMapped(_emailPattern, (_) => '[email]')
       .replaceAllMapped(_phonePattern, (_) => '[phone]');
+
+  /// Release-safe error summary: user-safe message for [AppError],
+  /// otherwise just the runtime type (never the raw `toString()`).
+  static String _safeErrorSummary(Object? error) {
+    if (error is AppError) return redact('${error.runtimeType}: ${error.message}');
+    return error.runtimeType.toString();
+  }
 
   // ─── Private implementation ────────────────────────────
 
