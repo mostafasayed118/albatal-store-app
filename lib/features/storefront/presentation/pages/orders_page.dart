@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/orders_cubit.dart';
 import '../widgets/order_list.dart';
@@ -37,7 +38,7 @@ class _OrdersPageState extends State<OrdersPage> {
           if (state.status == OrdersStatus.loading) {
             return Scaffold(
               appBar: AppBar(title: Text(l.myOrders)),
-              body: const FeedbackView(type: FeedbackViewType.loading),
+              body: const OrdersSkeleton(),
             );
           }
           if (state.status == OrdersStatus.error) {

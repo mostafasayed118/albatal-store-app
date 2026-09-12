@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/feedback_view.dart';
-import '../../../../shared/components/responsive_shell.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
@@ -88,7 +88,7 @@ class _CatalogPageState extends State<CatalogPage> {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
               state.status == CatalogStatus.initial) {
-            return const FeedbackView(type: FeedbackViewType.loading);
+            return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
             return FeedbackView(

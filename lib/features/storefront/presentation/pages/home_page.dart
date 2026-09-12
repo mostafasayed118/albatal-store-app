@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
-import '../../../../shared/components/responsive_shell.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
 import '../../../../shared/components/stitch/stitch_hero_carousel.dart';
@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
               state.status == CatalogStatus.initial) {
-            return const FeedbackView(type: FeedbackViewType.loading);
+            return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
             return FeedbackView(
