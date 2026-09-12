@@ -15,6 +15,18 @@ class CatalogSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // §17: the OS reduce-motion flag swaps the animated pulse for a
+    // static shimmer-free placeholder grid.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return LayoutBuilder(
+        builder: (context, constraints) => GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: productGridDelegateForWidth(constraints.maxWidth),
+          itemCount: itemCount,
+          itemBuilder: (context, index) => const _StaticCardSkeleton(),
+        ),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) => Skeletonizer(
         enabled: true,
@@ -71,12 +83,68 @@ class OrdersSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: tileCount,
+        itemBuilder: (context, index) => const _StaticTileSkeleton(),
+      );
+    }
     return Skeletonizer(
       enabled: true,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: tileCount,
         itemBuilder: (context, index) => const _OrderTileSkeleton(),
+      ),
+    );
+  }
+}
+
+/// Static (non-animated) placeholder used when the OS reduce-motion
+/// flag is on (feature-batch §17).
+class _StaticCardSkeleton extends StatelessWidget {
+  const _StaticCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 120, height: 12),
+                SizedBox(height: 4),
+                SizedBox(width: 60, height: 10),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaticTileSkeleton extends StatelessWidget {
+  const _StaticTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: ListTile(
+        leading: SizedBox(width: 44, height: 44),
+        title: SizedBox(width: 160, height: 12),
+        subtitle: SizedBox(width: 100, height: 10),
       ),
     );
   }
