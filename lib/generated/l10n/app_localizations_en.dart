@@ -522,6 +522,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSearch => 'Search';
 
   @override
+  String get signInWithGoogle => 'Google';
+
+  @override
+  String get signInWithApple => 'Apple';
+
+  @override
+  String get oauthUnavailable => 'Sign-in with this provider is unavailable.';
+
+  @override
+  String get oauthCancelled => 'Sign-in was cancelled.';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

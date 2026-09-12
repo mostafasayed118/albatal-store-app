@@ -1058,6 +1058,30 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get adminSearch;
 
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @signInWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple'**
+  String get signInWithApple;
+
+  /// No description provided for @oauthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in with this provider is unavailable.'**
+  String get oauthUnavailable;
+
+  /// No description provided for @oauthCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was cancelled.'**
+  String get oauthCancelled;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

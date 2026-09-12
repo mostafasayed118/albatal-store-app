@@ -43,10 +43,12 @@ import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
 import 'analytics_service.dart';
+import 'biometric_service.dart';
 import 'connectivity_gate.dart';
 import 'deep_link_service.dart';
 import 'image_compressor.dart';
 import 'notification_service.dart';
+import 'oauth_service.dart';
 import 'product_share_service.dart';
 import 'push_service.dart';
 import 'remote_config_service.dart';
@@ -158,6 +160,11 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<NotificationService>(() =>
         LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
     ..registerLazySingleton<PushService>(() => const PushService())
+    // §15: OAuth sign-in + biometric app lock (both fail-soft).
+    ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())
+    ..registerLazySingleton<BiometricService>(() => LocalBiometricService())
+    ..registerLazySingleton<AppLockPrefsStore>(
+        () => PrefsAppLockStore(getIt<SharedPreferences>()))
     // §13: remote config (defaults + TTL cache; advisory only).
     ..registerLazySingleton<RemoteConfigService>(
         () => RemoteConfigService());

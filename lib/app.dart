@@ -32,9 +32,11 @@ import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
+import 'shared/services/biometric_service.dart';
 import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
+import 'shared/services/logger.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
@@ -59,6 +61,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final ReorderCubit _reorderCubit;
   late final RecentSearchesCubit _recentSearchesCubit;
+  bool _appLockActive = false;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _deepLinkSub;
@@ -107,6 +110,30 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _deepLinkSub = getIt<DeepLinkService>()
         .incoming()
         .listen(_handleDeepLink, onError: (Object _) {});
+    // §15: biometric app lock (opt-in). Resolves silently to
+    // unlocked when the device has no biometrics or the store is
+    // unregistered (pre-DI widget tests).
+    _resolveAppLock();
+  }
+
+  Future<void> _resolveAppLock() async {
+    final prefs = getIt.isRegistered<AppLockPrefsStore>()
+        ? getIt<AppLockPrefsStore>()
+        : null;
+    if (prefs == null || !prefs.enabled) return;
+    final biometrics = getIt.isRegistered<BiometricService>()
+        ? getIt<BiometricService>()
+        : null;
+    if (biometrics == null || !await biometrics.canAuthenticate()) return;
+    if (!mounted) return;
+    setState(() => _appLockActive = true);
+    final accepted = await biometrics.authenticate(
+        reason: 'Unlock Al Batal Elite');
+    if (!mounted) return;
+    setState(() => _appLockActive = false);
+    if (!accepted) {
+      Log.i('app lock: authentication not completed');
+    }
   }
 
   void _handleDeepLink(Uri uri) {
@@ -137,6 +164,14 @@ final class _AlBatalAppState extends State<AlBatalApp> {
 
   @override
   Widget build(BuildContext context) {
+    // §15: cold-start app-lock. While the biometric prompt is up the
+    // shell renders a bare lock screen instead of the navigator.
+    if (_appLockActive) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: Center(child: FlutterLogo(size: 72))),
+      );
+    }
     return MultiBlocProvider(
         providers: [
           BlocProvider(

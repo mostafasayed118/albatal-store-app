@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/oauth_service.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
 
@@ -133,6 +137,28 @@ class _SignInPageState extends State<SignInPage> {
                     );
                   },
                 ),
+                const SizedBox(height: 12),
+                // §15: social sign-in. Providers must be enabled in the
+                // Supabase dashboard; failures map to a friendly message
+                // instead of dead buttons.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _signInWith(OAuthProvider.google),
+                      icon: const Icon(Icons.g_mobiledata, size: 28),
+                      label: Text(l.signInWithGoogle),
+                    ),
+                    if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _signInWith(OAuthProvider.apple),
+                        icon: const Icon(Icons.apple),
+                        label: Text(l.signInWithApple),
+                      ),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -156,6 +182,33 @@ class _SignInPageState extends State<SignInPage> {
       ),
     );
   }
+
+  Future<void> _signInWith(OAuthProvider provider) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final oauth = getIt.isRegistered<OAuthService>()
+        ? getIt<OAuthService>()
+        : null;
+    if (oauth == null) {
+      messenger.showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(context.l10n.oauthUnavailable)));
+      return;
+    }
+    final result = await oauth.signIn(provider);
+    if (!mounted) return;
+    switch (result) {
+      case Success():
+        break; // auth stream drives navigation
+      case Failure(:final error):
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(error.message == kOAuthCancelled
+              ? context.l10n.oauthCancelled
+              : context.l10n.oauthUnavailable),
+        ));
+    }
+  }
+
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
