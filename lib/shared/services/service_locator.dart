@@ -39,6 +39,7 @@ import '../../shared/services/sentry_crash_reporting_service.dart';
 import 'connectivity_gate.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
+import 'image_compressor.dart';
 
 final getIt = GetIt.instance;
 
@@ -119,5 +120,9 @@ Future<void> configureDependencies() async {
         return SentryCrashReportingService();
       }
       return const NoOpCrashReportingService();
-    });
+    })
+    // Upload-image compression (feature-batch §4). Fail-open by design:
+    // an unavailable plugin returns the original bytes.
+    ..registerLazySingleton<ImageCompressor>(
+        () => const FlutterImageCompressor());
 }
