@@ -2,12 +2,13 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import '../../../../fixtures/products_data.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../fixtures/products_data.dart';
 
 class _StubCheckoutRepo implements CheckoutRepository {
   _StubCheckoutRepo({this.result});
@@ -94,9 +95,9 @@ void main() {
         result: Success(
           PendingOrder(
             orderId: 'ord-123',
-            subtotal: Money.egp(500),
-            shipping: Money.egp(50),
-            total: Money.egp(550),
+            subtotal: const Money.egp(500),
+            shipping: const Money.egp(50),
+            total: const Money.egp(550),
             expiresAt: DateTime.parse('2026-01-01T00:00:00Z'),
           ),
         ),

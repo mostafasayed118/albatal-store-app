@@ -60,7 +60,7 @@ void main() {
       'emits error with repository message on Failure',
       build: () {
         when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
-            (_) async => Failure(AppError('Failed to load orders')));
+            (_) async => const Failure(AppError('Failed to load orders')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrders(),
@@ -137,7 +137,7 @@ void main() {
       'emits error with repository message on Failure',
       build: () {
         when(() => repo.getOrderDetails('o1'))
-            .thenAnswer((_) async => Failure(AppError('Failed to load order')));
+            .thenAnswer((_) async => const Failure(AppError('Failed to load order')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrderDetails('o1'),
@@ -279,7 +279,7 @@ void main() {
                   trackingNumber: null,
                 ))
             .thenAnswer((_) async =>
-                Failure(AppError('Failed to update order status')));
+                const Failure(AppError('Failed to update order status')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.updateOrderStatus('o1', AdminOrderStatus.cancelled),
@@ -297,7 +297,7 @@ void main() {
       'loadLowStockProducts emits typed variants on Success',
       build: () {
         when(() => repo.getLowStockProducts(threshold: 5))
-            .thenAnswer((_) async => Success(const [
+            .thenAnswer((_) async => const Success([
                   LowStockVariant(
                     variantId: 'v1',
                     productName: 'Silk',
@@ -337,7 +337,7 @@ void main() {
       'updateStock emits error on Failure',
       build: () {
         when(() => repo.updateStock('v1', 9)).thenAnswer(
-            (_) async => Failure(AppError('Failed to update stock')));
+            (_) async => const Failure(AppError('Failed to update stock')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.updateStock('v1', 9),
@@ -411,7 +411,7 @@ void main() {
       ),
       build: () {
         when(() => repo.setMembershipTier('profile-9', 'premium'))
-            .thenAnswer((_) async => Failure(AppError('tier change rejected')));
+            .thenAnswer((_) async => const Failure(AppError('tier change rejected')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.setMembershipTier('profile-9', 'premium'),

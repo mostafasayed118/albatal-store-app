@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
@@ -305,7 +305,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                         borderRadius: AppTheme.controlRadius),
                   ),
                   icon: Icon(
@@ -334,7 +334,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                   // is live: approval navigates to order success.
                   Card(
                     color: scheme.primaryContainer.withValues(alpha: .3),
-                    shape: RoundedRectangleBorder(
+                    shape: const RoundedRectangleBorder(
                         borderRadius: AppTheme.controlRadius),
                     child: Padding(
                       padding: const EdgeInsetsDirectional.all(16),
@@ -358,7 +358,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                       backgroundColor: scheme.secondary,
                       foregroundColor: scheme.onSecondary,
                       minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(
+                      shape: const RoundedRectangleBorder(
                           borderRadius: AppTheme.controlRadius),
                       textStyle: Theme.of(context).textTheme.labelLarge,
                     ),

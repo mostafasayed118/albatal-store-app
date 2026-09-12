@@ -135,7 +135,7 @@ void main() {
         () async {
       final stub = _ServerConfirmStub();
       final cubit = PaymentCubit(stub);
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       // COD path now calls confirmCodPayment — stub returns success.
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
@@ -165,7 +165,7 @@ void main() {
     test('PaymentCubit watchPaymentStatus emits terminal results', () async {
       final stub = _ServerConfirmStub();
       final cubit = PaymentCubit(stub);
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       // startWatching subscribes to the server stream. The
       // stub stream is empty, so no success is emitted —
       // proving success cannot come from a callback URL.

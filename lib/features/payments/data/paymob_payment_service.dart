@@ -184,7 +184,7 @@ class PaymobPaymentService implements PaymentService {
       final code = safeString(data, 'code', fallback: 'unknown');
 
       if (ok) {
-        return PaymentSuccess(transactionId: '', amount: Money.zero);
+        return const PaymentSuccess(transactionId: '', amount: Money.zero);
       }
 
       final message = switch (code) {

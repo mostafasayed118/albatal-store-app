@@ -106,11 +106,11 @@ void main() {
 
     testWidgets('empty orders tabs invite the user to keep shopping',
         (tester) async {
-      await tester.pumpWidget(_l10nHarness(OrderList(
-        orders: const [],
+      await tester.pumpWidget(_l10nHarness(const OrderList(
+        orders: [],
         emptyMessage: 'No active orders',
         isCompleted: false,
-        scheme: const ColorScheme.light(),
+        scheme: ColorScheme.light(),
       )));
 
       expect(find.text('No active orders'), findsOneWidget);

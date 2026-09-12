@@ -75,6 +75,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         setState(() => _paths = List.of(paths));
         // Confirm only what the repository saved — and say what happened
         // (an "Images updated" after a delete reads wrong).
+        // Admin-only, intentionally unlocalized.
         showConfirmation(context, confirmation ?? 'Images updated');
       },
       failure: (error) {
@@ -112,6 +113,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         _paths = next;
         _uploading = false;
       });
+      // Admin-only, intentionally unlocalized.
       showConfirmation(context, 'Image uploaded');
     } on AppError catch (e) {
       if (!mounted) return;
@@ -121,6 +123,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       if (!mounted) return;
       setState(() => _uploading = false);
       Log.e('Admin image upload failed', error: e);
+      // Admin-only, intentionally unlocalized.
       showFloatingError(context, 'Upload failed. Please try again.');
     }
   }
@@ -145,6 +148,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
+      // Admin-only, intentionally unlocalized: the delete-confirm copy below
+      // (no ARB keys; the storefront stays localized).
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete image?'),
         content: const Text(
@@ -172,9 +177,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.productImages)),
+      appBar: AppBar(title: Text(l10n.productImages)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -186,6 +191,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                       children: [
                         Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 12),
+                        // Admin-only, intentionally unlocalized.
                         AppButton(label: 'Retry', onPressed: _loadImages),
                       ],
                     ),
@@ -198,6 +204,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                       child: _uploading
                           ? const Center(child: CircularProgressIndicator())
                           : AppButton(
+                              // Admin-only, intentionally unlocalized.
                               label: 'Upload Image',
                               icon: Icons.upload,
                               onPressed: _uploadImage,
@@ -207,6 +214,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                       child: _paths.isEmpty
                           ? FeedbackView(
                               type: FeedbackViewType.empty,
+                              // Admin-only, intentionally unlocalized.
                               title: 'No images yet',
                               body:
                                   'Upload the first image so the product has a gallery on the store.',
@@ -249,8 +257,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                             const SizedBox(height: 8),
                                             Padding(
                                               padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8),
+                                                  const EdgeInsetsDirectional
+                                                      .symmetric(horizontal: 8),
                                               child: Text(
                                                 path.split('/').last,
                                                 style: Theme.of(context)
@@ -301,7 +309,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   }
 }
 
-class _IconBtn extends StatelessWidget {
+final class _IconBtn extends StatelessWidget {
   const _IconBtn({required this.icon, this.onTap});
   final IconData icon;
   final VoidCallback? onTap;

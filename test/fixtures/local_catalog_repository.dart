@@ -27,7 +27,7 @@ final class LocalCatalogRepository implements CatalogRepository {
   Future<Result<Product>> fetchProductById(String id) async {
     final product = products.where((p) => p.id == id).firstOrNull;
     if (product != null) return Success(product);
-    return Failure(AppError('Product not found'));
+    return const Failure(AppError('Product not found'));
   }
 
   @override

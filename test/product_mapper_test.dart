@@ -1,9 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/features/storefront/data/product_mapper.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('encode/decode preserves every product field', () {

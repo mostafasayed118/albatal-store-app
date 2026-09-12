@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
@@ -5,9 +7,10 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
-import 'fixtures/products_data.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'fixtures/products_data.dart';
 
 /// Stub repository that returns the fixed product list — no network, no I/O.
 final class StubCatalogRepository implements CatalogRepository {
@@ -23,7 +26,7 @@ final class StubCatalogRepository implements CatalogRepository {
   Future<Result<Product>> fetchProductById(String id) async {
     final product = products.where((p) => p.id == id).firstOrNull;
     if (product != null) return Success(product);
-    return Failure(AppError('Product not found'));
+    return const Failure(AppError('Product not found'));
   }
 
   @override
@@ -42,15 +45,15 @@ final class StubCatalogRepository implements CatalogRepository {
 final class FailingCatalogRepository implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
-      Failure(AppError('Catalog unavailable'));
+      const Failure(AppError('Catalog unavailable'));
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
-      Failure(AppError('Catalog unavailable'));
+      const Failure(AppError('Catalog unavailable'));
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -136,15 +139,15 @@ void main() {
       verify: (cubit) => expect(
         cubit.state.visible.map((product) => product.price.minorUnits),
         [
-          Money.egp(1340).minorUnits,
-          Money.egp(1290).minorUnits,
-          Money.egp(1050).minorUnits,
-          Money.egp(980).minorUnits,
-          Money.egp(820).minorUnits,
-          Money.egp(720).minorUnits,
-          Money.egp(690).minorUnits,
-          Money.egp(580).minorUnits,
-          Money.egp(540).minorUnits,
+          const Money.egp(1340).minorUnits,
+          const Money.egp(1290).minorUnits,
+          const Money.egp(1050).minorUnits,
+          const Money.egp(980).minorUnits,
+          const Money.egp(820).minorUnits,
+          const Money.egp(720).minorUnits,
+          const Money.egp(690).minorUnits,
+          const Money.egp(580).minorUnits,
+          const Money.egp(540).minorUnits,
         ],
       ),
     );
@@ -239,7 +242,7 @@ void main() {
           expect(
               p.price.minorUnits,
               inInclusiveRange(
-                  Money.egp(500).minorUnits, Money.egp(800).minorUnits));
+                  const Money.egp(500).minorUnits, const Money.egp(800).minorUnits));
         }
       },
     );
@@ -309,7 +312,7 @@ void main() {
       expect(cubit.state.availableColors, contains('Emerald'));
       expect(cubit.state.availableColors, contains('Gold'));
       expect(cubit.state.availableColors.length, 9);
-      cubit.close();
+      unawaited(cubit.close());
     });
   });
 

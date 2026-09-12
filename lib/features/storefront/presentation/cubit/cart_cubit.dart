@@ -35,7 +35,7 @@ final class CartState extends Equatable {
   /// free-shipping perk (migration 047); the checkout page carries the
   /// estimate disclaimer and the server-confirmed totals are what charge.
   Money get shipping =>
-      items.isEmpty || isPremiumMember ? Money.zero : Money.egp(75);
+      items.isEmpty || isPremiumMember ? Money.zero : const Money.egp(75);
   Money get total => subtotal + shipping;
   int get count => items.fold(0, (value, item) => value + item.quantity);
 

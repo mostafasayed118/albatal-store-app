@@ -14,6 +14,9 @@ import '../../theme/app_colors.dart';
 /// flagged as a release blocker), and the canonical design decision
 /// (STATE.md 2026-09-06) is no mic until then. Restore it together with
 /// real speech-to-text, not before.
+///
+/// Ownership: [controller] is borrowed, not owned — the caller (typically
+/// the page State) creates and disposes it; this widget never disposes it.
 class StitchSearchBar extends StatelessWidget {
   const StitchSearchBar({
     super.key,

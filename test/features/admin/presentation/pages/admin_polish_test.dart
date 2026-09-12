@@ -36,7 +36,7 @@ class _FakeStorageService extends StorageService {
 AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
       id: id,
       status: status,
-      total: Money.egp(100),
+      total: const Money.egp(100),
       placedAt: DateTime(2026),
     );
 
@@ -102,9 +102,9 @@ void main() {
         (tester) async {
       // Both loaders fail so the last emitted state is the error.
       when(() => repo.getAllOrders(status: any(named: 'status')))
-          .thenAnswer((_) async => Failure(const AppError('offline')));
+          .thenAnswer((_) async => const Failure(AppError('offline')));
       when(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
-          .thenAnswer((_) async => Failure(const AppError('offline')));
+          .thenAnswer((_) async => const Failure(AppError('offline')));
       when(() => repo.isCurrentUserAdmin()).thenAnswer((_) async => true);
 
       await tester.pumpWidget(harness(const AdminDashboardPage()));
@@ -147,7 +147,7 @@ void main() {
     testWidgets('failed load renders an error, not a fake empty queue',
         (tester) async {
       when(() => repo.getAllOrders(status: any(named: 'status')))
-          .thenAnswer((_) async => Failure(const AppError('offline')));
+          .thenAnswer((_) async => const Failure(AppError('offline')));
 
       await tester.pumpWidget(harness(const AdminOrdersPage()));
       await tester.pump();
@@ -209,7 +209,7 @@ void main() {
                 trackingNumber: any(named: 'trackingNumber'),
               ))
           .thenAnswer(
-              (_) async => Failure(const AppError('transition rejected')));
+              (_) async => const Failure(AppError('transition rejected')));
 
       tester.view.physicalSize = const Size(800, 1600);
       tester.view.devicePixelRatio = 1.0;
@@ -437,7 +437,7 @@ void main() {
       when(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
           .thenAnswer((_) async => const Success([variant]));
       when(() => repo.updateStock('v1', 7))
-          .thenAnswer((_) async => Failure(const AppError('write failed')));
+          .thenAnswer((_) async => const Failure(AppError('write failed')));
 
       await tester.pumpWidget(harness(const AdminInventoryPage()));
       await tester.pump();
@@ -624,7 +624,7 @@ void main() {
     AdminOrder orderWithCustomer(String profileId, String tier) => AdminOrder(
           id: 'order-tier-1',
           status: AdminOrderStatus.paid,
-          total: Money.egp(100),
+          total: const Money.egp(100),
           placedAt: DateTime(2026),
           customerName: 'Sara Ali',
           customerId: profileId,
@@ -694,7 +694,7 @@ void main() {
         (tester) async {
       registerTierStubs('profile-9');
       when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
-          (_) async => Failure(const AppError('tier change rejected')));
+          (_) async => const Failure(AppError('tier change rejected')));
 
       await tester.pumpWidget(
         harness(const AdminOrderDetailPage(orderId: 'order-tier-1')),
@@ -721,7 +721,7 @@ void main() {
           .thenAnswer((_) async => Success(AdminOrder(
                 id: 'order-tier-1',
                 status: AdminOrderStatus.paid,
-                total: Money.egp(100),
+                total: const Money.egp(100),
                 placedAt: DateTime(2026),
                 customerName: 'Name Only',
               )));

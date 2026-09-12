@@ -24,10 +24,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l.orderQueue),
+        title: Text(l10n.orderQueue),
         actions: [
           PopupMenuButton<AdminOrderStatus?>(
             icon: const Icon(Icons.filter_list),
@@ -35,18 +35,20 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
               context.read<AdminCubit>().loadOrders(status: status);
             },
             itemBuilder: (_) => [
-              PopupMenuItem(value: null, child: Text(l.allOrders)),
+              PopupMenuItem(value: null, child: Text(l10n.allOrders)),
               PopupMenuItem(
-                  value: AdminOrderStatus.placed, child: Text(l.placed)),
+                  value: AdminOrderStatus.placed, child: Text(l10n.placed)),
               PopupMenuItem(
                   value: AdminOrderStatus.processing,
-                  child: Text(l.processing)),
+                  child: Text(l10n.processing)),
               PopupMenuItem(
-                  value: AdminOrderStatus.shipped, child: Text(l.shipped)),
+                  value: AdminOrderStatus.shipped, child: Text(l10n.shipped)),
               PopupMenuItem(
-                  value: AdminOrderStatus.delivered, child: Text(l.delivered)),
+                  value: AdminOrderStatus.delivered,
+                  child: Text(l10n.delivered)),
               PopupMenuItem(
-                  value: AdminOrderStatus.cancelled, child: Text(l.cancelled)),
+                  value: AdminOrderStatus.cancelled,
+                  child: Text(l10n.cancelled)),
             ],
           ),
         ],
@@ -69,8 +71,8 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
             return FeedbackView(
               type: FeedbackViewType.empty,
               icon: Icons.receipt_long_outlined,
-              title: l.noOrdersFound,
-              body: l.noOrdersFoundBody,
+              title: l10n.noOrdersFound,
+              body: l10n.noOrdersFoundBody,
             );
           }
           return ListView.builder(
@@ -84,17 +86,18 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   }
 }
 
-class _OrderTile extends StatelessWidget {
+final class _OrderTile extends StatelessWidget {
   const _OrderTile({required this.order});
 
   final AdminOrder order;
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final status = order.status;
     final total = order.total.format();
+    // Admin-only, intentionally unlocalized.
     final customerName = order.customerName ?? 'Unknown';
     final itemCount = order.itemCount ?? order.items.length;
 
@@ -117,7 +120,7 @@ class _OrderTile extends StatelessWidget {
                     fontWeight: FontWeight.w700, color: scheme.primary)),
           ],
         ),
-        subtitle: Text('$customerName · $itemCount ${l.items}'),
+        subtitle: Text('$customerName · $itemCount ${l10n.items}'),
         trailing: Icon(context.directionalTrailingIcon),
       ),
     );

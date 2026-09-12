@@ -60,14 +60,14 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     // Short ids arrive via deep links (bad notifications, stale links);
     // substring(0, 8) on those used to throw a RangeError on first build.
     final shortId = widget.orderId.length <= 8
         ? widget.orderId
         : widget.orderId.substring(0, 8);
     return Scaffold(
-      appBar: AppBar(title: Text('${l.order} #$shortId...')),
+      appBar: AppBar(title: Text('${l10n.order} #$shortId...')),
       body: BlocListener<AdminCubit, AdminState>(
         listener: (context, state) {
           // Optimistic acks lie when the transition fails; confirm only
@@ -103,8 +103,8 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
               // language as every other error state, with a way back.
               return FeedbackView(
                 type: FeedbackViewType.error,
-                title: l.orderNotFound,
-                actionLabel: l.retry,
+                title: l10n.orderNotFound,
+                actionLabel: l10n.retry,
                 onAction: () =>
                     context.read<AdminCubit>().loadOrderDetails(widget.orderId),
               );

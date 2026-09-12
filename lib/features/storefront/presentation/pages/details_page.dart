@@ -1,4 +1,3 @@
-import '../widgets/name_and_price.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +10,7 @@ import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
+import '../widgets/name_and_price.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';

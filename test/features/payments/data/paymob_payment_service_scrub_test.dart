@@ -26,7 +26,7 @@ void main() {
 
       final service = PaymobPaymentService(client: client);
       final result = await service.initiatePayment(
-        amount: Money.egp(100),
+        amount: const Money.egp(100),
         method: PaymentMethod.paymobCard,
         orderId: 'ord-1',
         customerEmail: 'customer@example.com',

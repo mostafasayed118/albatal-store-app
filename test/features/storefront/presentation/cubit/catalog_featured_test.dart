@@ -9,7 +9,7 @@ Product _p(String id,
       id: id,
       name: 'Product $id',
       category: category,
-      price: Money.egp(500),
+      price: const Money.egp(500),
       oldPrice: oldPrice,
       imageColor: 0xFF176B57,
       rating: rating,
@@ -24,7 +24,7 @@ void main() {
       final state = CatalogState(
         allProducts: [
           _p('full-mid', rating: 4.5),
-          _p('disc-low', rating: 4.1, oldPrice: Money.egp(600)),
+          _p('disc-low', rating: 4.1, oldPrice: const Money.egp(600)),
           _p('full-low', rating: 4.9),
         ],
       );
@@ -36,7 +36,7 @@ void main() {
     test('a discounted product outranks better-rated full-price ones', () {
       final state = CatalogState(
         allProducts: [
-          _p('disc', rating: 4.1, oldPrice: Money.egp(600)),
+          _p('disc', rating: 4.1, oldPrice: const Money.egp(600)),
           _p('full-star', rating: 4.9),
         ],
       );

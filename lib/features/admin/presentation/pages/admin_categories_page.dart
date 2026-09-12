@@ -58,9 +58,9 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.categories)),
+      appBar: AppBar(title: Text(l10n.categories)),
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
@@ -70,6 +70,8 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
                   onAction: _loadCategories,
                 )
               : _categories.isEmpty
+                  // Admin-only, intentionally unlocalized (no ARB keys;
+                  // the storefront stays localized).
                   ? const FeedbackView(
                       type: FeedbackViewType.empty,
                       title: 'No categories yet',
@@ -103,7 +105,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
+final class _CategoryChip extends StatelessWidget {
   const _CategoryChip({required this.isActive});
 
   final bool isActive;
@@ -112,13 +114,15 @@ class _CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding:
+          const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: (isActive ? scheme.secondary : scheme.outline)
             .withValues(alpha: .12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
+        // Admin-only, intentionally unlocalized.
         isActive ? 'Active' : 'Inactive',
         style: TextStyle(
           fontSize: 12,

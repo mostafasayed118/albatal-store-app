@@ -60,9 +60,9 @@ void main() {
           Order(
             id: 'SERVER-PENDING-1',
             items: const [],
-            subtotal: Money.egp(820),
+            subtotal: const Money.egp(820),
             shipping: Money.zero,
-            total: Money.egp(820),
+            total: const Money.egp(820),
             status: OrderStatus.pending,
             placedAt: DateTime.utc(2026, 9, 3),
             paymentMethod: 'cod',

@@ -64,19 +64,21 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   /// list never shows a stale name, price, or active flag.
   Future<void> _editProduct(AdminProduct product) async {
     final changed = await context.push<bool>('/admin/products/${product.id}');
+    if (!context.mounted) return;
     if (changed == true) await _loadProducts();
   }
 
   Future<void> _newProduct() async {
     final changed = await context.push<bool>('/admin/products/new');
+    if (!context.mounted) return;
     if (changed == true) await _loadProducts();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text(l.products)),
+      appBar: AppBar(title: Text(l10n.products)),
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
@@ -86,6 +88,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                   onAction: _loadProducts,
                 )
               : _products.isEmpty
+                  // Admin hub copy below is admin-only, intentionally
+                  // unlocalized (no ARB keys; the storefront stays localized).
                   ? FeedbackView(
                       type: FeedbackViewType.empty,
                       title: 'No products yet',
@@ -101,6 +105,8 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         itemCount: _products.length,
                         itemBuilder: (ctx, i) {
                           final p = _products[i];
+                          // Admin-only, intentionally unlocalized: the em dash
+                          // fallback and the 'Inactive' suffix below.
                           final category =
                               p.categoryName.isNotEmpty ? p.categoryName : '—';
                           // Inactive rows say so in words — the dimmed icon
@@ -129,12 +135,14 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
+                                    // Admin-only, intentionally unlocalized.
                                     tooltip: 'Images',
                                     icon: const Icon(Icons.image_outlined),
                                     onPressed: () =>
                                         context.push('/admin/images/${p.id}'),
                                   ),
                                   IconButton(
+                                    // Admin-only, intentionally unlocalized.
                                     tooltip: 'Edit product',
                                     icon: const Icon(Icons.edit_outlined),
                                     onPressed: () => _editProduct(p),
@@ -149,6 +157,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _newProduct,
         icon: const Icon(Icons.add),
+        // Admin-only, intentionally unlocalized.
         label: const Text('New Product'),
       ),
     );

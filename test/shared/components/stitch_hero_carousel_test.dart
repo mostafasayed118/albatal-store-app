@@ -8,7 +8,7 @@ Product _product(String id, {Money? oldPrice, double rating = 4.0}) => Product(
       id: id,
       name: 'Product $id',
       category: 'Silk',
-      price: Money.egp(850),
+      price: const Money.egp(850),
       oldPrice: oldPrice,
       imageColor: 0xFF176B57,
       rating: rating,
@@ -106,7 +106,7 @@ void main() {
     // catalog_state_memo_test (featuredProducts); the factory mapping is
     // covered by the swipe test above (category eyebrow + price).
     final slide = StitchHeroSlide.fromProduct(
-        _product('x', oldPrice: Money.egp(1000), rating: 4.9));
+        _product('x', oldPrice: const Money.egp(1000), rating: 4.9));
     expect(slide.imageAsset, isNull);
     expect(slide.subtitle, '850 EGY');
     expect(slide.swatchColor, const Color(0xFF176B57));

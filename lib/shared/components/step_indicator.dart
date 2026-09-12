@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 3-step progress indicator (Shipping → Payment → Confirm).
-class StepIndicator extends StatelessWidget {
+final class StepIndicator extends StatelessWidget {
   const StepIndicator({
     super.key,
     required this.steps,
@@ -15,8 +15,8 @@ class StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: steps.asMap().entries.map((e) {
-        final active = e.key <= currentStep;
+      children: steps.asMap().entries.map((stepEntry) {
+        final active = stepEntry.key <= currentStep;
         return Expanded(
           child: Column(
             children: [
@@ -25,10 +25,10 @@ class StepIndicator extends StatelessWidget {
                 backgroundColor:
                     active ? scheme.primary : scheme.surfaceContainerHighest,
                 foregroundColor: active ? scheme.onPrimary : scheme.onSurface,
-                child: Text('${e.key + 1}'),
+                child: Text('${stepEntry.key + 1}'),
               ),
               const SizedBox(height: 4),
-              Text(e.value, style: const TextStyle(fontSize: 12)),
+              Text(stepEntry.value, style: const TextStyle(fontSize: 12)),
             ],
           ),
         );

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/address.dart';
 import '../cubit/addresses_cubit.dart';
 
-class AddressesPage extends StatelessWidget {
+final class AddressesPage extends StatelessWidget {
   const AddressesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     return Scaffold(
-        appBar: AppBar(title: Text(l.shippingAddresses)),
+        appBar: AppBar(title: Text(l10n.shippingAddresses)),
         body: BlocBuilder<AddressesCubit, AddressesState>(
           builder: (context, s) {
             if (s.status == AddressesStatus.loading) {
@@ -23,19 +24,19 @@ class AddressesPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(s.errorMessage ?? l.errorTitle),
+                    Text(s.errorMessage ?? l10n.errorTitle),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: () =>
                           context.read<AddressesCubit>().load(force: true),
-                      child: Text(l.retry),
+                      child: Text(l10n.retry),
                     ),
                   ],
                 ),
               );
             }
             if (s.addresses.isEmpty) {
-              return Center(child: Text(l.noAddressesSaved));
+              return Center(child: Text(l10n.noAddressesSaved));
             }
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -55,9 +56,10 @@ class AddressesPage extends StatelessWidget {
                       },
                       itemBuilder: (_) => [
                         PopupMenuItem(
-                            value: 'default', child: Text(l.setAsDefault)),
-                        PopupMenuItem(value: 'edit', child: Text(l.edit)),
-                        PopupMenuItem(value: 'delete', child: Text(l.delete)),
+                            value: 'default', child: Text(l10n.setAsDefault)),
+                        PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                        PopupMenuItem(
+                            value: 'delete', child: Text(l10n.delete)),
                       ],
                     ),
                   ),
@@ -69,7 +71,7 @@ class AddressesPage extends StatelessWidget {
         floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _edit(context, null),
             icon: const Icon(Icons.add),
-            label: Text(l.addAddress)));
+            label: Text(l10n.addAddress)));
   }
 }
 
@@ -78,10 +80,10 @@ Future<void> _edit(BuildContext context, Address? a) async {
   // a slow device can otherwise starve the route's opening frame.
   await WidgetsBinding.instance.endOfFrame;
   if (!context.mounted) return;
-  final r = TextEditingController(text: a?.recipient);
-  final l = TextEditingController(text: a?.line);
-  final c = TextEditingController(text: a?.city);
-  final n = TextEditingController(text: a?.country);
+  final recipientCtrl = TextEditingController(text: a?.recipient);
+  final streetCtrl = TextEditingController(text: a?.line);
+  final cityCtrl = TextEditingController(text: a?.city);
+  final countryCtrl = TextEditingController(text: a?.country);
   try {
     await showDialog<void>(
       context: context,
@@ -89,10 +91,10 @@ Future<void> _edit(BuildContext context, Address? a) async {
         var submitted = false;
         final loc = d.l10n;
         final fields = [
-          (r, loc.recipientName),
-          (l, loc.streetAddress),
-          (c, loc.city),
-          (n, loc.country),
+          (recipientCtrl, loc.recipientName),
+          (streetCtrl, loc.streetAddress),
+          (cityCtrl, loc.city),
+          (countryCtrl, loc.country),
         ];
         return StatefulBuilder(
           builder: (d, setState) => AlertDialog(
@@ -101,14 +103,14 @@ Future<void> _edit(BuildContext context, Address? a) async {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final x in fields)
+                  for (final field in fields)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: TextField(
-                        controller: x.$1,
+                        controller: field.$1,
                         decoration: InputDecoration(
-                          labelText: x.$2,
-                          errorText: submitted && x.$1.text.trim().isEmpty
+                          labelText: field.$2,
+                          errorText: submitted && field.$1.text.trim().isEmpty
                               ? loc.fieldRequired
                               : null,
                         ),
@@ -127,17 +129,18 @@ Future<void> _edit(BuildContext context, Address? a) async {
               ),
               FilledButton(
                 onPressed: () {
-                  if (fields.any((x) => x.$1.text.trim().isEmpty)) {
+                  if (fields.any((field) => field.$1.text.trim().isEmpty)) {
                     setState(() => submitted = true);
                     return;
                   }
                   context.read<AddressesCubit>().upsert(Address(
-                        id: a?.id ??
-                            DateTime.now().microsecondsSinceEpoch.toString(),
-                        recipient: r.text.trim(),
-                        line: l.text.trim(),
-                        city: c.text.trim(),
-                        country: n.text.trim(),
+                        // Client-generated v4 UUID; the server treats it as
+                        // an opaque key (never a timestamp ordering signal).
+                        id: a?.id ?? const Uuid().v4(),
+                        recipient: recipientCtrl.text.trim(),
+                        line: streetCtrl.text.trim(),
+                        city: cityCtrl.text.trim(),
+                        country: countryCtrl.text.trim(),
                         isDefault: a?.isDefault ?? false,
                       ));
                   Navigator.pop(d);
@@ -150,9 +153,9 @@ Future<void> _edit(BuildContext context, Address? a) async {
       },
     );
   } finally {
-    r.dispose();
-    l.dispose();
-    c.dispose();
-    n.dispose();
+    recipientCtrl.dispose();
+    streetCtrl.dispose();
+    cityCtrl.dispose();
+    countryCtrl.dispose();
   }
 }

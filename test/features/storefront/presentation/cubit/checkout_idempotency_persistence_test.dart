@@ -2,13 +2,14 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import '../../../../fixtures/products_data.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../fixtures/products_data.dart';
 
 class _StubCheckoutRepo implements CheckoutRepository {
   _StubCheckoutRepo();
@@ -189,9 +190,9 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
 
   PendingOrder _order(String id, String status) => PendingOrder(
         orderId: id,
-        subtotal: Money.egp(100),
+        subtotal: const Money.egp(100),
         shipping: Money.zero,
-        total: Money.egp(100),
+        total: const Money.egp(100),
         expiresAt: DateTime.now().add(const Duration(minutes: 15)),
         status: status,
       );

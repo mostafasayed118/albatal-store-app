@@ -1,11 +1,10 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/onboarding/data/local_onboarding_repository.dart';
 import 'package:al_batal_elite/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:al_batal_elite/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'package:al_batal_elite/features/onboarding/presentation/cubit/onboarding_state.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final class _FakeOnboardingRepository implements OnboardingRepository {
   _FakeOnboardingRepository({this.completed = false});

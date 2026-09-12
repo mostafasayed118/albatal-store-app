@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// arrive from the caller (which owns l10n) so this widget never touches
 /// generated localizations. Mounted in [AppShell] with the
 /// `offlineBannerMessage` copy — see `docs/packages-proposal.md` §4.
-class OfflineBanner extends StatelessWidget {
+final class OfflineBanner extends StatelessWidget {
   const OfflineBanner({
     super.key,
     required this.message,

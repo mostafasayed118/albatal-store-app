@@ -82,7 +82,7 @@ void main() {
       final service = _SequenceRecordingService();
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: Money.egp(820), orderId: 'ord-037-1');
+      cubit.initPayment(amount: const Money.egp(820), orderId: 'ord-037-1');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -104,7 +104,7 @@ void main() {
         );
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: Money.egp(820), orderId: 'ord-037-2');
+      cubit.initPayment(amount: const Money.egp(820), orderId: 'ord-037-2');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -121,7 +121,7 @@ void main() {
       final service = _SequenceRecordingService();
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: Money.egp(820), orderId: 'ord-037-3');
+      cubit.initPayment(amount: const Money.egp(820), orderId: 'ord-037-3');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 

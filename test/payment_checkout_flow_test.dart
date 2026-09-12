@@ -34,7 +34,7 @@ class _FlowStub implements PaymentService {
     initiateCallCount++;
     lastOrderId = orderId;
     return _initResult ??
-        PaymentPending(
+        const PaymentPending(
           checkoutUrl:
               'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=t',
         );
@@ -90,7 +90,7 @@ void main() {
 
     test('processPayment with pending emits awaitingVerification + checkoutUrl',
         () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-123');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-123');
       cubit.selectMethod(PaymentMethod.paymobCard);
       service.setInitiateResult(const PaymentPending(
         checkoutUrl:
@@ -110,7 +110,7 @@ void main() {
 
     test('server success transitions cubit to success and cancels subscription',
         () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -125,7 +125,7 @@ void main() {
     });
 
     test('server failure transitions cubit to failed with message', () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -149,7 +149,7 @@ void main() {
           return Timer(const Duration(minutes: 15), () {});
         },
       );
-      timedCubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      timedCubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       timedCubit.selectMethod(PaymentMethod.paymobCard);
       await timedCubit.processPayment(customerEmail: 'a@b.c');
 
@@ -161,7 +161,7 @@ void main() {
     }, timeout: const Timeout(Duration(seconds: 5)));
 
     test('cancel emits cancelled and cancels the watch', () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -171,7 +171,7 @@ void main() {
     });
 
     test('duplicate server success does not re-emit after terminal', () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -192,7 +192,7 @@ void main() {
 
     test('close cancels the watch subscription and timer without throwing',
         () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: 'ord-1');
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -210,7 +210,7 @@ void main() {
 
     test('initPayment with empty orderId keeps orderId empty (caller rejects)',
         () async {
-      cubit.initPayment(amount: Money.egp(100), orderId: '');
+      cubit.initPayment(amount: const Money.egp(100), orderId: '');
       expect(cubit.state.orderId, '');
       // The flow must NOT generate a fake order id internally.
       expect(cubit.state.status, PaymentStatus.selectingMethod);

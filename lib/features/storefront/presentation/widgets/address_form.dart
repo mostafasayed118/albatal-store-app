@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -9,7 +10,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 /// This is the canonical Flutter approach: each field owns its validator,
 /// the form coordinates validation on submit, and the result is returned
 /// via [Navigator.pop] so the caller never sees raw form internals.
-class AddressForm extends StatefulWidget {
+final class AddressForm extends StatefulWidget {
   const AddressForm({super.key});
 
   /// Shows the form in a modal bottom sheet and returns the entered address
@@ -34,7 +35,7 @@ class AddressForm extends StatefulWidget {
   State<AddressForm> createState() => _AddressFormState();
 }
 
-class _AddressFormState extends State<AddressForm> {
+final class _AddressFormState extends State<AddressForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _streetCtrl = TextEditingController();
@@ -53,7 +54,9 @@ class _AddressFormState extends State<AddressForm> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       Navigator.of(context).pop(Address(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        // Client-generated v4 UUID; the server treats it as an opaque key
+        // (never a timestamp ordering signal).
+        id: const Uuid().v4(),
         recipient: _nameCtrl.text.trim(),
         line: _streetCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
@@ -64,7 +67,7 @@ class _AddressFormState extends State<AddressForm> {
 
   @override
   Widget build(BuildContext context) {
-    final l = context.l10n;
+    final l10n = context.l10n;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottomInset + 24),
@@ -74,44 +77,44 @@ class _AddressFormState extends State<AddressForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l.addNewAddress,
+            Text(l10n.addNewAddress,
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
             TextFormField(
               controller: _nameCtrl,
-              decoration: InputDecoration(labelText: l.fullName),
+              decoration: InputDecoration(labelText: l10n.fullName),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().length < 2) ? l.nameRequired : null,
+                  (v == null || v.trim().length < 2) ? l10n.nameRequired : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _streetCtrl,
-              decoration: InputDecoration(labelText: l.streetAddress),
+              decoration: InputDecoration(labelText: l10n.streetAddress),
               textInputAction: TextInputAction.next,
               validator: (v) => (v == null || v.trim().length < 5)
-                  ? l.streetAddressRequired
+                  ? l10n.streetAddressRequired
                   : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _cityCtrl,
-              decoration: InputDecoration(labelText: l.city),
+              decoration: InputDecoration(labelText: l10n.city),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? l.cityRequired : null,
+                  (v == null || v.trim().isEmpty) ? l10n.cityRequired : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _countryCtrl,
-              decoration: InputDecoration(labelText: l.country),
+              decoration: InputDecoration(labelText: l10n.country),
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? l.countryRequired : null,
+                  (v == null || v.trim().isEmpty) ? l10n.countryRequired : null,
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _submit, child: Text(l.continueLabel)),
+            FilledButton(onPressed: _submit, child: Text(l10n.continueLabel)),
           ],
         ),
       ),

@@ -12,7 +12,7 @@ void main() {
 
     setUp(() {
       stub = InstapayStub(
-        initiation: InstapayReady(instructions: readyInstructions),
+        initiation: const InstapayReady(instructions: readyInstructions),
       );
       cubit = buildReadyCubit(stub);
     });
