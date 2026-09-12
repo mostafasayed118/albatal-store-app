@@ -48,6 +48,15 @@ abstract interface class AdminRepository {
   /// Enables/disables a coupon without deleting it.
   Future<Result<void>> setCouponActive(String id, bool active);
 
+  // ─── Review moderation (feature-batch §9) ───────────────
+
+  /// Pending review rows: (id, product, text, rating).
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews();
+
+  /// Sets a review's moderation status (`approved` / `rejected`).
+  Future<Result<void>> setReviewStatus(String id, String status);
+
   /// Update order status with optional tracking number.
   ///
   /// [status] must be a real `order_status` value; [AdminOrderStatus.unknown]

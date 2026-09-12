@@ -19,6 +19,7 @@ import '../widgets/name_and_price.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';
+import '../widgets/reviews_section.dart';
 import '../widgets/size_guide_sheet.dart';
 import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
@@ -120,6 +121,9 @@ class DetailsPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   RatingStars(product: p),
                 ],
+                // §9: approved customer reviews + submit affordance.
+                const SizedBox(height: 8),
+                ReviewsSection(productId: p.id),
                 const SizedBox(height: 20),
                 // Selection-only rebuild: variant/quantity ticks must not
                 // replay the gallery or related builders above.

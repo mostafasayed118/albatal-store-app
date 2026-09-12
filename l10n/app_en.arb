@@ -159,6 +159,18 @@
   "couponDiscountEgp": "Discount (EGP)",
   "couponActive": "Active",
   "adminAddCoupon": "Add coupon",
+  "customerReviews": "Customer reviews",
+  "writeReview": "Write a review",
+  "noReviewsYet": "No reviews yet — be the first.",
+  "reviewPlaceholder": "How is the fabric?",
+  "reviewAddPhoto": "Add photo",
+  "reviewPhotoAdded": "Photo attached",
+  "reviewSubmit": "Submit",
+  "reviewBuyRequired": "Reviews are open to customers who received this item.",
+  "reviewUnavailable": "Reviews are unavailable right now.",
+  "reviewModeration": "Review moderation",
+  "reviewApprove": "Approve",
+  "reviewReject": "Reject",
   "reorderAdded": "{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}",
   "@reorderAdded": {
     "placeholders": {

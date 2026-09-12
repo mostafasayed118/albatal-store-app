@@ -11,6 +11,7 @@ import '../../features/admin/presentation/pages/admin_order_detail_page.dart';
 import '../../features/admin/presentation/pages/admin_orders_page.dart';
 import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
 import '../../features/admin/presentation/pages/admin_products_page.dart';
+import '../../features/admin/presentation/pages/admin_reviews_page.dart';
 import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -185,6 +186,7 @@ final _routes = <RouteBase>[
   ),
   GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
   GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
+  GoRoute(path: '/admin/reviews', builder: (_, __) => const AdminReviewsPage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),

@@ -448,6 +448,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adminAddCoupon => 'إضافة كود';
 
   @override
+  String get customerReviews => 'تقييمات العملاء';
+
+  @override
+  String get writeReview => 'اكتب تقييمًا';
+
+  @override
+  String get noReviewsYet => 'لا توجد تقييمات بعد — كن الأول.';
+
+  @override
+  String get reviewPlaceholder => 'كيف كان القماش؟';
+
+  @override
+  String get reviewAddPhoto => 'إضافة صورة';
+
+  @override
+  String get reviewPhotoAdded => 'تم إرفاق الصورة';
+
+  @override
+  String get reviewSubmit => 'إرسال';
+
+  @override
+  String get reviewBuyRequired =>
+      'التقييمات متاحة للعملاء الذين استلموا هذا المنتج.';
+
+  @override
+  String get reviewUnavailable => 'التقييمات غير متاحة حاليًا.';
+
+  @override
+  String get reviewModeration => 'مراجعة التقييمات';
+
+  @override
+  String get reviewApprove => 'موافقة';
+
+  @override
+  String get reviewReject => 'رفض';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

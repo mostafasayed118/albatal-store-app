@@ -77,6 +77,12 @@ class AdminCatalogPage extends StatelessWidget {
             subtitle: l10n.manageVariantsAndStock,
             onTap: () => _guardedPush(context, '/admin/products'),
           ),
+          _ManagementTile(
+            icon: Icons.rate_review_outlined,
+            title: l10n.reviewModeration,
+            subtitle: l10n.reviewApprove,
+            onTap: () => _guardedPush(context, '/admin/reviews'),
+          ),
         ],
       ),
     );

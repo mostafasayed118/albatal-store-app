@@ -1,7 +1,5 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
@@ -25,13 +23,17 @@ import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/recent_searches_store.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
+import '../../features/storefront/data/supabase_coupons_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
+import '../../features/storefront/data/supabase_reviews_repository.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
+import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/idempotency_store.dart';
 import '../../features/storefront/domain/repositories/orders_repository.dart';
+import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/support/data/local_support_repository.dart';
@@ -136,5 +138,10 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<DeepLinkService>(() => DeepLinkService())
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(
-        () => PrefsRecentSearchesStore(getIt<SharedPreferences>()));
+        () => PrefsRecentSearchesStore(getIt<SharedPreferences>()))
+    // §8/§9: coupon validation + customer reviews.
+    ..registerLazySingleton<CouponsRepository>(
+        () => SupabaseCouponsRepository())
+    ..registerLazySingleton<ReviewsRepository>(
+        () => SupabaseReviewsRepository());
 }

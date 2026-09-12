@@ -914,6 +914,78 @@ abstract class AppLocalizations {
   /// **'Add coupon'**
   String get adminAddCoupon;
 
+  /// No description provided for @customerReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer reviews'**
+  String get customerReviews;
+
+  /// No description provided for @writeReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a review'**
+  String get writeReview;
+
+  /// No description provided for @noReviewsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet — be the first.'**
+  String get noReviewsYet;
+
+  /// No description provided for @reviewPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'How is the fabric?'**
+  String get reviewPlaceholder;
+
+  /// No description provided for @reviewAddPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get reviewAddPhoto;
+
+  /// No description provided for @reviewPhotoAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo attached'**
+  String get reviewPhotoAdded;
+
+  /// No description provided for @reviewSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get reviewSubmit;
+
+  /// No description provided for @reviewBuyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews are open to customers who received this item.'**
+  String get reviewBuyRequired;
+
+  /// No description provided for @reviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews are unavailable right now.'**
+  String get reviewUnavailable;
+
+  /// No description provided for @reviewModeration.
+  ///
+  /// In en, this message translates to:
+  /// **'Review moderation'**
+  String get reviewModeration;
+
+  /// No description provided for @reviewApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get reviewApprove;
+
+  /// No description provided for @reviewReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reviewReject;
+
   /// No description provided for @reorderAdded.
   ///
   /// In en, this message translates to:

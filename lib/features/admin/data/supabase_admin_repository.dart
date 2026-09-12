@@ -329,6 +329,46 @@ final class SupabaseAdminRepository implements AdminRepository {
       return Failure(AppError('Failed to update coupon', cause: e));
     }
   }
+
+  // ─── Review moderation (feature-batch §9) ───────────────
+
+  @override
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews() async {
+    try {
+      final rows = await _client
+          .from('product_reviews')
+          .select('id, product_id, text, rating')
+          .eq('status', 'pending')
+          .order('created_at', ascending: false)
+          .limit(100);
+      final list = rows as List<dynamic>;
+      return Success(list
+          .map((row) => row as Map<String, dynamic>)
+          .map((row) => (
+                id: row['id'] as String,
+                product: row['product_id'] as String,
+                text: row['text'] as String? ?? '',
+                rating: (row['rating'] as num?)?.toInt() ?? 0,
+              ))
+          .toList());
+    } catch (e) {
+      return Failure(AppError('Failed to fetch pending reviews', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<void>> setReviewStatus(String id, String status) async {
+    try {
+      await _client
+          .from('product_reviews')
+          .update({'status': status})
+          .eq('id', id);
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update review status', cause: e));
+    }
+  }
 }
 
 AdminCoupon _couponFromRow(Map<String, dynamic> row) => AdminCoupon(

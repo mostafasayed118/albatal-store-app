@@ -443,6 +443,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminAddCoupon => 'Add coupon';
 
   @override
+  String get customerReviews => 'Customer reviews';
+
+  @override
+  String get writeReview => 'Write a review';
+
+  @override
+  String get noReviewsYet => 'No reviews yet — be the first.';
+
+  @override
+  String get reviewPlaceholder => 'How is the fabric?';
+
+  @override
+  String get reviewAddPhoto => 'Add photo';
+
+  @override
+  String get reviewPhotoAdded => 'Photo attached';
+
+  @override
+  String get reviewSubmit => 'Submit';
+
+  @override
+  String get reviewBuyRequired =>
+      'Reviews are open to customers who received this item.';
+
+  @override
+  String get reviewUnavailable => 'Reviews are unavailable right now.';
+
+  @override
+  String get reviewModeration => 'Review moderation';
+
+  @override
+  String get reviewApprove => 'Approve';
+
+  @override
+  String get reviewReject => 'Reject';
+
+  @override
   String reorderAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

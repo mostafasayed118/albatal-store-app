@@ -421,6 +421,15 @@ final class _RouteProbeAdminRepository implements AdminRepository {
       const Success(null);
 
   @override
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews() async => const Success(<({String id, String product, String text, int rating})>[]);
+
+  @override
+  Future<Result<void>> setReviewStatus(String id, String status) async =>
+      const Success(null);
+
+
+  @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
       const Success(null);
 
