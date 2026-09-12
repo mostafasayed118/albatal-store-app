@@ -40,7 +40,9 @@ if (isReleaseBuild && keyPropertiesFile.exists()) {
 
 android {
     namespace = "com.albatal.elite"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_secure_storage 11 compiles against SDK 37; compileSdk is
+    // backward compatible, targetSdk/minSdk remain Flutter-managed.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

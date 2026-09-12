@@ -22,8 +22,9 @@ abstract interface class SecureStore {
 /// iOS items use `accessibleAfterFirstUnlockThisDeviceOnly`
 /// ([KeychainAccessibility.first_unlock_this_device]): readable after
 /// the first unlock post-restart, never migrated to a new device via
-/// backup. Android uses EncryptedSharedPreferences (AES-256-GCM,
-/// hardware-backed master key where available).
+/// backup. Android uses Keystore-backed AES-GCM (v11 default:
+/// RSA-OAEP key wrapping + AES/GCM/NoPadding, hardware-backed master
+/// key where available).
 final class FlutterSecureStore implements SecureStore {
   FlutterSecureStore({FlutterSecureStorage? storage})
       : _storage = storage ??
@@ -32,9 +33,8 @@ final class FlutterSecureStore implements SecureStore {
               aOptions: androidOptions,
             );
 
-  /// Android: EncryptedSharedPreferences (Keystore-backed master key).
-  static const androidOptions =
-      AndroidOptions(encryptedSharedPreferences: true);
+  /// Android: Keystore-backed AES-GCM (v11 default, hardware master key).
+  static const androidOptions = AndroidOptions();
 
   /// iOS: accessible after first unlock, this device only (no backup
   /// migration, no pre-unlock access).

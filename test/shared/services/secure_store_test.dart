@@ -94,9 +94,9 @@ void main() {
         FlutterSecureStore.iosOptions.toMap()['accessibility'],
         'first_unlock_this_device',
       );
-      // Android: EncryptedSharedPreferences (Keystore-backed master key).
+      // Android: Keystore-backed AES-GCM (v11 default), reset on error.
       expect(
-        FlutterSecureStore.androidOptions.toMap()['encryptedSharedPreferences'],
+        FlutterSecureStore.androidOptions.toMap()['resetOnError'],
         'true',
       );
     });
