@@ -6,11 +6,14 @@ import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.da
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'fixtures/products_data.dart';
+import 'helpers/fetch_related_stub.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Stub repository that returns the fixed product list — no network, no I/O.
-final class StubCatalogRepository implements CatalogRepository {
+final class StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Success(List.of(products));
@@ -39,7 +42,9 @@ final class StubCatalogRepository implements CatalogRepository {
 }
 
 /// Stub repository that always fails.
-final class FailingCatalogRepository implements CatalogRepository {
+final class FailingCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Failure(AppError('Catalog unavailable'));
@@ -302,13 +307,16 @@ void main() {
   });
 
   group('CatalogCubit — availableColors', () {
-    test('returns unique color names from products', () async {
+    test('returns unique variant color names from products', () async {
       final cubit = CatalogCubit(StubCatalogRepository());
       expect(cubit.state.availableColors, isEmpty);
       await cubit.load();
+      // Variant-derived (p.colors), not the imageColor placeholder bucket:
+      // 'Pearl' exists only as a variant color, never as an imageColor.
       expect(cubit.state.availableColors, contains('Emerald'));
       expect(cubit.state.availableColors, contains('Gold'));
-      expect(cubit.state.availableColors.length, 9);
+      expect(cubit.state.availableColors, contains('Pearl'));
+      expect(cubit.state.availableColors.length, 23);
       cubit.close();
     });
   });

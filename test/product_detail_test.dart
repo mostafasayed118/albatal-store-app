@@ -8,8 +8,12 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/product_de
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/fetch_related_stub.dart';
+
 /// Stub catalog for cubit tests that don't need real product data.
-class _StubCatalogRepository implements CatalogRepository {
+class _StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);
   @override
@@ -28,7 +32,9 @@ class _StubCatalogRepository implements CatalogRepository {
   List<String> get defaultCategories => const ['All'];
 }
 
-class _RepositoryFailureCatalog implements CatalogRepository {
+class _RepositoryFailureCatalog
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Failure(AppError('database unavailable'));
@@ -57,28 +63,25 @@ class _RelatedFetchThrowsCatalog implements CatalogRepository {
     imageColor: 0xFF000000,
   );
 
-  var _fetchProductsCalls = 0;
-
   @override
-  Future<Result<List<Product>>> fetchProducts() async {
-    _fetchProductsCalls++;
-    if (_fetchProductsCalls == 2) {
-      throw StateError('related products unavailable');
-    }
-    return const Success([requestedProduct]);
-  }
+  Future<Result<List<Product>>> fetchProducts() async =>
+      const Success([requestedProduct]);
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       const Success(['All']);
 
   @override
-  Future<Result<Product>> fetchProductById(String id) async {
-    final result = await fetchProducts();
-    return result.when(
-      success: (products) => Success(products.single),
-      failure: Failure.new,
-    );
+  Future<Result<Product>> fetchProductById(String id) async =>
+      const Success(requestedProduct);
+
+  @override
+  Future<Result<List<Product>>> fetchRelated(
+    String category, {
+    String? excludeId,
+    int limit = 8,
+  }) async {
+    throw StateError('related products unavailable');
   }
 
   @override
@@ -95,29 +98,25 @@ class _RelatedFetchThrowsCatalog implements CatalogRepository {
 class _RelatedFetchFailureCatalog implements CatalogRepository {
   static const requestedProduct = _RelatedFetchThrowsCatalog.requestedProduct;
 
-  var _fetchProductsCalls = 0;
-
   @override
-  Future<Result<List<Product>>> fetchProducts() async {
-    _fetchProductsCalls++;
-    if (_fetchProductsCalls == 2) {
-      return Failure(AppError('related products unavailable'));
-    }
-    return const Success([requestedProduct]);
-  }
+  Future<Result<List<Product>>> fetchProducts() async =>
+      const Success([requestedProduct]);
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
       const Success(['All']);
 
   @override
-  Future<Result<Product>> fetchProductById(String id) async {
-    final result = await fetchProducts();
-    return result.when(
-      success: (products) => Success(products.single),
-      failure: Failure.new,
-    );
-  }
+  Future<Result<Product>> fetchProductById(String id) async =>
+      const Success(requestedProduct);
+
+  @override
+  Future<Result<List<Product>>> fetchRelated(
+    String category, {
+    String? excludeId,
+    int limit = 8,
+  }) async =>
+      Failure(AppError('related products unavailable'));
 
   @override
   Product? findProductById(String id) => requestedProduct;
@@ -311,14 +310,37 @@ void main() {
     );
 
     blocTest<ProductDetailsCubit, DetailsState>(
-      'changes quantity with clamping',
+      'clamps quantity to the selected variant stock',
       build: () => ProductDetailsCubit(_StubCatalogRepository()),
+      seed: () => const DetailsState(
+        status: DetailsStatus.ready,
+        product: Product(
+          id: 'stocked',
+          name: 'Stocked',
+          category: 'Silk',
+          price: Money.egp(100),
+          imageColor: 0xFF000000,
+          colors: ['Emerald'],
+          sizes: ['1m'],
+          stock: {'Emerald-1m': 10},
+        ),
+        color: 'Emerald',
+        length: '1m',
+        quantity: 1,
+      ),
       act: (cubit) {
         cubit.quantity(0);
         cubit.quantity(100);
         cubit.quantity(5);
       },
       verify: (cubit) => expect(cubit.state.quantity, 5),
+    );
+
+    blocTest<ProductDetailsCubit, DetailsState>(
+      'pins quantity to 1 for out-of-stock variants',
+      build: () => ProductDetailsCubit(_StubCatalogRepository()),
+      act: (cubit) => cubit.quantity(5),
+      verify: (cubit) => expect(cubit.state.quantity, 1),
     );
   });
 }

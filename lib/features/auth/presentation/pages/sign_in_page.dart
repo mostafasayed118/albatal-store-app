@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
+import 'sign_up_page.dart' show passwordValidator;
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -62,6 +64,7 @@ class _SignInPageState extends State<SignInPage> {
           padding: const EdgeInsetsDirectional.all(24),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -84,7 +87,7 @@ class _SignInPageState extends State<SignInPage> {
                   enableSuggestions: false,
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
-                      (v == null || !v.contains('@')) ? l.invalidEmail : null,
+                      emailValidator(v, invalidMessage: l.invalidEmail),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -104,8 +107,10 @@ class _SignInPageState extends State<SignInPage> {
                   enableSuggestions: false,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
+                  // Unified 8-char rule: the sign-up constant is the
+                  // source (imported above), not a page-local literal.
                   validator: (v) =>
-                      (v == null || v.length < 6) ? l.passwordTooShort : null,
+                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
                 ),
                 Align(
                   alignment: Alignment.centerRight,

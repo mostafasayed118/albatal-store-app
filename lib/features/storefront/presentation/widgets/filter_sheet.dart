@@ -130,17 +130,29 @@ class _FilterSheetState extends State<FilterSheet> {
             const SizedBox(height: 24),
             Text(l.priceRange, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            RangeSlider(
-              values: _priceRange,
-              min: min,
-              max: max,
-              divisions: 20,
-              labels: RangeLabels(
-                Money.egp(_priceRange.start.round()).format(),
-                Money.egp(_priceRange.end.round()).format(),
+            // Degenerate catalog (single price or empty): RangeSlider
+            // asserts min < max, so show the fixed price instead of a
+            // slider that can never move.
+            if (max <= min)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  Money.egp(min.round()).format(),
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+              )
+            else
+              RangeSlider(
+                values: _priceRange,
+                min: min,
+                max: max,
+                divisions: 20,
+                labels: RangeLabels(
+                  Money.egp(_priceRange.start.round()).format(),
+                  Money.egp(_priceRange.end.round()).format(),
+                ),
+                onChanged: (v) => setState(() => _priceRange = v),
               ),
-              onChanged: (v) => setState(() => _priceRange = v),
-            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

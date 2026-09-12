@@ -17,9 +17,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => Success(_products);
   @override

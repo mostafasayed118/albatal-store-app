@@ -66,17 +66,25 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
 
   final CatalogRepository _catalogRepository;
 
+  /// Generation counter against A→B clobber: every [loadProduct] call
+  /// bumps it, and each async continuation bails when its generation is
+  /// stale — a slow related-fetch for product A can no longer overwrite
+  /// product B's ready state after rapid navigation.
+  int _generation = 0;
+
   /// Load a product by id from the catalog repository.
   ///
   /// First attempts a single-row [fetchProductById] query (1 query, not N).
   /// Falls back to the full [fetchProducts] scan if the single fetch fails.
-  /// Related products are still derived via [fetchProducts] filtering — at
-  /// least the single product fetch is now 1 query not N.
+  /// Related products come from the category-scoped [fetchRelated] query —
+  /// never the full catalog pull.
   Future<void> loadProduct(String id) async {
+    final generation = ++_generation;
     emit(const DetailsState(status: DetailsStatus.loading));
 
     try {
       final singleResult = await _catalogRepository.fetchProductById(id);
+      if (generation != _generation) return;
       final singleProduct = singleResult.when(
         success: (product) => product,
         failure: (_) => null,
@@ -84,25 +92,27 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
       if (singleProduct != null) {
         var related = <Product>[];
         try {
-          final allResult = await _catalogRepository.fetchProducts();
-          related = allResult.when(
-            success: (all) => all
-                .where((x) =>
-                    x.category == singleProduct.category &&
-                    x.id != singleProduct.id)
-                .toList(),
+          final relatedResult = await _catalogRepository.fetchRelated(
+            singleProduct.category,
+            excludeId: singleProduct.id,
+          );
+          if (generation != _generation) return;
+          related = relatedResult.when(
+            success: (items) => items,
             failure: (_) => <Product>[],
           );
         } catch (e) {
           Log.w('Product details related fetch failed: $e');
           related = <Product>[];
         }
+        if (generation != _generation) return;
         emit(_readyState(singleProduct, related));
         return;
       }
 
       // Retain the legacy full-catalog fallback, but only accept the requested id.
       final result = await _catalogRepository.fetchProducts();
+      if (generation != _generation) return;
       result.when(
         success: (allProducts) {
           final matches = allProducts.where((x) => x.id == id);
@@ -123,6 +133,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
         )),
       );
     } catch (e) {
+      if (generation != _generation) return;
       Log.w('Product details load failed: $e');
       emit(const DetailsState(
         status: DetailsStatus.error,
@@ -140,10 +151,28 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
         length: product.sizes.isNotEmpty ? product.sizes.first : '',
       );
 
-  void color(String value) => emit(state.copyWith(color: value));
-  void length(String value) => emit(state.copyWith(length: value));
+  void color(String value) {
+    // Reject values outside the loaded product's variant set (stale chips
+    // from a previous product must not silently select nothing).
+    final colors = state.product?.colors;
+    if (colors != null && colors.isNotEmpty && !colors.contains(value)) return;
+    emit(state.copyWith(color: value));
+  }
+
+  void length(String value) {
+    final sizes = state.product?.sizes;
+    if (sizes != null && sizes.isNotEmpty && !sizes.contains(value)) return;
+    emit(state.copyWith(length: value));
+  }
+
   void quantity(int value) {
-    final maxStock = state.stock > 0 ? state.stock : 99;
-    emit(state.copyWith(quantity: value.clamp(1, maxStock).toInt()));
+    // Out-of-stock variants pin to 1: the old `stock > 0 ? stock : 99`
+    // fallback opened a 1..99 range for a variant that cannot be bought.
+    final stock = state.stock;
+    if (stock <= 0) {
+      if (state.quantity != 1) emit(state.copyWith(quantity: 1));
+      return;
+    }
+    emit(state.copyWith(quantity: value.clamp(1, stock).toInt()));
   }
 }

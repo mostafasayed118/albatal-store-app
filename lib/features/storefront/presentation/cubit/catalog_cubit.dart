@@ -121,7 +121,10 @@ final class CatalogCubit extends Cubit<CatalogState> {
     final result = await _repository.getActiveFlashSales();
     result.when(
       success: (sales) {
-        if (sales.isEmpty && state.flashSales.isEmpty) return;
+        // Deep-equal polls emit nothing: the 60s refresh otherwise
+        // rebuilds every flash listener (and restarts the ticker) even
+        // when the server returned an identical list.
+        if (_flashSalesEqual(sales, state.flashSales)) return;
         emit(state.copyWith(flashSales: sales));
         if (sales.isNotEmpty) {
           final endsAt = sales.first.endsAt;
@@ -208,5 +211,17 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void deleteRecentQuery(String q) {
     emit(state.copyWith(
         recentQueries: state.recentQueries.where((r) => r != q).toList()));
+  }
+
+  /// Element-wise equality for flash polls (covers the empty==empty case
+  /// too). [FlashSale] is value-compared, so identical server payloads
+  /// decode to equal lists.
+  bool _flashSalesEqual(List<FlashSale> a, List<FlashSale> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }

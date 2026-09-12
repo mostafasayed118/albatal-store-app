@@ -28,26 +28,28 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    return BlocBuilder<OrdersCubit, OrdersState>(
-      builder: (context, state) {
-        if (state.status == OrdersStatus.loading) {
+    // Hoisted above the BlocBuilder: the controller used to be recreated
+    // on every orders emit, resetting the selected tab mid-session.
+    return DefaultTabController(
+      length: 3,
+      child: BlocBuilder<OrdersCubit, OrdersState>(
+        builder: (context, state) {
+          if (state.status == OrdersStatus.loading) {
+            return Scaffold(
+              appBar: AppBar(title: Text(l.myOrders)),
+              body: const FeedbackView(type: FeedbackViewType.loading),
+            );
+          }
+          if (state.status == OrdersStatus.error) {
+            return Scaffold(
+              appBar: AppBar(title: Text(l.myOrders)),
+              body: FeedbackView(
+                type: FeedbackViewType.error,
+                onAction: context.read<OrdersCubit>().restore,
+              ),
+            );
+          }
           return Scaffold(
-            appBar: AppBar(title: Text(l.myOrders)),
-            body: const FeedbackView(type: FeedbackViewType.loading),
-          );
-        }
-        if (state.status == OrdersStatus.error) {
-          return Scaffold(
-            appBar: AppBar(title: Text(l.myOrders)),
-            body: FeedbackView(
-              type: FeedbackViewType.error,
-              onAction: context.read<OrdersCubit>().restore,
-            ),
-          );
-        }
-        return DefaultTabController(
-          length: 3,
-          child: Scaffold(
             appBar: AppBar(
               title: Text(l.myOrders),
               bottom: TabBar(
@@ -77,9 +79,9 @@ class _OrdersPageState extends State<OrdersPage> {
                     scheme: scheme),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

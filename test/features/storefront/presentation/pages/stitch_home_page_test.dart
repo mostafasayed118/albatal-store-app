@@ -23,6 +23,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/fetch_related_stub.dart';
 
 class _SignedInAuthRepository extends StubAuthRepository {
   @override
@@ -36,7 +37,9 @@ class _SignedInProfileRepository extends StubProfileRepository {
       const Success(Profile(id: 'ui-test-user', fullName: 'UI Tester'));
 }
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   const _StubRepo();
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([

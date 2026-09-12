@@ -3,6 +3,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import '../../../../helpers/fetch_related_stub.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 // Transitive dep of flutter_test; adding it to pubspec.yaml requires human
 // approval per AGENTS.md, hence the scoped lint suppression.
@@ -10,7 +11,9 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cu
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([]);
   @override

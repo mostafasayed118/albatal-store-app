@@ -35,12 +35,12 @@ class ActiveFiltersBar extends StatelessWidget {
       ));
     }
     if (state.filters.priceMin > Money.zero ||
-        state.filters.priceMax < const Money.egp(999999)) {
+        state.filters.priceMax < CatalogConstants.unboundedMax) {
       chips.add(_filterChip(
         label:
             '${state.filters.priceMin.format()} – ${state.filters.priceMax.format()}',
         onDeleted: () =>
-            catalog.setPriceRange(Money.zero, const Money.egp(999999)),
+            catalog.setPriceRange(Money.zero, CatalogConstants.unboundedMax),
       ));
     }
 
