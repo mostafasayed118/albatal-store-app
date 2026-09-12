@@ -81,7 +81,7 @@ void main() {
                 productId: 'p1',
                 rating: any(named: 'rating'),
                 text: any(named: 'text'),
-                photoPath: any(named: 'photoPath'),
+                photoBytes: any(named: 'photoBytes'),
               ))
           .thenAnswer((_) async => const Failure(AppError(kReviewBuyRequired)));
       final cubit = ReviewsCubit(repository: repo);

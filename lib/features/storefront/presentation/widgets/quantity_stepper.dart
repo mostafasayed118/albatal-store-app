@@ -31,11 +31,11 @@ class QuantityStepper extends StatelessWidget {
       decreasedValue: '${quantity > min ? quantity - 1 : quantity}',
       customSemanticsActions: {
         if (quantity < max)
-          const CustomSemanticsAction(label: 'Increase'):
-              () => onChanged(quantity + 1),
+          const CustomSemanticsAction(label: 'Increase'): () =>
+              onChanged(quantity + 1),
         if (quantity > min)
-          const CustomSemanticsAction(label: 'Decrease'):
-              () => onChanged(quantity - 1),
+          const CustomSemanticsAction(label: 'Decrease'): () =>
+              onChanged(quantity - 1),
       },
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -150,12 +153,16 @@ final class _ReviewTile extends StatelessWidget {
                 padding: const EdgeInsetsDirectional.only(top: 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    review.photoUrl!,
+                  // Bounded + disk-cached decode: the thumbnail is a
+                  // 120px box, never the full-resolution upload
+                  // (audit 2026-09-13 perf).
+                  child: AppImage(
+                    source: review.photoUrl,
                     width: 120,
                     height: 120,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    cacheWidth: 240,
+                    cacheHeight: 240,
                   ),
                 ),
               ),
@@ -176,7 +183,7 @@ final class _ReviewSubmitSheet extends StatefulWidget {
 final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
   int _rating = 5;
   final _textController = TextEditingController();
-  XFile? _photo;
+  Uint8List? _photoBytes;
   bool _processingPhoto = false;
 
   @override
@@ -195,10 +202,13 @@ final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
         imageQuality: 80,
       );
       if (xfile == null) return;
-      // §4 enforcement pass before the upload path.
+      // §4 enforcement pass before the upload path. The compressed
+      // bytes ARE the upload payload — the old sheet discarded them and
+      // made the repository re-read the original file synchronously
+      // (audit 2026-09-13).
       final bytes = await xfile.readAsBytes();
-      await getIt<ImageCompressor>().compress(bytes);
-      setState(() => _photo = xfile);
+      final compressed = await getIt<ImageCompressor>().compress(bytes);
+      setState(() => _photoBytes = compressed);
     } on Exception {
       // picker unavailable (web/tests) — text-only review still works
     } finally {
@@ -260,7 +270,7 @@ final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
                 TextButton.icon(
                   onPressed: _processingPhoto ? null : _pickPhoto,
                   icon: const Icon(Icons.photo_outlined),
-                  label: Text(_photo == null
+                  label: Text(_photoBytes == null
                       ? l.reviewAddPhoto
                       : l.reviewPhotoAdded),
                 ),
@@ -272,7 +282,7 @@ final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
                           context.read<ReviewsCubit>().submit(
                                 rating: _rating,
                                 text: _textController.text,
-                                photoPath: _photo?.path,
+                                photoBytes: _photoBytes,
                               );
                           Navigator.of(context).pop();
                         },

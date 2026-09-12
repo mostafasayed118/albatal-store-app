@@ -176,8 +176,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
     // snap to 0.5 m grid (away from zero so 0.4 -> 0.5, not 0.0)
     final snapped = (clamped * 2).roundToDouble() / 2;
     clamped = snapped < minCut ? minCut : snapped;
-    emit(state.copyWith(
-        length: clamped.toStringAsFixed(1)));
+    emit(state.copyWith(length: clamped.toStringAsFixed(1)));
   }
 
   void quantity(int value) {

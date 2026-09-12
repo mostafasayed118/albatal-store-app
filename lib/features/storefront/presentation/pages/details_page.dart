@@ -100,8 +100,8 @@ class DetailsPage extends StatelessWidget {
                 IconButton(
                   tooltip: l.shareProduct,
                   onPressed: () => unawaited(getIt<ProductShareService>()
-                      .shareText(l.shareProductMessage(
-                          p.name, productUrl(p.id)))),
+                      .shareText(
+                          l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],

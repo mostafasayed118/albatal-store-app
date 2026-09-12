@@ -81,7 +81,7 @@ class ReviewsCubit extends Cubit<ReviewsState> {
   Future<void> submit({
     required int rating,
     required String text,
-    String? photoPath,
+    List<int>? photoBytes,
   }) async {
     final repo = _repository;
     if (repo == null || _productId.isEmpty) {
@@ -94,7 +94,7 @@ class ReviewsCubit extends Cubit<ReviewsState> {
       productId: _productId,
       rating: rating,
       text: text,
-      photoPath: photoPath,
+      photoBytes: photoBytes,
     );
     if (isClosed) return;
     switch (result) {
