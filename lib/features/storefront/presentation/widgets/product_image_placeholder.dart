@@ -22,12 +22,19 @@ class ProductImagePlaceholder extends StatelessWidget {
     this.imageAsset,
     this.size = 42,
     this.constraints,
+    this.cacheExtent,
   });
 
   final int imageColor;
   final String? imageAsset;
   final double size;
   final BoxConstraints? constraints;
+
+  /// Decode-size bound forwarded as both `cacheWidth`/`cacheHeight` to the
+  /// inner [AppImage]. Defaults to the 720px card budget; tiny slots
+  /// (e.g. the 72px cart thumb) pass ~2x their footprint so a thumbnail
+  /// never decodes a full-resolution bitmap.
+  final int? cacheExtent;
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +54,18 @@ class ProductImagePlaceholder extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: imageAsset == null
-          ? CustomPaint(
-              painter: FabricWeavePainter(baseColor: Color(imageColor)),
-              size: Size.infinite,
-              child: Center(
-                child: Icon(Icons.texture,
-                    color: onSwatchColor(Color(imageColor)), size: size),
+          // Isolated repaint: the weave repaints only when its own
+          // color changes, never with an ancestor scroll. isComplex
+          // stays false — the hatch is a handful of lines.
+          ? RepaintBoundary(
+              child: CustomPaint(
+                isComplex: false,
+                painter: FabricWeavePainter(baseColor: Color(imageColor)),
+                size: Size.infinite,
+                child: Center(
+                  child: Icon(Icons.texture,
+                      color: onSwatchColor(Color(imageColor)), size: size),
+                ),
               ),
             )
           : Stack(
@@ -62,8 +75,8 @@ class ProductImagePlaceholder extends StatelessWidget {
                 AppImage(
                   source: imageAsset,
                   fit: BoxFit.cover,
-                  cacheWidth: 720,
-                  cacheHeight: 720,
+                  cacheWidth: cacheExtent ?? 720,
+                  cacheHeight: cacheExtent ?? 720,
                   placeholder: Icon(Icons.texture,
                       color: onSwatchColor(Color(imageColor)), size: size),
                 ),

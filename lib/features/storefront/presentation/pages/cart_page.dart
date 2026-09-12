@@ -18,6 +18,14 @@ class CartPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l.myCart)),
       body: BlocBuilder<CartCubit, CartState>(
+        // Identity on the items list: the cubit always assigns a fresh
+        // list on item changes, so same-instance emits (premium-flag
+        // mirrors, error-message updates) skip the list rebuild while
+        // status transitions and real item edits still rebuild.
+        buildWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.isPremiumMember != current.isPremiumMember ||
+            !identical(previous.items, current.items),
         builder: (context, s) {
           if (s.status == CartStatus.loading) {
             return const FeedbackView(type: FeedbackViewType.loading);

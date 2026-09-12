@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
+import 'sign_up_page.dart' show passwordValidator;
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -17,6 +18,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -44,6 +46,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -53,17 +56,27 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _passwordCtrl,
-                  decoration: InputDecoration(labelText: l.password),
-                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: l.password,
+                    suffixIcon: IconButton(
+                      tooltip: l.password,
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility),
+                    ),
+                  ),
+                  obscureText: _obscure,
                   textInputAction: TextInputAction.next,
+                  // Unified 8-char rule: the sign-up constant is the
+                  // source (imported above), not a page-local literal.
                   validator: (v) =>
-                      (v == null || v.length < 6) ? l.passwordTooShort : null,
+                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _confirmCtrl,
                   decoration: InputDecoration(labelText: l.confirmPassword),
-                  obscureText: true,
+                  obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
                   validator: (v) =>

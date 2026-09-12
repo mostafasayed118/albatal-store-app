@@ -3,8 +3,10 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import '../../../../fixtures/local_catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import '../../../../helpers/stub_auth_repositories.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
@@ -20,11 +22,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
-import '../../../../helpers/stub_auth_repositories.dart';
+import '../../../../helpers/fetch_related_stub.dart';
 
-class _StubRepo implements CatalogRepository {
+class _StubRepo
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   const _StubRepo();
   @override
   Future<Result<List<Product>>> fetchProducts() async => const Success([
@@ -54,7 +57,7 @@ class _StubRepo implements CatalogRepository {
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      const Failure(AppError('Product not found'));
+      Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;

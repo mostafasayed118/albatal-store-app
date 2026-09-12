@@ -7,6 +7,8 @@ import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart'
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'helpers/stub_auth_repositories.dart';
+import 'helpers/fetch_related_stub.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
@@ -14,21 +16,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'helpers/stub_auth_repositories.dart';
-
 /// Repository that always fails — for testing the error state.
-final class FailingCatalogRepository implements CatalogRepository {
+final class FailingCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
-      const Failure(AppError('Catalog unavailable'));
+      Failure(AppError('Catalog unavailable'));
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
-      const Failure(AppError('Categories unavailable'));
+      Failure(AppError('Categories unavailable'));
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      const Failure(AppError('Product not found'));
+      Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -85,7 +87,9 @@ void main() {
   });
 }
 
-class _NeverCompletesRepository implements CatalogRepository {
+class _NeverCompletesRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() =>
       Completer<Result<List<Product>>>().future;

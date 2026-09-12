@@ -35,6 +35,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'helpers/memory_storefront_persistence.dart';
+import 'helpers/fetch_related_stub.dart';
 
 void main() {
   testWidgets('protected route redirects while unauthenticated',
@@ -368,7 +369,9 @@ final class _ProbeStorageService extends StorageService {
 
 /// Catalog double with no products: the routing tests only need the cubit to
 /// resolve without network access.
-final class _StubCatalogRepository implements CatalogRepository {
+final class _StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   const _StubCatalogRepository();
 
   @override

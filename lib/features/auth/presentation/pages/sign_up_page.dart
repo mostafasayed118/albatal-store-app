@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/auth_cubit.dart';
@@ -69,6 +70,7 @@ class _SignUpPageState extends State<SignUpPage> {
           padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: ListView(
               children: [
                 const SizedBox(height: 32),
@@ -90,7 +92,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   validator: (v) =>
-                      (v == null || !v.contains('@')) ? l.invalidEmail : null,
+                      emailValidator(v, invalidMessage: l.invalidEmail),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -112,7 +114,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 TextFormField(
                   controller: _confirmCtrl,
                   decoration: InputDecoration(labelText: l.confirmPassword),
-                  obscureText: true,
+                  obscureText: _obscure,
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _submit(),
                   validator: (v) =>

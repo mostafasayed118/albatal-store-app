@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
@@ -7,13 +5,15 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'fixtures/products_data.dart';
+import 'helpers/fetch_related_stub.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'fixtures/products_data.dart';
-
 /// Stub repository that returns the fixed product list — no network, no I/O.
-final class StubCatalogRepository implements CatalogRepository {
+final class StubCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
       Success(List.of(products));
@@ -26,7 +26,7 @@ final class StubCatalogRepository implements CatalogRepository {
   Future<Result<Product>> fetchProductById(String id) async {
     final product = products.where((p) => p.id == id).firstOrNull;
     if (product != null) return Success(product);
-    return const Failure(AppError('Product not found'));
+    return Failure(AppError('Product not found'));
   }
 
   @override
@@ -42,18 +42,20 @@ final class StubCatalogRepository implements CatalogRepository {
 }
 
 /// Stub repository that always fails.
-final class FailingCatalogRepository implements CatalogRepository {
+final class FailingCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
-      const Failure(AppError('Catalog unavailable'));
+      Failure(AppError('Catalog unavailable'));
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
-      const Failure(AppError('Catalog unavailable'));
+      Failure(AppError('Catalog unavailable'));
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      const Failure(AppError('Product not found'));
+      Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -139,15 +141,15 @@ void main() {
       verify: (cubit) => expect(
         cubit.state.visible.map((product) => product.price.minorUnits),
         [
-          const Money.egp(1340).minorUnits,
-          const Money.egp(1290).minorUnits,
-          const Money.egp(1050).minorUnits,
-          const Money.egp(980).minorUnits,
-          const Money.egp(820).minorUnits,
-          const Money.egp(720).minorUnits,
-          const Money.egp(690).minorUnits,
-          const Money.egp(580).minorUnits,
-          const Money.egp(540).minorUnits,
+          Money.egp(1340).minorUnits,
+          Money.egp(1290).minorUnits,
+          Money.egp(1050).minorUnits,
+          Money.egp(980).minorUnits,
+          Money.egp(820).minorUnits,
+          Money.egp(720).minorUnits,
+          Money.egp(690).minorUnits,
+          Money.egp(580).minorUnits,
+          Money.egp(540).minorUnits,
         ],
       ),
     );
@@ -242,7 +244,7 @@ void main() {
           expect(
               p.price.minorUnits,
               inInclusiveRange(
-                  const Money.egp(500).minorUnits, const Money.egp(800).minorUnits));
+                  Money.egp(500).minorUnits, Money.egp(800).minorUnits));
         }
       },
     );
@@ -305,14 +307,17 @@ void main() {
   });
 
   group('CatalogCubit — availableColors', () {
-    test('returns unique color names from products', () async {
+    test('returns unique variant color names from products', () async {
       final cubit = CatalogCubit(StubCatalogRepository());
       expect(cubit.state.availableColors, isEmpty);
       await cubit.load();
+      // Variant-derived (p.colors), not the imageColor placeholder bucket:
+      // 'Pearl' exists only as a variant color, never as an imageColor.
       expect(cubit.state.availableColors, contains('Emerald'));
       expect(cubit.state.availableColors, contains('Gold'));
-      expect(cubit.state.availableColors.length, 9);
-      unawaited(cubit.close());
+      expect(cubit.state.availableColors, contains('Pearl'));
+      expect(cubit.state.availableColors.length, 23);
+      cubit.close();
     });
   });
 
