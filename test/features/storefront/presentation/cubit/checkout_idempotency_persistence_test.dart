@@ -3,8 +3,10 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +29,21 @@ class _StubCheckoutRepo implements CheckoutRepository {
   }
 }
 
+/// Cubit wired to a [SharedPreferences]-backed idempotency store —
+/// mirrors the production composition in service_locator.dart without
+/// the presentation layer touching the data layer directly.
+CheckoutCubit _persistentCubit(
+  CheckoutRepository repo,
+  SharedPreferences prefs,
+) =>
+    CheckoutCubit(
+      repo,
+      placeOrder: PlaceCheckoutOrderUseCase(
+        checkoutRepository: repo,
+        idempotencyStore: LocalStorefrontPersistence(prefs),
+      ),
+    );
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -35,7 +52,7 @@ void main() {
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -53,7 +70,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final repoA = _StubCheckoutRepo();
-      final cubitA = CheckoutCubit(repoA, prefs: prefs);
+      final cubitA = _persistentCubit(repoA, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -64,7 +81,7 @@ void main() {
 
       // Simulate app restart: new cubit sharing the same SharedPreferences
       final repoB = _StubCheckoutRepo();
-      final cubitB = CheckoutCubit(repoB, prefs: prefs);
+      final cubitB = _persistentCubit(repoB, prefs);
       await cubitB.createPendingOrder(cartItems: items);
 
       expect(repoB.keys.first, firstKey,
@@ -82,7 +99,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _StubCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -98,7 +115,7 @@ void main() {
     test('resetForNewAttempt clears the persisted key', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -117,7 +134,7 @@ void main() {
     test('markSuccess clears the persisted key', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final cubit = CheckoutCubit(_StubCheckoutRepo(), prefs: prefs);
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -141,7 +158,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _SequencedCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];
@@ -168,7 +185,7 @@ void main() {
       });
       final prefs = await SharedPreferences.getInstance();
       final repo = _AlwaysDeadCheckoutRepo();
-      final cubit = CheckoutCubit(repo, prefs: prefs);
+      final cubit = _persistentCubit(repo, prefs);
       final items = [
         CartItem(product: products.first, color: 'Emerald', length: '2m'),
       ];

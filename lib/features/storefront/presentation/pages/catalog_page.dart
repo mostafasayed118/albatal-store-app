@@ -9,6 +9,7 @@ import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -157,7 +158,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                   onTap: () {
                                     final router = GoRouter.maybeOf(context);
                                     if (router != null) {
-                                      context.push('/product/${product.id}');
+                                      context.push(Routes.product(product.id));
                                     }
                                   },
                                   onWishlist: () => context

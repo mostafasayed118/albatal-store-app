@@ -1,6 +1,292 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-09T00:00:00Z
+Last run: 2026-09-12T04:40:00Z
+
+## New — 2026-09-12 (review-batch MERGED — PR #52 squash-merged, master now 6260427)
+
+Owner approved merge ("merge") after the 3-slice L2 review batch
+(previous block). Flow: integration test-merge in `.trees/merge-test`
+(5bb0a33 + low c251016 + med adbb766 + high 11e2f80, conflicts resolved
+in 6 test files), local evidence analyze clean + 690/690 PASS, branch
+`fix/review-batch-batch` pushed, PR #52 opened, then:
+- CI round 1: Format & Analyze FAIL (14 files of format drift under CI's
+  stable-3.47.4 formatter) + Flutter Tests FAIL (pushed branch predated
+  the in-worktree test fixes). Fixed: commit dacbe25 (merge-resolution
+  test fixes: catalog_cubit_test dart:async/unawaited;
+  review_batch_med_cache_test aligned to merged total-decode contract —
+  id-bearing corrupt entries degrade per-field instead of being skipped;
+  + dart format on the 14 CI-flagged files).
+- CI round 2: format FAIL on 1 more drifted file → whole-repo
+  `dart format` sweep, commit 58e1d8e (9 files, format-only).
+- CI round 3: analyze FAIL — `curly_braces_in_flow_control_structures`
+  logger.dart:129 (newer formatter output), commit d6f5975.
+- CI round 4: ALL GREEN (Flutter Tests, Format & Analyze, Edge, Secret
+  Scan, Setup; Android/Readiness skipped per standing call).
+- Merge: `gh pr merge 52 --squash` → MERGED 2026-09-12T04:34:35Z,
+  merge commit `6260427`. Slice branches deleted (local+remote);
+  worktrees removed (review-batch-high/med/low, merge-test).
+- Local master still at f7300cd with pre-existing dirty files (pubspec
+  churn + gradle/secure_store edits) — owner pulls when convenient
+  (established precedent); nothing in 5bb0a33..6260427 touches the
+  locally-dirty paths except possibly pubspec churn.
+- app.dart lifecycle item (close _cartCubit, hoist ..restore()) remains
+  DEFERRED (no slice owned it).
+- Verifier sub-agent was never dispatched (RunInfra credits exhausted
+  mid-run); compensated by full-suite evidence at every layer: per-slice
+  (666/690/666), merged tree (690/690), and CI (all 4 rounds).
+
+## New — 2026-09-10 (review-fixes slice COMMITTED on fix/review-fixes — push/PR NOT yet approved)
+
+Owner enabled L2 ("do all in subagebt"): all L1 review findings
+implemented via 6 file-disjoint subagents in worktree
+`.trees/review-fixes` (branch `fix/review-fixes`) from origin/master
+38c10ff. Commit `80774ee` "refactor(review): H1/H2/H3 + M1/M2/M3 +
+LOW fixes with regression tests":
+- H1 product_mapper total-decode (+ test/review_h1_mapper_total_test.dart).
+- H2 isClosed guards in checkout/payment cubits (+
+  test/review_h2_close_guards_test.dart).
+- H3 payment_method_page directional icon (no test — literal removal).
+- M1/M2 cart/wishlist preservation (+
+  test/review_m1m2_preservation_test.dart).
+- M3 Log.w fallback-poll + new
+  lib/features/payments/data/payment_status_watcher.dart (+
+  test/review_m3_watcher_test.dart).
+- LOW batch: deleted lib/.../local_orders_repository.dart,
+  stale-comment fix, discarded_futures ignore, Money.subtractClamped
+  (+ test/review_l3_money_test.dart), EnvConfig APP_ENV, guarded
+  router extra casts, AppShell required ConnectivityGate, indent fix.
+- Central verify fixes: bare `return;` in Future<bool>
+  submitInstapayProof → `return false`; app_router child-last lint;
+  unused import dropped from review_h1 test. First analyze flood was
+  missing `.dart_tool` in the fresh worktree (`flutter pub get`
+  fixed it; pubspec untouched, lock unchanged). Format-only noise
+  outside the change set + pub-get registrant churn reverted.
+- Evidence on 80774ee: analyze clean, 666/666 PASS (full suite),
+  verifier APPROVE (session ses_f74d25c80ffe9VraPjwFqFen77).
+- Pushed + PR #51 opened:
+  https://github.com/mostafasayed118/albatal-store-app/pull/51
+  CI round 1: Flutter Tests PASS, Format & Analyze FAIL on 9
+  pre-existing unformatted files (master drift under CI's
+  stable-3.47.3 formatter — none of them mine). Added commit
+  `4431960` "style: fix pre-existing dart format drift (format-only,
+  19+/22- across 9 files, verified semantics-free by diff)".
+  CI round 2: ALL GREEN (Format & Analyze + Flutter Tests pass).
+  Local evidence on the branch: analyze clean, 666/666 PASS.
+  Owner approved merge → PR #51 SQUASH-MERGED 2026-09-10T12:49:19Z;
+  master is now `5bb0a33`.
+  Housekeeping: `.trees/review-latest` and `.trees/review-fixes`
+  both removed (owner-approved).
+
+## New — 2026-09-10 (L1 code review of origin/master 38c10ff — report only, no source touched)
+
+Reviewed origin/master `38c10ff` (PR #50 merge) from read-only worktree
+`.trees/review-latest` (main tree is stale at f7300cd — findings below
+are against 38c10ff, not the stale tree). Prior-audit fixes verified
+landed (flash stream, Result boundary, Log.redact, secure session,
+composition roots). NEW findings, ranked: HIGH (3) —
+ProductCodec.fromRow raw `as` casts throw TypeError past the
+`on Exception` catches (whole catalog load can hang on loading);
+route-scoped cubits (CheckoutCubit.createPendingOrder, PaymentCubit
+processors) emit after close when the user backs out mid-flight
+(guaranteed second StateError out of the catch block); raw
+IconData(0xe5cc) still in payment_method_page (checkout's RTL fix
+missed this site — actually mirror-correct via matchTextDirection,
+so consistency-only). MEDIUM (3) — CartCubit.restore drops
+isPremiumMember (wrong shipping estimate); WishlistCubit.toggle drops
+resolved products (one-frame empty flash); silent loadFlashSales
+failure + silent realtime-poll catch. LOW (8) — dead
+LocalOrdersRepository + stale debug-repo doc comment; unawaited
+persistCache write; Money operator- assert; EnvConfig.environment
+cannot tell staging from prod; router extra casts; AppShell getIt;
+paymob god-file; cosmetic indents/TODO. Already-tracked, not
+re-reported: payments getIt x2 + auth email validator (committed on
+unmerged fix/p1-remnants 0043f53); Postgrest message passthrough
+(P1 ruling); discarded_futures rejection. Full before/after report
+delivered in chat; no L2 work started (awaiting owner enable).
+
+## New — 2026-09-10 (p1-remnants slice COMMITTED on fix/p1-remnants — push/PR NOT yet approved)
+
+Owner approved the last two denylisted items ("do it"): payments getIt
+×2 + auth email-validator call sites. Worktree `.trees/p1-remnants`
+(branch `fix/p1-remnants`) from origin/master 38c10ff. Commit
+`0043f53`:
+- payment_method_page + instapay_instructions_page: service_locator
+  import dropped; PaymentService constructor-injected; router passes
+  getIt<PaymentService>() at both routes; ctor assert guards the
+  production path; instapay rehydration stays null-tolerant.
+- new core/utils/email_validator.dart (+ dedicated test file, 16
+  cases incl. verifier-hardened `a@.com` rejection) wired into
+  sign_in / sign_up / forgot_password replacing contains('@').
+- Zero getIt/service_locator under lib/features (verified by ripgrep;
+  two benign comment mentions only).
+- Evidence on 0043f53: analyze clean, 657/657 PASS, verifier APPROVE
+  (session ses_f74f88977ffexV28h9laEpgFPb).
+- NEXT GATE: push + PR needs explicit owner approval ("push+PR" ok?).
+  Generated plugin registrants (linux/macos/windows) reverted —
+  CRLF-only noise from pub get.
+
+## Previous — 2026-09-10 (PR #50 SQUASH-MERGED — full 5-slice audit remediation is on master)
+
+Owner approved push/PR then explicitly selected "Merge PR #50" (only;
+payments getIt ×2 and auth email validator stay proposal-only).
+- PR #50 squash-merged: 38c10ff "Audit remediation: P1 arch + P2
+  security + P3 perf + P4/P5 quality (5 slices, verifier APPROVE) (#50)".
+- Master had advanced (PR #48 connectivity gate 540b1e2) → merge
+  conflict in test/app_router_test.dart resolved by union (StorageService
+  probe + ConnectivityGate registrations); worktree ran `flutter pub get`
+  (PR #48 added connectivity_plus + internet_connection_checker_plus);
+  final evidence on merge commit ea6287e: analyze clean, `flutter test`
+  651/651 PASS before push.
+- Remote branch deleted; worktree `.trees/audit-fixes` removed; local
+  branch deleted.
+- NOTE: main tree still at f7300cd with pre-existing dirty files
+  (pubspec.yaml dirty would collide with the pulled deps) — owner pulls
+  master (f7300cd → 38c10ff) when convenient.
+- Still proposal-only (denylisted): payments getIt ×2, auth email
+  validator call sites.
+
+## New — 2026-09-10 (L2 P1 architecture slice on fix/audit-fixes — 642/642, verifier APPROVE, unmerged)
+
+Owner approved P1 ("approval P1"). Commit `78d50c7` on fix/audit-fixes
+(18 files, +224/−123):
+- auth_cubit.dart: legacy data-layer ctor params + imports removed
+  (localAddressRepository/storefrontPersistence) — presentation now
+  depends on domain ports only; test switched to port-typed concretes.
+- Constructor injection replaced getIt in 9 presentation pages
+  (5 admin pages + admin_image_manager + StorageService, details_page,
+  support_page, checkout_page with PlaceCheckoutOrderUseCase +
+  AuthSessionPort). app_router.dart is the composition root. Test pump
+  sites updated; app_router_test gained _ProbeStorageService (images
+  route resolves storage at composition root).
+- OUT (denylisted, still gated): payments pages' getIt ×2
+  (payment_method_page:273, instapay_instructions_page:92) — only
+  remaining locator use in lib/features. Email-validator call sites in
+  auth/ pages remain proposal-only.
+
+Evidence: `flutter analyze --no-pub` clean; `flutter test` 642/642 PASS.
+Verifier: APPROVE (scope exact; payments/auth-pages denylist respected;
+composition roots = app.dart/bootstrap.dart/app_router.dart only;
+nothing pushed/merged). fix/audit-fixes now 5 commits ahead of f7300cd
+(97bed76, 057cbce, 7f5a064, ae61dad, 78d50c7) — awaiting owner push/PR
+gates. Main tree untouched at f7300cd + STATE.md bookkeeping.
+
+## New — 2026-09-10 (L2 5-slice audit remediation on fix/audit-fixes — 642/642, verifier APPROVE, unmerged)
+
+Owner enabled L2 and said "all" (all slices). Worktree
+`.trees/audit-fixes` branch `fix/audit-fixes` (base f7300cd). Four commits:
+- `97bed76` P3 perf: flash countdown moved off CatalogState props into
+  dedicated broadcast stream `CatalogCubit.flashCountdown` (discovery:
+  bloc 9.2.1 `Cubit.emit` DEDUPES equal states — props-exclusion would
+  freeze readers, bloc_base.dart:102); per-item wishlist hearts
+  (BlocSelector per grid card, home_page/catalog_page); hero decode
+  budget cacheWidth 840/cacheHeight 360 (stitch_hero_carousel). Tests:
+  catalog_flash_test (countdown via fakeAsync), wishlist_heart_isolation
+  (NEW), catalog_perf_test, catalog_flash_sale_test, stitch_home_page_test.
+  Widget tests with stream subscription + pump deadlock in fake-async —
+  stream probes live only in pure fakeAsync tests.
+- `057cbce` P2 security: safeDateTime added (safe_parse.dart);
+  CheckoutService fails closed on malformed RPC payload (missing
+  order_id/money/expiry → Failure, double money accepted);
+  ProductCodec.fromRow/decode nullable + total (id-less rows skipped,
+  corrupt cache entries skipped via whereType); orders repo _mapOrder
+  skips id-less rows, degrades money/timestamps; orders address decode
+  via AddressCodec.fromOrderJson; Log.redact scrubs emails/phone-like
+  runs from release Sentry breadcrumbs (value-based; crash reporter
+  already scrubbed keys). Tests: checkout fail-closed, orders malformed
+  rows, product_mapper null/degrade cases, logger_redact_test (NEW).
+- `7f5a064` P4/P5: Log.w on silent catches (secure session storage ×4,
+  PKCE ×2, admin permission probe, smoke harness debugPrint);
+  catalog_cubit.dart split → catalog_state.dart (412→cubit-only +
+  state file, re-exported for compat; AdminMappers _asString/_toInt
+  intentionally NOT merged — null-preserving String? semantics;
+  discarded_futures lint REJECTED — 131 new violations, documented in
+  analysis_options.yaml comment).
+- `ae61dad` chore: strip UTF-8 BOM from split files (verifier note).
+
+Evidence: `flutter analyze --no-pub` clean; `flutter test` 642/642 PASS
+(full suite, twice). Verifier sub-agent: APPROVE (scope clean, no
+denylisted paths, no secrets logged, countdown absent from state props).
+
+NOT DONE (denylist-gated → PROPOSALS ONLY, need human action):
+- P1 architecture: auth_cubit.dart:7,11 imports data layer; getIt
+  service-locating in ~12 pages; StorageService bypassing repository.
+  Fix requires editing lib/features/auth/ (denylisted). Proposal:
+  constructor-inject auth facade + route-scoped getIt removal, separate
+  approved slice.
+- Email-format validation before auth calls: pages live in
+  lib/features/auth/ (denylisted). Proposal: `core/utils/email_validator`
+  + call-site wiring in an approved slice.
+- Human gates: push/PR/merge of fix/audit-fixes NOT done (needs owner
+  approval). Main tree left at f7300cd, pre-existing dirty files
+  untouched, main-tree home_page.dart stray edit reverted via
+  `git checkout --` (worktree-only work confirmed by verifier).
+
+## New — 2026-09-10 (L2 B1+B2 MERGED, PR #48 squash-merged)
+
+Owner explicitly approved push+merge. PR #48 marked ready, squash-merged
+into master at 2026-09-09T22:10:14Z (remote branch auto-deleted).
+Worktree `.trees/offline-connectivity-gate` removed, local branch deleted.
+Main tree left at `f7300cd` with pre-existing dirty files untouched — next
+pull brings in the merge commit. B1+B2 closed: gate + AppShell banner live
+on master, evidence 641/641 + verifier APPROVE recorded above.
+
+Follow-up slice completed in `.trees/offline-connectivity-gate`,
+committed `f374912`, pushed, draft PR
+`https://github.com/mostafasayed118/albatal-store-app/pull/48`:
+`offlineBannerMessage` EN/AR (`l10n/*.arb` + `flutter gen-l10n`,
+generated/ untouched by hand), `ConnectivityGate.recheck()` for Retry,
+`unawaited(start())` in `bootstrap.dart` post-DI (never delays first
+frame), AppShell StreamBuilder mount (`initialData: gate.current`,
+`Expanded(child)` layout-safe). One real catch: AppShell mount broke 4
+`app_router_test` (gate unregistered in harness) — fixed by registering
+an unstarted gate, pattern-matched to existing AdminRepository setup.
+Evidence: analyze clean, **641/641** (632 + 9 new), format canonical,
+diff-check clean, verifier APPROVE no must-fix. Awaiting owner: review +
+merge #48 (do NOT merge without explicit approval); remaining future:
+device test of iOS-simulator stream caveat, A1 images slice (needs
+payments/ denylist decision).
+
+Owner said "go" → scoped via question to B1+B2 from clean HEAD (A1 needs
+payments/ denylist override; dirty-tree bumps excluded by owner choice).
+Worktree `.trees/offline-connectivity-gate`, branch
+`feat/offline-connectivity-gate`, base `f7300cd`. Slice:
+`connectivity_plus ^7.3.1` + `internet_connection_checker_plus ^3.1.2`
+(pubspec, owner-approved) with zero conflicts and no unrelated upgrades;
+NEW `lib/shared/services/connectivity_gate.dart` (two-layer signal: iface
+flap confirmed by probe, none→offline w/o probe, distinct emits, idempotent
+start, dispose never touches the v3 singleton); GetIt lazy-singleton
+registration; NEW presentational `OfflineBanner` (param-driven copy, no
+generated-l10n touch — AppShell mount + EN/AR copy deferred pending
+banner-copy review). Tests: 6 gate (seed/flap/hotel-wifi/no-op) + 1 banner
+widget. Evidence: analyze clean, **639/639** (632 + 7 new), format canonical,
+diff-check clean, verifier APPROVE no must-fix. `pub get` side effects only:
+lock + desktop generated registrants. No commit/push — awaiting owner: push
+branch + draft PR, then follow-ups (AppShell mount w/ ARB copy, cubit
+subscription, device test of iOS-simulator stream caveat).
+
+Owner approved `docs/packages-proposal.md`. Re-verified all 11 pins live via
+pub.dev API 2026-09-10 — zero drift: flutter_image_compress 2.5.1, photo_view
+0.15.0, skeletonizer 2.1.3, flutter_animate 4.5.2, connectivity_plus 7.3.1,
+internet_connection_checker_plus 3.1.2, flutter_local_notifications 22.3.0,
+onesignal_flutter 5.6.10, permission_handler 13.0.2, share_plus 13.3.0,
+app_links 7.2.1. Doc status flipped to APPROVED (docs) — still DO NOT APPLY to
+`pubspec.yaml`: no install, no native/CI change (L1 report-only,
+loop-constraints.md). Next needs explicit L2/install approval + slice order (§5).
+
+## New — 2026-09-10 (packages proposal docs only — L1 report-only, no deps installed)
+
+Drafted `docs/packages-proposal.md` (HUMAN-REVIEW DO NOT APPLY) per owner
+request: version pins verified 2026-09-10 on pub.dev (Flutter 3.48.0 / Dart
+3.12.2) + INSTRUCTIONS D3 why/alt/defer + migration risk, deep-dives for
+images (`flutter_image_compress ^2.5.1`, `photo_view ^0.15.0` stale-flag,
+`skeletonizer ^2.1.3`, `flutter_animate ^4.5.2`), offline
+(`connectivity_plus ^7.3.1` AGP ≥8.12.1/Java 17 gate, `internet_connection_checker_plus ^3.1.2` v3 breaking),
+notifications (`flutter_local_notifications ^22.3.0` desugar/compileSdk-36 high-effort,
+`onesignal_flutter ^5.6.10` license-unknown flag). Grounded in
+`lib/shared/components/app_image.dart`, `product_image_resolver.dart`,
+`instapay_instructions_page.dart` (no offline/notify refs in lib/). No
+`pubspec.yaml`, native, supabase/, or CI change (loop-constraints.md). Next:
+owner picks slice order (§5); each needs L2 worktree + draft PR.
 
 ## New — 2026-09-09 (residual audit batch on fix/audit-residual — 632/632, verifier APPROVE, awaiting push/PR gates)
 
@@ -2362,4 +2648,64 @@ The Premium perk is real money, applied **server-side** in
 
 **Production:** NOT pushed — owner-gated, same as 043–046.
 
+## New — 2026-09-10 (comprehensive quality audit — L1 report-only, 7.1/10)
 
+5 parallel subagents (maintainability, architecture, quality, security, performance). No code changed.
+
+Scores: maintainability 7.2/10, architecture 6.5/10, code quality 7.0/10, security 7.5/10, performance 7.5/10. Weighted overall (25/20/20/20/15) = **7.1/10**.
+
+Top 5 critical (priority order):
+1. Arch — `auth_cubit.dart:7,11` presentation→data import + `getIt<>()` in ~12 pages + `StorageService` infra bypass (`storage_service.dart:13`, `admin_image_manager_page.dart:84,222`). Fix: depend on ports only, inject via router/BlocProvider, repo-wrap storage.
+2. Security MEDIUM — residual `as String/int/List/Map` + `DateTime.parse` in `admin_mappers.dart:29,38,44`, `product_mapper.dart:26,35-37`, `checkout_service.dart:64-70`, `supabase_orders_repository.dart:78-85` + `logger.dart:99-110` raw message → Sentry breadcrumb PII leak. Fix: `safeString/safeInt/safeMap` (+`safeDateTime`), central `redact()` at Log layer.
+3. Perf — `CatalogState.props:230-240` includes `flashRemaining` → 1Hz full-state inequality + `BlocBuilder<Wishlist>` wrapping full SliverGrid (`home_page.dart:129-130`) rebuilds ~100 cards on toggle. Fix: exclude countdown from props / isolate ticker, per-item `BlocSelector` for heart.
+4. Quality/Maint — 6× silent `catch(_)` in `supabase_secure_storage.dart:36-105` + `supabase_admin_repository.dart:35-40`, god-files `paymob_payment_service.dart:24` (467 lines), `catalog_cubit.dart:37` (448 lines). Fix: `Log.w` on fail-safe catches, split service/cubit.
+5. Quality/Perf — triplicated address decode (`address_codec.dart:17-44` vs `supabase_orders_repository.dart:110-114` vs `admin_mappers.dart:75-89`) + parallel `safe_parse` vs `_asString/_toInt` + hard caps no pagination (`fetchProducts(limit:100)`, `historyLimit=50`). Fix: unify via `AddressCodec`, add `range()` pagination.
+
+Full per-dimension findings in loop session 2026-09-10; next needs explicit L2 enable + slice order before any lib/ fix.
+
+
+
+## New — 2026-09-12 (review-batch 3-slice L2 implementation — 3 worktree branches, unpushed)
+
+Owner enabled L2 (all HIGH/MED/LOW, gated files included, worktree-per-slice).
+Three file-disjoint worktrees from origin/master 5bb0a33:
+- .trees/review-batch-high → fix/review-batch-high, commit 11e2f80:
+  Sentry scrub chaining (bootstrap beforeSend→scrubEvent, appRunner, chained
+  error handlers), extended PII scrub (extra/contexts/breadcrumbs/request),
+  Money.format integer division, product discount clamp, Result/AppError
+  StackTrace, per-row fail-soft (product_mapper/orders/checkout_service),
+  checkout double-tap+empty-cart guards (address guard REJECTED — server-first
+  contract pinned by tests; async resetForNewAttempt REVERTED to sync),
+  payment guards (re-initiation block, awaitingProof, PaymobUrlGuard
+  fail-closed, cancelled/expired terminal), auth signOut Result, router
+  Uri-encoded redirects + exact-segment match + /instapay-instructions gate,
+  cart quantity clamp. Test fix: payment_integration stub URL → paymob host.
+  Evidence: analyze clean, 666/666 PASS.
+- .trees/review-batch-med → fix/review-batch-med, commit adbb766:
+  fetchRelated category-scoped query, PDP generation counter, flash-poll
+  deep-equal skip, availableColors from p.colors + catalog_filters.matches
+  aligned (BUG FIX: chips could never match), orders DefaultTabController
+  hoist, cart buildWhen, details split builders, image decode bounds (72px
+  thumb was 720), degenerate RangeSlider guard, dark ColorScheme completion,
+  instapay ext allowlist + reference cap, support URL allowlist, shared
+  email validator (created lib/core/utils/email_validator.dart — did NOT
+  exist on 5bb0a33), 8-char password minimum. Test fixes: filter swatches
+  harness (variant colors), degenerate price test (ListView lazy build —
+  drag before assert; findsNWidgets(3)).
+  Evidence: analyze clean, 690/690 PASS.
+- .trees/review-batch-low → fix/review-batch-low, commit c251016:
+  analysis_options hardening (6 lints; discarded_futures stays rejected),
+  dart fix --apply 239 fixes/93 files, unawaited(cancel) notifier, settings
+  dialog dispose-on-early-return (kept tested dispose timing — subagent's
+  outer-finally variant broke settings_delete_account_test, reverted to
+  tested position + early-return dispose), admin mounted guard, checkout
+  code-based mapping, uuid IDs, l10n naming. http:any dependency added by
+  subagent was REVERTED (pubspec untouched). Evidence: analyze clean,
+  666/666 PASS.
+
+Gaps/notes: app.dart lifecycle item (close _cartCubit, hoist ..restore())
+DEFERRED — owned by no slice; verifier sub-agent dispatch BLOCKED (runinfra
+credits exhausted) — self-review + full-suite evidence recorded above
+instead. Next gates: owner review of 3 branches → sequential merge order
+low → med → high (or high last to resolve router/theme overlaps), push/PR
+needs explicit approval.

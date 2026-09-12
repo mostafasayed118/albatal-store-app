@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
@@ -65,7 +66,7 @@ class DetailsPage extends StatelessWidget {
                 title: l.noResultsFound,
                 body: l.emptyBody,
                 actionLabel: l.returnHome,
-                onAction: () => context.go('/home'),
+                onAction: () => context.go(Routes.home),
               ),
             );
           }
@@ -157,8 +158,8 @@ class DetailsPage extends StatelessWidget {
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (_, i) => RelatedCard(
                         product: s.relatedProducts[i],
-                        onTap: () =>
-                            context.push('/product/${s.relatedProducts[i].id}'),
+                        onTap: () => context
+                            .push(Routes.product(s.relatedProducts[i].id)),
                       ),
                     ),
                   ),

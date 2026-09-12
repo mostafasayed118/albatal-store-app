@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -52,13 +53,13 @@ class AdminCatalogPage extends StatelessWidget {
             icon: Icons.shopping_bag_outlined,
             title: l10n.products,
             subtitle: l10n.manageProducts,
-            onTap: () => _guardedPush(context, '/admin/products'),
+            onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
           _ManagementTile(
             icon: Icons.category_outlined,
             title: l10n.categories,
             subtitle: l10n.manageCategories,
-            onTap: () => _guardedPush(context, '/admin/categories'),
+            onTap: () => _guardedPush(context, Routes.adminCategories),
           ),
           // Image and variant management are per-product surfaces
           // (`/admin/images/:id`, `/admin/variants/:id`) — a product must
@@ -69,13 +70,13 @@ class AdminCatalogPage extends StatelessWidget {
             icon: Icons.image_outlined,
             title: l10n.productImages,
             subtitle: l10n.manageProductImages,
-            onTap: () => _guardedPush(context, '/admin/products'),
+            onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
           _ManagementTile(
             icon: Icons.inventory_2_outlined,
             title: l10n.variants,
             subtitle: l10n.manageVariantsAndStock,
-            onTap: () => _guardedPush(context, '/admin/products'),
+            onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
         ],
       ),

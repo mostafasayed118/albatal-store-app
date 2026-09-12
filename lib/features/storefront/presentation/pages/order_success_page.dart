@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 
 class OrderSuccessPage extends StatelessWidget {
   const OrderSuccessPage({super.key, required this.orderId});
@@ -34,7 +35,7 @@ class OrderSuccessPage extends StatelessWidget {
                 const SizedBox(height: 24),
                 AppButton(
                   label: l.trackMyOrder,
-                  onPressed: () => context.go('/profile/orders'),
+                  onPressed: () => context.go(Routes.orders),
                 ),
               ],
             ),
@@ -67,13 +68,13 @@ class OrderSuccessPage extends StatelessWidget {
               const SizedBox(height: 32),
               AppButton(
                 label: l.trackMyOrder,
-                onPressed: () => context.go('/profile/orders'),
+                onPressed: () => context.go(Routes.orders),
               ),
               const SizedBox(height: 8),
               AppButton(
                 label: l.continueShopping,
                 style: AppButtonStyle.outline,
-                onPressed: () => context.go('/home'),
+                onPressed: () => context.go(Routes.home),
               ),
             ],
           ),

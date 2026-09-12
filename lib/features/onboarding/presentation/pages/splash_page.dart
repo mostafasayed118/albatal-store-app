@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
@@ -51,8 +52,9 @@ class _SplashPageState extends State<SplashPage>
 
   void _openDestination(OnboardingDestination destination) {
     if (!mounted) return;
-    context.go(
-        destination == OnboardingDestination.home ? '/home' : '/onboarding');
+    context.go(destination == OnboardingDestination.home
+        ? Routes.home
+        : Routes.onboarding);
   }
 
   @override

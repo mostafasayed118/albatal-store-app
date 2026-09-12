@@ -9,6 +9,7 @@ import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -108,7 +109,7 @@ final class SettingsPage extends StatelessWidget {
                 title: Text(context.l10n.customerSupport),
                 // Drill-in chevron points in the reading direction (flips in RTL).
                 trailing: Icon(context.directionalTrailingIcon),
-                onTap: () => context.push('/support'),
+                onTap: () => context.push(Routes.support),
               ),
               // Account deletion (UX-043) is only meaningful to a signed-in
               // user; guests see nothing here.
