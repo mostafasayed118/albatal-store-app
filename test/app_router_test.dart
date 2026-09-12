@@ -34,8 +34,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'helpers/memory_storefront_persistence.dart';
 import 'helpers/fetch_related_stub.dart';
+import 'helpers/memory_storefront_persistence.dart';
 
 void main() {
   testWidgets('protected route redirects while unauthenticated',

@@ -165,11 +165,10 @@ extension ProductCodec on Product {
         name: safeString(raw, 'name'),
         category: safeString(raw, 'category'),
         price: Money(priceRaw is num ? priceRaw.toInt() : 0),
-        oldPrice: oldPriceRaw is num
-            ? Money((oldPriceRaw).toInt())
-            : null,
-        imageColor:
-            imageColorRaw is num ? imageColorRaw.toInt() : _placeholderImageColor,
+        oldPrice: oldPriceRaw is num ? Money((oldPriceRaw).toInt()) : null,
+        imageColor: imageColorRaw is num
+            ? imageColorRaw.toInt()
+            : _placeholderImageColor,
         imageAsset: optStr(raw['imageAsset']),
         images:
             (raw['images'] as List?)?.whereType<String>().toList() ?? const [],

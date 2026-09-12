@@ -188,8 +188,7 @@ class SentryCrashReportingService implements CrashReportingService {
           req.queryString = null;
           req.fragment = null;
           final headers = Map<String, String>.from(req.headers);
-          final scrubbedHeaders =
-              CrashReportingService.scrubContext(headers);
+          final scrubbedHeaders = CrashReportingService.scrubContext(headers);
           req.headers = scrubbedHeaders.map(
             (k, v) => MapEntry(k, v?.toString() ?? '[REDACTED]'),
           );

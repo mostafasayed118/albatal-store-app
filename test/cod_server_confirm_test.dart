@@ -419,7 +419,8 @@ void main() {
       ));
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-no-payment');
+      cubit.initPayment(
+          amount: const Money.egp(100), orderId: 'ord-no-payment');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
@@ -458,7 +459,8 @@ void main() {
       final service = _CompleterConfirmService();
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-no-premature');
+      cubit.initPayment(
+          amount: const Money.egp(100), orderId: 'ord-no-premature');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       // Start payment — RPC is now pending.
@@ -490,7 +492,8 @@ void main() {
       final service = _CompleterConfirmService();
       final cubit = PaymentCubit(service);
 
-      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-fail-before');
+      cubit.initPayment(
+          amount: const Money.egp(100), orderId: 'ord-fail-before');
       cubit.selectMethod(PaymentMethod.cashOnDelivery);
 
       final processFuture = cubit.processPayment(customerEmail: 'a@b.c');

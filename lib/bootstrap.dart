@@ -73,7 +73,6 @@ Future<void> bootstrap({SmokeExit? exitApp}) async {
 /// the locator registers [NoOpCrashReportingService] and this is plain
 /// runApp with chained framework handlers.
 Future<void> _bootstrapAndRun(SmokeExit? exitApp) async {
-
   // Bootstrap Supabase + DI. Either can throw if .env is missing, env
   // vars are blank, or SharedPreferences fails. Without a guard the app
   // crashes to a red error screen before runApp. Catch and show a clear

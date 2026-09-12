@@ -41,18 +41,28 @@ void main() {
         ProductCodec.encode(_good),
         // Missing id → decode returns null.
         {'name': 'Nameless', 'price': 100},
-        // Mistyped imageColor (String, not num) → decode throws.
+        // Mistyped imageColor (String, not num) → total decode degrades
+        // the field (placeholder tint) instead of throwing; the entry
+        // survives because it carries a usable id.
         {'id': 'bad-1', 'name': 'Bad Color', 'imageColor': 'red'},
         // Not a map at all.
         'just-a-string',
       ];
-      await prefs.setString(
-          'catalog_products_cache_v1', jsonEncode(payload));
+      await prefs.setString('catalog_products_cache_v1', jsonEncode(payload));
 
       final restored = _repo(prefs).restorePersistentCacheForTest();
       expect(restored, isNotNull);
-      expect(restored!.map((p) => p.id),
-          ['11111111-1111-1111-1111-111111111111']);
+      expect(restored!.map((p) => p.id), [
+        '11111111-1111-1111-1111-111111111111',
+        'bad-1',
+      ]);
+      // The mistyped imageColor degraded to the same placeholder an absent
+      // imageColor decodes to — not thrown, not propagated.
+      expect(
+          restored.last.imageColor,
+          ProductCodec.decode(
+                  {'id': 'p', 'name': 'p', 'category': 'p', 'price': 0})!
+              .imageColor);
     });
 
     test('garbage payload still restores to null', () async {

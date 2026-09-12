@@ -226,8 +226,9 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           .select(_productSelect)
           .eq('is_active', true)
           .eq('categories.name', category);
-      final scoped =
-          (excludeId != null && excludeId.isNotEmpty) ? filtered.neq('id', excludeId) : filtered;
+      final scoped = (excludeId != null && excludeId.isNotEmpty)
+          ? filtered.neq('id', excludeId)
+          : filtered;
       final rows = await scoped.order('name').limit(limit);
 
       final result = <Product>[];
@@ -315,8 +316,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       for (final entry in decoded) {
         try {
           if (entry is! Map) continue;
-          final product =
-              ProductCodec.decode(entry as Map<Object?, Object?>);
+          final product = ProductCodec.decode(entry as Map<Object?, Object?>);
           if (product != null) products.add(product);
         } catch (e) {
           Log.w('Catalog persistent cache skipping corrupt entry: $e');

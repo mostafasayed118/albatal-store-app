@@ -166,8 +166,7 @@ class DetailsPage extends StatelessWidget {
                 const SizedBox(height: 80),
               ],
             ),
-            bottomNavigationBar:
-                BlocBuilder<ProductDetailsCubit, DetailsState>(
+            bottomNavigationBar: BlocBuilder<ProductDetailsCubit, DetailsState>(
               buildWhen: (previous, current) =>
                   previous.product != current.product ||
                   previous.color != current.color ||

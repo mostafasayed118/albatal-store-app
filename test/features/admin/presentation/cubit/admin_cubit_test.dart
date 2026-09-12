@@ -136,8 +136,8 @@ void main() {
     blocTest<AdminCubit, AdminState>(
       'emits error with repository message on Failure',
       build: () {
-        when(() => repo.getOrderDetails('o1'))
-            .thenAnswer((_) async => const Failure(AppError('Failed to load order')));
+        when(() => repo.getOrderDetails('o1')).thenAnswer(
+            (_) async => const Failure(AppError('Failed to load order')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrderDetails('o1'),
@@ -410,8 +410,8 @@ void main() {
         selectedOrder: _orderForCustomer('o1', 'profile-9'),
       ),
       build: () {
-        when(() => repo.setMembershipTier('profile-9', 'premium'))
-            .thenAnswer((_) async => const Failure(AppError('tier change rejected')));
+        when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
+            (_) async => const Failure(AppError('tier change rejected')));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.setMembershipTier('profile-9', 'premium'),

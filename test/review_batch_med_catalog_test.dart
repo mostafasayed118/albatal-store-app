@@ -32,7 +32,7 @@ class _FlashCatalog
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('Product not found'));
+      const Failure(AppError('Product not found'));
 
   @override
   Product? findProductById(String id) => null;
@@ -62,7 +62,7 @@ void main() {
       },
       expect: () => [
         CatalogState(
-          flashSales: [FlashSale(productId: 'p1', discountPct: 20)],
+          flashSales: [const FlashSale(productId: 'p1', discountPct: 20)],
         ),
       ],
     );
@@ -108,7 +108,7 @@ void main() {
       expect(find.byType(RangeSlider), findsNothing);
       // Fixed-price text + the collapsed start/end labels all read the
       // single catalog price.
-      expect(find.text(Money.egp(1290).format()), findsNWidgets(3));
+      expect(find.text(const Money.egp(1290).format()), findsNWidgets(3));
     });
   });
 

@@ -117,7 +117,8 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       final session = _client.auth.currentSession;
       if (session == null) {
-        return const Failure(AppError('Your session expired. Please sign in again.'));
+        return const Failure(
+            AppError('Your session expired. Please sign in again.'));
       }
       // The edge function re-verifies the JWT and compares [email] against
       // the account email before deleting with the service role (UX-043).

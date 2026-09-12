@@ -112,8 +112,8 @@ final class CartCubit extends Cubit<CartState> {
     // Ignore non-positive adds; clamp to the 1..99 update contract.
     if (quantity <= 0) return;
     final qty = quantity.clamp(1, 99).toInt();
-    final item = CartItem(
-        product: product, color: color, length: length, quantity: qty);
+    final item =
+        CartItem(product: product, color: color, length: length, quantity: qty);
     final old =
         state.items.where((existing) => existing.key == item.key).firstOrNull;
     if (old == null) {

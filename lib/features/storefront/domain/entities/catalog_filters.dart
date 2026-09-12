@@ -85,8 +85,8 @@ final class CatalogFilters extends Equatable {
     // Same source as CatalogState.availableColors (variant colors) — the
     // filter chips and the matcher must agree or offered chips can never
     // match anything (imageColor is a placeholder tint on network rows).
-    final matchesColor = colorFilter.isEmpty ||
-        product.colors.contains(colorFilter);
+    final matchesColor =
+        colorFilter.isEmpty || product.colors.contains(colorFilter);
     final matchesPrice = product.price >= priceMin && product.price <= priceMax;
     return matchesCategory && matchesQuery && matchesColor && matchesPrice;
   }

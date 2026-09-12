@@ -129,7 +129,7 @@ class _FailingCatalog
     implements CatalogRepository {
   @override
   Future<Result<List<Product>>> fetchProducts() async =>
-      Failure(AppError('offline'));
+      const Failure(AppError('offline'));
 
   @override
   Future<Result<List<String>>> fetchCategories() async =>
@@ -137,7 +137,7 @@ class _FailingCatalog
 
   @override
   Future<Result<Product>> fetchProductById(String id) async =>
-      Failure(AppError('offline'));
+      const Failure(AppError('offline'));
 
   @override
   Product? findProductById(String id) => null;

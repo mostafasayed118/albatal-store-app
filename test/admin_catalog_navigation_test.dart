@@ -16,7 +16,6 @@ import 'package:al_batal_elite/features/admin/presentation/pages/admin_products_
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_variant_editor_page.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
-import 'helpers/fetch_related_stub.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/app_image.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
@@ -24,6 +23,8 @@ import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+
+import 'helpers/fetch_related_stub.dart';
 
 // ─── Fakes ──────────────────────────────────────────────────────
 

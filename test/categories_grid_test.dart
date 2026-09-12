@@ -4,7 +4,6 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
-import 'helpers/fetch_related_stub.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/fabric_weave_painter.dart';
@@ -12,6 +11,8 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'helpers/fetch_related_stub.dart';
 
 final _products = [
   const Product(

@@ -125,7 +125,8 @@ class Log {
   /// Release-safe error summary: user-safe message for [AppError],
   /// otherwise just the runtime type (never the raw `toString()`).
   static String _safeErrorSummary(Object? error) {
-    if (error is AppError) return redact('${error.runtimeType}: ${error.message}');
+    if (error is AppError)
+      return redact('${error.runtimeType}: ${error.message}');
     return error.runtimeType.toString();
   }
 

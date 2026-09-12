@@ -4,8 +4,8 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 
-import 'products_data.dart';
 import '../helpers/fetch_related_stub.dart';
+import 'products_data.dart';
 
 /// Local in-memory catalog repository backed by the fixed [products] constant.
 ///

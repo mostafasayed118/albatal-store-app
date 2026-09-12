@@ -75,7 +75,8 @@ Future<void> configureDependencies() async {
         () => SupabaseProfileRepository())
     ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
     ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
-    ..registerLazySingleton<SupportRepository>(() => const LocalSupportRepository())
+    ..registerLazySingleton<SupportRepository>(
+        () => const LocalSupportRepository())
     ..registerLazySingleton<LocalStorefrontPersistence>(() =>
         LocalStorefrontPersistence(getIt<SharedPreferences>(),
             secureStore: getIt<SecureStore>()))

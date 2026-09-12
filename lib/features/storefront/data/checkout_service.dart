@@ -126,7 +126,9 @@ class CheckoutService implements CheckoutRepository {
     final code = (e.code ?? '').toUpperCase();
     final msg = e.message.toLowerCase();
     // Known safe signals (keep tiny; expand only with server contract).
-    if (code == '23505' || msg.contains('duplicate') || msg.contains('already')) {
+    if (code == '23505' ||
+        msg.contains('duplicate') ||
+        msg.contains('already')) {
       return 'Checkout failed';
     }
     if (msg.contains('insufficient stock') || msg.contains('out of stock')) {
