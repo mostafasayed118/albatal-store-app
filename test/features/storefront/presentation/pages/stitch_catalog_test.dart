@@ -12,6 +12,7 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cub
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/catalog_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
@@ -125,9 +126,24 @@ Widget _ordersHarness({required MemoryStorefrontPersistence store}) {
     supportedLocales: AppLocalizations.supportedLocales,
     home: BlocProvider(
       create: (_) => OrdersCubit(store)..restore(),
-      child: const OrdersPage(),
+      child: _withReorderCubit(const OrdersPage()),
     ),
   );
+}
+
+/// OrdersPage depends on the app-scoped ReorderCubit (§6). Harnesses
+/// that pump the page directly provide an inert instance here.
+Widget _withReorderCubit(Widget child) => BlocProvider<ReorderCubit>(
+      create: (_) => ReorderCubit(
+        catalog: _NoCatalog(),
+        addToCart: (_, {color = '', length = '', quantity = 1}) {},
+      ),
+      child: child,
+    );
+
+class _NoCatalog implements CatalogRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 void main() {

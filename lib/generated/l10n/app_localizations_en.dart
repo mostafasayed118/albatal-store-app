@@ -394,6 +394,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProduct => 'Share product';
 
   @override
+  String get reorder => 'Reorder';
+
+  @override
+  String reorderAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Added $count items to your cart',
+      one: 'Added 1 item to your cart',
+      zero: 'Nothing was added to your cart',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderUnavailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items are unavailable and were skipped',
+      one: '1 item is unavailable and was skipped',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String shareProductMessage(Object name, Object url) {
     return '$name — Al Batal Elite\n$url';
   }

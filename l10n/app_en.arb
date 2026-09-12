@@ -143,6 +143,19 @@
   },
   "confirmStep": "Confirm",
   "shareProduct": "Share product",
+  "reorder": "Reorder",
+  "reorderAdded": "{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}",
+  "@reorderAdded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "reorderUnavailable": "{count, plural, =1{1 item is unavailable and was skipped} other{{count} items are unavailable and were skipped}}",
+  "@reorderUnavailable": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "shareProductMessage": "{name} — Al Batal Elite\n{url}",
   "@shareProductMessage": {
     "placeholders": {

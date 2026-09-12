@@ -399,6 +399,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareProduct => 'مشاركة المنتج';
 
   @override
+  String get reorder => 'إعادة الطلب';
+
+  @override
+  String reorderAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تمت إضافة $count أصناف إلى سلتك',
+      one: 'تمت إضافة صنف واحد إلى سلتك',
+      zero: 'لم تتم إضافة أي أصناف إلى سلتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String reorderUnavailable(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم تخطي $count أصناف غير متاحة',
+      one: 'تم تخطي صنف غير متاح',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String shareProductMessage(Object name, Object url) {
     return '$name — البطل إيليت\n$url';
   }

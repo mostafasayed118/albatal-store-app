@@ -818,6 +818,24 @@ abstract class AppLocalizations {
   /// **'Share product'**
   String get shareProduct;
 
+  /// No description provided for @reorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder'**
+  String get reorder;
+
+  /// No description provided for @reorderAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}'**
+  String reorderAdded(int count);
+
+  /// No description provided for @reorderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item is unavailable and was skipped} other{{count} items are unavailable and were skipped}}'**
+  String reorderUnavailable(int count);
+
   /// No description provided for @shareProductMessage.
   ///
   /// In en, this message translates to:

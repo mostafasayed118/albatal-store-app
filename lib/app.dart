@@ -25,6 +25,7 @@ import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'features/storefront/presentation/cubit/orders_cubit.dart';
+import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
@@ -54,6 +55,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthCubit _authCubit;
   late final CartCubit _cartCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
+  late final ReorderCubit _reorderCubit;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _deepLinkSub;
@@ -85,6 +87,12 @@ final class _AlBatalAppState extends State<AlBatalApp> {
         isPremium: auth.profile?.tier == MembershipTier.premium,
       );
     });
+    // One-tap reorder (feature-batch §6): app-scoped so the orders
+    // surface stays GetIt-free; cart adds flow through the live cubit.
+    _reorderCubit = ReorderCubit(
+      catalog: getIt<CatalogRepository>(),
+      addToCart: _cartCubit.add,
+    );
     // Inbound deep links (feature-batch §5): parse → navigate. The
     // service swallows plugin errors on platforms without link support
     // so VM tests and web builds degrade to silence.
@@ -113,6 +121,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _deepLinkSub?.cancel();
     _router.dispose();
     _authRefreshNotifier.dispose();
+    _reorderCubit.close();
     _authCubit.close();
     super.dispose();
   }
@@ -136,6 +145,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                   WishlistCubit(getIt<WishlistRepository>())..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
+          BlocProvider.value(value: _reorderCubit),
           BlocProvider(
               create: (_) =>
                   AddressesCubit(getIt<AddressRepository>())..load()),

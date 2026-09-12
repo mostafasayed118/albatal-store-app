@@ -184,7 +184,11 @@ void main() {
       ),
     ));
 
-    expect(find.byType(TextButton), findsNothing);
+    // §6 refined the blanket rule: the customer-safe Reorder action is
+    // allowed on order cards; status-mutation affordances are not. The
+    // empty-item card renders Reorder disabled (nothing to re-add).
+    expect(find.byType(TextButton), findsOneWidget);
+    expect(find.byIcon(Icons.restart_alt), findsOneWidget);
     expect(find.byIcon(Icons.arrow_forward), findsNothing);
     expect(find.byType(StatusProgress), findsOneWidget);
   });
