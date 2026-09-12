@@ -9,6 +9,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../../domain/repositories/auth_session_port.dart';
@@ -63,7 +64,7 @@ class CheckoutPage extends StatelessWidget {
           // Empty (never fake) when the session lapsed — PaymentMethodPage
           // blocks with a sign-in error instead of charging a dead address.
           final email = _resolveCustomerEmail();
-          context.push('/payment-method', extra: {
+          context.push(Routes.paymentMethod, extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
             'shipping': s.serverShipping,

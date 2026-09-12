@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/order.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import 'order_card.dart';
 
 /// List of orders with an inviting empty state.
@@ -36,7 +37,7 @@ class OrderList extends StatelessWidget {
         title: emptyMessage,
         body: context.l10n.emptyBody,
         actionLabel: context.l10n.continueShopping,
-        onAction: () => context.go('/catalog'),
+        onAction: () => context.go(Routes.catalog),
       );
     }
     return ListView.builder(

@@ -45,11 +45,12 @@ import '../services/connectivity_gate.dart';
 import '../services/navigation_observer.dart';
 import '../services/service_locator.dart';
 import '../services/storage_service.dart';
+import 'app_routes.dart';
 import 'auth_refresh_notifier.dart';
 
 GoRouter createAppRouter(
   AuthCubit authCubit, {
-  String initialLocation = '/splash',
+  String initialLocation = Routes.splash,
   AuthRefreshNotifier? refreshListenable,
 }) =>
     GoRouter(
@@ -65,14 +66,15 @@ String? _redirect(AuthState auth, GoRouterState state) {
   final path = state.uri.path;
 
   String signInRedirect(String target) =>
-      Uri(path: '/sign-in', queryParameters: {'redirect': target}).toString();
+      Uri(path: Routes.signIn, queryParameters: {'redirect': target})
+          .toString();
 
   bool matchesAuthRoute(String route) =>
       path == route || path.startsWith('$route/');
 
-  if (path == '/admin' || path.startsWith('/admin/')) {
+  if (matchesAuthRoute(Routes.admin)) {
     if (!auth.isAuthenticated) return signInRedirect(path);
-    if (auth.profile?.isAdmin != true) return '/home';
+    if (auth.profile?.isAdmin != true) return Routes.home;
     return null;
   }
 
@@ -80,14 +82,14 @@ String? _redirect(AuthState auth, GoRouterState state) {
   // intentionally public — a guest must be able to review the cart they are
   // building; the auth gate moves to checkout (UI/UX review P0 funnel fix).
   const authRequired = [
-    '/checkout',
-    '/profile/orders',
-    '/profile/addresses',
-    '/wishlist',
-    '/payment-method',
-    '/paymob-checkout',
-    '/instapay-instructions',
-    '/order-success',
+    Routes.checkout,
+    Routes.orders,
+    Routes.addresses,
+    Routes.wishlist,
+    Routes.paymentMethod,
+    Routes.paymobCheckout,
+    Routes.instapayInstructions,
+    Routes.orderSuccess,
   ];
   if (authRequired.any(matchesAuthRoute) && !auth.isAuthenticated) {
     return signInRedirect(path);
@@ -96,24 +98,26 @@ String? _redirect(AuthState auth, GoRouterState state) {
 }
 
 final _routes = <RouteBase>[
-  GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
-  GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingPage()),
+  GoRoute(path: Routes.splash, builder: (_, __) => const SplashPage()),
+  GoRoute(path: Routes.onboarding, builder: (_, __) => const OnboardingPage()),
   ShellRoute(
       builder: (_, __, child) =>
           AppShell(gate: getIt<ConnectivityGate>(), child: child),
       routes: [
-        GoRoute(path: '/home', builder: (_, __) => const HomePage()),
+        GoRoute(path: Routes.home, builder: (_, __) => const HomePage()),
         GoRoute(
-            path: '/categories', builder: (_, __) => const CategoriesPage()),
+            path: Routes.categories,
+            builder: (_, __) => const CategoriesPage()),
         GoRoute(
-          path: '/catalog',
+          path: Routes.catalog,
           builder: (_, s) => CatalogPage(
             initialQuery: s.uri.queryParameters['q'],
           ),
         ),
-        GoRoute(path: '/wishlist', builder: (_, __) => const WishlistPage()),
-        GoRoute(path: '/cart', builder: (_, __) => const CartPage()),
-        GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
+        GoRoute(
+            path: Routes.wishlist, builder: (_, __) => const WishlistPage()),
+        GoRoute(path: Routes.cart, builder: (_, __) => const CartPage()),
+        GoRoute(path: Routes.profile, builder: (_, __) => const ProfilePage()),
       ]),
   GoRoute(
     path: '/product/:id',
@@ -123,7 +127,7 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/checkout',
+    path: Routes.checkout,
     builder: (_, __) => CheckoutPage(
       checkoutRepository: getIt<CheckoutRepository>(),
       placeOrder: getIt.isRegistered<PlaceCheckoutOrderUseCase>()
@@ -133,29 +137,29 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/order-success',
+    path: Routes.orderSuccess,
     builder: (_, state) => OrderSuccessPage(
       orderId: state.extra is String ? state.extra as String : '',
     ),
   ),
-  GoRoute(path: '/profile/orders', builder: (_, __) => const OrdersPage()),
+  GoRoute(path: Routes.orders, builder: (_, __) => const OrdersPage()),
   GoRoute(
-    path: '/profile/addresses',
+    path: Routes.addresses,
     builder: (_, __) => const AddressesPage(),
   ),
-  GoRoute(path: '/settings', builder: (_, __) => const SettingsPage()),
-  GoRoute(path: '/sign-in', builder: (_, __) => const SignInPage()),
-  GoRoute(path: '/sign-up', builder: (_, __) => const SignUpPage()),
+  GoRoute(path: Routes.settings, builder: (_, __) => const SettingsPage()),
+  GoRoute(path: Routes.signIn, builder: (_, __) => const SignInPage()),
+  GoRoute(path: Routes.signUp, builder: (_, __) => const SignUpPage()),
   GoRoute(
-    path: '/forgot-password',
+    path: Routes.forgotPassword,
     builder: (_, __) => const ForgotPasswordPage(),
   ),
   GoRoute(
-    path: '/reset-password',
+    path: Routes.resetPassword,
     builder: (_, __) => const ResetPasswordPage(),
   ),
   GoRoute(
-    path: '/payment-method',
+    path: Routes.paymentMethod,
     builder: (_, s) => PaymentMethodPage(
       args: s.extra is Map<String, dynamic>
           ? s.extra as Map<String, dynamic>
@@ -163,12 +167,12 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/paymob-checkout',
+    path: Routes.paymobCheckout,
     builder: (_, s) => PaymobCheckoutPage(
         checkoutUrl: s.extra is String ? s.extra as String : ''),
   ),
   GoRoute(
-    path: '/instapay-instructions',
+    path: Routes.instapayInstructions,
     // No path change (router review gate): the shared PaymentCubit
     // stays load-bearing via `extra['cubit']`; `extra['orderId']` is
     // carried additively for the page's rehydration path.
@@ -183,29 +187,30 @@ final _routes = <RouteBase>[
       );
     },
   ),
-  GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
-  GoRoute(path: '/admin/orders', builder: (_, __) => const AdminOrdersPage()),
+  GoRoute(path: Routes.admin, builder: (_, __) => const AdminDashboardPage()),
+  GoRoute(
+      path: Routes.adminOrders, builder: (_, __) => const AdminOrdersPage()),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
   ),
   GoRoute(
-    path: '/admin/inventory',
+    path: Routes.adminInventory,
     builder: (_, __) => const AdminInventoryPage(),
   ),
   GoRoute(
-    path: '/admin/catalog',
+    path: Routes.adminCatalog,
     builder: (_, __) => AdminCatalogPage(repository: getIt<AdminRepository>()),
   ),
   // Catalog management destinations (migration-era hub tiles pointed at
   // these paths, but the routes themselves were never registered — every
   // tile dead-ended on "Page Not Found").
   GoRoute(
-    path: '/admin/products',
+    path: Routes.adminProducts,
     builder: (_, __) => AdminProductsPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
-    path: '/admin/products/new',
+    path: Routes.adminProductNew,
     builder: (_, __) =>
         AdminProductEditPage(repository: getIt<AdminRepository>()),
   ),
@@ -217,7 +222,7 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/admin/categories',
+    path: Routes.adminCategories,
     builder: (_, __) =>
         AdminCategoriesPage(repository: getIt<AdminRepository>()),
   ),
@@ -239,21 +244,21 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/support',
+    path: Routes.support,
     builder: (_, __) =>
         SupportPage(supportRepository: getIt<SupportRepository>()),
   ),
   GoRoute(
-    path: '/privacy-policy',
+    path: Routes.privacyPolicy,
     builder: (_, __) => const PrivacyPolicyPage(),
   ),
-  GoRoute(path: '/terms', builder: (_, __) => const TermsOfServicePage()),
+  GoRoute(path: Routes.terms, builder: (_, __) => const TermsOfServicePage()),
   GoRoute(
-    path: '/shipping-policy',
+    path: Routes.shippingPolicy,
     builder: (_, __) => const ShippingPolicyPage(),
   ),
   GoRoute(
-    path: '/returns-policy',
+    path: Routes.returnsPolicy,
     builder: (_, __) => const ReturnsPolicyPage(),
   ),
 ];

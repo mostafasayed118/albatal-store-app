@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/storefront/presentation/cubit/cart_cubit.dart';
 import '../extensions/build_context_x.dart';
+import '../routing/app_routes.dart';
 import '../services/connectivity_gate.dart';
 import 'offline_banner.dart';
 
@@ -33,11 +34,11 @@ final class AppShell extends StatelessWidget {
             builder: (_, cart) => NavigationBar(
                     selectedIndex: _index(GoRouterState.of(context).uri.path),
                     onDestinationSelected: (i) => context.go([
-                          '/home',
-                          '/categories',
-                          '/cart',
-                          '/wishlist',
-                          '/profile'
+                          Routes.home,
+                          Routes.categories,
+                          Routes.cart,
+                          Routes.wishlist,
+                          Routes.profile
                         ][i]),
                     destinations: [
                       NavigationDestination(
@@ -70,10 +71,10 @@ final class AppShell extends StatelessWidget {
   }
 
   int _index(String p) {
-    if (p.startsWith('/categories')) return 1;
-    if (p.startsWith('/cart')) return 2;
-    if (p.startsWith('/wishlist')) return 3;
-    if (p.startsWith('/profile')) return 4;
+    if (p.startsWith(Routes.categories)) return 1;
+    if (p.startsWith(Routes.cart)) return 2;
+    if (p.startsWith(Routes.wishlist)) return 3;
+    if (p.startsWith(Routes.profile)) return 4;
     return 0;
   }
 }
