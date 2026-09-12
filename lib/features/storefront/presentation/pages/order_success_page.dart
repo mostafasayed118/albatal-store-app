@@ -4,16 +4,34 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/notification_service.dart';
+import '../../../../shared/services/service_locator.dart';
 
-class OrderSuccessPage extends StatelessWidget {
+class OrderSuccessPage extends StatefulWidget {
   const OrderSuccessPage({super.key, required this.orderId});
   final String orderId;
+
+  @override
+  State<OrderSuccessPage> createState() => _OrderSuccessPageState();
+}
+
+final class _OrderSuccessPageState extends State<OrderSuccessPage> {
+  @override
+  void initState() {
+    super.initState();
+    // §12: local order confirmation. The service itself is gated by the
+    // user's notification opt-in and fails silently when unavailable.
+    getIt<NotificationService>().showOrderNotification(
+      title: 'Al Batal Elite',
+      body: 'Order #${widget.orderId} confirmed',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final id = orderId.trim();
+    final id = widget.orderId.trim();
     if (id.isEmpty) {
       return Scaffold(
         body: Center(

@@ -45,6 +45,11 @@ class EnvConfig {
       String.fromEnvironment('WEB_BASE_URL',
           defaultValue: 'https://albatal.app');
 
+  /// OneSignal app id (feature-batch §12). Empty = push disabled; the
+  /// PushService scaffold no-ops so builds without push config work.
+  static const String onesignalAppId =
+      String.fromEnvironment('ONESIGNAL_APP_ID');
+
   /// Current environment name. Set via `--dart-define=APP_ENV=staging`
   /// (or in `config/env.*.json` via `--dart-define-from-file`); falls back
   /// to `development` in debug builds and `production` otherwise.

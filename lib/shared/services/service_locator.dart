@@ -16,6 +16,7 @@ import '../../features/onboarding/domain/repositories/onboarding_repository.dart
 import '../../features/payments/data/paymob_payment_service.dart';
 import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
+import '../../features/settings/data/notification_prefs_store.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
@@ -45,7 +46,9 @@ import 'analytics_service.dart';
 import 'connectivity_gate.dart';
 import 'deep_link_service.dart';
 import 'image_compressor.dart';
+import 'notification_service.dart';
 import 'product_share_service.dart';
+import 'push_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
 
@@ -146,5 +149,12 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<ReviewsRepository>(
         () => SupabaseReviewsRepository())
     // §11: first-party funnel analytics (fail-silent).
-    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService());
+    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService())
+    // §12: local order-status notifications + push scaffold (both
+    // fail-silent; push stays a no-op without ONESIGNAL_APP_ID).
+    ..registerLazySingleton<NotificationPrefsStore>(
+        () => PrefsNotificationStore(getIt<SharedPreferences>()))
+    ..registerLazySingleton<NotificationService>(() =>
+        LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
+    ..registerLazySingleton<PushService>(() => const PushService());
 }
