@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/remote_config_service.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -82,8 +83,9 @@ class _SplashPageState extends State<SplashPage>
       }
     }
     if (!mounted) return;
-    context.go(
-        destination == OnboardingDestination.home ? '/home' : '/onboarding');
+    context.go(destination == OnboardingDestination.home
+        ? Routes.home
+        : Routes.onboarding);
   }
 
   @override

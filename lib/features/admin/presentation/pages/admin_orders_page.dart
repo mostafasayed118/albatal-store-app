@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -103,7 +104,7 @@ final class _OrderTile extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        onTap: () => context.push('/admin/orders/${order.id}'),
+        onTap: () => context.push(Routes.adminOrder(order.id)),
         leading: CircleAvatar(
           backgroundColor: _statusColor(status, scheme).withValues(alpha: .12),
           child: Icon(_statusIcon(status),

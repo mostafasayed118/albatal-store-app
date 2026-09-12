@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/cart_cubit.dart';
 import '../widgets/cart_item_tile.dart';
 import '../widgets/cart_summary.dart';
@@ -44,7 +45,7 @@ class CartPage extends StatelessWidget {
               // Give the empty cart an exit back into the catalog instead of
               // dead-ending the user.
               actionLabel: l.startShopping,
-              onAction: () => context.go('/catalog'),
+              onAction: () => context.go(Routes.catalog),
             );
           }
           // Lazily built: a long cart no longer instantiates every
@@ -70,7 +71,7 @@ class CartPage extends StatelessWidget {
                     label: l.proceedToCheckout,
                     // Points forward in the reading direction (flips under RTL).
                     icon: context.directionalForwardIcon,
-                    onPressed: () => context.push('/checkout'),
+                    onPressed: () => context.push(Routes.checkout),
                   ),
                 ],
               );

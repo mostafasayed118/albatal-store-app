@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import 'price_text.dart';
@@ -20,7 +21,7 @@ class WishlistTile extends StatelessWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/product/${product.id}'),
+        onTap: () => context.push(Routes.product(product.id)),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(

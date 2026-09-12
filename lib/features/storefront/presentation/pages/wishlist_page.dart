@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -35,7 +36,7 @@ class WishlistPage extends StatelessWidget {
               title: l.wishlistEmptyTitle,
               body: l.wishlistEmptyBody,
               actionLabel: l.exploreCategories,
-              onAction: () => context.go('/categories'),
+              onAction: () => context.go(Routes.categories),
             );
           }
           return LayoutBuilder(

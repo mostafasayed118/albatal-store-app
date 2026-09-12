@@ -13,6 +13,7 @@ import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../../../../shared/widgets/skeleton_loaders.dart';
@@ -94,7 +95,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             tooltip: l.openSettings,
-            onPressed: () => context.push('/settings'),
+            onPressed: () => context.push(Routes.settings),
             icon: const Icon(Icons.dark_mode_outlined),
             color: AppColors.gold,
           ),
@@ -180,12 +181,12 @@ class _HomePageState extends State<HomePage> {
                             title: l.newSilkCollection,
                             subtitle: l.percentOff,
                             ctaLabel: l.shopNow,
-                            onTap: () => context.go('/categories'),
+                            onTap: () => context.go(Routes.categories),
                           ),
                           for (final p in state.featuredProducts)
                             StitchHeroSlide.fromProduct(
                               p,
-                              onTap: () => context.push('/product/${p.id}'),
+                              onTap: () => context.push(Routes.product(p.id)),
                             ),
                         ],
                       ),
@@ -247,7 +248,7 @@ class _HomePageState extends State<HomePage> {
                               showConfirmation(context, l.addedToCart);
                             },
                             onTap: () =>
-                                context.push('/product/${flashProduct.id}'),
+                                context.push(Routes.product(flashProduct.id)),
                           );
                         },
                       ),
@@ -319,7 +320,7 @@ class _HomePageState extends State<HomePage> {
                                 StitchProductGridCard(
                               product: product,
                               onTap: () =>
-                                  context.push('/product/${product.id}'),
+                                  context.push(Routes.product(product.id)),
                               onWishlist: () {
                                 hapticTap();
                                 context

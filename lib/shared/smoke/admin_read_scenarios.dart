@@ -1,4 +1,5 @@
 import '../../features/admin/presentation/cubit/admin_cubit.dart';
+import '../routing/app_routes.dart';
 import 'smoke_scenario.dart';
 
 /// Read-only data-path scenarios: they exercise the real cubits and
@@ -46,13 +47,13 @@ Map<String, SmokeScenario> adminReadScenarios() => {
         // sign-in means the admin guard tripped, and go_router's error page
         // would mean a dead end like the pre-044 catalog hub.
         const paths = [
-          '/admin',
-          '/admin/orders',
-          '/admin/inventory',
-          '/admin/catalog',
-          '/admin/products',
-          '/admin/products/new',
-          '/admin/categories',
+          Routes.admin,
+          Routes.adminOrders,
+          Routes.adminInventory,
+          Routes.adminCatalog,
+          Routes.adminProducts,
+          Routes.adminProductNew,
+          Routes.adminCategories,
         ];
         final checks = <SmokeCheck>[];
         for (final path in paths) {
