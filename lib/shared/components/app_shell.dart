@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/storefront/presentation/cubit/cart_cubit.dart';
+import '../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../extensions/build_context_x.dart';
 import '../routing/app_routes.dart';
 import '../services/connectivity_gate.dart';
@@ -30,44 +31,60 @@ final class AppShell extends StatelessWidget {
                   : const SizedBox.shrink()),
           Expanded(child: child),
         ]),
-        bottomNavigationBar: BlocBuilder<CartCubit, CartState>(
-            builder: (_, cart) => NavigationBar(
-                    selectedIndex: _index(GoRouterState.of(context).uri.path),
-                    onDestinationSelected: (i) => context.go([
-                          Routes.home,
-                          Routes.categories,
-                          Routes.cart,
-                          Routes.wishlist,
-                          Routes.profile
-                        ][i]),
-                    destinations: [
-                      NavigationDestination(
-                          icon: const Icon(Icons.home_outlined),
-                          selectedIcon: const Icon(Icons.home),
-                          label: l10n.home),
-                      NavigationDestination(
-                          icon: const Icon(Icons.grid_view_outlined),
-                          selectedIcon: const Icon(Icons.grid_view),
-                          label: l10n.categories),
-                      NavigationDestination(
-                          icon: Badge(
-                              isLabelVisible: cart.count > 0,
-                              label: Text(cartBadgeLabel(cart.count)),
-                              child: const Icon(Icons.shopping_bag_outlined)),
-                          selectedIcon: Badge(
-                              isLabelVisible: cart.count > 0,
-                              label: Text(cartBadgeLabel(cart.count)),
-                              child: const Icon(Icons.shopping_bag)),
-                          label: l10n.cart),
-                      NavigationDestination(
-                          icon: const Icon(Icons.favorite_border),
-                          selectedIcon: const Icon(Icons.favorite),
-                          label: l10n.wishlist),
-                      NavigationDestination(
-                          icon: const Icon(Icons.person_outline),
-                          selectedIcon: const Icon(Icons.person),
-                          label: l10n.profile),
-                    ])));
+        // Count-scoped selectors: the nav bar rebuilds only when a
+        // badge number actually changes (audit perf note), and the
+        // wishlist badge reflects WishlistCubit live (device-found bug:
+        // heart taps updated the wishlist but the tab showed nothing).
+        bottomNavigationBar: BlocSelector<CartCubit, CartState, int>(
+            selector: (cart) => cart.count,
+            builder: (_, cartCount) => BlocSelector<WishlistCubit,
+                    WishlistState, int>(
+                selector: (wishlist) => wishlist.ids.length,
+                builder: (_, wishlistCount) => NavigationBar(
+                        selectedIndex:
+                            _index(GoRouterState.of(context).uri.path),
+                        onDestinationSelected: (i) => context.go([
+                              Routes.home,
+                              Routes.categories,
+                              Routes.cart,
+                              Routes.wishlist,
+                              Routes.profile
+                            ][i]),
+                        destinations: [
+                          NavigationDestination(
+                              icon: const Icon(Icons.home_outlined),
+                              selectedIcon: const Icon(Icons.home),
+                              label: l10n.home),
+                          NavigationDestination(
+                              icon: const Icon(Icons.grid_view_outlined),
+                              selectedIcon: const Icon(Icons.grid_view),
+                              label: l10n.categories),
+                          NavigationDestination(
+                              icon: Badge(
+                                  isLabelVisible: cartCount > 0,
+                                  label: Text(cartBadgeLabel(cartCount)),
+                                  child:
+                                      const Icon(Icons.shopping_bag_outlined)),
+                              selectedIcon: Badge(
+                                  isLabelVisible: cartCount > 0,
+                                  label: Text(cartBadgeLabel(cartCount)),
+                                  child: const Icon(Icons.shopping_bag)),
+                              label: l10n.cart),
+                          NavigationDestination(
+                              icon: Badge(
+                                  isLabelVisible: wishlistCount > 0,
+                                  label: Text(cartBadgeLabel(wishlistCount)),
+                                  child: const Icon(Icons.favorite_border)),
+                              selectedIcon: Badge(
+                                  isLabelVisible: wishlistCount > 0,
+                                  label: Text(cartBadgeLabel(wishlistCount)),
+                                  child: const Icon(Icons.favorite)),
+                              label: l10n.wishlist),
+                          NavigationDestination(
+                              icon: const Icon(Icons.person_outline),
+                              selectedIcon: const Icon(Icons.person),
+                              label: l10n.profile),
+                        ]))));
   }
 
   int _index(String p) {
@@ -79,7 +96,7 @@ final class AppShell extends StatelessWidget {
   }
 }
 
-/// Badge text for the cart count.
+/// Badge text for the bottom-nav count badges (cart + wishlist).
 ///
 /// Caps at '99+' (UX-046) so the badge never blows out of shape at
 /// triple-digit quantities.
