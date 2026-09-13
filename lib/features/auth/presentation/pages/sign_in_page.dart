@@ -148,17 +148,21 @@ class _SignInPageState extends State<SignInPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _signInWith(OAuthProvider.google),
-                      icon: const Icon(Icons.g_mobiledata, size: 28),
-                      label: Text(l.signInWithGoogle),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _signInWith(OAuthProvider.google),
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: Text(l.signInWithGoogle),
+                      ),
                     ),
                     if (Theme.of(context).platform == TargetPlatform.iOS) ...[
                       const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        onPressed: () => _signInWith(OAuthProvider.apple),
-                        icon: const Icon(Icons.apple),
-                        label: Text(l.signInWithApple),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _signInWith(OAuthProvider.apple),
+                          icon: const Icon(Icons.apple),
+                          label: Text(l.signInWithApple),
+                        ),
                       ),
                     ],
                   ],
