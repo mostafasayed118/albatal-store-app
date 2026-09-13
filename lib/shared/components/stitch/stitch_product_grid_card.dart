@@ -47,9 +47,12 @@ class StitchProductGridCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Media 1:1
-                AspectRatio(
-                  aspectRatio: 1,
+                // Media flexes to absorb the cell height left over after
+                // the text block. The text block's intrinsic height scales
+                // with the user's font size, so a fixed square overflowed
+                // by 7.6px on a 360dp device (device-found 2026-09-13);
+                // BoxFit.cover degrades the crop instead of the layout.
+                Expanded(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -120,6 +123,8 @@ class StitchProductGridCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         product.category,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: textTheme.labelSmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
