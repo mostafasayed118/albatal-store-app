@@ -39,6 +39,7 @@ as $$
 declare
   v_window bigint :=
     extract(epoch from now())::bigint / greatest(p_window_seconds, 1);
+  v_allowed boolean;
 begin
   -- Atomic take: insert the window row on first sight, else bump the
   -- counter only while the budget lasts. `found` is false once the
@@ -48,7 +49,17 @@ begin
     on conflict (bucket, window_id)
     do update set count = public.rate_limits.count + 1
     where public.rate_limits.count < p_limit;
-  return found;
+  -- Capture the TAKE result immediately: FOUND is overwritten by
+  -- every subsequent DML (verifier round 2 must-fix — the prune's
+  -- DELETE below must not mask the take's outcome).
+  v_allowed := found;
+  -- Opportunistic housekeeping: ~1% of takes prune dead windows
+  -- (>48h old). Runs AFTER the take result is captured.
+  if random() < 0.01 then
+    delete from public.rate_limits
+    where window_id < extract(epoch from now())::bigint - 172800;
+  end if;
+  return v_allowed;
 end;
 $$;
 
@@ -58,18 +69,3 @@ $$;
 revoke all on function public.rate_limit_take(text, int, int) from public, anon;
 grant execute on function public.rate_limit_take(text, int, int) to authenticated;
 
--- Housekeeping: windows older than 48h are dead weight. Cheap enough
--- to prune opportunistically whenever a take lands in a fresh window.
-create or replace function public.rate_limit_prune()
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  delete from public.rate_limits
-  where window_id < extract(epoch from now())::bigint - 172800;
-end;
-$$;
-
-revoke all on function public.rate_limit_prune() from public, anon, authenticated;

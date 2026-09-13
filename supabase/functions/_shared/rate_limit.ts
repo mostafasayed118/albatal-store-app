@@ -17,10 +17,10 @@ import { jsonHeadersFor } from "./cors.ts";
 
 /** Minimal surface of a supabase-js client this module needs. */
 export interface RateLimitRpc {
-  (fn: string, args: Record<string, unknown>): Promise<{
-    data: unknown;
-    error: unknown;
-  }>;
+  (
+    fn: string,
+    args: Record<string, unknown>,
+  ): PromiseLike<{ data: unknown; error: unknown }>;
 }
 
 /** First hop of X-Forwarded-For (edge proxies prepend the client). */

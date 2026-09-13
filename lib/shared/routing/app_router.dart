@@ -178,6 +178,9 @@ final _routes = <RouteBase>[
       args: s.extra is Map<String, dynamic>
           ? s.extra as Map<String, dynamic>
           : {},
+      // Composition root resolves the service (audit 2026-09-13:
+      // payments getIt x2 closed — verifier must-fix #1).
+      paymentService: getIt<PaymentService>(),
     ),
   ),
   GoRoute(

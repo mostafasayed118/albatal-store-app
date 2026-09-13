@@ -58,6 +58,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Fail closed when service_role key is missing, then build the
+    // service-role client (the callback is an unauthenticated webhook
+    // from Paymob — HMAC is the auth) BEFORE any body parsing.
+    const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceRoleFail) return serviceRoleFail;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
+    );
+
+    // Rate limit (audit 2026-09-13, verifier must-fix #2): 60 webhook
+    // hits per caller IP per hour, enforced BEFORE the body parse +
+    // HMAC-SHA512 work so an invalid-signature flood cannot burn
+    // function quota. Fail-open by contract so a rate-limiter outage
+    // never blocks payments.
+    const rateLimited = await enforceRateLimit(
+      req,
+      (fn, args) => supabase.rpc(fn, args),
+      {
+        id: clientIp(req),
+        kind: "cb:ip",
+        limit: 60,
+        windowSeconds: 3600,
+      },
+    );
+    if (rateLimited) return rateLimited;
     const body = await req.text();
     if (!body || body.trim().length === 0) {
       return new Response(
@@ -176,33 +202,6 @@ Deno.serve(async (req) => {
     // The RPC runs as SECURITY DEFINER and performs the
     // payment/order/stock mutation in one transaction. It
     // locates the payment by paymob_order_id, validates
-    // amount/currency, and is idempotent. We use the
-    // service-role client because the callback is an
-    // unauthenticated webhook from Paymob (HMAC is the auth).
-    //
-    // Fail closed when service_role key is missing.
-    const serviceRoleFail = requireSecret(req, "SUPABASE_SERVICE_ROLE_KEY");
-    if (serviceRoleFail) return serviceRoleFail;
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string,
-    );
-
-    // Rate limit (audit 2026-09-13): 60 webhook hits per caller IP per
-    // hour — each request costs a body parse + HMAC-SHA512, so an
-    // unauthenticated flood otherwise burns function quota. Fail-open
-    // by contract so a rate-limiter outage never blocks payments.
-    const rateLimited = await enforceRateLimit(
-      req,
-      (fn, args) => supabase.rpc(fn, args),
-      {
-        id: clientIp(req),
-        kind: "cb:ip",
-        limit: 60,
-        windowSeconds: 3600,
-      },
-    );
-    if (rateLimited) return rateLimited;
 
     const { data, error } = await supabase.rpc("process_paymob_callback", {
       p_paymob_order_id: paymobOrderId,
