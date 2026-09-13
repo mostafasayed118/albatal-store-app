@@ -61,6 +61,8 @@
   "placed": "Placed",
   "shipped": "Shipped",
   "delivered": "Delivered",
+  "confirmed": "Confirmed",
+  "orderTimelineTitle": "Order tracking",
   "noItemsFound": "No items found",
   "exploreCategories": "Explore Categories",
   "wishlistEmptyTitle": "Your wishlist is empty",

@@ -196,6 +196,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delivered => 'Delivered';
 
   @override
+  String get confirmed => 'Confirmed';
+
+  @override
+  String get orderTimelineTitle => 'Order tracking';
+
+  @override
   String get noItemsFound => 'No items found';
 
   @override
