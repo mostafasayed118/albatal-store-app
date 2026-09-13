@@ -6,6 +6,7 @@ import 'package:al_batal_elite/features/auth/domain/repositories/profile_reposit
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/auth/presentation/pages/sign_in_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,7 +62,8 @@ class _StubProfileRepository implements ProfileRepository {
       const Success(null);
 }
 
-Widget _app(GoRouter router) => MaterialApp.router(
+Widget _app(GoRouter router, {ThemeData? theme}) => MaterialApp.router(
+      theme: theme,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
@@ -143,5 +145,29 @@ void main() {
 
     expect(find.text('HOME_SCREEN'), findsOneWidget);
     expect(find.text('CHECKOUT_SCREEN'), findsNothing);
+  });
+
+  testWidgets(
+      'sign-in page lays out under the app theme (device-found crash: '
+      'themed social buttons in a horizontal Row forced an infinite width)',
+      (WidgetTester tester) async {
+    final authCubit = AuthCubit(
+      authRepository: _StubAuthRepository(),
+      profileRepository: _StubProfileRepository(),
+    );
+    await authCubit.checkSession();
+    addTearDown(authCubit.close);
+
+    final router = _router(authCubit);
+    addTearDown(router.dispose);
+
+    // The real app theme sets `minimumSize: Size.fromHeight(50)` (i.e.
+    // Size(double.infinity, 50)) on filled/outlined buttons. A themed
+    // OutlinedButton inside a horizontal Row receives unbounded width and
+    // used to crash layout with "BoxConstraints forces an infinite width".
+    await tester.pumpWidget(_app(router, theme: AppTheme.light()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue as Guest'), findsOneWidget);
   });
 }
