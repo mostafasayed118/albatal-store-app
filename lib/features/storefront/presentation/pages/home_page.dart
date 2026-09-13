@@ -23,6 +23,7 @@ import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
+import '../widgets/recently_viewed_strip.dart';
 
 /// Home — Stitch reskin (spec §4/§5):
 /// pill search → 180dp gold hero → circular category chips →
@@ -233,6 +234,12 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
+                // #3: recently-viewed strip — hides itself until the
+                // shopper has actually viewed a product this lifecycle.
+                const SliverPadding(
+                  padding: EdgeInsetsDirectional.symmetric(horizontal: 16),
+                  sliver: SliverToBoxAdapter(child: RecentlyViewedStrip()),
+                ),
                 SliverPadding(
                   padding:
                       const EdgeInsetsDirectional.symmetric(horizontal: 16),

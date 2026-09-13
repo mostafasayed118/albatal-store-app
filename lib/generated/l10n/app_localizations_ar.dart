@@ -405,6 +405,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get recentSearches => 'عمليات البحث الأخيرة';
 
   @override
+  String get recentlyViewed => 'المنتجات المشاهدة مؤخرًا';
+
+  @override
   String get searchSuggestions => 'اقتراحات';
 
   @override

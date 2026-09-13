@@ -22,6 +22,7 @@ import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/recent_searches_store.dart';
+import '../../features/storefront/data/recently_viewed_store.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_coupons_repository.dart';
@@ -35,6 +36,7 @@ import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/idempotency_store.dart';
 import '../../features/storefront/domain/repositories/orders_repository.dart';
 import '../../features/storefront/domain/repositories/recent_searches_store.dart';
+import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
@@ -147,6 +149,9 @@ Future<void> configureDependencies() async {
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(
         () => PrefsRecentSearchesStore(getIt<SharedPreferences>()))
+    // #3: persisted recently-viewed product snapshots (home strip).
+    ..registerLazySingleton<RecentlyViewedStore>(
+        () => PrefsRecentlyViewedStore(getIt<SharedPreferences>()))
     // §8/§9: coupon validation + customer reviews.
     ..registerLazySingleton<CouponsRepository>(
         () => SupabaseCouponsRepository())

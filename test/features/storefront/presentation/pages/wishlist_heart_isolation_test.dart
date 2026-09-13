@@ -9,6 +9,7 @@ import 'package:al_batal_elite/features/storefront/domain/repositories/recent_se
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/recent_searches_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/catalog_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
 class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
@@ -83,6 +85,10 @@ Widget _homeHarness(MemoryStorefrontPersistence store) => MaterialApp(
           BlocProvider(
               create: (_) => RecentSearchesCubit(store: _NoRecentSearches())),
           BlocProvider(create: (_) => CartCubit(store)),
+          BlocProvider(
+            create: (_) =>
+                RecentlyViewedCubit(store: MemoryRecentlyViewedStore()),
+          ),
           BlocProvider(
             create: (_) => AuthCubit(
               authRepository: StubAuthRepository(),

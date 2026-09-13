@@ -12,6 +12,7 @@ import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/recently_viewed_store.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
@@ -44,7 +45,14 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository)..loadProduct(id),
+      // #3: record the view into the app-scoped store. Composition-root
+      // probe so widget tests can pump the page pre-DI.
+      create: (_) => ProductDetailsCubit(
+        _catalogRepository,
+        recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
+            ? getIt<RecentlyViewedStore>()
+            : null,
+      )..loadProduct(id),
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
       // gallery or the related strip.

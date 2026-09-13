@@ -400,6 +400,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recentSearches => 'Recent searches';
 
   @override
+  String get recentlyViewed => 'Recently viewed';
+
+  @override
   String get searchSuggestions => 'Suggestions';
 
   @override
