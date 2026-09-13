@@ -48,6 +48,9 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
+# Audit 2026-09-13 (#5): the client validator enforces 8 characters;
+# the GoTrue floor must not be weaker (dashboard setting must match).
+min_password_length = 8
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
