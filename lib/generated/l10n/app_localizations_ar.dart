@@ -1294,4 +1294,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get orderNotificationsSubtitle => 'التأكيدات وتحديثات الحالة';
+
+  @override
+  String get instapaySessionMissing => 'لم يتم العثور على جلسة الدفع';
 }

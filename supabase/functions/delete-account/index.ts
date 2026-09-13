@@ -33,6 +33,7 @@ import {
   jsonHeadersFor,
   requireCors,
 } from "../_shared/cors.ts";
+import { enforceRateLimit } from "../_shared/rate_limit.ts";
 import { requireSecret } from "../_shared/secrets.ts";
 
 async function handleDeleteAccount(req: Request): Promise<Response> {
@@ -79,6 +80,16 @@ async function handleDeleteAccount(req: Request): Promise<Response> {
         { status: 401, headers: jsonHeadersFor(req) },
       );
     }
+
+    // Rate limit (audit 2026-09-13): 5 attempts per user per hour —
+    // deletion is irreversible and each hit drives a service-role
+    // cascade. Bucketed by the verified user id, not IP.
+    const rateLimited = await enforceRateLimit(
+      req,
+      (fn, args) => userClient.rpc(fn, args),
+      { id: user.id, kind: "acct:user", limit: 5, windowSeconds: 3600 },
+    );
+    if (rateLimited) return rateLimited;
 
     // ─── Validate request ────────────────────────────────────
     // Only self-deletion is allowed, and (decision C) the caller must

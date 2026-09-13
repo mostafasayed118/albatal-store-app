@@ -1,6 +1,6 @@
 # Proposal — Edge-function rate limiting + GoTrue password floor
 
-**Status: HUMAN-REVIEW — DO NOT APPLY.** Both items sit behind the
+**Status: IMPLEMENTED on fix/audit-followup-0913 (owner-approved). DEPLOY GATED: migration 060 needs human-reviewed db push (staging first), then the four wired functions deploy; the GoTrue dashboard minimum-password setting must be raised to 8 server-side.** Both items sit behind the
 `supabase/` and server-config gates (loop-constraints.md). Staged here
 from the 2026-09-13 audit (security findings #1 and #5) so an approved
 slice can apply them verbatim.

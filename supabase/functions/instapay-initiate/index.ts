@@ -30,6 +30,7 @@ import {
   jsonHeadersFor,
   requireCors,
 } from "../_shared/cors.ts";
+import { enforceRateLimit } from "../_shared/rate_limit.ts";
 
 export async function handleInstapayInitiate(req: Request): Promise<Response> {
   const corsFail = requireCors(req);
@@ -73,6 +74,15 @@ export async function handleInstapayInitiate(req: Request): Promise<Response> {
         headers: jsonHeadersFor(req),
       });
     }
+
+    // Rate limit (audit 2026-09-13): 20 initiations per user per
+    // hour, checked before any payment lookups.
+    const rateLimited = await enforceRateLimit(
+      req,
+      (fn, args) => supabase.rpc(fn, args),
+      { id: user.id, kind: "init:user", limit: 20, windowSeconds: 3600 },
+    );
+    if (rateLimited) return rateLimited;
 
     // Fail closed when the merchant address is not configured.
     const instapayAddress = (Deno.env.get("INSTAPAY_MERCHANT_ADDRESS") ?? "")

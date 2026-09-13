@@ -55,9 +55,10 @@ class InstapayInstructionsPage extends StatefulWidget {
   /// path when the shared cubit is unavailable.
   final String? orderId;
 
-  /// [PaymentService] for the rehydrated cubit. Defaults to the
-  /// GetIt-registered instance; tests inject a stub. Ignored when
-  /// [cubit] is provided.
+  /// [PaymentService] for the rehydrated cubit, resolved at the
+  /// composition root (audit 2026-09-13); tests inject a stub. Null
+  /// (deep link without a session) renders the error body. Ignored
+  /// when [cubit] is provided.
   final PaymentService? paymentService;
 
   @override
@@ -88,10 +89,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
     super.initState();
     final orderId = widget.orderId?.trim() ?? '';
     if (widget.cubit == null && orderId.isNotEmpty) {
-      final service = widget.paymentService ??
-          (getIt.isRegistered<PaymentService>()
-              ? getIt<PaymentService>()
-              : null);
+      final service = widget.paymentService;
       if (service != null) {
         _ownedCubit = PaymentCubit(service)
           ..initPayment(amount: Money.zero, orderId: orderId);
@@ -219,7 +217,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
     if (cubit == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Payment session not found')),
+        body: Center(child: Text(context.l10n.instapaySessionMissing)),
       );
     }
     return BlocProvider<PaymentCubit>.value(

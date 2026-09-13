@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
@@ -342,13 +341,6 @@ class PaymobPaymentService implements PaymentService {
       );
     }
   }
-
-  /// Compat forwarder — the realtime mapping now lives on
-  /// [PaymentStatusWatcher]; kept so existing tests referencing
-  /// `PaymobPaymentService.terminalResultForRow` compile unchanged.
-  @visibleForTesting
-  static PaymentResult? terminalResultForRow(Map<String, dynamic> row) =>
-      PaymentStatusWatcher.terminalResultForRow(row);
 
   /// Subscribe to the `payments` row for [orderId] via Supabase Realtime.
   ///
