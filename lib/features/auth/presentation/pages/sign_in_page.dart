@@ -8,12 +8,16 @@ import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/oauth_service.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({super.key, this.oauthService});
+
+  /// [OAuthService] resolved at the composition root (audit
+  /// 2026-09-13: no build-time GetIt probe). Null (tests without the
+  /// bean registered) degrades to the oauthUnavailable message.
+  final OAuthService? oauthService;
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -185,8 +189,7 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> _signInWith(OAuthProvider provider) async {
     final messenger = ScaffoldMessenger.of(context);
-    final oauth =
-        getIt.isRegistered<OAuthService>() ? getIt<OAuthService>() : null;
+    final oauth = widget.oauthService;
     if (oauth == null) {
       messenger.showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,

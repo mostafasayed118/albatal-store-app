@@ -1,4 +1,5 @@
 import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/features/payments/data/payment_status_watcher.dart';
 import 'package:al_batal_elite/features/payments/data/paymob_payment_service.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,11 +45,11 @@ void main() {
       // Identical terminal rows must map to identical results on both
       // paths (realtime callback and 45s fallback poll): single
       // PaymentSuccess(transactionId: TX1); pending rows emit nothing.
-      final viaRealtime = PaymobPaymentService.terminalResultForRow(const {
+      final viaRealtime = PaymentStatusWatcher.terminalResultForRow(const {
         'status': 'success',
         'transaction_id': 'TX1',
       });
-      final viaPoll = PaymobPaymentService.terminalResultForRow(const {
+      final viaPoll = PaymentStatusWatcher.terminalResultForRow(const {
         'status': 'success',
         'transaction_id': 'TX1',
       });
@@ -61,16 +62,16 @@ void main() {
     test('failed rows map to gateway decline; pending rows emit nothing',
         () async {
       final failed =
-          PaymobPaymentService.terminalResultForRow(const {'status': 'failed'});
+          PaymentStatusWatcher.terminalResultForRow(const {'status': 'failed'});
       expect(failed, isA<PaymentFailed>());
       expect((failed as PaymentFailed).message,
           'Payment was declined by the gateway');
       expect(
-          PaymobPaymentService.terminalResultForRow(const {
+          PaymentStatusWatcher.terminalResultForRow(const {
             'status': 'pending',
           }),
           isNull);
-      expect(PaymobPaymentService.terminalResultForRow(const {}), isNull);
+      expect(PaymentStatusWatcher.terminalResultForRow(const {}), isNull);
     });
   });
 }

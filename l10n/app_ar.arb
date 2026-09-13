@@ -459,5 +459,6 @@
   "paymentMethodUnknown": "غير معروف",
   "adminAccessRequired": "يلزم الوصول كمسؤول",
   "orderNotifications": "إشعارات الطلبات",
-  "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة"
+  "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة",
+  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع"
 }

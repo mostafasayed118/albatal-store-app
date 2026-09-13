@@ -1,0 +1,65 @@
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../fixtures/local_catalog_repository.dart';
+import '../../../../helpers/memory_storefront_persistence.dart';
+
+Widget _harness(String productId) {
+  final persistence = MemoryStorefrontPersistence();
+  return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => WishlistCubit(persistence)),
+        BlocProvider(create: (_) => CartCubit(persistence)),
+      ],
+      child: DetailsPage(
+          id: productId, catalogRepository: LocalCatalogRepository()),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('details page shows product name and price',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_harness('silk-01'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Product name now leads the AppBar (UX-047) and still appears as the
+    // body title → exactly two occurrences.
+    expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
+    expect(find.text('1290 EGY'), findsOneWidget);
+    // CTA shows the live line total (unit price × qty, Stitch parity):
+    // "Add to Cart - 1290 EGY" at the default quantity of 1.
+    expect(find.text('Add to Cart - 1290 EGY'), findsOneWidget);
+  });
+
+  testWidgets('details page shows wishlist and share buttons',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_harness('silk-01'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byTooltip('Add to wishlist'), findsOneWidget);
+    expect(find.byTooltip('Share product'), findsOneWidget);
+  });
+
+  testWidgets('details page shows variant chips after scrolling',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_harness('silk-01'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.scrollUntilVisible(find.text('Color'), 100,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump();
+
+    expect(find.text('Color'), findsOneWidget);
+    expect(find.text('Emerald'), findsOneWidget);
+    expect(find.text('Length'), findsOneWidget);
+  });
+}

@@ -1,0 +1,75 @@
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/extensions/build_context_x.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../fixtures/local_catalog_repository.dart';
+import '../helpers/memory_storefront_persistence.dart';
+import '../helpers/stub_auth_repositories.dart';
+
+Widget _harness({required Locale locale}) {
+  SharedPreferences.setMockInitialValues({});
+  return MaterialApp(
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider(
+            create: (_) => CatalogCubit(LocalCatalogRepository())..load()),
+        BlocProvider(
+            create: (_) => CartCubit(MemoryStorefrontPersistence())..restore()),
+        BlocProvider(
+            create: (_) =>
+                WishlistCubit(MemoryStorefrontPersistence())..restore()),
+        BlocProvider(
+            create: (_) => AuthCubit(
+                  authRepository: StubAuthRepository(),
+                  profileRepository: StubProfileRepository(),
+                )..checkSession()),
+      ],
+      child: const HomePage(),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('home settings button exposes localized tooltip', (tester) async {
+    await tester.pumpWidget(_harness(locale: const Locale('en')));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byTooltip('Open settings'), findsOneWidget);
+  });
+
+  testWidgets('app boots in Arabic and resolves RTL directionality',
+      (tester) async {
+    await tester.pumpWidget(_harness(locale: const Locale('ar')));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(Directionality.of(tester.element(find.byType(HomePage))),
+        TextDirection.rtl);
+
+    final context = tester.element(find.byType(HomePage));
+    expect(context.l10n.brandName, 'البطل إيليت');
+    expect(context.l10n.addToCart, 'أضف إلى السلة');
+
+    expect(find.byTooltip('فتح الإعدادات'), findsOneWidget);
+  });
+
+  testWidgets('AppLocalizations delegate is registered for the home tree',
+      (tester) async {
+    await tester.pumpWidget(_harness(locale: const Locale('en')));
+    await tester.pump(const Duration(seconds: 1));
+
+    final context = tester.element(find.byType(HomePage));
+    expect(AppLocalizations.of(context), isNotNull);
+    expect(context.l10n.appTitle, 'Al Batal Elite');
+  });
+}

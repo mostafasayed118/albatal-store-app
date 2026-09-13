@@ -31,6 +31,7 @@ import {
   jsonHeadersFor,
   requireCors,
 } from "../_shared/cors.ts";
+import { enforceRateLimit } from "../_shared/rate_limit.ts";
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5 MB decoded
 
@@ -78,6 +79,15 @@ export async function handleInstapaySubmitProof(
         headers: jsonHeadersFor(req),
       });
     }
+    // Rate limit (audit 2026-09-13): 10 proof submissions per user
+    // per hour, checked before any body parsing or upload work.
+    const rateLimited = await enforceRateLimit(
+      req,
+      (fn, args) => supabase.rpc(fn, args),
+      { id: user.id, kind: "proof:user", limit: 10, windowSeconds: 3600 },
+    );
+    if (rateLimited) return rateLimited;
+
     const body = await req.json();
     const orderId = typeof body.order_id === "string" ? body.order_id : "";
     const proofBase64 = typeof body.proof_base64 === "string"
@@ -129,6 +139,21 @@ export async function handleInstapaySubmitProof(
       return new Response(
         JSON.stringify({ message: "Pending InstaPay payment not found" }),
         { status: 404, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    // Cap proofs per payment (audit 2026-09-13): at most 5 rows per
+    // payment — legitimate re-submissions after a failed review still
+    // work, but a single payment cannot be spammed with 5 MB uploads.
+    // RLS (041) scopes the count to the caller's own rows.
+    const { count: proofCount } = await supabase
+      .from("instapay_proofs")
+      .select("id", { count: "exact", head: true })
+      .eq("payment_id", payment.id);
+    if ((proofCount ?? 0) >= 5) {
+      return new Response(
+        JSON.stringify({ message: "Proof limit reached for this payment" }),
+        { status: 429, headers: jsonHeadersFor(req) },
       );
     }
 

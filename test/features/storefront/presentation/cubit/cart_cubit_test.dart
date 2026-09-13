@@ -1,0 +1,82 @@
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../fixtures/products_data.dart';
+import '../../../../helpers/memory_storefront_persistence.dart';
+
+void main() {
+  blocTest<CartCubit, CartState>(
+    'merges matching configured products and calculates totals',
+    build: () => CartCubit(MemoryStorefrontPersistence()),
+    act: (cubit) {
+      cubit.add(products.first, color: 'Emerald', length: '2m');
+      cubit.add(products.first, color: 'Emerald', length: '2m');
+    },
+    expect: () => [
+      CartState(
+          [CartItem(product: products.first, color: 'Emerald', length: '2m')],
+          status: CartStatus.ready),
+      CartState([
+        CartItem(
+            product: products.first,
+            color: 'Emerald',
+            length: '2m',
+            quantity: 2)
+      ], status: CartStatus.ready),
+    ],
+    verify: (cubit) => expect(cubit.state.total, const Money.egp(2655)),
+  );
+
+  test('premium members get a zero shipping estimate (migration 047 perk)', () {
+    final cubit = CartCubit(MemoryStorefrontPersistence());
+    cubit.add(products.first, color: 'Emerald', length: '2m');
+    expect(cubit.state.shipping, const Money.egp(75),
+        reason: 'standard members still see the flat estimate');
+
+    cubit.setPremiumMember(isPremium: true);
+    expect(cubit.state.shipping, Money.zero);
+    expect(cubit.state.total, cubit.state.subtotal);
+  });
+
+  test('setPremiumMember emits nothing when the tier is unchanged', () async {
+    final cubit = CartCubit(MemoryStorefrontPersistence());
+    var emissions = 0;
+    final sub = cubit.stream.listen((_) => emissions++);
+    cubit.setPremiumMember(isPremium: false);
+    cubit.setPremiumMember(isPremium: false);
+    await Future<void>.delayed(Duration.zero);
+    expect(emissions, 0, reason: 'unchanged tier must not rebuild consumers');
+    await sub.cancel();
+    await cubit.close();
+  });
+
+  test('restores configured cart lines and wishlist ids from local storage',
+      () async {
+    final storage = MemoryStorefrontPersistence();
+    Product? lookup(String id) => products.where((p) => p.id == id).firstOrNull;
+    final sourceCart = CartCubit(storage, productLookup: lookup);
+    final sourceWishlist = WishlistCubit(storage);
+
+    sourceCart.add(products.first, color: 'Emerald', length: '3m', quantity: 2);
+    sourceWishlist.toggle(products.last.id);
+
+    final restoredCart = CartCubit(storage, productLookup: lookup);
+    final restoredWishlist = WishlistCubit(storage);
+    await restoredCart.restore();
+    await restoredWishlist.restore();
+
+    expect(restoredCart.state.items, [
+      CartItem(
+          product: products.first, color: 'Emerald', length: '3m', quantity: 2)
+    ]);
+    expect(restoredWishlist.state.ids, {products.last.id});
+    await sourceCart.close();
+    await sourceWishlist.close();
+    await restoredCart.close();
+    await restoredWishlist.close();
+  });
+}
