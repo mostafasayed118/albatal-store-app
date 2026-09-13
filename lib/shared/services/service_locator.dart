@@ -55,6 +55,7 @@ import 'push_service.dart';
 import 'remote_config_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
+import 'whatsapp_share_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -143,6 +144,11 @@ Future<void> configureDependencies() async {
     // §5: share sheet + inbound deep links (initial + warm events).
     ..registerLazySingleton<ProductShareService>(
         () => const SharePlusProductShareService())
+    // #13: WhatsApp-first product share (wa.me universal link).
+    ..registerLazySingleton<ExternalLinkLauncher>(
+        () => const UrlLauncherExternalLinkLauncher())
+    ..registerLazySingleton<WhatsAppShareService>(
+        () => WaMeWhatsAppShareService(getIt<ExternalLinkLauncher>()))
     ..registerLazySingleton<DeepLinkService>(() => AppLinksDeepLinkService())
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(

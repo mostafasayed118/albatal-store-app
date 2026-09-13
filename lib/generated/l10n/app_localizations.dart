@@ -818,6 +818,18 @@ abstract class AppLocalizations {
   /// **'Share product'**
   String get shareProduct;
 
+  /// No description provided for @whatsappShareProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Share on WhatsApp'**
+  String get whatsappShareProduct;
+
+  /// WhatsApp prefill: product name, price and deep link
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — {price}\n{url}'**
+  String whatsappShareProductMessage(Object name, Object price, Object url);
+
   /// No description provided for @reorder.
   ///
   /// In en, this message translates to:
