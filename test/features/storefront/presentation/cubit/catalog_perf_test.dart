@@ -1,0 +1,346 @@
+import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/cart_page.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/cart_item_tile.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/theme/app_theme.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../../fixtures/products_data.dart';
+import '../../../../helpers/memory_storefront_persistence.dart';
+
+class MockCatalogRepository extends Mock implements CatalogRepository {}
+
+CatalogState _seeded() => CatalogState(
+      status: CatalogStatus.ready,
+      allProducts: products,
+      categories: categories,
+      filters: const CatalogFilters(),
+    );
+
+Order _order(String id, OrderStatus status) => Order(
+      id: id,
+      items: const [],
+      subtotal: const Money.egp(100),
+      shipping: const Money.egp(10),
+      total: const Money.egp(110),
+      status: status,
+      placedAt: DateTime(2026, 9, 1),
+      paymentMethod: 'cod',
+    );
+
+void main() {
+  group('P4 — catalog idle cost', () {
+    test('idle cubit emits no periodic states (legacy ticker removed)',
+        () async {
+      final cubit = CatalogCubit(MockCatalogRepository());
+      final states = <CatalogState>[];
+      final sub = cubit.stream.listen(states.add);
+
+      await Future.delayed(const Duration(milliseconds: 1100));
+
+      await cubit.close();
+      await sub.cancel();
+      expect(states, isEmpty);
+    });
+
+    test('countdown ticks never emit catalog states (memo stays warm)',
+        () async {
+      final cubit = CatalogCubit(MockCatalogRepository());
+      final states = <CatalogState>[];
+      final stateSub = cubit.stream.listen(states.add);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
+
+      cubit.startFlashSale(end: DateTime.now().add(const Duration(hours: 1)));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      // 1Hz ticks flow on the countdown stream only (audit P3).
+      expect(ticks, isNotEmpty);
+      expect(states, isEmpty);
+      // Memos carry over because state identity is untouched by ticks.
+      final state = _seeded();
+      final visible = state.visible;
+      expect(
+        identical(state.copyWith(carouselIndex: 1).visible, visible),
+        isTrue,
+      );
+
+      await cubit.close();
+      await stateSub.cancel();
+      await tickSub.cancel();
+    });
+  });
+
+  group('P4 — query debounce', () {
+    blocTest<CatalogCubit, CatalogState>(
+      'rapid queries emit once with the last value',
+      build: () => CatalogCubit(MockCatalogRepository()),
+      seed: _seeded,
+      act: (cubit) {
+        cubit.updateQuery('s');
+        cubit.updateQuery('si');
+        cubit.updateQuery('silk');
+      },
+      wait: const Duration(milliseconds: 500),
+      expect: () => [
+        _seeded().copyWith(
+          filters: const CatalogFilters(query: 'silk'),
+          recentQueries: const ['silk'],
+        ),
+      ],
+    );
+  });
+
+  group('P4 — orders memo', () {
+    test('tab views memoize per state instance', () {
+      final state = OrdersState(
+        orders: [
+          _order('o1', OrderStatus.placed),
+          _order('o2', OrderStatus.delivered),
+        ],
+        status: OrdersStatus.ready,
+      );
+
+      expect(identical(state.active, state.active), isTrue);
+      expect(identical(state.completed, state.completed), isTrue);
+      expect(state.active.map((o) => o.id), ['o1']);
+      expect(state.completed.map((o) => o.id), ['o2']);
+    });
+  });
+
+  group('P4 — cart virtualization', () {
+    testWidgets('cart list builds lazily via ListView.builder', (tester) async {
+      final store = MemoryStorefrontPersistence();
+      final cart = CartCubit(store);
+      cart.add(products[0], color: 'Emerald', length: '2m');
+      cart.add(products[1], color: 'Natural', length: '1m');
+      cart.add(products[2], color: 'Ivory', length: '5m');
+
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: cart),
+            BlocProvider(create: (_) => WishlistCubit(store)),
+          ],
+          child: const CartPage(),
+        ),
+      ));
+      await tester.pump();
+
+      final listView = tester.widget<ListView>(find.byType(ListView).first);
+      expect(listView.childrenDelegate, isA<SliverChildBuilderDelegate>());
+      expect(find.byType(CartItemTile), findsNWidgets(3));
+    });
+  });
+
+  group('P11 — home buildWhen', () {
+    CatalogState homeState() => CatalogState(
+          status: CatalogStatus.ready,
+          allProducts: products,
+          categories: categories,
+        );
+
+    test('rebuilds on every field the page actually renders', () {
+      final base = homeState();
+      expect(
+        homeBuildWhen(base, base.copyWith(status: CatalogStatus.loading)),
+        isTrue,
+      );
+      expect(
+        homeBuildWhen(base, base.copyWith(allProducts: [...products])),
+        isTrue,
+      );
+      expect(
+        homeBuildWhen(base, base.copyWith(categories: const ['All'])),
+        isTrue,
+      );
+      expect(
+        homeBuildWhen(
+            base, base.copyWith(filters: const CatalogFilters(query: 'silk'))),
+        isTrue,
+      );
+      expect(
+        homeBuildWhen(base, base.copyWith(recentQueries: const ['silk'])),
+        isTrue,
+      );
+      expect(
+        homeBuildWhen(
+          base,
+          base.copyWith(flashSales: const [
+            FlashSale(productId: 'p1', discountPct: 15),
+          ]),
+        ),
+        isTrue,
+      );
+    });
+
+    test('ignores carouselIndex-only emits (no widget reads it)', () {
+      final base = homeState();
+      expect(homeBuildWhen(base, base.copyWith(carouselIndex: 1)), isFalse);
+    });
+  });
+
+  group('P11 — ticker gating', () {
+    test('ticker emits nothing when flash sales empty (never populated)',
+        () async {
+      final repo = MockCatalogRepository();
+      when(() => repo.getActiveFlashSales())
+          .thenAnswer((_) async => const Success<List<FlashSale>>([]));
+      final cubit = CatalogCubit(repo);
+      final states = <CatalogState>[];
+      final stateSub = cubit.stream.listen(states.add);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
+
+      await cubit.loadFlashSales();
+
+      // Past one tick interval: no countdown may ever fire.
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+
+      expect(ticks, isEmpty);
+      expect(states, isEmpty);
+
+      await cubit.close();
+      await stateSub.cancel();
+      await tickSub.cancel();
+    });
+
+    test('ticker stops ticking when the sales list empties on refresh',
+        () async {
+      final repo = MockCatalogRepository();
+      final sale = FlashSale(
+        productId: 'p1',
+        discountPct: 15,
+        endsAt: DateTime.now().add(const Duration(hours: 2)),
+      );
+      var fetches = 0;
+      when(() => repo.getActiveFlashSales()).thenAnswer((_) async {
+        fetches++;
+        return fetches == 1
+            ? Success<List<FlashSale>>([sale])
+            : const Success<List<FlashSale>>([]);
+      });
+      final cubit = CatalogCubit(repo);
+      final ticks = <Duration>[];
+      final tickSub = cubit.flashCountdown.listen(ticks.add);
+
+      await cubit.loadFlashSales();
+      // Stream delivery is a microtask after startFlashSale's synchronous
+      // initial tick — give the event loop a turn before asserting.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(ticks, isNotEmpty);
+
+      // Refresh empties the sales list — the countdown must be stopped.
+      await cubit.loadFlashSales();
+      expect(cubit.state.flashSales, isEmpty);
+      final tickCountAtStop = ticks.length;
+
+      // Past two tick intervals: the gated ticker must be silent.
+      await Future<void>.delayed(const Duration(milliseconds: 2100));
+
+      expect(ticks.length, tickCountAtStop);
+
+      await cubit.close();
+      await tickSub.cancel();
+    });
+  });
+
+  group('P4 residual — parallel load (Future.wait)', () {
+    MockCatalogRepository repoWith({
+      Result<List<Product>>? productsResult,
+      Result<List<String>>? categoriesResult,
+    }) {
+      final repo = MockCatalogRepository();
+      when(() => repo.fetchProducts()).thenAnswer(
+          (_) async => productsResult ?? Success(List.of(products)));
+      when(() => repo.fetchCategories()).thenAnswer(
+          (_) async => categoriesResult ?? Success(List.of(categories)));
+      when(() => repo.getActiveFlashSales())
+          .thenAnswer((_) async => const Success<List<FlashSale>>([]));
+      return repo;
+    }
+
+    blocTest<CatalogCubit, CatalogState>(
+      'both fetches run and emit loading → ready with products+categories',
+      build: () => CatalogCubit(repoWith()),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        isA<CatalogState>()
+            .having((s) => s.status, 'status', CatalogStatus.ready)
+            .having((s) => s.allProducts.length, 'products', products.length)
+            .having((s) => s.categories, 'categories', categories),
+      ],
+    );
+
+    test('load invokes fetchProducts and fetchCategories exactly once',
+        () async {
+      final repo = repoWith();
+      final cubit = CatalogCubit(repo);
+      await cubit.load();
+      verify(() => repo.fetchProducts()).called(1);
+      verify(() => repo.fetchCategories()).called(1);
+      expect(cubit.state.status, CatalogStatus.ready);
+      await cubit.close();
+    });
+
+    blocTest<CatalogCubit, CatalogState>(
+      'categories failure degrades to [All] while products still land',
+      build: () => CatalogCubit(repoWith(
+        categoriesResult: const Failure(AppError('categories down')),
+      )),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        isA<CatalogState>()
+            .having((s) => s.status, 'status', CatalogStatus.ready)
+            .having((s) => s.allProducts.length, 'products', products.length)
+            .having((s) => s.categories, 'categories', const ['All']),
+      ],
+    );
+
+    blocTest<CatalogCubit, CatalogState>(
+      'products failure is terminal (error) even when categories succeed',
+      build: () => CatalogCubit(repoWith(
+        productsResult: const Failure(AppError('catalog down')),
+      )),
+      act: (cubit) => cubit.load(),
+      expect: () => [
+        CatalogState(status: CatalogStatus.loading),
+        CatalogState(status: CatalogStatus.error),
+      ],
+    );
+  });
+
+  group('P4 residual — state findProductById O(1)', () {
+    test('resolves by id, null on miss', () {
+      final state = _seeded();
+      expect(state.findProductById(products.first.id), same(products.first));
+      expect(state.findProductById('no-such-id'), isNull);
+    });
+
+    test('data-preserving emits carry the index over (no rescan)', () {
+      final state = _seeded();
+      final before = state.findProductById(products.first.id);
+      final ticked = state.copyWith(carouselIndex: 1);
+      expect(ticked.findProductById(products.first.id), same(before));
+    });
+  });
+}

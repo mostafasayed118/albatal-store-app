@@ -1,0 +1,117 @@
+import 'dart:async';
+
+import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/components/feedback_view.dart';
+import 'package:al_batal_elite/shared/widgets/skeleton_loaders.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
+import '../../../../helpers/fetch_related_stub.dart';
+import '../../../../helpers/stub_auth_repositories.dart';
+
+/// Repository that always fails — for testing the error state.
+final class FailingCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
+  @override
+  Future<Result<List<Product>>> fetchProducts() async =>
+      const Failure(AppError('Catalog unavailable'));
+
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Failure(AppError('Categories unavailable'));
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      const Failure(AppError('Product not found'));
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
+
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
+
+Widget _harness(CatalogRepository repo) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => CatalogCubit(repo)..load(),
+          ),
+          BlocProvider(
+            create: (_) => AuthCubit(
+              authRepository: StubAuthRepository(),
+              profileRepository: StubProfileRepository(),
+            )..checkSession(),
+          ),
+        ],
+        child: const HomePage(),
+      ),
+    );
+
+void main() {
+  testWidgets('home shows error state with retry when repository fails',
+      (tester) async {
+    await tester.pumpWidget(_harness(FailingCatalogRepository()));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(FeedbackView), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Something went wrong'), findsOneWidget);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(FeedbackView), findsOneWidget);
+  });
+
+  testWidgets('home shows loading state on initial build', (tester) async {
+    await tester.pumpWidget(_harness(_NeverCompletesRepository()));
+    await tester.pump();
+
+    // §3 feature-batch: loading renders a skeleton grid, not a spinner.
+    expect(find.byType(CatalogSkeleton), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is Bone), findsWidgets);
+  });
+}
+
+class _NeverCompletesRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
+  @override
+  Future<Result<List<Product>>> fetchProducts() =>
+      Completer<Result<List<Product>>>().future;
+
+  @override
+  Future<Result<List<String>>> fetchCategories() =>
+      Completer<Result<List<String>>>().future;
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) =>
+      Completer<Result<Product>>().future;
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
+
+  @override
+  List<String> get defaultCategories => const ['All'];
+}
