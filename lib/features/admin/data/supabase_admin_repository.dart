@@ -7,6 +7,7 @@ import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_coupon.dart';
 import '../domain/entities/admin_customer.dart';
 import '../domain/entities/admin_order.dart';
+import '../domain/entities/admin_sales.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_repository.dart';
@@ -116,6 +117,36 @@ final class SupabaseAdminRepository implements AdminRepository {
           AdminMappers.lowStockVariantsFromRows(response as List<dynamic>));
     } catch (e) {
       return Failure(AppError('Failed to load low stock products', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<AdminSalesOverview>> getSalesOverview({int days = 14}) async {
+    try {
+      // Read-only dashboard aggregation (#12): a single bounded select
+      // over existing orders rows with the joined line-item columns the
+      // detail query already uses. Client-side aggregation keeps the
+      // schema untouched; the limit keeps a burst of orders from
+      // stalling the dashboard (same bounded-read discipline as
+      // [getAllProducts]).
+      final now = DateTime.now();
+      final firstDay = DateTime.utc(now.year, now.month, now.day).subtract(
+        Duration(days: (days < 1 ? 1 : days) - 1),
+      );
+      final rows = await _client
+          .from('orders')
+          .select('id, status, total, placed_at, '
+              'order_items(product_name, quantity)')
+          .gte('placed_at', firstDay.toIso8601String())
+          .order('placed_at')
+          .limit(1000);
+      return Success(AdminMappers.salesOverviewFromRows(
+        rows as List<dynamic>,
+        days: days,
+        now: now,
+      ));
+    } catch (e) {
+      return Failure(AppError('Failed to load sales overview', cause: e));
     }
   }
 
