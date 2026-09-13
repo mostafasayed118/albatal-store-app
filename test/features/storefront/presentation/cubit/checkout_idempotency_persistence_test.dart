@@ -13,25 +13,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../fixtures/products_data.dart';
 
-class _StubCheckoutRepo implements CheckoutRepository {
-  _StubCheckoutRepo();
-  final List<String?> keys = [];
-
-  @override
-  Future<Result<PendingOrder>> placeOrder({
-    required List<CartItem> items,
-    required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
-    String? idempotencyKey,
-  }) async {
-    keys.add(idempotencyKey);
-    return const Failure(AppError('transient network error'));
-  }
-}
-
-/// Cubit wired to a [SharedPreferences]-backed idempotency store —
-/// mirrors the production composition in service_locator.dart without
-/// the presentation layer touching the data layer directly.
+/// Production composition: the use case carries the persisted
+/// [LocalStorefrontPersistence] idempotency store, exactly as the
+/// service locator wires it (the cubit no longer takes a `prefs`
+/// param — audit 2026-09-13 re-closed the presentation→data import).
 CheckoutCubit _persistentCubit(
   CheckoutRepository repo,
   SharedPreferences prefs,
@@ -43,6 +28,27 @@ CheckoutCubit _persistentCubit(
         idempotencyStore: LocalStorefrontPersistence(prefs),
       ),
     );
+
+class _StubCheckoutRepo implements CheckoutRepository {
+  _StubCheckoutRepo();
+  final List<String?> keys = [];
+
+  @override
+  Future<Result<PendingOrder>> placeOrder({
+    required List<CartItem> items,
+    required PaymentMethod paymentMethod,
+    required Map<String, dynamic> addressSnapshot,
+    String? couponCode,
+    String? idempotencyKey,
+  }) async {
+    keys.add(idempotencyKey);
+    return const Failure(AppError('transient network error'));
+  }
+}
+
+/// Cubit wired to a [SharedPreferences]-backed idempotency store —
+/// mirrors the production composition in service_locator.dart without
+/// the presentation layer touching the data layer directly.
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -219,6 +225,7 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
@@ -238,6 +245,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     required Map<String, dynamic> addressSnapshot,
+    String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);

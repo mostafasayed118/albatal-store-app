@@ -30,6 +30,19 @@ dependencies:
   image_picker: ^1.1.2 # InstaPay transfer-proof attachment (D3, PR #36 plan; owner-approved)
   connectivity_plus: ^7.3.1 # interface-type signal for the offline gate (B1, owner-approved)
   internet_connection_checker_plus: ^3.1.2 # real reachability probe, v3 pure-Dart API (B2, owner-approved)
+  # feature-batch §1 (owner-approved 2026-09-12): re-engagement, UX, media,
+  # auth and document capabilities, shipped as interface-wrapped services.
+  flutter_local_notifications: ^22.3.0 # §12 local order-status notifications
+  onesignal_flutter: ^5.6.10 # §12 push scaffold (env-gated, no-op w/o key)
+  share_plus: ^13.3.0 # §5 product share, §14 CSV export, §16 invoice share
+  app_links: ^7.2.1 # §5 inbound deep links -> GoRouter
+  permission_handler: ^13.0.2 # §12 notification permission gating
+  flutter_image_compress: ^2.5.1 # §4 upload compression (fail-open)
+  skeletonizer: ^3.0.0 # §3 skeleton loading states
+  local_auth: ^3.0.2 # §15 biometric app lock
+  pdf: ^3.13.0 # §16 branded invoice PDF
+  printing: ^5.15.0 # §16 invoice save/share
+  package_info_plus: ^10.2.1 # §13 forced-update min-version check
   # intl 0.20.3 requires a newer flutter_localizations pin; revisit after next Flutter stable.
 
 dev_dependencies:

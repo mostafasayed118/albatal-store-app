@@ -103,6 +103,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
   Future<void> restore() async {
     emit(state.copyWith(status: OrdersStatus.loading));
     final result = await _repository.readOrders();
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         emit(OrdersState(orders: value, status: OrdersStatus.ready));

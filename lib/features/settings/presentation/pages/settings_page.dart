@@ -28,6 +28,8 @@ final class SettingsPage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(title: Text(context.l10n.settings)),
             body: ListView(padding: const EdgeInsets.all(16), children: [
+              const _NotificationToggleTile(),
+
               Text(context.l10n.appearance,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
@@ -262,5 +264,26 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
     }
   } finally {
     _deleteDialogOpen = false;
+  }
+}
+
+/// §12: order-notification opt-in. State lives in [SettingsCubit] —
+/// the page never touches the DI container or the prefs store directly
+/// (audit 2026-09-13). Hidden entirely when no store was registered.
+final class _NotificationToggleTile extends StatelessWidget {
+  const _NotificationToggleTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = context.watch<SettingsCubit>().state.orderNotifications;
+    if (enabled == null) return const SizedBox.shrink();
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(context.l10n.orderNotifications),
+      subtitle: Text(context.l10n.orderNotificationsSubtitle),
+      value: enabled,
+      onChanged: (v) =>
+          context.read<SettingsCubit>().toggleOrderNotifications(v),
+    );
   }
 }

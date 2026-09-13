@@ -68,6 +68,7 @@ class PlaceCheckoutOrderUseCase {
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
     Address? address,
+    String? couponCode,
     String? inSessionKey,
   }) async {
     final key = inSessionKey ?? _restoredKey() ?? _generateIdempotencyKey();
@@ -80,6 +81,7 @@ class PlaceCheckoutOrderUseCase {
       items: items,
       paymentMethod: paymentMethod,
       addressSnapshot: snapshot,
+      couponCode: couponCode,
       idempotencyKey: key,
     );
     switch (first) {
@@ -97,6 +99,7 @@ class PlaceCheckoutOrderUseCase {
           items: items,
           paymentMethod: paymentMethod,
           addressSnapshot: snapshot,
+          couponCode: couponCode,
           idempotencyKey: fresh,
         );
         return switch (second) {

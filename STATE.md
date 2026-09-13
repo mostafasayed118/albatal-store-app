@@ -1,6 +1,101 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-12T04:40:00Z
+Last run: 2026-09-12T19:55:00Z
+
+## New — 2026-09-12 (l2-audit-fixes MERGED — PR #53 squash-merged, master now e56e57a)
+
+Owner approved push+PR then merge. Branch `fix/l2-audit-fixes` pushed
+(4d00cb7); PR #53 opened:
+https://github.com/mostafasayed118/albatal-store-app/pull/53
+- CI round 1: Format & Analyze FAIL — CI's newer stable formatter wraps
+  the new persistence-test helper signature. Fixed with `3753cfc`
+  "style: wrap persistence-test helper signature for CI formatter".
+- CI round 2: ALL GREEN — Format & Analyze, Flutter Tests (4m0s), Edge
+  Function Tests, Secret Scan, Setup & Cache, Deployment Readiness,
+  Sourcery; Android Release Build unwatched per standing call.
+- Owner approved merge ("merge") → PR #53 SQUASH-MERGED at
+  2026-09-12T16:42:03Z → merge commit `e56e57a`. Remote branch deleted;
+  worktree `.trees/l2-audit-fixes` removed; local branch deleted.
+- The 2026-09-12 audit's Top-5 items #1 (checkout_cubit layering
+  breach), #2 (dead code) and #5 (stringly-typed routing) are CLOSED on
+  master. Remaining audit items stay proposal-only: home_page god
+  build, admin-cubit bypass, edge-function rate limiting (supabase/
+  human-gated), payments getIt ×2 (denylist-gated), test/ root
+  reorganization.
+- Local main tree still at 2bbac91 — owner pulls when convenient
+  (established precedent). Housekeeping: ~14 stale worktrees from
+  prior sessions exist under .trees/ + .trees-worktrees/ (e.g.
+  p1-remnants, checkout-rpc-hardening, approved-packages-batch) —
+  candidates for owner-approved cleanup.
+
+## New — 2026-09-12 (L2 audit-fixes slice COMMITTED on fix/l2-audit-fixes — push/PR NOT yet approved)
+
+Owner ran a comprehensive 5-dimension code-quality audit (report-only;
+overall 8.3/10: maintainability 8.0, clean-arch 8.5, code quality 8.5,
+security 8.5, performance 8.0) and then enabled L2. Worktree
+`.trees/l2-audit-fixes`, branch `fix/l2-audit-fixes` from 2bbac91.
+Subagent credits were exhausted at dispatch time for the security/perf
+dimensions (audited directly instead) and recovered for the verifier.
+Three commits, scope lib/ + 1 test file ONLY (auth/ + payments/
+denylist RESPECTED — the batch script touched their nav strings and was
+reverted via git checkout):
+
+- `6307080` refactor(storefront): removed the codebase's ONLY
+  presentation→data import breach — checkout_cubit.dart no longer
+  imports data/ (memory_idempotency_store + storefront_persistence) or
+  shared_preferences; legacy `prefs` ctor param removed; default store
+  now the domain-located MemoryIdempotencyStore (file git-mv'd data/ →
+  domain/repositories/, import fixed, doc updated). Production path was
+  already injecting placeOrder — zero behavior change. ALSO: deleted
+  confirmed-dead catalog_search_bar.dart (zero refs in lib/+test/).
+- `27026c4` refactor(routing): NEW lib/shared/routing/app_routes.dart —
+  `Routes` abstract final class (26 static consts + 5 parametrized
+  factories product/adminProduct/adminOrder/adminVariant/adminImage);
+  replaced ~100 stringly-typed nav literals across 21 lib files;
+  app_router.dart uses constants (route patterns `:id` stay literal by
+  design); redirect now `matchesAuthRoute(Routes.admin)` (provably
+  equivalent). auth/payments nav literals intentionally left as strings
+  (denylist).
+- `4d00cb7` test(storefront): checkout_idempotency_persistence_test
+  migrated off the removed legacy param via `_persistentCubit()` helper
+  reproducing the production composition (PlaceCheckoutOrderUseCase +
+  LocalStorefrontPersistence); assertions untouched.
+
+Evidence on HEAD 4d00cb7: `flutter analyze` clean; `flutter test`
+**690/690 PASS** (== master baseline); `dart format` canonical (20-file
+sweep after script edits); `git diff --check` clean; generated-plugin
+pub-get churn reverted. Verifier sub-agent: **APPROVE**, no must-fix
+(session ses_f699ae2a3ffeH1hiBk0B8Tvlxy) — scope, diff-claims,
+architecture, byte-identical routing strings, behavior preservation all
+PASS; non-blocking note: generated-plugin worktree noise to be checked
+out before merge (done).
+
+REMAINING from the audit (proposal-only, NOT in this slice):
+- home_page.dart 265-line god build (needs decomposition slice).
+- admin pages bypassing cubits (admin_image_manager_page etc.) —
+  medium refactor.
+- Edge-function rate limiting + cors.ts legacy jsonHeaders callers —
+  supabase/ is human-gated.
+- payments getIt ×2 + auth pages nav literals — denylist-gated.
+- 81 loose test files in test/ root reorganization (test/ is outside
+  lib/ auto-fix scope).
+
+NEXT GATE: MERGE of PR #53 needs explicit owner approval. Nothing merged.
+
+## New — 2026-09-12 (l2-audit-fixes PUSHED + PR #53 — CI ALL GREEN)
+
+Owner approved push+PR ("push+PR"). Branch `fix/l2-audit-fixes` pushed
+(4d00cb7); PR #53 opened:
+https://github.com/mostafasayed118/albatal-store-app/pull/53
+- CI round 1: Format & Analyze FAIL — CI's newer stable formatter wraps
+  the new persistence-test helper signature (single long line). Fixed
+  with commit `3753cfc` "style: wrap persistence-test helper signature
+  for CI formatter" (manual wrap to CI style; local format/analyze/
+  targeted tests re-verified before push).
+- CI round 2: ALL GREEN — Format & Analyze ✅, Flutter Tests ✅ (4m0s),
+  Edge Function Tests ✅, Secret Scan ✅, Setup & Cache ✅, Deployment
+  Readiness ✅, Sourcery ✅; Android Release Build left unwatched per
+  standing call (NOT a merge gate).
 
 ## New — 2026-09-12 (review-batch MERGED — PR #52 squash-merged, master now 6260427)
 
@@ -2709,3 +2804,119 @@ credits exhausted) — self-review + full-suite evidence recorded above
 instead. Next gates: owner review of 3 branches → sequential merge order
 low → med → high (or high last to resolve router/theme overlaps), push/PR
 needs explicit approval.
+
+## 2026-09-12 — Feature-batch completion review (owner ask: "is all work done and correct?")
+
+Question: did the follow-on agent complete the approved 17-slice feature batch? Answer: NO.
+Evidence gathered this run:
+- master@2bbac91: green (flutter analyze clean; flutter test 690/690 PASS, run 2026-09-12).
+  Contains: re-done deps baseline (1571710 ≙ 845d377), merged offline gate B1+B2 (PR #48,
+  ConnectivityGate + AppShell OfflineBanner — supersedes feature-batch §2), audit/review
+  remediation PRs #50–#52. Feature-batch deps (skeletonizer, notifications, onesignal,
+  share_plus, app_links, image_compress, photo_view, flutter_animate, local_auth, pdf,
+  printing, package_info_plus) are NOT in master pubspec.
+- NOT on master / nowhere in repo: §3 skeletons (pages still FeedbackView-loading), §4
+  image compression, §5–§17 (reorder, search UX, coupons, reviews, fabric attributes,
+  analytics, notifications, remote config, admin customers/CSV, OAuth/app-lock, invoice,
+  a11y pass, perf harness). No migrations 048–053, no supabase/functions/_proposals.
+- Branch feat/feature-batch (STRANDED — master history was rewritten past its base
+  845d377 → 1571710): commits ece94c5 §1 deps, cab7abe §2 (superseded by #48), b994322 §3
+  skeletons. Gate at commit time: analyze clean, 640/640 PASS.
+- Uncommitted §4 WIP in .trees/feature-batch (image_compressor + InstaPay wiring + DI):
+  analyze clean; instapay test files 15/15 PASS (run 2026-09-12). Earlier "failing
+  instapay_page_test.dart" was a phantom path — that test file never existed.
+- Unmerged: fix/l2-audit-fixes (3 refactor commits), feat/approved-packages-batch
+  (gitignore only).
+Next gate (owner call): rebase feat/feature-batch onto master (drop §2, keep §1+§3,
+commit §4), then implement §5–§17. No push/merge performed.
+
+## 2026-09-13 — Feature batch §1–§17 IMPLEMENTED (feat/feature-batch, 24 commits)
+
+Owner approved all 20 proposals on 2026-09-12 → full L2 implementation in
+.trees/feature-batch (branch feat/feature-batch, rebased onto master@2bbac91
+after the earlier history rewrite; dropped my §2 — superseded by master's
+merged B1/B2 connectivity gate).
+
+Delivered (client-complete, SQL as review-gated proposals only):
+- §1 approved deps (flutter_local_notifications, onesignal, share_plus,
+  app_links, permission_handler, flutter_image_compress, photo_view,
+  skeletonizer, flutter_animate, local_auth, pdf, printing, package_info_plus)
+- §3 skeleton loading (catalog/home/orders; reduce-motion static fallback §17)
+- §4 upload compression (fail-open ImageCompressor; InstaPay proofs)
+- §5 product share + deep links (pure parser, albatal:// + web host,
+  manifest/Info.plist scheme registration)
+- §6 one-tap reorder (per-line re-validation, stock clamp, report snackbar)
+- §7 recent searches + suggestions (prefs store, client fallback, 048 pg_trgm RPC)
+- §8 coupons (validate_coupon client + checkout attach; 049 SQL: table/RLS/RPC/
+  checkout deltas; admin CRUD page)
+- §9 photo reviews (buy-to-review RLS proposal 050, submit sheet w/ compression,
+  admin moderation page + /admin/reviews)
+- §10 fabric attributes (width/gsm/sell_by_length/min_cut; cut-length stepper;
+  admin editor fields; 051 SQL w/ checkout metered-line deltas)
+- §11 first-party analytics (fail-silent AnalyticsService; checkout_start +
+  purchase; 052 SQL insert-own RLS + admin aggregate)
+- §12 notifications (local order-status service + opt-in store + settings tile;
+  OneSignal scaffold no-op without ONESIGNAL_APP_ID; push-order-status function
+  proposal)
+- §13 remote config (typed defaults, 10-min TTL, fail-silent; maintenance/
+  forced-update gate at splash; 052b app_config SQL)
+- §14 admin customers page + orders CSV exporter (quoting + formula-injection
+  guard)
+- §15 OAuth sign-in (Google/Apple, machine-coded failures) + biometric app lock
+  (local_auth 3.x, opt-in, registration-safe)
+- §16 invoice PDF (pure builder, brand tokens; admin order detail share action)
+- §17 a11y (stepper semantic actions, merged product-card label, reduce-motion
+  skeletons) + docs/perf-budget.md + PERF=1 frame harness
+
+EVIDENCE (final): flutter analyze — No issues found; flutter test — 763/763 PASS
+(worktree, 2026-09-13). git diff 2bbac91..HEAD -- supabase/migrations: ONLY new
+proposal files (048/049/050/051/052/052b); no existing migration touched, none
+applied. Secret sweep clean (only env-var NAME references). l10n parity: 393/393
+keys in EN and AR. Fail-soft codes present (coupon_unavailable,
+review_unavailable, oauth_unavailable).
+
+Verifier: sub-agent dispatch FAILED (Agent tool "Model request failed" ×3 —
+same infra blocker as the 2026-09-08 batch). Self-verification performed per
+the batch-end checklist with the evidence above; flagged for owner awareness.
+
+No push, no merge, no PR — owner call required. Suggested next gates:
+(1) owner reviews 048–052b SQL proposals + push-order-status function,
+(2) deploy-time config (OneSignal app id, Supabase OAuth providers, web base
+URL assetlinks/entitlements), (3) apply migrations in order, (4) merge
+feat/feature-batch into master after owner review, (5) unmerged
+fix/l2-audit-fixes branch still needs an owner decision.
+
+## 2026-09-13 — Owner gates executed: SQL review + staging apply + feature-batch merge
+
+1. SQL proposals reviewed against live schema BEFORE applying; two real bugs fixed
+   pre-apply (commit 0707f84): 057 view used profiles.display_name (column is
+   full_name — 001); numbering collided with remote history (052 taken by
+   052_seed_demo_showcase; remote ALSO had unknown 048-051 and 053-058 applied
+   outside this repo's files). Renumbered to 053-058 and discovered further:
+   remote analytics_events (event/properties/user_id) predates the batch —
+   053 rewritten as compat (index/policy DO-block/admin RPC on `event`),
+   AnalyticsService sink adapted to insert {event, properties} (5bbe736).
+   fetchCustomers fixed to membership_tier (046 column; 5b27821).
+2. Migrations applied: `supabase db push` (CLI 2.109.1, linked project
+   zvpjngdgbpnkkqrorkul) applied 053-058 + 059 (PostgREST `NOTIFY pgrst 'reload
+   schema'` — required because management-API DDL does not reload the REST
+   cache). External-lineage stubs 048-051 committed to document the unknown
+   remote migrations (live objects: analytics_events, notifications).
+   Verified live via REST: coupons/product_reviews/app_config tables exist,
+   orders.coupons_id + products fabric columns present, validate_coupon +
+   search_suggestions + analytics_event_counts_admin RPCs callable.
+   ENVIRONMENT: zvpj = STAGING (per STATE.md 1817/1825 + runner guards).
+   Production alxwvyflasewslinufqe NOT touched — prod has foreign-lineage
+   analytics_events/notifications; prod cutover needs owner-run history
+   reconciliation (db pull/repair) + push, and prod's exact migration state
+   (STATE.md 1781: prod was ≤030 as of 09-02, since advanced externally).
+3. Merges: feat/feature-batch merged into master --no-ff (d20fa7a, NO conflicts
+   — l2 conflict source evaporated: fix/l2-audit-fixes branch AND worktree were
+   DELETED externally WITHOUT merging; its 3 commits (4d00cb7 test-migration,
+   27026c4 Routes constants, 6307080 checkout layering) are orphaned but
+   recoverable by hash until GC. DECISION: not resurrected — deletion signals
+   author abandonment; recommend re-authoring the Routes-constants refactor on
+   top of merged master if wanted). Gate on merged master: pub get, analyze
+   clean, flutter test 763/763 PASS.
+4. NOT done (owner gates): no push to origin, no PR, no prod cutover, no
+   OneSignal/OAuth provider credentials configured, assetlinks.json not hosted.

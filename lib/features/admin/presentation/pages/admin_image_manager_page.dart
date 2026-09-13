@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
@@ -7,10 +8,23 @@ import '../../../../shared/components/app_image.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../domain/repositories/admin_repository.dart';
+
+/// Picks one image for upload. Injectable so widget tests can drive
+/// the flow without the platform channel (audit 2026-09-13: the
+/// upload is real — the dummy-bytes stub is gone).
+typedef ProductImagePicker = Future<XFile?> Function(ImageSource source);
+
+Future<XFile?> _defaultPick(ImageSource source) => ImagePicker().pickImage(
+      source: source,
+      maxWidth: kMaxUploadDimension.toDouble(),
+      maxHeight: kMaxUploadDimension.toDouble(),
+      imageQuality: 80,
+    );
 
 /// Image manager for a single product — grid, upload, reorder, delete.
 ///
@@ -22,10 +36,19 @@ class AdminImageManagerPage extends StatefulWidget {
     required this.productId,
     required this.repository,
     required this.storage,
+    this.pickImage = _defaultPick,
+    this.imageCompressor,
   });
   final String productId;
   final AdminRepository repository;
   final StorageService storage;
+
+  /// Gallery picker (injectable for tests).
+  final ProductImagePicker pickImage;
+
+  /// §4 compression pass; fail-open by contract, so a null injection
+  /// (tests) degrades to a no-op compressor.
+  final ImageCompressor? imageCompressor;
 
   @override
   State<AdminImageManagerPage> createState() => _AdminImageManagerPageState();
@@ -85,26 +108,78 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     );
   }
 
+  /// Post-compression size ceiling, mirroring the proof-upload guard —
+  /// a 1600px/82-quality re-encode should land far below this; hitting
+  /// it means something pathological was picked.
+  static const _maxImageBytes = 5 * 1024 * 1024;
+
+  /// Extensions the product-images storage policy accepts.
+  static const _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+
+  static String _contentType(String ext) => switch (ext) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+
   Future<void> _uploadImage() async {
-    // In production this would use image_picker; here we simulate an upload
-    // with dummy bytes so the StorageService + adminSetProductImages path
-    // is exercised and verifiable in tests.
     setState(() => _uploading = true);
     try {
-      final fileName = 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      // Dummy 1x1 JPEG bytes (SOI + EOI) — sufficient for storage API contract.
-      final bytes = <int>[0xFF, 0xD8, 0xFF, 0xD9];
+      final picked = await widget.pickImage(ImageSource.gallery);
+      if (!mounted) return;
+      if (picked == null) {
+        // User cancelled the picker — not an error.
+        setState(() => _uploading = false);
+        return;
+      }
+      var bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      if (bytes.isEmpty) {
+        setState(() => _uploading = false);
+        showFloatingError(context, 'Selected file is empty.');
+        return;
+      }
+      // §4 enforcement pass: the picker's imageQuality is only a hint
+      // on some platforms.
+      final compressor =
+          widget.imageCompressor ?? const FlutterImageCompressor();
+      bytes = await compressor.compress(bytes);
+      final ext = picked.name.contains('.')
+          ? picked.name.split('.').last.toLowerCase()
+          : 'jpg';
+      if (!_allowedExtensions.contains(ext)) {
+        if (!mounted) return;
+        setState(() => _uploading = false);
+        showFloatingError(
+            context, 'Unsupported format. Use JPG, PNG, or WebP.');
+        return;
+      }
+      if (bytes.length > _maxImageBytes) {
+        if (!mounted) return;
+        setState(() => _uploading = false);
+        showFloatingError(context, 'Image is too large after compression.');
+        return;
+      }
+      final fileName = 'upload_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final storagePath = await widget.storage.uploadProductImage(
         widget.productId,
         bytes,
         fileName,
-        'image/jpeg',
+        _contentType(ext),
       );
       final next = [..._paths, storagePath];
       final saveResult =
           await widget.repository.adminSetProductImages(widget.productId, next);
       if (!mounted) return;
       if (saveResult case Failure(:final error)) {
+        // Best-effort cleanup: don't orphan the storage object when the
+        // DB write rejected the new gallery.
+        try {
+          await widget.storage.deleteProductImage(storagePath);
+        } on Exception catch (e) {
+          Log.w('orphaned product image after failed save: $e');
+        }
+        if (!mounted) return;
         setState(() => _uploading = false);
         showFloatingError(context, error.message);
         return;
@@ -246,9 +321,14 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                     children: [
                                       // Real network image once CDN cache
                                       // headers land; url kept for tooltip.
+                                      // Bounded decode: a grid cell never
+                                      // needs the full-resolution bitmap
+                                      // (audit 2026-09-13 perf).
                                       AppImage(
                                         source: url,
                                         fit: BoxFit.cover,
+                                        cacheWidth: 420,
+                                        cacheHeight: 420,
                                         placeholder: Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,

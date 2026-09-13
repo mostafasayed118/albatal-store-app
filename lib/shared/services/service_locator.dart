@@ -16,19 +16,26 @@ import '../../features/onboarding/domain/repositories/onboarding_repository.dart
 import '../../features/payments/data/paymob_payment_service.dart';
 import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
+import '../../features/settings/data/notification_prefs_store.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
+import '../../features/storefront/data/recent_searches_store.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
+import '../../features/storefront/data/supabase_coupons_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
+import '../../features/storefront/data/supabase_reviews_repository.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
+import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/idempotency_store.dart';
 import '../../features/storefront/domain/repositories/orders_repository.dart';
+import '../../features/storefront/domain/repositories/recent_searches_store.dart';
+import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/support/data/local_support_repository.dart';
@@ -36,7 +43,16 @@ import '../../features/support/domain/repositories/support_repository.dart';
 import '../../shared/services/crash_reporting_service.dart';
 import '../../shared/services/env_config.dart';
 import '../../shared/services/sentry_crash_reporting_service.dart';
+import 'analytics_service.dart';
+import 'biometric_service.dart';
 import 'connectivity_gate.dart';
+import 'deep_link_service.dart';
+import 'image_compressor.dart';
+import 'notification_service.dart';
+import 'oauth_service.dart';
+import 'product_share_service.dart';
+import 'push_service.dart';
+import 'remote_config_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
 
@@ -119,5 +135,37 @@ Future<void> configureDependencies() async {
         return SentryCrashReportingService();
       }
       return const NoOpCrashReportingService();
-    });
+    })
+    // Upload-image compression (feature-batch §4). Fail-open by design:
+    // an unavailable plugin returns the original bytes.
+    ..registerLazySingleton<ImageCompressor>(
+        () => const FlutterImageCompressor())
+    // §5: share sheet + inbound deep links (initial + warm events).
+    ..registerLazySingleton<ProductShareService>(
+        () => const SharePlusProductShareService())
+    ..registerLazySingleton<DeepLinkService>(() => AppLinksDeepLinkService())
+    // §7: persisted recent catalog searches.
+    ..registerLazySingleton<RecentSearchesStore>(
+        () => PrefsRecentSearchesStore(getIt<SharedPreferences>()))
+    // §8/§9: coupon validation + customer reviews.
+    ..registerLazySingleton<CouponsRepository>(
+        () => SupabaseCouponsRepository())
+    ..registerLazySingleton<ReviewsRepository>(
+        () => SupabaseReviewsRepository())
+    // §11: first-party funnel analytics (fail-silent).
+    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService())
+    // §12: local order-status notifications + push scaffold (both
+    // fail-silent; push stays a no-op without ONESIGNAL_APP_ID).
+    ..registerLazySingleton<NotificationPrefsStore>(
+        () => PrefsNotificationStore(getIt<SharedPreferences>()))
+    ..registerLazySingleton<NotificationService>(
+        () => LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
+    ..registerLazySingleton<PushService>(() => const OneSignalPushService())
+    // §15: OAuth sign-in + biometric app lock (both fail-soft).
+    ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())
+    ..registerLazySingleton<BiometricService>(() => LocalBiometricService())
+    ..registerLazySingleton<AppLockPrefsStore>(
+        () => PrefsAppLockStore(getIt<SharedPreferences>()))
+    // §13: remote config (defaults + TTL cache; advisory only).
+    ..registerLazySingleton<RemoteConfigService>(() => RemoteConfigService());
 }

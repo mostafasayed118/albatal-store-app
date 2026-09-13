@@ -8,8 +8,10 @@
 
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/orders_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/orders_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -27,12 +29,26 @@ class _RecordingOrdersRepo implements OrdersRepository {
   }
 }
 
+/// OrdersPage renders app-scoped ReorderCubit (§6): the harness provides
+/// an instance with inert fakes — reorder behavior has its own suite.
+class _NoCatalog implements CatalogRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
 Widget _harness(OrdersCubit cubit) {
+  final reorderCubit = ReorderCubit(
+    catalog: _NoCatalog(),
+    addToCart: (_, {color = '', length = '', quantity = 1}) {},
+  );
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: BlocProvider.value(
-      value: cubit,
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: cubit),
+        BlocProvider.value(value: reorderCubit),
+      ],
       child: const OrdersPage(),
     ),
   );

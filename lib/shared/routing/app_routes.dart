@@ -40,6 +40,10 @@ abstract final class Routes {
   static const adminCategories = '/admin/categories';
   static const adminOrders = '/admin/orders';
   static const adminInventory = '/admin/inventory';
+  // Feature-batch §9/§14 + §13 surfaces (merged locally with the batch).
+  static const adminReviews = '/admin/reviews';
+  static const adminCustomers = '/admin/customers';
+  static const maintenance = '/maintenance';
 
   /// Product details for [id].
   static String product(String id) => '/product/$id';

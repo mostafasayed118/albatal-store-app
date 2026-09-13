@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/product_share_service.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
@@ -15,6 +20,7 @@ import '../widgets/name_and_price.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';
+import '../widgets/reviews_section.dart';
 import '../widgets/size_guide_sheet.dart';
 import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
@@ -94,10 +100,9 @@ class DetailsPage extends StatelessWidget {
                 WishlistToggleIcon(productId: p.id),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          behavior: SnackBarBehavior.floating,
-                          content: Text(l.shareLinkCopied))),
+                  onPressed: () => unawaited(getIt<ProductShareService>()
+                      .shareText(
+                          l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],
@@ -117,6 +122,9 @@ class DetailsPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   RatingStars(product: p),
                 ],
+                // §9: approved customer reviews + submit affordance.
+                const SizedBox(height: 8),
+                ReviewsSection(productId: p.id),
                 const SizedBox(height: 20),
                 // Selection-only rebuild: variant/quantity ticks must not
                 // replay the gallery or related builders above.

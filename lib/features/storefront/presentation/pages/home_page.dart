@@ -16,6 +16,7 @@ import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
@@ -106,7 +107,7 @@ class _HomePageState extends State<HomePage> {
           final catalog = context.read<CatalogCubit>();
           if (state.status == CatalogStatus.loading ||
               state.status == CatalogStatus.initial) {
-            return const FeedbackView(type: FeedbackViewType.loading);
+            return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
             return FeedbackView(
@@ -223,18 +224,33 @@ class _HomePageState extends State<HomePage> {
                   SliverPadding(
                     padding: const EdgeInsetsDirectional.all(16),
                     sliver: SliverToBoxAdapter(
-                      child: StitchFlashSaleCard(
-                        product: flashProduct,
-                        discountLabel: discountLabel,
-                        onAdd: () {
-                          context.read<CartCubit>().add(flashProduct);
-                          // Acknowledge the add — the flash-sale card
-                          // lives far from the cart badge, and a silent
-                          // tap reads as "did that even work?".
-                          showConfirmation(context, l.addedToCart);
+                      // Countdown: the card subscribes to the cubit's
+                      // flashCountdown broadcast stream so the 1Hz
+                      // ticker only does work when a widget actually
+                      // renders the remaining time (audit 2026-09-13 —
+                      // the stream previously had zero subscribers).
+                      child: StreamBuilder<Duration>(
+                        stream: catalog.flashCountdown,
+                        builder: (context, snapshot) {
+                          final remaining = (snapshot.data != null &&
+                                  snapshot.data! > Duration.zero)
+                              ? snapshot.data
+                              : null;
+                          return StitchFlashSaleCard(
+                            product: flashProduct,
+                            discountLabel: discountLabel,
+                            remaining: remaining,
+                            onAdd: () {
+                              context.read<CartCubit>().add(flashProduct);
+                              // Acknowledge the add — the flash-sale card
+                              // lives far from the cart badge, and a silent
+                              // tap reads as "did that even work?".
+                              showConfirmation(context, l.addedToCart);
+                            },
+                            onTap: () =>
+                                context.push(Routes.product(flashProduct.id)),
+                          );
                         },
-                        onTap: () =>
-                            context.push(Routes.product(flashProduct.id)),
                       ),
                     ),
                   ),

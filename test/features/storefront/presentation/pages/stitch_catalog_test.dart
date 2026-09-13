@@ -6,9 +6,12 @@ import 'package:al_batal_elite/features/storefront/data/storefront_persistence.d
     show OrderCodec;
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/recent_searches_store.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recent_searches_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/catalog_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
@@ -101,7 +104,7 @@ Widget _catalogHarness({MemoryStorefrontPersistence? persistence}) {
         BlocProvider(create: (_) => WishlistCubit(store)),
         BlocProvider(create: (_) => CartCubit(store)),
       ],
-      child: const CatalogPage(),
+      child: _withReorderCubit(const CatalogPage()),
     ),
   );
 }
@@ -125,9 +128,36 @@ Widget _ordersHarness({required MemoryStorefrontPersistence store}) {
     supportedLocales: AppLocalizations.supportedLocales,
     home: BlocProvider(
       create: (_) => OrdersCubit(store)..restore(),
-      child: const OrdersPage(),
+      child: _withReorderCubit(const OrdersPage()),
     ),
   );
+}
+
+/// OrdersPage depends on the app-scoped ReorderCubit (§6). Harnesses
+/// that pump the page directly provide an inert instance here.
+Widget _withReorderCubit(Widget child) => MultiBlocProvider(
+      providers: [
+        BlocProvider<ReorderCubit>(
+          create: (_) => ReorderCubit(
+            catalog: _NoCatalog(),
+            addToCart: (_, {color = '', length = '', quantity = 1}) {},
+          ),
+        ),
+        BlocProvider<RecentSearchesCubit>(
+          create: (_) => RecentSearchesCubit(store: _NoRecentSearches()),
+        ),
+      ],
+      child: child,
+    );
+
+class _NoRecentSearches implements RecentSearchesStore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class _NoCatalog implements CatalogRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 void main() {

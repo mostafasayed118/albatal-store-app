@@ -164,6 +164,15 @@ class AdminMappers {
       isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
       description: _asString(row['description']),
       composition: _asString(row['composition']),
+      care: _asString(row['care']),
+      origin: _asString(row['origin']),
+      widthCm: row['width_cm'] is int ? row['width_cm'] as int : null,
+      gsm: row['gsm'] is int ? row['gsm'] as int : null,
+      sellByLength:
+          row['sell_by_length'] is bool ? row['sell_by_length'] as bool : false,
+      minCutMeters: row['min_cut_meters'] is num
+          ? (row['min_cut_meters'] as num).toDouble()
+          : null,
     );
   }
 

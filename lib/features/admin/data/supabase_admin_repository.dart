@@ -4,6 +4,8 @@ import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
+import '../domain/entities/admin_coupon.dart';
+import '../domain/entities/admin_customer.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
@@ -153,6 +155,23 @@ final class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async {
+    try {
+      final rows = await _client
+          .from('products')
+          .select('id, name, slug, description, composition, category_id, '
+              'base_price, is_active, categories(name)')
+          .eq('id', productId)
+          .limit(1);
+      final list = rows as List<dynamic>;
+      if (list.isEmpty) return const Success(null);
+      return Success(AdminMappers.productsFromRows(list).first);
+    } catch (e) {
+      return Failure(AppError('Failed to load product', cause: e));
+    }
+  }
+
+  @override
   Future<Result<List<AdminCategory>>> getAllCategories() async {
     try {
       final rows = await _client
@@ -172,6 +191,12 @@ final class SupabaseAdminRepository implements AdminRepository {
     required String slug,
     String? description,
     String? composition,
+    String? care,
+    String? origin,
+    int? widthCm,
+    int? gsm,
+    bool? sellByLength,
+    double? minCutMeters,
     required String categoryId,
     required double basePrice,
     required bool isActive,
@@ -186,6 +211,14 @@ final class SupabaseAdminRepository implements AdminRepository {
         'p_category_id': categoryId,
         'p_base_price': basePrice,
         'p_is_active': isActive,
+        // §10 fabric attributes: only sent when set — the pre-051 RPC
+        // rejects unknown named parameters.
+        if (care != null) 'p_care': care,
+        if (origin != null) 'p_origin': origin,
+        if (widthCm != null) 'p_width_cm': widthCm,
+        if (gsm != null) 'p_gsm': gsm,
+        if (sellByLength != null) 'p_sell_by_length': sellByLength,
+        if (minCutMeters != null) 'p_min_cut_meters': minCutMeters,
       });
       if (res is! String || res.isEmpty) {
         return const Failure(AppError('Failed to save product'));
@@ -275,4 +308,130 @@ final class SupabaseAdminRepository implements AdminRepository {
       return Failure(AppError('Failed to update membership tier', cause: e));
     }
   }
+
+  // ─── Coupons (feature-batch §8) ─────────────────────────
+
+  @override
+  Future<Result<List<AdminCoupon>>> fetchCoupons() async {
+    try {
+      final rows = await _client
+          .from('coupons')
+          .select('id, code, discount_minor, description, active')
+          .order('created_at', ascending: false);
+      final list = rows as List<dynamic>;
+      return Success(
+        list.map((row) => _couponFromRow(row as Map<String, dynamic>)).toList(),
+      );
+    } catch (e) {
+      return Failure(AppError('Failed to fetch coupons', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async {
+    try {
+      final row = await _client
+          .from('coupons')
+          .upsert({
+            'code': code.trim().toUpperCase(),
+            'discount_minor': discountMinor,
+            if (description != null && description.isNotEmpty)
+              'description': description,
+          })
+          .select('id, code, discount_minor, description, active')
+          .single();
+      return Success(_couponFromRow(row));
+    } catch (e) {
+      return Failure(AppError('Failed to create coupon', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<void>> setCouponActive(String id, bool active) async {
+    try {
+      await _client.from('coupons').update({'active': active}).eq('id', id);
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update coupon', cause: e));
+    }
+  }
+
+  // ─── Customers (feature-batch §14) ──────────────────────
+
+  @override
+  Future<Result<List<AdminCustomer>>> fetchCustomers() async {
+    try {
+      final rows = await _client
+          .from('profiles')
+          .select('id, full_name, email, membership_tier')
+          .order('created_at', ascending: false)
+          .limit(500);
+      final list = rows as List<dynamic>;
+      return Success(list
+          .map((row) => row as Map<String, dynamic>)
+          .map((row) => AdminCustomer(
+                id: row['id'] as String? ?? '',
+                name: row['full_name'] as String? ?? '',
+                email: row['email'] as String? ?? '',
+                tier: row['membership_tier'] as String? ?? 'standard',
+                isBlocked:
+                    false, // no suspension flag in profiles (§14 read-only)
+              ))
+          .where((c) => c.id.isNotEmpty)
+          .toList());
+    } catch (e) {
+      return Failure(AppError('Failed to fetch customers', cause: e));
+    }
+  }
+
+  // ─── Review moderation (feature-batch §9) ───────────────
+
+  @override
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews() async {
+    try {
+      final rows = await _client
+          .from('product_reviews')
+          .select('id, product_id, text, rating')
+          .eq('status', 'pending')
+          .order('created_at', ascending: false)
+          .limit(100);
+      final list = rows as List<dynamic>;
+      return Success(list
+          .map((row) => row as Map<String, dynamic>)
+          .map((row) => (
+                id: row['id'] as String,
+                product: row['product_id'] as String,
+                text: row['text'] as String? ?? '',
+                rating: (row['rating'] as num?)?.toInt() ?? 0,
+              ))
+          .toList());
+    } catch (e) {
+      return Failure(AppError('Failed to fetch pending reviews', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<void>> setReviewStatus(String id, String status) async {
+    try {
+      await _client
+          .from('product_reviews')
+          .update({'status': status}).eq('id', id);
+      return const Success(null);
+    } catch (e) {
+      return Failure(AppError('Failed to update review status', cause: e));
+    }
+  }
 }
+
+AdminCoupon _couponFromRow(Map<String, dynamic> row) => AdminCoupon(
+      id: row['id'] as String,
+      code: (row['code'] as String?)?.toUpperCase() ?? '',
+      discountMinor: (row['discount_minor'] as num?)?.toInt() ?? 0,
+      active: row['active'] as bool? ?? false,
+      description: row['description'] as String?,
+    );

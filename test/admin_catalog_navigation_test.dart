@@ -4,6 +4,8 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
@@ -29,6 +31,35 @@ import 'helpers/fetch_related_stub.dart';
 // ─── Fakes ──────────────────────────────────────────────────────
 
 class FakeAdminRepository implements AdminRepository {
+  @override
+  Future<Result<List<AdminCoupon>>> fetchCoupons() async =>
+      const Success(<AdminCoupon>[]);
+
+  @override
+  Future<Result<AdminCoupon>> createCoupon({
+    required String code,
+    required int discountMinor,
+    String? description,
+  }) async =>
+      const Failure(AppError('not implemented'));
+
+  @override
+  Future<Result<void>> setCouponActive(String id, bool active) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<({String id, String product, String text, int rating})>>>
+      fetchPendingReviews() async => const Success(
+          <({String id, String product, String text, int rating})>[]);
+
+  @override
+  Future<Result<void>> setReviewStatus(String id, String status) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
+      const Success(<AdminCustomer>[]);
+
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
       const Success(null);
@@ -84,6 +115,12 @@ class FakeAdminRepository implements AdminRepository {
     required String slug,
     String? description,
     String? composition,
+    String? care,
+    String? origin,
+    int? widthCm,
+    int? gsm,
+    bool? sellByLength,
+    double? minCutMeters,
     required String categoryId,
     required double basePrice,
     required bool isActive,
@@ -117,6 +154,14 @@ class FakeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<String>>> getProductImagePaths(String productId) async =>
       Success(productImagePaths);
+
+  @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async {
+    for (final p in products) {
+      if (p.id == productId) return Success(p);
+    }
+    return const Success(null);
+  }
 
   @override
   Future<Result<List<AdminProduct>>> getAllProducts() async {

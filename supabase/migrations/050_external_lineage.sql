@@ -1,0 +1,1 @@
+-- See 048_external_lineage.sql — external-lineage stub (content unknown, applied remotely).
