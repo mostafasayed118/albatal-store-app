@@ -18,7 +18,8 @@ void main() {
   });
 
   group('ImageCompressor contract', () {
-    test('no-op compressor returns input bytes (fake contract check)', () async {
+    test('no-op compressor returns input bytes (fake contract check)',
+        () async {
       final bytes = Uint8List.fromList(List.filled(10, 7));
       final result = await _PassthroughCompressor().compress(bytes);
       expect(result, same(bytes));

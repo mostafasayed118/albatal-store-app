@@ -9,6 +9,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
 import '../../domain/repositories/auth_session_port.dart';
@@ -67,7 +68,7 @@ class CheckoutPage extends StatelessWidget {
           // Empty (never fake) when the session lapsed — PaymentMethodPage
           // blocks with a sign-in error instead of charging a dead address.
           final email = _resolveCustomerEmail();
-          context.push('/payment-method', extra: {
+          context.push(Routes.paymentMethod, extra: {
             'total': s.serverTotal,
             'subtotal': s.serverSubtotal,
             'shipping': s.serverShipping,
@@ -81,13 +82,13 @@ class CheckoutPage extends StatelessWidget {
           // localized retry copy so Arabic users never see English (audit
           // code-quality finding).
           final raw = s.errorMessage!;
-          // TODO(review-low): matching is stringly typed because [AppError]
-          // carries no machine-readable code (core/error is owned by the
-          // audit P1/P2 slices). If a `code` field is ever added there,
-          // switch this to code-based mapping — the scrubbed generic
-          // messages matched below are the exact literals emitted by
-          // CheckoutService for local failures.
-          final localized = (raw == 'Checkout failed' ||
+          // Code-based localization (audit 2026-09-13): generic failures
+          // carry [kCheckoutFailedCode]; the English-literal fallback
+          // keeps older call shapes (tests inject bare messages)
+          // localizing too. Server-authored messages pass through
+          // verbatim (P1 ruling).
+          final localized = (s.errorCode == kCheckoutFailedCode ||
+                  raw == 'Checkout failed' ||
                   raw == 'Failed to create order. Please try again.')
               ? l10n.checkoutFailedRetry
               : raw;

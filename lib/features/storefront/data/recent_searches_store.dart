@@ -1,14 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// persisted recent catalog searches (feature-batch §7).
-abstract interface class RecentSearchesStore {
-  List<String> load();
-
-  /// Records [query] at the front, deduped case-insensitively, capped.
-  void record(String query);
-
-  void clear();
-}
+import '../domain/repositories/recent_searches_store.dart';
 
 const kRecentSearchesKey = 'recent_searches_v1';
 const kRecentSearchesMax = 10;

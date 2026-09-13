@@ -185,9 +185,8 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> _signInWith(OAuthProvider provider) async {
     final messenger = ScaffoldMessenger.of(context);
-    final oauth = getIt.isRegistered<OAuthService>()
-        ? getIt<OAuthService>()
-        : null;
+    final oauth =
+        getIt.isRegistered<OAuthService>() ? getIt<OAuthService>() : null;
     if (oauth == null) {
       messenger.showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
@@ -208,7 +207,6 @@ class _SignInPageState extends State<SignInPage> {
         ));
     }
   }
-
 
   void _submit() {
     if (_formKey.currentState!.validate()) {

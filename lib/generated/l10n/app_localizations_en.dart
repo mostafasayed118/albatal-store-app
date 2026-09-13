@@ -1288,4 +1288,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminAccessRequired => 'Admin access required';
+
+  @override
+  String get orderNotifications => 'Order notifications';
+
+  @override
+  String get orderNotificationsSubtitle => 'Confirmations and status updates';
 }

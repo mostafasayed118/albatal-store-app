@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
@@ -70,7 +71,7 @@ final class _OnboardingPageState extends State<OnboardingPage> {
       listenWhen: (previous, current) =>
           previous.destination != current.destination &&
           current.destination == OnboardingDestination.home,
-      listener: (_, __) => context.go('/home'),
+      listener: (_, __) => context.go(Routes.home),
       child: Scaffold(
         body: SafeArea(
           child: LayoutBuilder(

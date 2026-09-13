@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -71,7 +72,7 @@ class DetailsPage extends StatelessWidget {
                 title: l.noResultsFound,
                 body: l.emptyBody,
                 actionLabel: l.returnHome,
-                onAction: () => context.go('/home'),
+                onAction: () => context.go(Routes.home),
               ),
             );
           }
@@ -100,8 +101,8 @@ class DetailsPage extends StatelessWidget {
                 IconButton(
                   tooltip: l.shareProduct,
                   onPressed: () => unawaited(getIt<ProductShareService>()
-                      .shareText(l.shareProductMessage(
-                          p.name, productUrl(p.id)))),
+                      .shareText(
+                          l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],
@@ -165,8 +166,8 @@ class DetailsPage extends StatelessWidget {
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (_, i) => RelatedCard(
                         product: s.relatedProducts[i],
-                        onTap: () =>
-                            context.push('/product/${s.relatedProducts[i].id}'),
+                        onTap: () => context
+                            .push(Routes.product(s.relatedProducts[i].id)),
                       ),
                     ),
                   ),

@@ -31,11 +31,8 @@ final class ReorderState extends Equatable {
 class ReorderCubit extends Cubit<ReorderState> {
   ReorderCubit({
     required CatalogRepository catalog,
-    required void Function(
-            Product product,
-            {String color,
-            String length,
-            int quantity})
+    required void Function(Product product,
+            {String color, String length, int quantity})
         addToCart,
   })  : _catalog = catalog,
         _addToCart = addToCart,

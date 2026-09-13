@@ -2,11 +2,11 @@ import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
-import 'package:al_batal_elite/features/storefront/data/recent_searches_store.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart'
     show OrderCodec;
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/recent_searches_store.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';

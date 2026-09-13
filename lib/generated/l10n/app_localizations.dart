@@ -2455,6 +2455,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Admin access required'**
   String get adminAccessRequired;
+
+  /// No description provided for @orderNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Order notifications'**
+  String get orderNotifications;
+
+  /// No description provided for @orderNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmations and status updates'**
+  String get orderNotificationsSubtitle;
 }
 
 class _AppLocalizationsDelegate

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -89,19 +90,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 icon: Icons.receipt_long,
                 title: l.orderQueue,
                 subtitle: l.viewAllOrders,
-                onTap: () => context.push('/admin/orders'),
+                onTap: () => context.push(Routes.adminOrders),
               ),
               _ActionTile(
                 icon: Icons.inventory_2_outlined,
                 title: l.inventory,
                 subtitle: l.manageStock,
-                onTap: () => context.push('/admin/inventory'),
+                onTap: () => context.push(Routes.adminInventory),
               ),
               _ActionTile(
                 icon: Icons.shopping_bag_outlined,
                 title: l.catalog,
                 subtitle: l.manageProducts,
-                onTap: () => context.push('/admin/catalog'),
+                onTap: () => context.push(Routes.adminCatalog),
               ),
             ],
           );

@@ -423,7 +423,8 @@ final class _RouteProbeAdminRepository implements AdminRepository {
 
   @override
   Future<Result<List<({String id, String product, String text, int rating})>>>
-      fetchPendingReviews() async => const Success(<({String id, String product, String text, int rating})>[]);
+      fetchPendingReviews() async => const Success(
+          <({String id, String product, String text, int rating})>[]);
 
   @override
   Future<Result<void>> setReviewStatus(String id, String status) async =>
@@ -432,8 +433,6 @@ final class _RouteProbeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
       const Success(<AdminCustomer>[]);
-
-
 
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>
@@ -507,6 +506,10 @@ final class _RouteProbeAdminRepository implements AdminRepository {
   @override
   Future<Result<List<String>>> getProductImagePaths(String productId) async =>
       const Success([]);
+
+  @override
+  Future<Result<AdminProduct?>> getProductById(String productId) async =>
+      const Success(null);
 
   @override
   Future<Result<List<AdminProduct>>> getAllProducts() async =>

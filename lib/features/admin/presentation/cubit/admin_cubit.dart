@@ -84,6 +84,7 @@ class AdminCubit extends Cubit<AdminState> {
   /// Check if current user is admin.
   Future<void> checkAdmin() async {
     final isAdmin = await _adminRepository.isCurrentUserAdmin();
+    if (isClosed) return;
     if (!isAdmin) {
       emit(state.copyWith(
         status: AdminStatus.error,
@@ -100,6 +101,7 @@ class AdminCubit extends Cubit<AdminState> {
       clearStatusFilter: status == null,
     ));
     final result = await _adminRepository.getAllOrders(status: status);
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(status: AdminStatus.ready, orders: value));
@@ -115,6 +117,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> loadOrderDetails(String orderId) async {
     emit(state.copyWith(status: AdminStatus.loading));
     final result = await _adminRepository.getOrderDetails(orderId);
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         if (value == null) {
@@ -147,10 +150,12 @@ class AdminCubit extends Cubit<AdminState> {
       status,
       trackingNumber: trackingNumber,
     );
+    if (isClosed) return;
     switch (result) {
       case Success():
         // Reload orders after status update so the queue reflects it.
         await loadOrders(status: state.statusFilter);
+        if (isClosed) return;
         // Refresh the open detail from the reloaded queue: without this,
         // the status card kept showing the pre-transition status until
         // the admin left and re-entered the page.
@@ -173,6 +178,7 @@ class AdminCubit extends Cubit<AdminState> {
   Future<void> loadLowStockProducts({int threshold = 5}) async {
     final result =
         await _adminRepository.getLowStockProducts(threshold: threshold);
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(
@@ -190,6 +196,7 @@ class AdminCubit extends Cubit<AdminState> {
   /// Update variant stock.
   Future<void> updateStock(String variantId, int newStock) async {
     final result = await _adminRepository.updateStock(variantId, newStock);
+    if (isClosed) return;
     switch (result) {
       case Success():
         await loadLowStockProducts();
@@ -208,6 +215,7 @@ class AdminCubit extends Cubit<AdminState> {
   /// admin transition. Failures surface through the shared error channel.
   Future<void> setMembershipTier(String profileId, String tier) async {
     final result = await _adminRepository.setMembershipTier(profileId, tier);
+    if (isClosed) return;
     switch (result) {
       case Success():
         final selected = state.selectedOrder;

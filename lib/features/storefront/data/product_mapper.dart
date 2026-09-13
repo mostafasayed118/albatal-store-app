@@ -173,6 +173,8 @@ extension ProductCodec on Product {
     // Total decode: mistyped cache values degrade instead of throwing
     // (one bad entry never fails the whole restore).
     String? optStr(Object? v) => v is String ? v : null;
+    List<String> optStrList(Object? v) =>
+        v is List ? v.whereType<String>().toList() : const [];
     final priceRaw = raw['price'];
     final oldPriceRaw = raw['oldPrice'];
     final imageColorRaw = raw['imageColor'];
@@ -188,16 +190,13 @@ extension ProductCodec on Product {
             ? imageColorRaw.toInt()
             : _placeholderImageColor,
         imageAsset: optStr(raw['imageAsset']),
-        images:
-            (raw['images'] as List?)?.whereType<String>().toList() ?? const [],
+        images: optStrList(raw['images']),
         description: optStr(raw['description']),
         composition: optStr(raw['composition']),
         care: optStr(raw['care']),
         origin: optStr(raw['origin']),
-        sizes:
-            (raw['sizes'] as List?)?.whereType<String>().toList() ?? const [],
-        colors:
-            (raw['colors'] as List?)?.whereType<String>().toList() ?? const [],
+        sizes: optStrList(raw['sizes']),
+        colors: optStrList(raw['colors']),
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),

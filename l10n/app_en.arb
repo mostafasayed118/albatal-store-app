@@ -495,5 +495,7 @@
   "orderRefRequired": "Unable to continue: the order reference is missing.",
   "checkoutFailedRetry": "Checkout failed. Please try again.",
   "paymentMethodUnknown": "Unknown",
-  "adminAccessRequired": "Admin access required"
+  "adminAccessRequired": "Admin access required",
+  "orderNotifications": "Order notifications",
+  "orderNotificationsSubtitle": "Confirmations and status updates"
 }

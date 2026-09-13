@@ -1288,4 +1288,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adminAccessRequired => 'يلزم الوصول كمسؤول';
+
+  @override
+  String get orderNotifications => 'إشعارات الطلبات';
+
+  @override
+  String get orderNotificationsSubtitle => 'التأكيدات وتحديثات الحالة';
 }

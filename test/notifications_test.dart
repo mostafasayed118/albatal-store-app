@@ -69,7 +69,7 @@ void main() {
     test('construction is safe without configuration', () {
       // EnvConfig.onesignalAppId is empty in tests: init() must be a
       // no-op that neither throws nor touches the network.
-      expect(const PushService(), isA<PushService>());
+      expect(const OneSignalPushService(), isA<PushService>());
     });
   });
 }

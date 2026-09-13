@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../catalog_constants.dart';
 import '../cubit/catalog_cubit.dart' hide CatalogConstants;
@@ -42,7 +43,7 @@ class CategoriesPage extends StatelessWidget {
             catalog.select(cat);
             final router = GoRouter.maybeOf(context);
             if (router != null) {
-              context.go('/catalog');
+              context.go(Routes.catalog);
             }
           }
 

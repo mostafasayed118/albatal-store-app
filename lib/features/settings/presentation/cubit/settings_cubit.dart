@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/services/notification_service.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'settings_state.dart';
 
@@ -10,25 +11,46 @@ import 'settings_state.dart';
 /// it maps the framework-free [AppThemeMode]/[AppLocale] domain values
 /// to/from the Material/`dart:ui` types the UI consumes. The domain and
 /// data layers must never import Flutter (audit residual fix).
+///
+/// §12 notification opt-in flows through here too: the page renders
+/// the toggle from [SettingsState.orderNotifications] (null = store
+/// not registered, tile hidden) instead of probing the DI container
+/// during build (audit 2026-09-13).
 final class SettingsCubit extends Cubit<SettingsState> {
-  SettingsCubit(this._repository) : super(const SettingsState());
+  SettingsCubit(this._repository, {NotificationPrefsStore? notificationPrefs})
+      : _notificationPrefs = notificationPrefs,
+        super(const SettingsState());
 
   final SettingsRepository _repository;
+  final NotificationPrefsStore? _notificationPrefs;
 
   Future<void> load() async {
     emit(state.copyWith(status: SettingsStatus.loading, clearError: true));
     final result = await _repository.read();
+    if (isClosed) return;
     result.when(
       success: (settings) => emit(state.copyWith(
         status: SettingsStatus.ready,
         themeMode: _toMaterialThemeMode(settings.themeMode),
         locale: Locale(settings.locale.languageCode),
+        orderNotifications:
+            _notificationPrefs?.orderNotificationsEnabled ?? false,
+        clearOrderNotifications: _notificationPrefs == null,
       )),
       failure: (error) => emit(state.copyWith(
         status: SettingsStatus.failure,
         errorMessage: error.message,
       )),
     );
+  }
+
+  /// §12: persist the order-notification opt-in optimistically. The
+  /// store write is synchronous prefs I/O, so no failure path exists.
+  void toggleOrderNotifications(bool enabled) {
+    final prefs = _notificationPrefs;
+    if (prefs == null) return;
+    prefs.setOrderNotifications(enabled);
+    emit(state.copyWith(orderNotifications: enabled));
   }
 
   Future<void> changeThemeMode(ThemeMode themeMode) => _save(

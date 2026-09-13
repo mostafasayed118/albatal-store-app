@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/remote_config_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_colors.dart';
@@ -59,7 +63,13 @@ class _SplashPageState extends State<SplashPage>
         ? getIt<RemoteConfigService>()
         : null;
     if (config != null) {
-      await config.refresh();
+      // Bounded wait: a slow/unreachable config endpoint must not hold
+      // the user on splash — defaults apply and the gate is advisory.
+      try {
+        await config.refresh().timeout(const Duration(seconds: 2));
+      } on TimeoutException {
+        Log.w('remote config refresh timed out; using defaults');
+      }
       if (!mounted) return;
       if (config.maintenanceMode) {
         if (!mounted) return;
@@ -73,8 +83,9 @@ class _SplashPageState extends State<SplashPage>
       }
     }
     if (!mounted) return;
-    context.go(
-        destination == OnboardingDestination.home ? '/home' : '/onboarding');
+    context.go(destination == OnboardingDestination.home
+        ? Routes.home
+        : Routes.onboarding);
   }
 
   @override

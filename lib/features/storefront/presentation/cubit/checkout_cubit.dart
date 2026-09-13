@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
@@ -9,12 +8,11 @@ import '../../../../core/error/result.dart';
 import '../../../../shared/services/analytics_service.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../payments/domain/entities/payment.dart';
-import '../../data/memory_idempotency_store.dart';
-import '../../data/storefront_persistence.dart';
 import '../../domain/entities/coupon_discount.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/repositories/coupons_repository.dart';
 import '../../domain/repositories/idempotency_store.dart';
+import '../../domain/repositories/memory_idempotency_store.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
@@ -25,6 +23,7 @@ final class CheckoutState extends Equatable {
     this.payment = PaymentMethod.paymobCard,
     this.selectedAddress,
     this.errorMessage,
+    this.errorCode,
     this.pendingOrderId,
     this.serverSubtotal,
     this.serverShipping,
@@ -39,6 +38,11 @@ final class CheckoutState extends Equatable {
   final PaymentMethod payment;
   final Address? selectedAddress;
   final String? errorMessage;
+
+  /// Machine-readable classification of [errorMessage] (e.g.
+  /// [kCheckoutFailedCode]); the page maps it to localized copy
+  /// instead of string-matching (audit 2026-09-13).
+  final String? errorCode;
   final String? pendingOrderId;
   final Money? serverSubtotal;
   final Money? serverShipping;
@@ -71,6 +75,7 @@ final class CheckoutState extends Equatable {
     Address? selectedAddress,
     bool clearAddress = false,
     String? errorMessage,
+    String? errorCode,
     String? pendingOrderId,
     Money? serverSubtotal,
     Money? serverShipping,
@@ -87,6 +92,7 @@ final class CheckoutState extends Equatable {
         selectedAddress:
             clearAddress ? null : (selectedAddress ?? this.selectedAddress),
         errorMessage: errorMessage,
+        errorCode: errorCode,
         pendingOrderId: pendingOrderId ?? this.pendingOrderId,
         serverSubtotal: serverSubtotal ?? this.serverSubtotal,
         serverShipping: serverShipping ?? this.serverShipping,
@@ -104,6 +110,7 @@ final class CheckoutState extends Equatable {
         payment,
         selectedAddress,
         errorMessage,
+        errorCode,
         pendingOrderId,
         serverSubtotal,
         serverShipping,
@@ -118,10 +125,11 @@ final class CheckoutState extends Equatable {
 final class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit(
     CheckoutRepository checkoutRepository, {
-    // Legacy persistence param (kept for backward compatibility — prefer
-    // injecting [placeOrder], which already carries its store). Only used
-    // to build the default use-case below; never read directly.
-    SharedPreferences? prefs,
+    // Production injects [placeOrder] from the composition root (the
+    // router resolves the persisted IdempotencyStore via the use case);
+    // the domain-located in-memory default keeps widget tests
+    // construction-only. The cubit depends on domain ports only — no
+    // data-layer imports (audit P1, re-closed after the feature batch).
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
     CouponsRepository? coupons,
@@ -131,10 +139,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(
               checkoutRepository: checkoutRepository,
-              idempotencyStore: idempotencyStore ??
-                  (prefs == null
-                      ? MemoryIdempotencyStore()
-                      : LocalStorefrontPersistence(prefs)),
+              idempotencyStore: idempotencyStore ?? MemoryIdempotencyStore(),
             ),
         super(const CheckoutState());
 
@@ -244,6 +249,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         emit(state.copyWith(
           status: CheckoutStatus.error,
           errorMessage: outcome.error?.message ?? 'Failed to create order.',
+          errorCode: outcome.error?.code,
           idempotencyKey: outcome.idempotencyKey,
         ));
       }
@@ -255,6 +261,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(
         status: CheckoutStatus.error,
         errorMessage: 'Failed to create order. Please try again.',
+        errorCode: kCheckoutFailedCode,
         idempotencyKey: state.idempotencyKey,
       ));
     }

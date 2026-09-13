@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -63,13 +64,13 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   /// (`context.pop(true)` after a successful save) — refresh so the
   /// list never shows a stale name, price, or active flag.
   Future<void> _editProduct(AdminProduct product) async {
-    final changed = await context.push<bool>('/admin/products/${product.id}');
+    final changed = await context.push<bool>(Routes.adminProduct(product.id));
     if (!context.mounted) return;
     if (changed == true) await _loadProducts();
   }
 
   Future<void> _newProduct() async {
-    final changed = await context.push<bool>('/admin/products/new');
+    final changed = await context.push<bool>(Routes.adminProductNew);
     if (!context.mounted) return;
     if (changed == true) await _loadProducts();
   }
@@ -130,7 +131,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                               // frequent per-product task); the trailing
                               // icons cover gallery and the edit form.
                               onTap: () =>
-                                  context.push('/admin/variants/${p.id}'),
+                                  context.push(Routes.adminVariant(p.id)),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -139,7 +140,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                     tooltip: 'Images',
                                     icon: const Icon(Icons.image_outlined),
                                     onPressed: () =>
-                                        context.push('/admin/images/${p.id}'),
+                                        context.push(Routes.adminImage(p.id)),
                                   ),
                                   IconButton(
                                     // Admin-only, intentionally unlocalized.

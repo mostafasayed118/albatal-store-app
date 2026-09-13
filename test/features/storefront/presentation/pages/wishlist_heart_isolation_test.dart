@@ -3,9 +3,9 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
-import 'package:al_batal_elite/features/storefront/data/recent_searches_store.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/recent_searches_store.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/recent_searches_cubit.dart';
@@ -81,8 +81,7 @@ Widget _homeHarness(MemoryStorefrontPersistence store) => MaterialApp(
           BlocProvider(create: (_) => CatalogCubit(_StubRepo())..load()),
           BlocProvider(create: (_) => WishlistCubit(store)),
           BlocProvider(
-              create: (_) =>
-                  RecentSearchesCubit(store: _NoRecentSearches())),
+              create: (_) => RecentSearchesCubit(store: _NoRecentSearches())),
           BlocProvider(create: (_) => CartCubit(store)),
           BlocProvider(
             create: (_) => AuthCubit(
@@ -145,8 +144,7 @@ void main() {
           BlocProvider(create: (_) => CatalogCubit(_StubRepo())..load()),
           BlocProvider(create: (_) => WishlistCubit(store)),
           BlocProvider(
-              create: (_) =>
-                  RecentSearchesCubit(store: _NoRecentSearches())),
+              create: (_) => RecentSearchesCubit(store: _NoRecentSearches())),
         ],
         child: const CatalogPage(),
       ),

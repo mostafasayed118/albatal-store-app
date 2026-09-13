@@ -69,10 +69,9 @@ class VariantSelector extends StatelessWidget {
                         IconButton(
                           tooltip: l.cutLength,
                           onPressed: () {
-                            final current =
-                                double.tryParse(state.length) ??
-                                    product.minCutMeters ??
-                                    1.0;
+                            final current = double.tryParse(state.length) ??
+                                product.minCutMeters ??
+                                1.0;
                             cubit.setCutLength(current - 0.5);
                           },
                           icon: const Icon(Icons.remove_circle_outline),
@@ -82,10 +81,9 @@ class VariantSelector extends StatelessWidget {
                         IconButton(
                           tooltip: l.cutLength,
                           onPressed: () {
-                            final current =
-                                double.tryParse(state.length) ??
-                                    product.minCutMeters ??
-                                    1.0;
+                            final current = double.tryParse(state.length) ??
+                                product.minCutMeters ??
+                                1.0;
                             cubit.setCutLength(current + 0.5);
                           },
                           icon: const Icon(Icons.add_circle_outline),

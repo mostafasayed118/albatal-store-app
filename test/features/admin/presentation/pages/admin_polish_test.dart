@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -14,11 +16,13 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/app_button.dart';
 import 'package:al_batal_elite/shared/components/app_image.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
+import 'package:al_batal_elite/shared/services/image_compressor.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockAdminRepository extends Mock implements AdminRepository {}
@@ -31,6 +35,28 @@ class _FakeStorageService extends StorageService {
   @override
   String getProductImageUrl(String storagePath) =>
       'https://example.com/$storagePath';
+}
+
+/// Records upload file names without touching Supabase.
+class _UploadingStorageService extends _FakeStorageService {
+  _UploadingStorageService(this.uploadedFileNames);
+
+  final List<String> uploadedFileNames;
+
+  @override
+  Future<String> uploadProductImage(String productId, List<int> bytes,
+      String fileName, String contentType) async {
+    uploadedFileNames.add(fileName);
+    return 'product-images/pid/$fileName';
+  }
+}
+
+/// Always re-encodes to a small payload so the compression pass is
+/// observably on the upload path.
+class _ShrinkCompressor implements ImageCompressor {
+  @override
+  Future<Uint8List> compress(Uint8List bytes) async =>
+      Uint8List.sublistView(bytes, 0, 1024);
 }
 
 AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
@@ -616,6 +642,44 @@ void main() {
       verify(() => repo.adminSetProductImages('pid', any())).called(1);
       expect(find.text('Image removed'), findsOneWidget);
       expect(find.byType(AppImage), findsNothing);
+    });
+
+    testWidgets('uploading picks, compresses, stores, and saves the gallery',
+        (tester) async {
+      // Audit 2026-09-13: the upload is real now — no dummy-bytes stub.
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Success([]));
+      when(() => repo.adminSetProductImages('pid', any()))
+          .thenAnswer((_) async => const Success(null));
+      final uploadedFileNames = <String>[];
+      final uploadStorage = _UploadingStorageService(uploadedFileNames);
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+          productId: 'pid',
+          repository: repo,
+          storage: uploadStorage,
+          pickImage: (_) async => XFile.fromData(
+            Uint8List.fromList(List.filled(300 * 1024, 1)),
+            name: 'fabric.jpg',
+            mimeType: 'image/jpeg',
+          ),
+          imageCompressor: _ShrinkCompressor(),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      // Two AppButtons render on the empty gallery (page upload +
+      // FeedbackView action); the page's own upload button is first.
+      await tester.tap(find.byType(AppButton).first);
+      await tester.pump();
+      await tester.pump();
+
+      expect(uploadedFileNames, hasLength(1));
+      expect(uploadedFileNames.single, endsWith('.jpg'));
+      verify(() => repo.adminSetProductImages('pid', any())).called(1);
+      expect(find.text('Image uploaded'), findsOneWidget);
     });
   });
 
