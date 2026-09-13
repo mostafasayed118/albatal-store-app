@@ -2467,6 +2467,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirmations and status updates'**
   String get orderNotificationsSubtitle;
+
+  /// No description provided for @instapaySessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment session not found'**
+  String get instapaySessionMissing;
 }
 
 class _AppLocalizationsDelegate

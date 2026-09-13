@@ -497,5 +497,6 @@
   "paymentMethodUnknown": "Unknown",
   "adminAccessRequired": "Admin access required",
   "orderNotifications": "Order notifications",
-  "orderNotificationsSubtitle": "Confirmations and status updates"
+  "orderNotificationsSubtitle": "Confirmations and status updates",
+  "instapaySessionMissing": "Payment session not found"
 }

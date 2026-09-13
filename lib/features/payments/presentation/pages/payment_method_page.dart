@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
 import '../../domain/entities/payment.dart';
@@ -29,19 +28,23 @@ class PaymentMethodPage extends StatefulWidget {
     required this.args,
     this.paymentCubit,
     this.paymentService,
-  });
+  }) : assert(
+          paymentCubit != null || paymentService != null,
+          'PaymentService must be injected at the composition root '
+          '(audit 2026-09-13: the page no longer service-locates).',
+        );
   final Map<String, dynamic> args;
 
   /// Optional injected cubit — used by widget tests to drive
   /// deterministic state transitions. When null (production),
-  /// the page creates its own cubit from [paymentService] or
-  /// the GetIt-registered [PaymentService]. This mirrors the
-  /// optional-dependency convention used by [CheckoutPage].
+  /// the page creates its own cubit from [paymentService],
+  /// which the router resolves at the composition root. This
+  /// mirrors the optional-dependency convention of [CheckoutPage].
   final PaymentCubit? paymentCubit;
 
-  /// Optional [PaymentService] for production dependency
-  /// injection. Defaults to the GetIt-registered instance.
-  /// Ignored when [paymentCubit] is provided.
+  /// [PaymentService] resolved at the composition root (audit
+  /// 2026-09-13: no GetIt fallback in the page). Ignored when
+  /// [paymentCubit] is provided.
   final PaymentService? paymentService;
 
   @override
@@ -266,7 +269,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     // Production path: BlocProvider owns and disposes the cubit.
     return BlocProvider<PaymentCubit>(
       create: (_) => PaymentCubit(
-        widget.paymentService ?? getIt<PaymentService>(),
+        widget.paymentService!,
       )..initPayment(
           amount: total,
           orderId: orderId,

@@ -58,6 +58,13 @@ void main() {
       expect(AppLocalizationsAr().adminAccessRequired.isNotEmpty, isTrue);
     });
 
+    test('instapay session-missing body (audit 2026-09-13)', () {
+      final en = AppLocalizationsEn();
+      final ar = AppLocalizationsAr();
+      expect(en.instapaySessionMissing, 'Payment session not found');
+      expect(ar.instapaySessionMissing.isNotEmpty, isTrue);
+    });
+
     test('order-notification opt-in tile (audit 2026-09-13)', () {
       final en = AppLocalizationsEn();
       final ar = AppLocalizationsAr();

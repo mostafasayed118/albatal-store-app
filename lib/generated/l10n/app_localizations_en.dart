@@ -1294,4 +1294,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orderNotificationsSubtitle => 'Confirmations and status updates';
+
+  @override
+  String get instapaySessionMissing => 'Payment session not found';
 }
