@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/product.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
@@ -204,53 +205,30 @@ class _HomePageState extends State<HomePage> {
                     padding:
                         const EdgeInsetsDirectional.symmetric(horizontal: 16),
                     sliver: SliverToBoxAdapter(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(l.flashSale,
-                                style: Theme.of(context).textTheme.titleLarge),
+                      child: _SectionHeader(
+                        title: l.flashSale,
+                        trailing: Text(
+                          discountLabel,
+                          style: TextStyle(
+                            color: scheme.secondary,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            discountLabel,
-                            style: TextStyle(
-                              color: scheme.secondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsetsDirectional.all(16),
+                    // Countdown: the card subscribes to the cubit's
+                    // flashCountdown broadcast stream so the 1Hz ticker
+                    // only does work when a widget actually renders the
+                    // remaining time (audit 2026-09-13 — the stream
+                    // previously had zero subscribers).
                     sliver: SliverToBoxAdapter(
-                      // Countdown: the card subscribes to the cubit's
-                      // flashCountdown broadcast stream so the 1Hz
-                      // ticker only does work when a widget actually
-                      // renders the remaining time (audit 2026-09-13 —
-                      // the stream previously had zero subscribers).
-                      child: StreamBuilder<Duration>(
-                        stream: catalog.flashCountdown,
-                        builder: (context, snapshot) {
-                          final remaining = (snapshot.data != null &&
-                                  snapshot.data! > Duration.zero)
-                              ? snapshot.data
-                              : null;
-                          return StitchFlashSaleCard(
-                            product: flashProduct,
-                            discountLabel: discountLabel,
-                            remaining: remaining,
-                            onAdd: () {
-                              context.read<CartCubit>().add(flashProduct);
-                              // Acknowledge the add — the flash-sale card
-                              // lives far from the cart badge, and a silent
-                              // tap reads as "did that even work?".
-                              showConfirmation(context, l.addedToCart);
-                            },
-                            onTap: () =>
-                                context.push(Routes.product(flashProduct.id)),
-                          );
-                        },
+                      child: _FlashSaleCard(
+                        product: flashProduct,
+                        discountLabel: discountLabel,
+                        countdown: catalog.flashCountdown,
                       ),
                     ),
                   ),
@@ -259,26 +237,10 @@ class _HomePageState extends State<HomePage> {
                   padding:
                       const EdgeInsetsDirectional.symmetric(horizontal: 16),
                   sliver: SliverToBoxAdapter(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(l.popularProducts,
-                              style: Theme.of(context).textTheme.titleLarge),
-                        ),
-                        PopupMenuButton<CatalogSort>(
-                          tooltip: l.sortProducts,
-                          initialValue: state.filters.sort,
-                          onSelected: catalog.selectSort,
-                          itemBuilder: (_) => CatalogSort.values
-                              .map((sort) => PopupMenuItem(
-                                  value: sort, child: Text(sort.label)))
-                              .toList(),
-                          child: Chip(
-                            avatar: const Icon(Icons.sort, size: 18),
-                            label: Text(state.filters.sort.label),
-                          ),
-                        ),
-                      ],
+                    child: _PopularHeader(
+                      title: l.popularProducts,
+                      sort: state.filters.sort,
+                      onSortSelected: catalog.selectSort,
                     ),
                   ),
                 ),
@@ -339,6 +301,107 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Section header row shared by the home surfaces (title + optional
+/// trailing widget). Extracted from the page build (audit 2026-09-13:
+/// home_page build extraction, checkout_page pattern).
+final class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.trailing});
+
+  final String title;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+/// Flash-sale card bound to [CatalogCubit.flashCountdown]: the 1Hz
+/// countdown re-renders this subtree only, and shows nothing while the
+/// stream is quiet (no deadline or no active sale).
+final class _FlashSaleCard extends StatelessWidget {
+  const _FlashSaleCard({
+    required this.product,
+    required this.discountLabel,
+    required this.countdown,
+  });
+
+  final Product product;
+  final String discountLabel;
+  final Stream<Duration> countdown;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Duration>(
+      stream: countdown,
+      builder: (context, snapshot) {
+        final remaining =
+            (snapshot.data != null && snapshot.data! > Duration.zero)
+                ? snapshot.data
+                : null;
+        return StitchFlashSaleCard(
+          product: product,
+          discountLabel: discountLabel,
+          remaining: remaining,
+          onAdd: () {
+            context.read<CartCubit>().add(product);
+            // Acknowledge the add — the flash-sale card lives far from
+            // the cart badge, and a silent tap reads as "did that even
+            // work?".
+            showConfirmation(context, context.l10n.addedToCart);
+          },
+          onTap: () => context.push(Routes.product(product.id)),
+        );
+      },
+    );
+  }
+}
+
+/// Popular-products header: title + the sort chip driven by
+/// [CatalogCubit.selectSort].
+final class _PopularHeader extends StatelessWidget {
+  const _PopularHeader({
+    required this.title,
+    required this.sort,
+    required this.onSortSelected,
+  });
+
+  final String title;
+  final CatalogSort sort;
+  final ValueChanged<CatalogSort> onSortSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+        ),
+        PopupMenuButton<CatalogSort>(
+          tooltip: l.sortProducts,
+          initialValue: sort,
+          onSelected: onSortSelected,
+          itemBuilder: (_) => CatalogSort.values
+              .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
+              .toList(),
+          child: Chip(
+            avatar: const Icon(Icons.sort, size: 18),
+            label: Text(sort.label),
+          ),
+        ),
+      ],
     );
   }
 }
