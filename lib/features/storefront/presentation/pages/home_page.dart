@@ -145,6 +145,9 @@ class _HomePageState extends State<HomePage> {
                       StitchSearchBar(
                         controller: _searchController,
                         onChanged: catalog.updateQuery,
+                        // Localized hint — the component's English fallback
+                        // would be announced to Arabic screen-reader users.
+                        hintText: l.searchFabrics,
                         // Outer SliverPadding already gutters 16 — keep
                         // vertical rhythm only to avoid a 32px double inset.
                         padding:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
 import '../../components/feedback.dart';
+import '../../extensions/build_context_x.dart';
 import '../../theme/contrast.dart';
 import '../app_image.dart';
 
@@ -28,6 +29,7 @@ class StitchProductGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l = context.l10n;
     // §17: screen readers hear one coherent card — name, price and
     // availability — instead of a scatter of unrelated texts.
     return Semantics(
@@ -71,14 +73,15 @@ class StitchProductGridCard extends StatelessWidget {
                         ),
                       ),
                       // Wishlist heart top-end — 44px touch target with an
-                      // accessible name (product + selected state).
+                      // accessible name (action + product, selected state).
                       PositionedDirectional(
                         top: 8,
                         end: 8,
                         child: Semantics(
                           button: true,
                           selected: isWishlisted,
-                          label: product.name,
+                          label:
+                              '${isWishlisted ? l.removeFromWishlistAction : l.addToWishlist}, ${product.name}',
                           child: Material(
                             color: scheme.surface.withValues(alpha: 0.92),
                             shape: const CircleBorder(),

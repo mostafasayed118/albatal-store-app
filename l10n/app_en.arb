@@ -127,10 +127,29 @@
   "newSilkCollection": "New Silk Collection",
   "percentOff": "20% Off",
   "shopNow": "Shop Now",
+  "flashSaleTimeRemaining": "Flash sale ends in {time}",
+  "@flashSaleTimeRemaining": {
+    "description": "Screen-reader label for the flash-sale countdown",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSlide": "Go to slide {number}",
+  "@goToSlide": {
+    "description": "Screen-reader label for a hero carousel page dot",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "decreaseQuantity": "Decrease quantity",
   "increaseQuantity": "Increase quantity",
   "removeFromWishlist": "Removed from wishlist",
   "addToWishlist": "Add to wishlist",
+  "removeFromWishlistAction": "Remove from wishlist",
   "fabricCategories": "Fabric Categories",
   "curatedFabrics": "{count, plural, =0{No curated fabrics} =1{1 curated fabric} other{{count} curated fabrics}}",
   "@curatedFabrics": {

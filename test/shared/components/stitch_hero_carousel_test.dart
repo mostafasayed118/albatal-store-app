@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_hero_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,9 @@ Product _product(String id, {Money? oldPrice, double rating = 4.0}) => Product(
 Future<void> _pump(WidgetTester tester, List<StitchHeroSlide> slides,
         {ValueChanged<int>? onPageChanged}) async =>
     tester.pumpWidget(MaterialApp(
+      // Carousel dots read AppLocalizations for their labels.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: StitchHeroCarousel(slides: slides, onPageChanged: onPageChanged),
       ),

@@ -770,6 +770,18 @@ abstract class AppLocalizations {
   /// **'Shop Now'**
   String get shopNow;
 
+  /// Screen-reader label for the flash-sale countdown
+  ///
+  /// In en, this message translates to:
+  /// **'Flash sale ends in {time}'**
+  String flashSaleTimeRemaining(String time);
+
+  /// Screen-reader label for a hero carousel page dot
+  ///
+  /// In en, this message translates to:
+  /// **'Go to slide {number}'**
+  String goToSlide(int number);
+
   /// No description provided for @decreaseQuantity.
   ///
   /// In en, this message translates to:
@@ -793,6 +805,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to wishlist'**
   String get addToWishlist;
+
+  /// No description provided for @removeFromWishlistAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from wishlist'**
+  String get removeFromWishlistAction;
 
   /// No description provided for @fabricCategories.
   ///
