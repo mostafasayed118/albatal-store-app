@@ -29,9 +29,9 @@ void main() {
     );
   });
 
-    tearDown(() async {
-      await authCubit.close();
-    });
+  tearDown(() async {
+    await authCubit.close();
+  });
 
   GoRouter router() => GoRouter(
         initialLocation: '/profile',
