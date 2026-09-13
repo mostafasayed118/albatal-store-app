@@ -154,6 +154,19 @@ class _AuthenticatedProfile extends StatelessWidget {
           trailing: Icon(context.directionalTrailingIcon),
           onTap: () => context.push('/settings'),
         ),
+        // Admin surface (owner request 2026-09-13): the /admin route is
+        // router-gated on profile.isAdmin, but until now nothing in the
+        // UI navigated to it — admins had no path to the dashboard. The
+        // tile is only rendered for admins; the router redirect is the
+        // real guard (non-admins bounce to /home even if forced).
+        if (profile?.isAdmin == true) ...[
+          ListTile(
+            leading: const Icon(Icons.admin_panel_settings_outlined),
+            title: Text(l.adminDashboard),
+            trailing: Icon(context.directionalTrailingIcon),
+            onTap: () => context.push('/admin'),
+          ),
+        ],
         const SizedBox(height: 24),
         TextButton.icon(
           onPressed: () async {
