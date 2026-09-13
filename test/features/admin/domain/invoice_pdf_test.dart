@@ -52,5 +52,26 @@ void main() {
       ]));
       expect(large.length, greaterThan(small.length));
     });
+
+    test('builds via the async isolate API (background-isolate path)',
+        () async {
+      // #9 regression guard: build() spawns Isolate.run internally. Two
+      // concurrent invocations exercise independent isolate spawns; the
+      // document content is deterministic for a fixed order (only fixed-
+      // length timestamps/ids vary per run), so byte lengths must match
+      // and every result must carry the %PDF magic header.
+      final order = _order(items: [
+        _item('Royal Emerald Silk', 2, 180000),
+      ]);
+      final results = await Future.wait([
+        builder.build(order),
+        builder.build(order),
+      ]);
+      for (final bytes in results) {
+        expect(bytes, isNotEmpty);
+        expect(bytes.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]); // %PDF
+      }
+      expect(results[0].length, results[1].length);
+    });
   });
 }
