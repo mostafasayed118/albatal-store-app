@@ -2473,6 +2473,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment session not found'**
   String get instapaySessionMissing;
+
+  /// No description provided for @galleryViewerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product image viewer'**
+  String get galleryViewerLabel;
+
+  /// No description provided for @galleryClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get galleryClose;
+
+  /// No description provided for @galleryZoomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch to zoom'**
+  String get galleryZoomHint;
+
+  /// No description provided for @gallerySwipeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to browse photos'**
+  String get gallerySwipeHint;
 }
 
 class _AppLocalizationsDelegate

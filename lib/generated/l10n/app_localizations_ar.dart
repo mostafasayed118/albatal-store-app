@@ -1297,4 +1297,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'لم يتم العثور على جلسة الدفع';
+
+  @override
+  String get galleryViewerLabel => 'عارض صور المنتج';
+
+  @override
+  String get galleryClose => 'إغلاق';
+
+  @override
+  String get galleryZoomHint => 'قرّب بإصبعين';
+
+  @override
+  String get gallerySwipeHint => 'اسحب لاستعراض الصور';
 }

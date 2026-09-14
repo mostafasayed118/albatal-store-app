@@ -460,5 +460,9 @@
   "adminAccessRequired": "يلزم الوصول كمسؤول",
   "orderNotifications": "إشعارات الطلبات",
   "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة",
-  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع"
+  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع",
+  "galleryViewerLabel": "عارض صور المنتج",
+  "galleryClose": "إغلاق",
+  "galleryZoomHint": "قرّب بإصبعين",
+  "gallerySwipeHint": "اسحب لاستعراض الصور"
 }

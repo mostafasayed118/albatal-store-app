@@ -43,6 +43,7 @@ dependencies:
   pdf: ^3.13.0 # §16 branded invoice PDF
   printing: ^5.15.0 # §16 invoice save/share
   package_info_plus: ^10.2.1 # §13 forced-update min-version check
+  photo_view: ^0.15.0 # §7 fullscreen pinch-zoom gallery (task #7, owner-approved re-add)
   # intl 0.20.3 requires a newer flutter_localizations pin; revisit after next Flutter stable.
 
 dev_dependencies:
