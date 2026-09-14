@@ -128,5 +128,5 @@ void main() {
 
 final class _FakeStorageService extends StorageService {
   @override
-  String getProductImageUrl(String storagePath) => 'cdn:$storagePath';
+  String getProductImageUrl(String storagePath, {int? width}) => 'cdn:$storagePath';
 }

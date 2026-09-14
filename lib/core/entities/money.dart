@@ -31,10 +31,46 @@ final class Money extends Equatable {
   /// Major units as a double — for display only, never for arithmetic.
   double get majorUnits => minorUnits / 100;
 
-  /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGY"`.
-  /// Uses whole major units (no decimals) to match the existing UI convention.
-  /// Truncates (integer division) — fractional minor units never round up.
-  String format({String symbol = 'EGY'}) => '${minorUnits ~/ 100} $symbol';
+  /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGY"`,
+  /// `Money(129050).format()` → `"1290.50 EGY"`. Piasters render only when
+  /// present, so whole amounts keep the established whole-EGY style while
+  /// fractional values are displayed instead of truncated by integer
+  /// division (audit 2026-09-14: `129050` must not read as "1290 EGY").
+  /// Pass an empty [symbol] for the bare major-unit number.
+  String format({String symbol = 'EGY'}) {
+    final major = minorUnits ~/ 100;
+    final piasters = minorUnits % 100;
+    final value = piasters == 0
+        ? '$major'
+        : '$major.${piasters.toString().padLeft(2, '0')}';
+    return symbol.isEmpty ? value : '$value $symbol';
+  }
+
+  /// Parses user-entered major-unit decimal text (`"1290"`, `"1290.5"`,
+  /// `"1290.50"`) into [Money]. Returns null for blank, malformed, or
+  /// negative input, and rejects more than two decimal places — an
+  /// unrepresentable piaster amount must not be silently rounded.
+  ///
+  /// Audit 2026-09-14: the admin price form collects EGP text while the
+  /// DB stores INTEGER minor units, so this is the single `* 100`
+  /// conversion point (string-exact, no float arithmetic).
+  static Money? tryParseMajor(String input) {
+    final text = input.trim();
+    if (text.isEmpty) return null;
+    final parts = text.split('.');
+    if (parts.length > 2) return null;
+    final major = int.tryParse(parts[0].isEmpty ? '0' : parts[0]);
+    if (major == null || major < 0) return null;
+    var minor = major * 100;
+    if (parts.length == 2) {
+      final frac = parts[1];
+      if (frac.length > 2) return null;
+      final piasters = frac.isEmpty ? 0 : int.tryParse(frac);
+      if (piasters == null) return null;
+      minor += frac.length == 1 ? piasters * 10 : piasters;
+    }
+    return Money(minor);
+  }
 
   // ─── Arithmetic ────────────────────────────────────────────
 

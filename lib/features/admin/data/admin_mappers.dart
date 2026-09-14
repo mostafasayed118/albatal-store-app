@@ -115,6 +115,9 @@ class AdminMappers {
 
   /// Maps one `product_variants` row into an [AdminVariant].
   /// Returns null for rows missing the variant id (cannot be edited).
+  ///
+  /// `price_override` is INTEGER minor units (migration 001) and is
+  /// mapped through unchanged (audit 2026-09-14).
   static AdminVariant? variantFromRow(Map<String, dynamic> row) {
     final id = row['id'];
     if (id is! String || id.isEmpty) return null;
@@ -152,6 +155,10 @@ class AdminMappers {
   /// order queue). The admin catalog list must show inactive products
   /// too — they are exactly what needs un-hiding — so unlike the
   /// storefront list there is no active-only filter upstream.
+  ///
+  /// `base_price` is INTEGER minor units (migration 001) and is mapped
+  /// through unchanged, matching the storefront mapper's
+  /// `Money(row['base_price'])` read (audit 2026-09-14).
   static AdminProduct productFromRow(Map<String, dynamic> row) {
     final category = row['categories'];
     final basePriceRaw = row['base_price'];

@@ -371,7 +371,7 @@ final class _ProbeStorageService extends StorageService {
   _ProbeStorageService() : super(client: null);
 
   @override
-  String getProductImageUrl(String storagePath) => 'https://probe/$storagePath';
+  String getProductImageUrl(String storagePath, {int? width}) => 'https://probe/$storagePath';
 }
 
 /// Catalog double with no products: the routing tests only need the cubit to

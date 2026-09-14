@@ -903,6 +903,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get passwordTooShort => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
 
   @override
+  String get passwordRuleHint => '8 أحرف على الأقل، مع حرف ورقم واحد على الأقل';
+
+  @override
+  String get passwordNeedsLetterDigit =>
+      'يجب أن تحتوي كلمة المرور على حرف ورقم واحد على الأقل';
+
+  @override
   String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
 
   @override

@@ -894,6 +894,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordTooShort => 'Password must be at least 8 characters';
 
   @override
+  String get passwordRuleHint =>
+      'At least 8 characters, including at least one letter and one digit';
+
+  @override
+  String get passwordNeedsLetterDigit =>
+      'Password must contain at least one letter and one digit';
+
+  @override
   String get passwordsDoNotMatch => 'Passwords do not match';
 
   @override

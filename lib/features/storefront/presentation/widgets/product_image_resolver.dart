@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/services/storage_service.dart';
+
 /// Single pipeline for rendering a product image.
 ///
 /// The null → texture-icon / http → `CachedNetworkImage` / asset →
@@ -49,11 +51,13 @@ class ProductImageResolver extends StatelessWidget {
     final url = asset;
     if (url == null || url.isEmpty) return _fallback();
     if (url.startsWith('http')) {
-      // Detail/hero path: full-bleed 1080px decode + disk cache with a
-      // short fade so high-res images pop in without a flash. The grid
-      // card path stays at its own 420px budget (stitch_product_grid_card).
+      // Detail/hero path: 1080px transform + decode + disk cache with a
+      // short fade so high-res images pop in without a flash. The zoom
+      // page keeps the untransformed full-res URL (its own path), and
+      // the grid card path stays at its own 420px budget
+      // (stitch_product_grid_card).
       return CachedNetworkImage(
-        imageUrl: url,
+        imageUrl: StorageService.transformPublicUrl(url, width: 1080),
         fit: fit,
         memCacheWidth: 1080,
         memCacheHeight: 1080,

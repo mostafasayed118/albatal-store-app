@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
+import '../../../../core/utils/currency.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -142,9 +144,7 @@ final class _AdminCouponsView extends StatelessWidget {
   }
 }
 
-/// Minor-units → "EGP x.yy" display label (display-only; money math
-/// stays server-side).
-String safeMinorToEgpLabel(int minor) {
-  final egp = minor / 100;
-  return 'EGP ${egp.toStringAsFixed(2)}';
-}
+/// Minor-units → canonical currency label (display-only; money math
+/// stays server-side). Delegates to [money] so the admin surface uses
+/// the same formatter as the storefront (audit 2026-09-14).
+String safeMinorToEgpLabel(int minor) => money(Money(minor));

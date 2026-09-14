@@ -233,6 +233,10 @@ final class SupabaseAdminRepository implements AdminRepository {
     required bool isActive,
   }) async {
     try {
+      // [basePrice] arrives as minor units (the admin form converts EGP
+      // text via [Money.tryParseMajor]); the RPC writes into
+      // `products.base_price` INTEGER (migration 001), so send an exact
+      // int, not a double the DB would have to coerce (audit 2026-09-14).
       final res = await _client.rpc('admin_upsert_product', params: {
         'p_id': id,
         'p_name': name,
@@ -240,7 +244,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         'p_description': description,
         'p_composition': composition,
         'p_category_id': categoryId,
-        'p_base_price': basePrice,
+        'p_base_price': basePrice.round(),
         'p_is_active': isActive,
         // §10 fabric attributes: only sent when set — the pre-051 RPC
         // rejects unknown named parameters.
@@ -269,12 +273,14 @@ final class SupabaseAdminRepository implements AdminRepository {
     double? priceOverride,
   }) async {
     try {
+      // Same minor-unit contract as [adminUpsertProduct]:
+      // `product_variants.price_override` is INTEGER (migration 001).
       final res = await _client.rpc('admin_upsert_variant', params: {
         'p_product_id': productId,
         'p_size': size,
         'p_color': color,
         'p_stock': stock,
-        'p_price_override': priceOverride,
+        'p_price_override': priceOverride?.round(),
       });
       if (res is! String || res.isEmpty) {
         return const Failure(AppError('Failed to save variant'));

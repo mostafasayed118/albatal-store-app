@@ -54,8 +54,8 @@ class CheckoutService implements CheckoutRepository {
     String? couponCode,
     String? idempotencyKey,
   }) async {
-    try {
-      final response = await _client.rpc(
+    final response = await Result.guard(
+      () => _client.rpc(
         'create_checkout_order',
         params: {
           // Single source of truth: the enum's serverValue matches the
@@ -92,55 +92,45 @@ class CheckoutService implements CheckoutRepository {
           if (couponCode != null) 'p_coupon_code': couponCode,
           if (idempotencyKey != null) 'p_idempotency_key': idempotencyKey,
         },
-      );
+      ),
+      'Checkout failed',
+      onError: _checkoutError,
+    );
 
-      // Total decode (audit P2): the RPC is server-authoritative, but a
-      // malformed payload must degrade to a user-safe Failure instead of
-      // throwing a TypeError into the catch-all below. Fail closed on a
-      // missing order id or expiry — a half-decoded order would corrupt
-      // the payment hand-off.
-      final data = safeMap(response);
-      final orderId = safeString(data, 'order_id');
-      final expiresAt = safeDateTime(data, 'expires_at');
-      final subtotal = _minorUnits(data['subtotal']);
-      final shipping = _minorUnits(data['shipping']);
-      final total = _minorUnits(data['total']);
-      if (orderId.isEmpty ||
-          expiresAt == null ||
-          subtotal == null ||
-          shipping == null ||
-          total == null) {
-        Log.e('Checkout RPC malformed payload', category: LogCategory.error);
-        return const Failure(
-            AppError('Checkout failed', code: kCheckoutFailedCode));
-      }
-      return Success(PendingOrder(
-        orderId: orderId,
-        subtotal: Money(subtotal),
-        shipping: Money(shipping),
-        total: Money(total),
-        expiresAt: expiresAt,
-        status: safeString(data, 'status', fallback: 'pending'),
-        isIdempotentRetry: safeBool(data, 'idempotent'),
-      ));
-    } on PostgrestException catch (e, st) {
-      // Never surface Postgrest text verbatim (can leak SQL/URLs).
-      // Allowlist-map known safe signals; everything else collapses to
-      // the generic message (Paymob-service pattern). Detail stays in
-      // logs with cause/stack.
-      Log.e('Checkout RPC failed', error: e, stackTrace: st);
-      final message = _userMessageForPostgrest(e);
-      return Failure(AppError(message,
-          cause: e,
-          stackTrace: st,
-          code: message == 'Checkout failed' ? kCheckoutFailedCode : null));
-    } catch (e, st) {
-      // Never interpolate the raw exception: transport failures can carry
-      // internal URLs and secrets that must not reach the UI (audit P1).
-      Log.e('Checkout failed', error: e, stackTrace: st);
-      return Failure(AppError('Checkout failed',
-          cause: e, stackTrace: st, code: kCheckoutFailedCode));
-    }
+    return response.when(
+      success: (data) {
+        // Total decode (audit P2): the RPC is server-authoritative, but a
+        // malformed payload must degrade to a user-safe Failure instead of
+        // throwing a TypeError into the catch-all below. Fail closed on a
+        // missing order id or expiry — a half-decoded order would corrupt
+        // the payment hand-off.
+        final map = safeMap(data);
+        final orderId = safeString(map, 'order_id');
+        final expiresAt = safeDateTime(map, 'expires_at');
+        final subtotal = _minorUnits(map['subtotal']);
+        final shipping = _minorUnits(map['shipping']);
+        final total = _minorUnits(map['total']);
+        if (orderId.isEmpty ||
+            expiresAt == null ||
+            subtotal == null ||
+            shipping == null ||
+            total == null) {
+          Log.e('Checkout RPC malformed payload', category: LogCategory.error);
+          return const Failure<PendingOrder>(
+              AppError('Checkout failed', code: kCheckoutFailedCode));
+        }
+        return Success<PendingOrder>(PendingOrder(
+          orderId: orderId,
+          subtotal: Money(subtotal),
+          shipping: Money(shipping),
+          total: Money(total),
+          expiresAt: expiresAt,
+          status: safeString(map, 'status', fallback: 'pending'),
+          isIdempotentRetry: safeBool(map, 'idempotent'),
+        ));
+      },
+      failure: (error) => Failure<PendingOrder>(error),
+    );
   }
 
   /// Allowlist-map of Postgrest failures to user-safe messages.
@@ -165,5 +155,27 @@ class CheckoutService implements CheckoutRepository {
       return 'Unsupported payment method.';
     }
     return 'Checkout failed';
+  }
+
+  /// [Result.guard] error-mapper for the checkout RPC.
+  ///
+  /// Never surfaces Postgrest text verbatim (can leak SQL/URLs).
+  /// Allowlist-maps known safe signals; everything else collapses to
+  /// the generic message (Paymob-service pattern). Detail stays in
+  /// logs with cause/stack.
+  AppError _checkoutError(Object e, StackTrace st) {
+    if (e is PostgrestException) {
+      Log.e('Checkout RPC failed', error: e, stackTrace: st);
+      final message = _userMessageForPostgrest(e);
+      return AppError(message,
+          cause: e,
+          stackTrace: st,
+          code: message == 'Checkout failed' ? kCheckoutFailedCode : null);
+    }
+    // Never interpolate the raw exception: transport failures can carry
+    // internal URLs and secrets that must not reach the UI (audit P1).
+    Log.e('Checkout failed', error: e, stackTrace: st);
+    return AppError('Checkout failed',
+        cause: e, stackTrace: st, code: kCheckoutFailedCode);
   }
 }

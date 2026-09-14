@@ -332,6 +332,8 @@
   "checkEmailToVerify": "تحقق من بريدك الإلكتروني للتحقق من حسابك",
   "invalidEmail": "يرجى إدخال بريد إلكتروني صالح",
   "passwordTooShort": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+  "passwordRuleHint": "8 أحرف على الأقل، مع حرف ورقم واحد على الأقل",
+  "passwordNeedsLetterDigit": "يجب أن تحتوي كلمة المرور على حرف ورقم واحد على الأقل",
   "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
   "nameRequired": "الاسم مطلوب",
   "dontHaveAccount": "ليس لديك حساب؟",

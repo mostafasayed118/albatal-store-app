@@ -1706,6 +1706,18 @@ abstract class AppLocalizations {
   /// **'Password must be at least 8 characters'**
   String get passwordTooShort;
 
+  /// No description provided for @passwordRuleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters, including at least one letter and one digit'**
+  String get passwordRuleHint;
+
+  /// No description provided for @passwordNeedsLetterDigit.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one letter and one digit'**
+  String get passwordNeedsLetterDigit;
+
   /// No description provided for @passwordsDoNotMatch.
   ///
   /// In en, this message translates to:

@@ -10,18 +10,46 @@ import '../cubit/auth_cubit.dart';
 /// Minimum accepted password length for new accounts (audit S9).
 const int minPasswordLength = 8;
 
-/// Password rule for the sign-up form: at least [minPasswordLength]
-/// characters.
+/// Password rule for the sign-in / reset forms: at least
+/// [minPasswordLength] characters.
 ///
 /// Top-level (not a closure) so the rule is unit-testable without a
 /// widget tree. [tooShortMessage] carries the localized copy from the
 /// page; the fallback exists only so the validator is testable
 /// standalone. Returns null when the value is acceptable.
+///
+/// Length-only on purpose: sign-in and password-reset must not reject
+/// credentials created before the complexity rule existed (audit
+/// 2026-09-14). New accounts go through [signUpPasswordValidator].
 String? passwordValidator(String? value, {String? tooShortMessage}) =>
     (value == null || value.length < minPasswordLength)
         ? tooShortMessage ??
             'Password must be at least $minPasswordLength characters'
         : null;
+
+/// Password rule for NEW accounts: [passwordValidator] plus at least one
+/// letter and one digit (audit 2026-09-14). Length-only passwords like
+/// `12345678` or `longenough` are no longer accepted at sign-up.
+///
+/// Kept separate from [passwordValidator] so legacy credentials still
+/// sign in. Returns null when the value is acceptable.
+String? signUpPasswordValidator(
+  String? value, {
+  String? tooShortMessage,
+  String? tooWeakMessage,
+}) {
+  final tooShort =
+      passwordValidator(value, tooShortMessage: tooShortMessage);
+  if (tooShort != null) return tooShort;
+  final password = value!;
+  final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
+  final hasDigit = password.contains(RegExp(r'\d'));
+  if (!hasLetter || !hasDigit) {
+    return tooWeakMessage ??
+        'Password must contain at least one letter and one digit';
+  }
+  return null;
+}
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -99,6 +127,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _passwordCtrl,
                   decoration: InputDecoration(
                     labelText: l.password,
+                    // State the full rule up front so the user never has
+                    // to learn it from a validation error.
+                    helperText: l.passwordRuleHint,
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => _obscure = !_obscure),
                       icon: Icon(
@@ -107,8 +138,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   obscureText: _obscure,
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
+                  validator: (v) => signUpPasswordValidator(
+                    v,
+                    tooShortMessage: l.passwordTooShort,
+                    tooWeakMessage: l.passwordNeedsLetterDigit,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(

@@ -16,17 +16,25 @@ sealed class Result<T> {
   /// user-safe [failureMessage] (the raw exception rides along as
   /// [AppError.cause] for diagnostics, never for display).
   ///
-  /// Local repositories delegate their try/catch boundaries here so the
+  /// When [onError] is provided it fully owns the [AppError] construction
+  /// — use it for boundaries that map different exception types to
+  /// different user-safe messages (Postgrest vs transport failures).
+  /// The fixed [failureMessage] then only applies when no mapper is given.
+  ///
+  /// Repositories delegate their try/catch boundaries here so the
   /// fail-soft message text stays byte-identical in one place per call
   /// site instead of hand-written in every method.
   static Future<Result<T>> guard<T>(
     Future<T> Function() action,
-    String failureMessage,
-  ) async {
+    String failureMessage, {
+    AppError Function(Object error, StackTrace stackTrace)? onError,
+  }) async {
     try {
       return Success(await action());
     } catch (e, st) {
-      return Failure(AppError(failureMessage, cause: e, stackTrace: st));
+      final error = onError?.call(e, st) ??
+          AppError(failureMessage, cause: e, stackTrace: st);
+      return Failure(error);
     }
   }
 }

@@ -90,11 +90,16 @@ Future<void> _edit(BuildContext context, Address? a) async {
       builder: (d) {
         var submitted = false;
         final loc = d.l10n;
+        // Input caps (audit 2026-09-14): the dialog previously accepted
+        // unbounded text that flowed verbatim into the order address
+        // snapshot. Counters are hidden so the layout is unchanged —
+        // the cap enforces itself by truncation. There is no phone
+        // field here: Address carries recipient/line/city/country only.
         final fields = [
-          (recipientCtrl, loc.recipientName),
-          (streetCtrl, loc.streetAddress),
-          (cityCtrl, loc.city),
-          (countryCtrl, loc.country),
+          (recipientCtrl, loc.recipientName, 60),
+          (streetCtrl, loc.streetAddress, 120),
+          (cityCtrl, loc.city, 60),
+          (countryCtrl, loc.country, 56),
         ];
         return StatefulBuilder(
           builder: (d, setState) => AlertDialog(
@@ -108,8 +113,10 @@ Future<void> _edit(BuildContext context, Address? a) async {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: TextField(
                         controller: field.$1,
+                        maxLength: field.$3,
                         decoration: InputDecoration(
                           labelText: field.$2,
+                          counterText: '',
                           errorText: submitted && field.$1.text.trim().isEmpty
                               ? loc.fieldRequired
                               : null,

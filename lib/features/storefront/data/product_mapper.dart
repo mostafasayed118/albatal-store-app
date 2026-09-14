@@ -81,7 +81,6 @@ extension ProductCodec on Product {
     // Category name via the join.
     final category = safeString(safeMap(row['categories']), 'name');
 
-    // TODO: add cached_network_image for Storage URLs with Cache-Control max-age=86400
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
     final rawImages = row['product_images'];
     final imageRows = rawImages is List

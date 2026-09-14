@@ -222,7 +222,7 @@ class FakeStorageService extends StorageService {
       'product-images/$productId/$fileName';
 
   @override
-  String getProductImageUrl(String storagePath) =>
+  String getProductImageUrl(String storagePath, {int? width}) =>
       'https://example.com/$storagePath';
 
   @override

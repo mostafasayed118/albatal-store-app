@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../../core/entities/money.dart';
 import '../entities/admin_order.dart';
 
 /// Branded invoice PDF generator (feature-batch §16).
@@ -101,15 +102,18 @@ final class InvoicePdfBuilder {
         headerDecoration: const pw.BoxDecoration(color: _emerald),
         cellStyle: const pw.TextStyle(fontSize: 10),
         headers: ['Item', 'Size', 'Color', 'Qty', 'Unit (EGP)', 'Line (EGP)'],
+        // Money.format is the canonical formatter — no hand-rolled
+        // /100.toStringAsFixed math (audit 2026-09-14). Line totals
+        // multiply in exact minor units before converting.
         data: order.items
             .map((item) => [
                   item.productName,
                   item.size,
                   item.color,
                   item.quantity.toString(),
-                  (item.unitPrice.minorUnits / 100).toStringAsFixed(2),
-                  (item.unitPrice.minorUnits * item.quantity / 100)
-                      .toStringAsFixed(2),
+                  item.unitPrice.format(symbol: ''),
+                  Money(item.unitPrice.minorUnits * item.quantity)
+                      .format(symbol: ''),
                 ])
             .toList(),
       );
@@ -117,7 +121,7 @@ final class InvoicePdfBuilder {
   static pw.Widget _totals(AdminOrder order) => pw.Container(
         alignment: pw.Alignment.centerRight,
         child: pw.Text(
-          'Total: ${(order.total.minorUnits / 100).toStringAsFixed(2)} EGP',
+          'Total: ${order.total.format(symbol: '')} EGP',
           style: const pw.TextStyle(
               fontSize: 14, color: _emerald, fontWeight: pw.FontWeight.bold),
         ),

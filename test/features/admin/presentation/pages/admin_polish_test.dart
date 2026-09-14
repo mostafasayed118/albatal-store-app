@@ -33,7 +33,7 @@ class _FakeStorageService extends StorageService {
   _FakeStorageService() : super(client: null);
 
   @override
-  String getProductImageUrl(String storagePath) =>
+  String getProductImageUrl(String storagePath, {int? width}) =>
       'https://example.com/$storagePath';
 }
 

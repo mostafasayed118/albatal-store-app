@@ -386,6 +386,8 @@
   "checkEmailToVerify": "Check your email to verify your account",
   "invalidEmail": "Please enter a valid email",
   "passwordTooShort": "Password must be at least 8 characters",
+  "passwordRuleHint": "At least 8 characters, including at least one letter and one digit",
+  "passwordNeedsLetterDigit": "Password must contain at least one letter and one digit",
   "passwordsDoNotMatch": "Passwords do not match",
   "nameRequired": "Name is required",
   "dontHaveAccount": "Don't have an account?",

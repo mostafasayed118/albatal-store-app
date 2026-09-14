@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/entities/product.dart';
 import '../../components/feedback.dart';
 import '../../extensions/build_context_x.dart';
+import '../../services/storage_service.dart';
 import '../../theme/contrast.dart';
 import '../app_image.dart';
 
@@ -60,8 +61,16 @@ class StitchProductGridCard extends StatelessWidget {
                     children: [
                       ColoredBox(
                         color: Color(product.imageColor),
+                        // 420px transform matches the memCacheWidth decode
+                        // budget below so the network download is not the
+                        // full-res original (audit 2026-09-14 perf).
                         child: AppImage(
-                          source: product.imageAsset,
+                          source: product.imageAsset == null
+                              ? null
+                              : StorageService.transformPublicUrl(
+                                  product.imageAsset!,
+                                  width: 420,
+                                ),
                           fit: BoxFit.cover,
                           cacheWidth: 420,
                           cacheHeight: 420,
