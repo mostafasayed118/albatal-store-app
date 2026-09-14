@@ -27,11 +27,17 @@ final class AuthState extends Equatable {
     this.status = AuthStatus.initial,
     this.profile,
     this.errorMessage,
+    this.errorCode,
   });
 
   final AuthStatus status;
   final Profile? profile;
   final String? errorMessage;
+
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
   bool get isGuest => status == AuthStatus.unauthenticated;
@@ -44,16 +50,18 @@ final class AuthState extends Equatable {
     AuthStatus? status,
     Profile? profile,
     String? errorMessage,
+    String? errorCode,
     bool clearProfile = false,
   }) =>
       AuthState(
         status: status ?? this.status,
         profile: clearProfile ? null : (profile ?? this.profile),
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [status, profile, errorMessage];
+  List<Object?> get props => [status, profile, errorMessage, errorCode];
 }
 
 // ─── Cubit ─────────────────────────────────────────────────
@@ -99,6 +107,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -142,6 +151,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -157,6 +167,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -178,7 +189,10 @@ class AuthCubit extends Cubit<AuthState> {
         // Surface to UI via errorMessage while staying authenticated;
         // do NOT emit the unpersisted edit (state keeps the last saved
         // profile so a retry shows honest data).
-        emit(state.copyWith(errorMessage: error.message));
+        emit(state.copyWith(
+          errorMessage: error.message,
+          errorCode: error.code,
+        ));
     }
   }
 
@@ -311,6 +325,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

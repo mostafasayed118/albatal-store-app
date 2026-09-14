@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/invoice/invoice_pdf_builder.dart';
 import '../cubit/admin_cubit.dart';
@@ -100,8 +101,15 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
           // what the repository actually did.
           if (state.status == AdminStatus.error) {
             if (_awaitedStatus != null || _awaitedTier != null) {
+              // Code-based localization (audit 2026-09-14): failures with
+              // a machine code map to localized copy; unknown codes keep
+              // the English fallback verbatim.
               showFloatingError(
-                  context, state.errorMessage ?? context.l10n.errorTitle);
+                context,
+                localizedErrorMessage(context, state.errorMessage,
+                        code: state.errorCode) ??
+                    context.l10n.errorTitle,
+              );
             }
             _awaitedStatus = null;
             _awaitedTier = null;

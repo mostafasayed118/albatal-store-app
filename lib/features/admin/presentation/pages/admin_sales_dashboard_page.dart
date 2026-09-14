@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
 import '../widgets/sales_low_stock_list.dart';
@@ -57,7 +58,12 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      state.errorMessage ?? 'Failed to load sales data.',
+                      // Code-based localization (audit 2026-09-14):
+                      // failures with a machine code map to localized
+                      // copy; unknown codes keep the English fallback.
+                      localizedErrorMessage(context, state.errorMessage,
+                              code: state.errorCode) ??
+                          'Failed to load sales data.',
                       textAlign: TextAlign.center,
                     ),
                   ),

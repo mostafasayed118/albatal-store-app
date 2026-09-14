@@ -51,8 +51,9 @@ class SupabaseAuthRepository implements AuthRepository {
         if (r.user != null) {
           return Success<AuthOutcome>(Authenticated(r.user!.id));
         }
-        return const Failure<AuthOutcome>(
-            AppError('Sign-up failed. Please try again.'));
+        return const Failure<AuthOutcome>(AppError(
+            'Sign-up failed. Please try again.',
+            code: 'auth_signup_failed'));
       },
       failure: (error) => Failure<AuthOutcome>(error),
     );
@@ -73,8 +74,9 @@ class SupabaseAuthRepository implements AuthRepository {
     );
     return response.when(
       success: (r) => r.user == null
-          ? const Failure<Authenticated>(
-              AppError('Sign-in failed. Please try again.'))
+          ? const Failure<Authenticated>(AppError(
+              'Sign-in failed. Please try again.',
+              code: 'auth_signin_failed'))
           : Success<Authenticated>(Authenticated(r.user!.id)),
       failure: (error) => Failure<Authenticated>(error),
     );
@@ -102,8 +104,9 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<Result<void>> deleteAccount({required String email}) async {
     final session = _client.auth.currentSession;
     if (session == null) {
-      return const Failure(
-          AppError('Your session expired. Please sign in again.'));
+      return const Failure(AppError(
+          'Your session expired. Please sign in again.',
+          code: 'auth_session_expired'));
     }
     // The edge function re-verifies the JWT and compares [email] against
     // the account email before deleting with the service role (UX-043).
@@ -133,57 +136,92 @@ class SupabaseAuthRepository implements AuthRepository {
         return const Stream<Authenticated?>.empty();
       });
 
-  /// Map Supabase auth error messages to user-safe text.
+  /// Map Supabase auth error messages to user-safe text plus a machine
+  /// code for UI localization (audit 2026-09-14).
   ///
   /// Lives in the data layer so the presentation cubit only ever sees
   /// [AppError.message] — never Supabase-specific strings. Add new
   /// mappings here as new error cases are discovered.
-  String _mapAuthError(String message) {
+  ({String code, String message}) _mapAuthError(String message) {
     switch (message) {
       case 'Invalid login credentials':
-        return 'Invalid email or password';
+        return (
+          code: 'auth_invalid_credentials',
+          message: 'Invalid email or password'
+        );
       case 'Email not confirmed':
-        return 'Please verify your email address first';
+        return (
+          code: 'auth_email_not_confirmed',
+          message: 'Please verify your email address first'
+        );
       case 'User already registered':
-        return 'An account with this email already exists';
+        return (
+          code: 'auth_email_taken',
+          message: 'An account with this email already exists'
+        );
       case 'Password should be at least 6 characters':
-        return 'Password must be at least 6 characters';
+        return (
+          code: 'auth_weak_password',
+          message: 'Password must be at least 6 characters'
+        );
       default:
         // Never surface unknown provider strings — callers already attach
         // the original exception as AppError.cause for diagnostics.
-        return 'An unexpected error occurred';
+        return (
+          code: 'auth_unexpected',
+          message: 'An unexpected error occurred'
+        );
     }
   }
 
   /// Map delete-account refusal messages from the edge function to
-  /// user-safe text. Unknown messages collapse to a generic string.
-  String _mapDeleteError(String message) {
+  /// user-safe text plus a machine code (audit 2026-09-14). Unknown
+  /// messages collapse to a generic string.
+  ({String code, String message}) _mapDeleteError(String message) {
     final m = message.toLowerCase();
     if (m.contains('email does not match')) {
-      return 'The email does not match this account';
+      return (
+        code: 'delete_email_mismatch',
+        message: 'The email does not match this account'
+      );
     }
     if (m.contains('admin')) {
-      return 'Admin accounts cannot be deleted in the app';
+      return (
+        code: 'delete_admin_account',
+        message: 'Admin accounts cannot be deleted in the app'
+      );
     }
     if (m.contains('cannot delete another')) {
-      return 'You can only delete your own account';
+      return (
+        code: 'delete_other_account',
+        message: 'You can only delete your own account'
+      );
     }
     if (m.contains('session expired') ||
         m.contains('authentication required')) {
-      return 'Your session expired. Please sign in again.';
+      return (
+        code: 'auth_session_expired',
+        message: 'Your session expired. Please sign in again.'
+      );
     }
-    return 'Account deletion failed. Please try again.';
+    return (
+      code: 'delete_failed',
+      message: 'Account deletion failed. Please try again.'
+    );
   }
 
   /// [Result.guard] error-mapper: [AuthException] messages go through
   /// [_mapAuthError]; anything else collapses to the generic string.
-  AppError _mapThrown(Object e, StackTrace st) => AppError(
-        e is AuthException
-            ? _mapAuthError(e.message)
-            : 'An unexpected error occurred',
-        cause: e,
-        stackTrace: st,
-      );
+  AppError _mapThrown(Object e, StackTrace st) {
+    final mapped =
+        e is AuthException ? _mapAuthError(e.message) : null;
+    return AppError(
+      mapped?.message ?? 'An unexpected error occurred',
+      code: mapped?.code ?? 'auth_unexpected',
+      cause: e,
+      stackTrace: st,
+    );
+  }
 
   /// [Result.guard] error-mapper for the delete-account edge function.
   /// `details` carries the parsed JSON body, e.g. { message: '...' }.
@@ -193,6 +231,8 @@ class SupabaseAuthRepository implements AuthRepository {
       FunctionException f => f.reasonPhrase ?? '',
       _ => '',
     };
-    return AppError(_mapDeleteError(serverMessage), cause: e, stackTrace: st);
+    final mapped = _mapDeleteError(serverMessage);
+    return AppError(mapped.message,
+        code: mapped.code, cause: e, stackTrace: st);
   }
 }

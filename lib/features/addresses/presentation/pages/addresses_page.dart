@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/address.dart';
 import '../cubit/addresses_cubit.dart';
 
@@ -24,7 +25,12 @@ final class AddressesPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(s.errorMessage ?? l10n.errorTitle),
+                    // Code-based localization (audit 2026-09-14): failures
+                    // with a machine code map to localized copy; unknown
+                    // codes keep the English fallback verbatim.
+                    Text(localizedErrorMessage(
+                          context, s.errorMessage, code: s.errorCode) ??
+                        l10n.errorTitle),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: () =>

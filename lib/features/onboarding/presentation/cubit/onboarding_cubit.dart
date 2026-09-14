@@ -25,6 +25,7 @@ final class OnboardingCubit extends Cubit<OnboardingState> {
       failure: (error) => emit(state.copyWith(
         status: OnboardingStatus.failure,
         errorMessage: error.message,
+        errorCode: error.code,
       )),
     );
   }
@@ -44,6 +45,7 @@ final class OnboardingCubit extends Cubit<OnboardingState> {
       failure: (error) => emit(state.copyWith(
         status: OnboardingStatus.failure,
         errorMessage: error.message,
+        errorCode: error.code,
       )),
     );
   }

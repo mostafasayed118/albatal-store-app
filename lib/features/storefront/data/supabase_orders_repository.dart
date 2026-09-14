@@ -67,7 +67,10 @@ final class SupabaseOrdersRepository implements OrdersRepository {
   /// [Result.guard] error-mapper for the orders history fetch.
   AppError _readOrdersError(Object e, StackTrace st) {
     Log.e('readOrders failed', error: e);
-    return AppError('Failed to load orders', cause: e);
+    // Machine code for UI localization (audit 2026-09-14); the English
+    // message stays the fallback for unmapped locales.
+    return AppError('Failed to load orders',
+        code: 'orders_load_failed', cause: e);
   }
 
   /// Total decode of an order row: every field degrades to the entity

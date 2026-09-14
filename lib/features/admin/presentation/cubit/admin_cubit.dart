@@ -18,6 +18,7 @@ final class AdminState extends Equatable {
     this.selectedOrder,
     this.statusFilter,
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminStatus status;
@@ -29,6 +30,11 @@ final class AdminState extends Equatable {
   /// never assigned a filter (see [loadOrders]).
   final AdminOrderStatus? statusFilter;
   final String? errorMessage;
+
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
 
   List<AdminOrder> get filteredOrders {
     final filter = statusFilter;
@@ -43,6 +49,7 @@ final class AdminState extends Equatable {
     AdminOrder? selectedOrder,
     AdminOrderStatus? statusFilter,
     String? errorMessage,
+    String? errorCode,
     bool clearSelectedOrder = false,
     bool clearStatusFilter = false,
   }) =>
@@ -55,6 +62,7 @@ final class AdminState extends Equatable {
         statusFilter:
             clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
@@ -65,6 +73,7 @@ final class AdminState extends Equatable {
         selectedOrder,
         statusFilter,
         errorMessage,
+        errorCode,
       ];
 }
 
@@ -109,6 +118,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -135,6 +145,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -170,6 +181,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -189,6 +201,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -204,6 +217,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -228,6 +242,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

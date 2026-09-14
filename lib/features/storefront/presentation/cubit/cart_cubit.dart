@@ -15,12 +15,18 @@ final class CartState extends Equatable {
     this.items, {
     this.status = CartStatus.initial,
     this.errorMessage,
+    this.errorCode,
     this.isPremiumMember = false,
   });
 
   final List<CartItem> items;
   final CartStatus status;
   final String? errorMessage;
+
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
 
   /// Whether the signed-in customer is a premium member (mirrored from
   /// AuthCubit — see [CartCubit.setPremiumMember]). Drives the shipping
@@ -46,17 +52,20 @@ final class CartState extends Equatable {
     List<CartItem>? items,
     CartStatus? status,
     String? errorMessage,
+    String? errorCode,
     bool? isPremiumMember,
   }) =>
       CartState(
         items ?? this.items,
         status: status ?? this.status,
         errorMessage: errorMessage,
+        errorCode: errorCode,
         isPremiumMember: isPremiumMember ?? this.isPremiumMember,
       );
 
   @override
-  List<Object?> get props => [items, status, errorMessage, isPremiumMember];
+  List<Object?> get props =>
+      [items, status, errorMessage, errorCode, isPremiumMember];
 }
 
 final class CartCubit extends Cubit<CartState> {
@@ -106,6 +115,7 @@ final class CartCubit extends Cubit<CartState> {
         emit(state.copyWith(
           status: CartStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

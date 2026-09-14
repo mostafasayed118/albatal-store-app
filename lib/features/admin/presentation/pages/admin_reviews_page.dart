@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_reviews_cubit.dart';
 
@@ -42,7 +43,13 @@ final class _AdminReviewsView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.status == AdminReviewsStatus.error) {
-            return Center(child: Text(state.errorMessage ?? ''));
+            // Code-based localization (audit 2026-09-14): failures with
+            // a machine code map to localized copy; unknown codes keep
+            // the English fallback verbatim.
+            return Center(
+                child: Text(localizedErrorMessage(
+                    context, state.errorMessage, code: state.errorCode) ??
+                ''));
           }
           return RefreshIndicator(
             onRefresh: () => context.read<AdminReviewsCubit>().load(),

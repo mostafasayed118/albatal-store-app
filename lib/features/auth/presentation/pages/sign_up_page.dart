@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../cubit/auth_cubit.dart';
 
 /// Minimum accepted password length for new accounts (audit S9).
@@ -87,7 +88,15 @@ class _SignUpPageState extends State<SignUpPage> {
             context.go('/home');
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            showFloatingError(context, state.errorMessage!);
+            // Code-based localization (audit 2026-09-14): failures with a
+            // machine code map to localized copy; unknown/missing codes
+            // keep the English fallback message verbatim.
+            showFloatingError(
+              context,
+              localizedErrorMessage(
+                      context, state.errorMessage!, code: state.errorCode) ??
+                state.errorMessage!,
+            );
           } else if (state.status == AuthStatus.unauthenticated) {
             // Email confirmation required
             showConfirmation(context, l.checkEmailToVerify);

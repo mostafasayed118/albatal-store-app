@@ -10,6 +10,7 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -101,7 +102,13 @@ final class SettingsPage extends StatelessWidget {
               ),
               if (state.status == SettingsStatus.failure) ...[
                 const SizedBox(height: 16),
-                Text(state.errorMessage ?? context.l10n.errorTitle,
+                // Code-based localization (audit 2026-09-14): failures
+                // with a machine code map to localized copy; unknown
+                // codes keep the English fallback verbatim.
+                Text(
+                    localizedErrorMessage(context, state.errorMessage,
+                            code: state.errorCode) ??
+                        context.l10n.errorTitle,
                     style:
                         TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
@@ -256,11 +263,16 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
               behavior: SnackBarBehavior.floating,
               content: Text(l10n.deleteAccountSuccess)));
       case Failure(:final error):
+        // Code-based localization (audit 2026-09-14): the delete mapper
+        // codes (delete_*/auth_session_expired) map to localized copy;
+        // unknown values keep the raw message. Pure resolver on the
+        // pre-await `l10n` — no BuildContext across the async gap.
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating,
-              content: Text(error.message)));
+              content: Text(
+                  localizedErrorText(l10n, error.code, error.message))));
     }
   } finally {
     _deleteDialogOpen = false;

@@ -8,6 +8,7 @@ import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/oauth_service.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
 
@@ -65,7 +66,15 @@ class _SignInPageState extends State<SignInPage> {
             context.go(redirectTarget);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            showFloatingError(context, state.errorMessage!);
+            // Code-based localization (audit 2026-09-14): failures with a
+            // machine code map to localized copy; unknown/missing codes
+            // keep the English fallback message verbatim.
+            showFloatingError(
+              context,
+              localizedErrorMessage(
+                      context, state.errorMessage!, code: state.errorCode) ??
+                state.errorMessage!,
+            );
           }
         },
         child: SingleChildScrollView(
@@ -206,11 +215,14 @@ class _SignInPageState extends State<SignInPage> {
       case Success():
         break; // auth stream drives navigation
       case Failure(:final error):
+        // Route through the shared code→l10n helper (audit 2026-09-14):
+        // oauth failures carry `oauth_cancelled` / `oauth_unavailable`
+        // as the message — the same mapping as the previous special
+        // case, now via the helper's code-as-message table.
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(error.message == kOAuthCancelled
-              ? context.l10n.oauthCancelled
-              : context.l10n.oauthUnavailable),
+          content: Text(localizedErrorMessage(context, error.message) ??
+              context.l10n.oauthUnavailable),
         ));
     }
   }

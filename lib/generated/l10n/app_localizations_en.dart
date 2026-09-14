@@ -1344,6 +1344,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkoutFailedRetry => 'Checkout failed. Please try again.';
 
   @override
+  String get errorCodesCouponUnavailable =>
+      'This coupon is not available right now.';
+
+  @override
+  String get errorCodesReviewBuyRequired =>
+      'Please purchase this product before writing a review.';
+
+  @override
+  String get errorCodesReviewInvalid => 'This review could not be submitted.';
+
+  @override
+  String get errorCodesReviewUnavailable =>
+      'Reviews are unavailable right now.';
+
+  @override
+  String get errorCodesOrdersLoadFailed =>
+      'Unable to load your orders. Please try again.';
+
+  @override
+  String get errorCodesAuthInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get errorCodesAuthEmailNotConfirmed =>
+      'Please verify your email address first';
+
+  @override
+  String get errorCodesAuthEmailTaken =>
+      'An account with this email already exists';
+
+  @override
+  String get errorCodesAuthWeakPassword =>
+      'Password must be at least 6 characters';
+
+  @override
+  String get errorCodesAuthUnexpected => 'An unexpected error occurred';
+
+  @override
+  String get errorCodesAuthSignupFailed => 'Sign-up failed. Please try again.';
+
+  @override
+  String get errorCodesAuthSigninFailed => 'Sign-in failed. Please try again.';
+
+  @override
+  String get errorCodesAuthSessionExpired =>
+      'Your session expired. Please sign in again.';
+
+  @override
+  String get errorCodesDeleteEmailMismatch =>
+      'The email does not match this account';
+
+  @override
+  String get errorCodesDeleteAdminAccount =>
+      'Admin accounts cannot be deleted in the app';
+
+  @override
+  String get errorCodesDeleteOtherAccount =>
+      'You can only delete your own account';
+
+  @override
+  String get errorCodesDeleteFailed =>
+      'Account deletion failed. Please try again.';
+
+  @override
   String get paymentMethodUnknown => 'Unknown';
 
   @override
