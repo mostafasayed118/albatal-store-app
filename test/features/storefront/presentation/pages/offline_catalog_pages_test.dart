@@ -7,6 +7,7 @@ import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.da
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
@@ -26,6 +27,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../fixtures/products_data.dart';
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
 /// Task #8 offline-catalog widget pins. The gate is seeded offline via
@@ -97,6 +99,11 @@ Widget _shellHarness(CatalogRepository repo) {
     providers: [
       BlocProvider(
           create: (_) => CatalogCubit(repo, gate: offlineGate)..load()),
+      // HomePage renders the recently-viewed strip (cross-slice union);
+      // register the app-scoped store so the shell harness pumps pre-DI.
+      BlocProvider(
+          create: (_) =>
+              RecentlyViewedCubit(store: MemoryRecentlyViewedStore())),
       BlocProvider(create: (_) => WishlistCubit(persistence)),
       BlocProvider(create: (_) => CartCubit(persistence)),
       BlocProvider(
