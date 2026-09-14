@@ -7,6 +7,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
+import 'back_in_stock_toggle.dart';
 import 'price_text.dart';
 import 'product_image_placeholder.dart';
 
@@ -38,20 +39,25 @@ class WishlistTile extends StatelessWidget {
               const SizedBox(height: 4),
               PriceText(product.price),
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    context.read<CartCubit>().add(product);
-                    context.read<WishlistCubit>().toggle(product.id);
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(l.movedToCart)));
-                  },
-                  icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                  label:
-                      Text(l.moveToCart, style: const TextStyle(fontSize: 12)),
-                ),
-              ),
+              // Task #5: out-of-stock wishlist items offer the
+              // back-in-stock alert toggle in place of move-to-cart.
+              if (product.inStock)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: () {
+                      context.read<CartCubit>().add(product);
+                      context.read<WishlistCubit>().toggle(product.id);
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(l.movedToCart)));
+                    },
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                    label: Text(l.moveToCart,
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+                )
+              else
+                BackInStockToggle(product: product),
             ],
           ),
         ),

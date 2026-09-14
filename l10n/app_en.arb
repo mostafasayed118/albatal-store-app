@@ -534,5 +534,24 @@
   "galleryViewerLabel": "Product image viewer",
   "galleryClose": "Close",
   "galleryZoomHint": "Pinch to zoom",
-  "gallerySwipeHint": "Swipe to browse photos"
+  "gallerySwipeHint": "Swipe to browse photos",
+  "notifyWhenBackInStock": "Notify me when back in stock",
+  "backInStockAlertOn": "We'll notify you when {product} is back in stock",
+  "@backInStockAlertOn": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
+  "backInStockAlertOff": "Back-in-stock alert removed",
+  "backInStockTitle": "Back in stock",
+  "backInStockBody": "{product} is back in stock",
+  "@backInStockBody": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  }
 }

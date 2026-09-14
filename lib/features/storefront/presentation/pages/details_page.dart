@@ -18,6 +18,7 @@ import '../../domain/repositories/catalog_repository.dart';
 import '../../domain/repositories/recently_viewed_store.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
+import '../widgets/back_in_stock_toggle.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
 import '../widgets/name_and_price.dart';
@@ -173,6 +174,19 @@ class DetailsPage extends StatelessWidget {
                       previous.quantity != current.quantity,
                   builder: (context, vs) =>
                       VariantSelector(product: p, state: vs),
+                ),
+                // Task #5: when the selected variant is out of stock, offer
+                // the back-in-stock alert toggle (product-level opt-in).
+                BlocBuilder<ProductDetailsCubit, DetailsState>(
+                  buildWhen: (previous, current) =>
+                      previous.product != current.product ||
+                      previous.stock != current.stock,
+                  builder: (context, vs) => vs.product != null && vs.stock <= 0
+                      ? Padding(
+                          padding: const EdgeInsetsDirectional.only(top: 8),
+                          child: BackInStockToggle(product: p),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 20),
                 DeliveryInfo(l: l, scheme: scheme),

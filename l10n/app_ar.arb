@@ -488,5 +488,10 @@
   "galleryViewerLabel": "عارض صور المنتج",
   "galleryClose": "إغلاق",
   "galleryZoomHint": "قرّب بإصبعين",
-  "gallerySwipeHint": "اسحب لاستعراض الصور"
+  "gallerySwipeHint": "اسحب لاستعراض الصور",
+  "notifyWhenBackInStock": "أعلمني عند توفره من جديد",
+  "backInStockAlertOn": "سنعلمك عندما يتوفر {product} من جديد",
+  "backInStockAlertOff": "تمت إزالة تنبيه توفر المنتج",
+  "backInStockTitle": "متوفر من جديد",
+  "backInStockBody": "توفر {product} من جديد"
 }
