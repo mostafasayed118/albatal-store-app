@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,9 @@ Product _product(
 
 Widget _harness(Widget card, {TextScaler textScaler = TextScaler.noScaling}) =>
     MaterialApp(
+      // The card reads AppLocalizations for the wishlist heart label.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: MediaQuery(
         data: MediaQueryData(textScaler: textScaler),
         child: Scaffold(

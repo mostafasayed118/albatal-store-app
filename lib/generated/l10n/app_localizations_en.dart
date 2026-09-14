@@ -361,6 +361,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shopNow => 'Shop Now';
 
   @override
+  String flashSaleTimeRemaining(String time) {
+    return 'Flash sale ends in $time';
+  }
+
+  @override
+  String goToSlide(int number) {
+    return 'Go to slide $number';
+  }
+
+  @override
   String get decreaseQuantity => 'Decrease quantity';
 
   @override
@@ -371,6 +381,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToWishlist => 'Add to wishlist';
+
+  @override
+  String get removeFromWishlistAction => 'Remove from wishlist';
 
   @override
   String get fabricCategories => 'Fabric Categories';

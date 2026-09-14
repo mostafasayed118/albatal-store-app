@@ -120,10 +120,29 @@
   "newSilkCollection": "مجموعة الحرير الجديدة",
   "percentOff": "خصم 20%",
   "shopNow": "تسوق الآن",
+  "flashSaleTimeRemaining": "ينتهي التخفيض السريع بعد {time}",
+  "@flashSaleTimeRemaining": {
+    "description": "قراءة قارئ الشاشة للعدّاد التنازلي للتخفيض السريع",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSlide": "الانتقال إلى الشريحة {number}",
+  "@goToSlide": {
+    "description": "قراءة قارئ الشاشة لنقاط التنقل في العرض المتحرك",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "decreaseQuantity": "تقليل الكمية",
   "increaseQuantity": "زيادة الكمية",
   "removeFromWishlist": "تمت الإزالة من المفضلة",
   "addToWishlist": "إضافة إلى المفضلة",
+  "removeFromWishlistAction": "إزالة من المفضلة",
   "fabricCategories": "فئات الأقمشة",
   "curatedFabrics": "{count, plural, zero{لا أقمشة مختارة} one{قماش مختار واحد} two{قماشان مختاران} few{{count} أقمشة مختارة} many{{count} قماشًا مختارًا} other{{count} قماشًا مختارًا}}",
   "@curatedFabrics": {

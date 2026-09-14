@@ -30,6 +30,9 @@ class StitchFlashSaleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    // Local copy so the non-null countdown promotes below (public final
+    // fields do not promote).
+    final remainingTime = remaining;
     return RepaintBoundary(
       child: Card(
         color: scheme.surface,
@@ -60,6 +63,9 @@ class StitchFlashSaleCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       cacheWidth: 180,
                       cacheHeight: 180,
+                      // Product name as the image's accessible name — the
+                      // swatch-backed media has no text of its own.
+                      semanticsLabel: product.name,
                       placeholder: Icon(
                         Icons.texture,
                         color: onSwatchColor(Color(product.imageColor)),
@@ -93,12 +99,23 @@ class StitchFlashSaleCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (remaining != null) ...[
+                            if (remainingTime != null) ...[
                               const SizedBox(width: 6),
-                              Text(
-                                _formatRemaining(remaining!),
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
+                              Semantics(
+                                // liveRegion stays false: the 1Hz ticker
+                                // must never spam the screen reader — the
+                                // user queries the time on demand instead.
+                                liveRegion: false,
+                                child: Text(
+                                  _formatRemaining(remainingTime),
+                                  // "01:23:45" alone is read as bare digits;
+                                  // the semantics label gives it meaning.
+                                  semanticsLabel: context.l10n
+                                      .flashSaleTimeRemaining(
+                                          _formatRemaining(remainingTime)),
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],

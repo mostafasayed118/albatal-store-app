@@ -363,6 +363,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shopNow => 'تسوق الآن';
 
   @override
+  String flashSaleTimeRemaining(String time) {
+    return 'ينتهي التخفيض السريع بعد $time';
+  }
+
+  @override
+  String goToSlide(int number) {
+    return 'الانتقال إلى الشريحة $number';
+  }
+
+  @override
   String get decreaseQuantity => 'تقليل الكمية';
 
   @override
@@ -373,6 +383,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addToWishlist => 'إضافة إلى المفضلة';
+
+  @override
+  String get removeFromWishlistAction => 'إزالة من المفضلة';
 
   @override
   String get fabricCategories => 'فئات الأقمشة';

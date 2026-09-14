@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../../extensions/build_context_x.dart';
 import '../../theme/app_colors.dart';
 import '../app_image.dart';
 
@@ -143,19 +144,29 @@ class _StitchHeroCarouselState extends State<StitchHeroCarousel> {
                   children: [
                     for (var i = 0; i < widget.slides.length; i++) ...[
                       if (i > 0) const SizedBox(width: 6),
-                      GestureDetector(
-                        // Dots are a real affordance: tap jumps to the slide.
-                        onTap: () => _controller.animateToPage(
-                          i,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        ),
-                        behavior: HitTestBehavior.opaque,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: _Dot(
-                            active: i == _index,
-                            key: ValueKey('stitch_hero_dot_$i'),
+                      // Dots are anonymous 6dp shapes visually — give the
+                      // screen reader a button with a localized "go to
+                      // slide N" name and the selected state. (The
+                      // GestureDetector's own tap action is inherited;
+                      // no duplicate onTap here.)
+                      Semantics(
+                        button: true,
+                        selected: i == _index,
+                        label: context.l10n.goToSlide(i + 1),
+                        child: GestureDetector(
+                          // Dots are a real affordance: tap jumps to the slide.
+                          onTap: () => _controller.animateToPage(
+                            i,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeOut,
+                          ),
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: _Dot(
+                              active: i == _index,
+                              key: ValueKey('stitch_hero_dot_$i'),
+                            ),
                           ),
                         ),
                       ),
