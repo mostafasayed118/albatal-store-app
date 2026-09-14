@@ -212,12 +212,18 @@ final _routes = <RouteBase>[
   GoRoute(
       path: Routes.adminOrders, builder: (_, __) => const AdminOrdersPage()),
   GoRoute(
-      path: Routes.adminReviews, builder: (_, __) => const AdminReviewsPage()),
+      path: Routes.adminReviews,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies; the page's own `getIt` lookup is now only a
+      // test-only fallback.
+      builder: (_, __) =>
+          AdminReviewsPage(repository: getIt<AdminRepository>())),
   GoRoute(
       path: Routes.maintenance, builder: (_, __) => const MaintenancePage()),
   GoRoute(
       path: Routes.adminCustomers,
-      builder: (_, __) => const AdminCustomersPage()),
+      builder: (_, __) =>
+          AdminCustomersPage(repository: getIt<AdminRepository>())),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),

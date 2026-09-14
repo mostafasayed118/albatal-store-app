@@ -32,14 +32,15 @@ import 'features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
+import 'shared/components/app_lock_gate.dart';
 import 'shared/routing/app_router.dart';
+import 'shared/routing/app_routes.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
 import 'shared/services/biometric_service.dart';
 import 'shared/services/connectivity_gate.dart';
 import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
-import 'shared/services/logger.dart';
 import 'shared/services/notification_service.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
@@ -66,7 +67,6 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final ReorderCubit _reorderCubit;
   late final RecentSearchesCubit _recentSearchesCubit;
   late final RecentlyViewedCubit _recentlyViewedCubit;
-  bool _appLockActive = false;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _deepLinkSub;
@@ -120,30 +120,10 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _deepLinkSub = getIt<DeepLinkService>()
         .incoming()
         .listen(_handleDeepLink, onError: (Object _) {});
-    // §15: biometric app lock (opt-in). Resolves silently to
-    // unlocked when the device has no biometrics or the store is
-    // unregistered (pre-DI widget tests).
-    _resolveAppLock();
-  }
-
-  Future<void> _resolveAppLock() async {
-    final prefs = getIt.isRegistered<AppLockPrefsStore>()
-        ? getIt<AppLockPrefsStore>()
-        : null;
-    if (prefs == null || !prefs.enabled) return;
-    final biometrics = getIt.isRegistered<BiometricService>()
-        ? getIt<BiometricService>()
-        : null;
-    if (biometrics == null || !await biometrics.canAuthenticate()) return;
-    if (!mounted) return;
-    setState(() => _appLockActive = true);
-    final accepted =
-        await biometrics.authenticate(reason: 'Unlock Al Batal Elite');
-    if (!mounted) return;
-    setState(() => _appLockActive = false);
-    if (!accepted) {
-      Log.i('app lock: authentication not completed');
-    }
+    // §15: the biometric app lock is owned by [AppLockGate], installed
+    // around the shell in [build]. It locks on the very first frame and
+    // releases only on a real authentication (audit fix — the previous
+    // inline flow failed OPEN and locked only after an awaited probe).
   }
 
   void _handleDeepLink(Uri uri) {
@@ -151,12 +131,12 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       uri,
       webBase: Uri.parse(EnvConfig.webBaseUrl),
     );
+    // Route builders live on [Routes] so a path change can never leave a
+    // stale literal behind (audit code-quality finding).
     if (link is ProductDeepLink) {
-      _router.push('/product/${Uri.encodeComponent(link.productId)}');
+      _router.push(Routes.product(link.productId));
     } else if (link is CatalogDeepLink) {
-      final q = link.query;
-      _router.push(
-          q == null ? '/catalog' : '/catalog?q=${Uri.encodeComponent(q)}');
+      _router.push(Routes.catalogWithQuery(link.query));
     }
   }
 
@@ -175,15 +155,21 @@ final class _AlBatalAppState extends State<AlBatalApp> {
 
   @override
   Widget build(BuildContext context) {
-    // §15: cold-start app-lock. While the biometric prompt is up the
-    // shell renders a bare lock screen instead of the navigator.
-    if (_appLockActive) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(body: Center(child: FlutterLogo(size: 72))),
-      );
-    }
-    return MultiBlocProvider(
+    // §15: cold-start app lock. [AppLockGate] wraps the shell and renders a
+    // localized, retry-able lock screen until the user authenticates;
+    // [AppLockGate.child] is not inflated while locked. Null services
+    // (registered-nothing tests, unsupported platform) make it a pass-through.
+    return AppLockGate(
+      biometrics:
+          getIt.isRegistered<BiometricService>() ? getIt<BiometricService>() : null,
+      prefs: getIt.isRegistered<AppLockPrefsStore>()
+          ? getIt<AppLockPrefsStore>()
+          : null,
+      // Escape hatch: a user who cannot authenticate is never trapped.
+      // Signing out clears the session + local PII snapshots BEFORE the
+      // gate unlocks, so this is not a bypass.
+      onSignOut: _authCubit.signOut,
+      child: MultiBlocProvider(
         providers: [
           BlocProvider(
               create: (_) => OnboardingCubit(
@@ -198,6 +184,15 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                         getIt.isRegistered<NotificationPrefsStore>()
                             ? getIt<NotificationPrefsStore>()
                             : null,
+                    // §15: the app-lock toggle lives in Settings and flows
+                    // through this cubit (the page never touches DI), so the
+                    // opt-in that arms [AppLockGate] is finally reachable.
+                    biometrics: getIt.isRegistered<BiometricService>()
+                        ? getIt<BiometricService>()
+                        : null,
+                    appLockStore: getIt.isRegistered<AppLockPrefsStore>()
+                        ? getIt<AppLockPrefsStore>()
+                        : null,
                   )..load()),
           BlocProvider(
               // Task #8: pass the connectivity gate so offline loads are
@@ -250,6 +245,6 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                               exitApp: widget.exitApp,
                               child: child!)
                           : child!),
-                )));
+                ))));
   }
 }

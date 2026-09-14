@@ -10,6 +10,7 @@ final class SettingsState extends Equatable {
     this.locale = const Locale('en'),
     this.errorMessage,
     this.orderNotifications,
+    this.appLockEnabled,
   });
 
   final SettingsStatus status;
@@ -22,6 +23,11 @@ final class SettingsState extends Equatable {
   /// platform) and the settings tile stays hidden.
   final bool? orderNotifications;
 
+  /// §15 biometric app-lock opt-in. Null = no app-lock store was
+  /// registered at the composition root, so the settings tile stays
+  /// hidden (same convention as [orderNotifications]).
+  final bool? appLockEnabled;
+
   SettingsState copyWith({
     SettingsStatus? status,
     ThemeMode? themeMode,
@@ -30,6 +36,8 @@ final class SettingsState extends Equatable {
     bool clearError = false,
     bool? orderNotifications,
     bool clearOrderNotifications = false,
+    bool? appLockEnabled,
+    bool clearAppLock = false,
   }) =>
       SettingsState(
         status: status ?? this.status,
@@ -39,9 +47,17 @@ final class SettingsState extends Equatable {
         orderNotifications: clearOrderNotifications
             ? null
             : orderNotifications ?? this.orderNotifications,
+        appLockEnabled:
+            clearAppLock ? null : appLockEnabled ?? this.appLockEnabled,
       );
 
   @override
-  List<Object?> get props =>
-      [status, themeMode, locale, errorMessage, orderNotifications];
+  List<Object?> get props => [
+        status,
+        themeMode,
+        locale,
+        errorMessage,
+        orderNotifications,
+        appLockEnabled,
+      ];
 }

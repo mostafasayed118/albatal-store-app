@@ -57,6 +57,17 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// How long the in-memory catalog cache is considered fresh.
   static const _cacheTTL = Duration(minutes: 5);
 
+  /// Default page size for [fetchProducts].
+  ///
+  /// KNOWN CEILING: search, category/color/price filtering and sorting all
+  /// run client-side over the fetched page (`CatalogState.visible`), so any
+  /// product beyond this bound is invisible to the storefront UI — an
+  /// unbounded catalog is silently truncated. The value is large enough for
+  /// the seeded catalog and the full-page case is logged as a truncation
+  /// signal; raising it or moving search server-side is the owner's call
+  /// (see `docs/perf-budget.md`).
+  static const kCatalogPageSize = 100;
+
   /// SharedPreferences key for the persistent catalog cache.
   static const _persistentCacheKey = 'catalog_products_cache_v1';
 
@@ -93,13 +104,13 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// Loads the active product catalog.
   ///
   /// The network query is bounded to [limit] rows (audit Task 11) so a
-  /// large table cannot stall the cold start — the app keeps the first
-  /// ~100 products (`int limit = 100` default keeps every existing
-  /// call-site compiling). `.order('name')` is kept so the bounded page
-  /// is deterministic, and the offline-restore path is untouched (it
-  /// reads the persistent cache, not the DB).
+  /// large table cannot stall the cold start — default [kCatalogPageSize].
+  /// `.order('name')` is kept so the bounded page is deterministic, the
+  /// offline-restore path is untouched (it reads the persistent cache, not
+  /// the DB), and hitting the bound logs a truncation warning because all
+  /// client-side search/filter/sort operate on this page only.
   @override
-  Future<Result<List<Product>>> fetchProducts({int limit = 100}) async {
+  Future<Result<List<Product>>> fetchProducts({int limit = kCatalogPageSize}) async {
     // Return cached data if still fresh — avoids redundant network calls
     // while keeping the in-memory cache warm for synchronous findProductById.
     if (_cacheIsFresh) return Success(_cache!);
@@ -131,6 +142,19 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       }
 
       _setCache(result);
+
+      // Truncation signal: `fetchProducts` is bounded, and every
+      // search/filter/sort pass runs CLIENT-side over this page, so a full
+      // page means the catalog has outgrown the bound and results are
+      // silently incomplete. Logged (not thrown) so the storefront keeps
+      // working while the owner decides between a larger page and
+      // server-side search — see the note on [_catalogPageSize].
+      if (result.length >= limit) {
+        Log.w(
+          'Catalog page is full ($limit rows): client-side search/filter '
+          'cannot see products beyond this page.',
+        );
+      }
 
       // Persist to SharedPreferences for offline fallback.
       unawaited(_persistCache(result));

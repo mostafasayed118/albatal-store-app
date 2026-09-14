@@ -48,17 +48,37 @@ abstract final class Routes {
   static const maintenance = '/maintenance';
 
   /// Product details for [id].
-  static String product(String id) => '/product/$id';
+  ///
+  /// The id segment is percent-encoded by the builder itself so call sites
+  /// can never forget it: the inbound deep-link path (see `app.dart`) feeds
+  /// user/externally-controlled ids straight through, and a raw id with a
+  /// `/` or `?` would otherwise be re-interpreted as route structure.
+  /// Encoding an ordinary UUID is a no-op.
+  static String product(String id) => '/product/${Uri.encodeComponent(id)}';
+
+  /// Catalog with an optional search [query] (`/catalog?q=…`).
+  ///
+  /// Used by the deep-link handler so the query string can never be built
+  /// with a stale literal.
+  static String catalogWithQuery(String? query) {
+    final trimmed = query?.trim() ?? '';
+    if (trimmed.isEmpty) return catalog;
+    return '$catalog?q=${Uri.encodeComponent(trimmed)}';
+  }
 
   /// Admin product edit page for [id].
-  static String adminProduct(String id) => '/admin/products/$id';
+  static String adminProduct(String id) =>
+      '/admin/products/${Uri.encodeComponent(id)}';
 
   /// Admin order detail page for [id].
-  static String adminOrder(String id) => '/admin/orders/$id';
+  static String adminOrder(String id) =>
+      '/admin/orders/${Uri.encodeComponent(id)}';
 
   /// Admin variant editor for [id].
-  static String adminVariant(String id) => '/admin/variants/$id';
+  static String adminVariant(String id) =>
+      '/admin/variants/${Uri.encodeComponent(id)}';
 
   /// Admin image manager for [id].
-  static String adminImage(String id) => '/admin/images/$id';
+  static String adminImage(String id) =>
+      '/admin/images/${Uri.encodeComponent(id)}';
 }

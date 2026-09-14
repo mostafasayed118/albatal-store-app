@@ -1,0 +1,51 @@
+Here's a feature proposal set for Al Batal Elite, grounded in what the codebase already has (catalog with variants and flash sales, Paymob/COD/InstaPay checkout, wishlist, order tracking, EN/AR with RTL, dark mode, a full admin suite, and an approved-but-unapplied dependency proposal in 
+docs/packages-proposal.md
+). I've grouped suggestions by area and flagged which ones need new dependencies versus what fits the current stack.
+
+Customer experience & commerce
+1. Promo codes / coupons at checkout. Discounts today exist only as server-side flash sales. A coupons table plus a code field in the checkout flow (validated inside the existing create_checkout_order RPC so money math stays server-side) enables campaign marketing, abandoned-cart incentives, and influencer codes. Coupon codes are table stakes in retail e-commerce and pair naturally with the flash-sale infrastructure you already built.
+
+2. Fabric-specific product data and purchasing. For a premium fabric store, the highest-value features are domain-specific: sell by cut length (customer picks meters with a minimum cut, price computed per meter on a variant), offer a swatch/sample ordering flow (small, cheap or free samples shipped before a full purchase), and display care instructions, width, weight (GSM), and composition prominently on the details page. This is the standard playbook of successful fabric retailers (Mood Fabrics, Spoonflower) and directly reduces the biggest purchase barrier — buying expensive fabric sight unseen.
+
+3. Product reviews with photos. Ratings are currently display-only fields. Letting verified buyers (orders in a delivered state) submit star ratings, text, and photos — stored in a new table with RLS and moderated in the admin suite — builds social proof, and "customer photos" is the strongest conversion lever for tactile products like fabric.
+
+4. One-tap reorder / buy again. A "reorder" button on past orders in /profile/orders that re-validates variants against current stock and rebuilds the cart. Fabric buyers frequently restock the same material; this is a small change with outsized repeat-purchase impact.
+
+5. Search enhancements. Recent searches, autocomplete suggestions, and typo tolerance (Postgres pg_trgm similarity on the product name/description, exposed via an RPC) on the existing /catalog?q= flow. Search-as-you-type with suggestions is now the expected baseline in shopping apps.
+
+6. Share & deep links. A share button on product details that emits a https://…/product/:id link (via share_plus, routing through app_links — both already in the approved packages proposal), with deep-link handling in GoRouter so links open the product page for signed-out users too. This is the cheapest organic growth channel, especially since WhatsApp is already your support channel.
+
+7. Guest checkout → account conversion. The cart is intentionally public for guests but checkout is auth-gated. Offering guest checkout with email capture, then a one-tap account claim afterward, removes the biggest funnel drop-off. If that's too invasive, at minimum pre-fill sign-up from the checkout context.
+
+8. PDF invoice / receipt. Generate a branded invoice (emerald/gold palette, Montserrat) per order, viewable in-app and attached to the order-notification email. Useful for B2B-ish fabric buyers (tailors, interior designers) who expense purchases.
+
+Notifications & re-engagement (the approved track)
+9. Order-status notifications. Currently send-order-notification exists server-side but there is no client notification path. Local notifications (flutter_local_notifications) for foreground order updates, then push via OneSignal with an edge-function trigger on update_order_status — exactly the two-stage plan already documented in packages-proposal.md. Order transparency is the #1 post-purchase expectation; today customers must poll the app.
+
+10. Wishlist and flash-sale alerts. Reuse the notification plumbing: notify when a wishlisted product enters a flash sale or drops in price, and let the existing FlashSaleTicker data drive campaign pushes. Wishlist-to-alert conversion is a well-proven retention pattern.
+
+11. Offline awareness. A connectivity_plus-based banner and graceful degraded states on the storefront (catalog cache already persists locally via LocalStorefrontPersistence). This matters for an Egyptian-market app where intermittent connectivity is common.
+
+Performance
+12. Skeleton loading states. Replace spinners on catalog, home, and order history with skeletonizer placeholders (in the approved proposal) so perceived load time drops and layout doesn't jump.
+
+13. Image pipeline compression. Compress InstaPay proof uploads and admin product images before upload (flutter_image_compress), enforce max dimensions server-side, and precache hero/featured images on the home screen. Faster uploads for customers paying by transfer, smaller storage, and quicker grids.
+
+14. A perf benchmark harness. Golden/perf tests with flutter drive --profile on the catalog scroll and checkout flow, given the recent idle-rebuild and virtualization work in PR #44. This turns one-off perf fixes into a regression-guarded budget.
+
+Accessibility
+15. Systematic Semantics coverage. Semantics appears in only ~6 widget files today. Prioritize: color swatches announcing the color name (not just a colored square), quantity steppers and variant selectors exposing increment/decrement actions, product cards announcing name + price + availability as one element, and form fields with proper labels. TalkBack/VoiceOver are how a growing share of users shop, and premium positioning makes this a brand-alignment issue.
+
+16. Text-scaling and reduced-motion resilience. Test key screens at textScaleFactor 1.3–2.0 (Arabic text grows noticeably) and respect the OS "reduce motion" flag before adopting flutter_animate from the proposal. This protects the 44dp+ touch-target and RTL work you've already invested in.
+
+Integrations & trust
+17. Supabase OAuth (Google + Apple sign-in). Not Firebase — Supabase's native OAuth. Apple sign-in is required for App Store submission if you ship iOS, and social sign-in measurably lifts conversion over email confirmation flows. Add biometric re-auth (local_auth) on top of the stored secure session for returning customers.
+
+18. Lightweight analytics without Firebase. A first-party events table written through an RPC (view_product, add_to_cart, begin_checkout, purchase) plus an admin dashboard widget. Given the project-wide Firebase rejection, a Supabase-native funnel gives you the conversion data needed to prioritize everything above.
+
+19. Remote config / feature flags. A simple app_config Supabase table read at startup (maintenance mode, flash-sale banner copy, forced-update version gate) so campaigns and incident responses don't require a store release.
+
+20. Admin operations completion. Two gaps in the admin suite: a customers list page (explicitly deferred in STATE.md, but order lookup and membership management already assume it) and a coupons management UI if #1 lands. A CSV export of orders rounds out bookkeeping.
+
+If prioritizing
+The strongest sequence given your constraints: (a) land the already-approved packages proposal (#9, #10, #11, #12, #13, #6) since the human gate is cleared and the plumbing is designed, then (b) promo codes (#1) and fabric cut-length purchasing (#2) as the highest revenue-impact additions, and (c) the accessibility pass (#15, #16) as bounded, testable batches. Note that every dependency-touching item goes through the pubspec.yaml approval gate in AGENTS.md, and per loop rules these are L1 proposals only — none of this should be implemented without L2 being enabled.

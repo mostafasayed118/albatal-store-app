@@ -1,5 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application
+    <!-- Permissions the app depends on directly.
+       Declared EXPLICITLY here rather than relying on manifest merging
+       from plugin libraries: `flutter build apk --release` uses ONLY
+       `src/main` (plus plugin manifests), whereas `src/debug` and
+       `src/profile` are debug-only source sets. INTERNET was previously
+       declared only in those debug/profile manifests, so a release APK
+       shipped with NO network permission and every Supabase/Paymob/Storage
+       call failed. Guarded by test/platform/platform_config_test.dart. -->
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.VIBRATE"/>
+  <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+  <application
         android:label="albatal_store"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

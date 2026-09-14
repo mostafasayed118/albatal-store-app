@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_coupon.dart';
@@ -48,6 +49,17 @@ final class SupabaseAdminRepository implements AdminRepository {
 
   // ─── Order Fulfillment ──────────────────────────────────
 
+  /// Lists orders for the admin queue.
+  ///
+  /// RLS NOTE: the embedded `profiles(full_name)` is filtered by the
+  /// caller's own profile policy, and `profiles` currently grants only
+  /// `auth.uid() = id` — so an admin sees the orders but a NULL profile for
+  /// other users, i.e. blank customer names. Until
+  /// `supabase/migrations/_proposals/061_admin_profiles_read.sql` is applied,
+  /// prefer [getOrderDetails] (RPC, RLS-bypassing, admin-checked) when the
+  /// customer identity is required. The mapper degrades the missing profile
+  /// to an empty name rather than throwing, which is why this shows up as a
+  /// blank label instead of an error.
   @override
   Future<Result<List<AdminOrder>>> getAllOrders({
     AdminOrderStatus? status,
@@ -73,16 +85,44 @@ final class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<Result<AdminOrder?>> getOrderDetails(String orderId) async {
     try {
-      final row = await _client
-          .from('orders')
-          .select('*, order_items(*), profiles(id, full_name, membership_tier)')
-          .eq('id', orderId)
-          .maybeSingle();
+      // `get_order_details` (migration 017) is SECURITY DEFINER and verifies
+      // owner/admin inside the function, so it can return the customer
+      // profile. The previous embedded select
+      // (`profiles(id, full_name, membership_tier)`) is subject to the
+      // VIEWER's row-level security, and `profiles` only grants
+      // `auth.uid() = id` (migration 002) — so the join came back null for
+      // every other user's order and the admin lost the customer identity.
+      final payload = await _client.rpc(
+        'get_order_details',
+        params: {'p_order_id': orderId},
+      );
+      final row = _orderRowFromRpc(payload);
       if (row == null) return const Success(null);
       return Success(AdminMappers.orderDetailFromRow(row));
     } catch (e) {
       return Failure(AppError('Failed to load order', cause: e));
     }
+  }
+
+  /// Reshapes the `get_order_details` payload
+  /// (`{order: {...}, items: [...], customer: {...}}`) into the single row
+  /// shape [AdminMappers.orderDetailFromRow] already understands
+  /// (`orders` + `order_items` + `profiles`). Returns null when the RPC
+  /// reports no order.
+  static Map<String, dynamic>? _orderRowFromRpc(Object? payload) {
+    final body = safeMap(payload);
+    final order = body['order'];
+    if (order is! Map) return null;
+    // Copied, not mutated in place: the decoded payload must not be
+    // altered under other readers.
+    final row = Map<String, dynamic>.from(safeMap(order));
+    final items = body['items'];
+    row['order_items'] = items is List ? items : const <Object>[];
+    final customer = body['customer'];
+    // `customer` is only absent when the order has no profile row; the
+    // mapper already degrades to a blank name in that case.
+    if (customer is Map) row['profiles'] = safeMap(customer);
+    return row;
   }
 
   @override
@@ -391,30 +431,43 @@ final class SupabaseAdminRepository implements AdminRepository {
     }
   }
 
-  // ─── Customers (feature-batch §14) ──────────────────────
+  // ─── Customers (feature-batch §14) ─────────────────────
 
+  /// Columns that exist on `public.profiles`.
+  ///
+  /// `email` is deliberately ABSENT: the column does not exist on
+  /// `profiles` (the address lives in `auth.users`, which PostgREST does not
+  /// expose), and requesting it made PostgREST answer with
+  /// `42703 column profiles.email does not exist`. Because the failure was
+  /// mapped to a `Failure`, the whole Customers screen rendered an error and
+  /// no customer could ever be listed. `phone` is the real contact column.
   @override
   Future<Result<List<AdminCustomer>>> fetchCustomers() async {
     try {
       final rows = await _client
           .from('profiles')
-          .select('id, full_name, email, membership_tier')
+          .select('id, full_name, phone, membership_tier')
           .order('created_at', ascending: false)
           .limit(500);
       final list = rows as List<dynamic>;
       return Success(list
-          .map((row) => row as Map<String, dynamic>)
+          .whereType<Map<String, dynamic>>()
           .map((row) => AdminCustomer(
-                id: row['id'] as String? ?? '',
-                name: row['full_name'] as String? ?? '',
-                email: row['email'] as String? ?? '',
-                tier: row['membership_tier'] as String? ?? 'standard',
+                id: safeString(row, 'id'),
+                name: safeString(row, 'full_name'),
+                phone: safeString(row, 'phone'),
+                tier: safeString(row, 'membership_tier', fallback: 'standard'),
                 isBlocked:
                     false, // no suspension flag in profiles (§14 read-only)
               ))
           .where((c) => c.id.isNotEmpty)
           .toList());
     } catch (e) {
+      // NOTE: this endpoint needs an admin SELECT policy on `profiles`
+      // (see supabase/migrations/_proposals/061_admin_profiles_read.sql).
+      // Without it RLS limits the result to the caller's own row; the call
+      // still succeeds, so the directory is simply short.
+      Log.w('fetchCustomers failed', category: LogCategory.network);
       return Failure(AppError('Failed to fetch customers', cause: e));
     }
   }

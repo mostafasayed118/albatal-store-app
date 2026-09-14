@@ -5,6 +5,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 /// Handles product image uploads and URL generation.
+///
+/// PATH CONTRACT: [buildProductImagePath] returns a path that is ALREADY
+/// prefixed with the bucket name (`product-images/<productId>/<uuid>_<file>`)
+/// and is stored verbatim in `product_images.storage_path`. [getProductImageUrl]
+/// therefore resolves those stored paths through the same bucket. The prefix
+/// is redundant with `.from(_bucket)` — changing the shape now would
+/// invalidate every path already persisted in the database, so it is kept and
+/// documented rather than "fixed". `test/shared/services/storage_service_prefix_test.dart`
+/// pins the contract.
 class StorageService {
   StorageService({SupabaseClient? client}) : _clientOverride = client;
 

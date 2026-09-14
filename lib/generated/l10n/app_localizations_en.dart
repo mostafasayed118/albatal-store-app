@@ -1380,4 +1380,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String backInStockBody(String product) {
     return '$product is back in stock';
   }
+
+  @override
+  String get appLocked => 'App locked';
+
+  @override
+  String get appLockMessage =>
+      'Unlock with your device biometrics to continue.';
+
+  @override
+  String get appLockUnlock => 'Unlock';
+
+  @override
+  String get appLockFailed =>
+      'Authentication failed. Try again to unlock the app.';
+
+  @override
+  String get appLockSignOut => 'Sign out instead';
+
+  @override
+  String get appLockToggle => 'App lock';
+
+  @override
+  String get appLockToggleSubtitle =>
+      'Require biometrics or the device passcode to open the app';
+
+  @override
+  String get appLockUnavailable => 'App lock isn\'t available on this device';
 }

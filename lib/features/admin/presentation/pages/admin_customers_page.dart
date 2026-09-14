@@ -84,6 +84,11 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                               const SizedBox(height: 8),
                           itemBuilder: (context, i) {
                             final c = state.visible[i];
+                            // Contact column: email when the schema supplies
+                            // one, otherwise the phone that `profiles`
+                            // actually has. Hidden when empty so the row
+                            // never renders a blank subtitle.
+                            final contact = c.contact;
                             return Card(
                               color: scheme.surface,
                               shape: RoundedRectangleBorder(
@@ -102,8 +107,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                                         color: scheme.onPrimaryContainer),
                                   ),
                                 ),
-                                title: Text(c.name.isEmpty ? c.email : c.name),
-                                subtitle: Text(c.email),
+                                title: Text(c.name.isEmpty ? (contact.isEmpty ? '?' : contact) : c.name),
+                                subtitle: contact.isEmpty
+                                    ? null
+                                    : Text(contact),
                                 trailing: Text(c.tier),
                               ),
                             );
