@@ -6,6 +6,7 @@ import '../../../../core/utils/currency.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../domain/pricing/cut_length_pricing.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import 'product_image_placeholder.dart';
@@ -40,6 +41,7 @@ class CartItemTile extends StatelessWidget {
         final color = item.color;
         final length = item.length;
         final quantity = item.quantity;
+        final isSample = item.sample;
         final itemKey = item.key;
         final name = product.name;
         cart.remove(itemKey);
@@ -51,8 +53,10 @@ class CartItemTile extends StatelessWidget {
               content: Text('${l.remove} $name'),
               action: SnackBarAction(
                 label: l.undo,
-                onPressed: () => cart.add(product,
-                    color: color, length: length, quantity: quantity),
+                onPressed: () => isSample
+                    ? cart.addSample(product, color: color)
+                    : cart.add(product,
+                        color: color, length: length, quantity: quantity),
               ),
             ),
           );
@@ -87,13 +91,16 @@ class CartItemTile extends StatelessWidget {
                   children: [
                     Text(item.product.name,
                         style: Theme.of(context).textTheme.titleSmall),
-                    Text('${item.color} · ${item.length}'),
-                    Text(money(item.product.price * item.quantity)),
-                    QuantityStepper(
-                      quantity: item.quantity,
-                      onChanged: (q) =>
-                          context.read<CartCubit>().update(item.key, q),
-                    ),
+                    Text(item.sample
+                        ? '${item.color} · ${l.sampleLineItem}'
+                        : '${item.color} · ${item.length}'),
+                    Text(money(item.effectiveLineTotal)),
+                    if (!item.sample)
+                      QuantityStepper(
+                        quantity: item.quantity,
+                        onChanged: (q) =>
+                            context.read<CartCubit>().update(item.key, q),
+                      ),
                     Wrap(
                       spacing: 4,
                       runSpacing: 4,

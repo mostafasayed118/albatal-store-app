@@ -97,23 +97,36 @@ final class CartItem extends Equatable {
     required this.color,
     required this.length,
     this.quantity = 1,
+    this.sample = false,
   });
 
   final Product product;
   final String color, length;
   final int quantity;
 
-  CartItem copyWith({int? quantity}) => CartItem(
+  /// Sample/swatch line (Wave C): a small cut with a fixed low/zero
+  /// server price. The flag flows through cart persistence and into
+  /// the checkout payload (`sample: true`); server-side price
+  /// enforcement is a pending supabase/ follow-up, so clients must
+  /// treat the line estimate as zero, never as the catalog price.
+  final bool sample;
+
+  CartItem copyWith({int? quantity, bool? sample}) => CartItem(
       product: product,
       color: color,
       length: length,
-      quantity: quantity ?? this.quantity);
+      quantity: quantity ?? this.quantity,
+      sample: sample ?? this.sample);
 
-  String get key => '${product.id}-$color-$length';
+  String get key =>
+      sample ? '${product.id}-$color-sample' : '${product.id}-$color-$length';
 
-  /// Line total = unit price × quantity.
+  /// Line total = unit price × quantity. For sell-by-length meters and
+  /// sample lines, use the storefront `CartItemPricing.effectiveLineTotal`
+  /// extension — this stays the plain fixed-size math (zero schema churn
+  /// for existing lines).
   Money get lineTotal => product.price * quantity;
 
   @override
-  List<Object?> get props => [product, color, length, quantity];
+  List<Object?> get props => [product, color, length, quantity, sample];
 }

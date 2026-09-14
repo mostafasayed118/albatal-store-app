@@ -5,6 +5,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/extensions/iterable_x.dart';
+import '../../domain/pricing/cut_length_pricing.dart';
 import '../../domain/repositories/cart_repository.dart';
 
 enum CartStatus { initial, loading, ready, error }
@@ -28,8 +29,10 @@ final class CartState extends Equatable {
   /// stale flag here can never change what is actually charged.
   final bool isPremiumMember;
 
+  /// Display estimate: metered lines use the tier-aware metered total
+  /// and sample lines are zero — the server totals stay authoritative.
   Money get subtotal =>
-      items.fold(Money.zero, (value, item) => value + item.lineTotal);
+      items.fold(Money.zero, (value, item) => value + item.effectiveLineTotal);
 
   /// Shipping estimate. Zero for premium members, matching the server's
   /// free-shipping perk (migration 047); the checkout page carries the
@@ -122,6 +125,24 @@ final class CartCubit extends Cubit<CartState> {
     } else {
       update(item.key, old.quantity + qty);
     }
+  }
+
+  /// Add a swatch/sample line for [product] (Wave C). One sample per
+  /// color: re-tapping the button is an idempotent no-op, since sample
+  /// quantity is fixed by convention. The line carries `sample: true`
+  /// into the checkout payload; its client-side estimate is zero and
+  /// server-side sample pricing is a pending follow-up.
+  void addSample(Product product, {String color = 'Emerald'}) {
+    final item = CartItem(
+      product: product,
+      color: color,
+      length: 'sample',
+      quantity: 1,
+      sample: true,
+    );
+    if (state.items.any((existing) => existing.key == item.key)) return;
+    _emitAndPersist(
+        CartState([...state.items, item], status: CartStatus.ready));
   }
 
   void update(String key, int quantity) => _emitAndPersist(CartState(

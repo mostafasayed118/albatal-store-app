@@ -93,6 +93,15 @@ void main() {
       await cubit.close();
     });
 
+    test('clamps at the 50 m ceiling and stays on the 0.5 m grid', () async {
+      final cubit = await cubitWith(_fabric(minCut: 1.0));
+      cubit.setCutLength(999);
+      expect(cubit.state.length, '50.0');
+      cubit.setCutLength(50.3);
+      expect(cubit.state.length, '50.0');
+      await cubit.close();
+    });
+
     test('ignores non-sell-by-length products', () async {
       final cubit = await cubitWith(_fabric(sellByLength: false, minCut: null));
       final before = cubit.state.length;

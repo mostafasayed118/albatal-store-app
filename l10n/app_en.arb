@@ -219,6 +219,25 @@
   },
   "cutLength": "Cut length",
   "sellByLengthNote": "Sold by the meter — minimum cut applies.",
+  "cutLengthEstimatedTotal": "Estimated total: {total}",
+  "@cutLengthEstimatedTotal": {
+    "description": "Running line price under the cut-length selector",
+    "placeholders": {
+      "total": {"type": "String"}
+    }
+  },
+  "pricingTiersTitle": "Wholesale pricing",
+  "pricingTierRow": "{meters}+ m — {percent}% off",
+  "@pricingTierRow": {
+    "description": "One wholesale tier row: minimum meters and discount",
+    "placeholders": {
+      "meters": {"type": "String"},
+      "percent": {"type": "int"}
+    }
+  },
+  "orderSample": "Order fabric sample",
+  "sampleAdded": "Sample added to your cart",
+  "sampleLineItem": "Sample",
   "maintenanceTitle": "We'll be right back",
   "maintenanceBody": "Al Batal Elite is under maintenance. Please check back soon.",
   "updateRequiredTitle": "Update available",

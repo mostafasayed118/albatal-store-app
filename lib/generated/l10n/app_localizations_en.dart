@@ -532,6 +532,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sellByLengthNote => 'Sold by the meter — minimum cut applies.';
 
   @override
+  String cutLengthEstimatedTotal(String total) {
+    return 'Estimated total: $total';
+  }
+
+  @override
+  String get pricingTiersTitle => 'Wholesale pricing';
+
+  @override
+  String pricingTierRow(String meters, int percent) {
+    return '$meters+ m — $percent% off';
+  }
+
+  @override
+  String get orderSample => 'Order fabric sample';
+
+  @override
+  String get sampleAdded => 'Sample added to your cart';
+
+  @override
+  String get sampleLineItem => 'Sample';
+
+  @override
   String get maintenanceTitle => 'We\'ll be right back';
 
   @override

@@ -83,6 +83,7 @@ final class LocalStorefrontPersistence
             color: color,
             length: length,
             quantity: quantity.toInt().clamp(1, 99).toInt(),
+            sample: safeBool(line, 'sample'),
           );
         })
         .whereType<CartItem>()
@@ -115,6 +116,7 @@ final class LocalStorefrontPersistence
                 'color': item.color,
                 'length': item.length,
                 'quantity': item.quantity,
+                if (item.sample) 'sample': true,
               })
           .toList()),
     );
@@ -214,6 +216,7 @@ extension OrderCodec on Order {
                   'color': i.color,
                   'length': i.length,
                   'quantity': i.quantity,
+                  if (i.sample) 'sample': true,
                 })
             .toList(),
         'subtotal': o.subtotal.minorUnits,
@@ -254,6 +257,7 @@ extension OrderCodec on Order {
                 color: color,
                 length: length,
                 quantity: safeInt(line, 'quantity', fallback: 1).clamp(1, 99),
+                sample: safeBool(line, 'sample'),
               );
             } catch (e) {
               Log.w('Order snapshot line is corrupt; skipping: $e');

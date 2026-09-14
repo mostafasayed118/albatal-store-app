@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../domain/pricing/cut_length_pricing.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 
@@ -25,9 +26,15 @@ class AddToCartButton extends StatelessWidget {
     final p = state.product!;
     // Stitch CTA shows the live line total (unit price × quantity), like
     // "Add to Cart - 1700 EGY"; falls back to the plain label when the
-    // product carries no price yet.
-    final label = state.inStock && p.price.minorUnits > 0
-        ? l.addToCartTotal((p.price * state.quantity).format())
+    // product carries no price yet. Metered fabrics price per meter:
+    // tiered per-meter × cut meters × quantity (Wave C).
+    final meters = p.sellByLength ? double.tryParse(state.length) : null;
+    final lineTotal = meters != null
+        ? meteredLineTotal(tieredPerMeterPrice(p.price, meters), meters,
+            quantity: state.quantity)
+        : p.price * state.quantity;
+    final label = state.inStock && lineTotal.minorUnits > 0
+        ? l.addToCartTotal(lineTotal.format())
         : (state.inStock ? l.addToCart : l.outOfStock);
     return Container(
       padding: const EdgeInsetsDirectional.all(16),
