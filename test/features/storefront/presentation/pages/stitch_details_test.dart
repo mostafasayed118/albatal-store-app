@@ -7,6 +7,7 @@ import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.da
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/cart_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
@@ -23,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
 class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
@@ -177,6 +179,10 @@ void main() {
                   authRepository: StubAuthRepository(),
                   profileRepository: StubProfileRepository(),
                 )..checkSession(),
+              ),
+              BlocProvider(
+                create: (_) =>
+                    RecentlyViewedCubit(store: MemoryRecentlyViewedStore()),
               ),
             ],
             child: const HomePage(),

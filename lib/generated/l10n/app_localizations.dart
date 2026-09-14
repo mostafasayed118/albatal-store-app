@@ -872,6 +872,12 @@ abstract class AppLocalizations {
   /// **'Recent searches'**
   String get recentSearches;
 
+  /// No description provided for @recentlyViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get recentlyViewed;
+
   /// No description provided for @searchSuggestions.
   ///
   /// In en, this message translates to:

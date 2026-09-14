@@ -6,6 +6,7 @@ import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.da
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/order_list.dart';
@@ -19,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
 class _MockCatalogRepository extends Mock implements CatalogRepository {}
@@ -43,6 +45,10 @@ Widget _homeHarness(
         BlocProvider(create: (_) => CatalogCubit(repo)..load()),
         BlocProvider(create: (_) => WishlistCubit(store)),
         BlocProvider(create: (_) => CartCubit(store)),
+        BlocProvider(
+          create: (_) =>
+              RecentlyViewedCubit(store: MemoryRecentlyViewedStore()),
+        ),
         BlocProvider(
           create: (_) => AuthCubit(
             authRepository: StubAuthRepository(),

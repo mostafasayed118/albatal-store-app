@@ -161,6 +161,7 @@
   "whatsappShareProductMessage": "{name} بسعر {price}\n{url}",
   "reorder": "إعادة الطلب",
   "recentSearches": "عمليات البحث الأخيرة",
+  "recentlyViewed": "المنتجات المشاهدة مؤخرًا",
   "searchSuggestions": "اقتراحات",
   "clearRecent": "مسح",
   "couponFieldLabel": "كود الخصم",

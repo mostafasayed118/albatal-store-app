@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/recently_viewed_store.dart';
 
 enum DetailsStatus { initial, loading, ready, notFound, error }
 
@@ -62,9 +63,14 @@ final class DetailsState extends Equatable {
 }
 
 final class ProductDetailsCubit extends Cubit<DetailsState> {
-  ProductDetailsCubit(this._catalogRepository) : super(const DetailsState());
+  ProductDetailsCubit(this._catalogRepository, {this.recentlyViewed})
+      : super(const DetailsState());
 
   final CatalogRepository _catalogRepository;
+
+  /// #3: app-scoped recently-viewed store. Null in widget tests that
+  /// pump the page without the store registered (fail-soft probe).
+  final RecentlyViewedStore? recentlyViewed;
 
   /// Generation counter against A→B clobber: every [loadProduct] call
   /// bumps it, and each async continuation bails when its generation is
@@ -142,14 +148,19 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
     }
   }
 
-  DetailsState _readyState(Product product, List<Product> related) =>
-      DetailsState(
-        status: DetailsStatus.ready,
-        product: product,
-        relatedProducts: related,
-        color: product.colors.isNotEmpty ? product.colors.first : '',
-        length: product.sizes.isNotEmpty ? product.sizes.first : '',
-      );
+  DetailsState _readyState(Product product, List<Product> related) {
+    // #3: record the view before the ready emit so the home strip is
+    // already fresh when the shopper returns. Sync prefs write, so no
+    // isClosed hazard.
+    recentlyViewed?.record(product);
+    return DetailsState(
+      status: DetailsStatus.ready,
+      product: product,
+      relatedProducts: related,
+      color: product.colors.isNotEmpty ? product.colors.first : '',
+      length: product.sizes.isNotEmpty ? product.sizes.first : '',
+    );
+  }
 
   void color(String value) {
     // Reject values outside the loaded product's variant set (stale chips
