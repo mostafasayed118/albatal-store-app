@@ -19,6 +19,7 @@ import '../widgets/active_filters_bar.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/catalog_sort_bar.dart';
 import '../widgets/filter_sheet.dart';
+import '../widgets/offline_catalog_view.dart';
 import '../widgets/search_suggestions_bar.dart';
 import 'home_page.dart' show homeBuildWhen;
 
@@ -96,6 +97,11 @@ class _CatalogPageState extends State<CatalogPage> {
             return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
+            // Task #8: offline + cold cache is an offline notice, not
+            // an error; reserve the FeedbackView for real failures.
+            if (state.isOffline) {
+              return OfflineCatalogView(onRetry: catalog.load);
+            }
             return FeedbackView(
               type: FeedbackViewType.error,
               onAction: catalog.load,

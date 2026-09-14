@@ -38,6 +38,7 @@ final class CatalogState extends Equatable {
     this.carouselIndex = 0,
     this.recentQueries = const [],
     this.flashSales = const [],
+    this.isOffline = false,
   });
 
   final CatalogStatus status;
@@ -46,6 +47,14 @@ final class CatalogState extends Equatable {
   final CatalogFilters filters;
   final int carouselIndex;
   final List<String> recentQueries;
+
+  /// Snapshot of the connectivity gate at load time (Task #8 offline
+  /// catalog). When true the rendered data (on success) came from the
+  /// persistent cache, and a [CatalogStatus.error] means "offline with a
+  /// cold cache" — pages render a friendly offline notice instead of the
+  /// generic error view. The error FeedbackView is reserved for real
+  /// (online) failures.
+  final bool isOffline;
 
   /// Active flash sales (T1) — typed domain entities mapped from the
   /// repository; schema knowledge lives in `FlashSaleCodec.fromRow`.
@@ -197,6 +206,7 @@ final class CatalogState extends Equatable {
     int? carouselIndex,
     List<String>? recentQueries,
     List<FlashSale>? flashSales,
+    bool? isOffline,
   }) {
     final resolvedProducts = allProducts ?? this.allProducts;
     final resolvedFilters = filters ?? this.filters;
@@ -208,6 +218,7 @@ final class CatalogState extends Equatable {
       carouselIndex: carouselIndex ?? this.carouselIndex,
       recentQueries: recentQueries ?? this.recentQueries,
       flashSales: flashSales ?? this.flashSales,
+      isOffline: isOffline ?? this.isOffline,
     );
     // Data-only emits (e.g. a refreshed sales list over the same catalog)
     // leave the underlying products/filters untouched — carry the
@@ -228,6 +239,7 @@ final class CatalogState extends Equatable {
         carouselIndex,
         recentQueries,
         flashSales,
+        isOffline,
       ];
 }
 

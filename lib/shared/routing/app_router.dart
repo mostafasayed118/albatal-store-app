@@ -131,6 +131,7 @@ final _routes = <RouteBase>[
     builder: (_, s) => DetailsPage(
       id: s.pathParameters['id']!,
       catalogRepository: getIt<CatalogRepository>(),
+      gate: getIt<ConnectivityGate>(),
     ),
   ),
   GoRoute(

@@ -23,6 +23,7 @@ import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
+import '../widgets/offline_catalog_view.dart';
 import '../widgets/recently_viewed_strip.dart';
 
 /// Home — Stitch reskin (spec §4/§5):
@@ -112,6 +113,12 @@ class _HomePageState extends State<HomePage> {
             return const CatalogSkeleton();
           }
           if (state.status == CatalogStatus.error) {
+            // Task #8: an offline miss (cold cache) is not a real
+            // failure — show the offline notice and reserve the error
+            // view for online failures.
+            if (state.isOffline) {
+              return OfflineCatalogView(onRetry: catalog.load);
+            }
             return FeedbackView(
               type: FeedbackViewType.error,
               onAction: catalog.load,
@@ -436,6 +443,7 @@ final class _PopularHeader extends StatelessWidget {
 /// predicate O(1) instead of deep-scanning the catalog on every emit.
 bool homeBuildWhen(CatalogState previous, CatalogState current) {
   if (previous.status != current.status) return true;
+  if (previous.isOffline != current.isOffline) return true;
   if (!identical(previous.allProducts, current.allProducts)) return true;
   if (previous.categories != current.categories) return true;
   if (previous.filters != current.filters) return true;

@@ -200,6 +200,15 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // single() throws PostgrestException (PGRST116) when no row matches.
       return Failure(AppError('Product not found', cause: e));
     } on Exception catch (e) {
+      // Offline cold start (Task #8): the in-memory index missed and the
+      // network is gone. Restore the persistent cache once — a deep link
+      // to a previously synced product still resolves from disk.
+      final restored = _restorePersistentCache();
+      if (restored != null) {
+        _setCache(restored);
+        final hit = _productsById[id];
+        if (hit != null) return Success(hit);
+      }
       return Failure(AppError('Failed to load product', cause: e));
     }
   }
@@ -210,7 +219,9 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// only products in [category] are returned), excludes [excludeId], and
   /// bounds the page to [limit] rows — the details strip no longer pulls
   /// the full catalog. Mapping skips unusable rows like [fetchProducts];
-  /// transport errors fail closed so the cubit keeps the primary product.
+  /// transport errors degrade to a cache-derived strip (in-memory, else
+  /// the persistent snapshot) and fail closed only when nothing is
+  /// cached, so the cubit keeps the primary product either way.
   @override
   Future<Result<List<Product>>> fetchRelated(
     String category, {
@@ -247,6 +258,23 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       }
       return Success(result);
     } on Exception catch (e) {
+      // Offline degrade (Task #8): the related strip should not go blank
+      // when a full catalog snapshot exists — derive the strip from the
+      // in-memory cache, restoring the persistent cache on a cold start.
+      var pool = _cache;
+      if (pool == null) {
+        final restored = _restorePersistentCache();
+        if (restored != null) {
+          _setCache(restored);
+          pool = restored;
+        }
+      }
+      if (pool != null) {
+        return Success(pool
+            .where((p) => p.category == category && p.id != excludeId)
+            .take(limit)
+            .toList());
+      }
       return Failure(AppError('Failed to load related products', cause: e));
     }
   }
