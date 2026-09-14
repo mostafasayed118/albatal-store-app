@@ -14,25 +14,33 @@ final class AdminReviewsState extends Equatable {
     this.status = AdminReviewsStatus.initial,
     this.pending = const [],
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminReviewsStatus status;
   final List<PendingReview> pending;
   final String? errorMessage;
 
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
+
   AdminReviewsState copyWith({
     AdminReviewsStatus? status,
     List<PendingReview>? pending,
     String? errorMessage,
+    String? errorCode,
   }) =>
       AdminReviewsState(
         status: status ?? this.status,
         pending: pending ?? this.pending,
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [status, pending, errorMessage];
+  List<Object?> get props => [status, pending, errorMessage, errorCode];
 }
 
 /// Review moderation for the admin hub (feature-batch §9). The page no
@@ -54,7 +62,9 @@ class AdminReviewsCubit extends Cubit<AdminReviewsState> {
         emit(state.copyWith(status: AdminReviewsStatus.ready, pending: value));
       case Failure(:final error):
         emit(state.copyWith(
-            status: AdminReviewsStatus.error, errorMessage: error.message));
+            status: AdminReviewsStatus.error,
+            errorMessage: error.message,
+            errorCode: error.code));
     }
   }
 

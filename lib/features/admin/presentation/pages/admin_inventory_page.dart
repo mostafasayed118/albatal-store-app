@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
 import '../widgets/dialog_controllers.dart';
@@ -60,8 +61,15 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
           // the repository actually did.
           if (state.status == AdminStatus.error) {
             if (_awaitingStockUpdate) {
+              // Code-based localization (audit 2026-09-14): failures with
+              // a machine code map to localized copy; unknown codes keep
+              // the English fallback verbatim.
               showFloatingError(
-                  context, state.errorMessage ?? context.l10n.errorTitle);
+                context,
+                localizedErrorMessage(context, state.errorMessage,
+                        code: state.errorCode) ??
+                    context.l10n.errorTitle,
+              );
             }
             _awaitingStockUpdate = false;
           } else if (_awaitingStockUpdate &&
@@ -80,7 +88,11 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
               // that lies to the person managing inventory.
               return FeedbackView(
                 type: FeedbackViewType.error,
-                body: state.errorMessage,
+                // Code-based localization (audit 2026-09-14): failures
+                // with a machine code map to localized copy; unknown
+                // codes keep the English fallback verbatim.
+                body: localizedErrorMessage(
+                    context, state.errorMessage, code: state.errorCode),
                 onAction: () =>
                     context.read<AdminCubit>().loadLowStockProducts(),
               );

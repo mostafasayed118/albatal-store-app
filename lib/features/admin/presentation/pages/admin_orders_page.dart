@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
 
@@ -63,7 +64,11 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
             // A failed load must not read as an empty queue.
             return FeedbackView(
               type: FeedbackViewType.error,
-              body: state.errorMessage,
+              // Code-based localization (audit 2026-09-14): failures with
+              // a machine code map to localized copy; unknown codes keep
+              // the English fallback verbatim.
+              body: localizedErrorMessage(
+                  context, state.errorMessage, code: state.errorCode),
               onAction: () => context.read<AdminCubit>().loadOrders(),
             );
           }

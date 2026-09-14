@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
+import '../../../../core/utils/currency.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_coupons_cubit.dart';
 
@@ -48,7 +51,12 @@ final class _AdminCouponsView extends StatelessWidget {
           }
           if (state.status == AdminCouponsStatus.error) {
             return Center(
-              child: Text(state.errorMessage ?? l.couponInvalid),
+              // Code-based localization (audit 2026-09-14): failures with
+              // a machine code map to localized copy; unknown codes keep
+              // the English fallback verbatim.
+              child: Text(localizedErrorMessage(
+                    context, state.errorMessage, code: state.errorCode) ??
+                  l.couponInvalid),
             );
           }
           if (state.coupons.isEmpty) {
@@ -142,9 +150,7 @@ final class _AdminCouponsView extends StatelessWidget {
   }
 }
 
-/// Minor-units → "EGP x.yy" display label (display-only; money math
-/// stays server-side).
-String safeMinorToEgpLabel(int minor) {
-  final egp = minor / 100;
-  return 'EGP ${egp.toStringAsFixed(2)}';
-}
+/// Minor-units → canonical currency label (display-only; money math
+/// stays server-side). Delegates to [money] so the admin surface uses
+/// the same formatter as the storefront (audit 2026-09-14).
+String safeMinorToEgpLabel(int minor) => money(Money(minor));

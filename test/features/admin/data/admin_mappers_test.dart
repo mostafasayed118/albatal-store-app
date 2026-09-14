@@ -364,6 +364,34 @@ void main() {
       ]);
       expect(products, isEmpty);
     });
+
+    // Audit 2026-09-14: `base_price` / `price_override` are INTEGER
+    // minor units (migration 001); the mappers must pass the raw int
+    // value through unchanged — no /100 or toDouble() rescaling.
+    test('passes INTEGER minor-unit prices through unchanged', () {
+      final products = AdminMappers.productsFromRows([
+        {
+          'id': 'p-minor',
+          'name': 'Royal Emerald Silk',
+          'slug': 'royal-emerald-silk',
+          'category_id': 'c-1',
+          'base_price': 129050,
+          'is_active': true,
+        },
+      ]);
+      expect(products.single.basePrice, 129050.0);
+
+      final variants = AdminMappers.variantsFromRows([
+        {
+          'id': 'v-minor',
+          'size': 'M',
+          'color': 'Navy',
+          'stock': 3,
+          'price_override': 45500,
+        },
+      ]);
+      expect(variants.single.priceOverride, 45500.0);
+    });
   });
 
   group('AdminMappers.categoriesFromRows (admin category list)', () {

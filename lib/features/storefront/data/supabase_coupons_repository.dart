@@ -25,37 +25,49 @@ final class SupabaseCouponsRepository implements CouponsRepository {
     if (trimmed.isEmpty) {
       return const Failure(AppError(kCouponInvalid));
     }
-    try {
-      final rows = await _client.rpc(
+    final rows = await Result.guard(
+      () => _client.rpc(
         'validate_coupon',
         params: {'p_code': trimmed},
-      );
-      final list = rows as List<dynamic>? ?? const [];
-      if (list.isEmpty) {
-        return const Failure(AppError(kCouponInvalid));
-      }
-      final row = list.first as Map<String, dynamic>;
-      final coupon = couponFromRow(row);
-      if (coupon == null) {
-        return const Failure(AppError(kCouponInvalid));
-      }
-      return Success(coupon);
-    } on PostgrestException catch (e, st) {
-      // 42883 = undefined_function / PGRST202 = schema cache miss:
-      // the proposal migration has not been applied yet.
+      ),
+      kCouponInvalid,
+      onError: _couponError,
+    );
+    return rows.when(
+      success: (value) {
+        final list = value as List<dynamic>? ?? const [];
+        if (list.isEmpty) {
+          return const Failure<CouponDiscount>(AppError(kCouponInvalid));
+        }
+        final row = list.first as Map<String, dynamic>;
+        final coupon = couponFromRow(row);
+        if (coupon == null) {
+          return const Failure<CouponDiscount>(AppError(kCouponInvalid));
+        }
+        return Success<CouponDiscount>(coupon);
+      },
+      failure: (error) => Failure<CouponDiscount>(error),
+    );
+  }
+
+  /// [Result.guard] error-mapper: 42883 = undefined_function /
+  /// PGRST202 = schema cache miss — the proposal migration has not
+  /// been applied yet, so the RPC absence degrades to
+  /// [kCouponUnavailable]; everything else is an invalid coupon.
+  AppError _couponError(Object e, StackTrace st) {
+    if (e is PostgrestException) {
       final unavailable = e.code == '42883' ||
           e.code == 'PGRST202' ||
           e.message.contains('schema cache');
       Log.w('validate_coupon failed: ${e.code} ${e.message}',
           category: LogCategory.network);
-      return Failure(AppError(
+      return AppError(
         unavailable ? kCouponUnavailable : kCouponInvalid,
         cause: e,
         stackTrace: st,
-      ));
-    } on Exception catch (e, st) {
-      Log.e('validate_coupon unexpected error', error: e, stackTrace: st);
-      return Failure(AppError(kCouponInvalid, cause: e, stackTrace: st));
+      );
     }
+    Log.e('validate_coupon unexpected error', error: e, stackTrace: st);
+    return AppError(kCouponInvalid, cause: e, stackTrace: st);
   }
 }

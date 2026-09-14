@@ -13,6 +13,7 @@ final class AdminCustomersState extends Equatable {
     this.customers = const [],
     this.visible = const [],
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminCustomersStatus status;
@@ -22,21 +23,28 @@ final class AdminCustomersState extends Equatable {
   final List<AdminCustomer> visible;
   final String? errorMessage;
 
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
+
   AdminCustomersState copyWith({
     AdminCustomersStatus? status,
     List<AdminCustomer>? customers,
     List<AdminCustomer>? visible,
     String? errorMessage,
+    String? errorCode,
   }) =>
       AdminCustomersState(
         status: status ?? this.status,
         customers: customers ?? this.customers,
         visible: visible ?? this.visible,
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [status, customers, visible, errorMessage];
+  List<Object?> get props => [status, customers, visible, errorMessage, errorCode];
 }
 
 /// Customer directory for the admin hub (feature-batch §14). The page
@@ -62,7 +70,9 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
         ));
       case Failure(:final error):
         emit(state.copyWith(
-            status: AdminCustomersStatus.error, errorMessage: error.message));
+            status: AdminCustomersStatus.error,
+            errorMessage: error.message,
+            errorCode: error.code));
     }
   }
 

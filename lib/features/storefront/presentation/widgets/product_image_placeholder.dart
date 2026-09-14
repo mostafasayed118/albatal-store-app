@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/components/app_image.dart';
+import '../../../../shared/services/storage_service.dart';
 import '../../../../shared/theme/contrast.dart';
 import 'fabric_weave_painter.dart';
 
@@ -73,7 +74,15 @@ class ProductImagePlaceholder extends StatelessWidget {
               children: [
                 ColoredBox(color: Color(imageColor)),
                 AppImage(
-                  source: imageAsset,
+                  // Width-bounded transform matches the decode budget below
+                  // so a small slot never downloads the full-res original
+                  // (audit 2026-09-14 perf).
+                  source: imageAsset == null
+                      ? null
+                      : StorageService.transformPublicUrl(
+                          imageAsset!,
+                          width: cacheExtent ?? 720,
+                        ),
                   fit: BoxFit.cover,
                   cacheWidth: cacheExtent ?? 720,
                   cacheHeight: cacheExtent ?? 720,

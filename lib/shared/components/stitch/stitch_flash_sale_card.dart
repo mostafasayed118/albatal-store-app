@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
 import '../../extensions/build_context_x.dart';
+import '../../services/storage_service.dart';
 import '../../theme/contrast.dart';
 import '../app_image.dart';
 
@@ -62,8 +63,16 @@ class StitchFlashSaleCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     clipBehavior: Clip.antiAlias,
+                    // 180px transform matches the memCacheWidth decode
+                    // budget below so a 90dp row thumb never downloads
+                    // the full-res original (audit 2026-09-14 perf).
                     child: AppImage(
-                      source: product.imageAsset,
+                      source: product.imageAsset == null
+                          ? null
+                          : StorageService.transformPublicUrl(
+                              product.imageAsset!,
+                              width: 180,
+                            ),
                       fit: BoxFit.cover,
                       cacheWidth: 180,
                       cacheHeight: 180,

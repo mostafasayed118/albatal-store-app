@@ -227,6 +227,27 @@ void main() {
       await cubit.close();
     });
 
+    test('signIn failure propagates the machine errorCode', () async {
+      // audit 2026-09-14: the cubit passes [AppError.code] through to
+      // [AuthState.errorCode] so pages can localize by code instead of
+      // matching English message literals.
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          signIn: ({required email, required password}) async =>
+              const Failure(AppError('Invalid email or password',
+                  code: 'auth_invalid_credentials')),
+        ),
+        profileRepository: profileRepo,
+      );
+      await cubit.signIn(email: 'a@b.com', password: 'wrong');
+      expect(cubit.state.status, AuthStatus.failure);
+      expect(cubit.state.errorCode, 'auth_invalid_credentials');
+      // The English message stays the fallback — pages localize with the
+      // helper only when a code is present.
+      expect(cubit.state.errorMessage, 'Invalid email or password');
+      await cubit.close();
+    });
+
     test('signUp with confirmation required sets unauthenticated', () async {
       final cubit = AuthCubit(
         authRepository: _StubAuthRepository(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -76,7 +77,12 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
     final colorCtrl = newDialogController(existing?.color ?? '');
     final stockCtrl = newDialogController(existing?.stock.toString() ?? '');
     final priceCtrl = newDialogController(
-      existing?.priceOverride?.toString() ?? '',
+      existing?.priceOverride == null
+          ? ''
+          // `priceOverride` is INTEGER minor units (migration 001); the
+          // field edits major EGP text, so prefill converts via [Money]
+          // instead of showing raw cents (audit 2026-09-14).
+          : Money(existing!.priceOverride!.round()).format(symbol: ''),
     );
     bool saving = false;
 
@@ -148,15 +154,20 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         showFloatingError(ctx, 'Stock cannot be negative');
                         return;
                       }
-                      final priceOverride = priceCtrl.text.trim().isEmpty
-                          ? null
-                          : double.tryParse(priceCtrl.text.trim());
+                      // The field collects major EGP text; [Money.tryParseMajor]
+                      // is the single ×100 conversion point into minor units
+                      // (same contract as the product form, audit 2026-09-14).
+                      final priceOverrideMinor =
+                          priceCtrl.text.trim().isEmpty
+                              ? null
+                              : Money.tryParseMajor(priceCtrl.text.trim());
                       if (priceCtrl.text.trim().isNotEmpty &&
-                          priceOverride == null) {
+                          priceOverrideMinor == null) {
                         showFloatingError(ctx, 'Invalid price override');
                         return;
                       }
-                      if (priceOverride != null && priceOverride <= 0) {
+                      if (priceOverrideMinor != null &&
+                          priceOverrideMinor.minorUnits <= 0) {
                         // No DB guard existed for price_override until
                         // migration 044 — this is the first line of defense;
                         // the CHECK is the last.
@@ -170,7 +181,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         size: sizeCtrl.text.trim(),
                         color: colorCtrl.text.trim(),
                         stock: stock,
-                        priceOverride: priceOverride,
+                        priceOverride:
+                            priceOverrideMinor?.minorUnits.toDouble(),
                       );
                       if (!ctx.mounted) return;
                       result.when(
@@ -254,7 +266,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                               // 'Stock:' / 'Override:' row labels below.
                               title: Text('${v.size} / ${v.color}'),
                               subtitle: Text(
-                                  'Stock: ${v.stock}${override != null ? ' • Override: $override' : ''}'),
+                                  'Stock: ${v.stock}${override != null ? ' • Override: ${Money(override.round()).format(symbol: 'EGY')}' : ''}'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.edit),
                                 onPressed: () =>

@@ -1706,6 +1706,18 @@ abstract class AppLocalizations {
   /// **'Password must be at least 8 characters'**
   String get passwordTooShort;
 
+  /// No description provided for @passwordRuleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters, including at least one letter and one digit'**
+  String get passwordRuleHint;
+
+  /// No description provided for @passwordNeedsLetterDigit.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one letter and one digit'**
+  String get passwordNeedsLetterDigit;
+
   /// No description provided for @passwordsDoNotMatch.
   ///
   /// In en, this message translates to:
@@ -2527,6 +2539,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checkout failed. Please try again.'**
   String get checkoutFailedRetry;
+
+  /// No description provided for @errorCodesCouponUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This coupon is not available right now.'**
+  String get errorCodesCouponUnavailable;
+
+  /// No description provided for @errorCodesReviewBuyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please purchase this product before writing a review.'**
+  String get errorCodesReviewBuyRequired;
+
+  /// No description provided for @errorCodesReviewInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This review could not be submitted.'**
+  String get errorCodesReviewInvalid;
+
+  /// No description provided for @errorCodesReviewUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews are unavailable right now.'**
+  String get errorCodesReviewUnavailable;
+
+  /// No description provided for @errorCodesOrdersLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load your orders. Please try again.'**
+  String get errorCodesOrdersLoadFailed;
+
+  /// No description provided for @errorCodesAuthInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get errorCodesAuthInvalidCredentials;
+
+  /// No description provided for @errorCodesAuthEmailNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email address first'**
+  String get errorCodesAuthEmailNotConfirmed;
+
+  /// No description provided for @errorCodesAuthEmailTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists'**
+  String get errorCodesAuthEmailTaken;
+
+  /// No description provided for @errorCodesAuthWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get errorCodesAuthWeakPassword;
+
+  /// No description provided for @errorCodesAuthUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred'**
+  String get errorCodesAuthUnexpected;
+
+  /// No description provided for @errorCodesAuthSignupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-up failed. Please try again.'**
+  String get errorCodesAuthSignupFailed;
+
+  /// No description provided for @errorCodesAuthSigninFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Please try again.'**
+  String get errorCodesAuthSigninFailed;
+
+  /// No description provided for @errorCodesAuthSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Please sign in again.'**
+  String get errorCodesAuthSessionExpired;
+
+  /// No description provided for @errorCodesDeleteEmailMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The email does not match this account'**
+  String get errorCodesDeleteEmailMismatch;
+
+  /// No description provided for @errorCodesDeleteAdminAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts cannot be deleted in the app'**
+  String get errorCodesDeleteAdminAccount;
+
+  /// No description provided for @errorCodesDeleteOtherAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only delete your own account'**
+  String get errorCodesDeleteOtherAccount;
+
+  /// No description provided for @errorCodesDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion failed. Please try again.'**
+  String get errorCodesDeleteFailed;
 
   /// No description provided for @paymentMethodUnknown.
   ///

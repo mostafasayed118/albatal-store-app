@@ -32,13 +32,13 @@ final class SupabaseOrdersRepository implements OrdersRepository {
   static const int historyLimit = 50;
 
   @override
-  Future<Result<List<Order>>> readOrders() async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        return const Failure(AppError('Not authenticated'));
-      }
+  Future<Result<List<Order>>> readOrders() {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return Future.value(const Failure(AppError('Not authenticated')));
+    }
 
+    return Result.guard(() async {
       // Fetch orders with embedded items via a join. Supabase PostgREST
       // returns order_items as an array inside each order row.
       final rows = await _client
@@ -60,12 +60,17 @@ final class SupabaseOrdersRepository implements OrdersRepository {
       }
       // Total decode (audit P2): rows without a usable id are skipped so
       // one malformed row can never fail the whole history load.
-      final orders = rows.map(_mapOrder).whereType<Order>().toList();
-      return Success(orders);
-    } on Exception catch (e) {
-      Log.e('readOrders failed', error: e);
-      return Failure(AppError('Failed to load orders', cause: e));
-    }
+      return rows.map(_mapOrder).whereType<Order>().toList();
+    }, 'Failed to load orders', onError: _readOrdersError);
+  }
+
+  /// [Result.guard] error-mapper for the orders history fetch.
+  AppError _readOrdersError(Object e, StackTrace st) {
+    Log.e('readOrders failed', error: e);
+    // Machine code for UI localization (audit 2026-09-14); the English
+    // message stays the fallback for unmapped locales.
+    return AppError('Failed to load orders',
+        code: 'orders_load_failed', cause: e);
   }
 
   /// Total decode of an order row: every field degrades to the entity

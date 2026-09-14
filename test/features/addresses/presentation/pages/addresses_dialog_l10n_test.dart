@@ -77,4 +77,26 @@ void main() {
 
     expect(find.text('This field is required'), findsNWidgets(4));
   });
+
+  testWidgets('address dialog caps unbounded input (audit 2026-09-14)',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_harness());
+    await _openDialog(tester);
+
+    final long = 'x' * 200;
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Recipient').first, long);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Street address').first, long);
+    await tester.pump();
+
+    // maxLength truncates instead of letting unbounded text flow into the
+    // order address snapshot.
+    final recipient = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Recipient').first);
+    final street = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Street address').first);
+    expect(recipient.controller!.text.length, 60);
+    expect(street.controller!.text.length, 120);
+  });
 }

@@ -103,6 +103,52 @@ void main() {
     expect(result, isA<Failure<String>>());
   });
 
+  // Audit 2026-09-14: the RPCs write into INTEGER minor-unit columns
+  // (migration 001), so the params must be exact ints, not doubles.
+  test('adminUpsertVariant sends an int minor-unit price override', () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('admin_upsert_variant', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>('v-1'));
+    final repo = SupabaseAdminRepository(client: client);
+    final result = await repo.adminUpsertVariant(
+      productId: 'p1',
+      size: 'M',
+      color: 'Navy',
+      stock: 3,
+      priceOverride: 45500.0,
+    );
+    verify(() => client.rpc('admin_upsert_variant', params: {
+          'p_product_id': 'p1',
+          'p_size': 'M',
+          'p_color': 'Navy',
+          'p_stock': 3,
+          'p_price_override': 45500,
+        })).called(1);
+    expect(result.when(success: (v) => v, failure: (e) => null), 'v-1');
+  });
+
+  test('adminUpsertProduct sends an int minor-unit base price', () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('admin_upsert_product', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>('p-1'));
+    final repo = SupabaseAdminRepository(client: client);
+    await repo.adminUpsertProduct(
+      name: 'Silk',
+      slug: 'silk',
+      categoryId: 'cat-1',
+      basePrice: 129050.0,
+      isActive: true,
+    );
+    // Single captureAny verify: a prior `.called(1)` verify marks the
+    // call as consumed in mocktail, so a second verify would see no
+    // matching calls (audit 2026-09-14 fix).
+    final captured = verify(() => client.rpc('admin_upsert_product',
+            params: captureAny(named: 'params')))
+        .captured.single as Map<String, dynamic>;
+    expect(captured['p_base_price'], 129050);
+    expect(captured['p_base_price'], isA<int>());
+  });
+
   test('getAllProducts bounds the query with limit(100) + range page',
       () async {
     final client = MockSupabaseClient();

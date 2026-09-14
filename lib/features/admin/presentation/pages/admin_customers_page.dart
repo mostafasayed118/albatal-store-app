@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/utils/error_l10n.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_customers_cubit.dart';
 
@@ -53,7 +54,13 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           if (state.status == AdminCustomersStatus.error) {
             return Scaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
-              body: Center(child: Text(state.errorMessage ?? '')),
+              // Code-based localization (audit 2026-09-14): failures with
+              // a machine code map to localized copy; unknown codes keep
+              // the English fallback verbatim.
+              body: Center(
+                  child: Text(localizedErrorMessage(
+                      context, state.errorMessage, code: state.errorCode) ??
+                  '')),
             );
           }
           return Scaffold(

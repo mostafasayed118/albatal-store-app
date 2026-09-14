@@ -903,6 +903,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get passwordTooShort => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
 
   @override
+  String get passwordRuleHint => '8 أحرف على الأقل، مع حرف ورقم واحد على الأقل';
+
+  @override
+  String get passwordNeedsLetterDigit =>
+      'يجب أن تحتوي كلمة المرور على حرف ورقم واحد على الأقل';
+
+  @override
   String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
 
   @override
@@ -1334,6 +1341,68 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkoutFailedRetry => 'فشل إتمام الطلب. يرجى المحاولة مجددًا.';
+
+  @override
+  String get errorCodesCouponUnavailable => 'كود الخصم غير متاح حاليًا.';
+
+  @override
+  String get errorCodesReviewBuyRequired =>
+      'يرجى شراء هذا المنتج قبل كتابة مراجعة.';
+
+  @override
+  String get errorCodesReviewInvalid => 'تعذر إرسال هذه المراجعة.';
+
+  @override
+  String get errorCodesReviewUnavailable => 'المراجعات غير متاحة حاليًا.';
+
+  @override
+  String get errorCodesOrdersLoadFailed =>
+      'تعذر تحميل طلباتك. يرجى المحاولة مجددًا.';
+
+  @override
+  String get errorCodesAuthInvalidCredentials =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+
+  @override
+  String get errorCodesAuthEmailNotConfirmed =>
+      'يرجى تأكيد بريدك الإلكتروني أولًا';
+
+  @override
+  String get errorCodesAuthEmailTaken =>
+      'يوجد حساب بهذا البريد الإلكتروني بالفعل';
+
+  @override
+  String get errorCodesAuthWeakPassword =>
+      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
+
+  @override
+  String get errorCodesAuthUnexpected => 'حدث خطأ غير متوقع';
+
+  @override
+  String get errorCodesAuthSignupFailed =>
+      'فشل إنشاء الحساب. يرجى المحاولة مجددًا.';
+
+  @override
+  String get errorCodesAuthSigninFailed =>
+      'فشل تسجيل الدخول. يرجى المحاولة مجددًا.';
+
+  @override
+  String get errorCodesAuthSessionExpired =>
+      'انتهت صلاحية جلستك. يرجى تسجيل الدخول مجددًا.';
+
+  @override
+  String get errorCodesDeleteEmailMismatch =>
+      'البريد الإلكتروني لا يطابق هذا الحساب';
+
+  @override
+  String get errorCodesDeleteAdminAccount =>
+      'لا يمكن حذف حسابات المشرفين من التطبيق';
+
+  @override
+  String get errorCodesDeleteOtherAccount => 'يمكنك حذف حسابك فقط';
+
+  @override
+  String get errorCodesDeleteFailed => 'فشل حذف الحساب. يرجى المحاولة مجددًا.';
 
   @override
   String get paymentMethodUnknown => 'غير معروف';

@@ -16,11 +16,17 @@ final class OrdersState extends Equatable {
     this.orders = const [],
     this.status = OrdersStatus.ready,
     this.errorMessage,
+    this.errorCode,
   });
 
   final List<Order> orders;
   final OrdersStatus status;
   final String? errorMessage;
+
+  /// Machine-readable error classification from [AppError.code] for
+  /// UI localization (audit 2026-09-14); null when the failure carried
+  /// no code — pages fall back to [errorMessage] verbatim.
+  final String? errorCode;
 
   /// Lazy storage for the tab views (same pattern as CatalogState's
   /// `_CatalogMemos`): the orders page reads all three tabs per build,
@@ -75,15 +81,17 @@ final class OrdersState extends Equatable {
     List<Order>? orders,
     OrdersStatus? status,
     String? errorMessage,
+    String? errorCode,
   }) =>
       OrdersState(
         orders: orders ?? this.orders,
         status: status ?? this.status,
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [orders, status, errorMessage];
+  List<Object?> get props => [orders, status, errorMessage, errorCode];
 }
 
 /// Per-state lazy storage for [OrdersState]'s tab views. Mutable by
@@ -111,6 +119,7 @@ final class OrdersCubit extends Cubit<OrdersState> {
         emit(state.copyWith(
           status: OrdersStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

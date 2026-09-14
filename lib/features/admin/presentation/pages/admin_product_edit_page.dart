@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
@@ -75,10 +76,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _gsmCtrl = TextEditingController(text: safeString(d, 'gsm'));
     _minCutCtrl = TextEditingController(text: safeString(d, 'min_cut_meters'));
     _sellByLength = safeString(d, 'sell_by_length') == 'true';
-    final price = d?['base_price'];
-    _priceCtrl = TextEditingController(
-      text: price == null ? '' : price.toString(),
-    );
+    _priceCtrl = TextEditingController(text: _minorToInput(d?['base_price']));
     _isActive = safeBool(d, 'is_active', fallback: true);
     _selectedCategoryId = d?['category_id'] as String?;
     if (widget.productId != null && d == null) {
@@ -120,18 +118,19 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _minCutCtrl.text = product.minCutMeters?.toString() ?? '';
     _sellByLength = product.sellByLength;
     _priceCtrl.text =
-        product.basePrice == 0 ? '' : _trimTrailingZeros(product.basePrice);
+        product.basePrice == 0 ? '' : _minorToInput(product.basePrice);
     _isActive = product.isActive;
     _selectedCategoryId = product.categoryId;
     setState(() => _loadingProduct = false);
   }
 
-  /// Prices render whole-EGP style across the admin surfaces (1890, not
-  /// 1890.0); keep the form consistent when prefilling from the row.
-  static String _trimTrailingZeros(double value) {
-    final s = value.toStringAsFixed(2);
-    return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
-  }
+  /// Rows carry INTEGER minor units (migration 001) while the form edits
+  /// major EGP ("1890", or "1290.50"); prefill converts via [Money] so
+  /// the admin never sees raw cents in the field (audit 2026-09-14).
+  static String _minorToInput(Object? minorRaw) =>
+      minorRaw is num && minorRaw > 0
+          ? Money(minorRaw.round()).format(symbol: '')
+          : '';
 
   Future<void> _loadCategories() async {
     try {
@@ -207,12 +206,22 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       showFloatingError(context, 'Please select a category');
       return;
     }
-    final price = double.tryParse(_priceCtrl.text.trim());
-    if (price == null) {
-      showFloatingError(context, 'Invalid price');
+    // The form collects EGP text; [Money.tryParseMajor] is the single
+    // ×100 conversion point into minor units (audit 2026-09-14).
+    final priceMinor = Money.tryParseMajor(_priceCtrl.text.trim());
+    if (priceMinor == null) {
+      // tryParseMajor rejects negatives as malformed input; keep the
+      // dedicated message so the admin sees the real problem (audit
+      // 2026-09-14 regression: '-50' must not read as 'Invalid price').
+      showFloatingError(
+        context,
+        _priceCtrl.text.trim().startsWith('-')
+            ? 'Price cannot be negative'
+            : 'Invalid price',
+      );
       return;
     }
-    if (price <= 0) {
+    if (priceMinor.minorUnits <= 0) {
       // The DB enforces this too (001: base_price > 0), but failing here
       // gives an inline message instead of a generic save failure.
       showFloatingError(context, 'Price cannot be negative');
@@ -236,7 +245,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       sellByLength: _sellByLength,
       minCutMeters: double.tryParse(_minCutCtrl.text.trim()),
       categoryId: _selectedCategoryId!,
-      basePrice: price,
+      basePrice: priceMinor.minorUnits.toDouble(),
       isActive: _isActive,
     );
     if (!mounted) return;
@@ -321,7 +330,15 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                   const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Required';
-                if (double.tryParse(v.trim()) == null) return 'Invalid number';
+                // Syntax check only: a leading '-' is syntactically valid
+                // but rejected semantically by _submit with the dedicated
+                // 'Price cannot be negative' message (audit 2026-09-14).
+                final text = v.trim();
+                final magnitude =
+                    text.startsWith('-') ? text.substring(1) : text;
+                if (Money.tryParseMajor(magnitude) == null) {
+                  return 'Invalid number';
+                }
                 return null;
               },
             ),

@@ -22,10 +22,16 @@ final class SupabaseRemoteConfigFetcher implements RemoteConfigFetcher {
   @override
   Future<Map<String, String>> fetch() async {
     final rows = await _client.from('app_config').select('key, value');
-    final list = rows as List<dynamic>;
+    // Defensive decode (audit 2026-09-14): rows is untyped, so a
+    // malformed payload would throw a TypeError — an Error, not an
+    // Exception — that the caller's catch guard cannot treat as a
+    // normal fetch failure. Skip malformed rows instead; the service
+    // falls back to defaults for the missing keys.
+    final Object payload = rows; // erase the declared type: trust nothing
+    final list = payload is List ? payload : const <dynamic>[];
     return {
-      for (final row in list.cast<Map<String, dynamic>>())
-        if (row['key'] is String && row['value'] is String)
+      for (final row in list)
+        if (row is Map && row['key'] is String && row['value'] is String)
           row['key'] as String: row['value'] as String,
     };
   }
@@ -76,7 +82,10 @@ class RemoteConfigService {
       _fetchedAt = now;
       _maintenanceMode = null; // invalidate typed reads
       _updateRequired = null;
-    } on Exception catch (e, st) {
+    } catch (e, st) {
+      // Catch-all, not `on Exception`: a malformed payload can throw a
+      // TypeError (an Error), which advisory config must swallow like
+      // any other fetch failure — the app never boot-blocks on config.
       Log.w('remote config fetch failed: $e');
       Log.d(st.toString());
     }
