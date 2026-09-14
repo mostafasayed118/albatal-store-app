@@ -13,7 +13,6 @@ import '../../../shared/services/logger.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 import '../domain/repositories/catalog_repository.dart';
-import '../presentation/catalog_constants.dart';
 import 'product_mapper.dart';
 
 /// Supabase-backed catalog repository.
@@ -309,7 +308,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   }
 
   @override
-  List<String> get defaultCategories => CatalogConstants.defaults;
+  List<String> get defaultCategories => defaultCatalogCategories;
 
   // ─── Persistent cache helpers ──────────────────────────────
 
@@ -324,8 +323,9 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // Best-effort cache write — never crash the app over persistence.
       await prefs.setString(_persistentCacheKey, jsonEncode(encoded));
     } catch (e) {
-      // Best-effort persistence — never crash the app over a cache write.
-      Log.w('Catalog persistent cache write failed: $e');
+      // Best-effort cache write — never crash the app over persistence.
+      // Logged without the raw error text; audit 2026-09-14 P0-5.
+      Log.w('Catalog persistent cache write failed.', error: e);
     }
   }
 
@@ -347,12 +347,14 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           final product = ProductCodec.decode(entry as Map<Object?, Object?>);
           if (product != null) products.add(product);
         } catch (e) {
-          Log.w('Catalog persistent cache skipping corrupt entry: $e');
+          // Per-entry fail-soft (logged without payload text; P0-5).
+          Log.w('Catalog persistent cache skipping corrupt entry.', error: e);
         }
       }
       return products;
     } catch (e) {
-      Log.w('Catalog persistent cache restore failed: $e');
+      // Fail-soft restore (logged without payload text; P0-5).
+      Log.w('Catalog persistent cache restore failed.', error: e);
       return null;
     }
   }

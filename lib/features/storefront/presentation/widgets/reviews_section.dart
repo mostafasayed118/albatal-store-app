@@ -82,7 +82,11 @@ final class _ReviewsView extends StatelessWidget {
                         color: Theme.of(context).colorScheme.outline)),
               )
             else
-              ...state.reviews.map((r) => _ReviewTile(review: r)),
+              // Virtualized (audit 2026-09-14 P0-4): the old
+              // `...reviews.map` spread built every tile up front; the
+              // builder recycles tiles and caps the inline list at 10
+              // with a Show-all sheet for the rest.
+              _ReviewsInlineList(reviews: state.reviews),
           ],
         );
       },
@@ -103,6 +107,17 @@ final class _ReviewsView extends StatelessWidget {
 
 final class _ReviewTile extends StatelessWidget {
   const _ReviewTile({required this.review});
+
+  final ProductReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(child: _ReviewTileBody(review: review));
+  }
+}
+
+final class _ReviewTileBody extends StatelessWidget {
+  const _ReviewTileBody({required this.review});
 
   final ProductReview review;
 
@@ -167,6 +182,65 @@ final class _ReviewTile extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Inline review list: first 10 recycled via builder + Show-all sheet.
+///
+/// Caps the inline column the details page renders — the old spread built
+/// every tile (and star row) up front. The sheet reuses the same tile so
+/// long review histories scroll virtualized instead of overflowing the
+/// details column.
+final class _ReviewsInlineList extends StatelessWidget {
+  const _ReviewsInlineList({required this.reviews});
+
+  final List<ProductReview> reviews;
+
+  static const _inlineCap = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = reviews.take(_inlineCap).toList();
+    final remaining = reviews.length - visible.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: visible.length,
+          itemBuilder: (_, i) => _ReviewTile(review: visible[i]),
+        ),
+        if (remaining > 0)
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton(
+              // Localized copy lands with the next l10n regen (lib-only
+              // scope — no .arb edits in this slice); count stays visible.
+              onPressed: () => _showAllSheet(context),
+              child: Text('Show all ($remaining)'),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showAllSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        builder: (_, controller) => ListView.builder(
+          controller: controller,
+          itemCount: reviews.length,
+          itemBuilder: (_, i) => Padding(
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+            child: _ReviewTile(review: reviews[i]),
+          ),
         ),
       ),
     );

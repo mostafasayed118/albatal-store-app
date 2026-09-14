@@ -49,8 +49,20 @@ class Log {
     _log(LogLevel.info, category, message);
   }
 
-  static void w(String message, {LogCategory category = LogCategory.app}) {
+  static void w(
+    String message, {
+    LogCategory category = LogCategory.app,
+    dynamic error,
+  }) {
     _log(LogLevel.warning, category, message);
+    if (error != null) {
+      // Release breadcrumbs leave the device: never interpolate the raw
+      // error object at the call site (it can carry URLs, tokens, or PII).
+      // Same safe-summary path as [e]: AppError message in release,
+      // full detail in debug.
+      final summary = kReleaseMode ? _safeErrorSummary(error) : '$error';
+      _log(LogLevel.warning, category, '  Error: $summary');
+    }
   }
 
   static void e(String message,
