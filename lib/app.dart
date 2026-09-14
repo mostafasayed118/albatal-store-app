@@ -22,17 +22,20 @@ import 'features/storefront/domain/repositories/cart_repository.dart';
 import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
 import 'features/storefront/domain/repositories/recent_searches_store.dart';
+import 'features/storefront/domain/repositories/recently_viewed_store.dart';
 import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'features/storefront/presentation/cubit/orders_cubit.dart';
 import 'features/storefront/presentation/cubit/recent_searches_cubit.dart';
+import 'features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
 import 'shared/services/biometric_service.dart';
+import 'shared/services/connectivity_gate.dart';
 import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
@@ -62,6 +65,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final ReorderCubit _reorderCubit;
   late final RecentSearchesCubit _recentSearchesCubit;
+  late final RecentlyViewedCubit _recentlyViewedCubit;
   bool _appLockActive = false;
   late final GoRouter _router;
   StreamSubscription<AuthState>? _authSub;
@@ -104,6 +108,11 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     // reorder cubit so pages stay GetIt-free.
     _recentSearchesCubit = RecentSearchesCubit(
       store: getIt<RecentSearchesStore>(),
+    )..load();
+    // Recently-viewed strip (#3): app-scoped; records flow from the
+    // product-details cubit, the home page only reads.
+    _recentlyViewedCubit = RecentlyViewedCubit(
+      store: getIt<RecentlyViewedStore>(),
     )..load();
     // Inbound deep links (feature-batch §5): parse → navigate. The
     // service swallows plugin errors on platforms without link support
@@ -159,6 +168,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _authRefreshNotifier.dispose();
     _reorderCubit.close();
     _recentSearchesCubit.close();
+    _recentlyViewedCubit.close();
     _authCubit.close();
     super.dispose();
   }
@@ -190,15 +200,28 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                             : null,
                   )..load()),
           BlocProvider(
-              create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
+              // Task #8: pass the connectivity gate so offline loads are
+              // tagged (cached restore / offline notice) instead of
+              // surfacing as errors.
+              create: (_) => CatalogCubit(getIt<CatalogRepository>(),
+                  gate: getIt<ConnectivityGate>())
+                ..load()),
           BlocProvider.value(value: _cartCubit..restore()),
           BlocProvider(
-              create: (_) =>
-                  WishlistCubit(getIt<WishlistRepository>())..restore()),
+              create: (_) => WishlistCubit(
+                    getIt<WishlistRepository>(),
+                    // Composition-root probe (same pattern as the
+                    // settings notification store above): shells without
+                    // the store registered get a no-op toggle.
+                    alertStore: getIt.isRegistered<BackInStockAlertStore>()
+                        ? getIt<BackInStockAlertStore>()
+                        : null,
+                  )..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
           BlocProvider.value(value: _reorderCubit),
           BlocProvider.value(value: _recentSearchesCubit),
+          BlocProvider.value(value: _recentlyViewedCubit),
           BlocProvider(
               create: (_) =>
                   AddressesCubit(getIt<AddressRepository>())..load()),

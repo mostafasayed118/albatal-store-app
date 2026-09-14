@@ -18,10 +18,12 @@ import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/data/notification_prefs_store.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/storefront/data/back_in_stock_alert_store.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
 import '../../features/storefront/data/recent_searches_store.dart';
+import '../../features/storefront/data/recently_viewed_store.dart';
 import '../../features/storefront/data/storefront_persistence.dart';
 import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_coupons_repository.dart';
@@ -35,6 +37,7 @@ import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/idempotency_store.dart';
 import '../../features/storefront/domain/repositories/orders_repository.dart';
 import '../../features/storefront/domain/repositories/recent_searches_store.dart';
+import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
@@ -55,6 +58,7 @@ import 'push_service.dart';
 import 'remote_config_service.dart';
 import 'secure_store.dart';
 import 'storage_service.dart';
+import 'whatsapp_share_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -143,10 +147,18 @@ Future<void> configureDependencies() async {
     // §5: share sheet + inbound deep links (initial + warm events).
     ..registerLazySingleton<ProductShareService>(
         () => const SharePlusProductShareService())
+    // #13: WhatsApp-first product share (wa.me universal link).
+    ..registerLazySingleton<ExternalLinkLauncher>(
+        () => const UrlLauncherExternalLinkLauncher())
+    ..registerLazySingleton<WhatsAppShareService>(
+        () => WaMeWhatsAppShareService(getIt<ExternalLinkLauncher>()))
     ..registerLazySingleton<DeepLinkService>(() => AppLinksDeepLinkService())
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(
         () => PrefsRecentSearchesStore(getIt<SharedPreferences>()))
+    // #3: persisted recently-viewed product snapshots (home strip).
+    ..registerLazySingleton<RecentlyViewedStore>(
+        () => PrefsRecentlyViewedStore(getIt<SharedPreferences>()))
     // §8/§9: coupon validation + customer reviews.
     ..registerLazySingleton<CouponsRepository>(
         () => SupabaseCouponsRepository())
@@ -160,6 +172,9 @@ Future<void> configureDependencies() async {
         () => PrefsNotificationStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<NotificationService>(
         () => LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
+    // Task #5: per-product back-in-stock alert opt-ins (client-side).
+    ..registerLazySingleton<BackInStockAlertStore>(
+        () => PrefsBackInStockAlertStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<PushService>(() => const OneSignalPushService())
     // §15: OAuth sign-in + biometric app lock (both fail-soft).
     ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())

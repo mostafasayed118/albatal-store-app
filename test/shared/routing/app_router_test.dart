@@ -10,6 +10,7 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart
 import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_sales.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
@@ -460,6 +461,14 @@ final class _RouteProbeAdminRepository implements AdminRepository {
   Future<Result<List<LowStockVariant>>> getLowStockProducts(
           {int threshold = 5}) async =>
       const Success([]);
+
+  @override
+  Future<Result<AdminSalesOverview>> getSalesOverview({int days = 14}) async =>
+      const Success(AdminSalesOverview(
+        revenueByDay: [],
+        topProducts: [],
+        statusCounts: [],
+      ));
 
   @override
   Future<Result<void>> updateStock(String variantId, int newStock) async =>

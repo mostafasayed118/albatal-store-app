@@ -19,6 +19,11 @@ dependencies:
   get_it: ^9.2.1
   go_router: ^18.0.1
   intl: ^0.20.2
+  # Admin sales dashboard revenue chart (#12, owner-approved). Pinned to
+  # 0.71.0 — the newest release whose min Dart SDK (3.2) stays compatible
+  # with this project's declared Dart >=3.3 floor; fl_chart 1.x needs Dart
+  # >=3.6 and would silently raise the project's SDK floor.
+  fl_chart: ^0.71.0
   sentry_flutter: ^9.28.0
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^11.0.0 # encrypted at-rest PII + Supabase session (residual-P1, owner-approved)
@@ -43,6 +48,7 @@ dependencies:
   pdf: ^3.13.0 # §16 branded invoice PDF
   printing: ^5.15.0 # §16 invoice save/share
   package_info_plus: ^10.2.1 # §13 forced-update min-version check
+  photo_view: ^0.15.0 # §7 fullscreen pinch-zoom gallery (task #7, owner-approved re-add)
   # intl 0.20.3 requires a newer flutter_localizations pin; revisit after next Flutter stable.
 
 dev_dependencies:

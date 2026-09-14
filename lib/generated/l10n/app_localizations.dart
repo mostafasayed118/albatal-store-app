@@ -464,6 +464,18 @@ abstract class AppLocalizations {
   /// **'Delivered'**
   String get delivered;
 
+  /// No description provided for @confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get confirmed;
+
+  /// No description provided for @orderTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order tracking'**
+  String get orderTimelineTitle;
+
   /// No description provided for @noItemsFound.
   ///
   /// In en, this message translates to:
@@ -770,6 +782,18 @@ abstract class AppLocalizations {
   /// **'Shop Now'**
   String get shopNow;
 
+  /// Screen-reader label for the flash-sale countdown
+  ///
+  /// In en, this message translates to:
+  /// **'Flash sale ends in {time}'**
+  String flashSaleTimeRemaining(String time);
+
+  /// Screen-reader label for a hero carousel page dot
+  ///
+  /// In en, this message translates to:
+  /// **'Go to slide {number}'**
+  String goToSlide(int number);
+
   /// No description provided for @decreaseQuantity.
   ///
   /// In en, this message translates to:
@@ -793,6 +817,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add to wishlist'**
   String get addToWishlist;
+
+  /// No description provided for @removeFromWishlistAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from wishlist'**
+  String get removeFromWishlistAction;
 
   /// No description provided for @fabricCategories.
   ///
@@ -818,6 +848,18 @@ abstract class AppLocalizations {
   /// **'Share product'**
   String get shareProduct;
 
+  /// No description provided for @whatsappShareProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Share on WhatsApp'**
+  String get whatsappShareProduct;
+
+  /// WhatsApp prefill: product name, price and deep link
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — {price}\n{url}'**
+  String whatsappShareProductMessage(Object name, Object price, Object url);
+
   /// No description provided for @reorder.
   ///
   /// In en, this message translates to:
@@ -829,6 +871,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent searches'**
   String get recentSearches;
+
+  /// No description provided for @recentlyViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get recentlyViewed;
 
   /// No description provided for @searchSuggestions.
   ///
@@ -1021,6 +1069,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sold by the meter — minimum cut applies.'**
   String get sellByLengthNote;
+
+  /// Running line price under the cut-length selector
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated total: {total}'**
+  String cutLengthEstimatedTotal(String total);
+
+  /// No description provided for @pricingTiersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wholesale pricing'**
+  String get pricingTiersTitle;
+
+  /// One wholesale tier row: minimum meters and discount
+  ///
+  /// In en, this message translates to:
+  /// **'{meters}+ m — {percent}% off'**
+  String pricingTierRow(String meters, int percent);
+
+  /// No description provided for @orderSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Order fabric sample'**
+  String get orderSample;
+
+  /// No description provided for @sampleAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample added to your cart'**
+  String get sampleAdded;
+
+  /// No description provided for @sampleLineItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample'**
+  String get sampleLineItem;
 
   /// No description provided for @maintenanceTitle.
   ///
@@ -2473,6 +2557,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment session not found'**
   String get instapaySessionMissing;
+
+  /// No description provided for @galleryViewerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product image viewer'**
+  String get galleryViewerLabel;
+
+  /// No description provided for @galleryClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get galleryClose;
+
+  /// No description provided for @galleryZoomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinch to zoom'**
+  String get galleryZoomHint;
+
+  /// No description provided for @gallerySwipeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to browse photos'**
+  String get gallerySwipeHint;
+
+  /// No description provided for @notifyWhenBackInStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me when back in stock'**
+  String get notifyWhenBackInStock;
+
+  /// No description provided for @backInStockAlertOn.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll notify you when {product} is back in stock'**
+  String backInStockAlertOn(String product);
+
+  /// No description provided for @backInStockAlertOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Back-in-stock alert removed'**
+  String get backInStockAlertOff;
+
+  /// No description provided for @backInStockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Back in stock'**
+  String get backInStockTitle;
+
+  /// No description provided for @backInStockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{product} is back in stock'**
+  String backInStockBody(String product);
 }
 
 class _AppLocalizationsDelegate

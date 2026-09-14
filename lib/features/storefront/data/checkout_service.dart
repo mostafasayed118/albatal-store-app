@@ -8,6 +8,7 @@ import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../../payments/domain/entities/payment.dart';
 import '../domain/entities/pending_order.dart';
+import '../domain/pricing/cut_length_pricing.dart';
 import '../domain/repositories/checkout_repository.dart';
 
 /// Server-authoritative checkout service.
@@ -68,6 +69,22 @@ class CheckoutService implements CheckoutRepository {
                     'size': item.length,
                     'color': item.color,
                     'quantity': item.quantity,
+                    // Wave C: sample lines are flagged so the checkout
+                    // flow can apply the fixed sample price server-side
+                    // (enforcement = pending supabase/ follow-up; extra
+                    // JSON keys are ignored by the pre-update RPC).
+                    if (item.sample) 'sample': true,
+                    // Metered lines carry the cut meters plus the client
+                    // estimate so the server can cross-check; when the
+                    // wholesale tier dropped the per-meter price, the
+                    // discounted value rides along as `tiered_price`
+                    // (minor units) for server-side validation.
+                    if (item.cutMeters case final meters?) ...{
+                      'meters': meters,
+                      'line_total': item.effectiveLineTotal.minorUnits,
+                      if (item.effectivePerMeterPrice! != item.product.price)
+                        'tiered_price': item.effectivePerMeterPrice!.minorUnits,
+                    },
                   })
               .toList(),
           // §8: only sent when a coupon validated — the pre-049 RPC

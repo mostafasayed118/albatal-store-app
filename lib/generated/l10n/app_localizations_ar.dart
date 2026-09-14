@@ -196,6 +196,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get delivered => 'تم التوصيل';
 
   @override
+  String get confirmed => 'تم التأكيد';
+
+  @override
+  String get orderTimelineTitle => 'تتبع الطلب';
+
+  @override
   String get noItemsFound => 'لا توجد عناصر';
 
   @override
@@ -363,6 +369,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shopNow => 'تسوق الآن';
 
   @override
+  String flashSaleTimeRemaining(String time) {
+    return 'ينتهي التخفيض السريع بعد $time';
+  }
+
+  @override
+  String goToSlide(int number) {
+    return 'الانتقال إلى الشريحة $number';
+  }
+
+  @override
   String get decreaseQuantity => 'تقليل الكمية';
 
   @override
@@ -373,6 +389,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addToWishlist => 'إضافة إلى المفضلة';
+
+  @override
+  String get removeFromWishlistAction => 'إزالة من المفضلة';
 
   @override
   String get fabricCategories => 'فئات الأقمشة';
@@ -399,10 +418,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shareProduct => 'مشاركة المنتج';
 
   @override
+  String get whatsappShareProduct => 'مشاركة عبر واتساب';
+
+  @override
+  String whatsappShareProductMessage(Object name, Object price, Object url) {
+    return '$name بسعر $price\n$url';
+  }
+
+  @override
   String get reorder => 'إعادة الطلب';
 
   @override
   String get recentSearches => 'عمليات البحث الأخيرة';
+
+  @override
+  String get recentlyViewed => 'المنتجات المشاهدة مؤخرًا';
 
   @override
   String get searchSuggestions => 'اقتراحات';
@@ -505,6 +535,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sellByLengthNote => 'يُباع بالمتر — يوجد حد أدنى للقص.';
+
+  @override
+  String cutLengthEstimatedTotal(String total) {
+    return 'الإجمالي التقديري: $total';
+  }
+
+  @override
+  String get pricingTiersTitle => 'أسعار الجملة';
+
+  @override
+  String pricingTierRow(String meters, int percent) {
+    return '$meters+ م — خصم $percent٪';
+  }
+
+  @override
+  String get orderSample => 'اطلب عينة قماش';
+
+  @override
+  String get sampleAdded => 'تمت إضافة العينة إلى سلتك';
+
+  @override
+  String get sampleLineItem => 'عينة';
 
   @override
   String get maintenanceTitle => 'سنعود قريبًا';
@@ -1297,4 +1349,35 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'لم يتم العثور على جلسة الدفع';
+
+  @override
+  String get galleryViewerLabel => 'عارض صور المنتج';
+
+  @override
+  String get galleryClose => 'إغلاق';
+
+  @override
+  String get galleryZoomHint => 'قرّب بإصبعين';
+
+  @override
+  String get gallerySwipeHint => 'اسحب لاستعراض الصور';
+
+  @override
+  String get notifyWhenBackInStock => 'أعلمني عند توفره من جديد';
+
+  @override
+  String backInStockAlertOn(String product) {
+    return 'سنعلمك عندما يتوفر $product من جديد';
+  }
+
+  @override
+  String get backInStockAlertOff => 'تمت إزالة تنبيه توفر المنتج';
+
+  @override
+  String get backInStockTitle => 'متوفر من جديد';
+
+  @override
+  String backInStockBody(String product) {
+    return 'توفر $product من جديد';
+  }
 }

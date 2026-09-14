@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 import 'logger.dart';
@@ -17,9 +18,16 @@ import 'logger.dart';
 /// [current]. The injected [InternetConnection] singleton is never disposed
 /// here — only this gate's own subscriptions are cancelled in [dispose].
 class ConnectivityGate {
-  ConnectivityGate({Connectivity? connectivity, InternetConnection? checker})
+  /// [seedOnline] pins [current] without the plugin stack so cubit and
+  /// widget tests can stub the gate offline ([start] never called).
+  /// Production callers leave the optimistic-online default.
+  ConnectivityGate(
+      {Connectivity? connectivity,
+      InternetConnection? checker,
+      @visibleForTesting bool seedOnline = true})
       : _connectivity = connectivity ?? Connectivity(),
-        _checker = checker ?? InternetConnection();
+        _checker = checker ?? InternetConnection(),
+        _current = seedOnline;
 
   final Connectivity _connectivity;
   final InternetConnection _checker;

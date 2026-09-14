@@ -13,6 +13,7 @@ import '../../features/admin/presentation/pages/admin_orders_page.dart';
 import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
 import '../../features/admin/presentation/pages/admin_products_page.dart';
 import '../../features/admin/presentation/pages/admin_reviews_page.dart';
+import '../../features/admin/presentation/pages/admin_sales_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
@@ -130,6 +131,7 @@ final _routes = <RouteBase>[
     builder: (_, s) => DetailsPage(
       id: s.pathParameters['id']!,
       catalogRepository: getIt<CatalogRepository>(),
+      gate: getIt<ConnectivityGate>(),
     ),
   ),
   GoRoute(
@@ -227,6 +229,13 @@ final _routes = <RouteBase>[
   GoRoute(
     path: Routes.adminCatalog,
     builder: (_, __) => AdminCatalogPage(repository: getIt<AdminRepository>()),
+  ),
+  GoRoute(
+    path: Routes.adminSales,
+    // Read-only sales dashboard (#12); repository resolved at the
+    // composition root like every other admin destination.
+    builder: (_, __) =>
+        AdminSalesDashboardPage(repository: getIt<AdminRepository>()),
   ),
   // Catalog management destinations (migration-era hub tiles pointed at
   // these paths, but the routes themselves were never registered — every

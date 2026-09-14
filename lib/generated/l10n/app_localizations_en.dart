@@ -196,6 +196,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delivered => 'Delivered';
 
   @override
+  String get confirmed => 'Confirmed';
+
+  @override
+  String get orderTimelineTitle => 'Order tracking';
+
+  @override
   String get noItemsFound => 'No items found';
 
   @override
@@ -361,6 +367,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shopNow => 'Shop Now';
 
   @override
+  String flashSaleTimeRemaining(String time) {
+    return 'Flash sale ends in $time';
+  }
+
+  @override
+  String goToSlide(int number) {
+    return 'Go to slide $number';
+  }
+
+  @override
   String get decreaseQuantity => 'Decrease quantity';
 
   @override
@@ -371,6 +387,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addToWishlist => 'Add to wishlist';
+
+  @override
+  String get removeFromWishlistAction => 'Remove from wishlist';
 
   @override
   String get fabricCategories => 'Fabric Categories';
@@ -394,10 +413,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProduct => 'Share product';
 
   @override
+  String get whatsappShareProduct => 'Share on WhatsApp';
+
+  @override
+  String whatsappShareProductMessage(Object name, Object price, Object url) {
+    return '$name — $price\n$url';
+  }
+
+  @override
   String get reorder => 'Reorder';
 
   @override
   String get recentSearches => 'Recent searches';
+
+  @override
+  String get recentlyViewed => 'Recently viewed';
 
   @override
   String get searchSuggestions => 'Suggestions';
@@ -500,6 +530,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sellByLengthNote => 'Sold by the meter — minimum cut applies.';
+
+  @override
+  String cutLengthEstimatedTotal(String total) {
+    return 'Estimated total: $total';
+  }
+
+  @override
+  String get pricingTiersTitle => 'Wholesale pricing';
+
+  @override
+  String pricingTierRow(String meters, int percent) {
+    return '$meters+ m — $percent% off';
+  }
+
+  @override
+  String get orderSample => 'Order fabric sample';
+
+  @override
+  String get sampleAdded => 'Sample added to your cart';
+
+  @override
+  String get sampleLineItem => 'Sample';
 
   @override
   String get maintenanceTitle => 'We\'ll be right back';
@@ -1297,4 +1349,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'Payment session not found';
+
+  @override
+  String get galleryViewerLabel => 'Product image viewer';
+
+  @override
+  String get galleryClose => 'Close';
+
+  @override
+  String get galleryZoomHint => 'Pinch to zoom';
+
+  @override
+  String get gallerySwipeHint => 'Swipe to browse photos';
+
+  @override
+  String get notifyWhenBackInStock => 'Notify me when back in stock';
+
+  @override
+  String backInStockAlertOn(String product) {
+    return 'We\'ll notify you when $product is back in stock';
+  }
+
+  @override
+  String get backInStockAlertOff => 'Back-in-stock alert removed';
+
+  @override
+  String get backInStockTitle => 'Back in stock';
+
+  @override
+  String backInStockBody(String product) {
+    return '$product is back in stock';
+  }
 }

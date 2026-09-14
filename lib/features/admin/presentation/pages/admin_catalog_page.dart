@@ -90,6 +90,14 @@ class AdminCatalogPage extends StatelessWidget {
             subtitle: l10n.adminSearch,
             onTap: () => _guardedPush(context, '/admin/customers'),
           ),
+          // Sales dashboard (#12): admin-only, intentionally English
+          // in-code — no ARB keys for admin-only copy.
+          _ManagementTile(
+            icon: Icons.insights_outlined,
+            title: 'Sales Dashboard',
+            subtitle: 'Revenue, best sellers, low stock',
+            onTap: () => _guardedPush(context, Routes.adminSales),
+          ),
         ],
       ),
     );

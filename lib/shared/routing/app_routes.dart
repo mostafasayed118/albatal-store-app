@@ -43,6 +43,8 @@ abstract final class Routes {
   // Feature-batch §9/§14 + §13 surfaces (merged locally with the batch).
   static const adminReviews = '/admin/reviews';
   static const adminCustomers = '/admin/customers';
+  // Read-only sales dashboard (#12).
+  static const adminSales = '/admin/sales';
   static const maintenance = '/maintenance';
 
   /// Product details for [id].

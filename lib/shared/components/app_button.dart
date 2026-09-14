@@ -22,7 +22,22 @@ final class AppButton extends StatelessWidget {
         : Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-            children: [Text(label), const SizedBox(width: 8), Icon(icon)],
+            children: [
+              // Flexible + ellipsis: the label yields to the icon when the
+              // button is width-constrained at large text scales (1.4×)
+              // instead of overflowing. Loose fit keeps the default
+              // content-sized behavior at the standard scale.
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(icon),
+            ],
           );
     return switch (style) {
       AppButtonStyle.primary =>

@@ -2,8 +2,10 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/recently_viewed_store.dart';
 
 enum DetailsStatus { initial, loading, ready, notFound, error }
 
@@ -16,6 +18,7 @@ final class DetailsState extends Equatable {
     this.length = '',
     this.quantity = 1,
     this.errorMessage,
+    this.isOffline = false,
   });
 
   final DetailsStatus status;
@@ -25,6 +28,12 @@ final class DetailsState extends Equatable {
   final String length;
   final int quantity;
   final String? errorMessage;
+
+  /// Connectivity truth sampled at load time (Task #8 offline catalog).
+  /// An error / not-found while offline renders a friendly offline
+  /// notice instead of the generic error FeedbackView; a ready state
+  /// under `isOffline` was resolved from the persistent catalog cache.
+  final bool isOffline;
 
   /// Stock for the currently selected variant.
   int get stock => product?.stockFor(color, length) ?? 0;
@@ -38,6 +47,7 @@ final class DetailsState extends Equatable {
     String? length,
     int? quantity,
     String? errorMessage,
+    bool? isOffline,
   }) =>
       DetailsState(
         status: status ?? this.status,
@@ -47,6 +57,7 @@ final class DetailsState extends Equatable {
         length: length ?? this.length,
         quantity: quantity ?? this.quantity,
         errorMessage: errorMessage,
+        isOffline: isOffline ?? this.isOffline,
       );
 
   @override
@@ -58,13 +69,25 @@ final class DetailsState extends Equatable {
         length,
         quantity,
         errorMessage,
+        isOffline,
       ];
 }
 
 final class ProductDetailsCubit extends Cubit<DetailsState> {
-  ProductDetailsCubit(this._catalogRepository) : super(const DetailsState());
+  ProductDetailsCubit(this._catalogRepository,
+      {this.recentlyViewed, ConnectivityGate? gate})
+      : _gate = gate,
+        super(const DetailsState());
 
   final CatalogRepository _catalogRepository;
+
+  /// #3: app-scoped recently-viewed store. Null in widget tests that
+  /// pump the page without the store registered (fail-soft probe).
+  final RecentlyViewedStore? recentlyViewed;
+
+  /// Optional connectivity truth (Task #8). Null keeps the legacy
+  /// online-assumption behaviour for existing test seams.
+  final ConnectivityGate? _gate;
 
   /// Generation counter against A→B clobber: every [loadProduct] call
   /// bumps it, and each async continuation bails when its generation is
@@ -80,7 +103,8 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
   /// never the full catalog pull.
   Future<void> loadProduct(String id) async {
     final generation = ++_generation;
-    emit(const DetailsState(status: DetailsStatus.loading));
+    final offline = _gate?.current == false;
+    emit(DetailsState(status: DetailsStatus.loading, isOffline: offline));
 
     try {
       final singleResult = await _catalogRepository.fetchProductById(id);
@@ -106,7 +130,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
           related = <Product>[];
         }
         if (generation != _generation) return;
-        emit(_readyState(singleProduct, related));
+        emit(_readyState(singleProduct, related, offline: offline));
         return;
       }
 
@@ -118,38 +142,48 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
           final matches = allProducts.where((x) => x.id == id);
           final product = matches.isEmpty ? null : matches.first;
           if (product == null) {
-            emit(const DetailsState(status: DetailsStatus.notFound));
+            emit(DetailsState(
+                status: DetailsStatus.notFound, isOffline: offline));
             return;
           }
           final related = allProducts
               .where(
                   (x) => x.category == product.category && x.id != product.id)
               .toList();
-          emit(_readyState(product, related));
+          emit(_readyState(product, related, offline: offline));
         },
-        failure: (_) => emit(const DetailsState(
+        failure: (_) => emit(DetailsState(
           status: DetailsStatus.error,
           errorMessage: 'Unable to load product details.',
+          isOffline: offline,
         )),
       );
     } catch (e) {
       if (generation != _generation) return;
       Log.w('Product details load failed: $e');
-      emit(const DetailsState(
+      emit(DetailsState(
         status: DetailsStatus.error,
         errorMessage: 'Unable to load product details.',
+        isOffline: offline,
       ));
     }
   }
 
-  DetailsState _readyState(Product product, List<Product> related) =>
-      DetailsState(
-        status: DetailsStatus.ready,
-        product: product,
-        relatedProducts: related,
-        color: product.colors.isNotEmpty ? product.colors.first : '',
-        length: product.sizes.isNotEmpty ? product.sizes.first : '',
-      );
+  DetailsState _readyState(Product product, List<Product> related,
+      {bool offline = false}) {
+    // #3: record the view before the ready emit so the home strip is
+    // already fresh when the shopper returns. Sync prefs write, so no
+    // isClosed hazard.
+    recentlyViewed?.record(product);
+    return DetailsState(
+      status: DetailsStatus.ready,
+      product: product,
+      relatedProducts: related,
+      color: product.colors.isNotEmpty ? product.colors.first : '',
+      length: product.sizes.isNotEmpty ? product.sizes.first : '',
+      isOffline: offline,
+    );
+  }
 
   void color(String value) {
     // Reject values outside the loaded product's variant set (stale chips

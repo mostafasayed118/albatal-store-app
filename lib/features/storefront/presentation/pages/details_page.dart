@@ -5,18 +5,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/product.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../../domain/repositories/recently_viewed_store.dart';
+import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
+import '../widgets/back_in_stock_toggle.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
 import '../widgets/name_and_price.dart';
+import '../widgets/offline_catalog_view.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';
@@ -27,16 +35,40 @@ import '../widgets/wishlist_toggle_icon.dart';
 
 /// Product details. The catalog repository is constructor-injected
 /// (audit P1); the router resolves it at the composition root, widget
-/// tests pass a fake directly.
+/// tests pass a fake directly. The optional [gate] (Task #8) lets the
+/// cubit tag offline loads so a network-miss while offline shows the
+/// friendly notice instead of a hard error.
 class DetailsPage extends StatelessWidget {
   const DetailsPage(
       {super.key,
       required this.id,
-      required CatalogRepository catalogRepository})
-      : _catalogRepository = catalogRepository;
+      required CatalogRepository catalogRepository,
+      this.whatsappShareService,
+      ConnectivityGate? gate})
+      : _catalogRepository = catalogRepository,
+        _gate = gate;
 
   final String id;
   final CatalogRepository _catalogRepository;
+  final ConnectivityGate? _gate;
+
+  /// #13: optional seam for widget tests; defaults to the getIt-registered
+  /// wa.me service (same injection pattern as [_catalogRepository]).
+  final WhatsAppShareService? whatsappShareService;
+
+  /// #13: WhatsApp-first share — localized prefill (name + price + deep
+  /// link) handed to the wa.me universal link. A launch that no external
+  /// app takes must still acknowledge the tap: the shared floating-error
+  /// helper (never a raw snackbar), mirroring the Support page pattern.
+  Future<void> _shareOnWhatsApp(BuildContext context, Product p) async {
+    final launched =
+        await (whatsappShareService ?? getIt<WhatsAppShareService>()).share(
+            context.l10n.whatsappShareProductMessage(
+                p.name, p.price.format(), productUrl(p.id)));
+    if (!launched && context.mounted) {
+      showFloatingError(context, context.l10n.couldNotOpenLink);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +76,15 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository)..loadProduct(id),
+      // #3: record the view into the app-scoped store. Composition-root
+      // probe so widget tests can pump the page pre-DI.
+      create: (_) => ProductDetailsCubit(
+        _catalogRepository,
+        gate: _gate,
+        recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
+            ? getIt<RecentlyViewedStore>()
+            : null,
+      )..loadProduct(id),
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
       // gallery or the related strip.
@@ -79,11 +119,17 @@ class DetailsPage extends StatelessWidget {
           if (s.status == DetailsStatus.error) {
             return Scaffold(
               appBar: AppBar(),
-              body: FeedbackView(
-                type: FeedbackViewType.error,
-                onAction: () =>
-                    context.read<ProductDetailsCubit>().loadProduct(id),
-              ),
+              // Task #8: a failed probe while offline is a cache miss,
+              // not a product error — offer the offline notice + retry.
+              body: s.isOffline
+                  ? OfflineCatalogView(
+                      onRetry: () =>
+                          context.read<ProductDetailsCubit>().loadProduct(id))
+                  : FeedbackView(
+                      type: FeedbackViewType.error,
+                      onAction: () =>
+                          context.read<ProductDetailsCubit>().loadProduct(id),
+                    ),
             );
           }
           if (p == null) {
@@ -98,6 +144,13 @@ class DetailsPage extends StatelessWidget {
               title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
               actions: [
                 WishlistToggleIcon(productId: p.id),
+                // #13: WhatsApp-first — the direct option leads, generic
+                // share sheet stays as the fallback.
+                IconButton(
+                  tooltip: l.whatsappShareProduct,
+                  onPressed: () => unawaited(_shareOnWhatsApp(context, p)),
+                  icon: const Icon(Icons.chat_outlined),
+                ),
                 IconButton(
                   tooltip: l.shareProduct,
                   onPressed: () => unawaited(getIt<ProductShareService>()
@@ -137,6 +190,19 @@ class DetailsPage extends StatelessWidget {
                   builder: (context, vs) =>
                       VariantSelector(product: p, state: vs),
                 ),
+                // Task #5: when the selected variant is out of stock, offer
+                // the back-in-stock alert toggle (product-level opt-in).
+                BlocBuilder<ProductDetailsCubit, DetailsState>(
+                  buildWhen: (previous, current) =>
+                      previous.product != current.product ||
+                      previous.stock != current.stock,
+                  builder: (context, vs) => vs.product != null && vs.stock <= 0
+                      ? Padding(
+                          padding: const EdgeInsetsDirectional.only(top: 8),
+                          child: BackInStockToggle(product: p),
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 const SizedBox(height: 20),
                 DeliveryInfo(l: l, scheme: scheme),
                 if (p.description != null) ...[
@@ -152,6 +218,18 @@ class DetailsPage extends StatelessWidget {
                   onPressed: () => showSizeGuide(context),
                   icon: const Icon(Icons.straighten, size: 18),
                   label: Text(l.sizeGuide),
+                ),
+                const SizedBox(height: 12),
+                // Wave C: swatch/sample ordering — adds a flagged sample
+                // line to the cart; the checkout flow prices it (server
+                // enforcement pending in supabase/).
+                OutlinedButton.icon(
+                  onPressed: () {
+                    context.read<CartCubit>().addSample(p, color: s.color);
+                    showConfirmation(context, l.sampleAdded);
+                  },
+                  icon: const Icon(Icons.palette_outlined, size: 18),
+                  label: Text(l.orderSample),
                 ),
                 if (s.relatedProducts.isNotEmpty) ...[
                   const SizedBox(height: 24),

@@ -1,6 +1,7 @@
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fixtures/local_catalog_repository.dart';
 import '../helpers/memory_storefront_persistence.dart';
+import '../helpers/recently_viewed_store_stub.dart';
 import '../helpers/stub_auth_repositories.dart';
 
 Widget _harness({required Locale locale}) {
@@ -34,6 +36,9 @@ Widget _harness({required Locale locale}) {
                   authRepository: StubAuthRepository(),
                   profileRepository: StubProfileRepository(),
                 )..checkSession()),
+        BlocProvider(
+            create: (_) =>
+                RecentlyViewedCubit(store: MemoryRecentlyViewedStore())),
       ],
       child: const HomePage(),
     ),

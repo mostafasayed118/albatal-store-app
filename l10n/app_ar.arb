@@ -61,6 +61,8 @@
   "placed": "تم الطلب",
   "shipped": "تم الشحن",
   "delivered": "تم التوصيل",
+  "confirmed": "تم التأكيد",
+  "orderTimelineTitle": "تتبع الطلب",
   "noItemsFound": "لا توجد عناصر",
   "exploreCategories": "استكشاف الفئات",
   "wishlistEmptyTitle": "قائمة مفضلتك فارغة",
@@ -120,10 +122,29 @@
   "newSilkCollection": "مجموعة الحرير الجديدة",
   "percentOff": "خصم 20%",
   "shopNow": "تسوق الآن",
+  "flashSaleTimeRemaining": "ينتهي التخفيض السريع بعد {time}",
+  "@flashSaleTimeRemaining": {
+    "description": "قراءة قارئ الشاشة للعدّاد التنازلي للتخفيض السريع",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "goToSlide": "الانتقال إلى الشريحة {number}",
+  "@goToSlide": {
+    "description": "قراءة قارئ الشاشة لنقاط التنقل في العرض المتحرك",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
   "decreaseQuantity": "تقليل الكمية",
   "increaseQuantity": "زيادة الكمية",
   "removeFromWishlist": "تمت الإزالة من المفضلة",
   "addToWishlist": "إضافة إلى المفضلة",
+  "removeFromWishlistAction": "إزالة من المفضلة",
   "fabricCategories": "فئات الأقمشة",
   "curatedFabrics": "{count, plural, zero{لا أقمشة مختارة} one{قماش مختار واحد} two{قماشان مختاران} few{{count} أقمشة مختارة} many{{count} قماشًا مختارًا} other{{count} قماشًا مختارًا}}",
   "@curatedFabrics": {
@@ -136,8 +157,11 @@
   },
   "confirmStep": "تأكيد",
   "shareProduct": "مشاركة المنتج",
+  "whatsappShareProduct": "مشاركة عبر واتساب",
+  "whatsappShareProductMessage": "{name} بسعر {price}\n{url}",
   "reorder": "إعادة الطلب",
   "recentSearches": "عمليات البحث الأخيرة",
+  "recentlyViewed": "المنتجات المشاهدة مؤخرًا",
   "searchSuggestions": "اقتراحات",
   "clearRecent": "مسح",
   "couponFieldLabel": "كود الخصم",
@@ -170,6 +194,12 @@
   "gsmValue": "{value} غرام/م²",
   "cutLength": "طول القص",
   "sellByLengthNote": "يُباع بالمتر — يوجد حد أدنى للقص.",
+  "cutLengthEstimatedTotal": "الإجمالي التقديري: {total}",
+  "pricingTiersTitle": "أسعار الجملة",
+  "pricingTierRow": "{meters}+ م — خصم {percent}٪",
+  "orderSample": "اطلب عينة قماش",
+  "sampleAdded": "تمت إضافة العينة إلى سلتك",
+  "sampleLineItem": "عينة",
   "maintenanceTitle": "سنعود قريبًا",
   "maintenanceBody": "تطبيق البطل إيليت تحت الصيانة. يُرجى الزيادة لاحقًا.",
   "updateRequiredTitle": "تحديث متاح",
@@ -460,5 +490,14 @@
   "adminAccessRequired": "يلزم الوصول كمسؤول",
   "orderNotifications": "إشعارات الطلبات",
   "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة",
-  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع"
+  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع",
+  "galleryViewerLabel": "عارض صور المنتج",
+  "galleryClose": "إغلاق",
+  "galleryZoomHint": "قرّب بإصبعين",
+  "gallerySwipeHint": "اسحب لاستعراض الصور",
+  "notifyWhenBackInStock": "أعلمني عند توفره من جديد",
+  "backInStockAlertOn": "سنعلمك عندما يتوفر {product} من جديد",
+  "backInStockAlertOff": "تمت إزالة تنبيه توفر المنتج",
+  "backInStockTitle": "متوفر من جديد",
+  "backInStockBody": "توفر {product} من جديد"
 }

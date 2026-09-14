@@ -71,15 +71,25 @@ class StitchCategoryChips extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    cat,
-                    style: textTheme.labelSmall?.copyWith(
-                      color:
-                          isActive ? scheme.onSurface : scheme.onSurfaceVariant,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  // Flexible so the label shrinks into the remaining track
+                  // space at large text scales (1.4×) instead of pushing
+                  // the chip Column past the fixed 78dp track. At 1.0 the
+                  // labelSmall line still fits with the documented 2px
+                  // slack, so nothing changes at the default scale.
+                  Flexible(
+                    child: Text(
+                      cat,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: isActive
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                        fontWeight:
+                            isActive ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
