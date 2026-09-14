@@ -19,6 +19,11 @@ dependencies:
   get_it: ^9.2.1
   go_router: ^18.0.1
   intl: ^0.20.2
+  # Admin sales dashboard revenue chart (#12, owner-approved). Pinned to
+  # 0.71.0 — the newest release whose min Dart SDK (3.2) stays compatible
+  # with this project's declared Dart >=3.3 floor; fl_chart 1.x needs Dart
+  # >=3.6 and would silently raise the project's SDK floor.
+  fl_chart: ^0.71.0
   sentry_flutter: ^9.28.0
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^11.0.0 # encrypted at-rest PII + Supabase session (residual-P1, owner-approved)

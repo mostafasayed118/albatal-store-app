@@ -3,6 +3,7 @@ import '../entities/admin_catalog.dart';
 import '../entities/admin_coupon.dart';
 import '../entities/admin_customer.dart';
 import '../entities/admin_order.dart';
+import '../entities/admin_sales.dart';
 import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
 
@@ -77,6 +78,17 @@ abstract interface class AdminRepository {
   Future<Result<List<LowStockVariant>>> getLowStockProducts({
     int threshold = 5,
   });
+
+  // ─── Sales Dashboard (#12, read-only) ────────────────────
+
+  /// Aggregated sales overview for the last [days] days.
+  ///
+  /// Purely read-only: one bounded select over existing `orders` rows
+  /// (with joined `order_items(product_name, quantity)`), aggregated
+  /// client-side — no schema change and no write. The result carries a
+  /// zero-filled revenue-per-day timeline, top-5 products by units
+  /// sold, and order counts by status within the same window.
+  Future<Result<AdminSalesOverview>> getSalesOverview({int days = 14});
 
   // ─── Variant Management ─────────────────────────────────
 
