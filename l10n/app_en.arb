@@ -530,5 +530,9 @@
   "adminAccessRequired": "Admin access required",
   "orderNotifications": "Order notifications",
   "orderNotificationsSubtitle": "Confirmations and status updates",
-  "instapaySessionMissing": "Payment session not found"
+  "instapaySessionMissing": "Payment session not found",
+  "galleryViewerLabel": "Product image viewer",
+  "galleryClose": "Close",
+  "galleryZoomHint": "Pinch to zoom",
+  "gallerySwipeHint": "Swipe to browse photos"
 }

@@ -1327,4 +1327,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'Payment session not found';
+
+  @override
+  String get galleryViewerLabel => 'Product image viewer';
+
+  @override
+  String get galleryClose => 'Close';
+
+  @override
+  String get galleryZoomHint => 'Pinch to zoom';
+
+  @override
+  String get gallerySwipeHint => 'Swipe to browse photos';
 }
