@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_coupon.dart';
@@ -40,8 +41,10 @@ final class SupabaseAdminRepository implements AdminRepository {
       // A failed permission probe must not grant admin. Catches broadly
       // because malformed payloads raise TypeError (an Error, not an
       // Exception) that must never escape the repository boundary.
-      Log.w('Admin permission probe failed; denying admin: $e',
-          category: LogCategory.auth);
+      // Logged via error: (never interpolated — probe payloads can carry
+      // PII; audit 2026-09-14 P0-5).
+      Log.w('Admin permission probe failed; denying admin.',
+          category: LogCategory.auth, error: e);
       return false;
     }
   }
@@ -401,19 +404,24 @@ final class SupabaseAdminRepository implements AdminRepository {
           .select('id, full_name, email, membership_tier')
           .order('created_at', ascending: false)
           .limit(500);
-      final list = rows as List<dynamic>;
-      return Success(list
-          .map((row) => row as Map<String, dynamic>)
+      // Total decode parity with getAllOrders: mistyped rows degrade to
+      // skips (audit 2026-09-14 P0-3) — previously `rows as List` threw on
+      // a malformed payload and `row as Map` threw per-row.
+      final list = (rows as List)
+          .whereType<Map<String, dynamic>>()
+          // Rows without a string id cannot be navigated to; skip them.
+          .where((row) => row['id'] is String)
           .map((row) => AdminCustomer(
-                id: row['id'] as String? ?? '',
-                name: row['full_name'] as String? ?? '',
-                email: row['email'] as String? ?? '',
-                tier: row['membership_tier'] as String? ?? 'standard',
+                id: safeString(row, 'id'),
+                name: safeString(row, 'full_name'),
+                email: safeString(row, 'email'),
+                tier: safeString(row, 'membership_tier', fallback: 'standard'),
                 isBlocked:
                     false, // no suspension flag in profiles (§14 read-only)
               ))
           .where((c) => c.id.isNotEmpty)
-          .toList());
+          .toList();
+      return Success(list);
     } catch (e) {
       return Failure(AppError('Failed to fetch customers', cause: e));
     }

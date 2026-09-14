@@ -8,6 +8,24 @@ import '../entities/flash_sale.dart';
 /// repository is intentionally thin. The abstraction earns its keep the moment
 /// the catalog becomes remote, paginated, cached, or backed by a database:
 /// the Cubit stays the same and only the implementation swaps.
+///
+/// Fallback category names used when the server provides none (first-frame
+/// render before the cubit loads).
+///
+/// Domain-owned single source of truth (audit 2026-09-14 V1): the data
+/// layer (`SupabaseCatalogRepository.defaultCategories`) reads this const
+/// instead of importing `presentation/catalog_constants.dart`, so the
+/// dependency rule `presentation → domain → data` holds. Presentation
+/// keeps its richer `CatalogConstants` (accents, swatches, chips) and
+/// delegates its fallback list here.
+const defaultCatalogCategories = <String>[
+  'Silk',
+  'Cotton',
+  'Velvet',
+  'Linen',
+  'Wool',
+];
+
 abstract interface class CatalogRepository {
   Future<Result<List<Product>>> fetchProducts();
   Future<Result<List<String>>> fetchCategories();

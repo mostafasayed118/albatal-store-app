@@ -32,7 +32,10 @@ final class LocalAddressRepository implements ClearableAddressRepository {
         try {
           decoded = jsonDecode(raw);
         } on FormatException catch (e) {
-          Log.w('Saved addresses cache is corrupt; ignoring: $e');
+          // Fail-soft: corrupt cache degrades to empty (logged without
+          // interpolating the raw payload — it can carry PII/URLs and
+          // release breadcrumbs leave the device; audit 2026-09-14 P0-5).
+          Log.w('Saved addresses cache is corrupt; ignoring.', error: e);
           return <Address>[];
         }
         if (decoded is! List) {

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../domain/repositories/catalog_repository.dart'
+    show defaultCatalogCategories;
+
 /// Single source of truth for catalog fallback data (audit P5).
 ///
 /// Three previously-duplicated literals now live here:
@@ -15,13 +18,10 @@ import 'package:flutter/material.dart';
 /// original locations so existing tests keep compiling.
 abstract final class CatalogConstants {
   /// Category names used whenever the catalog provides none.
-  static const defaults = <String>[
-    'Silk',
-    'Cotton',
-    'Velvet',
-    'Linen',
-    'Wool',
-  ];
+  ///
+  /// Delegates to the domain-owned [defaultCatalogCategories] so data and
+  /// presentation can never drift (audit 2026-09-14 V1).
+  static const defaults = defaultCatalogCategories;
 
   /// A tactile mid-tone tint per fabric family, with a deterministic hue
   /// fallback for categories the catalog grows later.

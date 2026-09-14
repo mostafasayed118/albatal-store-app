@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -41,6 +41,40 @@ class StorageService {
 
   String getProductImageUrl(String storagePath) {
     return _client.storage.from(_bucket).getPublicUrl(storagePath);
+  }
+
+  /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
+  ///
+  /// Serves the downsized variant instead of the full upload: grid 420,
+  /// detail 720, zoom 1080. Falls back to the bare public URL when the
+  /// path has no usable image extension (fail-open, same posture as
+  /// `ImageCompressor`) so a bad path never breaks the image pipeline.
+  /// Widths are allowlisted — arbitrary caller input can never reach the
+  /// URL builder.
+  String getProductImageUrlForWidth(String storagePath, int width) {
+    const allowed = <int>{180, 420, 720, 1080};
+    final w = allowed.contains(width) ? width : 720;
+    final lower = storagePath.toLowerCase();
+    final dot = lower.lastIndexOf('.');
+    final ext = dot >= 0 ? lower.substring(dot + 1) : '';
+    const renderable = <String>{'jpg', 'jpeg', 'png', 'webp'};
+    if (!renderable.contains(ext)) {
+      return getProductImageUrl(storagePath);
+    }
+    final base = getPublicUrlBase(storagePath);
+    return '$base/storage/v1/render/image/public/$_bucket/'
+        '$storagePath?width=$w&quality=70&resize=contain';
+  }
+
+  /// Public-URL base (scheme + host) for the current Supabase project,
+  /// derived from the bare public URL so per-environment hosts keep
+  /// working without a new config value.
+  @visibleForTesting
+  String getPublicUrlBase(String storagePath) {
+    final bare = getProductImageUrl(storagePath);
+    final marker = '/storage/v1/object/public/$_bucket/';
+    final idx = bare.indexOf(marker);
+    return idx >= 0 ? bare.substring(0, idx) : bare;
   }
 
   String getAvatarUrl(String userId, String fileName) {

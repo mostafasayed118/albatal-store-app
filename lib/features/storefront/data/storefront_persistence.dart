@@ -58,7 +58,9 @@ final class LocalStorefrontPersistence
     try {
       decoded = jsonDecode(raw);
     } on FormatException catch (e) {
-      Log.w('Cart cache is corrupt; ignoring: $e');
+      // Fail-soft: corrupt cart degrades to empty (logged without
+      // interpolating the raw payload; audit 2026-09-14 P0-5).
+      Log.w('Cart cache is corrupt; ignoring.', error: e);
       return const [];
     }
     if (decoded is! List) {
