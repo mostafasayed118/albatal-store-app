@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -12,6 +13,7 @@ import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
@@ -152,6 +154,18 @@ class DetailsPage extends StatelessWidget {
                   onPressed: () => showSizeGuide(context),
                   icon: const Icon(Icons.straighten, size: 18),
                   label: Text(l.sizeGuide),
+                ),
+                const SizedBox(height: 12),
+                // Wave C: swatch/sample ordering — adds a flagged sample
+                // line to the cart; the checkout flow prices it (server
+                // enforcement pending in supabase/).
+                OutlinedButton.icon(
+                  onPressed: () {
+                    context.read<CartCubit>().addSample(p, color: s.color);
+                    showConfirmation(context, l.sampleAdded);
+                  },
+                  icon: const Icon(Icons.palette_outlined, size: 18),
+                  label: Text(l.orderSample),
                 ),
                 if (s.relatedProducts.isNotEmpty) ...[
                   const SizedBox(height: 24),

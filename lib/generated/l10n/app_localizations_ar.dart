@@ -507,6 +507,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sellByLengthNote => 'يُباع بالمتر — يوجد حد أدنى للقص.';
 
   @override
+  String cutLengthEstimatedTotal(String total) {
+    return 'الإجمالي التقديري: $total';
+  }
+
+  @override
+  String get pricingTiersTitle => 'أسعار الجملة';
+
+  @override
+  String pricingTierRow(String meters, int percent) {
+    return '$meters+ م — خصم $percent٪';
+  }
+
+  @override
+  String get orderSample => 'اطلب عينة قماش';
+
+  @override
+  String get sampleAdded => 'تمت إضافة العينة إلى سلتك';
+
+  @override
+  String get sampleLineItem => 'عينة';
+
+  @override
   String get maintenanceTitle => 'سنعود قريبًا';
 
   @override

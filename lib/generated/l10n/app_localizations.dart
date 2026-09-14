@@ -1022,6 +1022,42 @@ abstract class AppLocalizations {
   /// **'Sold by the meter — minimum cut applies.'**
   String get sellByLengthNote;
 
+  /// Running line price under the cut-length selector
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated total: {total}'**
+  String cutLengthEstimatedTotal(String total);
+
+  /// No description provided for @pricingTiersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wholesale pricing'**
+  String get pricingTiersTitle;
+
+  /// One wholesale tier row: minimum meters and discount
+  ///
+  /// In en, this message translates to:
+  /// **'{meters}+ m — {percent}% off'**
+  String pricingTierRow(String meters, int percent);
+
+  /// No description provided for @orderSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Order fabric sample'**
+  String get orderSample;
+
+  /// No description provided for @sampleAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample added to your cart'**
+  String get sampleAdded;
+
+  /// No description provided for @sampleLineItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample'**
+  String get sampleLineItem;
+
   /// No description provided for @maintenanceTitle.
   ///
   /// In en, this message translates to:
