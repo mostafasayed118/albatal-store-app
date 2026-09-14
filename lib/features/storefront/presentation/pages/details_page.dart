@@ -5,11 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/product.dart';
+import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../cubit/product_details_cubit.dart';
@@ -32,11 +35,30 @@ class DetailsPage extends StatelessWidget {
   const DetailsPage(
       {super.key,
       required this.id,
-      required CatalogRepository catalogRepository})
+      required CatalogRepository catalogRepository,
+      this.whatsappShareService})
       : _catalogRepository = catalogRepository;
 
   final String id;
   final CatalogRepository _catalogRepository;
+
+  /// #13: optional seam for widget tests; defaults to the getIt-registered
+  /// wa.me service (same injection pattern as [_catalogRepository]).
+  final WhatsAppShareService? whatsappShareService;
+
+  /// #13: WhatsApp-first share — localized prefill (name + price + deep
+  /// link) handed to the wa.me universal link. A launch that no external
+  /// app takes must still acknowledge the tap: the shared floating-error
+  /// helper (never a raw snackbar), mirroring the Support page pattern.
+  Future<void> _shareOnWhatsApp(BuildContext context, Product p) async {
+    final launched =
+        await (whatsappShareService ?? getIt<WhatsAppShareService>()).share(
+            context.l10n.whatsappShareProductMessage(
+                p.name, p.price.format(), productUrl(p.id)));
+    if (!launched && context.mounted) {
+      showFloatingError(context, context.l10n.couldNotOpenLink);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +120,13 @@ class DetailsPage extends StatelessWidget {
               title: Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis),
               actions: [
                 WishlistToggleIcon(productId: p.id),
+                // #13: WhatsApp-first — the direct option leads, generic
+                // share sheet stays as the fallback.
+                IconButton(
+                  tooltip: l.whatsappShareProduct,
+                  onPressed: () => unawaited(_shareOnWhatsApp(context, p)),
+                  icon: const Icon(Icons.chat_outlined),
+                ),
                 IconButton(
                   tooltip: l.shareProduct,
                   onPressed: () => unawaited(getIt<ProductShareService>()

@@ -162,6 +162,16 @@
   },
   "confirmStep": "Confirm",
   "shareProduct": "Share product",
+  "whatsappShareProduct": "Share on WhatsApp",
+  "whatsappShareProductMessage": "{name} — {price}\n{url}",
+  "@whatsappShareProductMessage": {
+    "description": "WhatsApp prefill: product name, price and deep link",
+    "placeholders": {
+      "name": {},
+      "price": {},
+      "url": {}
+    }
+  },
   "reorder": "Reorder",
   "recentSearches": "Recent searches",
   "searchSuggestions": "Suggestions",

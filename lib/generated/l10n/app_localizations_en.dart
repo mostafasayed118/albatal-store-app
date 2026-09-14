@@ -407,6 +407,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareProduct => 'Share product';
 
   @override
+  String get whatsappShareProduct => 'Share on WhatsApp';
+
+  @override
+  String whatsappShareProductMessage(Object name, Object price, Object url) {
+    return '$name — $price\n$url';
+  }
+
+  @override
   String get reorder => 'Reorder';
 
   @override

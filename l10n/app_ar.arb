@@ -155,6 +155,8 @@
   },
   "confirmStep": "تأكيد",
   "shareProduct": "مشاركة المنتج",
+  "whatsappShareProduct": "مشاركة عبر واتساب",
+  "whatsappShareProductMessage": "{name} بسعر {price}\n{url}",
   "reorder": "إعادة الطلب",
   "recentSearches": "عمليات البحث الأخيرة",
   "searchSuggestions": "اقتراحات",
