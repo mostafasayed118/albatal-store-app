@@ -18,6 +18,7 @@ import '../../features/payments/domain/repositories/payment_service.dart';
 import '../../features/settings/data/local_settings_repository.dart';
 import '../../features/settings/data/notification_prefs_store.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/storefront/data/back_in_stock_alert_store.dart';
 import '../../features/storefront/data/checkout_service.dart';
 import '../../features/storefront/data/local_cart_repository.dart';
 import '../../features/storefront/data/local_wishlist_repository.dart';
@@ -160,6 +161,9 @@ Future<void> configureDependencies() async {
         () => PrefsNotificationStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<NotificationService>(
         () => LocalNotificationService(prefs: getIt<NotificationPrefsStore>()))
+    // Task #5: per-product back-in-stock alert opt-ins (client-side).
+    ..registerLazySingleton<BackInStockAlertStore>(
+        () => PrefsBackInStockAlertStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<PushService>(() => const OneSignalPushService())
     // §15: OAuth sign-in + biometric app lock (both fail-soft).
     ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())

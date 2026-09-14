@@ -498,5 +498,24 @@
   "adminAccessRequired": "Admin access required",
   "orderNotifications": "Order notifications",
   "orderNotificationsSubtitle": "Confirmations and status updates",
-  "instapaySessionMissing": "Payment session not found"
+  "instapaySessionMissing": "Payment session not found",
+  "notifyWhenBackInStock": "Notify me when back in stock",
+  "backInStockAlertOn": "We'll notify you when {product} is back in stock",
+  "@backInStockAlertOn": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
+  "backInStockAlertOff": "Back-in-stock alert removed",
+  "backInStockTitle": "Back in stock",
+  "backInStockBody": "{product} is back in stock",
+  "@backInStockBody": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  }
 }

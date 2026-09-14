@@ -460,5 +460,10 @@
   "adminAccessRequired": "يلزم الوصول كمسؤول",
   "orderNotifications": "إشعارات الطلبات",
   "orderNotificationsSubtitle": "التأكيدات وتحديثات الحالة",
-  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع"
+  "instapaySessionMissing": "لم يتم العثور على جلسة الدفع",
+  "notifyWhenBackInStock": "أعلمني عند توفره من جديد",
+  "backInStockAlertOn": "سنعلمك عندما يتوفر {product} من جديد",
+  "backInStockAlertOff": "تمت إزالة تنبيه توفر المنتج",
+  "backInStockTitle": "متوفر من جديد",
+  "backInStockBody": "توفر {product} من جديد"
 }

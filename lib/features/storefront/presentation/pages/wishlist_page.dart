@@ -1,17 +1,58 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/product.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/notification_service.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/wishlist_tile.dart';
 
-class WishlistPage extends StatelessWidget {
+class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
+
+  @override
+  State<WishlistPage> createState() => _WishlistPageState();
+}
+
+class _WishlistPageState extends State<WishlistPage> {
+  StreamSubscription<Product>? _restockSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Task #5 (client-side slice): the cubit reports observed
+    // out-of-stock -> in-stock transitions for watched products; the
+    // page owns localization + the local notification dispatch. A
+    // server-side Supabase trigger is the follow-up, out of scope here.
+    _restockSub =
+        context.read<WishlistCubit>().restockAlerts.listen(_onRestock);
+  }
+
+  void _onRestock(Product product) {
+    if (!mounted) return;
+    final l = context.l10n;
+    final notifications = getIt.isRegistered<NotificationService>()
+        ? getIt<NotificationService>()
+        : const NoOpNotificationService();
+    unawaited(notifications.showBackInStockNotification(
+      title: l.backInStockTitle,
+      body: l.backInStockBody(product.name),
+    ));
+  }
+
+  @override
+  void dispose() {
+    _restockSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

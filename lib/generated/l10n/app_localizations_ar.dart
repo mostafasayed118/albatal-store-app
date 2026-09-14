@@ -1297,4 +1297,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'لم يتم العثور على جلسة الدفع';
+
+  @override
+  String get notifyWhenBackInStock => 'أعلمني عند توفره من جديد';
+
+  @override
+  String backInStockAlertOn(String product) {
+    return 'سنعلمك عندما يتوفر $product من جديد';
+  }
+
+  @override
+  String get backInStockAlertOff => 'تمت إزالة تنبيه توفر المنتج';
+
+  @override
+  String get backInStockTitle => 'متوفر من جديد';
+
+  @override
+  String backInStockBody(String product) {
+    return 'توفر $product من جديد';
+  }
 }

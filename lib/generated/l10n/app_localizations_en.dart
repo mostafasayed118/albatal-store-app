@@ -1297,4 +1297,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instapaySessionMissing => 'Payment session not found';
+
+  @override
+  String get notifyWhenBackInStock => 'Notify me when back in stock';
+
+  @override
+  String backInStockAlertOn(String product) {
+    return 'We\'ll notify you when $product is back in stock';
+  }
+
+  @override
+  String get backInStockAlertOff => 'Back-in-stock alert removed';
+
+  @override
+  String get backInStockTitle => 'Back in stock';
+
+  @override
+  String backInStockBody(String product) {
+    return '$product is back in stock';
+  }
 }

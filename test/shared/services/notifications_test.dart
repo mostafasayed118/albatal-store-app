@@ -21,6 +21,14 @@ class _RecordingService implements NotificationService {
     if (!prefs.orderNotificationsEnabled) return;
     shown++;
   }
+
+  @override
+  Future<void> showBackInStockNotification({
+    required String title,
+    required String body,
+  }) async {
+    shown++;
+  }
 }
 
 void main() {

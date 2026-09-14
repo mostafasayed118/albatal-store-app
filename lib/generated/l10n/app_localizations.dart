@@ -2473,6 +2473,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment session not found'**
   String get instapaySessionMissing;
+
+  /// No description provided for @notifyWhenBackInStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me when back in stock'**
+  String get notifyWhenBackInStock;
+
+  /// No description provided for @backInStockAlertOn.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll notify you when {product} is back in stock'**
+  String backInStockAlertOn(String product);
+
+  /// No description provided for @backInStockAlertOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Back-in-stock alert removed'**
+  String get backInStockAlertOff;
+
+  /// No description provided for @backInStockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Back in stock'**
+  String get backInStockTitle;
+
+  /// No description provided for @backInStockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{product} is back in stock'**
+  String backInStockBody(String product);
 }
 
 class _AppLocalizationsDelegate

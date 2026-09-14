@@ -193,8 +193,15 @@ final class _AlBatalAppState extends State<AlBatalApp> {
               create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
           BlocProvider.value(value: _cartCubit..restore()),
           BlocProvider(
-              create: (_) =>
-                  WishlistCubit(getIt<WishlistRepository>())..restore()),
+              create: (_) => WishlistCubit(
+                    getIt<WishlistRepository>(),
+                    // Composition-root probe (same pattern as the
+                    // settings notification store above): shells without
+                    // the store registered get a no-op toggle.
+                    alertStore: getIt.isRegistered<BackInStockAlertStore>()
+                        ? getIt<BackInStockAlertStore>()
+                        : null,
+                  )..restore()),
           BlocProvider(
               create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
           BlocProvider.value(value: _reorderCubit),
