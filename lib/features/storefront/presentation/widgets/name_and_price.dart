@@ -20,7 +20,8 @@ class NameAndPrice extends StatelessWidget {
         Row(
           children: [
             // Stitch price: EGY-suffixed amount in label-md (labelLarge)
-            // bold primary #003527 (spec §4).
+            // bold primary #003527 (spec §4). Intrinsic width: the price
+            // is never truncated; the discount chip below flexes instead.
             PriceText(
               product.price,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -32,9 +33,17 @@ class NameAndPrice extends StatelessWidget {
             ),
             if (product.discountPercent != null) ...[
               const SizedBox(width: 8),
-              Chip(
-                  label: Text(
-                      context.l10n.discountPercent(product.discountPercent!))),
+              // Flexible chip: at large text scales (1.4×) it shrinks
+              // (label ellipsizes) instead of pushing the price row past
+              // the viewport; full-size at the default scale.
+              Flexible(
+                child: Chip(
+                    label: Text(
+                        context.l10n.discountPercent(product.discountPercent!),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false)),
+              ),
             ],
           ],
         ),

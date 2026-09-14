@@ -65,7 +65,17 @@ class AddToCartButton extends StatelessWidget {
           children: [
             const Icon(Icons.shopping_bag_outlined),
             const SizedBox(width: 8),
-            Text(label),
+            // Flexible + ellipsis: at large text scales (1.4×) the live
+            // line total yields width to the icon instead of overflowing
+            // the CTA row; unchanged at the default scale.
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
+            ),
           ],
         ),
       ),

@@ -28,8 +28,14 @@ class StatusProgress extends StatelessWidget {
       OrderStatus.paid => 1,
       _ => steps.indexWhere((s) => s.$1 == status),
     };
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    // Wrap (was a Row): at the default scale the four stages fit on one
+    // run and spaceBetween distributes them exactly like the old Row;
+    // at large text scales (1.4×) the stages flow onto extra runs
+    // instead of overflowing the card row.
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      spacing: 8,
+      runSpacing: 4,
       children: [
         for (var i = 0; i < steps.length; i++)
           Text(

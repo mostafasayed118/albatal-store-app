@@ -123,21 +123,7 @@ void main() {
     expect(find.text('Shipping Address'), findsWidgets);
     expect(find.text('Payment'), findsOneWidget);
     expect(find.text('Review Order'), findsWidgets);
-  },
-      // KNOWN SCALE FRAGILITY — pin parked until lib/ is fixed (this task
-      // is test-only; lib/ must not be touched). Found by this very pin at
-      // 360x800 logical px, TextScaler.linear(1.4):
-      //
-      //  1. lib/features/storefront/presentation/widgets/cart_summary.dart:44
-      //     — the label/Spacer/value Row overflows on the right (66px and
-      //     21px) at w=296: neither Text flexes.
-      //  2. lib/features/storefront/presentation/pages/checkout_page.dart:190
-      //     — the 'Proceed to Payment' bottom-bar Row overflows by 92px on
-      //     the right at w=289.6.
-      //
-      // Fix direction: Expanded/Flexible + ellipsis on the summary rows and
-      // the CTA label. Remove this skip once fixed.
-      skip: true);
+  });
 
   testWidgets(
       'OrderCard with the status timeline renders without overflow at '
@@ -152,8 +138,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(
         builder: (context) => MediaQuery(
-          data: const MediaQueryData(
-              textScaler: TextScaler.linear(1.4)),
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.4)),
           child: Scaffold(
             body: ListView(
               padding: const EdgeInsetsDirectional.all(16),
@@ -176,17 +161,5 @@ void main() {
     expect(find.byType(StatusProgress), findsOneWidget);
     expect(find.textContaining('Placed'), findsWidgets);
     expect(find.textContaining('Delivered'), findsOneWidget);
-  },
-      // KNOWN SCALE FRAGILITY — pin parked until lib/ is fixed (this task
-      // is test-only; lib/ must not be touched). Found by this very pin at
-      // 360x800 logical px, TextScaler.linear(1.4):
-      //
-      //  lib/features/storefront/presentation/widgets/status_progress.dart:31
-      //  — the 4-stage Row (Placed/Processing/Shipped/Delivered, fontSize 12
-      //  × 1.4) overflows by 386px on the right inside the w=296 card row:
-      //  none of the four stage labels can wrap and the Row has no flex.
-      //
-      // Fix direction: Wrap the four stage labels in a Wrap (or flex them)
-      // instead of a fixed Row. Remove this skip once fixed.
-      skip: true);
+  });
 }

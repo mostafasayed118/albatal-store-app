@@ -7,6 +7,7 @@ import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.da
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_viewed_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
@@ -19,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
 class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
@@ -103,6 +105,11 @@ Widget _harness() {
                   authRepository: StubAuthRepository(),
                   profileRepository: StubProfileRepository(),
                 )..checkSession()),
+        // The recently-viewed strip on Home reads the app-scoped cubit —
+        // same provider set as stitch_home_page_test.dart.
+        BlocProvider(
+            create: (_) =>
+                RecentlyViewedCubit(store: MemoryRecentlyViewedStore())),
       ],
       child: const MediaQuery(
         data: MediaQueryData(textScaler: TextScaler.linear(1.4)),
@@ -131,25 +138,21 @@ void main() {
     // RenderFlex overflow was found on exactly this class of device).
     expect(tester.takeException(), isNull);
 
-    // Key sections still render at scale.
+    // Key sections still render at scale. The popular-products grid is a
+    // lazy SliverGrid: at 1.4× the content above it pushes the first
+    // cards below the 740dp fold, so scroll until the grid mounts before
+    // pinning it (fixed drags only — never pumpAndSettle, per the
+    // countdown-timer contract above).
     expect(find.byType(StitchSearchBar), findsOneWidget);
     expect(find.byType(StitchCategoryChips), findsOneWidget);
+    var scrolls = 0;
+    while (
+        find.byType(StitchProductGridCard).evaluate().isEmpty && scrolls < 30) {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+      await tester.pump();
+      scrolls++;
+    }
     expect(find.byType(StitchProductGridCard), findsWidgets);
-  },
-      // KNOWN SCALE FRAGILITY — pin parked until lib/ is fixed (this task
-      // is test-only; lib/ must not be touched). Found by this very pin at
-      // 360x740 logical px, TextScaler.linear(1.4):
-      //
-      //  1. lib/shared/components/stitch/stitch_category_chips.dart:49 —
-      //     the per-chip vertical Column (icon + label) inside the fixed
-      //     h=78 chip overflows by 4.0px on the bottom for every chip
-      //     ('All', 'Silk', 'Cotton', 'Velvet').
-      //  2. lib/shared/components/stitch/stitch_flash_sale_card.dart:72 —
-      //     the card's inner Column (inside Expanded > Row > Padding of the
-      //     media row) overflows by 26px on the bottom.
-      //
-      // Fix direction: flex/scroll or remove the fixed heights (same
-      // pattern as the StitchProductGridCard media fix). Remove this skip
-      // once both sites are fixed.
-      skip: true);
+    expect(tester.takeException(), isNull);
+  });
 }

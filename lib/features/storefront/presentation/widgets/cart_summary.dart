@@ -43,8 +43,19 @@ class CartSummary extends StatelessWidget {
         padding: const EdgeInsetsDirectional.symmetric(vertical: 4),
         child: Row(
           children: [
-            Text(label, style: Theme.of(context).textTheme.bodyMedium),
-            const Spacer(),
+            // Expanded label (was a Spacer): identical layout at the
+            // default scale, but at large text scales the label
+            // ellipsizes instead of pushing the amount off-card. Money
+            // values stay fully visible.
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
+              ),
+            ),
             Text(value,
                 style: (bold
                         ? Theme.of(context).textTheme.titleSmall

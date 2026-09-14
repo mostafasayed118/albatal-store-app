@@ -43,8 +43,12 @@ class StitchFlashSaleCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: SizedBox(
-            height: 120,
+          // 120dp row at the default scale, but allowed to grow when the
+          // text block needs more height at large text scales (1.4×) —
+          // same pattern as the StitchProductGridCard media fix. The
+          // image stays 90dp and centers vertically if the card grows.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 120),
             child: Padding(
               padding: const EdgeInsetsDirectional.all(12),
               child: Row(
@@ -78,6 +82,10 @@ class StitchFlashSaleCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
+                      // Size to the text content so the card height follows
+                      // the tallest child (image vs text block) instead of
+                      // forcing the block into a fixed 96dp slot.
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // Badge + name row
                         Row(
@@ -101,20 +109,28 @@ class StitchFlashSaleCard extends StatelessWidget {
                             ),
                             if (remainingTime != null) ...[
                               const SizedBox(width: 6),
-                              Semantics(
-                                // liveRegion stays false: the 1Hz ticker
-                                // must never spam the screen reader — the
-                                // user queries the time on demand instead.
-                                liveRegion: false,
-                                child: Text(
-                                  _formatRemaining(remainingTime),
-                                  // "01:23:45" alone is read as bare digits;
-                                  // the semantics label gives it meaning.
-                                  semanticsLabel: context.l10n
-                                      .flashSaleTimeRemaining(
-                                          _formatRemaining(remainingTime)),
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: scheme.onSurfaceVariant,
+                              // Flexible: the countdown yields width to the
+                              // badge at large text scales instead of
+                              // overflowing the badge row.
+                              Flexible(
+                                child: Semantics(
+                                  // liveRegion stays false: the 1Hz ticker
+                                  // must never spam the screen reader — the
+                                  // user queries the time on demand instead.
+                                  liveRegion: false,
+                                  child: Text(
+                                    _formatRemaining(remainingTime),
+                                    // "01:23:45" alone is read as bare digits;
+                                    // the semantics label gives it meaning.
+                                    semanticsLabel: context.l10n
+                                        .flashSaleTimeRemaining(
+                                            _formatRemaining(remainingTime)),
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: false,
                                   ),
                                 ),
                               ),

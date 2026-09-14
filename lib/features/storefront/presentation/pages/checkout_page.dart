@@ -190,7 +190,17 @@ class CheckoutPage extends StatelessWidget {
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(l10n.proceedToPayment),
+                        // Flexible + ellipsis: at large text scales (1.4×)
+                        // the label shrinks instead of overflowing the CTA
+                        // row; unchanged at the default scale.
+                        Flexible(
+                          child: Text(
+                            l10n.proceedToPayment,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         // Extension flips under RTL; the previous raw
                         // IconData(0xe5cc) literal pointed backwards in

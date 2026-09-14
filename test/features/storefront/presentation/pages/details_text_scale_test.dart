@@ -50,21 +50,7 @@ void main() {
     expect(find.text('1290 EGY'), findsOneWidget);
     // CTA line total still renders at scale.
     expect(find.text('Add to Cart - 1290 EGY'), findsOneWidget);
-  },
-      // KNOWN SCALE FRAGILITY — pin parked until lib/ is fixed (this task
-      // is test-only; lib/ must not be touched). Found by this very pin at
-      // 360x800 logical px, TextScaler.linear(1.4):
-      //
-      //  1. lib/features/storefront/presentation/widgets/name_and_price.dart:20
-      //     — the name/price Row overflows by 142px on the right at w=328:
-      //     the name Text does not flex or wrap against the price column.
-      //  2. lib/features/storefront/presentation/widgets/add_to_cart_button.dart:56
-      //     — the 'Add to Cart - 1290 EGY' bottom-bar Row overflows by
-      //     170px on the right at w=289.6.
-      //
-      // Fix direction: Expanded/Flexible + ellipsis on the name text and
-      // the CTA label. Remove this skip once fixed.
-      skip: true);
+  });
 
   testWidgets(
       'RelatedCard renders name and price without overflow at 1.4 scale '

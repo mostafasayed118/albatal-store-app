@@ -122,21 +122,5 @@ void main() {
     expect(find.byType(CartSummary), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
     expect(find.textContaining('EGY'), findsWidgets);
-  },
-      // KNOWN SCALE FRAGILITY — pin parked until lib/ is fixed (this task
-      // is test-only; lib/ must not be touched). Found by this very pin at
-      // 360x800 logical px, TextScaler.linear(1.4):
-      //
-      //  1. lib/features/storefront/presentation/widgets/cart_summary.dart:44
-      //     — the label/Spacer/value Row overflows on the right (66px for
-      //     the Subtotal row, 21px for the Total row) at w=296: neither
-      //     Text flexes, so once label + value exceed the card width the
-      //     row cannot wrap.
-      //  2. lib/shared/components/app_button.dart:22 — the icon+label Row
-      //     inside the 'Proceed to Checkout' CTA overflows by 111px on the
-      //     right at w=289.6.
-      //
-      // Fix direction: Expanded/Flexible on the label (and ellipsis) in
-      // CartSummary rows and AppButton. Remove this skip once fixed.
-      skip: true);
+  });
 }
