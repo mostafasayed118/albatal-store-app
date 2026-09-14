@@ -61,6 +61,8 @@
   "placed": "تم الطلب",
   "shipped": "تم الشحن",
   "delivered": "تم التوصيل",
+  "confirmed": "تم التأكيد",
+  "orderTimelineTitle": "تتبع الطلب",
   "noItemsFound": "لا توجد عناصر",
   "exploreCategories": "استكشاف الفئات",
   "wishlistEmptyTitle": "قائمة مفضلتك فارغة",

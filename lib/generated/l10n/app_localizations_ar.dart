@@ -196,6 +196,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get delivered => 'تم التوصيل';
 
   @override
+  String get confirmed => 'تم التأكيد';
+
+  @override
+  String get orderTimelineTitle => 'تتبع الطلب';
+
+  @override
   String get noItemsFound => 'لا توجد عناصر';
 
   @override

@@ -464,6 +464,18 @@ abstract class AppLocalizations {
   /// **'Delivered'**
   String get delivered;
 
+  /// No description provided for @confirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get confirmed;
+
+  /// No description provided for @orderTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order tracking'**
+  String get orderTimelineTitle;
+
   /// No description provided for @noItemsFound.
   ///
   /// In en, this message translates to:
