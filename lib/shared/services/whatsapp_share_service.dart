@@ -27,7 +27,7 @@ final class UrlLauncherExternalLinkLauncher implements ExternalLinkLauncher {
   Future<bool> launchExternal(Uri uri) async {
     try {
       if (!await canLaunchUrl(uri)) return false;
-      return launchUrl(uri, mode: LaunchMode.externalApplication);
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } on Exception {
       // No handler / channel unavailable — the caller shows feedback.
       return false;
