@@ -33,6 +33,7 @@ import 'generated/l10n/app_localizations.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
 import 'shared/services/biometric_service.dart';
+import 'shared/services/connectivity_gate.dart';
 import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
@@ -190,7 +191,12 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                             : null,
                   )..load()),
           BlocProvider(
-              create: (_) => CatalogCubit(getIt<CatalogRepository>())..load()),
+              // Task #8: pass the connectivity gate so offline loads are
+              // tagged (cached restore / offline notice) instead of
+              // surfacing as errors.
+              create: (_) => CatalogCubit(getIt<CatalogRepository>(),
+                  gate: getIt<ConnectivityGate>())
+                ..load()),
           BlocProvider.value(value: _cartCubit..restore()),
           BlocProvider(
               create: (_) =>

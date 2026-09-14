@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -17,6 +18,7 @@ import '../widgets/add_to_cart_button.dart';
 import '../widgets/delivery_info.dart';
 import '../widgets/image_gallery.dart';
 import '../widgets/name_and_price.dart';
+import '../widgets/offline_catalog_view.dart';
 import '../widgets/product_details_section.dart';
 import '../widgets/rating_stars.dart';
 import '../widgets/related_card.dart';
@@ -27,16 +29,21 @@ import '../widgets/wishlist_toggle_icon.dart';
 
 /// Product details. The catalog repository is constructor-injected
 /// (audit P1); the router resolves it at the composition root, widget
-/// tests pass a fake directly.
+/// tests pass a fake directly. The optional [gate] (Task #8) lets the
+/// cubit tag offline loads so a network-miss while offline shows the
+/// friendly notice instead of a hard error.
 class DetailsPage extends StatelessWidget {
   const DetailsPage(
       {super.key,
       required this.id,
-      required CatalogRepository catalogRepository})
-      : _catalogRepository = catalogRepository;
+      required CatalogRepository catalogRepository,
+      ConnectivityGate? gate})
+      : _catalogRepository = catalogRepository,
+        _gate = gate;
 
   final String id;
   final CatalogRepository _catalogRepository;
+  final ConnectivityGate? _gate;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +51,8 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      create: (_) => ProductDetailsCubit(_catalogRepository)..loadProduct(id),
+      create: (_) =>
+          ProductDetailsCubit(_catalogRepository, gate: _gate)..loadProduct(id),
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
       // gallery or the related strip.
@@ -79,11 +87,17 @@ class DetailsPage extends StatelessWidget {
           if (s.status == DetailsStatus.error) {
             return Scaffold(
               appBar: AppBar(),
-              body: FeedbackView(
-                type: FeedbackViewType.error,
-                onAction: () =>
-                    context.read<ProductDetailsCubit>().loadProduct(id),
-              ),
+              // Task #8: a failed probe while offline is a cache miss,
+              // not a product error — offer the offline notice + retry.
+              body: s.isOffline
+                  ? OfflineCatalogView(
+                      onRetry: () =>
+                          context.read<ProductDetailsCubit>().loadProduct(id))
+                  : FeedbackView(
+                      type: FeedbackViewType.error,
+                      onAction: () =>
+                          context.read<ProductDetailsCubit>().loadProduct(id),
+                    ),
             );
           }
           if (p == null) {

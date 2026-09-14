@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/data/product_mapper.dart';
 import 'package:al_batal_elite/features/storefront/data/supabase_catalog_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,30 @@ const _good = Product(
   stock: {'Emerald-1m': 12},
   rating: 4.8,
   reviewCount: 124,
+);
+
+/// Same category as [_good] — the related-strip fallback must include it.
+const _sameCategory = Product(
+  id: '22222222-2222-2222-2222-222222222222',
+  name: 'Ivory Silk Charmeuse',
+  category: 'Silk',
+  price: Money(98000),
+  imageColor: 0xFFF2EAD9,
+  sizes: ['1m'],
+  colors: ['Ivory'],
+  stock: {'Ivory-1m': 5},
+);
+
+/// Different category — the related-strip fallback must exclude it.
+const _other = Product(
+  id: '33333333-3333-3333-3333-333333333333',
+  name: 'Midnight Velvet',
+  category: 'Velvet',
+  price: Money(88000),
+  imageColor: 0xFF302244,
+  sizes: ['2m'],
+  colors: ['Purple'],
+  stock: {'Purple-2m': 7},
 );
 
 SupabaseCatalogRepository _repo(SharedPreferences prefs) =>
@@ -88,6 +113,75 @@ void main() {
       expect(product.stock, {'Emerald-1m': 12});
       expect(product.rating, 4.8);
       expect(product.reviewCount, 124);
+    });
+  });
+
+  group('Offline degrades (Task #8)', () {
+    test(
+        'fetchProductById cold-start offline restores the persistent cache '
+        'and resolves the id', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final client = _MockSupabaseClient();
+      final repo =
+          SupabaseCatalogRepository(client: client, preferences: prefs);
+      await repo.persistCacheForTest([_good, _other]);
+      when(() => client.from(any())).thenThrow(Exception('network offline'));
+
+      final result = await repo.fetchProductById(_good.id);
+
+      expect(result, isA<Success<Product>>());
+      expect((result as Success<Product>).value.id, _good.id);
+      // The restore routed through _setCache — synchronous index rebuilt.
+      expect(repo.findProductById(_good.id)?.name, 'Royal Emerald Silk');
+    });
+
+    test(
+        'fetchProductById offline with a cold cache still fails (page shows '
+        'the offline notice, not a stale product)', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final client = _MockSupabaseClient();
+      final repo =
+          SupabaseCatalogRepository(client: client, preferences: prefs);
+      when(() => client.from(any())).thenThrow(Exception('network offline'));
+
+      final result = await repo.fetchProductById(_good.id);
+
+      expect(result, isA<Failure>());
+    });
+
+    test('fetchRelated offline derives the strip from the persistent cache',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final client = _MockSupabaseClient();
+      final repo =
+          SupabaseCatalogRepository(client: client, preferences: prefs);
+      // Two Silk products + one Velvet: the strip must filter + exclude.
+      await repo.persistCacheForTest([_good, _sameCategory, _other]);
+      when(() => client.from(any())).thenThrow(Exception('network offline'));
+
+      final result =
+          await repo.fetchRelated('Silk', excludeId: _good.id, limit: 8);
+
+      expect(result, isA<Success<List<Product>>>());
+      final related = (result as Success<List<Product>>).value;
+      expect(related.map((p) => p.id), [_sameCategory.id]);
+    });
+
+    test('fetchRelated offline with nothing cached fails closed as before',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final client = _MockSupabaseClient();
+      final repo =
+          SupabaseCatalogRepository(client: client, preferences: prefs);
+      when(() => client.from(any())).thenThrow(Exception('network offline'));
+
+      final result = await repo.fetchRelated('Silk');
+
+      expect(result, isA<Failure>());
     });
   });
 }

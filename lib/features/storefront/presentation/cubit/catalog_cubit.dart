@@ -5,6 +5,7 @@ import 'package:bloc/bloc.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
+import '../../../../shared/services/connectivity_gate.dart';
 import '../../domain/entities/catalog_filters.dart';
 import '../../domain/entities/flash_sale.dart';
 import '../../domain/repositories/catalog_repository.dart';
@@ -24,7 +25,7 @@ export '../../domain/entities/catalog_filters.dart'
 export 'catalog_state.dart';
 
 final class CatalogCubit extends Cubit<CatalogState> {
-  CatalogCubit(this._repository, {DateTime Function()? now})
+  CatalogCubit(this._repository, {DateTime Function()? now, this.gate})
       : _now = now ?? DateTime.now,
         super(CatalogState()) {
     // Countdown ticking lives in FlashSaleTicker (server-driven); the
@@ -34,6 +35,14 @@ final class CatalogCubit extends Cubit<CatalogState> {
   }
 
   final CatalogRepository _repository;
+
+  /// App-scoped connectivity truth (Task #8 offline catalog). Optional so
+  /// legacy test seams (`CatalogCubit(repo)`) keep compiling with the
+  /// default online assumption. When the gate reports offline, [load]
+  /// tags [CatalogState.isOffline] so pages can suppress the error
+  /// FeedbackView in favour of the offline notice; the repository's
+  /// persistent-cache fallback does the actual cache restore.
+  final ConnectivityGate? gate;
 
   /// Injectable clock so the flash countdown is testable deterministically.
   final DateTime Function() _now;
@@ -59,7 +68,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   Timer? _flashPollTimer;
 
   Future<void> load() async {
-    emit(state.copyWith(status: CatalogStatus.loading));
+    // Offline truth is sampled once per load (Task #8): an offline load
+    // that succeeds comes from the persistent cache; an offline failure
+    // is "cold cache while offline", not a real server error.
+    final offline = gate?.current == false;
+    emit(state.copyWith(status: CatalogStatus.loading, isOffline: offline));
     // Parallel fetch (audit residual P4): products and categories are
     // independent queries, so they run concurrently via Future.wait.
     // Error semantics unchanged: a products failure is terminal (error),
@@ -80,6 +93,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
           status: CatalogStatus.ready,
           allProducts: products,
           categories: cats,
+          isOffline: offline,
         ));
         // Integrate flash sales into initial load (T1). Fire-and-forget;
         // emissions are skipped when sales are empty to keep existing
@@ -87,7 +101,8 @@ final class CatalogCubit extends Cubit<CatalogState> {
         // ignore: discarded_futures
         loadFlashSales();
       },
-      failure: (_) => emit(state.copyWith(status: CatalogStatus.error)),
+      failure: (_) =>
+          emit(state.copyWith(status: CatalogStatus.error, isOffline: offline)),
     );
   }
 
