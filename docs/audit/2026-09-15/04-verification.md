@@ -133,3 +133,23 @@ Get-ChildItem docs/audit/2026-09-15/patches/*.patch | Sort-Object Name | ForEach
 > outer repository) is a no-op on paths outside its working directory. The check was re-run with
 > zip exports and a self-contained scratch repository; the table above is from that corrected run,
 > which counts and hashes both trees rather than trusting an empty diff.
+
+## 9. Clean-checkout verification (green is not local state)
+
+The branch tip was exported with `git archive --format=zip fix/audit-2026-09-15` into a fresh
+directory (no `.dart_tool`, no locally-modified files, no editor state), made its own repository
+for the git-backed secret sweep, then `flutter pub get` + the harness were run there:
+
+| Gate (in the clean export) | exit | time |
+|---|---|---|
+| `flutter pub get` | 0 | — |
+| `flutter analyze --no-pub` | 0 | 118.5 s — `No issues found!` |
+| `dart format --set-exit-if-changed` | 0 | 1.8 s — 0 changed |
+| `flutter test --reporter compact` | 0 | 163 s — **`+888: All tests passed!`** |
+| secret sweep (role-aware) | 0 | one triaged `anon` warning (`AUD-014`) |
+| `flutter pub outdated` | 0 | 5.6 s |
+
+**`failed gates: 0`** — log: `.openclaw/tmp/audit/clean-checkout-run2.txt`, evidence directory:
+`.openclaw/tmp/clean-checkout-20260915-140703/`. The Android build gate was excluded here
+(`-SkipBuild`) because it was already verified twice on the branch checkout (see §1 and §7);
+the three code-level gates plus the security sweep all reproduce on a pristine export.
