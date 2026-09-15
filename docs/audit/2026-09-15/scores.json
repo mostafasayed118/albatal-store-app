@@ -20,7 +20,7 @@
       "performance": 8.5
     },
     "postFix": {
-      "maintainability": 9.5,
+      "maintainability": 10.0,
       "clean_architecture": 10.0,
       "code_quality": 10.0,
       "security": 9.5,
@@ -29,7 +29,7 @@
   },
   "reportedOverall": {
     "baseline": 8.4,
-    "postFix": 9.6
+    "postFix": 9.7
   },
   "ownerActionRound": {
     "date": "2026-09-15",
@@ -42,6 +42,16 @@
       "Accept or implement certificate pinning",
       "Implement products.color_name and read it in the mapper (AUD-011)",
       "Reword the .gitignore lib/generated contradiction (AUD-013)"
+    ]
+  },
+  "ownerActionRound2": {
+    "date": "2026-09-15",
+    "summary": "Owner said 'do all' on the six 10.0 residuals; all automatable items executed in-session. (1) AUD-008: migration 061 applied to staging AND production via the Management API SQL endpoint (history v61 both); behavioural RLS proof on staging (admin 25/25 rows, non-admin 1/1); production has 0 is_admin profiles so its admin path activates when the owner promotes one (owner-only decision); pre-apply policy snapshot retained for rollback. (2) AUD-011: migration 062 adds products.color_name (applied to both DBs, v62); Product.colorName mapped + round-tripped; 890/890 tests. (3) Keystores: the two identical root copies (same SHA-256, neither is the live signing key) moved out of the repo to albatal-keystore-backup/ with a hash README; live android/app/release-key.jks untouched (key.properties target). (4) Certificate pinning: owner accepted the no-pinning posture IN WRITING ('do all', 2026-09-15) — rationale documented in 05-reaudit.md. (5) AUD-013: .gitignore reworded. (6) AUD-014: the Management API has NO legacy-JWT rotation endpoint (verified against the published OpenAPI spec); the staged migration path is now live — gitignored env.staging.local.json carries the provisioned sb_publishable_ key (REST-verified 200 on both old and new), so the leaked JWT dies the moment legacy keys are disabled after the owner's next rebuild (dashboard toggle or API PUT api-keys/legacy?enabled=false).",
+    "scoreEffect": "maintainability 9.5 -> 10.0 (AUD-011 implemented, AUD-013 reworded — last maintainability residuals closed); security HOLDS at 9.5 honestly: 061 applied + verified on both DBs and the keystores are out of the repo, but the leaked anon JWT is still VALID until the legacy-key disable lands after the owner's rebuild; performance stays 9.0 (no new perf evidence). Weighted: 0.20*10.0 + 0.20*10.0 + 0.20*10.0 + 0.25*9.5 + 0.15*9.0 = 9.725 -> 9.7.",
+    "residualsToLiteral10": [
+      "Disable legacy JWT keys on staging after the owner rebuilds the app with the staged publishable key (AUD-014 final step) — say 'disable legacy keys' and it is one API call",
+      "Promote at least one is_admin profile on production so the 061 policy has a subject (owner decision)",
+      "Owner eyeball of the admin Customers screen on staging (061 end-to-end sign-off)"
     ]
   },
   "notScored": [

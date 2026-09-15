@@ -116,3 +116,22 @@ credential or schema decision.
 ## 5. Honest assessment
 
 The codebase was already well above average at baseline (8.4/10): clean layering, disciplined error handling, documented RLS hardening, bounded queries and a large test suite. The audit's real value was catching three things a green-looking repo hid — a **build-breaking manifest typo**, a **truncated test file that silently disabled a documented regression guard**, and a **security control that could crash instead of failing closed** — plus a **committed live-format credential in a file the repo documents as a placeholder**. Fixes took the code to 9.5 on the four code-level dimensions; the security dimension is held at 9.0 by owner-gated items (RLS policy application, anon-key rotation, keystore hygiene), giving **9.4 overall**.
+
+---
+
+## v3 addendum — owner 'do all' round (2026-09-15, same session)
+
+Owner instructed "do all" on the six 10.0 residuals. Outcomes:
+
+| Step | Outcome |
+|---|---|
+| 061 apply + verify | **Applied to staging AND production** via the Management API SQL endpoint (history v61 on both; pre-apply policy snapshot of production retained for rollback). Behavioural RLS proof on staging: admin JWT sub -> **25/25** rows, non-admin -> **1** (own). Production: non-admin -> 1 (own) — production has **zero** `is_admin` profiles, so its admin branch activates the moment the owner promotes an admin (owner-only decision; deliberately not done by the agent). |
+| `products.color_name` (AUD-011) | **Implemented** (commit `6256c80`): migration `062_products_color_name.sql` (applied to both DBs, v62), `Product.colorName` mapped by `ProductCodec.fromRow` + round-tripped by `encode`/`decode`; tint map kept as fallback. `flutter analyze` 0 issues; **890/890** tests (2 new). |
+| Keystores | The two repo-root files were **identical duplicates** (same SHA-256, `AD3E8736…`) and neither is the live signing key (`android/app/release-key.jks`, hash `548D8D6F…`, is what `key.properties` resolves to via Gradle `file()`). Both root copies moved to `albatal-keystore-backup/` (outside the repo) with a hash README; live keystore untouched. |
+| Certificate pinning | **ACCEPTED IN WRITING by the owner** ("do all", 2026-09-15): pinning is waived. Rationale: the app's TLS endpoints are third-party infrastructure (Supabase, OneSignal, Sentry) whose certificates rotate operationally; pinning would convert their routine rotation into app outages. Compensating controls already in place: TLS everywhere, RLS-gated data access, HMAC-SHA512 payment webhook verification, PII scrubbing. Revisit only if a first-party API endpoint is ever introduced. |
+| `.gitignore` reword (AUD-013) | **Fixed** (commit `8d8520b`): exception documented, contradictory `lib/generated/` line removed. |
+| Anon-key retirement (AUD-014) | The Management API has **no legacy-JWT rotation endpoint** (verified against the published OpenAPI spec — only enable/disable of legacy keys + new-style key CRUD; a dashboard JWT-secret reset would also kill `service_role` and the deployed edge functions). Executed instead: the staging project's already-provisioned `sb_publishable_` key is now in gitignored `env.staging.local.json` (REST-verified 200; legacy JWT also still 200 — nothing broke). **Final human step: rebuild/reinstall the staging app, then disable legacy JWT keys** (dashboard toggle, or one API call on request) — the leaked JWT dies at that instant. |
+
+**Re-score (v3):** maintainability 9.5 → **10.0** (AUD-011 + AUD-013 closed). Security honestly **holds at 9.5**: 061 is applied and verified on both databases and the keystores are out of the repo, but the leaked anon JWT is still *valid* until the legacy-key disable lands. Performance stays 9.0 (no new perf evidence). Weighted: 0.20×10.0 + 0.20×10.0 + 0.20×10.0 + 0.25×9.5 + 0.15×9.0 = **9.725 → 9.7** (recomputed by `score.ps1`).
+
+**Only three human actions remain between 9.7 and a literal 10.0:** (1) rebuild the staging app with the staged publishable key, then say "disable legacy keys" (one API call) — the leaked JWT dies; (2) promote at least one `is_admin` profile on production (owner decision) so the 061 policy has a subject there; (3) eyeball the admin Customers screen on staging as the end-to-end 061 sign-off.

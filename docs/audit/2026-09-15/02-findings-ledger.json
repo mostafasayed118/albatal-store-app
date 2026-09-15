@@ -113,10 +113,10 @@
       "location": "lib/features/admin/data/supabase_admin_repository.dart:416-429 (fetchCustomers); supabase/migrations (missing 061)",
       "root_cause": "profiles grants only auth.uid() = id (migration 002). The admin directory therefore returns just the caller's own row: no data is leaked, but the screen silently under-reports. Repository comments reference supabase/migrations/_proposals/061_admin_profiles_read.sql, which is absent from the repo, so the gap has no reviewable artifact.",
       "proposed_fix": "Ship the review-gated SQL proposal adding a SELECT policy for admins (is_admin) on public.profiles, and require human review before supabase db push.",
-      "applied_fix": "Route (a) chosen and executed by the owner (commit 445d3fa): supabase/migrations/061_admin_profiles_read.sql now exists as a real migration with provenance notes citing the auditor proposal. NOT applied to any database - config.toml is linked to the production-parity ref, so `supabase db push` remains an explicit gate. Apply on staging first and verify the admin Customers screen lists other users.",
-      "status": "migration-shipped-db-apply-pending",
-      "commit": null,
-      "verification": "Policy statements cross-checked against 002_rls_policies.sql and 029_drop_profiles_update_own.sql; proposal marked HUMAN-REVIEW / DO NOT AUTO-APPLY.",
+      "applied_fix": "Route (a) chosen and executed by the owner (commit 445d3fa): supabase/migrations/061_admin_profiles_read.sql now exists as a real migration with provenance notes citing the auditor proposal. Applied to the LIVE databases on owner instruction ('do all', 2026-09-15) via the Management API SQL endpoint: staging (zvpjngdgbpnkkqrorkul) then production (alxwvyflasewslinufqe); recorded in supabase_migrations.schema_migrations as version 61 on both.",
+      "status": "applied-staging-verified-production-applied",
+      "commit": "445d3fa",
+      "verification": "Staging behavioural RLS proof: admin sub -> 25/25 rows visible; non-admin sub -> exactly 1 (own). Production applied identically (pre-apply snapshot of profiles policies kept for rollback); production non-admin probe -> 1 (own) — production has ZERO is_admin profiles, so the admin path activates as soon as the owner promotes an admin there (owner-only decision). Helper is SECURITY DEFINER on both. Admin Customers screen eyeball on a device remains the owner's final sign-off.",
       "evidence": "docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql"
     },
     {
@@ -141,11 +141,11 @@
       "location": "lib/features/storefront/domain/entities/catalog_filters.dart:28-40",
       "root_cause": "catalogColorName maps hardcoded ARGB ints to display names; the code's own TODO(audit) notes the correct fix is a Product.colorName column. That is a DB/schema decision, not a code-only change.",
       "proposed_fix": "Add products.color_name (or a colours lookup table) and read it through the mapper, keeping the 'Other' fallback.",
-      "applied_fix": "Not applied: out of scope (schema change requires owner decision + migration review).",
-      "status": "documented-residual",
-      "commit": null,
-      "verification": "Fallback behaviour confirmed present (`?? 'Other'`).",
-      "evidence": "docs/audit/2026-09-15/05-reaudit.md (residual risk register)"
+      "applied_fix": "Implemented (commit 6256c80): migration 062_products_color_name.sql adds products.color_name text (both DBs applied, history v62); Product.colorName (nullable) added to the entity, mapped by ProductCodec.fromRow and round-tripped by encode/decode; the catalogColorName tint map stays as the documented fallback.",
+      "status": "fixed",
+      "commit": "6256c80",
+      "verification": "flutter analyze 0 issues; flutter test 890/890 (2 new AUD-011 tests: fromRow maps color_name, mistyped/absent degrades to null, encode/decode round-trip + legacy-cache decode).",
+      "evidence": "supabase/migrations/062_products_color_name.sql, lib/core/entities/product.dart, lib/features/storefront/data/product_mapper.dart"
     },
     {
       "id": "AUD-012",
@@ -169,10 +169,10 @@
       "location": ".gitignore (Generated section) vs lib/generated/l10n/*.dart (tracked)",
       "root_cause": "lib/generated/ and *.g.dart are ignored, but the three generated l10n files are committed (so CI can build without running codegen). The ignore rule cannot apply to already-tracked files, so the two rules contradict and future generated files may surprise contributors.",
       "proposed_fix": "Either document the exception next to the ignore rule ('l10n output is intentionally tracked') or add a negation pattern (!lib/generated/l10n/).",
-      "applied_fix": "Not applied: .gitignore policy is a repo-governance decision; documented here so the owner can pick the wording.",
-      "status": "documented-residual",
-      "commit": null,
-      "verification": "git ls-files lib/generated -> 3 tracked files; git check-ignore behaviour confirmed by inspection.",
+      "applied_fix": "Fixed (commit 8d8520b): the 'Generated' section now documents the exception — *.g.dart/*.freezed.dart stay untracked, and lib/generated/ (flutter gen-l10n output) is intentionally tracked with regeneration byte-stable via flutter gen-l10n. The contradictory lib/generated/ ignore line was removed.",
+      "status": "fixed",
+      "commit": "8d8520b",
+      "verification": "git ls-files lib/generated -> 3 tracked files; git check-ignore confirms they are no longer shadowed by an ignore rule.",
       "evidence": "docs/audit/2026-09-15/03-audit-report.md"
     },
     {
@@ -183,10 +183,10 @@
       "location": "config/env.staging.json:3",
       "root_cause": ".gitignore documents the convention that the committed templates (env.staging.json / env.production.json) hold PLACEHOLDERS and real values live in the gitignored *.local.json variants. env.production.json honours this (REPLACE_WITH_*), but env.staging.json holds a genuine 208-character JWT (3 segments, decodes to role=anon, iss=supabase, far-future exp). It entered the tree with commit d50a181 ('refactor(security): implement environment isolation and harden payment flows'). A Supabase anon key is public-by-design and RLS-gated, so there is no direct exploit path - the risk is the breached convention plus reliance on RLS completeness, and it was missed by the 2026-09-14 live-DB check (which only cleared env.production.json).",
       "proposed_fix": "Replace the value in the tracked template with a placeholder (mirroring env.production.json), keep the real key only in gitignored config/env.staging.local.json, and rotate the staging anon key in the Supabase dashboard if the project treats it as sensitive. Because the key is in git history, rotation - not just removal - is the durable fix.",
-      "applied_fix": "Owner action (commit ebe381b): the tracked template now holds the placeholder REPLACE_WITH_STAGING_ANON_KEY (verified: 29-char placeholder, zero non-ASCII bytes); the real key lives only in gitignored config/env.staging.local.json. REMAINING OWNER ACTION: rotate the anon key in the Supabase dashboard - the old value is still in git history.",
-      "status": "remediated-in-tree-rotation-pending",
+      "applied_fix": "Owner action (commit ebe381b): the tracked template now holds the placeholder REPLACE_WITH_STAGING_ANON_KEY (verified: 29-char placeholder, zero non-ASCII bytes). Follow-up round (owner 'do all', 2026-09-15): the staging project already has new-style API keys provisioned, so the leak is being retired via the documented migration path instead of a JWT-secret reset — gitignored config/env.staging.local.json now carries the 46-char sb_publishable_ key (REST-verified HTTP 200; legacy anon JWT also verified still 200, so nothing broke). REMAINING (owner, one command): rebuild/reinstall the staging app from the updated local config, then disable legacy JWT keys (dashboard, or API PUT /v1/projects/{ref}/api-keys/legacy?enabled=false on request) — the leaked JWT dies at that moment. A full dashboard JWT-secret rotation is NOT automatable and would also invalidate service_role (edge functions), so it needs a coordinated window.",
+      "status": "remediated-in-tree-key-migration-staged",
       "commit": "ebe381b",
-      "verification": "Decoded role=anon (printed no token material); file is ASCII-only, 208-char token, tracked; git log --diff-filter=A identifies d50a181 as the introducing commit; git grep shows it is the only tracked file with a real token.",
+      "verification": "Decoded role=anon (printed no token material); file is ASCII-only, 208-char token, tracked; git log --diff-filter=A identifies d50a181 as the introducing commit; publishable key probed live against /rest/v1/products -> 200 with both old and new keys; harness scans only tracked files so the local swap is invisible to it.",
       "evidence": "docs/audit/2026-09-15/05-reaudit.md (RESIDUAL-R10), scripts/audit/run-audit.ps1 (role-aware sweep)"
     },
     {
