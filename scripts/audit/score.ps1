@@ -89,9 +89,9 @@ foreach ($dim in $weights.PSObject.Properties) {
 }
 Write-Host ("  weighted overall = {0}" -f $postFix) -ForegroundColor Green
 
-Write-Host "`nReported overall: baseline 8.4 -> post-fix 9.4" -ForegroundColor Cyan
-if ([math]::Abs($baseline - 8.4) -gt 0.051 -or [math]::Abs($postFix - 9.4) -gt 0.051) {
-  Write-Host "MISMATCH vs published report (8.4 / 9.4)" -ForegroundColor Red
+Write-Host "`nReported overall (from scores.json): baseline $($s.reportedOverall.baseline) -> post-fix $($s.reportedOverall.postFix)" -ForegroundColor Cyan
+if ([math]::Abs($baseline - [double]$s.reportedOverall.baseline) -gt 0.051 -or [math]::Abs($postFix - [double]$s.reportedOverall.postFix) -gt 0.051) {
+  Write-Host ("MISMATCH vs reported values in scores.json ({0} / {1})" -f $s.reportedOverall.baseline, $s.reportedOverall.postFix) -ForegroundColor Red
   exit 1
 }
 

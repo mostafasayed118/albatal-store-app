@@ -71,6 +71,7 @@
 <div class="cards">
   <div class="card"><div class="lbl">Overall · baseline</div><div class="val">8.4</div><div class="dlt">weighted, 5 dimensions</div></div>
   <div class="card"><div class="lbl">Overall · re-audit</div><div class="val">9.4</div><div class="dlt">+1.0 after verified fixes</div></div>
+  <div class="card"><div class="lbl">Overall · after owner actions</div><div class="val">9.6</div><div class="dlt">re-audit v2 (same rubric)</div></div>
   <div class="card"><div class="lbl">Tests</div><div class="val">888</div><div class="dlt">was 875 pass / 9 fail</div></div>
   <div class="card"><div class="lbl">Android build</div><div class="val">PASS</div><div class="dlt">was broken (manifest XML)</div></div>
   <div class="card"><div class="lbl">Analyzer</div><div class="val">0</div><div class="dlt">was 4 warnings</div></div>
@@ -197,7 +198,27 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
   <p style="margin-bottom:0">All three are fixed and verified; the suite is now 888/888 with a proven-clean build.</p>
 </div>
 
-<h2><span class="n">6</span>Artifacts</h2>
+<h2><span class="n">6</span>Addendum — owner remediation round (re-audit v2)</h2>
+<p style="font-size:13.5px">The owner then executed the residual list. Branch merged with <code>origin/master</code> (PR #63), conflicts resolved semantically, gates re-proven on the merge head, pushed as PR #64. Same rubric, same weights:</p>
+<table>
+  <thead><tr><th>Dimension</th><th class="num">Weight</th><th class="num">Baseline</th><th class="num">Post-fix</th><th class="num">After owner actions</th></tr></thead>
+  <tbody>
+    <tr><td>Maintainability</td><td class="num">20%</td><td class="num">8.5</td><td class="num">9.5</td><td class="num"><b>9.5</b></td></tr>
+    <tr><td>Clean architecture</td><td class="num">20%</td><td class="num">9.5</td><td class="num">10.0</td><td class="num"><b>10.0</b></td></tr>
+    <tr><td>Code quality</td><td class="num">20%</td><td class="num">7.5</td><td class="num">9.5</td><td class="num"><b>10.0</b></td></tr>
+    <tr><td>Security</td><td class="num">25%</td><td class="num">8.0</td><td class="num">9.0</td><td class="num"><b>9.5</b></td></tr>
+    <tr><td>Performance</td><td class="num">15%</td><td class="num">8.5</td><td class="num">9.0</td><td class="num"><b>9.0</b></td></tr>
+    <tr><td><b>Weighted overall</b></td><td class="num"><b>100%</b></td><td class="num"><b>8.4</b></td><td class="num"><b>9.4</b></td><td class="num"><b>9.6</b></td></tr>
+  </tbody>
+</table>
+<pre>v2 = 0.20×9.5 + 0.20×10.0 + 0.20×10.0 + 0.25×9.5 + 0.15×9.0
+   = 1.90 + 2.00 + 2.00 + 2.375 + 1.350 = 9.625 → 9.6</pre>
+<div class="callout">
+  <p style="margin-top:0"><b>Closed by the owner round:</b> <code>AUD-015</code> packed-refs repaired (<code>git clone</code> verified working) · <code>AUD-009</code> <code>http</code> pinned · <code>AUD-014</code> tracked key → placeholder · <code>AUD-008</code> migration 061 shipped.</p>
+  <p style="margin-bottom:0"><b>Still open (all owner/deployment, not code):</b> rotate the staging anon key, apply 061 to staging then production, move release keystores out of the repo root, accept or implement certificate pinning, implement <code>products.color_name</code>, reword the <code>.gitignore</code> <code>lib/generated</code> contradiction.</p>
+</div>
+
+<h2><span class="n">7</span>Artifacts</h2>
 <table>
   <thead><tr><th>Artifact</th><th>Path</th></tr></thead>
   <tbody>

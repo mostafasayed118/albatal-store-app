@@ -55,6 +55,64 @@ Per the audit brief, these are reported as residual risk rather than by discardi
 | Security | Medium-high | Secrets/RLS/platform config reviewed directly, including decoding the committed staging token's `role` claim without printing token material; RLS coverage is repo-wide by policy grep + deep reads of 002/017/029, but 59 migrations were not re-derived line-by-line from a live database. No live probing was allowed. **Note:** `AUD-014` was found during harness validation *after* the first scoring pass; the security score was lowered from 9.5 to 9.0 to reflect that the earlier "evidence complete" claim did not hold |
 | Performance | Medium | Static analysis plus the existing `catalog_perf_test.dart`; no profiling against real devices or a production dataset was in scope |
 
+## 4b. Re-audit v2 — after the owner remediation round (2026-09-15)
+
+The owner executed the residual list. The branch was then merged with `origin/master` (PR #63), two
+conflicts were resolved semantically, and the gates were re-proven on the merge head. Scores below
+use the **same rubric and weights** (v1.0); only the evidence changed.
+
+| Dimension | Weight | Baseline | Post-fix (v1) | After owner actions (v2) |
+|---|---|---|---|---|
+| Maintainability | 20% | 8.5 | 9.5 | **9.5** |
+| Clean architecture | 20% | 9.5 | 10.0 | **10.0** |
+| Code quality | 20% | 7.5 | 9.5 | **10.0** |
+| Security | 25% | 8.0 | 9.0 | **9.5** |
+| Performance | 15% | 8.5 | 9.0 | **9.0** |
+| **Weighted overall** | 100% | **8.4** | **9.4** | **9.6** |
+
+```
+v2 = 0.20×9.5 + 0.20×10.0 + 0.20×10.0 + 0.25×9.5 + 0.15×9.0
+   = 1.90 + 2.00 + 2.00 + 2.375 + 1.350 = 9.625 → 9.6
+```
+
+Recomputed automatically by `scripts/audit/score.ps1` from `scores.json` (exit 0).
+
+**What moved, and why:**
+
+| Change | Effect |
+|---|---|
+| `AUD-009` — `http: any` pinned to `^1.2.0` (commit `48462d9`) | removes the last actionable code-quality deduction → **code quality 9.5 → 10.0** |
+| `AUD-008` — migration `061_admin_profiles_read.sql` shipped as a real migration (commit `445d3fa`) | the missing reviewable artifact is closed; only the DB application gate remains → **security 9.0 → 9.5** |
+| `AUD-014` — tracked template placeholdered (commit `ebe381b`), verified 29-char placeholder, 0 non-ASCII bytes | committed real key replaced in-tree; dashboard rotation still owner-side |
+| `AUD-015` — packed-refs repaired; auditor re-verified `git clone` exits 0 | repo-integrity blocker cleared (**unscored** dimension) |
+| `AUD-011` decision recorded (`products.color_name text` at next schema touch) | implementation still pending → **maintainability held at 9.5** |
+
+**Harness re-proven on the merge head (independently re-run by the auditor, not just reported):**
+`flutter analyze` exit 0 · `dart format` exit 0 · **888/888 tests** · `flutter build apk --debug` exit 0 ·
+secret sweep exit 0 · `failed gates: 0` (log: `.openclaw/tmp/audit/harness_run3.txt`).
+
+**Residual register — updated status:**
+
+| ID | Status after the owner round |
+|---|---|
+| R1 (`AUD-008`) | **Artifact closed** — migration shipped. Open: apply to staging → production and verify the admin Customers screen lists other users |
+| R2 (`AUD-009`) | ✅ **Closed** — `http: ^1.2.0` |
+| R3 (`AUD-011`) | Decision recorded; implementation at the next schema touch |
+| R4 (`AUD-013`) | Open (trivial `.gitignore` wording) |
+| R5 (`AUD-012`) | Waived (documented-intentional admin-console English) |
+| R6 (keystores on disk) | Open — owner-side hygiene |
+| R7 (certificate pinning) | Open — accept in writing or implement |
+| R8 (dashboard `buildWhen`, static ListViews) | Accepted as-is (bounded surfaces) |
+| R9 (stale plan-doc test path) | Open (documentation, very low) |
+| R10 (`AUD-014`) | **In-tree closed**; open: rotate the staging anon key (still in git history) |
+| R11 (`AUD-015`) | ✅ **Closed** — clone verified working |
+
+**Remaining path to a literal 10.0:** rotate the staging anon key; apply migration 061 to staging +
+production and verify the admin directory; move the release keystores out of the repository root;
+accept or implement certificate pinning; implement `products.color_name` in the mapper; reword the
+`.gitignore` `lib/generated` contradiction. None of these is a code defect — each is a deployment,
+credential or schema decision.
+
 ## 5. Honest assessment
 
 The codebase was already well above average at baseline (8.4/10): clean layering, disciplined error handling, documented RLS hardening, bounded queries and a large test suite. The audit's real value was catching three things a green-looking repo hid — a **build-breaking manifest typo**, a **truncated test file that silently disabled a documented regression guard**, and a **security control that could crash instead of failing closed** — plus a **committed live-format credential in a file the repo documents as a placeholder**. Fixes took the code to 9.5 on the four code-level dimensions; the security dimension is held at 9.0 by owner-gated items (RLS policy application, anon-key rotation, keystore hygiene), giving **9.4 overall**.
