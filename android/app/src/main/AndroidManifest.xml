@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Permissions the app depends on directly.
        Declared EXPLICITLY here rather than relying on manifest merging
-       from plugin libraries: `flutter build apk --release` uses ONLY
+       from plugin libraries: `flutter build apk` (release) uses ONLY
        `src/main` (plus plugin manifests), whereas `src/debug` and
        `src/profile` are debug-only source sets. INTERNET was previously
        declared only in those debug/profile manifests, so a release APK
