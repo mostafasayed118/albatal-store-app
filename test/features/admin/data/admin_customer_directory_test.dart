@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
@@ -105,4 +106,165 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   @override
   Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) =>
       Future.value(_rows as T).timeout(timeLimit, onTimeout: onTimeout);
+}
+
+/// `rpc()` hands back a `PostgrestFilterBuilder` carrying a single decoded
+/// JSON payload (not a row list), so the customer-directory fakes above need
+/// an Object?-shaped sibling for the `get_order_details` tests.
+class _FakeRpcBuilder extends Fake implements PostgrestFilterBuilder<Object?> {
+  _FakeRpcBuilder(this._payload);
+
+  final Object? _payload;
+
+  @override
+  Future<R> then<R>(FutureOr<R> Function(Object? value) onValue,
+          {Function? onError}) =>
+      Future.value(_payload).then(onValue, onError: onError);
+
+  @override
+  Future<Object?> catchError(Function onError,
+          {bool Function(Object error)? test}) =>
+      Future.value(_payload).catchError(onError, test: test);
+
+  @override
+  Future<Object?> whenComplete(FutureOr<void> Function() action) =>
+      Future.value(_payload).whenComplete(action);
+
+  @override
+  Stream<Object?> asStream() => Future.value(_payload).asStream();
+}
+
+void main() {
+  // ─── fetchCustomers ─────────────────────────────────────
+  //
+  // Regression guard (doc comment above): the directory once requested the
+  // nonexistent `profiles.email` column; PostgREST answered 42703 and the
+  // whole screen degraded to a permanent error. The stub below matches the
+  // exact column list the repository MUST request — any drift (including
+  // re-adding `email`) misses the stub and fails the test.
+  test('fetchCustomers selects only real profiles columns and maps rows',
+      () async {
+    final client = MockSupabaseClient();
+    final builder = MockSupabaseQueryBuilder();
+    when(() => client.from('profiles')).thenAnswer((_) => builder);
+    when(() => builder.select('id, full_name, phone, membership_tier'))
+        .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
+      {
+        'id': 'c1',
+        'full_name': 'Layla',
+        'phone': '01000000000',
+        'membership_tier': 'premium',
+      },
+      {'id': 'c2', 'full_name': 'Omar'},
+    ]));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.fetchCustomers();
+
+    verify(() => builder.select('id, full_name, phone, membership_tier'))
+        .called(1);
+    final customers = result.when(success: (v) => v, failure: (_) => null);
+    expect(customers, isNotNull);
+    expect(customers!.length, 2);
+    expect(customers[0].id, 'c1');
+    expect(customers[0].name, 'Layla');
+    expect(customers[0].phone, '01000000000');
+    expect(customers[0].contact, '01000000000'); // no email column → phone
+    expect(customers[0].tier, 'premium');
+    expect(customers[0].isBlocked, isFalse); // §14 read-only directory
+    expect(customers[1].tier, 'standard'); // tolerant default
+    expect(customers[1].phone, '');
+  });
+
+  test('fetchCustomers maps a PostgREST failure to Failure (never throws)',
+      () async {
+    final client = MockSupabaseClient();
+    final builder = MockSupabaseQueryBuilder();
+    when(() => client.from('profiles')).thenAnswer((_) => builder);
+    when(() => builder.select('id, full_name, phone, membership_tier'))
+        .thenThrow(Exception('42703 column profiles.email does not exist'));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.fetchCustomers();
+
+    expect(result, isA<Failure<List<AdminCustomer>>>());
+  });
+
+  // ─── getOrderDetails ────────────────────────────────────
+  //
+  // Regression guard (doc comment above): the embedded profiles(...) join
+  // was subject to the VIEWER's RLS and returned a null profile for every
+  // other user's order. The detail path must go through the admin-checked
+  // `get_order_details` RPC instead.
+  test('getOrderDetails resolves through the admin-checked RPC', () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('get_order_details',
+        params: {'p_order_id': 'o1'})).thenAnswer(
+      (_) => _FakeRpcBuilder({
+        'order': {
+          'id': 'o1',
+          'status': 'placed',
+          'total': 129000,
+          'placed_at': '2026-09-01T10:00:00Z',
+          'payment_method': 'card',
+        },
+        'items': [
+          {
+            'product_name': 'Silk',
+            'size': '4m',
+            'color': 'Navy',
+            'quantity': 1,
+            'unit_price': 129000,
+          },
+        ],
+        'customer': {
+          'id': 'c1',
+          'full_name': 'Layla',
+          'membership_tier': 'premium',
+        },
+      }),
+    );
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.getOrderDetails('o1');
+
+    verify(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
+        .called(1);
+    final order = result.when(success: (v) => v, failure: (_) => null);
+    expect(order, isNotNull);
+    expect(order!.id, 'o1');
+    expect(order.status, AdminOrderStatus.placed);
+    expect(order.total, const Money(129000));
+    expect(order.customerId, 'c1');
+    expect(order.customerName, 'Layla');
+    expect(order.customerTier, 'premium');
+    expect(order.items.length, 1);
+    expect(order.itemCount, 1);
+    expect(order.items.first.productName, 'Silk');
+  });
+
+  test('getOrderDetails degrades a missing order to Success(null)', () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('get_order_details',
+        params: {'p_order_id': 'missing'}))
+        .thenAnswer((_) => _FakeRpcBuilder(<String, dynamic>{}));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.getOrderDetails('missing');
+
+    final order = result.when(success: (v) => v, failure: (_) => throw 'fail');
+    expect(order, isNull);
+  });
+
+  test('getOrderDetails maps an RPC failure to Failure (never throws)',
+      () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('get_order_details',
+        params: {'p_order_id': 'o1'})).thenThrow(Exception('permission'));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.getOrderDetails('o1');
+
+    expect(result, isA<Failure<AdminOrder?>>());
+  });
 }
