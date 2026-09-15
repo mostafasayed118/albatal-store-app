@@ -174,6 +174,20 @@
       "commit": null,
       "verification": "git ls-files lib/generated -> 3 tracked files; git check-ignore behaviour confirmed by inspection.",
       "evidence": "docs/audit/2026-09-15/03-audit-report.md"
+    },
+    {
+      "id": "AUD-014",
+      "dimension": "security",
+      "severity": "medium",
+      "title": "Tracked staging config file contains a real committed Supabase anon JWT (placeholders were the documented convention)",
+      "location": "config/env.staging.json:3",
+      "root_cause": ".gitignore documents the convention that the committed templates (env.staging.json / env.production.json) hold PLACEHOLDERS and real values live in the gitignored *.local.json variants. env.production.json honours this (REPLACE_WITH_*), but env.staging.json holds a genuine 208-character JWT (3 segments, decodes to role=anon, iss=supabase, far-future exp). It entered the tree with commit d50a181 ('refactor(security): implement environment isolation and harden payment flows'). A Supabase anon key is public-by-design and RLS-gated, so there is no direct exploit path - the risk is the breached convention plus reliance on RLS completeness, and it was missed by the 2026-09-14 live-DB check (which only cleared env.production.json).",
+      "proposed_fix": "Replace the value in the tracked template with a placeholder (mirroring env.production.json), keep the real key only in gitignored config/env.staging.local.json, and rotate the staging anon key in the Supabase dashboard if the project treats it as sensitive. Because the key is in git history, rotation - not just removal - is the durable fix.",
+      "applied_fix": "Not applied: config/ is outside the AGENTS.md auto-fix scope (lib/ only) and swapping the value could break staging builds that rely on the tracked file if no local override exists in CI. Reported with exact remediation instead; the repeatable harness now decodes token role and warns (not fails) for anon keys while hard-failing on service_role.",
+      "status": "documented-owner-action-required",
+      "commit": null,
+      "verification": "Decoded role=anon (printed no token material); file is ASCII-only, 208-char token, tracked; git log --diff-filter=A identifies d50a181 as the introducing commit; git grep shows it is the only tracked file with a real token.",
+      "evidence": "docs/audit/2026-09-15/05-reaudit.md (RESIDUAL-R10), scripts/audit/run-audit.ps1 (role-aware sweep)"
     }
   ],
   "baseline_harness": {
@@ -189,6 +203,7 @@
     "dart_format": "exit 0 - clean",
     "flutter_build_apk_debug": "exit 0 - app-debug.apk built",
     "coverage": "70.4% line coverage (7471/10609 instrumented lines)",
-    "flutter_pub_outdated": "no security-relevant findings; 3 direct pins intentional and documented"
+    "flutter_pub_outdated": "no security-relevant findings; 3 direct pins intentional and documented",
+    "secret_sweep": "no keystores or privileged keys; one triaged public-by-design anon JWT committed in config/env.staging.json (AUD-014, owner action)"
   }
 }

@@ -2,7 +2,7 @@
 
 Last run: 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
 
-## New — 2026-09-15 (five-dimension code-quality audit + fixes; 8.4 → 9.5)
+## New — 2026-09-15 (five-dimension code-quality audit + fixes; 8.4 → 9.4)
 
 Owner asked for a full five-dimension audit (maintainability, clean
 architecture, code quality, security, performance) scored 0–10 and then
@@ -31,10 +31,20 @@ Waived / residual (owner action, reasons in the reports): AUD-008 admin
 profiles RLS gap — **proposal shipped** at
 `docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql`, corroborated
 by the 2026-09-14 live-DB check (no admin SELECT policy live; live-only
-`admin_list_customers` has no migration — parity debt); AUD-009 `http: any`
+`admin_list_customers` has no migration — parity debt); **AUD-014: a real
+208-char Supabase anon JWT is committed in the tracked
+`config/env.staging.json`** (decoded role = anon → public-by-design, RLS-
+gated; breaches the repo's own placeholder convention; introduced by
+d50a181; NOT auto-fixed — config/ is outside the AGENTS.md auto-fix scope
+and swapping it can break staging builds; owner should placeholder it, keep
+the real key in env.staging.local.json, and rotate it in the Supabase
+dashboard since it is in git history); AUD-009 `http: any`
 needs pubspec approval; AUD-011 colour names need a schema column;
 AUD-012 admin-console English strings are documented-intentional;
 AUD-013 `.gitignore` vs tracked `lib/generated`.
+Security scored 9.0 (not 9.5) because of AUD-014 + the RLS gap → overall
+**9.4**. The audit harness (`scripts/audit/run-audit.ps1`) now decodes JWT
+role claims: anon = warn, service_role = hard fail.
 
 Deliverables: `docs/audit/2026-09-15/` (inventory, rubric, ledger json+csv,
 report md + report.html, verification, re-audit + residual register,

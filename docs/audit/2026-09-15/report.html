@@ -70,7 +70,7 @@
 
 <div class="cards">
   <div class="card"><div class="lbl">Overall · baseline</div><div class="val">8.4</div><div class="dlt">weighted, 5 dimensions</div></div>
-  <div class="card"><div class="lbl">Overall · re-audit</div><div class="val">9.5</div><div class="dlt">+1.1 after verified fixes</div></div>
+  <div class="card"><div class="lbl">Overall · re-audit</div><div class="val">9.4</div><div class="dlt">+1.0 after verified fixes</div></div>
   <div class="card"><div class="lbl">Tests</div><div class="val">888</div><div class="dlt">was 875 pass / 9 fail</div></div>
   <div class="card"><div class="lbl">Android build</div><div class="val">PASS</div><div class="dlt">was broken (manifest XML)</div></div>
   <div class="card"><div class="lbl">Analyzer</div><div class="val">0</div><div class="dlt">was 4 warnings</div></div>
@@ -87,11 +87,11 @@
       <td><div class="bar before"><i style="width:95%"></i></div><div class="bar"><i style="width:100%"></i></div></td></tr>
     <tr><td>Code quality</td><td class="num">20%</td><td class="num">7.5</td><td class="num">9.5</td><td class="num">+2.0</td>
       <td><div class="bar before"><i style="width:75%"></i></div><div class="bar"><i style="width:95%"></i></div></td></tr>
-    <tr><td>Security</td><td class="num">25%</td><td class="num">8.0</td><td class="num">9.5</td><td class="num">+1.5</td>
-      <td><div class="bar before"><i style="width:80%"></i></div><div class="bar"><i style="width:95%"></i></div></td></tr>
+    <tr><td>Security</td><td class="num">25%</td><td class="num">8.0</td><td class="num">9.0</td><td class="num">+1.0</td>
+      <td><div class="bar before"><i style="width:80%"></i></div><div class="bar"><i style="width:90%"></i></div></td></tr>
     <tr><td>Performance</td><td class="num">15%</td><td class="num">8.5</td><td class="num">9.0</td><td class="num">+0.5</td>
       <td><div class="bar before"><i style="width:85%"></i></div><div class="bar"><i style="width:90%"></i></div></td></tr>
-    <tr><td><b>Weighted overall</b></td><td class="num"><b>100%</b></td><td class="num"><b>8.4</b></td><td class="num"><b>9.5</b></td><td class="num"><b>+1.1</b></td><td></td></tr>
+    <tr><td><b>Weighted overall</b></td><td class="num"><b>100%</b></td><td class="num"><b>8.4</b></td><td class="num"><b>9.4</b></td><td class="num"><b>+1.0</b></td><td></td></tr>
   </tbody>
 </table>
 <div class="legend">Upper bar = re-audit · Lower bar = baseline. Weights: security 25%, then maintainability / architecture / quality 20% each, performance 15%.</div>
@@ -99,8 +99,8 @@
 <pre>Baseline = 0.20×8.5 + 0.20×9.5 + 0.20×7.5 + 0.25×8.0 + 0.15×8.5
          = 1.70 + 1.90 + 1.50 + 2.00 + 1.2750 = 8.375  → 8.4
 
-After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
-         = 1.90 + 2.00 + 1.90 + 2.375 + 1.350 = 9.525 → 9.5</pre>
+After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
+         = 1.90 + 2.00 + 1.90 + 2.250 + 1.350 = 9.400 → 9.4</pre>
 
 <h2><span class="n">2</span>Verification gates — baseline vs repaired</h2>
 <table>
@@ -153,13 +153,14 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
     </ul>
   </div>
   <div>
-    <h3 style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Why 9.5, not 10</h3>
-    <p style="font-size:13.5px">Every code-level finding is fixed and verified. The remaining half-point is four <b>owner-gated decisions</b> the audit is forbidden from taking alone (<code>AGENTS.md</code>: no pubspec edits, no migration edits without human review):</p>
+    <h3 style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Why 9.4, not 10</h3>
+    <p style="font-size:13.5px">Every code-level finding is fixed and verified. The remaining margin is four <b>owner-gated decisions</b> the audit is forbidden from taking alone (<code>AGENTS.md</code>: no pubspec edits, no migration edits without human review):</p>
     <ul style="padding-left:18px;font-size:13.5px">
       <li><span class="pill open">R1</span> Admin <code>061</code> RLS policy — proposal shipped, needs human review + apply.</li>
       <li><span class="pill open">R2</span> <code>http: any</code> → pin to <code>^1.2.0</code> (one line, needs approval).</li>
       <li><span class="pill open">R3</span> Catalogue colour names need a DB column to replace a hardcoded map.</li>
       <li><span class="pill open">R4</span> <code>.gitignore</code> vs tracked <code>lib/generated</code> wording.</li>
+      <li><span class="pill open">R10</span> Real Supabase <b>anon</b> JWT committed in <code>config/env.staging.json</code> — placeholder it and rotate (public-by-design, RLS-gated; still a breached convention).</li>
     </ul>
     <div class="callout warn" style="font-size:13px;margin-top:12px">
       Sample-size honesty: RLS coverage is repo-wide by policy grep plus deep reads of migrations 002 / 017 / 029 — a line-by-line derivation of all 59 migrations against a live database was out of scope (no production access, no live probing).
@@ -172,7 +173,8 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
   <p style="margin-top:0"><b>The audited tree looked healthy</b> — clean analyzer output bar four unused imports, 875 passing tests, a documented audit culture. Three defects were still live:</p>
   <p><b>1.</b> A <b>two-character typo</b> (<code>--</code> in an XML comment) silently made <i>every Android build fail</i>.<br>
      <b>2.</b> A <b>truncated test file</b> removed the only guard on a documented production regression while leaving the suite looking alive.<br>
-     <b>3.</b> A <b>security control</b> (the app lock's fail-closed escape) could be crashed by an <code>Error</code>-class failure instead of holding the lock.</p>
+     <b>3.</b> A <b>security control</b> (the app lock's fail-closed escape) could be crashed by an <code>Error</code>-class failure instead of holding the lock.<br>
+     <b>4.</b> A <b>live-format credential</b> (Supabase <code>anon</code> JWT) sat in a tracked config file the repo documents as a placeholder.</p>
   <p style="margin-bottom:0">All three are fixed and verified; the suite is now 888/888 with a proven-clean build.</p>
 </div>
 

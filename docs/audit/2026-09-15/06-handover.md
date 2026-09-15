@@ -13,7 +13,9 @@ Audit: 2026-09-15 · Repair branch: `fix/audit-2026-09-15` · Baseline: `5ef935c
 | `e78ca6e` | AUD-005 | `dart format` across `lib` and `test` | 7 files |
 | `f8c6f45` | AUD-006 | Payment watcher closes its controller on unsubscribe | `lib/features/payments/data/payment_status_watcher.dart` |
 | `5d494ae` | AUD-010 | Removed the stale `cached_network_image` TODO | `lib/features/storefront/data/product_mapper.dart` |
-| `b86…` (audit docs) | — | Audit report, rubric, ledger, verification bundle, re-audit, handover, harness, RLS proposal | `docs/audit/2026-09-15/**`, `scripts/audit/run-audit.ps1` |
+| `b86…` → superseded | — | *superseded by* `707db16` + the final docs commit (audit report, rubric, ledger, verification, re-audit, handover, harness, RLS proposal, rendered report) | `docs/audit/2026-09-15/**`, `scripts/audit/run-audit.ps1`, `STATE.md` |
+
+> The exact final commit list: `git log --oneline 5ef935c..fix/audit-2026-09-15`. Every fix commit maps to a ledger row; the docs commits carry the audit artifacts.
 
 Deliverables index: [00-inventory](00-inventory.md) · [01-rubric](01-rubric.md) · [02-ledger.json](02-findings-ledger.json) / [02-ledger.csv](02-findings-ledger.csv) · [03-audit-report](03-audit-report.md) · [04-verification](04-verification.md) · [05-reaudit](05-reaudit.md) · [06-handover](06-handover.md) · [rendered report](report.html) · [RLS proposal](proposals/061_admin_profiles_read.sql)
 
@@ -96,10 +98,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit/run-audit.ps1 
 - [ ] Reproduce AUD-003/AUD-001 by checking out the parent of their commits and running the two test files.
 - [ ] Cross-check the ledger against `git log 5ef935c..fix/audit-2026-09-15`: every `fixed` row has a commit, every fix commit maps to a row.
 - [ ] Run `scripts/audit/run-audit.ps1` on a clean checkout of the branch to prove the green result is not local state.
-- [ ] Decide RESIDUAL-R1…R9 ([05-reaudit.md](05-reaudit.md#3-residual-risk-register)) — each has a one-line owner action.
+- [ ] Decide RESIDUAL-R1…R10 ([05-reaudit.md](05-reaudit.md#3-residual-risk-register)) — each has a one-line owner action.
+- [ ] **AUD-014 (R10):** placeholder the anon key in `config/env.staging.json` (mirror `env.production.json`), keep the real key in `config/env.staging.local.json`, and rotate the staging anon key in the Supabase dashboard (it is in git history via `d50a181`).
 - [ ] Re-run the secret sweep on history before publishing (`gitleaks detect` using the repo's `.gitleaks.toml`).
 
 ## 6. Known cosmetic items for the reviewer
 
 - The snapshot commit `5fd16e9` also captured `.openclaw-attachments/` (two pasted-text files). Removing them from the index was blocked by a safety guard at the time; drop them when you squash or rebase the branch if you prefer.
 - `.openclaw/tmp/audit/**` holds raw process logs; they are intentionally untracked.
+- The harness's secret sweep initially flagged the committed staging token; the sweep is now role-aware (warn on `anon`, hard-fail on `service_role`). The warned state is expected until the owner completes the AUD-014 remediation above.

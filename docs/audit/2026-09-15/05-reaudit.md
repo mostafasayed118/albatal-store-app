@@ -12,18 +12,18 @@
 | Maintainability | 20% | 8.5 | **9.5** | +1.0 |
 | Clean architecture | 20% | 9.5 | **10.0** | +0.5 |
 | Code quality | 20% | 7.5 | **9.5** | +2.0 |
-| Security | 25% | 8.0 | **9.5** | +1.5 |
+| Security | 25% | 8.0 | **9.0** | +1.0 |
 | Performance | 15% | 8.5 | **9.0** | +0.5 |
-| **Weighted overall** | 100% | **8.4** | **9.5** | **+1.1** |
+| **Weighted overall** | 100% | **8.4** | **9.4** | **+1.0** |
 
 ```
-Re-audit = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
-         = 1.90 + 2.00 + 1.90 + 2.375 + 1.350 = 9.525 → 9.5
+Re-audit = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
+         = 1.90 + 2.00 + 1.90 + 2.250 + 1.350 = 9.400 → 9.4
 ```
 
-Harness on the re-audited tree: analyze clean · **888/888 tests pass** · format clean · Android debug APK builds · 70.4% coverage · secret sweep clean.
+Harness on the re-audited tree: analyze clean · **888/888 tests pass** · format clean · Android debug APK builds · 70.4% coverage · secret sweep triaged (no privileged keys).
 
-## 2. Why this is 9.5 and not 10.0
+## 2. Why this is 9.4 and not 10.0
 
 Every **code-level** finding raised by this audit is either fixed-and-verified or explicitly reviewed and waived. What remains between 9.5 and 10.0 is **not code defects** — it is four owner-gated decisions that the audit is contractually forbidden from taking unilaterally (`AGENTS.md`: no `pubspec.yaml` edits without approval, no `supabase/` migration edits without human review).
 
@@ -42,6 +42,7 @@ Per the audit brief, these are reported as residual risk rather than by discardi
 | RESIDUAL-R7 | No certificate pinning | Security | Deliberate stack-level trade-off; adding it is an architectural change needing owner sign-off | Explicitly accept in writing, or pin via a custom `http` client for Supabase/Paymob hosts | MITM via a trusted-device CA. Low-medium, standard for this stack |
 | RESIDUAL-R8 | `admin_sales_dashboard_page.dart` builder lacks `buildWhen`; 20 static `ListView(` surfaces | Performance | Inspected: bounded static content (≤ 4 cards / form fields / policy text); adding guards is churn without measured benefit | None required; revisit only if the dashboard grows a scrolling list | Negligible |
 | RESIDUAL-R9 | 9 payments tests could not be re-run as a single file group because `test/payment_test.dart` no longer exists (referenced by an older plan doc) | Documentation | The file was reorganised in a prior batch; the suite runs via the folder | Update the stale path reference in `docs/superpowers/plans/2026-09-08-audit-batch.md` if that plan is reused | Confusion for a future implementer following the old plan. Very low |
+| RESIDUAL-R10 (`AUD-014`) | A real Supabase **anon** JWT is committed in the tracked `config/env.staging.json` (208 chars, role=anon, introduced by `d50a181`) | Security hygiene | `config/` is outside the `AGENTS.md` auto-fix scope (lib/ only); swapping the value can break staging builds if CI relies on the tracked file; and the key is already in git history, so only the owner can rotate it | Replace the tracked value with a placeholder (mirroring `env.production.json`), keep the real key in the gitignored `config/env.staging.local.json`, and rotate the staging anon key in the Supabase dashboard | Anon keys are public-by-design and RLS-gated, so there is no direct exploit path; the exposure is a breached repo convention plus reliance on RLS completeness. Low |
 
 ## 4. Confidence notes (per rubric requirement)
 
@@ -50,9 +51,9 @@ Per the audit brief, these are reported as residual risk rather than by discardi
 | Maintainability | High | Full-tree scans (file sizes, dartdoc, TODO census) + 15 files read in full. Metrics are countable, not subjective |
 | Clean architecture | High | Dependency-direction rules were tested mechanically across all 255 files (0 violations), not sampled |
 | Code quality | High | Gate-driven (analyzer, formatter, suite) plus a complete triage of all 26 non-null assertions and all 97 catch sites |
-| Security | Medium-high | Secrets/RLS/platform config reviewed directly; RLS coverage is repo-wide by policy grep + deep reads of 002/017/029, but 59 migrations were not re-derived line-by-line from a live database. No live probing was allowed |
+| Security | Medium-high | Secrets/RLS/platform config reviewed directly, including decoding the committed staging token's `role` claim without printing token material; RLS coverage is repo-wide by policy grep + deep reads of 002/017/029, but 59 migrations were not re-derived line-by-line from a live database. No live probing was allowed. **Note:** `AUD-014` was found during harness validation *after* the first scoring pass; the security score was lowered from 9.5 to 9.0 to reflect that the earlier "evidence complete" claim did not hold |
 | Performance | Medium | Static analysis plus the existing `catalog_perf_test.dart`; no profiling against real devices or a production dataset was in scope |
 
 ## 5. Honest assessment
 
-The codebase was already well above average at baseline (8.4/10): clean layering, disciplined error handling, documented RLS hardening, bounded queries and a large test suite. The audit's real value was catching three things a green-looking repo hid — a **build-breaking manifest typo**, a **truncated test file that silently disabled a documented regression guard**, and a **security control that could crash instead of failing closed** — then closing the gap to 9.5 with verified fixes.
+The codebase was already well above average at baseline (8.4/10): clean layering, disciplined error handling, documented RLS hardening, bounded queries and a large test suite. The audit's real value was catching three things a green-looking repo hid — a **build-breaking manifest typo**, a **truncated test file that silently disabled a documented regression guard**, and a **security control that could crash instead of failing closed** — plus a **committed live-format credential in a file the repo documents as a placeholder**. Fixes took the code to 9.5 on the four code-level dimensions; the security dimension is held at 9.0 by owner-gated items (RLS policy application, anon-key rotation, keystore hygiene), giving **9.4 overall**.

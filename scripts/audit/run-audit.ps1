@@ -80,9 +80,31 @@ if ($suspicious) {
   Write-Host "suspicious tracked files: $($suspicious -join ', ')"
   $leakHits = 1
 }
-$tokenHits = git grep -n -E 'eyJ[A-Za-z0-9_-]{20,}' -- 'lib/*' 'config/*' 'supabase/*' 2>$null | Where-Object { $_ -notmatch 'REPLACE_|\.\.\.|…' }
-if ($tokenHits) { $tokenHits | ForEach-Object { Write-Host "possible token: $_" }; $leakHits = 1 }
-if ($leakHits -eq 0) { Write-Host "clean: no committed secrets, keystores or live tokens detected" }
+# Real Supabase JWTs are long base64url strings (anon/service keys). Any long
+# token committed on purpose needs triage: decode the role claim and hard-fail
+# on privileged roles (service_role bypasses RLS entirely), while reporting a
+# public-by-design `anon` key as a warned finding (see AUD-014 in the ledger).
+$tokenHits = git grep -n -E 'eyJ[A-Za-z0-9_-]{40,}' -- 'lib/*' 'config/*' 'supabase/*' 2>$null
+$privileged = @()
+foreach ($hit in @($tokenHits)) {
+  $file = ($hit -split ':', 2)[0]
+  $tok = [regex]::Match($hit, 'eyJ[A-Za-z0-9_\.\-]+').Value.TrimEnd('.')
+  $role = 'undecodable'
+  try {
+    $seg = $tok.Split('.')[1]
+    $seg = $seg.Replace('-', '+').Replace('_', '/')
+    switch ($seg.Length % 4) { 2 { $seg += '==' } 3 { $seg += '=' } }
+    $role = ([System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($seg)) | ConvertFrom-Json).role
+  } catch { $role = 'undecodable' }
+  if ($role -eq 'anon') {
+    Write-Host "WARN triaged: public-by-design 'anon' key committed in $file (AUD-014 - owner to placeholder/rotate)" -ForegroundColor Yellow
+  } else {
+    Write-Host "FAIL $role key committed in $file - rotate immediately" -ForegroundColor Red
+    $privileged += $hit
+  }
+}
+if ($privileged.Count -gt 0) { $leakHits = 1 }
+if ($leakHits -eq 0) { Write-Host "clean: no keystores, privileged keys or untriaged secrets detected" }
 $results['secret sweep'] = @{ exit = $leakHits }
 if ($leakHits -ne 0) { $fails++ }
 

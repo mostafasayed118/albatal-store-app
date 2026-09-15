@@ -14,9 +14,9 @@
 | Maintainability | 20% | 8.5 | **9.5** | +1.0 |
 | Clean architecture | 20% | 9.5 | **10.0** | +0.5 |
 | Code quality | 20% | 7.5 | **9.5** | +2.0 |
-| Security | 25% | 8.0 | **9.5** | +1.5 |
+| Security | 25% | 8.0 | **9.0** | +1.0 |
 | Performance | 15% | 8.5 | **9.0** | +0.5 |
-| **Weighted overall** | 100% | **8.4** | **9.5** | **+1.1** |
+| **Weighted overall** | 100% | **8.4** | **9.4** | **+1.0** |
 
 Arithmetic (recomputable by hand, one decimal):
 
@@ -24,8 +24,8 @@ Arithmetic (recomputable by hand, one decimal):
 Baseline = 0.20×8.5 + 0.20×9.5 + 0.20×7.5 + 0.25×8.0 + 0.15×8.5
          = 1.70 + 1.90 + 1.50 + 2.00 + 1.2750 = 8.375  → 8.4
 
-After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
-         = 1.90 + 2.00 + 1.90 + 2.375 + 1.350 = 9.525 → 9.5
+After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
+         = 1.90 + 2.00 + 1.90 + 2.250 + 1.350 = 9.400 → 9.4
 ```
 
 ## 2. Dimension 1 — Maintainability (20%): 8.5 → 9.5
@@ -93,7 +93,7 @@ Deductions after fixes:
 
 **9.5**
 
-## 5. Dimension 4 — Security (25%): 8.0 → 9.5
+## 5. Dimension 4 — Security (25%): 8.0 → 9.0
 
 **Method:** OWASP-oriented static review of first-party code, secret sweep over tracked files **and full git history**, RLS policy inspection (002/017/029 + migration census), platform config review (manifest, gradle, plist), auth/PII/logging review.
 
@@ -105,12 +105,13 @@ Verified strengths:
 - **Platform config:** manifest declares only INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, VIBRATE, USE_BIOMETRIC; a single exported launcher activity; no cleartext traffic flag; no debug-only permissions leaking into release (the manifest comment documents the INTERNET-permission regression it fixed).
 
 Deductions:
-- **−1.0** `AUD-008` — the admin customer directory is silently narrowed by RLS because the referenced `061` policy migration does not exist anywhere in the repo (repository comments point at `supabase/migrations/_proposals/061_admin_profiles_read.sql`). Not an exposure (RLS restricts *more* than intended), but a real functional/privacy-adjacent gap with no reviewable artifact. **Proposal shipped** (`docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql`) with a SECURITY DEFINER admin check to avoid recursive RLS, a review checklist and rollback. Applying it requires human review per `AGENTS.md`.
+- **−1.0** `AUD-008` — the admin customer directory is silently narrowed by RLS because the referenced `061` policy migration does not exist anywhere in the repo (repository comments point at `supabase/migrations/_proposals/061_admin_profiles_read.sql`). Not an exposure (RLS restricts *more* than intended), but a real functional/privacy-adjacent gap with no reviewable artifact. **Proposal shipped** (`docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql`) with a SECURITY DEFINER admin check to avoid recursive RLS, a review checklist and rollback. Applying it requires human review per `AGENTS.md`. Independently corroborated by the 2026-09-14 live-DB check recorded in `STATE.md` (no admin SELECT policy live; a live-only `admin_list_customers` function has no migration).
+- **−0.5** `AUD-014` — the tracked `config/env.staging.json` holds a **real 208-character Supabase JW**T (role=anon, decoded without printing token material), even though the repo documents that committed templates hold placeholders and only the gitignored `*.local.json` files hold real values (`env.production.json` honours this). An anon key is public-by-design and RLS-gated, so there is no direct exploit path — but it breaches the repo's own convention, depends on RLS completeness, sits in git history (introduced by `d50a181`), and was missed by the earlier live-DB check that only cleared `env.production.json`. Remediation and rotation are owner actions; the harness now decodes token role and warns on anon while hard-failing on `service_role`.
 - **−0.5** `AUD-002` — the fail-closed contract was not enforced against `Error`-class failures (fixed).
 - **−0.5** release keystores (`release-key.jks`, `release-keystore.jks`) sit in the repository root on disk. They are untracked and ignored, but keeping signing material inside the working tree is a hygiene risk; recommend moving them outside the repo and rotating if they were ever shared.
-- **−0.5** no certificate pinning (`RESIDUAL-R2`) — standard for this stack but worth an explicit accept/decline decision.
+- **−0.5** no certificate pinning (`RESIDUAL-R7`) — standard for this stack but worth an explicit accept/decline decision.
 
-**9.5**
+**9.0**
 
 ## 6. Dimension 5 — Performance (15%): 8.5 → 9.0
 
@@ -140,7 +141,7 @@ Deductions:
 | 4 | AUD-001 | **8/8 app-lock tests failing** (the only verification of the security gate) | Bare `Scaffold` under `pumpWidget` — no `Directionality` ancestor | Wrapped in `MaterialApp` | None (test harness only) | ✅ Fixed `9884592` |
 | 5 | AUD-006 | **Resource leak on every payment watch** | Controller not closed in `onCancel` | `isClosed`-guarded `close()` in `onCancel` | Low; `emitTerminal` already guards `isClosed` | ✅ Fixed `f8c6f45` |
 
-Runner-up: `AUD-008` (RLS admin directory) — proposal shipped, application is a human-gated DB step.
+Runner-up: `AUD-008` (RLS admin directory) and `AUD-014` (committed anon JWT in a tracked template) — both have review-ready remediation (a SQL proposal and an exact config/rotation recipe) and are owner-gated.
 
 ## 8. Verification summary
 
