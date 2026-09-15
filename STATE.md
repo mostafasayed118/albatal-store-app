@@ -143,10 +143,20 @@ now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
   (scorer-deterministic: 9.85 → 9.8; score.ps1 exit 0). The only
   dimension below 10.0 is performance (9.0 — needs new measured
   evidence, not bookkeeping).
-- NEXT GATES: owner review + merge of PR #64; promote an is_admin
-  profile on production when an admin account is wanted there; eyeball
-  the admin Customers screen on staging (061 end-to-end sign-off);
-  optional: production legacy-key parity later.
+- MERGED: PR #64 merged into master 2026-09-15 14:15Z (merge commit
+  a8b25ab) with FULL GREEN CI — Secret Scan, Format & Analyze, Flutter
+  Tests, Edge Function Tests, Deployment Readiness, Android Release
+  Build all SUCCESS. All 29 remediation/audit commits + owner WIP
+  5fd16e9 are now on master; local master synced to a8b25ab. Also this
+  round: fresh v5 re-audit (first successful sub-agent dispatch after
+  7/7 failures; 2 new code findings — codec drops sellByLength/
+  minCutMeters/widthCm/gsm despite doc claim, fetchPendingReviews
+  non-total decode — plus minors; re-derived 9.7, recorded in
+  05-reaudit.md v5; fix offer pending).
+- NEXT GATES: promote an is_admin profile on production when an admin
+  account is wanted there; eyeball the admin Customers screen on
+  staging (061 end-to-end sign-off); optional: production legacy-key
+  parity later; future work cycles branch fresh from master (a8b25ab).
 
 ## New — 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
 
