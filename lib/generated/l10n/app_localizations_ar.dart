@@ -1380,4 +1380,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String backInStockBody(String product) {
     return 'توفر $product من جديد';
   }
+
+  @override
+  String get appLocked => 'التطبيق مقفل';
+
+  @override
+  String get appLockMessage => 'افتح القفل باستخدام البصمة للمتابعة.';
+
+  @override
+  String get appLockUnlock => 'فتح القفل';
+
+  @override
+  String get appLockFailed => 'فشل التحقق. حاول مرة أخرى لفتح التطبيق.';
+
+  @override
+  String get appLockSignOut => 'تسجيل الخروج بدلاً من ذلك';
+
+  @override
+  String get appLockToggle => 'قفل التطبيق';
+
+  @override
+  String get appLockToggleSubtitle => 'اطلب البصمة أو رمز الجهاز لفتح التطبيق';
+
+  @override
+  String get appLockUnavailable => 'قفل التطبيق غير متاح على هذا الجهاز';
 }

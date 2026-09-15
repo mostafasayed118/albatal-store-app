@@ -44,8 +44,11 @@ linux/flutter/ephemeral/
 # Windows
 windows/flutter/ephemeral/
 
-# Generated
-lib/generated/
+# Generated code — *.g.dart / *.freezed.dart are local build artifacts and
+# stay untracked. EXCEPTION: lib/generated/ (flutter gen-l10n output) IS
+# tracked on purpose — regeneration is byte-stable (`flutter gen-l10n`
+# re-run produces zero diffs), so the 3 committed l10n files are the source
+# of truth for CI builds without a gen step (AUD-013 reword).
 *.g.dart
 *.freezed.dart
 

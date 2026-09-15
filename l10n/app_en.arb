@@ -572,5 +572,37 @@
         "type": "String"
       }
     }
+  },
+  "appLocked": "App locked",
+  "appLockMessage": "Unlock with your device biometrics to continue.",
+  "appLockUnlock": "Unlock",
+  "appLockFailed": "Authentication failed. Try again to unlock the app.",
+  "appLockSignOut": "Sign out instead",
+  "appLockToggle": "App lock",
+  "appLockToggleSubtitle": "Require biometrics or the device passcode to open the app",
+  "appLockUnavailable": "App lock isn't available on this device",
+  "@appLocked": {
+    "description": "Title shown on the biometric app-lock screen (feature-batch §15)."
+  },
+  "@appLockMessage": {
+    "description": "Body copy on the biometric app-lock screen."
+  },
+  "@appLockUnlock": {
+    "description": "Button label that re-triggers the biometric prompt."
+  },
+  "@appLockFailed": {
+    "description": "Shown when the biometric prompt did not succeed; the app stays locked."
+  },
+  "@appLockSignOut": {
+    "description": "Escape hatch on the app-lock screen: signs the user out, then unlocks."
+  },
+  "@appLockToggle": {
+    "description": "Settings toggle title that turns the biometric app lock on or off."
+  },
+  "@appLockToggleSubtitle": {
+    "description": "Settings toggle subtitle describing what the app lock does."
+  },
+  "@appLockUnavailable": {
+    "description": "Shown when the device cannot authenticate (no biometrics and no passcode)."
   }
 }

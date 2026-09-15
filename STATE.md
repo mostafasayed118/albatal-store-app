@@ -1,6 +1,829 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-12T19:55:00Z
+Last run: 2026-09-15 (owner follow-up batch: AUD-015 git repair, AUD-014/009/008 remediations; branch `fix/audit-2026-09-15` NOT pushed)
+
+## New — 2026-09-15 (owner follow-up batch: git repair + AUD-014/009/008; 888/888, analyze clean)
+
+Owner approved the follow-up list ("do this steps"). Three new commits on
+`fix/audit-2026-09-15` (each own commit: 48462d9, ebe381b, 445d3fa; branch
+now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
+
+- **AUD-015 CLOSED — corrupt packed-refs repaired.** `.git/packed-refs`
+  held a stale duplicate `refs/heads/audit-remediation → 83fc99c` out of
+  sorted order (loose ref 447f645 was the real tip; reflog confirms
+  83fc99c is its ancestor). Before: `git clone --local` failed with
+  `fatal: multiple updates for ref 'refs/remotes/origin/audit-remediation'`.
+  `git pack-refs --all` alone did NOT dedupe; the stale line was removed
+  byte-precisely (LF, no CRLF), backup kept at `.git/packed-refs.bak`.
+  After: fsck reports ZERO packed-refs errors; clone test exit 0 (clone
+  deleted after proof). Residual (pre-existing, cosmetic): fsck still
+  reports invalid HEAD-reflog entries pointing at objects lost in the
+  pre-2026-09-15 "object-db loss" — does not block clone/worktrees/CI;
+  optional cleanup via `git reflog expire` if the owner accepts losing
+  that recovery history. Landmine noted: `.git/info/exclude` line 57 has
+  `/C*/` which matches ANY root dir starting with "C" (config, coverage…)
+  and makes plain `git add config/...` emit ignore warnings.
+- **AUD-014: tracked staging key placeholdered (commit ebe381b).**
+  `config/env.staging.json` now mirrors `env.production.json`
+  (`REPLACE_WITH_STAGING_ANON_KEY`); the real JWT was already (and only)
+  in gitignored `config/env.staging.local.json` — verified identical.
+  CI check: no workflow references env.staging.json, so no build break.
+  **OWNER STILL MUST rotate the staging anon key in the Supabase
+  dashboard** — it remains in git history (introduced d50a181);
+  placeholdering alone is not the durable fix.
+- **AUD-009 closed (commit 48462d9).** pubspec `http: any` → `http: ^1.2.0`
+  (dev dep; pubspec.lock unchanged — resolves to same version).
+- **AUD-008: route (a) chosen + migration created (commit 445d3fa).**
+  Evidence: lib has ZERO references to `admin_list_customers` —
+  `SupabaseAdminRepository.fetchCustomers` reads `profiles(...)` directly,
+  so the table-level SELECT policy is what fixes the live screen; route
+  (b) would have required client changes too. Created
+  `supabase/migrations/061_admin_profiles_read.sql` from the reviewed
+  proposal: SECURITY DEFINER `is_current_user_admin()` (no recursive RLS)
+  + additive `profiles_select_admin` policy; name clash-checked against
+  all migrations (only 061 uses it); rollback comments included.
+  **NOT applied to any live DB on purpose:** `supabase/config.toml` is
+  linked to `alxwvyflasewslinufqe` (the production-parity project per the
+  09-13 evidence) — a blind `db push` would target the wrong project.
+  Owner apply path: `supabase link --project-ref zvpjngdgbpnkkqrorkul` →
+  `supabase migration list` (expect only 061 unapplied) → `supabase db
+  push` → verify the admin Customers screen lists other users → decide
+  production parity separately (established gate).
+- **AUD-011 decision recorded:** add `products.color_name text` at the
+  next schema touch (single column; in-app curated swatch table already
+  resolves hues — `swatchColorFor` — so no lookup table unless the admin
+  UI must manage hues). Code side (read/write/migrate) is ready to
+  implement once the column exists.
+- **Evidence on merge head 3b18b6c:** `flutter analyze` 0 issues; `flutter
+  test` **888/888 PASS** (exit 0); working tree clean; AUD-015 clone/CI/
+  worktree blocker closed end-to-end.
+- **PUSHED + PR #64 opened** (owner approved "Push + open PR"):
+  https://github.com/mostafasayed118/albatal-store-app/pull/64. Before the
+  push, `origin/master` had advanced (ebc5560, PR #63, 14 lib files) and
+  was MERGED into the branch per the #50/#52/#54 house pattern — 2 content
+  conflicts resolved in `3b18b6c`: (1) supabase_admin_repository
+  fetchCustomers = audit's `phone`-only select (the `email` column does
+  not exist on profiles; selecting it 400s the query — the regression the
+  AUD-003 test pins) + PR #63's total-decode guards (`id is String` skip);
+  (2) product_mapper = union of comment blocks (P0-4 render-URL TODO is
+  still accurate — mapper still uses bare `getProductImageUrl`).
+  Reviewer callout is in the PR body: commit 5fd16e9 is the owner's own
+  WIP snapshot. CI unwatched per standing call.
+- **Re-audit v2 landed (commit ecef567)** — post-owner-action re-score
+  **8.4 → 9.6** (baseline 8.375; v2 9.625; weights sum 1.00 — recomputed
+  two independent ways: score.ps1 exit 0 + an independent arithmetic
+  cross-check). Movement: code_quality 9.5→10.0 (AUD-009 pinned — no
+  actionable code findings left), security 9.0→9.5 (061 shipped +
+  AUD-014 placeholdered); maintainability holds 9.5 (colorName impl +
+  .gitignore reword open), performance holds 9.0. Harness re-run on the
+  merge head: **failed gates 0** (analyze clean, format clean, 888/888,
+  debug APK builds, secret sweep clean). Ledger: 14 findings — 9 fixed,
+  1 migration-shipped (AUD-008), 1 in-tree-closed (AUD-014), 1 waived
+  (AUD-012), 2 documented residuals (AUD-011, AUD-013); AUD-015 recorded
+  in the ledger but excluded from the five-dimension weighting
+  (`notScored`, repo integrity not first-party source).
+  **Sub-agent dispatch now 7/7 failures** (seventh attempt: 969 ms,
+  status=failed, no output) — dispatch is definitively unavailable in
+  this environment; bypass reason + compensating controls recorded in
+  `.cluster/audit-2026-09-15/plan.md` (untracked staging). Untracked
+  `delivery/` + `.cluster/` are hand-off staging copies by design; the
+  canonical committed package lives in `docs/audit/2026-09-15/`.
+- **SIX STEPS to a literal 10.0** (all deployment/credential/schema — no
+  code defects remain): (1) rotate the staging anon key in the Supabase
+  dashboard; (2) apply 061 to staging → verify the admin Customers
+  screen → production; (3) move release keystores out of the repo root;
+  (4) accept (in writing) or implement certificate pinning; (5)
+  implement `products.color_name` + mapper read (AUD-011); (6) reword
+  the .gitignore/`lib/generated` contradiction (AUD-013).
+- **Owner 'do all' round — five of six residuals executed (round 3):**
+  (1) **061 APPLIED to staging AND production** via the Management API
+  SQL endpoint (sb_sql.ps1 + Credential-Manager token; history v61 on
+  both; pre-apply production policy snapshot retained). Behavioural RLS
+  proof on staging: admin sub → **25/25** rows, non-admin → **1** (own);
+  production non-admin → 1 — production has **0 is_admin profiles**, so
+  its admin branch activates when the owner promotes one (deliberately
+  not done by the agent). (2) **AUD-011 implemented** (6256c80): migration
+  062 `products.color_name` (applied to both DBs, v62) + `Product.colorName`
+  mapped + round-tripped; **890/890** tests (2 new). (3) **Keystores**:
+  root `release-key.jks`/`release-keystore.jks` were identical duplicates
+  (same SHA-256) and NOT the live signing key (android/app/release-key.jks
+  is, via Gradle `file()` resolution) — root copies moved to
+  `C:\flutter_projects\albatal-keystore-backup\` with a hash README.
+  (4) **Cert pinning accepted IN WRITING** ("do all", 2026-09-15) — waiver
+  + rationale in 05-reaudit.md v3. (5) **AUD-013 reworded** (8d8520b).
+  (6) **AUD-014**: Management API has NO legacy-JWT rotation endpoint
+  (verified vs published OpenAPI spec; dashboard JWT-secret reset would
+  also kill service_role → edge functions). Executed the staged migration:
+  gitignored `env.staging.local.json` now carries the provisioned
+  `sb_publishable_` key (REST-verified 200 on both keys, nothing broke).
+  **Final human step: rebuild the staging app → then legacy JWT keys get
+  disabled (one API call on request) and the leaked JWT dies.**
+  Re-score: maintainability 9.5→**10.0**; security honestly holds 9.5
+  (leaked JWT still valid until the disable); overall **9.7**
+  (score.ps1 exit 0: 9.725 → 9.7). Ledger: 14 findings — 11 fixed,
+  1 applied-and-verified (AUD-008), 1 waived (AUD-012), 1 key-migration
+  staged (AUD-014).
+- **AUD-014 CLOSED — legacy JWT keys DISABLED on staging (round 4,
+  owner: "disable legacy keys"):** No per-key rotation API exists
+  (verified vs OpenAPI spec); user-secret shadowing of the managed
+  SUPABASE_SERVICE_ROLE_KEY is impossible (platform-reserved, HTTP 400),
+  so the disable was made safe by behaviour-proof instead: a throwaway
+  staging user signed up with the sb_publishable_ key and fully deleted
+  through delete-account (the payment-critical service-client path)
+  **after** the disable → `200 {"deleted":true}`. `PUT
+  /api-keys/legacy?enabled=false` → 200; enforcement landed in ~2 min.
+  Post-disable probes: leaked anon JWT (d50a181) → **401 (dead)**;
+  legacy service_role → 401; publishable → 200; edge function probe →
+  401 scheduler-mismatch (healthy, not 503). `.env.staging` +
+  gitignored `env.staging.local.json` now carry the publishable key;
+  tracked template stays a placeholder. The throwaway probe user was
+  self-deleted by the proof itself. Production (alxwvy...) legacy keys
+  intentionally untouched (its anon key was never leaked) — optional
+  future parity. Re-score: security 9.5 → **10.0**; overall **9.8**
+  (scorer-deterministic: 9.85 → 9.8; score.ps1 exit 0). The only
+  dimension below 10.0 is performance (9.0 — needs new measured
+  evidence, not bookkeeping).
+- NEXT GATES: owner review + merge of PR #64; promote an is_admin
+  profile on production when an admin account is wanted there; eyeball
+  the admin Customers screen on staging (061 end-to-end sign-off);
+  optional: production legacy-key parity later.
+
+## New — 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
+
+## New — 2026-09-15 (five-dimension code-quality audit + fixes; 8.4 → 9.4)
+
+Owner asked for a full five-dimension audit (maintainability, clean
+architecture, code quality, security, performance) scored 0–10 and then
+"fix all issues". Rubric + weights published before scoring
+(`docs/audit/2026-09-15/01-rubric.md`). Work on branch
+`fix/audit-2026-09-15` (7 fix commits + audit docs); master untouched at
+`5ef935c`; owner WIP preserved as `5fd16e9`. Nothing pushed/merged.
+
+Harness: baseline → after
+- `flutter analyze`: 4 warnings → **0 issues**
+- `flutter test`: 875 pass / 9 fail → **888 pass / 0 fail**
+- `dart format --set-exit-if-changed`: 7 files → **clean**
+- `flutter build apk --debug`: **FAIL (ManifestMerger/SAXParse)** → **PASS**
+- coverage: n/a → **70.4%** (7,471/10,609)
+
+Fixed (each own commit): AUD-004 manifest `--` in XML comment (all Android
+builds were broken); AUD-003 truncated admin customer-directory test (no
+`main()`; 4 analyzer warnings; documented profiles.email regression was
+unguarded — reconstructed 5 tests); AUD-001 app-lock tests missing
+Directionality (0/8 → 8/8); AUD-002 app-lock sign-out escape caught only
+`Exception`, so a thrown `Error` crashed the lock screen instead of staying
+fail-closed; AUD-006 payment watcher never closed its `StreamController`;
+AUD-005 format drift; AUD-010 stale cached_network_image TODO.
+
+Waived / residual (owner action, reasons in the reports): AUD-008 admin
+profiles RLS gap — **proposal shipped** at
+`docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql`, corroborated
+by the 2026-09-14 live-DB check (no admin SELECT policy live; live-only
+`admin_list_customers` has no migration — parity debt); **AUD-014: a real
+208-char Supabase anon JWT is committed in the tracked
+`config/env.staging.json`** (decoded role = anon → public-by-design, RLS-
+gated; breaches the repo's own placeholder convention; introduced by
+d50a181; NOT auto-fixed — config/ is outside the AGENTS.md auto-fix scope
+and swapping it can break staging builds; owner should placeholder it, keep
+the real key in env.staging.local.json, and rotate it in the Supabase
+dashboard since it is in git history); AUD-009 `http: any`
+needs pubspec approval; AUD-011 colour names need a schema column;
+AUD-012 admin-console English strings are documented-intentional;
+AUD-013 `.gitignore` vs tracked `lib/generated`.
+Security scored 9.0 (not 9.5) because of AUD-014 + the RLS gap → overall
+**9.4**. The audit harness (`scripts/audit/run-audit.ps1`) now decodes JWT
+role claims: anon = warn, service_role = hard fail.
+
+Deliverables: `docs/audit/2026-09-15/` (inventory, rubric, ledger json+csv,
+report md + report.html, verification, re-audit + residual register,
+handover/rollback, RLS proposal) and `scripts/audit/run-audit.ps1`
+(repeatable scoring + verification harness).
+
+Note: 5 auditor sub-agents spawned for parallel dimension review all failed
+at startup (runtimeMs 1–13s, status=failed, no output); the audit was
+completed in-session instead. A 6th tightly-scoped verifier sub-agent
+(AGENTS.md requires one after L2 changes) also failed the same way
+(runtimeMs 994, status=failed, model zai_auto-fast) — so 6/6 dispatches
+failed across three models, which points at the sub-agent runtime, not the
+tasks. Independence was obtained instead from a cold clean-checkout harness
+run, forward+reverse patch parity (SHA-256), and the two-way ledger↔commit
+cross-check; all are reproducible by a third party (see
+`docs/audit/2026-09-15/04-verification.md` §12). **Sub-agent dispatch is
+non-functional in this environment and should be investigated.**
+
+## New — 2026-09-14 (audit-batch-3 PUSHED + PR #62 opened; all 4 owner items done)
+
+Owner approved commit/push + all follow-ups. Branch `fix/audit-batch-3`
+pushed; PR opened: https://github.com/mostafasayed118/albatal-store-app/pull/62
+Commits: 1995138 (audit fixes, 44 files), 760fe1d (untrack staging
+env), fdc1e85 (error-code l10n, 38 files, +853/−66).
+- L10n batch (subagent): cubits emit errorCode (22 sites); new
+  shared/utils/error_l10n.dart + 17 EN+AR keys; auth repo mapping
+  tables assign codes (messages unchanged); analyze 0 issues; full
+  suite 911 passed / 0 failed.
+- Live-DB check (subagent, sb_sql.ps1 + Credential Manager token):
+  `profiles` policies live == migrations (select_own, insert/update
+  pinned; NO admin SELECT policy). Mystery solved:
+  `admin_list_customers` is a SECURITY DEFINER fn calling
+  assert_admin() — but it is LIVE-ONLY (no migration file).
+  FOLLOW-UP: write the migration for parity. Also `config/
+  env.production.json` is a placeholder template — safe.
+- CI watch: unwatched per standing call; owner to merge PR #62.
+
+## New — 2026-09-14 (audit-batch-3: 5-dimension audit fixes staged, NOT committed/pushed)
+
+Human explicitly enabled L2 ("fix all issues"). All work in worktree
+`.trees/audit-batch-3` (branch `fix/audit-batch-3`, 44 files, +1049/−333,
+STAGED, uncommitted — awaiting owner approval).
+- Fixed: admin money pipeline (double→int minor units via
+  `Money.tryParseMajor`; variant editor had a 100× EGP mis-entry bug;
+  piaster-correct `Money.format()`; formatters consolidated onto
+  currency.dart/Money in coupons page + invoice PDF).
+- Fixed: Supabase image transforms (width-bounded render URLs for
+  180/420/720/1080 px consumers) + upload ext/size validation moved
+  into StorageService; stale TODO removed.
+- Fixed: ~25 catch→Failure sites migrated to `Result.guard(onError:)`;
+  reviews repo uses GetIt; remote_config TypeError-proofed.
+- Fixed: strict email regex, sign-up password letter+digit rule,
+  address maxLength caps, ARB EN+AR additions.
+- RLS verification (read-only): all admin direct-table writes SECURE
+  (002/003/029/046/056/057 policies; profiles.is_admin pinned; history
+  ESC-001 remediated). Caveat: no admin SELECT policy on `profiles` →
+  fetchCustomers likely returns only the admin's own row server-side.
+- Verification: `flutter analyze` 0 issues; `flutter test` 904 passed /
+  0 failed (full suite); verifier sub-agent APPROVE (targeted re-runs).
+- Incidents: concurrent subagent stash sweep mid-session (recovered;
+  `stash@{0}` left intact as redundant snapshot); money-task agent died
+  on credit limit — work completed by orchestrator.
+- Follow-ups for owner: (a) commit/push approval for fix/audit-batch-3;
+  (b) error-message l10n needs cubit-side code→l10n mapping (AppError
+  already has `code`; display not centralized — data files unchanged);
+  (c) staging anon key in config/env.staging.json (out of lib/ scope);
+  (d) confirm live-DB admin-profiles SELECT policy matches migrations.
+
+## New — 2026-09-14 (PR #61 MERGED — 14-feature enhancement batch live on master 5ef935c)
+
+Owner approved merge. Squash-merge via gh: **5ef935c** "feat: integrated
+enhancement batch - cut-length commerce, zoom, alerts, offline,
+recently-viewed, a11y, dashboard, timeline + text-scale fixes (#61)".
+- All 12 session worktrees removed (.trees/{order-timeline,
+  admin-dashboard, invoice-isolate, a11y-labels, whatsapp-share,
+  recently-viewed, media-zoom, back-in-stock, offline-catalog,
+  cut-length, text-scale, merge-batch}); 11 slice branches +
+  integration/enhancements-batch deleted locally; remote branch
+  deleted by GitHub.
+- Local master fast-forwarded 9a7496c → 5ef935c (clean); master
+  push-CI unwatched per standing call.
+- Human-gated server-side follow-ups remain: back-in-stock DB
+  trigger/webhook for real restock events; server-side validation of
+  meters / tiered prices / sample flags in the checkout RPC.
+- Housekeeping carried over: stale pre-session worktrees remain under
+  .trees/ + .trees-worktrees/ (apply-052, approved-packages-batch,
+  audit-batch-2, checkout-rpc-hardening, demo-seed-fix, feature-batch,
+  p1-remnants, + the .trees-worktrees/ set) — candidates for
+  owner-approved cleanup.
+
+## New — 2026-09-14 (enhancement batch PUSHED + PR #61 opened — merge-gate CI ALL GREEN)
+
+Owner approved push+PR. Branch integration/enhancements-batch pushed
+(afe023f); PR #61 opened:
+https://github.com/mostafasayed118/albatal-store-app/pull/61
+- CI round 1: Format & Analyze FAIL — CI's newer analyzer
+  (stable-3.47.4) flags `unawaited_return_in_try_block` at
+  whatsapp_share_service.dart:30 (local toolchain didn't). Fixed with
+  a1b8fb7 "fix(lint): await launchUrl inside try block" (verified:
+  targeted details/cart suites pass, analyze clean locally).
+- CI round 2: ALL GREEN — Format & Analyze ✅, Flutter Tests ✅
+  (5m44s), Edge Function Tests ✅, Secret Scan ✅, Setup & Cache ✅,
+  Deployment Readiness ✅; Android Release Build unwatched per standing
+  call; Sourcery/CodeSnif skipping (informational).
+- NEXT GATE: MERGE of PR #61 needs explicit owner approval ("merge").
+
+## New — 2026-09-14 (14-feature enhancement batch INTEGRATED on integration/enhancements-batch — 868/868, verifier APPROVE, unmerged)
+
+Owner approved all 14 suggested features ("i approved of all, use
+superskills to do all") → parallel implementer sub-agents in per-slice
+git worktrees, then sequential `--no-ff` integration merges in
+`.trees/merge-batch` (branch `integration/enhancements-batch` from
+origin/master 9a7496c). HEAD **afe023f**, 18 commits ahead of master,
+NOT pushed.
+
+- Slices (all committed + verified per-slice): invoice-pdf-isolate
+  (Isolate.run), a11y-semantic-labels, whatsapp-share (wa.me builder +
+  share button on details; support number 201154580512 already existed),
+  order-tracking-timeline (order_status_timeline widget; backend has
+  only placed_at → best-effort step mapping), admin-sales-dashboard
+  (fl_chart ^0.71.0), recently-viewed (store port + PrefsRecentlyViewedStore
+  `recently_viewed_v1` cap 10 + strip on home + record in details
+  _readyState), media-zoom (photo_view ^0.15.0 zoom gallery),
+  back-in-stock-alerts (PrefsBackInStockAlertStore `back_in_stock_watched_v1`
+  + wishlist toggle + local notification), offline-catalog
+  (CatalogState/DetailsState isOffline + ConnectivityGate-injected
+  OfflineCatalogView + cache-degrading fetches), cut-length-commerce
+  (domain/pricing/cut_length_pricing.dart constants kCutLengthMaxMeters 50 /
+  step 0.5 / tiers 25m→10% 10m→5%; CartItem.sample flag; addSample();
+  checkout payload meters/line_total/tiered_price/sample:true),
+  text-scale-tests (#11 pins at TextScaler.linear(1.4) on 360dp).
+- Integration: 11 merges + 2 fix commits (cadaebd cross-slice harness fix —
+  offline shell harness registers RecentlyViewedCubit per precedent;
+  afe023f overflow fixes). ARB conflicts resolved by union (419 EN = 419 AR
+  keys, no dupes); lib/generated/ only ever regenerated via
+  `flutter gen-l10n` (byte-identical re-run verified).
+- #11 pins caught 6 REAL overflow sites at 1.4 scale → FIXED in afe023f
+  (8 files): stitch_category_chips (Flexible label, 78dp track kept),
+  stitch_flash_sale_card (ConstrainedBox min 120 + Flexible countdown),
+  cart_summary (Expanded label + ellipsis; money never truncated),
+  app_button (Flexible label, icon branch only), checkout_page bottom bar,
+  status_progress (Row→Wrap), name_and_price (Flexible discount chip),
+  add_to_cart_button (Flexible label). All 5 test skips removed.
+- Evidence on afe023f: analyze CLEAN; full suite **868 passed / 0 failed /
+  0 skipped** (master baseline 774); dart format canonical; gen-l10n
+  re-run produces zero diffs; no merge markers; no test deleted.
+- Verifier sub-agent: **APPROVE** — all 5 checks passed (merge history,
+  forbidden-paths scan clean, pubspec limited to the 2 approved deps,
+  ARB parity, DI singletons registered exactly once, admin route present,
+  no skips).
+- HUMAN-GATED FOLLOW-UPS (server-side, supabase/ untouched per
+  constraints): back-in-stock DB trigger/webhook for real restock events
+  (client currently fires local notification on toggle), server-side
+  cut-length/tiered-price/sample validation in checkout RPC.
+- NEXT GATES: owner review → "push+PR" approval (draft PR first, never
+  push/merge without approval) → merge gate.
+
+## New — 2026-09-13 (PR #60 MERGED — admin dashboard entry point on master 9a7496c)
+
+Owner approved merge. REST squash-merge: **9a7496c** "feat(auth): admin
+dashboard entry point on the profile page (#60)". Branch deleted; local
+master fast-forwarded to 9a7496c. CI: Format & Analyze ✅ (after one
+dart-format re-wrap on the new test), Flutter Tests 5m09s ✅ (774/774),
+Edge Function Tests ✅, Secret Scan ✅, Setup & Cache ✅, Sourcery ✅,
+Deployment Readiness ✅; Android Release Build unwatched per standing
+call.
+- Context: /admin was router-gated on profile.isAdmin but had ZERO UI
+  navigation call sites — admins could never reach the dashboard.
+  Profile page now renders an Admin Dashboard tile only for
+  profile.isAdmin == true (EN + AR strings already existed in ARBs).
+- Owner admin-login follow-up: the device build points at STAGING
+  (zvpjngdgbpnkkqrorkul via env.staging.local.json); is_admin must be
+  set on the same project the build targets, then sign out/in.
+
+## New — 2026-09-13 (PR #59 MERGED — wishlist nav badge live on master e1df220)
+
+Owner approved merge. REST squash-merge: **e1df220** "fix(storefront):
+wishlist count badge on the bottom-nav tab (device-found bug) (#59)".
+Branch + worktree removed. Local master fast-forwarded d4b0b5d →
+e1df220 (through the parallel session's #58 d4b188c) — local and
+remote master in sync. The wishlist tab badge is live in the next
+device build: heart tap → count updates immediately; hidden when
+empty. Master push-CI unwatched per standing call.
+
+## New — 2026-09-13 (wishlist badge PUSHED + PR #59 opened — merge-gate CI ALL GREEN)
+
+Owner approved push+PR. Branch fix/wishlist-nav-badge pushed (2f35ee4);
+PR #59 opened:
+https://github.com/mostafasayed118/albatal-store-app/pull/59
+- CI: Format & Analyze ✅, Flutter Tests ✅ (5m04s), Edge Function
+  Tests ✅, Secret Scan ✅, Setup & Cache ✅, Sourcery ✅; Android
+  Release Build unwatched per standing call.
+- NEXT GATE: MERGE of PR #59 needs explicit owner approval ("merge").
+
+## New — 2026-09-13 (wishlist nav badge FIXED on fix/wishlist-nav-badge — 771/771, ready for push+PR)
+
+Owner-reported device bug: heart taps updated the wishlist but the
+bottom-nav wishlist tab showed no count — the NavigationDestination
+had NO badge wired (only cart did). FIXED in worktree
+`.trees/wishlist-badge`, branch `fix/wishlist-nav-badge` from
+origin/master bc08d78, commit 2f35ee4:
+- wishlist destination now mirrors the cart badge (WishlistCubit
+  ids.length, shared 99+ cap formatter).
+- BOTH badges moved to count-scoped BlocSelectors — the nav bar
+  rebuilds only when a badge number changes (closes the perf-audit
+  note about whole-nav rebuilds on any cart emit).
+- NEW test/shared/components/app_shell_wishlist_badge_test.dart:
+  badge mirrors count + updates LIVE on a heart tap; hidden when
+  empty. (Test needs a real GoRouter context — ShellRoute harness;
+  pumpAndSettle after the sync emit.)
+- Evidence: analyze clean; full suite **771/771 PASS**; format
+  canonical.
+- NEXT GATE: owner "push+PR". Note: branch based on bc08d78; #58
+  (d4b188c) touched auth pages only — no overlap expected.
+
+## New — 2026-09-13 (PR #58 MERGED — sign-in crash fixed on master d4b188c; local master fast-forwarded)
+
+Owner approved merge. REST squash-merge: **d4b188c** "fix(auth): social
+sign-in row forced infinite width on themed buttons (#58)". Branch
+deleted; local master fast-forwarded bc08d78 → d4b188c (clean). CI:
+Format & Analyze ✅, Flutter Tests 4m52s ✅ (770/770), Edge Function
+Tests ✅, Secret Scan ✅, Setup & Cache ✅, Sourcery ✅, Deployment
+Readiness ✅; Android Release Build unwatched per standing call. The
+sign-in crash fix ships in the next device build off master.
+
+## New — 2026-09-13 (sign-in crash FIXED in working tree — device-verified; UNCOMMITTED)
+
+Owner reported: tapping Sign In on /sign-in crashed to a blank screen
+(Infinix X6882). Root cause captured from device logcat: the §15 social
+sign-in row (added PR #54) puts themed `OutlinedButton.icon`s inside a
+horizontal `Row`; the app theme's `minimumSize: Size.fromHeight(50)` is
+`Size(double.infinity, 50)`, so unbounded row width forced
+`minWidth=Infinity` → "BoxConstraints forces an infinite width" →
+layout-assertion cascade → blank page. Existing tests pump the page with
+the DEFAULT theme, so CI never saw it.
+- FIX (lib/ only): sign_in_page.dart social buttons wrapped in
+  `Expanded` (bounded width; Google full-width on Android, split halves
+  on iOS). Theme left untouched by design (avoid app-wide button
+  visual changes).
+- Regression test added:
+  test/features/auth/presentation/pages/sign_in_redirect_test.dart
+  "sign-in page lays out under the app theme" (pumps AppTheme.light()).
+- Evidence: analyze clean; full suite **770/770 PASS** (769 + 1 new);
+  on-device re-verified via adb-driven UI: /sign-in renders fully and
+  submit tap shows validation messages with zero layout exceptions in
+  logcat. Working tree changes: lib/features/auth/presentation/pages/
+  sign_in_page.dart + the test above (uncommitted — awaiting owner).
+
+## New — 2026-09-13 (PR #57 MERGED — grid-card overflow fixed on master bc08d78; local master fast-forwarded)
+
+Owner approved merge. REST squash-merge: **bc08d78** "fix(storefront):
+product grid card RenderFlex overflow on small cells (device-found)
+(#57)". Branch + worktree removed; local master fast-forwarded
+d4b0b5d → bc08d78 (clean — no divergence this time). The 7.6px grid
+overflow is fixed in the next device build off master. Master push-CI
+unwatched per standing call.
+- Housekeeping: ~14 stale worktrees remain under .trees/ (apply-052,
+  approved-packages-batch, audit-batch-2, checkout-rpc-hardening,
+  demo-seed-fix, deploy-0913, feature-batch, p1-remnants, + the
+  .trees-worktrees/ dir) — still candidates for owner-approved cleanup.
+- 2026-09-13 session fully closed: audit (5 dimensions) → remediation
+  PRs #54/#55/#56 → staging deploy (rate limiting + password floor
+  live, verified) → device-found overflow fix #57. Remaining optional
+  items: production-parity deploy for the alxwvyflasewslinufqe ref,
+  password-error mapper nicety, ARB AR native review, stale-worktree
+  cleanup.
+
+## New — 2026-09-13 (grid-card overflow fix PUSHED + PR #57 opened — CI ALL GREEN)
+
+Owner approved push+PR. Branch fix/grid-card-overflow pushed (d8bb0f0);
+PR #57 opened:
+https://github.com/mostafasayed118/albatal-store-app/pull/57
+- CI: Format & Analyze ✅, Flutter Tests ✅ (4m54s), Edge Function
+  Tests ✅, Secret Scan ✅, Setup & Cache ✅, Sourcery ✅; Android
+  Release Build unwatched per standing call.
+- NEXT GATE: MERGE of PR #57 needs explicit owner approval ("merge").
+  After merge: master CI on the merge commit unwatched; the device
+  overflow disappears from the next build off master.
+
+## New — 2026-09-13 (master SYNCED local ↔ remote at d4b0b5d)
+
+Owner asked to sync local and remote master. Local master (fe69a94)
+merged origin/master (e9f5876) cleanly in the main tree — zero
+conflicts, merged tree verified BYTE-IDENTICAL to e9f5876 before
+committing. Pushed (fast-forward): **local and remote master both at
+d4b0b5d**. Uncommitted working-copy state preserved (STATE.md run-log
+records; the android/gradle + deno.lock churn are the owner's
+pre-existing local edits — left untouched).
+Still unmerged, awaiting owner "push+PR": fix/grid-card-overflow
+(d8bb0f0, the device-found grid-card overflow fix) in worktree
+.trees/grid-overflow-fix.
+
+## New — 2026-09-13 (device-found grid-card overflow FIXED on fix/grid-card-overflow — 769/769, unmerged)
+
+Owner ran the app on-device (Infinix X6882, 360dp) and hit a
+RenderFlex overflow: stitch_product_grid_card.dart:47 Column
+overflowed 7.6px at the popular-grid cell 158x232.4 (aspectRatio .68;
+fixed 1:1 media + intrinsic text at the system font scale). FIXED in
+worktree `.trees/grid-overflow-fix`, branch `fix/grid-card-overflow`
+from origin/master e9f5876, commit d8bb0f0:
+- card media now Expanded (text block drives intrinsic height;
+  cover-fit image absorbs the remainder) — overflow-proof at every
+  cell size/font scale; category line maxLines+ellipsis hardened.
+- Shared component: one fix covers home/catalog/wishlist/categories
+  grids.
+- NEW regression tests (test/shared/components/
+  stitch_product_grid_card_test.dart) pin the exact device cell size
+  and a 1.4 text scale.
+- Evidence: analyze clean; full suite **769/769 PASS** (766 + 3 new);
+  grid-family tests green; format canonical.
+- NEXT GATE: owner "push+PR" to ship it. Other log lines from the
+  device run (gralloc4 format errors, TranChoreographer skips,
+  Sentry avc denials) are device/OS noise, not app bugs.
+
+## New — 2026-09-13 (GoTrue password floor LIVE on staging — deploy gate fully closed)
+
+- **password_min_length = 8 applied to staging** via Management API
+  (PATCH /v1/projects/zvpjngdgbpnkkqrorkul/config/auth). NOTE: the
+  API field is `password_min_length` — `min_password_length` (the
+  documented name) is silently ignored with HTTP 200; verified via
+  GET + an end-to-end signup probe: 6-char password → REJECTED
+  "Password should be at least 8 characters." (weak_password,
+  reasons: [length]). No user created.
+- Probe mishap cleaned: the FIRST probe ran against the MAIN .env's
+  project (ref alxwvyflasewslinufqe — NOT staging) and created a
+  user; deleted via that project's service-role admin API (HTTP 200).
+- **Owner action: REVOKE/rotate the sbp_ personal access token** — it
+  was pasted into chat in plaintext.
+- **DISCOVERY for owner parity decision: the main .env points at a
+  THIRD project (ref alxwvyflasewslinufqe)** — presumably the
+  production app config. The password floor there is still 6, and
+  migration 060 + the four rate-limited functions are NOT deployed
+  there. Production parity (backup → push 060 → deploy 4 functions →
+  PATCH password_min_length=8) is a separate owner-gated decision.
+- Optional follow-up offered: supabase_auth_repository.dart:171
+  exact-matches the 6-char server message; now the server says 8, so
+  weak-password attempts that reach GoTrue show the generic error.
+  Client validator already blocks <8, so impact is edge-case only.
+- 2026-09-13 audit thread: CLOSED end-to-end on staging.
+
+## New — 2026-09-13 (PRs #55 + #56 MERGED + STAGING DEPLOYED — rate limiting LIVE, one human step remains)
+
+Owner approved the full sequence ("do this"): push+PR → merge on green
+CI → deploy gate.
+
+- **PR #55 squash-merged** `a8c02fd` (merge-gate CI all green: Format &
+  Analyze, Flutter Tests 5m03s, Edge Function Tests, Secret Scan,
+  Setup & Cache, Deployment Readiness; Android unwatched per standing
+  call). Worktree + local branch removed.
+- **PR #56 squash-merged** `e9f5876` — fix(config): the
+  min_password_length key added under [auth] in #55 is INVALID in CLI
+  2.109 config.toml schema and blocked all supabase CLI commands;
+  removed with a pointer to the dashboard. Discovered live during the
+  deploy gate; CI green before merge.
+- **STAGING DEPLOY EXECUTED** (project zvpjngdgbpnkkqrorkul):
+  1. Backup FIRST — pg_dump (postgres:17 container; CLI's own dump
+     container failed on this box) → outputs/db-backups/
+     staging-pre060-20260913.sql (1.6 MB, 77 tables, 81 functions).
+     Docker Desktop was started for this (was off).
+  2. `migration list`: ONLY 060 unapplied (042-059 aligned).
+  3. `db push`: migration 060 applied to staging.
+  4. Functions deployed: paymob-callback, instapay-initiate,
+     instapay-submit-proof, delete-account.
+  5. VERIFIED via psql (postgres:17 container): rate_limit_take as
+     service_role — 3 takes true, 4th false (budget enforced
+     end-to-end, exactly the paymob path); as anon — permission
+     denied (fail-closed grant shape). Probe rows cleaned.
+- **REMAINING HUMAN STEP (the only one): raise the GoTrue minimum
+  password length to 8 in the Supabase dashboard** (Authentication →
+  Policies) — config.toml cannot express it and no Management-API
+  token is available locally. Until then server accepts 6-char
+  passwords; the client validator already enforces 8.
+- Local master still at fe69a94 (diverged-history pattern) — origin
+  a8c02fd + e9f5876 carry identical-plus content; pull when convenient.
+- 2026-09-13 audit thread: FULLY CLOSED (all 5 dimensions' findings
+  addressed or deploy-gated-live). Watch item: verify rate limiting
+  behavior on staging under real traffic + check edge-function logs
+  for the fail-open lines.
+
+## New — 2026-09-13 (L2 follow-up batch on fix/audit-followup-0913 — ALL remaining audit items — verifier round 2 in flight)
+
+Owner approved the full remaining backlog ("rate limiting + GoTrue
+floor; denylisted leftovers; bigger refactors"). Worktree
+`.trees/followup-0913`, branch `fix/audit-followup-0913` from fe69a94.
+Five commits (31d1aa5, 88e84aa, b44981b, 13a0389, 238975a) + verifier
+must-fix commit afa94f3:
+
+- **Denylist OVERRIDE (owner-approved)** — payments getIt ×2 CLOSED:
+  PaymentService constructor-injected into PaymentMethodPage +
+  InstapayInstructionsPage, router resolves at /payment-method and the
+  InstaPay rehydration path (either/or ctor assert); SignInPage takes
+  OAuthService from the router. 'Payment session not found' →
+  instapaySessionMissing ARB EN/AR, pinned in l10n_audit_keys_test.
+  NOTE: instapay page's getIt<ImageCompressor>() probe remains (was
+  NOT in the approved item list).
+- **Rate limiting + GoTrue floor (DEPLOY GATED)** — migration 060
+  (rate_limits + SECURITY DEFINER rate_limit_take, execute to
+  authenticated only, 1% opportunistic prune inlined); _shared/
+  rate_limit.ts (fail-open on infra errors) + 6 Deno unit tests;
+  wired: instapay-submit-proof 10/user/h + per-payment proof cap 5
+  (041 RLS-scoped count), instapay-initiate 20/user/h,
+  paymob-callback 60/IP/h ABOVE the body parse + HMAC (verifier
+  must-fix #2), delete-account 5/user/h; config.toml
+  min_password_length = 8 — the DASHBOARD setting still needs raising
+  server-side (human action, listed in the deploy gate).
+- **home_page extraction** — _SectionHeader/_FlashSaleCard/
+  _PopularHeader out of the build (checkout_page pattern); countdown
+  rebuild scope narrowed to the card.
+- **Test reorganization** — 92 loose root test files moved into
+  feature-mirrored dirs (test/features/<f>/{data,domain,presentation/
+  {pages,cubit,widgets}}, test/shared, test/core, test/l10n,
+  test/accessibility, test/app); relative imports rewritten; 11
+  ticket-named files renamed to behavior names; the
+  PaymobPaymentService.terminalResultForRow @visibleForTesting
+  forwarder DELETED (callers → PaymentStatusWatcher).
+- **Verifier round 1: REJECT with 2 must-fixes, both real and fixed
+  in afa94f3**: (1) /payment-method route silently missed its
+  paymentService injection — the old literal patch anchor missed the
+  Routes.paymentMethod refactor; would have crashed production
+  checkout nav (assert) — fixed + confirmed; (2) paymob-callback
+  limiter sat AFTER HMAC verification — hoisted above the body parse.
+  Also: stray empty artifact file `x` removed; RateLimitRpc widened to
+  PromiseLike (all four functions pass deno check).
+- Evidence on HEAD 889be8a: analyze CLEAN; flutter test **766/766
+  PASS**; deno 28/28; deno check clean on all four wired functions;
+  format canonical; test/ root has ZERO loose *_test.dart files.
+- Verifier trail: round 1 REJECT (2 real must-fixes: /payment-method
+  silently missing its paymentService injection — old literal patch
+  anchor missed Routes.paymentMethod; paymob limiter after HMAC) →
+  fixed in afa94f3 → round 2 REJECT (real PL/pgSQL bug: the inlined
+  prune's DELETE overwrote FOUND before `return found` — spurious 429
+  / waved-through exhaustion on ~1% of takes) → fixed with
+  v_allowed capture in 889be8a → **round 3: APPROVE, no must-fix**.
+  Carried-over deploy notes: verify service_role can execute
+  rate_limit_take on staging (paymob path fails open on grant denial);
+  raise the dashboard min-password setting to 8.
+- NEXT GATES: owner review of the branch → push+PR approval →
+  DEPLOY GATE for migration 060 (backup → staging db push → deploy
+  the four functions) + Supabase dashboard password setting → merge.
+
+## New — 2026-09-13 (local master RECONCILED with origin/master — pull completed, tree identical)
+
+Owner asked to "make pull first to master". The main tree was already
+mid-merge: an owner-run `git pull` (stash@{0} "pre-sync dirty files"
+was created first — STATE.md records recovered from it after the
+merge) had stopped on 33 UU conflicts (master 670249b vs origin
+97ece75 — diverged squash history, shared content lineage). Completed
+the merge:
+- All 33 conflicts resolved by taking the ORIGIN side — 97ece75's
+  tree IS the approved union (built + verified in the
+  fix/audit-2026-09-13 worktree before squash); verified via
+  `git diff --cached 97ece75`.
+- The union check surfaced one local-only artifact:
+  admin_catalog_page carried a DUPLICATE Reviews/Customers tile pair
+  (feature-batch merge artifact on local master only — origin already
+  had the correct single pair) + a stale data-path recent_searches
+  import in stitch_catalog_test. Both cleaned; merge amended (d891b2d).
+- Final state: local master tree BYTE-IDENTICAL to origin/master
+  97ece75 (git diff empty); analyze clean; targeted admin/catalog
+  tests pass (the same tree already passed 765/765 in CI).
+- Working-copy state preserved: STATE.md run-log records restored
+  from stash@{0} and left uncommitted per session practice (the
+  stash itself left in place — only contained STATE.md, fully
+  recovered; owner may drop it).
+- Pushing local master is OPTIONAL: origin already has the content;
+  a push would only add merge commit d891b2d to history.
+
+## New — 2026-09-13 (PR #54 SQUASH-MERGED — master is now 97ece75)
+
+Owner approved merge ("merge"). gh GraphQL merge errored twice
+(transient server error) → REST endpoint
+`PUT /pulls/54/merge` succeeded: **97ece75** "fix: audit 2026-09-13
+remediation — real admin image upload, layering re-closure, l10n,
+reviews pipeline (#54)".
+- Remote branch deleted by GitHub; worktree `.trees/audit-0913` and
+  local branch `fix/audit-2026-09-13` removed.
+- **Local master stays at 670249b** — it CANNOT fast-forward to
+  97ece75 (diverged histories; the squash commit carries the same
+  content). Owner pulls when convenient (established precedent); a
+  `git pull` will be a true merge — content-identical trees, expect at
+  most a STATE.md textual conflict; keep the local run-log blocks.
+  Consider it the same reconciliation noted under the push+PR block.
+- Master push-CI (on 97ece75) left unwatched per standing call.
+- Audit thread closed: #1/#3/#4 + next-in-line items all CLOSED on
+  master; #2 (edge-function rate limiting) + #5 (GoTrue password
+  floor) remain PROPOSALS in
+  docs/proposals/2026-09-13-rate-limit-and-password-floor.md (staged
+  on the merged branch — supabase/ + server config human-gated).
+  Denylisted leftovers unchanged: payments getIt ×2, instapay literal,
+  sign-in probe; test/ reorganization; home_page build extraction.
+
+## New — 2026-09-13 (fix/audit-2026-09-13 PUSHED + PR #54 opened — merge-gate CI ALL GREEN)
+
+Owner approved push+PR ("push+PR"). Branch pushed (d2d7154); PR #54
+opened: https://github.com/mostafasayed118/albatal-store-app/pull/54
+
+- **Divergence found and integrated:** origin/master had advanced to
+  e56e57a (PR #53) while local master sat at 670249b carrying the
+  owner-approved §1-§17 feature-batch merge (d20fa7a) never pushed.
+  PR #54 was CONFLICTING at open. Merged origin/master into the branch
+  (f8a68fa) per the PR #50/#52 house pattern: union resolutions —
+  Routes constants (their side) kept and EXTENDED with adminReviews/
+  adminCustomers/maintenance; checkout_cubit keeps the domain-only
+  ctor (supersedes #53's narrower fix); STATE.md kept as the
+  working-copy superset; pubspec.lock regenerated (auto-merge had
+  corrupted it). Post-merge evidence: analyze clean, 765/765 PASS,
+  format canonical.
+- **PR body updated** to state plainly that the PR necessarily carries
+  the locally-merged feature batch (it is in the branch's history) plus
+  the audit-fix commits; supabase/ has no newly changed paths (local
+  lineage migration stubs are documentation-only; deploy remains gated).
+- CI on the merged head (run 34726653352): Format & Analyze ✅,
+  Flutter Tests ✅ (4m36s), Edge Function Tests ✅, Secret Scan ✅,
+  Setup & Cache ✅, Deployment Readiness ✅; Android Release Build left
+  unwatched per standing call (NOT a merge gate); CodeSnif/Sourcery
+  skipping (informational).
+- NOTE: the first push did not trigger CI (no run registered for the
+  opened PR; Actions confirmed enabled) — the synchronize push fired it
+  normally. Watch if it recurs.
+
+NEXT GATE: MERGE of PR #54 needs explicit owner approval ("merge").
+Reviewer should expect the feature-batch diff inside this PR.
+
+## New — 2026-09-13 (L2 audit-fix batch on fix/audit-2026-09-13 — 765/765, verifier APPROVE, unmerged)
+
+Owner said "fix all" after the audit (L2 enablement). Worktree
+`.trees/audit-0913`, branch `fix/audit-2026-09-13` from 670249b. Seven
+commits (a8a3c90, 92e742a, e0cd477, 07dd1e8, e957cd5, 20cff29, d2d7154):
+
+- **#1 closed** — admin_image_manager `_uploadImage` dummy-bytes stub →
+  real ImagePicker + ImageCompressor + StorageService flow (injectable
+  pickImage, ext/size guards, best-effort orphan cleanup on DB
+  rejection), bounded grid decode 420px, NEW upload regression test.
+- **#3 closed (lib scope)** — checkout_cubit legacy prefs/data-import
+  branch deleted (MemoryIdempotencyStore → domain/repositories);
+  RecentSearchesStore + NotificationPrefsStore hoisted to ports
+  (consumer-side port in shared/services/notification_service.dart);
+  settings toggle flows through SettingsCubit.state.orderNotifications
+  (no build-time getIt probe); PushService/DeepLinkService wrapped
+  (OneSignalPushService/AppLinksDeepLinkService); isClosed guards in
+  admin (6 sites)/addresses/wishlist/orders cubits; admin reviews +
+  customers pages render NEW AdminReviewsCubit/AdminCustomersCubit.
+- **#4 closed (customer-facing)** — orderNotifications(+Subtitle) ARB
+  keys EN/AR, settings_page consumes them, l10n_audit_keys_test pins.
+  Admin copy stays English per its documented in-code intent; the
+  instapay literal is payments-denylist-gated.
+- **Next-in-line landed** — reviews thumbnails AppImage 240px +
+  compressed-bytes submit (photoPath→photoBytes, sync read removed,
+  escaped-`$` filename bug fixed); AdminRepository.getProductById
+  (edit page no longer fetch-100-and-scans; 3 test fakes stubbed);
+  home flash card subscribes to flashCountdown (ticker has a consumer);
+  photo_view + flutter_animate removed (zero refs); AppError.code +
+  kCheckoutFailedCode (page localizes by code, literals kept as
+  fallback); splash config.refresh 2s timeout; product_mapper List
+  guards; coupon-sheet controller disposal; coupon sheet + admin grid
+  decode bounds.
+- **#2/#5 STAGED, not applied** — docs/proposals/2026-09-13-rate-limit-
+  and-password-floor.md (edge-function rate-limit SQL + per-payment
+  proof cap + GoTrue 8-char floor). supabase/ untouched, human-gated.
+
+Evidence on HEAD d2d7154: `flutter analyze` CLEAN; `flutter test`
+**765/765 PASS** (763 baseline + 2 new); whole-repo dart format
+canonical (15-file semantics-free sweep, incl. one auth format-only
+touch — verifier whitespace-verified); pubspec/lock updated for the 2
+dep removals; generated-plugin churn reverted. Verifier sub-agent:
+**APPROVE, no must-fix** — all diff claims verified, denylist +
+supabase scope clean, no secrets in diff, nothing pushed/merged.
+
+NEXT GATE: push + PR needs explicit owner approval ("push+PR" ok?).
+Deferred as proposals: payments getIt ×2 + instapay literal +
+sign-in probe (denylist), test reorganization (92 loose files),
+home_page build extraction, snackbar/CTA consolidation, typed route
+extras (payment_method_page is denylist-side).
+
+## New — 2026-09-13 (comprehensive 5-dimension audit — REPORT ONLY, no code touched)
+
+Owner requested a full audit (maintainability / clean-arch / code quality /
+security / performance) via 5 parallel subagents + flutter analyze/test.
+Evidence on the working tree (master 670249b): analyze CLEAN (0 issues),
+flutter test 763/763 PASS.
+
+Scores (weighted overall **7.2/10**; weights: security .25, arch .20,
+quality .20, maintainability .20, perf .15):
+- Performance 8.0 — prior fixes verified landed; gaps: reviews photo
+  pipeline (full-res decode, discarded compression result, sync main-
+  isolate read), splash remote-config await without timeout, dead 1Hz
+  ticker while flash sales active, photo_view + flutter_animate unused
+  deps, invoice PDF on main isolate.
+- Security 7.5 — no committed secrets (history-swept), defense-in-depth
+  admin/RLS, canonical HMAC-SHA512 webhook, layered PII scrubbing; gaps:
+  ZERO rate limiting on all 8 edge functions (proof uploads uncapped),
+  GoTrue min password still 6 vs client 8, remote migrations 048-051 are
+  unauditable stubs, proof upload content-type-only (no magic bytes),
+  keystores/env files live in working tree (gitignored).
+- Code Quality 7.0 — 73 catch sites zero empty catches, total-decode
+  mappers, honest documented lint config; gaps: admin_image_manager
+  `_uploadImage` is a STUB (dummy 4-byte JPEG ships in production),
+  22 raw snackbars bypass feedback.dart helpers, dead
+  PaymentStatus.expired + carouselIndex, product_mapper `as List?`
+  casts remain, 4 hand-rolled secondary CTAs vs AppButton.accent.
+- Maintainability 7.0 — uniform 8-feature skeleton, 3,390 /// lines,
+  only 8 cross-feature imports, centralized catalog constants; gaps:
+  hardcoded-EN strings cluster (settings_page:294, admin_product_edit
+  0 l10n, instapay:222) invisible to l10n_audit_keys_test, 66/230 lib
+  files untested (supabase_auth_repository zero refs; sentry test
+  imports the abstract not the impl), 11 ticket-named + 92 loose test
+  files, AppError has no machine code (checkout matches English
+  literals), typed route extras missing (map-based `args['total']`).
+- Clean Architecture 6.5 — domain verifiably pure (zero flutter/io/
+  supabase in domain), 17 ports in domain, GetIt composition-root-only
+  for most routes; REGRESSIONS vs 09-12 audit still present:
+  checkout_cubit legacy data-imports/fallbacks (12-13,131-138),
+  settings_page getIt.isRegistered probe in build (287-289), admin
+  reviews/customers/images bypass cubits, payments getIt ×2 self-served,
+  PushService + DeepLinkService NOT interface-wrapped despite pubspec
+  comment; fat AdminRepository (~20 methods) + PaymentService (13
+  hand-rolled test fakes); isClosed guards only in payments/checkout.
+  Duplicate LocalAddressRepository: FIXED.
+
+Top 5 by priority: (1) admin image upload stub — wire ImagePicker +
+ImageCompressor (pattern exists in instapay_instructions_page);
+(2) edge-function rate limiting + per-payment proof cap (supabase/,
+human-gated); (3) layering regressions — finish P1 ctor-injection, hoist
+RecentSearches/NotificationPrefs/IdempotencyStore ports into domain,
+wrap push/deep-link; (4) hardcoded-EN l10n cluster + extend
+l10n_audit_keys_test + CI grep for Text(' literals; (5) raise GoTrue
+minimum password length to 8 (server config, one-liner).
+
+Trend: 8.3 (2026-09-12, pre-batch) → 7.2 — the §1-§17 feature batch
+landed unpolished on i18n/DI/tests while the established core stayed
+clean. No L2 requested; findings are proposals only.
 
 ## New — 2026-09-12 (l2-audit-fixes MERGED — PR #53 squash-merged, master now e56e57a)
 

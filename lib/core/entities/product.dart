@@ -22,6 +22,7 @@ final class Product extends Equatable {
     this.minCutMeters,
     this.sizes = const ['1m', '2m', '5m'],
     this.colors = const ['Emerald', 'Gold', 'Ivory'],
+    this.colorName,
     this.stock = const {},
     this.rating = 0.0,
     this.reviewCount = 0,
@@ -47,6 +48,12 @@ final class Product extends Equatable {
   final List<String> images;
   final List<String> sizes;
   final List<String> colors;
+
+  /// Curated display color name from `products.color_name` (AUD-011,
+  /// migration 062). Null when the row does not carry one — filters keep
+  /// using the variant-derived [colors]; this is the DB-derived source for
+  /// future swatch/filter wiring.
+  final String? colorName;
   final Map<String, int> stock;
   final double rating;
   final int reviewCount;
@@ -85,6 +92,7 @@ final class Product extends Equatable {
         minCutMeters,
         sizes,
         colors,
+        colorName,
         stock,
         rating,
         reviewCount,

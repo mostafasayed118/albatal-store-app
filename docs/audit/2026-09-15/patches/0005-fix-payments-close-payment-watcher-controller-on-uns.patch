@@ -1,0 +1,26 @@
+From f8c6f45625332149cd014fd0fefc10546731253b Mon Sep 17 00:00:00 2001
+From: opencode <opencode@local>
+Date: Tue, 15 Sep 2026 03:56:54 +0300
+Subject: [PATCH 5/6] fix(payments): close payment watcher controller on
+ unsubscribe (AUD-006); deterministic teardown
+
+---
+ lib/features/payments/data/payment_status_watcher.dart | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/lib/features/payments/data/payment_status_watcher.dart b/lib/features/payments/data/payment_status_watcher.dart
+index 0c79c62..ac99a6b 100644
+--- a/lib/features/payments/data/payment_status_watcher.dart
++++ b/lib/features/payments/data/payment_status_watcher.dart
+@@ -143,6 +143,11 @@ final class PaymentStatusWatcher {
+     controller.onCancel = () {
+       fallbackTimer?.cancel();
+       channel?.unsubscribe();
++      // Release the controller itself: single-subscription by contract, so
++      // after the cubit cancels, nobody can listen again. Closing here
++      // (guarded) makes the teardown deterministic instead of waiting for
++      // GC, and emitTerminal's isClosed guard already tolerates it.
++      if (!controller.isClosed) unawaited(controller.close());
+     };
+ 
+     return controller.stream;

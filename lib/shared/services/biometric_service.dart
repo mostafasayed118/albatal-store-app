@@ -5,11 +5,17 @@ import 'logger.dart';
 
 /// Biometric app-lock port (feature-batch §15).
 abstract interface class BiometricService {
-  /// Whether the device has enrolled biometrics (or the plugin can ask).
+  /// Whether this device can authenticate the user at all — biometrics OR a
+  /// device credential (PIN / pattern / passcode).
+  ///
+  /// Deliberately NOT `canCheckBiometrics` (biometrics only): gating on
+  /// biometrics alone made the app lock unreachable on passcode-only
+  /// devices, and made it release itself the moment a user removed their
+  /// enrolled fingerprints. `isDeviceSupported()` covers both cases.
   Future<bool> canAuthenticate();
 
-  /// Prompts the user; resolves true on success. Failures resolve
-  /// false — the gate never crashes the shell.
+  /// Prompts the user; resolves true on success. Failures (cancel, lockout,
+  /// unsupported) resolve false — the gate treats false as "stay locked".
   Future<bool> authenticate({required String reason});
 }
 
@@ -23,11 +29,9 @@ final class LocalBiometricService implements BiometricService {
   @override
   Future<bool> canAuthenticate() async {
     try {
-      final supported = await _auth.isDeviceSupported();
-      if (!supported) return false;
-      return await _auth.canCheckBiometrics;
+      return await _auth.isDeviceSupported();
     } on Exception catch (e) {
-      Log.w('biometrics check failed: $e');
+      Log.w('biometric capability probe failed: $e');
       return false;
     }
   }
@@ -37,7 +41,12 @@ final class LocalBiometricService implements BiometricService {
     try {
       return await _auth.authenticate(
         localizedReason: reason,
-        biometricOnly: true,
+        // Device-credential fallback is intentional: `biometricOnly: true`
+        // silently made the app lock unusable whenever biometrics were
+        // unavailable (and, combined with the old fail-open gate, let the
+        // app through). The lock must be enforceable on passcode-only
+        // devices too.
+        biometricOnly: false,
       );
     } on Exception catch (e) {
       Log.w('biometric auth failed: $e');

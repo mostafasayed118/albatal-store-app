@@ -86,6 +86,8 @@ extension ProductCodec on Product {
     // zoom 1080) + Cache-Control immutable on upload; bare getPublicUrl
     // kept as the fail-open fallback until the render-URL cutover lands.
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
+    // (Rendering is cached in the presentation layer: `ProductImageResolver`
+    // / `AppImage` wrap `CachedNetworkImage` for every remote product image.)
     final rawImages = row['product_images'];
     final imageRows = rawImages is List
         ? rawImages.whereType<Map<String, dynamic>>().toList()
@@ -132,6 +134,7 @@ extension ProductCodec on Product {
       origin: _optStr(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
       colors: colorSet.toList()..sort(),
+      colorName: _optStr(row, 'color_name'),
       stock: stockMap,
       rating: rating,
       reviewCount: safeInt(row, 'review_count'),
@@ -158,6 +161,7 @@ extension ProductCodec on Product {
         'origin': p.origin,
         'sizes': p.sizes,
         'colors': p.colors,
+        'colorName': p.colorName,
         'stock': p.stock,
         'rating': p.rating,
         'reviewCount': p.reviewCount,
@@ -200,6 +204,7 @@ extension ProductCodec on Product {
         origin: optStr(raw['origin']),
         sizes: optStrList(raw['sizes']),
         colors: optStrList(raw['colors']),
+        colorName: optStr(raw['colorName']),
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),

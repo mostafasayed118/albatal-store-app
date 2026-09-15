@@ -1,0 +1,54 @@
+All research complete. Here is the structured catalog.
+
+Al Batal Elite — Current Feature Catalog
+1. Feature modules (lib/features/) and screens (routes in C:\flutter_projects\albatal_store\lib\shared\routing\app_router.dart)
+storefront — the shopping funnel:
+
+HomePage (/home): Stitch hero carousel (promo + featured products), category chips, flash-sale card with live countdown ticker (FlashSaleTicker, get_active_flash_sales RPC, discount labels), featured/best-rated grid.
+CategoriesPage (/categories), CatalogPage (/catalog with ?q= search): text search bar, sort bar, filter sheet, active-filters bar, empty states.
+DetailsPage (/product/:id): image gallery + full-screen ZoomGallery (InteractiveViewer-based), variant selector (color swatches + sizes), stock badge, rating stars (display-only), size guide sheet, wishlist toggle, add-to-cart, related products.
+CartPage (/cart) — intentionally public for guests; CheckoutPage (/checkout, auth-gated) with address picker/form, shipping fee, order review; OrderSuccessPage (/order-success).
+OrdersPage (/profile/orders): order history with status progress tracker; WishlistPage (/wishlist).
+admin (all /admin/* gated by profile.isAdmin): AdminDashboardPage (/admin), AdminOrdersPage (/admin/orders) + AdminOrderDetailPage (/admin/orders/:id — status transitions via update_order_status RPC, customer membership-tier control), AdminInventoryPage (/admin/inventory — low stock via get_low_stock_products RPC, stock updates), AdminCatalogPage (/admin/catalog hub), AdminProductsPage (/admin/products), AdminProductEditPage (/admin/products/new, /admin/products/:id — admin_upsert_product RPC), AdminCategoriesPage (/admin/categories), AdminImageManagerPage (/admin/images/:id — admin_set_product_images RPC), AdminVariantEditorPage (/admin/variants/:id — admin_upsert_variant RPC).
+
+auth: SignInPage, SignUpPage, ForgotPasswordPage, ResetPasswordPage, ProfilePage (hub → orders, addresses, wishlist, settings, support, sign-in/out).
+
+addresses: AddressesPage (/profile/addresses) — CRUD, stored encrypted (flutter_secure_storage).
+
+payments: PaymentMethodPage (/payment-method), PaymobCheckoutPage (/paymob-checkout, webview iframe), InstapayInstructionsPage (/instapay-instructions — transfer instructions + photo proof upload via image_picker to private instapay-proofs bucket, admin review flow server-side).
+
+settings: SettingsPage (/settings) — theme mode (system/light/dark) + language (EN/AR) radios, persisted.
+
+onboarding: SplashPage (/splash), OnboardingPage (/onboarding, PageView).
+
+support: SupportPage (/support — WhatsApp + email channels via url_launcher, FAQ kind exists in SupportChannelKind), plus static PrivacyPolicyPage (/privacy-policy), TermsOfServicePage (/terms), ShippingPolicyPage (/shipping-policy), ReturnsPolicyPage (/returns-policy).
+
+2. Backend/data layer (Supabase-only)
+Tables referenced in lib: products, product_variants, product_images, categories, orders, payments, profiles; storage bucket avatars (client) + instapay-proofs (server-enforced).
+RPCs: create_checkout_order (atomic checkout with idempotency key, server-computed money), update_order_status, get_active_flash_sales, get_low_stock_products, admin_upsert_product, admin_upsert_variant, admin_set_product_images, admin_set_membership_tier.
+45+ migrations: RLS policies, stock functions, shipping zones/fee calc, order statuses + idempotency/expiry + race-safe state machine, audit trail, flash sales, membership tier (046), premium free shipping (047), account deletion, cron jobs.
+Edge functions: checkout, paymob-initiate, paymob-callback, instapay-initiate, instapay-submit-proof, instapay-review, cancel-expired-orders, send-order-notification (server-side only), delete-account.
+Payments: Paymob card, Cash on Delivery, InstaPay (manual proof + review). No Stripe/PayPal/wallets.
+Not present client-side: push notifications (no plugin), analytics SDK, remote config, Firebase (explicitly rejected project-wide). Sentry is the only telemetry.
+3. Auth
+Email/password only: sign-up with email confirmation, password sign-in, email reset + reset-password page, sign out, in-app account deletion (edge function). No OTP, no social/Google/Apple, no biometrics. Roles: profiles.is_admin (router-level admin gate) and membership_tier ("premium" tier → free shipping perk surfaced in cart).
+
+4. l10n/i18n
+English + Arabic ARBs (l10n/app_en.arb, app_ar.arb) → generated AppLocalizations; runtime language switch in Settings; RTL supported (explicit directional-icon/mirroring fixes in git history and docs).
+
+5. Non-functional infra present
+Caching/offline: LocalStorefrontPersistence (SharedPreferences) restores cart, wishlist, order snapshot, and catalog cache; no connectivity listener (no connectivity_plus) — offline banner is proposed, not built.
+Security: flutter_secure_storage for session + encrypted address book (PII cleared on sign-out/delete); EnvConfig staging/prod; environment banner; Supabase session port.
+Error handling: Result<T>/AppError in core/error, payment error-code mapper (payment_error_mapper.dart), Log with redaction; retry exists only as checkout idempotency keys (MemoryIdempotencyStore) and payment status watcher/fallback poll.
+Crash reporting: SentryCrashReportingService (sentry_flutter).
+Accessibility: minimal — Semantics( appears in only ~6 widget files; no systemic screen-reader coverage.
+Theming: full dark mode (AppTheme.dark()) + ThemeMode setting; design tokens per DESIGN.md.
+NOT present: PDF/invoice generation, coupons/promo codes (only server-side flash-sale discounts), product reviews/ratings submission (ratings are display-only fields), order tracking map, chat, referrals.
+6. Docs skim
+STATE.md: 2,700-line dev-loop log (not a backlog). Recently merged: 3-slice review batch (PR #52), L1 review fixes, membership-tier admin control, premium free shipping. Notes explicitly out of scope: a dedicated admin customers list page; deferred app.dart lifecycle cleanup.
+docs/packages-proposal.md: APPROVED-in-docs, NOT yet applied — proposed deps: flutter_image_compress, photo_view, skeletonizer, flutter_animate (images/motion); connectivity_plus + internet_connection_checker_plus (offline gate/banner); flutter_local_notifications (local order-status notifications) then onesignal_flutter (push via edge function); share_plus + app_links (WhatsApp share + deep links); permission_handler. Explicitly rejected: Firebase anything, dio, drift/hive/isar, getx/riverpod, UI mega-kits. Documents current gaps: no compression, no zoom (since partially addressed by ZoomGallery), no offline correctness, no notifications.
+docs/superpowers/plans/2026-09-08-audit-batch.md: TDD implementation plan fixing a 7.5/10 quality audit — payment error-code mapper, Paymob service logging/terminal-state helper, checkout page split, shared address codec, catalog query hardening, 8-char password rule, PII clear on sign-out (mostly landed per STATE.md).
+INSTRUCTIONS.md: role = mentor/senior-tech-lead teaching contract (explain-before-implement, approval gates, walkthroughs); stack locked to Flutter-first Clean Architecture (presentation→domain→data), BLoC/Cubit, GetIt, GoRouter, Supabase-only (no Firebase), no unapproved dependency changes.
+DESIGN.md: tokens sourced from lib/shared/theme/app_theme.dart — emerald primary #003527/#064E3B, gold secondary #904D00/#FE932C, terracotta error #BA1A1A, light scaffold #F9F9F9, dark charcoal #121212 + slate #1E293B, Montserrat headings + Inter body, full type scale, 4px spacing, radius scale, breakpoints, 44dp+ touch targets.
+7. pubspec.yaml — notable deps beyond core (bloc/get_it/go_router/supabase)
+sentry_flutter, cached_network_image, flutter_secure_storage, shared_preferences, webview_flutter (Paymob iframe), image_picker (InstaPay proof), url_launcher (WhatsApp/email), flutter_svg, intl, equatable, uuid. Dev: bloc_test, mocktail, fake_async, flutter_lints. Absent: firebase_*, stripe, local_auth, connectivity_plus, notifications, photo_view, share_plus, pdf, drift/hive — i.e., every item in the packages proposal is still an open, owner-approved-but-unapplied enhancement track, and push notifications, offline handling, coupons, reviews, invoice/PDF, and social auth are confirmed non-existent features.

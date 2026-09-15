@@ -146,9 +146,6 @@ void main() {
       await tester.pumpWidget(harness(router));
       await tester.pumpAndSettle();
 
-      // ignore: avoid_print
-      print(
-          'DBG status=${authCubit.state.status} tier=${authCubit.state.profile?.tier} badge=${find.text('Premium Member').evaluate().length}');
       await tester.ensureVisible(find.text('Premium Member'));
       expect(find.text('Premium Member'), findsOneWidget);
       expect(find.byIcon(Icons.workspace_premium), findsOneWidget);

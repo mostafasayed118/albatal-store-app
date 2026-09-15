@@ -124,6 +124,57 @@ void main() {
     expect(product.category, 'Cotton');
     expect(product.price.minorUnits, 50000);
   });
+
+  test('fromRow maps products.color_name (AUD-011); absent degrades to null',
+      () {
+    final storage = _FakeStorageService();
+    final withName = ProductCodec.fromRow(
+      {
+        'id': 'p1',
+        'name': 'Silk',
+        'base_price': 50000,
+        'color_name': 'Royal Emerald',
+      },
+      const [],
+      storageService: storage,
+    )!;
+    expect(withName.colorName, 'Royal Emerald');
+
+    final withoutName = ProductCodec.fromRow(
+      {
+        'id': 'p2',
+        'name': 'Cotton',
+        'base_price': 10000,
+        'color_name': 42, // mistyped column degrades to null (total decode)
+      },
+      const [],
+      storageService: storage,
+    )!;
+    expect(withoutName.colorName, isNull);
+  });
+
+  test('encode/decode round-trips colorName (AUD-011)', () {
+    const product = Product(
+      id: 'silk-1',
+      name: 'Silk',
+      category: 'Silk',
+      price: Money(129900),
+      imageColor: 0xff123456,
+      colorName: 'Royal Emerald',
+    );
+    final decoded = ProductCodec.decode(ProductCodec.encode(product))!;
+    expect(decoded.colorName, 'Royal Emerald');
+
+    // Caches written by pre-062 builds carry no colorName key.
+    final legacy = ProductCodec.decode({
+      'id': 'silk-1',
+      'name': 'Silk',
+      'category': 'Silk',
+      'price': 129900,
+      'imageColor': 0xff123456,
+    })!;
+    expect(legacy.colorName, isNull);
+  });
 }
 
 final class _FakeStorageService extends StorageService {

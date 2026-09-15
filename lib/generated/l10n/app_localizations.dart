@@ -2611,6 +2611,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{product} is back in stock'**
   String backInStockBody(String product);
+
+  /// Title shown on the biometric app-lock screen (feature-batch §15).
+  ///
+  /// In en, this message translates to:
+  /// **'App locked'**
+  String get appLocked;
+
+  /// Body copy on the biometric app-lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with your device biometrics to continue.'**
+  String get appLockMessage;
+
+  /// Button label that re-triggers the biometric prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get appLockUnlock;
+
+  /// Shown when the biometric prompt did not succeed; the app stays locked.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Try again to unlock the app.'**
+  String get appLockFailed;
+
+  /// Escape hatch on the app-lock screen: signs the user out, then unlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out instead'**
+  String get appLockSignOut;
+
+  /// Settings toggle title that turns the biometric app lock on or off.
+  ///
+  /// In en, this message translates to:
+  /// **'App lock'**
+  String get appLockToggle;
+
+  /// Settings toggle subtitle describing what the app lock does.
+  ///
+  /// In en, this message translates to:
+  /// **'Require biometrics or the device passcode to open the app'**
+  String get appLockToggleSubtitle;
+
+  /// Shown when the device cannot authenticate (no biometrics and no passcode).
+  ///
+  /// In en, this message translates to:
+  /// **'App lock isn\'t available on this device'**
+  String get appLockUnavailable;
 }
 
 class _AppLocalizationsDelegate

@@ -6,6 +6,7 @@ import '../../../../core/entities/profile.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -164,7 +165,7 @@ class _AuthenticatedProfile extends StatelessWidget {
             leading: const Icon(Icons.admin_panel_settings_outlined),
             title: Text(l.adminDashboard),
             trailing: Icon(context.directionalTrailingIcon),
-            onTap: () => context.push('/admin'),
+            onTap: () => context.push(Routes.admin),
           ),
         ],
         const SizedBox(height: 24),

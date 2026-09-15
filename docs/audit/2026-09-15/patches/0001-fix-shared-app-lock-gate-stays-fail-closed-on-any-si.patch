@@ -1,0 +1,66 @@
+From 988459220f9cfaf5379e51f8bb932dade4d3beb5 Mon Sep 17 00:00:00 2001
+From: opencode <opencode@local>
+Date: Tue, 15 Sep 2026 03:12:35 +0300
+Subject: [PATCH 1/6] fix(shared): app-lock gate stays fail-closed on any
+ sign-out failure; test harness wraps gate in MaterialApp (AUD-001, AUD-002)
+
+---
+ lib/shared/components/app_lock_gate.dart      |  6 +++++-
+ .../shared/components/app_lock_gate_test.dart | 20 +++++++++++--------
+ 2 files changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/lib/shared/components/app_lock_gate.dart b/lib/shared/components/app_lock_gate.dart
+index 4c15dc9..380fbe5 100644
+--- a/lib/shared/components/app_lock_gate.dart
++++ b/lib/shared/components/app_lock_gate.dart
+@@ -143,7 +143,11 @@ class _AppLockGateState extends State<AppLockGate> {
+     if (signOut == null) return;
+     try {
+       await signOut();
+-    } on Exception catch (e) {
++    } on Object catch (e) {
++      // `on Object`, not just Exception: any failure — including a thrown
++      // Error — must keep the lock. Letting it propagate would crash the
++      // lock screen and defeat the fail-closed contract this escape exists
++      // to preserve (verified by the no-bypass test).
+       Log.w('app lock: sign-out escape failed: $e');
+       return;
+     }
+diff --git a/test/shared/components/app_lock_gate_test.dart b/test/shared/components/app_lock_gate_test.dart
+index 0c51522..870812a 100644
+--- a/test/shared/components/app_lock_gate_test.dart
++++ b/test/shared/components/app_lock_gate_test.dart
+@@ -16,11 +16,13 @@ void main() {
+     required _FakeBiometrics biometrics,
+     Future<void> Function()? onSignOut,
+   }) =>
+-      AppLockGate(
+-        biometrics: biometrics,
+-        prefs: _FakeAppLockPrefs(prefEnabled),
+-        onSignOut: onSignOut,
+-        child: const Scaffold(key: childKey, body: Text('shell')),
++      MaterialApp(
++        home: AppLockGate(
++          biometrics: biometrics,
++          prefs: _FakeAppLockPrefs(prefEnabled),
++          onSignOut: onSignOut,
++          child: const Scaffold(key: childKey, body: Text('shell')),
++        ),
+       );
+ 
+   testWidgets('opt-in off → renders the shell, never prompts', (tester) async {
+@@ -36,9 +38,11 @@ void main() {
+ 
+   testWidgets('no biometric service → pass-through (tests / unsupported)',
+       (tester) async {
+-    await tester.pumpWidget(AppLockGate(
+-      prefs: _FakeAppLockPrefs(true),
+-      child: const Scaffold(key: childKey),
++    await tester.pumpWidget(MaterialApp(
++      home: AppLockGate(
++        prefs: _FakeAppLockPrefs(true),
++        child: const Scaffold(key: childKey),
++      ),
+     ));
+     await tester.pumpAndSettle();
+ 

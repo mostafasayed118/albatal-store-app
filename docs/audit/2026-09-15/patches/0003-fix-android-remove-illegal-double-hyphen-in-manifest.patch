@@ -1,0 +1,23 @@
+From e7f3839a095d3e4e2c41d691d74df3babb44eed3 Mon Sep 17 00:00:00 2001
+From: opencode <opencode@local>
+Date: Tue, 15 Sep 2026 03:32:08 +0300
+Subject: [PATCH 3/6] fix(android): remove illegal double-hyphen in manifest
+ XML comment (AUD-004); debug APK builds again
+
+---
+ android/app/src/main/AndroidManifest.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index af79f9f..4081aee 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -1,7 +1,7 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+     <!-- Permissions the app depends on directly.
+        Declared EXPLICITLY here rather than relying on manifest merging
+-       from plugin libraries: `flutter build apk --release` uses ONLY
++       from plugin libraries: `flutter build apk` (release) uses ONLY
+        `src/main` (plus plugin manifests), whereas `src/debug` and
+        `src/profile` are debug-only source sets. INTERNET was previously
+        declared only in those debug/profile manifests, so a release APK
