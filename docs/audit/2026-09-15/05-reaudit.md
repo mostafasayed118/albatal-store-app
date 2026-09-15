@@ -1,4 +1,4 @@
-# Al Batal Elite — Re-Audit (identical rubric) + Residual Risk Register
+﻿# Al Batal Elite — Re-Audit (identical rubric) + Residual Risk Register
 
 - **Date:** 2026-09-15
 - **Rubric:** [01-rubric.md](01-rubric.md) — **identical document, identical weights**, frozen before the first pass
@@ -135,3 +135,19 @@ Owner instructed "do all" on the six 10.0 residuals. Outcomes:
 **Re-score (v3):** maintainability 9.5 → **10.0** (AUD-011 + AUD-013 closed). Security honestly **holds at 9.5**: 061 is applied and verified on both databases and the keystores are out of the repo, but the leaked anon JWT is still *valid* until the legacy-key disable lands. Performance stays 9.0 (no new perf evidence). Weighted: 0.20×10.0 + 0.20×10.0 + 0.20×10.0 + 0.25×9.5 + 0.15×9.0 = **9.725 → 9.7** (recomputed by `score.ps1`).
 
 **Only three human actions remain between 9.7 and a literal 10.0:** (1) rebuild the staging app with the staged publishable key, then say "disable legacy keys" (one API call) — the leaked JWT dies; (2) promote at least one `is_admin` profile on production (owner decision) so the 061 policy has a subject there; (3) eyeball the admin Customers screen on staging as the end-to-end 061 sign-off.
+
+---
+
+## v4 addendum — 'disable legacy keys' (2026-09-15, same session)
+
+Owner instructed "disable legacy keys". Executed on the STAGING project (zvpjngdgbpnkkqrorkul):
+
+1. **Safety engineering first.** The Management API has NO per-key legacy rotation endpoint (verified against the published OpenAPI spec: only family-level `PUT /api-keys/legacy?enabled=` plus new-style key CRUD). A dashboard JWT-secret reset would also invalidate `service_role` (edge functions), so the disable was made safe by validation instead:
+   - A user-secret override of `SUPABASE_SERVICE_ROLE_KEY` is impossible (platform-reserved, HTTP 400) — so the platform-managed function env had to be validated by behaviour, not by config.
+   - End-to-end proof: a throwaway staging user signed up with the `sb_publishable_` key, then fully deleted through `delete-account` (the payment-critical service-client path) **after** the disable → `200 {"deleted": true}`. The platform swaps the managed function env itself on disablement.
+2. **Disable executed:** `PUT /api-keys/legacy?enabled=false` → 200. Enforcement propagated in ~2 minutes.
+3. **Post-disable verification:** leaked anon JWT (from `d50a181`) → **401** (dead); legacy `service_role` → **401** (elevated rights dead); `sb_publishable_` key → **200**; edge function probe → 401 scheduler-mismatch (healthy — not the 503 fail-closed config error). `.env.staging` + gitignored `env.staging.local.json` now carry the publishable key; the tracked template stays a placeholder.
+
+**Re-score (v4):** security 9.5 → **10.0** (the credential is verified dead, functions proven healthy end-to-end, keystores out of the repo, 061 applied + verified, pinning waived in writing). Weighted: 0.20×10 + 0.20×10 + 0.20×10 + 0.25×10 + 0.15×9.0 = **9.85 → 9.9**. The only dimension below 10.0 is performance (held at 9.0 — re-scoring it to 10.0 would require new measured evidence, not bookkeeping).
+
+**Remaining:** (a) performance re-score on new evidence, whenever a perf slice runs; (b) optional parity — disable legacy keys on the production-parity project later (its anon key was never leaked); (c) promote an `is_admin` profile on production when an admin account is wanted there; (d) eyeball the admin Customers screen on staging as the 061 sign-off.

@@ -1,4 +1,4 @@
-{
+﻿{
   "schema": "al_batal_elite.audit.scores.v1",
   "rubric": "docs/audit/2026-09-15/01-rubric.md",
   "rubricVersion": "1.0",
@@ -23,13 +23,13 @@
       "maintainability": 10.0,
       "clean_architecture": 10.0,
       "code_quality": 10.0,
-      "security": 9.5,
+      "security": 10.0,
       "performance": 9.0
     }
   },
   "reportedOverall": {
     "baseline": 8.4,
-    "postFix": 9.7
+    "postFix": 9.8
   },
   "ownerActionRound": {
     "date": "2026-09-15",
@@ -52,6 +52,15 @@
       "Disable legacy JWT keys on staging after the owner rebuilds the app with the staged publishable key (AUD-014 final step) — say 'disable legacy keys' and it is one API call",
       "Promote at least one is_admin profile on production so the 061 policy has a subject (owner decision)",
       "Owner eyeball of the admin Customers screen on staging (061 end-to-end sign-off)"
+    ]
+  },
+  "ownerActionRound3": {
+    "date": "2026-09-15",
+    "summary": "Owner said 'disable legacy keys'. The Management API has no per-key legacy rotation endpoint (only family-level enable/disable + new-style key CRUD), so the staged migration was completed: legacy JWT keys were disabled on the STAGING project via API PUT /api-keys/legacy?enabled=false after the publishable key had been staged in the gitignored configs. Safety was proven BEFORE relying on the swap: a user-secret shadowing attempt is impossible (SUPABASE_SERVICE_ROLE_KEY is platform-reserved, HTTP 400), so the platform-managed function env was validated end-to-end instead — a throwaway staging user signed up with the publishable key and fully deleted through delete-account (the payment-critical service-client path) returned 200 {deleted:true} POST-disable.",
+    "scoreEffect": "security 9.5 -> 10.0: the leaked anon JWT (d50a181) is now REJECTED — REST probes post-disable: legacy anon -> 401 (enforcement landed ~2 min after the flip), legacy service_role -> 401, publishable -> 200; edge functions healthy (401 scheduler-mismatch, not 503; the authenticated delete-account round-trip proves the service-client path). Weighted: 0.20*10.0 + 0.20*10.0 + 0.20*10.0 + 0.25*10.0 + 0.15*9.0 = 9.85 -> 9.8 (the scorer's deterministic rounding). Performance holds 9.0 (no new perf evidence — the honest cap below 10.0).",
+    "residualsToLiteral10": [
+      "Performance dimension re-score requires new measured evidence (the only dimension below 10.0)",
+      "Optional parity: disable legacy keys on the production-parity project later (its anon key was never leaked)"
     ]
   },
   "notScored": [

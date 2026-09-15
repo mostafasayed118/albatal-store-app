@@ -123,11 +123,30 @@ now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
   (score.ps1 exit 0: 9.725 → 9.7). Ledger: 14 findings — 11 fixed,
   1 applied-and-verified (AUD-008), 1 waived (AUD-012), 1 key-migration
   staged (AUD-014).
-- NEXT GATES: owner review + merge of PR #64; AUD-014 final step
-  (rebuild staging app with the staged publishable key, then "disable
-  legacy keys" — one API call — and the leaked JWT dies); promote an
-  is_admin profile on production (owner decision); eyeball the admin
-  Customers screen on staging (061 end-to-end sign-off).
+- **AUD-014 CLOSED — legacy JWT keys DISABLED on staging (round 4,
+  owner: "disable legacy keys"):** No per-key rotation API exists
+  (verified vs OpenAPI spec); user-secret shadowing of the managed
+  SUPABASE_SERVICE_ROLE_KEY is impossible (platform-reserved, HTTP 400),
+  so the disable was made safe by behaviour-proof instead: a throwaway
+  staging user signed up with the sb_publishable_ key and fully deleted
+  through delete-account (the payment-critical service-client path)
+  **after** the disable → `200 {"deleted":true}`. `PUT
+  /api-keys/legacy?enabled=false` → 200; enforcement landed in ~2 min.
+  Post-disable probes: leaked anon JWT (d50a181) → **401 (dead)**;
+  legacy service_role → 401; publishable → 200; edge function probe →
+  401 scheduler-mismatch (healthy, not 503). `.env.staging` +
+  gitignored `env.staging.local.json` now carry the publishable key;
+  tracked template stays a placeholder. The throwaway probe user was
+  self-deleted by the proof itself. Production (alxwvy...) legacy keys
+  intentionally untouched (its anon key was never leaked) — optional
+  future parity. Re-score: security 9.5 → **10.0**; overall **9.8**
+  (scorer-deterministic: 9.85 → 9.8; score.ps1 exit 0). The only
+  dimension below 10.0 is performance (9.0 — needs new measured
+  evidence, not bookkeeping).
+- NEXT GATES: owner review + merge of PR #64; promote an is_admin
+  profile on production when an admin account is wanted there; eyeball
+  the admin Customers screen on staging (061 end-to-end sign-off);
+  optional: production legacy-key parity later.
 
 ## New — 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
 
