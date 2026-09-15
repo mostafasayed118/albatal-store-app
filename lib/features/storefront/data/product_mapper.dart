@@ -158,6 +158,10 @@ extension ProductCodec on Product {
         'description': p.description,
         'composition': p.composition,
         'care': p.care,
+        'widthCm': p.widthCm,
+        'gsm': p.gsm,
+        'sellByLength': p.sellByLength,
+        'minCutMeters': p.minCutMeters,
         'origin': p.origin,
         'sizes': p.sizes,
         'colors': p.colors,
@@ -180,6 +184,8 @@ extension ProductCodec on Product {
     // Total decode: mistyped cache values degrade instead of throwing
     // (one bad entry never fails the whole restore).
     String? optStr(Object? v) => v is String ? v : null;
+    int? optInt(Object? v) => v is num ? v.toInt() : null;
+    double? optDouble(Object? v) => v is num ? v.toDouble() : null;
     List<String> optStrList(Object? v) =>
         v is List ? v.whereType<String>().toList() : const [];
     final priceRaw = raw['price'];
@@ -201,6 +207,11 @@ extension ProductCodec on Product {
         description: optStr(raw['description']),
         composition: optStr(raw['composition']),
         care: optStr(raw['care']),
+        widthCm: optInt(raw['widthCm']),
+        gsm: optInt(raw['gsm']),
+        sellByLength:
+            raw['sellByLength'] is bool ? raw['sellByLength'] as bool : false,
+        minCutMeters: optDouble(raw['minCutMeters']),
         origin: optStr(raw['origin']),
         sizes: optStrList(raw['sizes']),
         colors: optStrList(raw['colors']),
