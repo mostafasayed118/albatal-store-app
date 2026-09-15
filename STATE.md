@@ -1,6 +1,70 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
+Last run: 2026-09-15 (owner follow-up batch: AUD-015 git repair, AUD-014/009/008 remediations; branch `fix/audit-2026-09-15` NOT pushed)
+
+## New — 2026-09-15 (owner follow-up batch: git repair + AUD-014/009/008; 888/888, analyze clean)
+
+Owner approved the follow-up list ("do this steps"). Three new commits on
+`fix/audit-2026-09-15` (each own commit: 48462d9, ebe381b, 445d3fa; branch
+now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
+
+- **AUD-015 CLOSED — corrupt packed-refs repaired.** `.git/packed-refs`
+  held a stale duplicate `refs/heads/audit-remediation → 83fc99c` out of
+  sorted order (loose ref 447f645 was the real tip; reflog confirms
+  83fc99c is its ancestor). Before: `git clone --local` failed with
+  `fatal: multiple updates for ref 'refs/remotes/origin/audit-remediation'`.
+  `git pack-refs --all` alone did NOT dedupe; the stale line was removed
+  byte-precisely (LF, no CRLF), backup kept at `.git/packed-refs.bak`.
+  After: fsck reports ZERO packed-refs errors; clone test exit 0 (clone
+  deleted after proof). Residual (pre-existing, cosmetic): fsck still
+  reports invalid HEAD-reflog entries pointing at objects lost in the
+  pre-2026-09-15 "object-db loss" — does not block clone/worktrees/CI;
+  optional cleanup via `git reflog expire` if the owner accepts losing
+  that recovery history. Landmine noted: `.git/info/exclude` line 57 has
+  `/C*/` which matches ANY root dir starting with "C" (config, coverage…)
+  and makes plain `git add config/...` emit ignore warnings.
+- **AUD-014: tracked staging key placeholdered (commit ebe381b).**
+  `config/env.staging.json` now mirrors `env.production.json`
+  (`REPLACE_WITH_STAGING_ANON_KEY`); the real JWT was already (and only)
+  in gitignored `config/env.staging.local.json` — verified identical.
+  CI check: no workflow references env.staging.json, so no build break.
+  **OWNER STILL MUST rotate the staging anon key in the Supabase
+  dashboard** — it remains in git history (introduced d50a181);
+  placeholdering alone is not the durable fix.
+- **AUD-009 closed (commit 48462d9).** pubspec `http: any` → `http: ^1.2.0`
+  (dev dep; pubspec.lock unchanged — resolves to same version).
+- **AUD-008: route (a) chosen + migration created (commit 445d3fa).**
+  Evidence: lib has ZERO references to `admin_list_customers` —
+  `SupabaseAdminRepository.fetchCustomers` reads `profiles(...)` directly,
+  so the table-level SELECT policy is what fixes the live screen; route
+  (b) would have required client changes too. Created
+  `supabase/migrations/061_admin_profiles_read.sql` from the reviewed
+  proposal: SECURITY DEFINER `is_current_user_admin()` (no recursive RLS)
+  + additive `profiles_select_admin` policy; name clash-checked against
+  all migrations (only 061 uses it); rollback comments included.
+  **NOT applied to any live DB on purpose:** `supabase/config.toml` is
+  linked to `alxwvyflasewslinufqe` (the production-parity project per the
+  09-13 evidence) — a blind `db push` would target the wrong project.
+  Owner apply path: `supabase link --project-ref zvpjngdgbpnkkqrorkul` →
+  `supabase migration list` (expect only 061 unapplied) → `supabase db
+  push` → verify the admin Customers screen lists other users → decide
+  production parity separately (established gate).
+- **AUD-011 decision recorded:** add `products.color_name text` at the
+  next schema touch (single column; in-app curated swatch table already
+  resolves hues — `swatchColorFor` — so no lookup table unless the admin
+  UI must manage hues). Code side (read/write/migrate) is ready to
+  implement once the column exists.
+- **Evidence on new HEAD 445d3fa:** `flutter analyze` 0 issues (14.4s);
+  `flutter test` **888/888 PASS** (exit 0); working tree clean; AUD-015
+  clone/CI/worktree blocker closed end-to-end.
+- NEXT GATES: owner "push+PR" for `fix/audit-2026-09-15` (19 commits,
+  includes owner WIP snapshot 5fd16e9); AUD-014 dashboard rotation; 061
+  staging deploy + screen verification. Optional hygiene (not done,
+  owner call): move `release-key.jks`/`release-keystore.jks` out of the
+  repo root; cert-pinning decision in writing; AUD-013 .gitignore/
+  `lib/generated` reword.
+
+## New — 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
 
 ## New — 2026-09-15 (five-dimension code-quality audit + fixes; 8.4 → 9.4)
 
