@@ -53,7 +53,15 @@ handover/rollback, RLS proposal) and `scripts/audit/run-audit.ps1`
 
 Note: 5 auditor sub-agents spawned for parallel dimension review all failed
 at startup (runtimeMs 1–13s, status=failed, no output); the audit was
-completed in-session instead. Worth investigating separately.
+completed in-session instead. A 6th tightly-scoped verifier sub-agent
+(AGENTS.md requires one after L2 changes) also failed the same way
+(runtimeMs 994, status=failed, model zai_auto-fast) — so 6/6 dispatches
+failed across three models, which points at the sub-agent runtime, not the
+tasks. Independence was obtained instead from a cold clean-checkout harness
+run, forward+reverse patch parity (SHA-256), and the two-way ledger↔commit
+cross-check; all are reproducible by a third party (see
+`docs/audit/2026-09-15/04-verification.md` §12). **Sub-agent dispatch is
+non-functional in this environment and should be investigated.**
 
 ## New — 2026-09-14 (audit-batch-3 PUSHED + PR #62 opened; all 4 owner items done)
 

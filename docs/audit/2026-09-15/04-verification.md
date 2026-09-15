@@ -178,3 +178,66 @@ diff vs `5fd16e9`), then aborted; the repository was verified clean at `92b0cb4`
 > Note: `git revert --abort` and `git apply -R` are non-destructive (they only rewrite working-tree
 > files from existing objects), which is why the rollback path can be exercised safely during an
 > audit. Nothing was committed, pushed, or merged at any point.
+
+## 11. Performance regression check
+
+The repository's own performance suites were run on the repaired tree:
+
+| Suite | Tests | Result | Wall time |
+|---|---|---|---|
+| `test/features/storefront/presentation/cubit/catalog_perf_test.dart` | 14 | pass | — |
+| `test/perf/catalog_scroll_perf_test.dart` | 2 | pass | — |
+| combined | **16** | **All tests passed!** | 18.8 s |
+
+The catalog suites assert algorithmic properties directly (e.g. `findProductById` stays O(1) with the
+index carried across emits — "no rescan"), so they are a meaningful guard rather than a smoke test.
+
+**Regression risk by construction:** none of the six applied fixes touches an algorithmic path —
+they are a guarded `close()` in a teardown callback (`AUD-006`), a widened catch clause in an error
+path (`AUD-002`), a reworded XML comment (`AUD-004`), a reconstructed test file (`AUD-003`), a
+stale-comment removal (`AUD-010`), and a formatter pass (`AUD-005`). No query, loop, cache or
+widget-tree shape changed, so no before/after benchmark is required to establish parity; the perf
+suites above confirm the harness still asserts those properties green.
+
+> Scope note: the audit brief restricts measurement to local fixtures and forbids production traffic,
+> so no device profiling or production query plans were produced. The performance dimension was
+> therefore scored on static evidence plus these harness results (see `05-reaudit.md` confidence
+> table: **Medium**).
+
+## 12. Independent verification
+
+`AGENTS.md` requires a verifier sub-agent after L2 code changes. **Six sub-agent dispatches were
+attempted for this audit (five dimension auditors plus one tightly-scoped fix verifier, across three
+models); all six failed at startup** — `status=failed`, runtimes of 0.9–13.6 s, no output and no
+findings file. This is an environment limitation of the agent runtime, not a finding about the
+project, and it is recorded in `STATE.md`.
+
+Because an independent *agent* could not be run, independence was obtained by other means, all of
+which a third party can reproduce from the branch alone:
+
+| Independence mechanism | Command / artifact | Result |
+|---|---|---|
+| Cold re-run from a pristine export (no local state) | harness in `.openclaw/tmp/clean-checkout-20260915-140703/` | `failed gates: 0` (§9) |
+| Patch-series parity (snapshot + patches == tip) | `git apply` × 6 then SHA-256 compare | 0 diffs in lib/test/android (§8) |
+| Rollback parity (tip − patches == snapshot) | `git apply -R` × 6 then SHA-256 compare | 0 diffs (§10) |
+| Behaviour parity | same `flutter test` invocation before and after | 875→888 pass, 0 fail (§1) |
+| Two-way ledger↔commit cross-check | ledger vs `git log 5ef935c..fix/audit-2026-09-15` | every `fixed` row has a commit; every fix commit has a row |
+| Third-party re-check | `scripts/audit/run-audit.ps1` (exit 0/1) | reproducibly green |
+
+### Third-party reproduction checklist (run these yourself)
+
+```powershell
+# 1. Gates on the branch
+powershell -File scripts/audit/run-audit.ps1
+
+# 2. Each fix, in isolation (see the patch series for the exact diffs)
+git show e7f3839 -- android/app/src/main/AndroidManifest.xml   # AUD-004
+flutter test test/shared/components/app_lock_gate_test.dart    # AUD-001 (was 0/8)
+flutter test test/features/admin/data/admin_customer_directory_test.dart  # AUD-003
+flutter build apk --debug                                      # AUD-004 proof (fails on the parent commit)
+
+# 3. Faithfulness of the delivered patches
+#    (see 04-verification.md §8 for the full script)
+```
+
+Every verdict in the ledger names the artifact that proves it; nothing is asserted from memory.
