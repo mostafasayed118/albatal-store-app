@@ -1,4 +1,3 @@
-import '../../../../core/data/address_codec.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
@@ -7,6 +6,21 @@ import '../../../payments/domain/entities/payment.dart';
 import '../entities/pending_order.dart';
 import '../repositories/checkout_repository.dart';
 import '../repositories/idempotency_store.dart';
+
+/// Address-snapshot encoder owned by the storefront domain (audit
+/// 2026-09-14 V2 follow-up).
+///
+/// The 5-key server snapshot sent as `p_address` by the checkout flow.
+/// Lives in domain (not `core/data/`) so the domain use-case no longer
+/// imports across the layer boundary. Encode-only: the server never sends
+/// one back; the 6-key address-book shape stays in `AddressCodec`.
+Map<String, dynamic> addressSnapshotJson(Address address) => {
+      'id': address.id,
+      'recipient': address.recipient,
+      'line': address.line,
+      'city': address.city,
+      'country': address.country,
+    };
 
 /// Outcome of [PlaceCheckoutOrderUseCase].
 ///
@@ -73,9 +87,8 @@ class PlaceCheckoutOrderUseCase {
   }) async {
     final key = inSessionKey ?? _restoredKey() ?? _generateIdempotencyKey();
     await _idempotencyStore.saveKey(key, _clock().millisecondsSinceEpoch);
-    final snapshot = address != null
-        ? AddressCodec.toSnapshotJson(address)
-        : <String, dynamic>{};
+    final snapshot =
+        address != null ? addressSnapshotJson(address) : <String, dynamic>{};
 
     final first = await _checkoutRepository.placeOrder(
       items: items,

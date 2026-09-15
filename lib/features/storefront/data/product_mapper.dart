@@ -81,6 +81,10 @@ extension ProductCodec on Product {
     // Category name via the join.
     final category = safeString(safeMap(row['categories']), 'name');
 
+    // TODO(audit-2026-09-14 P0-4): route Storage URLs through
+    // StorageService.getProductImageUrlForWidth (grid 420 / detail 720 /
+    // zoom 1080) + Cache-Control immutable on upload; bare getPublicUrl
+    // kept as the fail-open fallback until the render-URL cutover lands.
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
     // (Rendering is cached in the presentation layer: `ProductImageResolver`
     // / `AppImage` wrap `CachedNetworkImage` for every remote product image.)

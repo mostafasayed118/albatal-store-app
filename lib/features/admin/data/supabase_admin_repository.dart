@@ -41,8 +41,10 @@ final class SupabaseAdminRepository implements AdminRepository {
       // A failed permission probe must not grant admin. Catches broadly
       // because malformed payloads raise TypeError (an Error, not an
       // Exception) that must never escape the repository boundary.
-      Log.w('Admin permission probe failed; denying admin: $e',
-          category: LogCategory.auth);
+      // Logged via error: (never interpolated — probe payloads can carry
+      // PII; audit 2026-09-14 P0-5).
+      Log.w('Admin permission probe failed; denying admin.',
+          category: LogCategory.auth, error: e);
       return false;
     }
   }
@@ -449,9 +451,13 @@ final class SupabaseAdminRepository implements AdminRepository {
           .select('id, full_name, phone, membership_tier')
           .order('created_at', ascending: false)
           .limit(500);
-      final list = rows as List<dynamic>;
-      return Success(list
+      // Total decode parity with getAllOrders: mistyped rows degrade to
+      // skips (audit 2026-09-14 P0-3) — previously `rows as List` threw on
+      // a malformed payload and `row as Map` threw per-row.
+      final list = (rows as List)
           .whereType<Map<String, dynamic>>()
+          // Rows without a string id cannot be navigated to; skip them.
+          .where((row) => row['id'] is String)
           .map((row) => AdminCustomer(
                 id: safeString(row, 'id'),
                 name: safeString(row, 'full_name'),
@@ -461,10 +467,11 @@ final class SupabaseAdminRepository implements AdminRepository {
                     false, // no suspension flag in profiles (§14 read-only)
               ))
           .where((c) => c.id.isNotEmpty)
-          .toList());
+          .toList();
+      return Success(list);
     } catch (e) {
       // NOTE: this endpoint needs an admin SELECT policy on `profiles`
-      // (see supabase/migrations/_proposals/061_admin_profiles_read.sql).
+      // (see supabase/migrations/061_admin_profiles_read.sql).
       // Without it RLS limits the result to the caller's own row; the call
       // still succeeds, so the directory is simply short.
       Log.w('fetchCustomers failed', category: LogCategory.network);

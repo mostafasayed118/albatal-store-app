@@ -17,11 +17,38 @@ const int minPasswordLength = 8;
 /// widget tree. [tooShortMessage] carries the localized copy from the
 /// page; the fallback exists only so the validator is testable
 /// standalone. Returns null when the value is acceptable.
+///
+/// Length-only on purpose: sign-up is the trust boundary the audit
+/// flagged; server (GoTrue floor 8, verified live 2026-09-13) stays
+/// authoritative. Sign-in/reset keep accepting legacy credentials.
 String? passwordValidator(String? value, {String? tooShortMessage}) =>
     (value == null || value.length < minPasswordLength)
         ? tooShortMessage ??
             'Password must be at least $minPasswordLength characters'
         : null;
+
+/// Password rule for NEW accounts: [passwordValidator] plus at least one
+/// letter and one digit (audit 2026-09-14). Length-only passwords like
+/// `12345678` or `longenough` are no longer accepted at sign-up.
+///
+/// Kept separate from [passwordValidator] so legacy credentials still
+/// sign in. Returns null when the value is acceptable.
+String? signUpPasswordValidator(
+  String? value, {
+  String? tooShortMessage,
+  String? tooWeakMessage,
+}) {
+  final tooShort = passwordValidator(value, tooShortMessage: tooShortMessage);
+  if (tooShort != null) return tooShort;
+  final password = value!;
+  final hasLetter = password.contains(RegExp(r'[A-Za-z]'));
+  final hasDigit = password.contains(RegExp(r'\d'));
+  if (!hasLetter || !hasDigit) {
+    return tooWeakMessage ??
+        'Password must contain at least one letter and one digit';
+  }
+  return null;
+}
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -99,6 +126,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _passwordCtrl,
                   decoration: InputDecoration(
                     labelText: l.password,
+                    // State the full rule up front so the user never has
+                    // to learn it from a validation error. Uses the
+                    // existing localized too-short copy; the letter+digit
+                    // fallback stays English until the next l10n
+                    // regen (lib-only scope — no .arb edits in this slice).
+                    helperText: l.passwordTooShort,
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => _obscure = !_obscure),
                       icon: Icon(
@@ -107,8 +140,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   obscureText: _obscure,
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
+                  validator: (v) => signUpPasswordValidator(
+                    v,
+                    tooShortMessage: l.passwordTooShort,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
