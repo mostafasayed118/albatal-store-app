@@ -168,6 +168,23 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
   </div>
 </div>
 
+<h3 style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:30px">OWASP Top 10 (2021) — walk-through</h3>
+<table>
+  <thead><tr><th>Category</th><th>Verdict</th><th>Basis</th></tr></thead>
+  <tbody>
+    <tr><td>A01 Broken access control</td><td><span class="pill open">partial</span></td><td>Admin-checked RPCs + RLS hardening (029); gap = missing admin SELECT policy on <code>profiles</code> (AUD-008, proposal shipped)</td></tr>
+    <tr><td>A02 Cryptographic failures</td><td><span class="pill fixed">pass</span></td><td><code>flutter_secure_storage</code>; constant-time secret compare; no secrets logged (no cert pinning — R7)</td></tr>
+    <tr><td>A03 Injection</td><td><span class="pill fixed">pass</span></td><td>PostgREST builders / RPC params only; deep-link + support-link allow-lists</td></tr>
+    <tr><td>A04 Insecure design</td><td><span class="pill fixed">pass</span></td><td>Integer-minor-unit money; server-authoritative totals; fail-closed app lock</td></tr>
+    <tr><td>A05 Security misconfiguration</td><td><span class="pill open">partial</span></td><td>Minimal manifest, gitignored signing; gaps = committed anon JWT (AUD-014) + keystores on disk (R6)</td></tr>
+    <tr><td>A06 Vulnerable components</td><td><span class="pill fixed">pass</span></td><td>No security advisories; pins intentional (<code>http: any</code> noted, AUD-009)</td></tr>
+    <tr><td>A07 Auth failures</td><td><span class="pill fixed">pass</span></td><td>Supabase Auth; password rules; opt-in fail-closed biometric lock; PII cleared on sign-out</td></tr>
+    <tr><td>A08 Data integrity failures</td><td><span class="pill fixed">pass</span></td><td>Mappers type-test every field; no unsafe deserialization; no <code>dynamic</code> in presentation</td></tr>
+    <tr><td>A09 Logging failures</td><td><span class="pill fixed">pass</span></td><td>Structured logger, PII-free; Sentry scrubbing; no <code>print()</code></td></tr>
+    <tr><td>A10 SSRF</td><td><span class="pill fixed">n/a</span></td><td>Client app; allow-listed external targets</td></tr>
+  </tbody>
+</table>
+
 <h2><span class="n">5</span>What a green-looking repo was hiding</h2>
 <div class="callout">
   <p style="margin-top:0"><b>The audited tree looked healthy</b> — clean analyzer output bar four unused imports, 875 passing tests, a documented audit culture. Three defects were still live:</p>

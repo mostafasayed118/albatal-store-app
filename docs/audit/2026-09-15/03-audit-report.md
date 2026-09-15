@@ -113,6 +113,23 @@ Deductions:
 
 **9.0**
 
+### OWASP Top 10 (2021) — explicit walk-through
+
+| Category | Verdict | Evidence / reasoning |
+|---|---|---|
+| **A01** Broken access control | ⚠️ Partial (owner-gated) | No client-side authorization decisions: mutating calls go through admin-checked RPCs (`update_order_status`, `admin_*`) or RLS. Migrations `002`/`003`/`029` pin ownership and drop a permissive `profiles_update_own` that allowed self-setting `is_admin`. **Gap:** the admin customer directory depends on a missing `profiles` admin SELECT policy → `AUD-008` (proposal shipped, needs human review; no data exposed) |
+| **A02** Cryptographic failures | ✅ Pass | No custom crypto. Session/PII at rest via `flutter_secure_storage` (platform keystore); edge-function secret comparison is constant-time (`supabase/functions/_shared/secrets.ts`); no secrets logged. Residual: no certificate pinning (`RESIDUAL-R7`) |
+| **A03** Injection | ✅ Pass | No string-built SQL: all queries use PostgREST builders (`select/eq/order/limit`) or RPC parameter maps. No `eval`/`Process.run` on user input. Deep links are host/scheme allow-listed (`deep_link_parser.dart`); support links pass `isAllowedSupportLink` before `launchUrl` |
+| **A04** Insecure design | ✅ Pass | Money is integer minor units (no float drift); the server stays authoritative for totals; the app lock fails closed (fixed in `AUD-002`); order/payment state machines are explicit enums with `unknown` degradation |
+| **A05** Security misconfiguration | ⚠️ Partial (hygiene) | Manifest declares only the 5 needed permissions, one exported launcher activity, no cleartext traffic; release signing reads gitignored `key.properties`; `.gitleaks.toml` present. **Gaps:** a real `anon` JWT is committed in a tracked template (`AUD-014`) and keystores sit in the repo root on disk (`RESIDUAL-R6`) |
+| **A06** Vulnerable & outdated components | ✅ Pass | `flutter pub outdated` returns no security-relevant advisories; the 3 direct pins are intentional and documented. Residual: `http: any` prevents a clean supply-chain pin (`AUD-009`) |
+| **A07** Identification & authentication failures | ✅ Pass | Supabase Auth (no hand-rolled session logic); password rules enforce length + letter + digit; the biometric app lock is opt-in and fail-closed; PII snapshots are cleared on sign-out/delete |
+| **A08** Software & data integrity failures | ✅ Pass | No unsafe deserialization: JSON decoding is confined to mappers that type-test every field and degrade to defaults (`admin_mappers.dart`, `product_mapper.dart`); no `dynamic` casts in presentation; no untrusted download/exec steps |
+| **A09** Logging & monitoring failures | ✅ Pass | Structured logger with categories (`logger.dart`); payment/auth failures logged without PII or token material; Sentry wired with a scrubbing service; no `print()` in `lib` |
+| **A10** Server-side request forgery (SSRF) | ✅ Pass (N/A) | Client app: it never fetches user-supplied URLs server-side. WebView/`url_launcher` targets are allow-listed |
+
+The security verdict is constrained by two owner-gated items (A01, A05), not by exploitable client code — hence **9.0**, with the exact remediation for each recorded in the ledger and the residual register.
+
 ## 6. Dimension 5 — Performance (15%): 8.5 → 9.0
 
 **Method:** timer/stream lifecycle audit, rebuild-pressure census (`BlocBuilder` vs `buildWhen`), list-virtualization review, query-bounding review, cache/asset pipeline review, coverage of the existing perf harness.
