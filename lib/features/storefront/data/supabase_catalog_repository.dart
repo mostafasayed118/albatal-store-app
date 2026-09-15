@@ -110,7 +110,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// the DB), and hitting the bound logs a truncation warning because all
   /// client-side search/filter/sort operate on this page only.
   @override
-  Future<Result<List<Product>>> fetchProducts({int limit = kCatalogPageSize}) async {
+  Future<Result<List<Product>>> fetchProducts(
+      {int limit = kCatalogPageSize}) async {
     // Return cached data if still fresh — avoids redundant network calls
     // while keeping the in-memory cache warm for synchronous findProductById.
     if (_cacheIsFresh) return Success(_cache!);

@@ -149,14 +149,14 @@ void main() {
     when(() => client.from('profiles')).thenAnswer((_) => builder);
     when(() => builder.select('id, full_name, phone, membership_tier'))
         .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
-      {
-        'id': 'c1',
-        'full_name': 'Layla',
-        'phone': '01000000000',
-        'membership_tier': 'premium',
-      },
-      {'id': 'c2', 'full_name': 'Omar'},
-    ]));
+              {
+                'id': 'c1',
+                'full_name': 'Layla',
+                'phone': '01000000000',
+                'membership_tier': 'premium',
+              },
+              {'id': 'c2', 'full_name': 'Omar'},
+            ]));
     final repo = SupabaseAdminRepository(client: client);
 
     final result = await repo.fetchCustomers();
@@ -198,8 +198,8 @@ void main() {
   // `get_order_details` RPC instead.
   test('getOrderDetails resolves through the admin-checked RPC', () async {
     final client = MockSupabaseClient();
-    when(() => client.rpc('get_order_details',
-        params: {'p_order_id': 'o1'})).thenAnswer(
+    when(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
+        .thenAnswer(
       (_) => _FakeRpcBuilder({
         'order': {
           'id': 'o1',
@@ -245,8 +245,8 @@ void main() {
 
   test('getOrderDetails degrades a missing order to Success(null)', () async {
     final client = MockSupabaseClient();
-    when(() => client.rpc('get_order_details',
-        params: {'p_order_id': 'missing'}))
+    when(() =>
+            client.rpc('get_order_details', params: {'p_order_id': 'missing'}))
         .thenAnswer((_) => _FakeRpcBuilder(<String, dynamic>{}));
     final repo = SupabaseAdminRepository(client: client);
 
@@ -259,8 +259,8 @@ void main() {
   test('getOrderDetails maps an RPC failure to Failure (never throws)',
       () async {
     final client = MockSupabaseClient();
-    when(() => client.rpc('get_order_details',
-        params: {'p_order_id': 'o1'})).thenThrow(Exception('permission'));
+    when(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
+        .thenThrow(Exception('permission'));
     final repo = SupabaseAdminRepository(client: client);
 
     final result = await repo.getOrderDetails('o1');

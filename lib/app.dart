@@ -160,91 +160,93 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     // [AppLockGate.child] is not inflated while locked. Null services
     // (registered-nothing tests, unsupported platform) make it a pass-through.
     return AppLockGate(
-      biometrics:
-          getIt.isRegistered<BiometricService>() ? getIt<BiometricService>() : null,
-      prefs: getIt.isRegistered<AppLockPrefsStore>()
-          ? getIt<AppLockPrefsStore>()
-          : null,
-      // Escape hatch: a user who cannot authenticate is never trapped.
-      // Signing out clears the session + local PII snapshots BEFORE the
-      // gate unlocks, so this is not a bypass.
-      onSignOut: _authCubit.signOut,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-              create: (_) => OnboardingCubit(
-                    getIt<OnboardingRepository>(),
-                  )),
-          BlocProvider(
-              create: (_) => SettingsCubit(
-                    getIt<SettingsRepository>(),
-                    // Composition-root probe: settings tests pump the
-                    // shell without the notification store registered.
-                    notificationPrefs:
-                        getIt.isRegistered<NotificationPrefsStore>()
-                            ? getIt<NotificationPrefsStore>()
+        biometrics: getIt.isRegistered<BiometricService>()
+            ? getIt<BiometricService>()
+            : null,
+        prefs: getIt.isRegistered<AppLockPrefsStore>()
+            ? getIt<AppLockPrefsStore>()
+            : null,
+        // Escape hatch: a user who cannot authenticate is never trapped.
+        // Signing out clears the session + local PII snapshots BEFORE the
+        // gate unlocks, so this is not a bypass.
+        onSignOut: _authCubit.signOut,
+        child: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                  create: (_) => OnboardingCubit(
+                        getIt<OnboardingRepository>(),
+                      )),
+              BlocProvider(
+                  create: (_) => SettingsCubit(
+                        getIt<SettingsRepository>(),
+                        // Composition-root probe: settings tests pump the
+                        // shell without the notification store registered.
+                        notificationPrefs:
+                            getIt.isRegistered<NotificationPrefsStore>()
+                                ? getIt<NotificationPrefsStore>()
+                                : null,
+                        // §15: the app-lock toggle lives in Settings and flows
+                        // through this cubit (the page never touches DI), so the
+                        // opt-in that arms [AppLockGate] is finally reachable.
+                        biometrics: getIt.isRegistered<BiometricService>()
+                            ? getIt<BiometricService>()
                             : null,
-                    // §15: the app-lock toggle lives in Settings and flows
-                    // through this cubit (the page never touches DI), so the
-                    // opt-in that arms [AppLockGate] is finally reachable.
-                    biometrics: getIt.isRegistered<BiometricService>()
-                        ? getIt<BiometricService>()
-                        : null,
-                    appLockStore: getIt.isRegistered<AppLockPrefsStore>()
-                        ? getIt<AppLockPrefsStore>()
-                        : null,
-                  )..load()),
-          BlocProvider(
-              // Task #8: pass the connectivity gate so offline loads are
-              // tagged (cached restore / offline notice) instead of
-              // surfacing as errors.
-              create: (_) => CatalogCubit(getIt<CatalogRepository>(),
-                  gate: getIt<ConnectivityGate>())
-                ..load()),
-          BlocProvider.value(value: _cartCubit..restore()),
-          BlocProvider(
-              create: (_) => WishlistCubit(
-                    getIt<WishlistRepository>(),
-                    // Composition-root probe (same pattern as the
-                    // settings notification store above): shells without
-                    // the store registered get a no-op toggle.
-                    alertStore: getIt.isRegistered<BackInStockAlertStore>()
-                        ? getIt<BackInStockAlertStore>()
-                        : null,
-                  )..restore()),
-          BlocProvider(
-              create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
-          BlocProvider.value(value: _reorderCubit),
-          BlocProvider.value(value: _recentSearchesCubit),
-          BlocProvider.value(value: _recentlyViewedCubit),
-          BlocProvider(
-              create: (_) =>
-                  AddressesCubit(getIt<AddressRepository>())..load()),
-          BlocProvider.value(value: _authCubit),
-          BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
-        ],
-        child: BlocBuilder<SettingsCubit, SettingsState>(
-            buildWhen: (a, b) =>
-                a.themeMode != b.themeMode || a.locale != b.locale,
-            builder: (_, s) => MaterialApp.router(
-                  title: 'Al Batal Elite',
-                  debugShowCheckedModeBanner: false,
-                  theme: AppTheme.light(),
-                  darkTheme: AppTheme.dark(),
-                  themeMode: s.themeMode,
-                  locale: s.locale,
-                  localizationsDelegates:
-                      AppLocalizations.localizationsDelegates,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  routerConfig: _router,
-                  builder: (context, child) => EnvironmentBanner(
-                      child: widget.exitApp != null
-                          ? SmokeHarness(
-                              router: _router,
-                              adminCubit: context.read<AdminCubit>(),
-                              exitApp: widget.exitApp,
-                              child: child!)
-                          : child!),
-                ))));
+                        appLockStore: getIt.isRegistered<AppLockPrefsStore>()
+                            ? getIt<AppLockPrefsStore>()
+                            : null,
+                      )..load()),
+              BlocProvider(
+                  // Task #8: pass the connectivity gate so offline loads are
+                  // tagged (cached restore / offline notice) instead of
+                  // surfacing as errors.
+                  create: (_) => CatalogCubit(getIt<CatalogRepository>(),
+                      gate: getIt<ConnectivityGate>())
+                    ..load()),
+              BlocProvider.value(value: _cartCubit..restore()),
+              BlocProvider(
+                  create: (_) => WishlistCubit(
+                        getIt<WishlistRepository>(),
+                        // Composition-root probe (same pattern as the
+                        // settings notification store above): shells without
+                        // the store registered get a no-op toggle.
+                        alertStore: getIt.isRegistered<BackInStockAlertStore>()
+                            ? getIt<BackInStockAlertStore>()
+                            : null,
+                      )..restore()),
+              BlocProvider(
+                  create: (_) =>
+                      OrdersCubit(getIt<OrdersRepository>())..restore()),
+              BlocProvider.value(value: _reorderCubit),
+              BlocProvider.value(value: _recentSearchesCubit),
+              BlocProvider.value(value: _recentlyViewedCubit),
+              BlocProvider(
+                  create: (_) =>
+                      AddressesCubit(getIt<AddressRepository>())..load()),
+              BlocProvider.value(value: _authCubit),
+              BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
+            ],
+            child: BlocBuilder<SettingsCubit, SettingsState>(
+                buildWhen: (a, b) =>
+                    a.themeMode != b.themeMode || a.locale != b.locale,
+                builder: (_, s) => MaterialApp.router(
+                      title: 'Al Batal Elite',
+                      debugShowCheckedModeBanner: false,
+                      theme: AppTheme.light(),
+                      darkTheme: AppTheme.dark(),
+                      themeMode: s.themeMode,
+                      locale: s.locale,
+                      localizationsDelegates:
+                          AppLocalizations.localizationsDelegates,
+                      supportedLocales: AppLocalizations.supportedLocales,
+                      routerConfig: _router,
+                      builder: (context, child) => EnvironmentBanner(
+                          child: widget.exitApp != null
+                              ? SmokeHarness(
+                                  router: _router,
+                                  adminCubit: context.read<AdminCubit>(),
+                                  exitApp: widget.exitApp,
+                                  child: child!)
+                              : child!),
+                    ))));
   }
 }

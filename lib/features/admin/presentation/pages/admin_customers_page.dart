@@ -107,10 +107,11 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                                         color: scheme.onPrimaryContainer),
                                   ),
                                 ),
-                                title: Text(c.name.isEmpty ? (contact.isEmpty ? '?' : contact) : c.name),
-                                subtitle: contact.isEmpty
-                                    ? null
-                                    : Text(contact),
+                                title: Text(c.name.isEmpty
+                                    ? (contact.isEmpty ? '?' : contact)
+                                    : c.name),
+                                subtitle:
+                                    contact.isEmpty ? null : Text(contact),
                                 trailing: Text(c.tier),
                               ),
                             );
