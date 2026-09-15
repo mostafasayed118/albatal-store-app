@@ -69,11 +69,35 @@ now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
   still accurate — mapper still uses bare `getProductImageUrl`).
   Reviewer callout is in the PR body: commit 5fd16e9 is the owner's own
   WIP snapshot. CI unwatched per standing call.
-- NEXT GATES: owner review + merge of PR #64; AUD-014 dashboard rotation;
-  061 staging deploy + screen verification. Optional hygiene (not done,
-  owner call): move `release-key.jks`/`release-keystore.jks` out of the
-  repo root; cert-pinning decision in writing; AUD-013 .gitignore/
-  `lib/generated` reword.
+- **Re-audit v2 landed (commit ecef567)** — post-owner-action re-score
+  **8.4 → 9.6** (baseline 8.375; v2 9.625; weights sum 1.00 — recomputed
+  two independent ways: score.ps1 exit 0 + an independent arithmetic
+  cross-check). Movement: code_quality 9.5→10.0 (AUD-009 pinned — no
+  actionable code findings left), security 9.0→9.5 (061 shipped +
+  AUD-014 placeholdered); maintainability holds 9.5 (colorName impl +
+  .gitignore reword open), performance holds 9.0. Harness re-run on the
+  merge head: **failed gates 0** (analyze clean, format clean, 888/888,
+  debug APK builds, secret sweep clean). Ledger: 14 findings — 9 fixed,
+  1 migration-shipped (AUD-008), 1 in-tree-closed (AUD-014), 1 waived
+  (AUD-012), 2 documented residuals (AUD-011, AUD-013); AUD-015 recorded
+  in the ledger but excluded from the five-dimension weighting
+  (`notScored`, repo integrity not first-party source).
+  **Sub-agent dispatch now 7/7 failures** (seventh attempt: 969 ms,
+  status=failed, no output) — dispatch is definitively unavailable in
+  this environment; bypass reason + compensating controls recorded in
+  `.cluster/audit-2026-09-15/plan.md` (untracked staging). Untracked
+  `delivery/` + `.cluster/` are hand-off staging copies by design; the
+  canonical committed package lives in `docs/audit/2026-09-15/`.
+- **SIX STEPS to a literal 10.0** (all deployment/credential/schema — no
+  code defects remain): (1) rotate the staging anon key in the Supabase
+  dashboard; (2) apply 061 to staging → verify the admin Customers
+  screen → production; (3) move release keystores out of the repo root;
+  (4) accept (in writing) or implement certificate pinning; (5)
+  implement `products.color_name` + mapper read (AUD-011); (6) reword
+  the .gitignore/`lib/generated` contradiction (AUD-013).
+- NEXT GATES: owner review + merge of PR #64 (carries owner WIP snapshot
+  5fd16e9 + the audit package + the v2 addendum); AUD-014 dashboard
+  rotation; 061 staging deploy + screen verification.
 
 ## New — 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
 
