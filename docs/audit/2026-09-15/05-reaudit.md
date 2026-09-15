@@ -182,3 +182,41 @@ architecture 10.0, quality 9.5, security 10.0, performance 9.0 →
 until findings 1-2 are fixed; fixing them restores 10.0 quality and
 10.0 maintainability. Security stands at 10.0 (sub-agent found no
 security issues; RLS + key-state evidence from rounds 1-4 stands).
+
+---
+
+## v6 addendum — v5 findings FIXED + production owner actions (2026-09-15)
+
+**Code fixes (branch fix/v5-code-findings, from master a8b25ab):**
+1. product_mapper.dart codec: encode/decode now carry widthCm, gsm,
+   sellByLength, minCutMeters (total-decode degradation for mistyped
+   values). The doc comment's full-fidelity claim is now TRUE.
+2. supabase_admin_repository.fetchPendingReviews: total decode parity
+   with fetchCustomers — whereType + usable id/product_id guards +
+   safeString/safeInt field degrades. The new test's rating='x' row
+   caught that the original fix still had one raw cast (as num?) —
+   converted to safeInt; the test is the regression guard.
+3. Tests: round-trip fixture extended with the 4 fields + a mistyped
+   §10-degrade test + 2 fetchPendingReviews tests (mixed malformed
+   rows; failure mapping). FakeFilterBuilder widened to plant
+   mistyped rows (tolerant whereType reification).
+
+**Gates at fix commit:** analyze 0 issues, format 424 clean,
+893/893 tests (+3).
+
+**Production owner actions (alxwvyflasewslinufqe):**
+- is_admin promoted: al3tar900@gmail.com (893df36d, owner account,
+  earliest profile) is now the sole admin — the 061 policy has a
+  production subject; admin Customers/order flows will resolve.
+- Legacy-key parity PREP: production sb_publishable_ key verified
+  provisioned + REST-probed 200; .env SUPABASE_ANON_KEY swapped to it
+  (in-memory swap, value never printed) so the NEXT release build
+  bakes the new key. The disable of production legacy keys is
+  deliberately DEFERRED: every installed build carries the legacy
+  anon JWT, and disabling before an app update ships would 401 the
+  live app for all users. Go-live sequence: (1) ship a release built
+  from this .env, (2) confirm rollout, (3) PUT api-keys/legacy
+  ?enabled=false, (4) probe legacy anon -> 401 / publishable -> 200.
+- Customers screen data-path sign-off (staging, 061 RLS): owner sub
+  25/25 rows, admin@albatal.com 25/25, non-admin 1; column shapes
+  match fetchCustomers' select exactly.
