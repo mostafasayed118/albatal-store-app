@@ -188,6 +188,20 @@
       "commit": null,
       "verification": "Decoded role=anon (printed no token material); file is ASCII-only, 208-char token, tracked; git log --diff-filter=A identifies d50a181 as the introducing commit; git grep shows it is the only tracked file with a real token.",
       "evidence": "docs/audit/2026-09-15/05-reaudit.md (RESIDUAL-R10), scripts/audit/run-audit.ps1 (role-aware sweep)"
+    },
+    {
+      "id": "AUD-015",
+      "dimension": "repo_integrity",
+      "severity": "high",
+      "title": "Corrupt/unsorted .git/packed-refs breaks git clone of the repository (CI and onboarding blocker)",
+      "location": ".git/packed-refs:10 (refs/heads/audit-remediation)",
+      "root_cause": "While verifying the audit, `git clone --local` of the repository failed with 'fatal: multiple updates for ref refs/heads/audit-remediation not allowed', and git fsck reported 'packed-refs line 10: packedRefUnsorted: refname refs/heads/audit-remediation is less than previous refname refs/heads/mostafasayed118/chore/bump-all-pub-dependencies'. The packed-refs file is no longer sorted, and the same ref also exists as a loose ref with a different SHA (447f645 vs the packed 83fc99c), so git sees two conflicting definitions. HEAD reflog also contains invalid entries. A fresh clone, a CI checkout, or a new worktree of this repository therefore fails. Not caused by the audit - discovered by it.",
+      "proposed_fix": "Back up .git/packed-refs, then restore a consistent ref store: remove the duplicate/stale entry, re-sort the file (keeping the '# pack-refs with: peeled fully-peeled sorted' header), and run `git pack-refs --all` followed by `git fsck --full` to confirm. Decide which SHA is the real audit-remediation tip before deleting either definition, and consider dropping the stray refs/heads/mostafasayed118/* branch that a PR-ref mapping appears to have created.",
+      "applied_fix": "Not applied deliberately: this is .git internals surgery that can affect branch pointers and history integrity, AGENTS.md limits auto-fixes to lib/, and the correct target SHA needs an owner decision. Exact procedure supplied instead.",
+      "status": "documented-owner-action-required",
+      "commit": null,
+      "verification": "Reproduced twice: `git clone --local --no-hardlinks . <dir>` exits 128 with the 'multiple updates for ref' error; `git fsck` reports the packedRefUnsorted line plus invalid HEAD reflog entries; `git show-ref` lists refs/heads/audit-remediation twice with different SHAs. The working repository itself still functions normally (audit branch tip 92b0cb4, clean tree).",
+      "evidence": ".openclaw/tmp/audit/rollback-check.ps1 output; docs/audit/2026-09-15/05-reaudit.md (RESIDUAL-R11)"
     }
   ],
   "baseline_harness": {
@@ -204,6 +218,7 @@
     "flutter_build_apk_debug": "exit 0 - app-debug.apk built",
     "coverage": "70.4% line coverage (7471/10609 instrumented lines)",
     "flutter_pub_outdated": "no security-relevant findings; 3 direct pins intentional and documented",
-    "secret_sweep": "no keystores or privileged keys; one triaged public-by-design anon JWT committed in config/env.staging.json (AUD-014, owner action)"
+    "secret_sweep": "no keystores or privileged keys; one triaged public-by-design anon JWT committed in config/env.staging.json (AUD-014, owner action)",
+    "repo_integrity": ".git/packed-refs is unsorted with a duplicated ref definition, so git clone of the repository fails (AUD-015, owner action)"
   }
 }

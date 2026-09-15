@@ -153,3 +153,28 @@ for the git-backed secret sweep, then `flutter pub get` + the harness were run t
 `.openclaw/tmp/clean-checkout-20260915-140703/`. The Android build gate was excluded here
 (`-SkipBuild`) because it was already verified twice on the branch checkout (see §1 and §7);
 the three code-level gates plus the security sweep all reproduce on a pristine export.
+
+## 10. Rollback verification (handover Option B executed)
+
+The documented rollback was proven at file level against the delivered patch series — the
+procedure a reviewer would actually follow if they wanted to undo the audit:
+
+1. Export the fixed tree (`5d494ae`) and the pre-fix snapshot (`5fd16e9`) from git.
+2. Reverse-apply the six patches (`git apply -R`, newest first) to the fixed tree.
+3. Compare the result with the snapshot by SHA-256 per file.
+
+| Check | Result |
+|---|---|
+| reverse-apply failures | **0** (all six patches reversed cleanly) |
+| `lib/` differences vs pre-fix snapshot | **0** |
+| `test/` differences vs pre-fix snapshot | **0** |
+| `android/` differences vs pre-fix snapshot | **0** |
+
+Both directions are therefore proven: **snapshot + patches = fixed tree** (§8) and
+**fixed tree − patches = snapshot** (§10). `git revert --no-commit 5fd16e9..5d494ae` (handover
+Option B) was also executed once and produced the same pre-fix state (11 files changed, empty
+diff vs `5fd16e9`), then aborted; the repository was verified clean at `92b0cb4` afterwards.
+
+> Note: `git revert --abort` and `git apply -R` are non-destructive (they only rewrite working-tree
+> files from existing objects), which is why the rollback path can be exercised safely during an
+> audit. Nothing was committed, pushed, or merged at any point.

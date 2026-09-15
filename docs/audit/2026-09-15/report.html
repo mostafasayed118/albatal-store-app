@@ -161,6 +161,7 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
       <li><span class="pill open">R3</span> Catalogue colour names need a DB column to replace a hardcoded map.</li>
       <li><span class="pill open">R4</span> <code>.gitignore</code> vs tracked <code>lib/generated</code> wording.</li>
       <li><span class="pill open">R10</span> Real Supabase <b>anon</b> JWT committed in <code>config/env.staging.json</code> — placeholder it and rotate (public-by-design, RLS-gated; still a breached convention).</li>
+      <li><span class="pill open">R11</span> <b>Repo integrity:</b> <code>.git/packed-refs</code> is unsorted with a duplicated ref, so <code>git clone</code> of this repository fails — owner-led <code>.git</code> fix.</li>
     </ul>
     <div class="callout warn" style="font-size:13px;margin-top:12px">
       Sample-size honesty: RLS coverage is repo-wide by policy grep plus deep reads of migrations 002 / 017 / 029 — a line-by-line derivation of all 59 migrations against a live database was out of scope (no production access, no live probing).
@@ -191,7 +192,8 @@ After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.0 + 0.15×9.0
   <p><b>1.</b> A <b>two-character typo</b> (<code>--</code> in an XML comment) silently made <i>every Android build fail</i>.<br>
      <b>2.</b> A <b>truncated test file</b> removed the only guard on a documented production regression while leaving the suite looking alive.<br>
      <b>3.</b> A <b>security control</b> (the app lock's fail-closed escape) could be crashed by an <code>Error</code>-class failure instead of holding the lock.<br>
-     <b>4.</b> A <b>live-format credential</b> (Supabase <code>anon</code> JWT) sat in a tracked config file the repo documents as a placeholder.</p>
+     <b>4.</b> A <b>live-format credential</b> (Supabase <code>anon</code> JWT) sat in a tracked config file the repo documents as a placeholder.<br>
+     <b>5.</b> The repository itself <b>cannot be freshly cloned</b> — <code>.git/packed-refs</code> is corrupt (duplicate, unsorted ref).</p>
   <p style="margin-bottom:0">All three are fixed and verified; the suite is now 888/888 with a proven-clean build.</p>
 </div>
 

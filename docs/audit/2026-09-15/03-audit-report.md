@@ -160,6 +160,12 @@ Deductions:
 
 Runner-up: `AUD-008` (RLS admin directory) and `AUD-014` (committed anon JWT in a tracked template) — both have review-ready remediation (a SQL proposal and an exact config/rotation recipe) and are owner-gated.
 
+### Additional finding outside the five scored dimensions — repo integrity (`AUD-015`)
+
+While verifying the branch, `git clone` of the repository **failed**: `fatal: multiple updates for ref 'refs/heads/audit-remediation' not allowed`. `git fsck` returns `packed-refs line 10: packedRefUnsorted: refname 'refs/heads/audit-remediation' is less than previous refname 'refs/heads/mostafasayed118/chore/bump-all-pub-dependencies'`, and the same ref is defined twice with different SHAs (`447f645` loose vs `83fc99c` packed). HEAD's reflog also holds invalid entries.
+
+Impact: a **fresh clone, CI checkout or new worktree of this repository does not work** — a delivery/onboarding blocker, though it does not affect the application code (the working repository functions normally: audit tip `92b0cb4`, clean tree, all gates green). Recorded in the ledger but **not** used to adjust the five dimension scores, because it is repository infrastructure rather than first-party source; the fix touches `.git` internals and must be owner-led (`05-reaudit.md` → `RESIDUAL-R11`).
+
 ## 8. Verification summary
 
 | Gate | Baseline | After fixes |

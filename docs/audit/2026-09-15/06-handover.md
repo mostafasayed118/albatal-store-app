@@ -115,12 +115,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit/run-audit.ps1 
 - [ ] Cross-check the ledger against `git log 5ef935c..fix/audit-2026-09-15`: every `fixed` row has a commit, every fix commit maps to a row (verified: AUD-004→`e7f3839`, AUD-003→`ded0bb4`, AUD-001/002→`9884592`, AUD-006→`f8c6f45`, AUD-005→`e78ca6e`, AUD-010→`5d494ae`).
 - [ ] Apply `docs/audit/2026-09-15/patches/*.patch` to `5fd16e9` and confirm the result matches the branch tip (proven byte-identical for lib/test/android).
 - [ ] Run `scripts/audit/run-audit.ps1` on a clean checkout of the branch to prove the green result is not local state.
-- [ ] Decide RESIDUAL-R1…R10 ([05-reaudit.md](05-reaudit.md#3-residual-risk-register)) — each has a one-line owner action.
+- [ ] Decide RESIDUAL-R1…R11 ([05-reaudit.md](05-reaudit.md#3-residual-risk-register)) — each has a one-line owner action.
+- [ ] **AUD-015 (R11) — blocks cloning:** back up `.git/packed-refs`, resolve the duplicate `refs/heads/audit-remediation` definition (`447f645` loose vs `83fc99c` packed), re-sort the file, then `git pack-refs --all` + `git fsck --full`. Until then a fresh `git clone` of this repository fails, so CI cannot check it out greenfield.
 - [ ] **AUD-014 (R10):** placeholder the anon key in `config/env.staging.json` (mirror `env.production.json`), keep the real key in `config/env.staging.local.json`, and rotate the staging anon key in the Supabase dashboard (it is in git history via `d50a181`).
 - [ ] Re-run the secret sweep on history before publishing (`gitleaks detect` using the repo's `.gitleaks.toml`).
 
 ## 6. Known cosmetic items for the reviewer
 
+- **The repository cannot currently be cloned** (`AUD-015`): `.git/packed-refs` is unsorted and defines `refs/heads/audit-remediation` twice. Work locally in the existing clone until it is fixed; the fix procedure is in `05-reaudit.md` → `RESIDUAL-R11`, and it must be owner-led because it touches `.git` internals.
 - The snapshot commit `5fd16e9` also captured `.openclaw-attachments/` (two pasted-text files). Removing them from the index was blocked by a safety guard at the time; drop them when you squash or rebase the branch if you prefer.
-- `.openclaw/tmp/audit/**` holds raw process logs; they are intentionally untracked.
+- `.openclaw/tmp/audit/**` holds raw process logs and scratch exports (untracked, ignored).
 - The harness's secret sweep initially flagged the committed staging token; the sweep is now role-aware (warn on `anon`, hard-fail on `service_role`). The warned state is expected until the owner completes the AUD-014 remediation above.
+- Process transparency: during verification, one `git revert` dry-run executed in the working tree (a scratch clone failed for the reason above) and was aborted immediately; the tree was confirmed clean at `92b0cb4` afterwards, and the rollback was then proven properly with a file-level reverse-patch run (`04-verification.md` §10).
