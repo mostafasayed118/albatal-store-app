@@ -82,3 +82,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit/run-audit.ps1 
 
 Writes analyze / format / test / build / coverage / secret-sweep / dependency evidence into
 `.openclaw/tmp/audit/rerun/` and exits non-zero if any gate fails.
+
+## 7. Harness validation (end-to-end run of the deliverable script)
+
+The harness was executed against the repaired tree to prove it works as shipped:
+
+| Gate | exit | time |
+|---|---|---|
+| `flutter analyze --no-pub` | 0 | 118.6 s |
+| `dart format --set-exit-if-changed` | 0 | 1.9 s |
+| `flutter test --reporter compact` | 0 | 127.6 s — `+888: All tests passed!` |
+| `flutter build apk --debug` | 0 | 34.5 s — `√ Built build\app\outputs\flutter-apk\app-debug.apk` |
+| secret sweep (role-aware) | 0 | warned once on the triaged `anon` key (`AUD-014`); no keystores, no privileged keys |
+| `flutter pub outdated` | 0 | 6.4 s (informational) |
+
+**`failed gates: 0`** — log: `.openclaw/tmp/audit/harness_run2.txt`.
+
+> The first harness run correctly failed on the secret-sweep gate because the sweep's original
+> filter was over-broad: it could not distinguish a redacted placeholder from a live key, and the
+> committed staging token is a real JWT. The sweep now **decodes the token's `role` claim**: an
+> `anon` key is reported as a warned, triaged finding (public by design, RLS-gated — see `AUD-014`),
+> while any privileged role (`service_role`, etc.) hard-fails the gate. That change makes the gate
+> meaningful rather than merely noisy.
