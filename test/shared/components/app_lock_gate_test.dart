@@ -16,11 +16,13 @@ void main() {
     required _FakeBiometrics biometrics,
     Future<void> Function()? onSignOut,
   }) =>
-      AppLockGate(
-        biometrics: biometrics,
-        prefs: _FakeAppLockPrefs(prefEnabled),
-        onSignOut: onSignOut,
-        child: const Scaffold(key: childKey, body: Text('shell')),
+      MaterialApp(
+        home: AppLockGate(
+          biometrics: biometrics,
+          prefs: _FakeAppLockPrefs(prefEnabled),
+          onSignOut: onSignOut,
+          child: const Scaffold(key: childKey, body: Text('shell')),
+        ),
       );
 
   testWidgets('opt-in off → renders the shell, never prompts', (tester) async {
@@ -36,9 +38,11 @@ void main() {
 
   testWidgets('no biometric service → pass-through (tests / unsupported)',
       (tester) async {
-    await tester.pumpWidget(AppLockGate(
-      prefs: _FakeAppLockPrefs(true),
-      child: const Scaffold(key: childKey),
+    await tester.pumpWidget(MaterialApp(
+      home: AppLockGate(
+        prefs: _FakeAppLockPrefs(true),
+        child: const Scaffold(key: childKey),
+      ),
     ));
     await tester.pumpAndSettle();
 

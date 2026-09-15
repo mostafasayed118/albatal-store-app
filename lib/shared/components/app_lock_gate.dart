@@ -143,7 +143,11 @@ class _AppLockGateState extends State<AppLockGate> {
     if (signOut == null) return;
     try {
       await signOut();
-    } on Exception catch (e) {
+    } on Object catch (e) {
+      // `on Object`, not just Exception: any failure — including a thrown
+      // Error — must keep the lock. Letting it propagate would crash the
+      // lock screen and defeat the fail-closed contract this escape exists
+      // to preserve (verified by the no-bypass test).
       Log.w('app lock: sign-out escape failed: $e');
       return;
     }
