@@ -151,3 +151,34 @@ Owner instructed "disable legacy keys". Executed on the STAGING project (zvpjngd
 **Re-score (v4):** security 9.5 → **10.0** (the credential is verified dead, functions proven healthy end-to-end, keystores out of the repo, 061 applied + verified, pinning waived in writing). Weighted: 0.20×10 + 0.20×10 + 0.20×10 + 0.25×10 + 0.15×9.0 = **9.85 → 9.9**. The only dimension below 10.0 is performance (held at 9.0 — re-scoring it to 10.0 would require new measured evidence, not bookkeeping).
 
 **Remaining:** (a) performance re-score on new evidence, whenever a perf slice runs; (b) optional parity — disable legacy keys on the production-parity project later (its anon key was never leaked); (c) promote an `is_admin` profile on production when an admin account is wanted there; (d) eyeball the admin Customers screen on staging as the 061 sign-off.
+
+---
+
+## v5 addendum — fresh 5-dimension re-audit at head 73c78a8 (2026-09-15)
+
+Method: first SUCCESSFUL sub-agent dispatch in the project's history
+(explore agent, 7/7 prior failures; dispatch is RESTORED) + fresh gates
+(analyze 0 issues / 424 files format-clean / 890+890 tests pass /
+score.ps1 exit 0) + manual verification of every sub-agent claim.
+
+New findings (all verified in-source, none previously in the ledger):
+1. product_mapper.dart encode/decode omits sellByLength, minCutMeters,
+   widthCm, gsm while the doc comment claims full fidelity — restored
+   cache products silently lose the cut-length commerce fields
+   (colorName IS covered from AUD-011).
+2. supabase_admin_repository.dart fetchPendingReviews (494-503) uses
+   raw casts — one malformed row fails the whole list, violating the
+   file's own total-decode convention (fetchCustomers 454-456).
+3. Minor: Log.w('fetchCustomers failed') drops the cause (477);
+   _optInt doc comment describes _optStr (7-11); old_price coercion
+   duplicates _optInt (62-64); PaymentSuccess.amount is always
+   Money.zero (watcher:36 — matches the service's own placeholder
+   convention at paymob_payment_service 127/186/317 but is
+   undocumented); watcher unsubscribe without removeChannel (145).
+
+Re-derived dimension scores (rubric weights): maintainability 9.5,
+architecture 10.0, quality 9.5, security 10.0, performance 9.0 →
+9.65 → 9.7. The published scorecard stays at 9.8 (ledger-driven)
+until findings 1-2 are fixed; fixing them restores 10.0 quality and
+10.0 maintainability. Security stands at 10.0 (sub-agent found no
+security issues; RLS + key-state evidence from rounds 1-4 stands).
