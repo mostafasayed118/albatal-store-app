@@ -1,0 +1,381 @@
+From e78ca6ee5f3de2e2d9fba20b23b29108e072b4ad Mon Sep 17 00:00:00 2001
+From: opencode <opencode@local>
+Date: Tue, 15 Sep 2026 03:48:04 +0300
+Subject: [PATCH 4/6] style(audit): apply dart format across lib and test
+ (AUD-005)
+
+---
+ docs/audit/2026-09-15/01-rubric.md            |  47 +++++
+ lib/app.dart                                  | 172 +++++++++---------
+ .../pages/admin_customers_page.dart           |   9 +-
+ .../data/supabase_catalog_repository.dart     |   3 +-
+ lib/shared/components/app_lock_gate.dart      |   2 +-
+ .../data/admin_customer_directory_test.dart   |  28 +--
+ test/platform/platform_config_test.dart       |   2 +-
+ .../shared/components/app_lock_gate_test.dart |   2 +-
+ 8 files changed, 158 insertions(+), 107 deletions(-)
+ create mode 100644 docs/audit/2026-09-15/01-rubric.md
+
+diff --git a/docs/audit/2026-09-15/01-rubric.md b/docs/audit/2026-09-15/01-rubric.md
+new file mode 100644
+index 0000000..27f91a4
+--- /dev/null
++++ b/docs/audit/2026-09-15/01-rubric.md
+@@ -0,0 +1,47 @@
++# Al Batal Elite — Audit Rubric, Weights, and Scoring Rules (v1.0, frozen 2026-09-15)
++
++This rubric is published **before** scoring. The re-audit after fixes uses the identical document.
++
++## Dimensions and weights
++
++| # | Dimension | Weight | Rationale |
++|---|---|---|---|
++| 1 | Maintainability | 20% | 29.4k-line app still in active feature development; future-change cost dominates lifecycle cost |
++| 2 | Clean architecture | 20% | The codebase *claims* feature-first Clean Architecture; adherence is cheap to verify and expensive to lose |
++| 3 | Code quality | 20% | Smells/duplication/dead code are the daily friction; equal weight to the two above |
++| 4 | Security | 25% | Commerce app: payments (Paymob/InstaPay), PII, auth. Highest stakes, therefore highest weight |
++| 5 | Performance | 15% | Real but the app is CRUD/browsing; no measured hotspots at baseline, so slightly lower weight |
++
++Sum = 100%. Overall = Σ(scoreᵢ × weightᵢ), rounded to one decimal.
++
++## Score anchors (0–10)
++
++| Score | Meaning |
++|---|---|
++| 10 | No verified findings in this dimension that a reasonable senior reviewer would act on; harness green; evidence complete |
++| 9 | Findings exist but all are minor/nit-level, explicitly waived with justification, or outside first-party code |
++| 7–8 | A handful of non-critical findings with clear remediation paths; no user-facing or data risk |
++| 4–6 | Systemic issues (recurring anti-pattern, weak boundary) or several high-severity findings |
++| 1–3 | Critical findings present (exploitable, data-loss, build/test broken) or dimension largely unmanaged |
++| 0 | Dimension unmanaged and actively harmful |
++
++Rules:
++- Every deduction must cite file:line evidence verified by the auditor (no hearsay).
++- Generated code (`lib/generated/**`) and vendored/platform boilerplate are excluded except where first-party code calls them unsafely.
++- The verifier re-opens every cited location before accepting the score.
++
++## Verification harness (definition of "green")
++
++1. `flutter analyze --no-pub` → `No issues found!`
++2. `flutter test` → all tests pass (baseline: 875 pass / 9 fail on `master` WIP tree)
++3. `dart format --set-exit-if-changed --output=none lib test` → exit 0
++4. `flutter build apk --debug` → build succeeds (run once per verification phase)
++5. `flutter pub outdated` recorded; no known-vulnerable pinned versions (informational)
++6. Secret sweep: `git diff --check` + tracked-file grep for `.env` values, `eyJ…` tokens, keystore paths → clean
++
++## Baseline freeze (2026-09-15, commit `5ef935c` + owner-WIP snapshot `5fd16e9`)
++
++- analyze: 4 warnings (unused imports, truncated test file)
++- test: **875 passed / 9 failed** (1 load failure + 8 harness failures)
++- format: 7 files would be reformatted (4 in `lib/`)
++- Raw logs: `.openclaw/tmp/audit/baseline/{analyze,test_full,format}.txt`
+diff --git a/lib/app.dart b/lib/app.dart
+index 722b7ed..ed34a5b 100644
+--- a/lib/app.dart
++++ b/lib/app.dart
+@@ -160,91 +160,93 @@ final class _AlBatalAppState extends State<AlBatalApp> {
+     // [AppLockGate.child] is not inflated while locked. Null services
+     // (registered-nothing tests, unsupported platform) make it a pass-through.
+     return AppLockGate(
+-      biometrics:
+-          getIt.isRegistered<BiometricService>() ? getIt<BiometricService>() : null,
+-      prefs: getIt.isRegistered<AppLockPrefsStore>()
+-          ? getIt<AppLockPrefsStore>()
+-          : null,
+-      // Escape hatch: a user who cannot authenticate is never trapped.
+-      // Signing out clears the session + local PII snapshots BEFORE the
+-      // gate unlocks, so this is not a bypass.
+-      onSignOut: _authCubit.signOut,
+-      child: MultiBlocProvider(
+-        providers: [
+-          BlocProvider(
+-              create: (_) => OnboardingCubit(
+-                    getIt<OnboardingRepository>(),
+-                  )),
+-          BlocProvider(
+-              create: (_) => SettingsCubit(
+-                    getIt<SettingsRepository>(),
+-                    // Composition-root probe: settings tests pump the
+-                    // shell without the notification store registered.
+-                    notificationPrefs:
+-                        getIt.isRegistered<NotificationPrefsStore>()
+-                            ? getIt<NotificationPrefsStore>()
++        biometrics: getIt.isRegistered<BiometricService>()
++            ? getIt<BiometricService>()
++            : null,
++        prefs: getIt.isRegistered<AppLockPrefsStore>()
++            ? getIt<AppLockPrefsStore>()
++            : null,
++        // Escape hatch: a user who cannot authenticate is never trapped.
++        // Signing out clears the session + local PII snapshots BEFORE the
++        // gate unlocks, so this is not a bypass.
++        onSignOut: _authCubit.signOut,
++        child: MultiBlocProvider(
++            providers: [
++              BlocProvider(
++                  create: (_) => OnboardingCubit(
++                        getIt<OnboardingRepository>(),
++                      )),
++              BlocProvider(
++                  create: (_) => SettingsCubit(
++                        getIt<SettingsRepository>(),
++                        // Composition-root probe: settings tests pump the
++                        // shell without the notification store registered.
++                        notificationPrefs:
++                            getIt.isRegistered<NotificationPrefsStore>()
++                                ? getIt<NotificationPrefsStore>()
++                                : null,
++                        // §15: the app-lock toggle lives in Settings and flows
++                        // through this cubit (the page never touches DI), so the
++                        // opt-in that arms [AppLockGate] is finally reachable.
++                        biometrics: getIt.isRegistered<BiometricService>()
++                            ? getIt<BiometricService>()
+                             : null,
+-                    // §15: the app-lock toggle lives in Settings and flows
+-                    // through this cubit (the page never touches DI), so the
+-                    // opt-in that arms [AppLockGate] is finally reachable.
+-                    biometrics: getIt.isRegistered<BiometricService>()
+-                        ? getIt<BiometricService>()
+-                        : null,
+-                    appLockStore: getIt.isRegistered<AppLockPrefsStore>()
+-                        ? getIt<AppLockPrefsStore>()
+-                        : null,
+-                  )..load()),
+-          BlocProvider(
+-              // Task #8: pass the connectivity gate so offline loads are
+-              // tagged (cached restore / offline notice) instead of
+-              // surfacing as errors.
+-              create: (_) => CatalogCubit(getIt<CatalogRepository>(),
+-                  gate: getIt<ConnectivityGate>())
+-                ..load()),
+-          BlocProvider.value(value: _cartCubit..restore()),
+-          BlocProvider(
+-              create: (_) => WishlistCubit(
+-                    getIt<WishlistRepository>(),
+-                    // Composition-root probe (same pattern as the
+-                    // settings notification store above): shells without
+-                    // the store registered get a no-op toggle.
+-                    alertStore: getIt.isRegistered<BackInStockAlertStore>()
+-                        ? getIt<BackInStockAlertStore>()
+-                        : null,
+-                  )..restore()),
+-          BlocProvider(
+-              create: (_) => OrdersCubit(getIt<OrdersRepository>())..restore()),
+-          BlocProvider.value(value: _reorderCubit),
+-          BlocProvider.value(value: _recentSearchesCubit),
+-          BlocProvider.value(value: _recentlyViewedCubit),
+-          BlocProvider(
+-              create: (_) =>
+-                  AddressesCubit(getIt<AddressRepository>())..load()),
+-          BlocProvider.value(value: _authCubit),
+-          BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
+-        ],
+-        child: BlocBuilder<SettingsCubit, SettingsState>(
+-            buildWhen: (a, b) =>
+-                a.themeMode != b.themeMode || a.locale != b.locale,
+-            builder: (_, s) => MaterialApp.router(
+-                  title: 'Al Batal Elite',
+-                  debugShowCheckedModeBanner: false,
+-                  theme: AppTheme.light(),
+-                  darkTheme: AppTheme.dark(),
+-                  themeMode: s.themeMode,
+-                  locale: s.locale,
+-                  localizationsDelegates:
+-                      AppLocalizations.localizationsDelegates,
+-                  supportedLocales: AppLocalizations.supportedLocales,
+-                  routerConfig: _router,
+-                  builder: (context, child) => EnvironmentBanner(
+-                      child: widget.exitApp != null
+-                          ? SmokeHarness(
+-                              router: _router,
+-                              adminCubit: context.read<AdminCubit>(),
+-                              exitApp: widget.exitApp,
+-                              child: child!)
+-                          : child!),
+-                ))));
++                        appLockStore: getIt.isRegistered<AppLockPrefsStore>()
++                            ? getIt<AppLockPrefsStore>()
++                            : null,
++                      )..load()),
++              BlocProvider(
++                  // Task #8: pass the connectivity gate so offline loads are
++                  // tagged (cached restore / offline notice) instead of
++                  // surfacing as errors.
++                  create: (_) => CatalogCubit(getIt<CatalogRepository>(),
++                      gate: getIt<ConnectivityGate>())
++                    ..load()),
++              BlocProvider.value(value: _cartCubit..restore()),
++              BlocProvider(
++                  create: (_) => WishlistCubit(
++                        getIt<WishlistRepository>(),
++                        // Composition-root probe (same pattern as the
++                        // settings notification store above): shells without
++                        // the store registered get a no-op toggle.
++                        alertStore: getIt.isRegistered<BackInStockAlertStore>()
++                            ? getIt<BackInStockAlertStore>()
++                            : null,
++                      )..restore()),
++              BlocProvider(
++                  create: (_) =>
++                      OrdersCubit(getIt<OrdersRepository>())..restore()),
++              BlocProvider.value(value: _reorderCubit),
++              BlocProvider.value(value: _recentSearchesCubit),
++              BlocProvider.value(value: _recentlyViewedCubit),
++              BlocProvider(
++                  create: (_) =>
++                      AddressesCubit(getIt<AddressRepository>())..load()),
++              BlocProvider.value(value: _authCubit),
++              BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
++            ],
++            child: BlocBuilder<SettingsCubit, SettingsState>(
++                buildWhen: (a, b) =>
++                    a.themeMode != b.themeMode || a.locale != b.locale,
++                builder: (_, s) => MaterialApp.router(
++                      title: 'Al Batal Elite',
++                      debugShowCheckedModeBanner: false,
++                      theme: AppTheme.light(),
++                      darkTheme: AppTheme.dark(),
++                      themeMode: s.themeMode,
++                      locale: s.locale,
++                      localizationsDelegates:
++                          AppLocalizations.localizationsDelegates,
++                      supportedLocales: AppLocalizations.supportedLocales,
++                      routerConfig: _router,
++                      builder: (context, child) => EnvironmentBanner(
++                          child: widget.exitApp != null
++                              ? SmokeHarness(
++                                  router: _router,
++                                  adminCubit: context.read<AdminCubit>(),
++                                  exitApp: widget.exitApp,
++                                  child: child!)
++                              : child!),
++                    ))));
+   }
+ }
+diff --git a/lib/features/admin/presentation/pages/admin_customers_page.dart b/lib/features/admin/presentation/pages/admin_customers_page.dart
+index f1d8ad3..f125900 100644
+--- a/lib/features/admin/presentation/pages/admin_customers_page.dart
++++ b/lib/features/admin/presentation/pages/admin_customers_page.dart
+@@ -107,10 +107,11 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
+                                         color: scheme.onPrimaryContainer),
+                                   ),
+                                 ),
+-                                title: Text(c.name.isEmpty ? (contact.isEmpty ? '?' : contact) : c.name),
+-                                subtitle: contact.isEmpty
+-                                    ? null
+-                                    : Text(contact),
++                                title: Text(c.name.isEmpty
++                                    ? (contact.isEmpty ? '?' : contact)
++                                    : c.name),
++                                subtitle:
++                                    contact.isEmpty ? null : Text(contact),
+                                 trailing: Text(c.tier),
+                               ),
+                             );
+diff --git a/lib/features/storefront/data/supabase_catalog_repository.dart b/lib/features/storefront/data/supabase_catalog_repository.dart
+index da934d9..ec5da1f 100644
+--- a/lib/features/storefront/data/supabase_catalog_repository.dart
++++ b/lib/features/storefront/data/supabase_catalog_repository.dart
+@@ -110,7 +110,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
+   /// the DB), and hitting the bound logs a truncation warning because all
+   /// client-side search/filter/sort operate on this page only.
+   @override
+-  Future<Result<List<Product>>> fetchProducts({int limit = kCatalogPageSize}) async {
++  Future<Result<List<Product>>> fetchProducts(
++      {int limit = kCatalogPageSize}) async {
+     // Return cached data if still fresh — avoids redundant network calls
+     // while keeping the in-memory cache warm for synchronous findProductById.
+     if (_cacheIsFresh) return Success(_cache!);
+diff --git a/lib/shared/components/app_lock_gate.dart b/lib/shared/components/app_lock_gate.dart
+index 380fbe5..2775222 100644
+--- a/lib/shared/components/app_lock_gate.dart
++++ b/lib/shared/components/app_lock_gate.dart
+@@ -254,4 +254,4 @@ class _AppLockScreen extends StatelessWidget {
+       ),
+     );
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/test/features/admin/data/admin_customer_directory_test.dart b/test/features/admin/data/admin_customer_directory_test.dart
+index a57428d..260b0ee 100644
+--- a/test/features/admin/data/admin_customer_directory_test.dart
++++ b/test/features/admin/data/admin_customer_directory_test.dart
+@@ -149,14 +149,14 @@ void main() {
+     when(() => client.from('profiles')).thenAnswer((_) => builder);
+     when(() => builder.select('id, full_name, phone, membership_tier'))
+         .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
+-      {
+-        'id': 'c1',
+-        'full_name': 'Layla',
+-        'phone': '01000000000',
+-        'membership_tier': 'premium',
+-      },
+-      {'id': 'c2', 'full_name': 'Omar'},
+-    ]));
++              {
++                'id': 'c1',
++                'full_name': 'Layla',
++                'phone': '01000000000',
++                'membership_tier': 'premium',
++              },
++              {'id': 'c2', 'full_name': 'Omar'},
++            ]));
+     final repo = SupabaseAdminRepository(client: client);
+ 
+     final result = await repo.fetchCustomers();
+@@ -198,8 +198,8 @@ void main() {
+   // `get_order_details` RPC instead.
+   test('getOrderDetails resolves through the admin-checked RPC', () async {
+     final client = MockSupabaseClient();
+-    when(() => client.rpc('get_order_details',
+-        params: {'p_order_id': 'o1'})).thenAnswer(
++    when(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
++        .thenAnswer(
+       (_) => _FakeRpcBuilder({
+         'order': {
+           'id': 'o1',
+@@ -245,8 +245,8 @@ void main() {
+ 
+   test('getOrderDetails degrades a missing order to Success(null)', () async {
+     final client = MockSupabaseClient();
+-    when(() => client.rpc('get_order_details',
+-        params: {'p_order_id': 'missing'}))
++    when(() =>
++            client.rpc('get_order_details', params: {'p_order_id': 'missing'}))
+         .thenAnswer((_) => _FakeRpcBuilder(<String, dynamic>{}));
+     final repo = SupabaseAdminRepository(client: client);
+ 
+@@ -259,8 +259,8 @@ void main() {
+   test('getOrderDetails maps an RPC failure to Failure (never throws)',
+       () async {
+     final client = MockSupabaseClient();
+-    when(() => client.rpc('get_order_details',
+-        params: {'p_order_id': 'o1'})).thenThrow(Exception('permission'));
++    when(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
++        .thenThrow(Exception('permission'));
+     final repo = SupabaseAdminRepository(client: client);
+ 
+     final result = await repo.getOrderDetails('o1');
+diff --git a/test/platform/platform_config_test.dart b/test/platform/platform_config_test.dart
+index c751f69..36b646c 100644
+--- a/test/platform/platform_config_test.dart
++++ b/test/platform/platform_config_test.dart
+@@ -104,4 +104,4 @@ void main() {
+       );
+     });
+   });
+-}
+\ No newline at end of file
++}
+diff --git a/test/shared/components/app_lock_gate_test.dart b/test/shared/components/app_lock_gate_test.dart
+index 870812a..5c4de62 100644
+--- a/test/shared/components/app_lock_gate_test.dart
++++ b/test/shared/components/app_lock_gate_test.dart
+@@ -159,4 +159,4 @@ class _FakeBiometrics implements BiometricService {
+     authenticateCalls++;
+     return accept;
+   }
+-}
+\ No newline at end of file
++}

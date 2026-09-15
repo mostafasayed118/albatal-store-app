@@ -104,3 +104,32 @@ The harness was executed against the repaired tree to prove it works as shipped:
 > `anon` key is reported as a warned, triaged finding (public by design, RLS-gated — see `AUD-014`),
 > while any privileged role (`service_role`, etc.) hard-fails the gate. That change makes the gate
 > meaningful rather than merely noisy.
+
+## 8. Patch-series faithfulness proof
+
+The repair is delivered as a reviewable patch series at
+`docs/audit/2026-09-15/patches/` (six patches, one per fix commit). To prove the series is
+self-contained and reproducible, the snapshot tree `5fd16e9` was exported and the six patches
+applied to it, then compared file-by-file (SHA-256) against the fixed tree `5d494ae`:
+
+| Tree | Files (source) | Files (patched) | Hash differences |
+|---|---|---|---|
+| `lib/` | 255 | 255 | **0** |
+| `test/` | 169 | 169 | **0** |
+| `android/` | 20 | 20 | **0** |
+
+All six patches applied without a single rejection (`patch_apply_failures=0`), and the patched
+tree is **byte-identical** to the fixed tree. A reviewer can therefore reproduce the entire
+repair from the snapshot with:
+
+```powershell
+git archive --format=zip -o tree.zip 5fd16e9; Expand-Archive tree.zip -DestinationPath .
+git init -q .; git add -A
+Get-ChildItem docs/audit/2026-09-15/patches/*.patch | Sort-Object Name | ForEach-Object { git apply $_ }
+```
+
+> Process note: the first attempt at this proof reported a false positive because `git archive | tar`
+> silently produced empty directories on this host and `git apply` (run from a directory inside the
+> outer repository) is a no-op on paths outside its working directory. The check was re-run with
+> zip exports and a self-contained scratch repository; the table above is from that corrected run,
+> which counts and hashes both trees rather than trusting an empty diff.

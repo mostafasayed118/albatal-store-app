@@ -17,7 +17,23 @@ Audit: 2026-09-15 · Repair branch: `fix/audit-2026-09-15` · Baseline: `5ef935c
 
 > The exact final commit list: `git log --oneline 5ef935c..fix/audit-2026-09-15`. Every fix commit maps to a ledger row; the docs commits carry the audit artifacts.
 
-Deliverables index: [00-inventory](00-inventory.md) · [01-rubric](01-rubric.md) · [02-ledger.json](02-findings-ledger.json) / [02-ledger.csv](02-findings-ledger.csv) · [03-audit-report](03-audit-report.md) · [04-verification](04-verification.md) · [05-reaudit](05-reaudit.md) · [06-handover](06-handover.md) · [rendered report](report.html) · [RLS proposal](proposals/061_admin_profiles_read.sql)
+Deliverables index: [00-inventory](00-inventory.md) · [01-rubric](01-rubric.md) · [02-ledger.json](02-findings-ledger.json) / [02-ledger.csv](02-findings-ledger.csv) · [03-audit-report](03-audit-report.md) · [04-verification](04-verification.md) · [05-reaudit](05-reaudit.md) · [06-handover](06-handover.md) · [rendered report](report.html) · [patch series](patches/) · [RLS proposal](proposals/061_admin_profiles_read.sql)
+
+### Patch series (review starting point)
+
+`docs/audit/2026-09-15/patches/` holds one patch per fix commit, in apply order:
+
+| Patch | Finding | Change |
+|---|---|---|
+| `0001-…app-lock-gate…` | AUD-001, AUD-002 | Fail-closed sign-out + MaterialApp test harness |
+| `0002-…customer-directory…` | AUD-003 | Reconstructed admin test (`main()` + 5 tests) |
+| `0003-…manifest…` | AUD-004 | Illegal `--` removed from the XML comment |
+| `0004-…dart-format…` | AUD-005 | Formatter pass across lib + test |
+| `0005-…payment-watcher…` | AUD-006 | Controller closed on unsubscribe |
+| `0006-…cached_network_image-TODO…` | AUD-010 | Stale TODO removed |
+
+Applying these six patches to the snapshot commit `5fd16e9` reproduces the fixed tree exactly
+(255 lib / 169 test / 20 android files, zero SHA-256 differences) — see [04-verification](04-verification.md#8-patch-series-faithfulness-proof).
 
 ## 2. Rollback procedure
 
@@ -96,7 +112,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit/run-audit.ps1 
 - [ ] Recompute the weighted score from the five dimension scores → must equal 9.5.
 - [ ] Reproduce AUD-004 by reverting `e7f3839` (`flutter build apk --debug` fails), then restore.
 - [ ] Reproduce AUD-003/AUD-001 by checking out the parent of their commits and running the two test files.
-- [ ] Cross-check the ledger against `git log 5ef935c..fix/audit-2026-09-15`: every `fixed` row has a commit, every fix commit maps to a row.
+- [ ] Cross-check the ledger against `git log 5ef935c..fix/audit-2026-09-15`: every `fixed` row has a commit, every fix commit maps to a row (verified: AUD-004→`e7f3839`, AUD-003→`ded0bb4`, AUD-001/002→`9884592`, AUD-006→`f8c6f45`, AUD-005→`e78ca6e`, AUD-010→`5d494ae`).
+- [ ] Apply `docs/audit/2026-09-15/patches/*.patch` to `5fd16e9` and confirm the result matches the branch tip (proven byte-identical for lib/test/android).
 - [ ] Run `scripts/audit/run-audit.ps1` on a clean checkout of the branch to prove the green result is not local state.
 - [ ] Decide RESIDUAL-R1…R10 ([05-reaudit.md](05-reaudit.md#3-residual-risk-register)) — each has a one-line owner action.
 - [ ] **AUD-014 (R10):** placeholder the anon key in `config/env.staging.json` (mirror `env.production.json`), keep the real key in `config/env.staging.local.json`, and rotate the staging anon key in the Supabase dashboard (it is in git history via `d50a181`).
