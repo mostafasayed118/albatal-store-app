@@ -54,12 +54,23 @@ now 19 commits over master, still NOT pushed; master untouched at 5ef935c):
   resolves hues — `swatchColorFor` — so no lookup table unless the admin
   UI must manage hues). Code side (read/write/migrate) is ready to
   implement once the column exists.
-- **Evidence on new HEAD 445d3fa:** `flutter analyze` 0 issues (14.4s);
-  `flutter test` **888/888 PASS** (exit 0); working tree clean; AUD-015
-  clone/CI/worktree blocker closed end-to-end.
-- NEXT GATES: owner "push+PR" for `fix/audit-2026-09-15` (19 commits,
-  includes owner WIP snapshot 5fd16e9); AUD-014 dashboard rotation; 061
-  staging deploy + screen verification. Optional hygiene (not done,
+- **Evidence on merge head 3b18b6c:** `flutter analyze` 0 issues; `flutter
+  test` **888/888 PASS** (exit 0); working tree clean; AUD-015 clone/CI/
+  worktree blocker closed end-to-end.
+- **PUSHED + PR #64 opened** (owner approved "Push + open PR"):
+  https://github.com/mostafasayed118/albatal-store-app/pull/64. Before the
+  push, `origin/master` had advanced (ebc5560, PR #63, 14 lib files) and
+  was MERGED into the branch per the #50/#52/#54 house pattern — 2 content
+  conflicts resolved in `3b18b6c`: (1) supabase_admin_repository
+  fetchCustomers = audit's `phone`-only select (the `email` column does
+  not exist on profiles; selecting it 400s the query — the regression the
+  AUD-003 test pins) + PR #63's total-decode guards (`id is String` skip);
+  (2) product_mapper = union of comment blocks (P0-4 render-URL TODO is
+  still accurate — mapper still uses bare `getProductImageUrl`).
+  Reviewer callout is in the PR body: commit 5fd16e9 is the owner's own
+  WIP snapshot. CI unwatched per standing call.
+- NEXT GATES: owner review + merge of PR #64; AUD-014 dashboard rotation;
+  061 staging deploy + screen verification. Optional hygiene (not done,
   owner call): move `release-key.jks`/`release-keystore.jks` out of the
   repo root; cert-pinning decision in writing; AUD-013 .gitignore/
   `lib/generated` reword.
