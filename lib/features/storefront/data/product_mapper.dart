@@ -134,6 +134,7 @@ extension ProductCodec on Product {
       origin: _optStr(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
       colors: colorSet.toList()..sort(),
+      colorName: _optStr(row, 'color_name'),
       stock: stockMap,
       rating: rating,
       reviewCount: safeInt(row, 'review_count'),
@@ -160,6 +161,7 @@ extension ProductCodec on Product {
         'origin': p.origin,
         'sizes': p.sizes,
         'colors': p.colors,
+        'colorName': p.colorName,
         'stock': p.stock,
         'rating': p.rating,
         'reviewCount': p.reviewCount,
@@ -202,6 +204,7 @@ extension ProductCodec on Product {
         origin: optStr(raw['origin']),
         sizes: optStrList(raw['sizes']),
         colors: optStrList(raw['colors']),
+        colorName: optStr(raw['colorName']),
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),

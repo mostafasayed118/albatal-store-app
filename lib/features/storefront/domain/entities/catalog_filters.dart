@@ -25,8 +25,11 @@ abstract final class CatalogConstants {
 
 /// Maps an imageColor int to a human-readable color name for filtering.
 ///
-/// TODO(audit): derive color names from DB/config (Product.colorName field)
-/// rather than hardcoded map; keep fallback to 'Other' for unknown values.
+/// DB-derived alternative: `products.color_name` (migration 062) is mapped
+/// onto [Product.colorName] by ProductCodec.fromRow — prefer it when a row
+/// carries one. This tint map stays as the fallback for rows without a
+/// color_name (and for local/seed rows), keeping the 'Other' fallback for
+/// unknown values.
 String catalogColorName(int color) {
   const map = {
     0xFF176B57: 'Emerald',
