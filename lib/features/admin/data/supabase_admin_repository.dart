@@ -491,16 +491,21 @@ final class SupabaseAdminRepository implements AdminRepository {
           .eq('status', 'pending')
           .order('created_at', ascending: false)
           .limit(100);
-      final list = rows as List<dynamic>;
-      return Success(list
-          .map((row) => row as Map<String, dynamic>)
+      // Total decode parity with fetchCustomers: mistyped rows degrade to
+      // skips instead of one malformed review failing the whole pending
+      // queue. Rows without a usable id/product_id cannot be moderated or
+      // navigated to, so they are skipped.
+      final list = (rows as List)
+          .whereType<Map<String, dynamic>>()
+          .where((row) => row['id'] is String && row['product_id'] is String)
           .map((row) => (
                 id: row['id'] as String,
                 product: row['product_id'] as String,
-                text: row['text'] as String? ?? '',
-                rating: (row['rating'] as num?)?.toInt() ?? 0,
+                text: safeString(row, 'text'),
+                rating: safeInt(row, 'rating'),
               ))
-          .toList());
+          .toList();
+      return Success(list);
     } catch (e) {
       return Failure(AppError('Failed to fetch pending reviews', cause: e));
     }

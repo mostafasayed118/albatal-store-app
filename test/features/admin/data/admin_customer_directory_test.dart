@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -72,7 +72,21 @@ class FakeTransformBuilder<T> extends Fake
 class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   FakeFilterBuilder(this._rows);
 
-  final List<Map<String, dynamic>> _rows;
+  /// `dynamic` element type on purpose: the total-decode regression tests
+  /// deliberately plant mistyped rows (e.g. a bare String) to prove they
+  /// degrade to skips instead of throwing.
+  final List<dynamic> _rows;
+
+  /// Tolerantly reified row list: PostgREST row lists decode as JSON
+  /// objects, so anything that is not a map is dropped here (mirroring the
+  /// client) while mistyped FIELD values still reach the repository to
+  /// prove its total-decode guards. Produces an honest
+  /// `List<Map<String, dynamic>>` at runtime so `as T` (PostgrestList)
+  /// succeeds.
+  T get _typed => _rows.whereType<Map<String, dynamic>>().toList() as T;
+
+  @override
+  PostgrestFilterBuilder<T> eq(String column, Object? value) => this;
 
   @override
   PostgrestTransformBuilder<T> order(
@@ -81,31 +95,31 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
     bool nullsFirst = false,
     String? referencedTable,
   }) =>
-      FakeTransformBuilder<T>(_rows as T);
+      FakeTransformBuilder<T>(_typed);
 
   @override
   PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
-      FakeTransformBuilder<T>(_rows as T);
+      FakeTransformBuilder<T>(_typed);
 
   @override
   Future<R> then<R>(FutureOr<R> Function(T value) onValue,
           {Function? onError}) =>
-      Future.value(_rows as T).then(onValue, onError: onError);
+      Future.value(_typed).then(onValue, onError: onError);
 
   @override
   Future<T> catchError(Function onError, {bool Function(Object error)? test}) =>
-      Future.value(_rows as T).catchError(onError, test: test);
+      Future.value(_typed).catchError(onError, test: test);
 
   @override
   Future<T> whenComplete(FutureOr<void> Function() action) =>
-      Future.value(_rows as T).whenComplete(action);
+      Future.value(_typed).whenComplete(action);
 
   @override
-  Stream<T> asStream() => Future.value(_rows as T).asStream();
+  Stream<T> asStream() => Future.value(_typed).asStream();
 
   @override
   Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) =>
-      Future.value(_rows as T).timeout(timeLimit, onTimeout: onTimeout);
+      Future.value(_typed).timeout(timeLimit, onTimeout: onTimeout);
 }
 
 /// `rpc()` hands back a `PostgrestFilterBuilder` carrying a single decoded
@@ -266,5 +280,64 @@ void main() {
     final result = await repo.getOrderDetails('o1');
 
     expect(result, isA<Failure<AdminOrder?>>());
+  });
+
+  // ─── fetchPendingReviews ────────────────────────────────
+  //
+  // Regression guard (v5 audit): the pending-queue decode used raw casts,
+  // so ONE malformed row failed the entire list — the exact bug class the
+  // total-decode convention (fetchCustomers, getAllOrders) was introduced
+  // to kill. Mistyped rows must degrade to skips.
+  test('fetchPendingReviews skips mistyped rows and maps the rest', () async {
+    final client = MockSupabaseClient();
+    final builder = MockSupabaseQueryBuilder();
+    when(() => client.from('product_reviews')).thenAnswer((_) => builder);
+    when(() => builder.select('id, product_id, text, rating'))
+        .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
+              {
+                'id': 'r1',
+                'product_id': 'p1',
+                'text': 'Luxurious drape',
+                'rating': 5,
+              },
+              'not-a-map', // mistyped row: degrade to skip, never throw
+              {'id': 42, 'product_id': 'p2'}, // unusable id: skip
+              {'id': 'r3', 'product_id': 7}, // unusable product: skip
+              {'id': 'r4', 'product_id': 'p3', 'text': null, 'rating': 'x'},
+            ]));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.fetchPendingReviews();
+
+    verify(() => builder.select('id, product_id, text, rating')).called(1);
+    final reviews = result.when(success: (v) => v, failure: (_) => null);
+    expect(reviews, isNotNull);
+    expect(reviews!.length, 2);
+    expect(reviews[0].id, 'r1');
+    expect(reviews[0].product, 'p1');
+    expect(reviews[0].text, 'Luxurious drape');
+    expect(reviews[0].rating, 5);
+    expect(reviews[1].id, 'r4'); // text/rating degrade, row still usable
+    expect(reviews[1].text, '');
+    expect(reviews[1].rating, 0);
+  });
+
+  test('fetchPendingReviews filters to pending status and maps failure',
+      () async {
+    final client = MockSupabaseClient();
+    final builder = MockSupabaseQueryBuilder();
+    when(() => client.from('product_reviews')).thenAnswer((_) => builder);
+    when(() => builder.select('id, product_id, text, rating'))
+        .thenThrow(Exception('network'));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.fetchPendingReviews();
+
+    expect(
+      result,
+      isA<
+          Failure<
+              List<({String id, String product, String text, int rating})>>>(),
+    );
   });
 }

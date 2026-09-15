@@ -1,6 +1,31 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-15 (owner follow-up batch: AUD-015 git repair, AUD-014/009/008 remediations; branch `fix/audit-2026-09-15` NOT pushed)
+Last run: 2026-09-15 (post-merge cycle: v5 code findings fixed on fresh
+branch `fix/v5-code-findings` from master a8b25ab; production is_admin
+promoted; production publishable-key parity PREPPED, disable deferred
+until app release ships).
+
+## New — 2026-09-15 (post-merge round: v5 fixes + production actions; 893/893)
+
+- **v5 findings FIXED** (commit on fix/v5-code-findings): codec carries
+  widthCm/gsm/sellByLength/minCutMeters with total-decode degradation;
+  fetchPendingReviews total decode (whereType + id/product_id guards +
+  safeString/safeInt — the new mistyped-rating test caught a leftover
+  raw `as num?` cast in my first fix and forced safeInt). Gates:
+  analyze 0, format 424 clean, 893/893 (+3). score.ps1 exit 0 (9.8).
+- **Production is_admin promoted:** al3tar900@gmail.com (893df36d,
+  owner account, sole admin) — 061 now has a production subject.
+- **Production parity PREPPED, disable DEFERRED:** publishable key
+  probed 200; .env anon swapped to it (next release bakes it).
+  Disabling production legacy keys NOW would 401 every installed app
+  (they carry the legacy JWT). Sequence: ship release -> rollout ->
+  PUT api-keys/legacy?enabled=false -> probe 401/200.
+- **Customers data-path sign-off (staging):** owner sub + admin@
+  albatal.com both 25/25 via 061 RLS; non-admin 1; columns match the
+  repository select. Visual tap-through still owner-optional.
+- NEXT GATES: review + merge PR (fix/v5-code-findings); ship a
+  production release from the swapped .env, then disable production
+  legacy keys; optional visual tap-through of admin screens.
 
 ## New — 2026-09-15 (owner follow-up batch: git repair + AUD-014/009/008; 888/888, analyze clean)
 

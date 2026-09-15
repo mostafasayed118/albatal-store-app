@@ -18,6 +18,10 @@ void main() {
       description: 'description',
       composition: 'silk',
       care: 'dry clean',
+      widthCm: 150,
+      gsm: 95,
+      sellByLength: true,
+      minCutMeters: 0.5,
       origin: 'Egypt',
       sizes: ['2m'],
       colors: ['Emerald'],
@@ -30,6 +34,28 @@ void main() {
     expect(decoded, product);
     expect(decoded!.price.minorUnits, 129900);
     expect(decoded.oldPrice!.minorUnits, 149900);
+    // §10 cut-length commerce fields must survive the cache round-trip
+    // (v5 audit: the codec previously dropped all four while claiming
+    // full fidelity, so offline-restored products lost sell-by-length).
+    expect(decoded.widthCm, 150);
+    expect(decoded.gsm, 95);
+    expect(decoded.sellByLength, isTrue);
+    expect(decoded.minCutMeters, 0.5);
+  });
+
+  test('decode degrades mistyped §10 fields instead of throwing', () {
+    final decoded = ProductCodec.decode({
+      'id': 'silk-1',
+      'widthCm': 'wide',
+      'gsm': true,
+      'sellByLength': 'yes',
+      'minCutMeters': 'half',
+    });
+    expect(decoded, isNotNull);
+    expect(decoded!.widthCm, isNull);
+    expect(decoded.gsm, isNull);
+    expect(decoded.sellByLength, isFalse);
+    expect(decoded.minCutMeters, isNull);
   });
 
   test('decode returns null for a corrupt cache entry without an id', () {
