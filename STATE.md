@@ -1,6 +1,49 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-14T02:00:00Z
+Last run: 2026-09-15 (5-dimension audit + repair, branch `fix/audit-2026-09-15`, NOT pushed)
+
+## New — 2026-09-15 (five-dimension code-quality audit + fixes; 8.4 → 9.5)
+
+Owner asked for a full five-dimension audit (maintainability, clean
+architecture, code quality, security, performance) scored 0–10 and then
+"fix all issues". Rubric + weights published before scoring
+(`docs/audit/2026-09-15/01-rubric.md`). Work on branch
+`fix/audit-2026-09-15` (7 fix commits + audit docs); master untouched at
+`5ef935c`; owner WIP preserved as `5fd16e9`. Nothing pushed/merged.
+
+Harness: baseline → after
+- `flutter analyze`: 4 warnings → **0 issues**
+- `flutter test`: 875 pass / 9 fail → **888 pass / 0 fail**
+- `dart format --set-exit-if-changed`: 7 files → **clean**
+- `flutter build apk --debug`: **FAIL (ManifestMerger/SAXParse)** → **PASS**
+- coverage: n/a → **70.4%** (7,471/10,609)
+
+Fixed (each own commit): AUD-004 manifest `--` in XML comment (all Android
+builds were broken); AUD-003 truncated admin customer-directory test (no
+`main()`; 4 analyzer warnings; documented profiles.email regression was
+unguarded — reconstructed 5 tests); AUD-001 app-lock tests missing
+Directionality (0/8 → 8/8); AUD-002 app-lock sign-out escape caught only
+`Exception`, so a thrown `Error` crashed the lock screen instead of staying
+fail-closed; AUD-006 payment watcher never closed its `StreamController`;
+AUD-005 format drift; AUD-010 stale cached_network_image TODO.
+
+Waived / residual (owner action, reasons in the reports): AUD-008 admin
+profiles RLS gap — **proposal shipped** at
+`docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql`, corroborated
+by the 2026-09-14 live-DB check (no admin SELECT policy live; live-only
+`admin_list_customers` has no migration — parity debt); AUD-009 `http: any`
+needs pubspec approval; AUD-011 colour names need a schema column;
+AUD-012 admin-console English strings are documented-intentional;
+AUD-013 `.gitignore` vs tracked `lib/generated`.
+
+Deliverables: `docs/audit/2026-09-15/` (inventory, rubric, ledger json+csv,
+report md + report.html, verification, re-audit + residual register,
+handover/rollback, RLS proposal) and `scripts/audit/run-audit.ps1`
+(repeatable scoring + verification harness).
+
+Note: 5 auditor sub-agents spawned for parallel dimension review all failed
+at startup (runtimeMs 1–13s, status=failed, no output); the audit was
+completed in-session instead. Worth investigating separately.
 
 ## New — 2026-09-14 (audit-batch-3 PUSHED + PR #62 opened; all 4 owner items done)
 

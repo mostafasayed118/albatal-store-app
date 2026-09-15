@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Al Batal Elite — Code Quality Audit · 2026-09-15</title>
+<style>
+  :root{
+    --ink:#111827; --navy:#1e3a5f; --navy-2:#2c5282; --rule:#d7dce3;
+    --muted:#6b7280; --paper:#ffffff; --bg:#f7f8fa; --grey-1:#c8cfd8;
+    --grey-2:#e5e9ee; --good:#1e3a5f; --warn:#8a6d3b; --crit:#7f1d1d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 "Inter",-apple-system,"Segoe UI",system-ui,sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;padding:56px 28px 96px}
+  header{border-bottom:2px solid var(--navy);padding-bottom:20px;margin-bottom:8px}
+  .kicker{font:600 11px/1 "Inter",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--navy-2)}
+  h1{font:700 30px/1.2 "Montserrat","Inter",sans-serif;margin:12px 0 6px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:600}
+  h2{font:700 17px/1.3 "Montserrat","Inter",sans-serif;margin:44px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+  h2 .n{color:var(--grey-1);margin-right:8px;font-variant-numeric:tabular-nums}
+  p{margin:10px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--grey-2);vertical-align:top}
+  th{font:600 11px/1.3 "Inter",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--rule)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  code,.mono{font:12.5px/1.5 "SFMono-Regular",Consolas,monospace;background:#eef1f5;padding:1px 5px;border-radius:3px}
+  pre{background:#eef1f5;border-left:2px solid var(--navy-2);padding:12px 14px;overflow-x:auto;
+    font:12.5px/1.6 "SFMono-Regular",Consolas,monospace;margin:12px 0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0}
+  .card{background:var(--paper);border:1px solid var(--rule);border-top:2px solid var(--navy);padding:14px 16px}
+  .card .lbl{font:600 10.5px/1.3 "Inter",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .card .val{font:700 26px/1.15 "Montserrat",sans-serif;margin-top:8px;font-variant-numeric:tabular-nums}
+  .card .dlt{font-size:12px;color:var(--navy-2);margin-top:2px;font-variant-numeric:tabular-nums}
+  .bar{position:relative;height:14px;background:var(--grey-2);margin:6px 0 4px}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--navy-2)}
+  .bar u{position:absolute;top:0;bottom:0;width:1px;background:var(--grey-1)}
+  .bar.before i{background:var(--grey-1)}
+  .legend{font-size:11.5px;color:var(--muted)}
+  .pill{display:inline-block;font:600 10.5px/1 "Inter",sans-serif;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 7px;border:1px solid currentColor;border-radius:2px}
+  .pill.fixed{color:var(--navy)}
+  .pill.open{color:var(--warn)}
+  .pill.waived{color:var(--muted)}
+  .callout{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--navy);padding:14px 16px;margin:18px 0}
+  .callout.warn{border-left-color:var(--warn)}
+  footer{margin-top:52px;padding-top:14px;border-top:1px solid var(--rule);color:var(--muted);font-size:12px}
+  a{color:var(--navy-2)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:720px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">Code Quality Audit · Rubric v1.0</div>
+  <h1>Al Batal Elite — Five-Dimension Audit &amp; Repair</h1>
+  <div class="sub">Flutter commerce application · 255 source files / 29,447 lines · 169 test files / 22,003 lines · 59 SQL migrations</div>
+  <div class="meta">
+    <span><b>Date</b> 2026-09-15</span>
+    <span><b>Baseline</b> <code>5ef935c</code> + owner WIP (<code>5fd16e9</code>)</span>
+    <span><b>Repair branch</b> <code>fix/audit-2026-09-15</code></span>
+    <span><b>Fixes applied</b> 7 findings</span>
+    <span><b>Harness</b> analyze · format · test · build · secret sweep</span>
+  </div>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="lbl">Overall · baseline</div><div class="val">8.4</div><div class="dlt">weighted, 5 dimensions</div></div>
+  <div class="card"><div class="lbl">Overall · re-audit</div><div class="val">9.5</div><div class="dlt">+1.1 after verified fixes</div></div>
+  <div class="card"><div class="lbl">Tests</div><div class="val">888</div><div class="dlt">was 875 pass / 9 fail</div></div>
+  <div class="card"><div class="lbl">Android build</div><div class="val">PASS</div><div class="dlt">was broken (manifest XML)</div></div>
+  <div class="card"><div class="lbl">Analyzer</div><div class="val">0</div><div class="dlt">was 4 warnings</div></div>
+  <div class="card"><div class="lbl">Coverage</div><div class="val">70.4%</div><div class="dlt">7,471 / 10,609 lines</div></div>
+</div>
+
+<h2><span class="n">1</span>Weighted score, before and after</h2>
+<table>
+  <thead><tr><th>Dimension</th><th class="num">Weight</th><th class="num">Baseline</th><th class="num">Re-audit</th><th class="num">Δ</th><th>Score movement</th></tr></thead>
+  <tbody>
+    <tr><td>Maintainability</td><td class="num">20%</td><td class="num">8.5</td><td class="num">9.5</td><td class="num">+1.0</td>
+      <td><div class="bar before"><i style="width:85%"></i></div><div class="bar"><i style="width:95%"></i></div></td></tr>
+    <tr><td>Clean architecture</td><td class="num">20%</td><td class="num">9.5</td><td class="num">10.0</td><td class="num">+0.5</td>
+      <td><div class="bar before"><i style="width:95%"></i></div><div class="bar"><i style="width:100%"></i></div></td></tr>
+    <tr><td>Code quality</td><td class="num">20%</td><td class="num">7.5</td><td class="num">9.5</td><td class="num">+2.0</td>
+      <td><div class="bar before"><i style="width:75%"></i></div><div class="bar"><i style="width:95%"></i></div></td></tr>
+    <tr><td>Security</td><td class="num">25%</td><td class="num">8.0</td><td class="num">9.5</td><td class="num">+1.5</td>
+      <td><div class="bar before"><i style="width:80%"></i></div><div class="bar"><i style="width:95%"></i></div></td></tr>
+    <tr><td>Performance</td><td class="num">15%</td><td class="num">8.5</td><td class="num">9.0</td><td class="num">+0.5</td>
+      <td><div class="bar before"><i style="width:85%"></i></div><div class="bar"><i style="width:90%"></i></div></td></tr>
+    <tr><td><b>Weighted overall</b></td><td class="num"><b>100%</b></td><td class="num"><b>8.4</b></td><td class="num"><b>9.5</b></td><td class="num"><b>+1.1</b></td><td></td></tr>
+  </tbody>
+</table>
+<div class="legend">Upper bar = re-audit · Lower bar = baseline. Weights: security 25%, then maintainability / architecture / quality 20% each, performance 15%.</div>
+
+<pre>Baseline = 0.20×8.5 + 0.20×9.5 + 0.20×7.5 + 0.25×8.0 + 0.15×8.5
+         = 1.70 + 1.90 + 1.50 + 2.00 + 1.2750 = 8.375  → 8.4
+
+After    = 0.20×9.5 + 0.20×10.0 + 0.20×9.5 + 0.25×9.5 + 0.15×9.0
+         = 1.90 + 2.00 + 1.90 + 2.375 + 1.350 = 9.525 → 9.5</pre>
+
+<h2><span class="n">2</span>Verification gates — baseline vs repaired</h2>
+<table>
+  <thead><tr><th>Gate</th><th>Baseline</th><th>Repaired</th></tr></thead>
+  <tbody>
+    <tr><td><code>flutter analyze --no-pub</code></td><td>exit 1 — 4 warnings</td><td><span class="pill fixed">exit 0 · clean</span></td></tr>
+    <tr><td><code>flutter test</code></td><td>875 pass / <b>9 fail</b></td><td><span class="pill fixed">888 / 0</span></td></tr>
+    <tr><td><code>dart format --set-exit-if-changed</code></td><td>exit 1 — 7 files</td><td><span class="pill fixed">exit 0 · clean</span></td></tr>
+    <tr><td><code>flutter build apk --debug</code></td><td><b>exit 1</b> — ManifestMerger2 / SAXParseException</td><td><span class="pill fixed">exit 0 · APK built</span></td></tr>
+    <tr><td><code>flutter test --coverage</code></td><td>not run</td><td>70.4% (7,471 / 10,609)</td></tr>
+    <tr><td>Secret sweep (tree + history)</td><td>clean</td><td>clean</td></tr>
+    <tr><td><code>flutter pub outdated</code></td><td>not run</td><td>no security-relevant findings</td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">3</span>Top 5 critical issues</h2>
+<table>
+  <thead><tr><th class="num">#</th><th>Finding</th><th>Severity</th><th>Root cause</th><th>Fix</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td><b>AUD-004</b> All Android builds failed</td><td>Critical</td>
+      <td><code>--</code> inside an XML comment (<code>AndroidManifest.xml:4</code>) → SAXParseException in <code>:app:processDebugMainManifest</code></td>
+      <td>Reworded the comment</td><td><span class="pill fixed">fixed e7f3839</span></td></tr>
+    <tr><td class="num">2</td><td><b>AUD-003</b> Truncated test file, regression unguarded</td><td>High</td>
+      <td>File had imports/fakes/docs but no <code>main()</code>; produced all 4 analyzer warnings; the documented <code>profiles.email</code> 42703 regression had zero coverage</td>
+      <td>Reconstructed <code>main()</code> + 5 tests; exact-column stub fails if <code>email</code> returns</td><td><span class="pill fixed">fixed ded0bb4</span></td></tr>
+    <tr><td class="num">3</td><td><b>AUD-002</b> App lock could crash instead of failing closed</td><td>High</td>
+      <td><code>on Exception</code> missed <code>Error</code>-class failures; escaped via <code>unawaited()</code> and crashed the lock screen</td>
+      <td>Catch <code>Object</code>, log, stay locked</td><td><span class="pill fixed">fixed 9884592</span></td></tr>
+    <tr><td class="num">4</td><td><b>AUD-001</b> 8/8 app-lock tests failing</td><td>High</td>
+      <td>Bare <code>Scaffold</code> pumped with no <code>Directionality</code> ancestor — the only verification of the security gate was red</td>
+      <td>Wrap the pumped tree in <code>MaterialApp</code></td><td><span class="pill fixed">fixed 9884592</span></td></tr>
+    <tr><td class="num">5</td><td><b>AUD-006</b> Payment watcher leaked its controller</td><td>Medium</td>
+      <td><code>StreamController</code> never closed on unsubscribe; retained until GC per payment watch</td>
+      <td><code>isClosed</code>-guarded <code>close()</code> in <code>onCancel</code></td><td><span class="pill fixed">fixed f8c6f45</span></td></tr>
+  </tbody>
+</table>
+
+<h2><span class="n">4</span>Dimension detail</h2>
+<div class="grid2">
+  <div>
+    <h3 style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Strengths (verified)</h3>
+    <ul style="padding-left:18px;font-size:13.5px">
+      <li><b>Zero</b> layering violations across 255 files: no Supabase import in <code>presentation/</code>, no Flutter import in <code>domain/</code>, no <code>presentation → data</code>, no cross-feature imports.</li>
+      <li><b>Zero</b> committed secrets; only <code>.env.example</code> in full history; templates redacted; release signing via gitignored <code>key.properties</code>.</li>
+      <li>Edge-function secrets compared in <b>constant time</b> and fail closed without logging values.</li>
+      <li>RLS hardening is real and documented (migration 029 fixed a self-escalation path).</li>
+      <li>All list queries bounded (<code>limit(100/500/50/1000)</code>); no N+1 awaits in production code.</li>
+      <li>All 3 periodic timers owned and cancelled; heaviest rebuild path gated by <code>homeBuildWhen</code>.</li>
+      <li>91% dartdoc coverage; 22k-line suite mirrors the feature layout.</li>
+    </ul>
+  </div>
+  <div>
+    <h3 style="font:600 13px/1.3 Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Why 9.5, not 10</h3>
+    <p style="font-size:13.5px">Every code-level finding is fixed and verified. The remaining half-point is four <b>owner-gated decisions</b> the audit is forbidden from taking alone (<code>AGENTS.md</code>: no pubspec edits, no migration edits without human review):</p>
+    <ul style="padding-left:18px;font-size:13.5px">
+      <li><span class="pill open">R1</span> Admin <code>061</code> RLS policy — proposal shipped, needs human review + apply.</li>
+      <li><span class="pill open">R2</span> <code>http: any</code> → pin to <code>^1.2.0</code> (one line, needs approval).</li>
+      <li><span class="pill open">R3</span> Catalogue colour names need a DB column to replace a hardcoded map.</li>
+      <li><span class="pill open">R4</span> <code>.gitignore</code> vs tracked <code>lib/generated</code> wording.</li>
+    </ul>
+    <div class="callout warn" style="font-size:13px;margin-top:12px">
+      Sample-size honesty: RLS coverage is repo-wide by policy grep plus deep reads of migrations 002 / 017 / 029 — a line-by-line derivation of all 59 migrations against a live database was out of scope (no production access, no live probing).
+    </div>
+  </div>
+</div>
+
+<h2><span class="n">5</span>What a green-looking repo was hiding</h2>
+<div class="callout">
+  <p style="margin-top:0"><b>The audited tree looked healthy</b> — clean analyzer output bar four unused imports, 875 passing tests, a documented audit culture. Three defects were still live:</p>
+  <p><b>1.</b> A <b>two-character typo</b> (<code>--</code> in an XML comment) silently made <i>every Android build fail</i>.<br>
+     <b>2.</b> A <b>truncated test file</b> removed the only guard on a documented production regression while leaving the suite looking alive.<br>
+     <b>3.</b> A <b>security control</b> (the app lock's fail-closed escape) could be crashed by an <code>Error</code>-class failure instead of holding the lock.</p>
+  <p style="margin-bottom:0">All three are fixed and verified; the suite is now 888/888 with a proven-clean build.</p>
+</div>
+
+<h2><span class="n">6</span>Artifacts</h2>
+<table>
+  <thead><tr><th>Artifact</th><th>Path</th></tr></thead>
+  <tbody>
+    <tr><td>Inventory / scope</td><td><code>docs/audit/2026-09-15/00-inventory.md</code></td></tr>
+    <tr><td>Rubric &amp; weights</td><td><code>docs/audit/2026-09-15/01-rubric.md</code></td></tr>
+    <tr><td>Findings ledger (JSON / CSV)</td><td><code>docs/audit/2026-09-15/02-findings-ledger.json</code> · <code>.csv</code></td></tr>
+    <tr><td>Audit report (markdown)</td><td><code>docs/audit/2026-09-15/03-audit-report.md</code></td></tr>
+    <tr><td>Before/after evidence bundle</td><td><code>docs/audit/2026-09-15/04-verification.md</code></td></tr>
+    <tr><td>Re-audit + residual register</td><td><code>docs/audit/2026-09-15/05-reaudit.md</code></td></tr>
+    <tr><td>Handover / rollback</td><td><code>docs/audit/2026-09-15/06-handover.md</code></td></tr>
+    <tr><td>RLS proposal (not applied)</td><td><code>docs/audit/2026-09-15/proposals/061_admin_profiles_read.sql</code></td></tr>
+    <tr><td>Repeatable harness</td><td><code>scripts/audit/run-audit.ps1</code></td></tr>
+  </tbody>
+</table>
+
+<footer>
+  Generated 2026-09-15 · Al Batal Elite audit rubric v1.0 · repair branch <code>fix/audit-2026-09-15</code> · master untouched at <code>5ef935c</code> · nothing pushed or merged.
+</footer>
+</div>
+</body>
+</html>
