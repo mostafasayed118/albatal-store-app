@@ -1,0 +1,53 @@
+{
+  "schema": "al_batal_elite.audit.scores.v1",
+  "rubric": "docs/audit/2026-09-15/01-rubric.md",
+  "rubricVersion": "1.0",
+  "auditDate": "2026-09-15",
+  "weights": {
+    "maintainability": 0.20,
+    "clean_architecture": 0.20,
+    "code_quality": 0.20,
+    "security": 0.25,
+    "performance": 0.15
+  },
+  "weightRationale": "Commerce app handling payments and PII: security weighted highest (25%). Architecture and code quality are the daily change-cost drivers (20% each). Maintainability likewise 20%. Performance lowest (15%) because no measured hotspot existed at baseline.",
+  "scores": {
+    "baseline": {
+      "maintainability": 8.5,
+      "clean_architecture": 9.5,
+      "code_quality": 7.5,
+      "security": 8.0,
+      "performance": 8.5
+    },
+    "postFix": {
+      "maintainability": 9.5,
+      "clean_architecture": 10.0,
+      "code_quality": 9.5,
+      "security": 9.0,
+      "performance": 9.0
+    }
+  },
+  "notScored": [
+    {
+      "id": "AUD-015",
+      "dimension": "repo_integrity",
+      "reason": "Repository infrastructure (.git/packed-refs corruption), not first-party source. Recorded in the ledger; deliberately excluded from the five-dimension weighting."
+    }
+  ],
+  "evidence": {
+    "baseline": {
+      "analyze": "4 warnings",
+      "tests": "875 passed / 9 failed",
+      "format": "7 files would change",
+      "build": "FAIL (ManifestMerger/SAXParseException)"
+    },
+    "postFix": {
+      "analyze": "0 issues",
+      "tests": "888 passed / 0 failed",
+      "format": "clean",
+      "build": "APK built",
+      "coverage": "70.4% (7471/10609)",
+      "perfSuites": "16 tests green"
+    }
+  }
+}

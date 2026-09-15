@@ -17,7 +17,7 @@ Audit: 2026-09-15 · Repair branch: `fix/audit-2026-09-15` · Baseline: `5ef935c
 
 > The exact final commit list: `git log --oneline 5ef935c..fix/audit-2026-09-15`. Every fix commit maps to a ledger row; the docs commits carry the audit artifacts.
 
-Deliverables index: [00-inventory](00-inventory.md) · [01-rubric](01-rubric.md) · [02-ledger.json](02-findings-ledger.json) / [02-ledger.csv](02-findings-ledger.csv) · [03-audit-report](03-audit-report.md) · [04-verification](04-verification.md) · [05-reaudit](05-reaudit.md) · [06-handover](06-handover.md) · [rendered report](report.html) · [patch series](patches/) · [RLS proposal](proposals/061_admin_profiles_read.sql)
+Deliverables index: [00-inventory](00-inventory.md) · [01-rubric](01-rubric.md) · [02-ledger.json](02-findings-ledger.json) / [02-ledger.csv](02-findings-ledger.csv) · [03-audit-report](03-audit-report.md) · [04-verification](04-verification.md) · [05-reaudit](05-reaudit.md) · [06-handover](06-handover.md) · [rendered report](report.html) · [patch series](patches/) · [scores data](scores.json) · [RLS proposal](proposals/061_admin_profiles_read.sql) · harness: `scripts/audit/{run-audit,score}.ps1`
 
 ### Patch series (review starting point)
 
@@ -89,6 +89,19 @@ git rm -r --cached docs/audit scripts/audit   # keeps files on disk
 - **Keystore hygiene:** move `release-key.jks` / `release-keystore.jks` outside the repository tree if they are not already backed up in a secure location.
 
 ## 4. How to re-run the audit and the verification harness
+
+**Scoring pass (recompute the weighted overall from the data):**
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit/score.ps1
+```
+
+Reads `docs/audit/2026-09-15/scores.json`, validates the weights (must sum to 100%) and
+score ranges, recomputes the weighted overall for both phases, cross-checks the findings ledger
+for any open critical/high finding in a scored dimension, and prints the per-term arithmetic.
+Exit 0 = consistent with the published 8.4 → 9.4.
+
+**Verification pass (analyze + format + tests + Android build + secret sweep + dependency snapshot):**
 
 ```powershell
 # full pass (analyze + format + tests + Android debug build + secret sweep + dependency snapshot)
