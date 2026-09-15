@@ -143,6 +143,11 @@ final class PaymentStatusWatcher {
     controller.onCancel = () {
       fallbackTimer?.cancel();
       channel?.unsubscribe();
+      // Release the controller itself: single-subscription by contract, so
+      // after the cubit cancels, nobody can listen again. Closing here
+      // (guarded) makes the teardown deterministic instead of waiting for
+      // GC, and emitTerminal's isClosed guard already tolerates it.
+      if (!controller.isClosed) unawaited(controller.close());
     };
 
     return controller.stream;
