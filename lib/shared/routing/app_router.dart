@@ -50,6 +50,7 @@ import '../services/connectivity_gate.dart';
 import '../services/image_compressor.dart';
 import '../services/navigation_observer.dart';
 import '../services/oauth_service.dart';
+import '../services/product_share_service.dart';
 import '../services/service_locator.dart';
 import '../services/storage_service.dart';
 import 'app_routes.dart';
@@ -210,7 +211,11 @@ final _routes = <RouteBase>[
   ),
   GoRoute(path: Routes.admin, builder: (_, __) => const AdminDashboardPage()),
   GoRoute(
-      path: Routes.adminOrders, builder: (_, __) => const AdminOrdersPage()),
+      path: Routes.adminOrders,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies; the page's own `getIt` lookup is now only a
+      // test-only fallback.
+      builder: (_, __) => AdminOrdersPage(shareService: getIt<ShareService>())),
   GoRoute(
       path: Routes.adminReviews,
       // Composition root (audit P1): the only place that resolves

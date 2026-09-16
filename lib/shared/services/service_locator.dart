@@ -144,9 +144,9 @@ Future<void> configureDependencies() async {
     // an unavailable plugin returns the original bytes.
     ..registerLazySingleton<ImageCompressor>(
         () => const FlutterImageCompressor())
-    // §5: share sheet + inbound deep links (initial + warm events).
-    ..registerLazySingleton<ProductShareService>(
-        () => const SharePlusProductShareService())
+    // §5/§14: the generic share-sheet sink (product share + admin CSV
+    // export), plus inbound deep links (initial + warm events).
+    ..registerLazySingleton<ShareService>(() => const SharePlusShareService())
     // #13: WhatsApp-first product share (wa.me universal link).
     ..registerLazySingleton<ExternalLinkLauncher>(
         () => const UrlLauncherExternalLinkLauncher())

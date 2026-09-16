@@ -12,15 +12,22 @@ String productShareMessage({required String name, required String url}) =>
 String productUrl(String productId) =>
     '${EnvConfig.webBaseUrl}/product/$productId';
 
-abstract interface class ProductShareService {
+/// Opens the platform share sheet with arbitrary text.
+///
+/// Deliberately named for the capability, not a caller: the §5 product
+/// share and the §14 admin orders CSV export both route through here,
+/// because what this wraps (`SharePlus.instance.share`) is not
+/// product-specific. The product-flavoured copy and URL helpers live
+/// above.
+abstract interface class ShareService {
   /// Opens the platform share sheet with [message].
   Future<void> shareText(String message);
 }
 
 /// `share_plus` implementation. Cancelling the share sheet is a user
 /// decision, not an error — failures are swallowed, never rethrown.
-final class SharePlusProductShareService implements ProductShareService {
-  const SharePlusProductShareService();
+final class SharePlusShareService implements ShareService {
+  const SharePlusShareService();
 
   @override
   Future<void> shareText(String message) async {

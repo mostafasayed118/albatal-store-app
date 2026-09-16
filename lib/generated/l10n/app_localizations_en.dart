@@ -1085,6 +1085,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'New orders will appear here as customers check out.';
 
   @override
+  String get exportOrdersCsv => 'Export orders as CSV';
+
+  @override
   String get processing => 'Processing';
 
   @override

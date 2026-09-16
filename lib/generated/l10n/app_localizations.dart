@@ -2072,6 +2072,12 @@ abstract class AppLocalizations {
   /// **'New orders will appear here as customers check out.'**
   String get noOrdersFoundBody;
 
+  /// Tooltip on the admin order queue's CSV export action, which shares the visible rows as a file (feature-batch §14).
+  ///
+  /// In en, this message translates to:
+  /// **'Export orders as CSV'**
+  String get exportOrdersCsv;
+
   /// No description provided for @processing.
   ///
   /// In en, this message translates to:
