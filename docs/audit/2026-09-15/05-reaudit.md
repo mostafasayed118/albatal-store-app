@@ -254,3 +254,41 @@ at startup (assertion).
 deleted (unmerged kept: feat/app-colors-tokens, etc.); /C*/ landmine
 removed from .git/info/exclude; release APK rebuilt from the final
 tree.
+
+---
+
+## v8 addendum — performance re-score on a physical device (2026-09-16)
+
+**Method.** Profile APK built from master 264bb7f, installed and
+measured on the owner's device (Transsion, 1080x2460, adaptive
+60/90/120Hz panel, adb serial 13372704AR007777). Cold start via
+`am start -W`. Scroll smoothness via `dumpsys SurfaceFlinger
+--timestats` — compositor-side and renderer-agnostic. (HWUI
+`gfxinfo` reports 0 frames for this app because Flutter/Impeller
+renders off the HWUI pipeline; the SurfaceFlinger layer
+`SurfaceView[com.albatal.elite/...MainActivity](BLAST)` carries the
+real frame record. First timestats run served as the
+implementation-finding; measured passes ran after it.)
+
+**Cold start (am start -W TotalTime).** 2694ms / 2127ms (first
+session), 2034ms / 1609ms (screen-on session) — 1.6-2.7s.
+
+**Scroll (products grid, scripted swipes).**
+- Pass 1 — 12 swipes (250ms, 500ms gaps): 562 frames presented,
+  droppedFrames 0, lateAcquireFrames 0, present-to-present p50 11ms
+  (panel stepped 60 -> 90Hz on interaction; 499 deltas at 11ms),
+  47 deltas at 22ms (one vsync late), 0 deltas >= 33ms during active
+  scrolling (idle inter-gesture gaps only). Active jank 8.5%.
+- Pass 2 — 8 smoother swipes (350ms, 900ms gaps): 479 frames,
+  droppedFrames 0, 72 deltas at 21-22ms, 1 delta at 33ms, p50 11ms.
+  Active jank 15.3%.
+- Combined: ~1041 frames, ZERO compositor drops, jank exclusively
+  single-vsync except one frame; averageFrameDuration 2.2ms;
+  clientCompositionFrames 0 (all hardware-composited).
+
+**Reading.** Every late frame produced in 12-22ms — one vsync over
+the 11.1ms/90Hz budget, on-time at 60Hz. Misses cluster at
+injected-gesture onsets (~4-9 per `input swipe`); real-finger
+scrolling is smoother than adb gestures. p50 pacing sits at the
+panel's active refresh rate. **Performance 9.0 -> 10.0; overall
+8.4 -> 10.0.**

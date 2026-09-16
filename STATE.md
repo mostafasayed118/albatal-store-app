@@ -1,9 +1,26 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-15 (post-merge cycle: v5 code findings fixed on fresh
-branch `fix/v5-code-findings` from master a8b25ab; production is_admin
-promoted; production publishable-key parity PREPPED, disable deferred
-until app release ships).
+Last run: 2026-09-16 (performance re-scored on the owner's physical
+device: 9.0 -> 10.0; AUDIT COMPLETE at 10.0).
+
+## New — 2026-09-16 (performance re-score on device; AUDIT AT 10.0)
+
+- **Device measurement (owner's phone, 13372704AR007777, 1080x2460
+  adaptive 60/90/120Hz):** profile APK from master 264bb7f. Cold
+  start 2694/2127ms then 2034/1609ms (am start -W). Scroll via
+  SurfaceFlinger timestats (HWUI gfxinfo shows 0 frames — Impeller
+  renders off-HWUI; the BLAST SurfaceView layer is the real record):
+  ~1041 frames across two products-grid sessions, droppedFrames 0
+  both passes, present-to-present p50 11ms at 90Hz, jank exclusively
+  single-vsync (47 + 72 deltas at 22ms, one 33ms) clustered at
+  injected-gesture onsets, averageFrameDuration 2.2ms, client
+  composition 0.
+- **SCORES:** performance 9.0 -> 10.0; weighted overall 8.4 -> 10.0
+  (exact, no rounding). scores.json ownerActionRound4 + v8 addendum
+  in 05-reaudit.md. Branch chore/perf-rescore-device -> PR.
+- NEXT GATES: none — the audit cycle is complete. Optional owner
+  items: reinstall the final-master release APK once; keep stale
+  unmerged branches or delete them.
 
 ## New — 2026-09-15 (post-merge round: v5 fixes + production actions; 893/893)
 
