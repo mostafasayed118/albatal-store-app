@@ -53,10 +53,10 @@ import 'deep_link_service.dart';
 import 'image_compressor.dart';
 import 'notification_service.dart';
 import 'oauth_service.dart';
-import 'product_share_service.dart';
 import 'push_service.dart';
 import 'remote_config_service.dart';
 import 'secure_store.dart';
+import 'share_service.dart';
 import 'storage_service.dart';
 import 'whatsapp_share_service.dart';
 
@@ -144,14 +144,15 @@ Future<void> configureDependencies() async {
     // an unavailable plugin returns the original bytes.
     ..registerLazySingleton<ImageCompressor>(
         () => const FlutterImageCompressor())
-    // §5/§14: the generic share-sheet sink (product share + admin CSV
-    // export), plus inbound deep links (initial + warm events).
+    // §5/§14: the generic share-sheet sink — §5 product share and §14
+    // admin CSV export both route through it.
     ..registerLazySingleton<ShareService>(() => const SharePlusShareService())
     // #13: WhatsApp-first product share (wa.me universal link).
     ..registerLazySingleton<ExternalLinkLauncher>(
         () => const UrlLauncherExternalLinkLauncher())
     ..registerLazySingleton<WhatsAppShareService>(
         () => WaMeWhatsAppShareService(getIt<ExternalLinkLauncher>()))
+    // §5: inbound deep links (initial + warm events).
     ..registerLazySingleton<DeepLinkService>(() => AppLinksDeepLinkService())
     // §7: persisted recent catalog searches.
     ..registerLazySingleton<RecentSearchesStore>(

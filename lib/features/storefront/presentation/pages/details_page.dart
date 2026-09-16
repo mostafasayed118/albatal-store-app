@@ -13,6 +13,7 @@ import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/share_service.dart';
 import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
