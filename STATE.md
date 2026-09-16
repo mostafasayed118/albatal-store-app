@@ -1,6 +1,15 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 8: §14 customer directory switched from OFFSET paging
+Last run: 2026-09-16 (part 9: §14 customer directory **PHONE SEARCH** + the keyset
+**index migration** + a **REAL PostgREST proof** of both query strings). Branch
+`feat/admin-customer-tier`, commits `e67f05f` + `e454514` + `6db46a1`, worktree
+`.trees/customer-tier`, PUSHED onto **draft PR #74**. Evidence: `flutter analyze`
+0 issues, format clean (429 files), `flutter test` **940/940** (933 baseline + 7),
+5/5 mutation checks bite with byte-identical restore, and
+`run_keyset_paging_proof.mjs` **18/18 against a live PostgREST 12.2.3**. NOTE:
+touches `supabase/` (a migration + a probe) and `l10n/` — both OUTSIDE the loop's
+`lib/`-only auto-fix scope, so they need owner review; the migration is **NOT
+applied**. Prior run: 2026-09-16 (part 8: §14 customer directory switched from OFFSET paging
 to **KEYSET paging** — a row can no longer be duplicated or skipped when two
 profiles share a `created_at`, or when a customer signs up mid-scroll. Branch
 `feat/admin-customer-tier`, commit `f8004b8`, worktree `.trees/customer-tier`,
@@ -41,6 +50,143 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 9: phone search + keyset index migration + a REAL PostgREST proof — commits `e67f05f`, `e454514`, `6db46a1`)
+
+Owner: "make phone numbers searchable in the admin customer directory", then
+"write an integration test that runs the keyset paging query against a real
+PostgREST instance to prove the or() tree is accepted" and "add a migration
+indexing profiles on (created_at DESC, id DESC)". On the owner's choice the
+probes were built as **both** a local runnable harness and a staging probe, and
+phone search was folded into this branch. Same branch; PUSHED onto draft PR #74.
+
+### 1. Phone search (`e67f05f`)
+
+`fetchCustomers` matched `full_name` only, so an admin holding a customer's
+phone number could not look that customer up. The two columns are alternates, so
+the term now goes into ONE `or` tree — `full_name.ilike.X,phone.ilike.X`.
+Chaining `.ilike()` twice would AND the columns and match only a row where BOTH
+contain the term, which for a phone-shaped query is the empty set.
+
+**The real hazard this introduced:** it is the first time user-typed text
+reaches an `or` tree, and `,` and `(`/`)` are *structural* inside one.
+`customerSearchPattern` escaped only LIKE metacharacters (`\`, `%`, `_`). The
+value is now quote-wrapped with any embedded `"` backslash-escaped. Verified
+against live PostgREST, not assumed:
+
+| term | result |
+|---|---|
+| `Ali, Omar` **unquoted** | **HTTP 400** — "failed to parse logic tree" |
+| `Ali, Omar` quoted | HTTP 200, matches literally (1 row) |
+| `Sara (Home)` quoted | HTTP 200, matches literally (1 row) |
+| `Quote "Q"` quoted | HTTP 200, matches literally (1 row) |
+
+The search hint was also replaced: `adminSearch` ("Search") is shared with the
+catalog hub, so the directory now uses a new `adminSearchCustomersHint`
+("Search name or phone", EN+AR). A search nobody can discover is not a fix.
+
+**Known limitation, stated not hidden:** `profiles.phone` is raw `TEXT` from auth
+metadata and there is NO normaliser anywhere in the repo. A digit-only query
+will not match a value stored with separators. Fixing that needs SQL-side
+normalisation (generated column + index, or an RPC) — a schema change — so it is
+recorded as a residual rather than smuggled in.
+
+### 2. Keyset index migration (`e454514`)
+
+New `supabase/migrations/063_profiles_keyset_index.sql`:
+`CREATE INDEX IF NOT EXISTS idx_profiles_created_at_id ON public.profiles (created_at DESC, id DESC)`.
+`profiles` carried only its primary key, so every page request sorted. Checked
+first: there is **no** pre-existing index on `profiles` at all, so this is not
+redundant. Correctness is unaffected — keyset paging is right with or without it
+— so it is a separate, individually rejectable migration. **NOT APPLIED**;
+`supabase/` is owner-gated. Rollback is a one-line `DROP INDEX` recorded in the
+file. Not `CONCURRENTLY` (cannot run in a transaction block; row counts are tiny).
+
+### 3. The PostgREST proof (`6db46a1`) — RUN here, not written-and-parked
+
+**Why the house convention could not answer the question.** All six
+`supabase/tests/*.mjs` probes import `pg` — a *direct Postgres* connection,
+which bypasses PostgREST entirely and therefore cannot exercise query-string
+parsing. (`test/**/integration_test.dart` in this repo are stubbed unit/widget
+tests, not live, so they were not the vehicle either.) A follow-the-convention
+implementation would have gone green while proving nothing.
+
+New: `supabase/tests/keyset-proof/{docker-compose.yml,seed.sql}` (real
+Postgres 15 + **PostgREST 12.2.3**) and `supabase/tests/run_keyset_paging_proof.mjs`.
+
+**Result: 18/18 checks passed against the live PostgREST** (executed in this
+run). Fixture: 124 rows, of which 120 share only 12 distinct instants (10 rows
+each), so ties straddle page boundaries at the production page size (50) and at 7.
+
+What it pins: the cursor tree is accepted; a walk over duplicate sort keys
+returns every row exactly once and in order; the bookmark timestamp is not lossy
+(a `created_at=eq.<bookmark>` probe matches the whole 10-row tie group, which
+would fail if the format truncated precision); the search reaches name OR phone;
+and **two `or` parameters CONJOIN** (a filtered walk === the filtered baseline,
+not the whole table).
+
+**Both halves carry a negative control, because a proof that cannot fail proves
+nothing:**
+
+- remove the tie-breaker → the same walk returns **84 of 124 rows (40 lost)**
+- unquote the comma term → **HTTP 400 "failed to parse logic tree"**
+
+If either control had come back clean, the fixture would not have been
+exercising the defect and the pass would have been meaningless.
+
+Staging mode is read-only and pinned to the staging ref `zvpjngdgbpnkkqrorkul`;
+three guards were verified to ABORT (missing env, wrong project ref, unknown
+mode). **NOT RUN against staging** — no credentials exist here, so the local
+proof is the executed evidence.
+
+### Two environment findings worth carrying forward
+
+1. **`.or()` wraps its argument in parentheses on the wire** —
+   `postgrest-dart 2.9.1` does `appendSearchParams(key, '($filters)')`. The first
+   probe omitted them and PostgREST answered `42703 column profiles.orcreated_at
+   does not exist`. The Dart unit tests correctly pin the pre-*wrap* string
+   (that is what the repository builds); the wrapping is the client's.
+2. **This sandbox drops container→container traffic on a user-defined bridge.**
+   `db` → `rest:3000` = "no response", while `db` → its own IP and host →
+   container both work, so PostgREST sat in `PGRST002` ("could not query the
+   database for the schema cache") indefinitely. The compose file now routes
+   PostgREST to Postgres through the host's **published port**
+   (`host.docker.internal:host-gateway`), which depends only on host↔container
+   networking. Diagnosed from container logs, not guessed.
+
+### Mutation evidence (5/5 bite; in-memory restore, `md5` byte-identical)
+
+| Mutation | Caught by |
+|---|---|
+| phone branch dropped from the `or` tree | "searches name and phone as alternates" |
+| `or`-tree quoting removed | comma / paren / quote pins |
+| embedded quote no longer escaped | "cannot close the wrapper" |
+| LIKE metacharacter escaping removed | "escapes LIKE metacharacters" |
+| search hint reverted to the generic label | page hint pin |
+
+Each was confirmed to fail as an **assertion**, not a compile error. The harness
+that mutates now snapshots bytes in memory and writes them back — it never uses
+`git checkout`, after part 8's run proved that restores from the *index* and
+destroyed uncommitted work.
+
+### Gates
+
+`flutter analyze` 0 issues · format clean (429 files) · `flutter test`
+**940/940** (933 baseline + 7) · probe **18/18** live. Three commits; `supabase/`
+and `l10n/` are outside the `lib/`-only auto-fix scope (**flag for review**).
+
+### Residuals — do NOT re-report as new findings
+
+- **Phone normalisation** (digit-only query vs a separated stored value) — needs
+  a schema change; deliberately not done.
+- **`pg_trgm` index for the search** — `ilike '%term%'` cannot use a btree index;
+  precedent exists (`idx_products_name_trgm`, `055_search_suggestions.sql`). Not
+  added: it is a search-cost decision, not part of the keyset walk.
+- **Migration 063 is unapplied**, so production still sorts each page.
+- **The staging probe mode is unrun.**
+- Also left intact and untouched from before this run: uncommitted `pubspec.lock`
+  / `.flutter-plugins-dependencies` changes in the MAIN tree (intl 0.20.3) — not
+  mine, not committed, deliberately not reverted.
 
 ## New — 2026-09-16 (part 8: OFFSET paging → KEYSET paging in the customer directory — commit `f8004b8`)
 
