@@ -592,6 +592,39 @@ void main() {
       expect(customerPhoneDigitPattern('()+'), isNull);
     });
 
+    test('transliterates Arabic-Indic digits an AR-locale admin typed', () {
+      // Without transliteration these reduce to NOTHING — `[^0-9]` is
+      // ASCII-only, so it deletes them rather than keeping them — and the
+      // term would fall back to a literal search that matches nothing.
+      expect(customerPhoneDigitPattern('٠١٠١٢٣٤٥٦٧٨'), '%01012345678%');
+      expect(customerPhoneDigitPattern('٠٥٠-١٢٣-٤٥٦٧'), '%0501234567%');
+      // Mixed encodings in one term, e.g. a pasted number plus a typed digit.
+      expect(customerPhoneDigitPattern('٠٥٠1234567'), '%0501234567%');
+    });
+
+    test('transliterates Extended Arabic-Indic (Persian/Urdu) digits too', () {
+      // A different range entirely (U+06F0–U+06F9). Arabic script is shared,
+      // so normalising only one of the two ranges reproduces the bug for the
+      // other.
+      expect(customerPhoneDigitPattern('۰۱۲۳۴۵۶۷۸۹۰'), '%01234567890%');
+    });
+
+    test('a lone Arabic-Indic digit is still phone-shaped', () {
+      expect(customerPhoneDigitPattern('٥'), '%5%');
+    });
+
+    test('transliterates the PHONE half but never the name half', () {
+      // Arabic names live in Arabic script in the database, so the name
+      // branch must be handed exactly what was typed.
+      expect(customerSearchFilter('محمد'),
+          'full_name.ilike."%محمد%",phone.ilike."%محمد%"');
+      expect(
+        customerSearchFilter('٠١٠١٢٣٤٥٦٧٨'),
+        'full_name.ilike."%٠١٠١٢٣٤٥٦٧٨%",'
+        'phone_digits.ilike."%01012345678%"',
+      );
+    });
+
     test('a LIKE metacharacter makes the term literal, not digit-shaped', () {
       // Which is exactly why the digit pattern needs no escaping of its own:
       // no metacharacter can get as far as being a phone-shaped term.

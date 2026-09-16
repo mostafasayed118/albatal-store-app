@@ -21,9 +21,35 @@
 --
 -- Fix
 -- ---
--- Trigram GIN indexes, matching the precedent in 055_search_suggestions.sql
--- (idx_products_name_trgm, created for exactly this shape of query). Between
--- those two migrations the pattern is already established in this repo.
+-- A trigram GIN index on `full_name`, matching the precedent in
+-- 055_search_suggestions.sql (idx_products_name_trgm, created for exactly this
+-- shape of query). Between those two migrations the pattern is already
+-- established in this repo.
+--
+-- SCOPE — why only `full_name`, and not `phone`
+-- -------------------------------------------
+-- An earlier revision of this migration also indexed `phone`. That index has
+-- been DROPPED from it as vestigial, on the owner's call, because 065 changed
+-- which column a phone search reads. The routing is:
+--
+--   phone-SHAPED term  (digits and phone punctuation only) -> phone_digits
+--   anything else      (contains a letter or symbol)       -> phone, literal
+--
+-- So `phone` is now reached only by a term that is NOT phone-shaped yet still
+-- appears in a stored number — in practice "the admin pasted the stored value
+-- verbatim, letters and all". Digits, which is how a number is actually read
+-- back, never land there. Indexing a column that routine queries no longer
+-- touch costs write amplification on every signup and profile edit for a path
+-- that is rare by construction.
+--
+-- The capability does narrow, deliberately: a paste of the STORED VALUE with
+-- its separators is still matched (that term is phone-shaped, so it goes to
+-- `phone_digits`, which is indexed), but a paste containing letters is matched
+-- by an unindexed scan of `phone`. Accepting a seq scan on a rare path is the
+-- trade being made.
+--
+-- `phone_digits` carries its own trigram index — see 065, which cannot be
+-- folded in here because the column does not exist until that migration runs.
 --
 -- Be precise about what `gin_trgm_ops` does and does not give:
 --   * It DOES accelerate `ILIKE '%x%'` — leading wildcards are the case a
@@ -37,25 +63,19 @@
 --   * It adds write cost to profiles. That trade is cheap here: profiles are
 --     written on signup and on profile edit, and searched on every typing
 --     pause.
---   * NULL `phone` rows are simply not indexed (correct — a NULL has no
---     substring to match).
+--   * It has no NULL to be silent about here: `full_name` is
+--     NOT NULL DEFAULT '' (001_initial_schema.sql), so every row is indexed.
+--     The equivalent hazard in 065 is avoided by COALESCE-ing `phone` to ''
+--     rather than leaving the generated column NULL.
 --
--- Interaction with phone normalisation — read before extending this
--- -----------------------------------------------------------------
+-- The companion migration — 065
+-- ----------------------------
 -- 065_profiles_phone_digits.sql adds a generated `phone_digits` column so a
--- digit-only search can match a stored value containing separators. It ships
--- that column's own trigram index, which this migration cannot create:
--- indexing a column that does not exist yet would fail, and guessing at an
--- unapproved schema change is worse than a follow-up migration.
---
--- Consequence for the index below: once 065 is applied, a phone-SHAPED term
--- (digits and phone punctuation only) is routed to `phone_digits`, leaving
--- `idx_profiles_phone_trgm` to serve only terms that are not phone-shaped yet
--- still appear in a stored number — in practice "the admin pasted the stored
--- value verbatim". It also costs nothing to keep beyond write amplification on
--- one more column. Flagged rather than dropped unilaterally: removing it is a
--- separate decision from adding the column, and 064 is still unapplied and
--- unreviewed.
+-- digit-only search can match a stored value containing separators, AND
+-- transliterates Arabic-Indic digits so a customer who typed ٠١٢… is reachable
+-- at all. It ships that column's own trigram index. Which columns a search
+-- actually reads, and why `phone` is no longer one of them for digit terms, is
+-- in SCOPE above.
 --
 -- Why not CONCURRENTLY
 -- --------------------
@@ -67,19 +87,14 @@
 -- Rollback
 -- --------
 -- DROP INDEX IF EXISTS public.idx_profiles_full_name_trgm;
--- DROP INDEX IF EXISTS public.idx_profiles_phone_trgm;
 -- (The pg_trgm extension is left in place — 055 depends on it.)
--- Rollback restores the pre-064 plan: one sequential scan per search. No data
--- change either way.
+-- Rollback restores the pre-064 plan for the NAME search only. The digit search
+-- is unaffected either way: its index belongs to 065. No data change.
 -- ============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Case-insensitive substring search on the customer's name.
+-- Case-insensitive substring search on the customer's name. This is the only
+-- index this migration creates — see SCOPE for why `phone` was dropped.
 CREATE INDEX IF NOT EXISTS idx_profiles_full_name_trgm
   ON public.profiles USING gin (full_name gin_trgm_ops);
-
--- Literal substring search on the stored phone number. Note this matches the
--- value as stored — it does not normalise separators (see the note above).
-CREATE INDEX IF NOT EXISTS idx_profiles_phone_trgm
-  ON public.profiles USING gin (phone gin_trgm_ops);

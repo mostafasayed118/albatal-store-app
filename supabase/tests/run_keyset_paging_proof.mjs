@@ -250,6 +250,32 @@ const SEPARATED_PHONES = [
 ];
 
 /**
+ * Rows whose STORED number is in Arabic-Indic digits — the harsher half of the
+ * problem. Before the migration transliterated, the `[^0-9]` strip (ASCII-only)
+ * DELETED every digit instead of keeping it, so `phone_digits` came out EMPTY
+ * and the row was unreachable by ANY digit search — including an ASCII one
+ * typed by an admin who knows nothing about the encoding.
+ *
+ * One row per range, because normalising one range and not the other is the
+ * exact shape of the bug: Arabic script is shared between Arabic, Persian and
+ * Urdu, so either could have been typed at signup.
+ */
+const ARABIC_DIGIT_PHONES = [
+  {
+    id: '00000000-0000-0000-0000-000000000401',
+    stored: '+٩٦٦ ٥٠ ٧٧٧ ٨٨٨٨',
+    digits: '966507778888',
+    range: 'Arabic-Indic U+0660–U+0669',
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000402',
+    stored: '۰۱۲۳۴۵۶۷۸۹۰',
+    digits: '01234567890',
+    range: 'Extended Arabic-Indic U+06F0–U+06F9',
+  },
+];
+
+/**
  * Phone normalisation (migration 065).
  *
  * Three claims, and the middle one is what makes the others worth anything:
@@ -320,6 +346,49 @@ async function phoneNormalisationChecks() {
     absent.ok && absent.rows.length === 0,
     `unexpectedly matched ${absent.rows?.length ?? '?'} row(s)`,
   );
+
+  // ── Arabic-Indic digits ──────────────────────────────────────────────────
+  // Note the row is reachable from BOTH directions below: an admin typing
+  // ASCII digits finds an Arabic-stored number, and an AR-locale admin typing
+  // native digits finds the same row. Neither works without transliteration on
+  // the side being typed.
+  for (const { id, stored, digits, range } of ARABIC_DIGIT_PHONES) {
+    const row = await rest('/profiles', {
+      select: 'phone,phone_digits',
+      id: `eq.${id}`,
+    });
+    const computed =
+      row.ok && row.rows.length === 1 ? row.rows[0].phone_digits : null;
+    check(
+      `Postgres transliterates ${range} "${stored}" → ${digits}`,
+      computed === digits,
+      `server said ${JSON.stringify(computed)} — an empty value here is the ` +
+        `pre-transliteration bug, where the strip deleted the digits outright`,
+    );
+
+    // An ASCII-digit term must reach the Arabic-stored row. This is the half
+    // that made the row invisible to EVERYONE, not just to AR-locale admins.
+    const byAscii = await searchFor(digits);
+    check(
+      `an ASCII digit term reaches the ${range} row`,
+      byAscii.ok &&
+        byAscii.rows.length === 1 &&
+        byAscii.rows[0].id === id,
+      `HTTP ${byAscii.status}, matched ${byAscii.rows?.length ?? 0}`,
+    );
+
+    // And a term typed in the SAME native digits must reach it too — the
+    // direction the shape gate would otherwise reject as "not digit-shaped".
+    const byNative = await searchFor(stored);
+    check(
+      `a term typed in ${range} digits reaches its own row`,
+      byNative.ok &&
+        byNative.rows.length === 1 &&
+        byNative.rows[0].id === id,
+      `HTTP ${byNative.status}, matched ${byNative.rows?.length ?? 0} — if 0, ` +
+        `the term was not transliterated or the shape gate rejected it`,
+    );
+  }
 
   // NEGATIVE CONTROL for the SHAPE GATE. 'Layla1' is not phone-shaped, so it
   // must stay a literal search. No name contains it, while Layla's stored phone
@@ -466,8 +535,8 @@ async function main() {
   const baseline = await readAllIds();
   if (mode === 'local') {
     check(
-      'fixture is loaded (127 rows: 120 walk + 4 search + 3 normalisation)',
-      baseline.length === 127,
+      'fixture is loaded (129 rows: 120 walk + 4 search + 3 normalisation + 2 Arabic)',
+      baseline.length === 129,
       `saw ${baseline.length}`,
     );
   }

@@ -37,7 +37,7 @@ grant select on public.profiles to web_anon;
 -- change this in the same commit or the check silently stops testing it.
 --
 -- Created after the walk fixture and before the bulk load in
--- search_index_plan.sql, which is where they matter: on 124 rows the planner
+-- search_index_plan.sql, which is where they matter: on 129 rows the planner
 -- will choose a sequential scan whatever indexes exist, and rightly so.
 -- ---------------------------------------------------------------------------
 create extension if not exists pg_trgm;
@@ -45,8 +45,10 @@ create extension if not exists pg_trgm;
 create index if not exists idx_profiles_full_name_trgm
   on public.profiles using gin (full_name gin_trgm_ops);
 
-create index if not exists idx_profiles_phone_trgm
-  on public.profiles using gin (phone gin_trgm_ops);
+-- NOTE: there is deliberately NO index on `phone` here. An earlier revision of
+-- 064 created one and it was dropped as vestigial — a phone-shaped term is
+-- routed to `phone_digits`, so `phone` is only reached by a term that is not
+-- phone-shaped. Kept in step with 064 rather than reintroduced by habit.
 
 -- ---------------------------------------------------------------------------
 -- The walk fixture: 120 rows sharing only 12 distinct instants (10 rows each).
@@ -100,6 +102,21 @@ insert into public.profiles (id, full_name, phone, membership_tier, created_at) 
   ('00000000-0000-0000-0000-000000000301', 'Nour Separated', '+966 50 123 4567', 'standard', timestamptz '2026-09-16 05:00:00+00'),
   ('00000000-0000-0000-0000-000000000302', 'Hana Dashes',    '050-123-4567',     'premium',  timestamptz '2026-09-16 04:00:00+00'),
   ('00000000-0000-0000-0000-000000000303', 'Rania Parens',   '(015) 111-2222',   'standard', timestamptz '2026-09-16 03:00:00+00');
+
+-- ---------------------------------------------------------------------------
+-- Arabic-Indic digit fixture. The STORED value is in Arabic-Indic digits, which
+-- is the harsher half of the problem: before 065 transliterated, the
+-- `[^0-9]` strip DELETED every digit and these rows came out with an EMPTY
+-- phone_digits — invisible to every digit search, including ASCII ones.
+--
+-- The name is ASCII on purpose, so a match can only have come from the phone.
+-- One row per range: Arabic-Indic (Egypt/Saudi) and Extended Arabic-Indic
+-- (Persian/Urdu), because normalising one range and not the other is the exact
+-- shape of the bug being guarded against.
+-- ---------------------------------------------------------------------------
+insert into public.profiles (id, full_name, phone, membership_tier, created_at) values
+  ('00000000-0000-0000-0000-000000000401', 'Arabic Numerals', '+٩٦٦ ٥٠ ٧٧٧ ٨٨٨٨', 'standard', timestamptz '2026-09-16 02:00:00+00'),
+  ('00000000-0000-0000-0000-000000000402', 'Persian Numerals', '۰۱۲۳۴۵۶۷۸۹۰',     'premium',  timestamptz '2026-09-16 01:00:00+00');
 -- Digit runs were chosen to be mutually NON-overlapping and absent from every
 -- other fixture number. '(010) 987-6543' was the obvious third style and was
 -- rejected: its digits ('0109876543') are a PREFIX of Layla's stored
@@ -121,7 +138,16 @@ insert into public.profiles (id, full_name, phone, membership_tier, created_at) 
 -- ---------------------------------------------------------------------------
 alter table public.profiles
   add column if not exists phone_digits text
-  generated always as (regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'))
+  generated always as (
+    regexp_replace(
+      translate(
+        coalesce(phone, ''),
+        '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
+        '01234567890123456789'
+      ),
+      '[^0-9]', '', 'g'
+    )
+  )
   stored;
 
 create index if not exists idx_profiles_phone_digits_trgm

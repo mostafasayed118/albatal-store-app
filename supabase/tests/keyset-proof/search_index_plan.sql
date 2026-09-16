@@ -1,6 +1,9 @@
 -- ============================================================================
 -- Planner check for migrations 064 and 065 (pg_trgm search indexes).
 -- ============================================================================
+-- Covers exactly the indexes the directory's searches actually reach: the NAME
+-- index (064) and the NORMALISED PHONE index (065). `phone` itself is indexed
+-- by neither, by design — see SCOPE in 064.
 -- Proves the claim the migration makes: that the directory's leading-wildcard
 -- search stops being a sequential scan. "The index exists" is not that claim —
 -- an index the planner cannot use for the predicate, or will not choose, leaves
@@ -18,7 +21,7 @@
 --     < supabase/tests/keyset-proof/search_index_plan.sql
 -- ON_ERROR_STOP=1 is what makes the assertions below fail the command.
 --
--- WHY A BULK LOAD AT ALL: on the probe's 127-row fixture the planner picks a
+-- WHY A BULK LOAD AT ALL: on the probe's 129-row fixture the planner picks a
 -- sequential scan whatever indexes exist, and it is right to — a 2-page table
 -- is cheaper to scan. Asserting index usage there would be asserting a fiction.
 -- The indexes have to be measured at a size where the choice is real.
@@ -68,29 +71,14 @@ begin
   raise notice 'name search uses idx_profiles_full_name_trgm';
 end $$;
 
--- ---------------------------------------------------------------------------
--- Assertion 2: likewise for the phone column.
--- ---------------------------------------------------------------------------
-do $$
-declare
-  plan json;
-begin
-  execute $q$explain (format json)
-    select id from public.profiles where phone ilike '%98765432%'$q$ into plan;
-
-  if position('idx_profiles_phone_trgm' in plan::text) = 0 then
-    raise exception
-      'phone search did not use idx_profiles_phone_trgm. Plan: %',
-      plan::text;
-  end if;
-
-  raise notice 'phone search uses idx_profiles_phone_trgm';
-end $$;
-
--- ---------------------------------------------------------------------------
--- Assertion 3: and for the NORMALISED phone column (migration 065). This is the
+-- ------------------------------------------------------------------- ---------------------------------------------------------------------------
+-- Assertion 2: and for the NORMALISED phone column (migration 065). This is the
 -- branch a digit-only search actually takes — digits are the common case — so
 -- without this index 064's benefit would cover only the rarer half of searches.
+--
+-- There is deliberately NO assertion for the raw `phone` column: 064 no longer
+-- indexes it, because a phone-shaped term is routed here instead. Asserting an
+-- index on `phone` would assert a plan the directory no longer produces.
 -- ---------------------------------------------------------------------------
 do $$
 declare

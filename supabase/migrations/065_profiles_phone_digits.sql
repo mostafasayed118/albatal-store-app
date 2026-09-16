@@ -43,23 +43,46 @@
 --   the generated value NULL, and a NULL is not "no digits" — it is a
 --   comparison that can never be true. With it, a row that has no phone yields
 --   '' and simply never matches a digit term, which is the correct outcome.
--- * `regexp_replace(text, text, text, text)` is IMMUTABLE in PostgreSQL 15,
---   which STORED requires. Not taken on trust: the probe in
---   supabase/tests/keyset-proof/ applies this exact statement against a live
---   PostgreSQL 15.19 instance (postgres:15-alpine, pg_config reports this
---   project's own pinned major_version) and then READS THE COMPUTED VALUES
---   BACK, so a non-immutable expression would fail at the ALTER and a wrong
---   expression would fail the read-back rather than reach production.
+-- * `regexp_replace(text, text, text, text)` and `translate(text, text, text)`
+--   are both IMMUTABLE in PostgreSQL 15, which STORED requires. Not taken on
+--   trust: the probe in supabase/tests/keyset-proof/ applies this exact
+--   statement against a live PostgreSQL 15.19 instance (postgres:15-alpine,
+--   matching this project's pinned major_version) and then READS THE COMPUTED
+--   VALUES BACK, so a non-immutable expression would fail at the ALTER and a
+--   wrong expression would fail the read-back rather than reach production.
+-- * The two `translate` tables are 20 characters each, positionally aligned,
+--   and contain no duplicates (duplicates would silently make the first
+--   mapping win).
 -- * Column name matches the one 064's header already anticipates.
 -- * NOT added to the client's SELECT list. The directory filters on this column
 --   but never displays it — `phone` stays the value the admin sees. Returning
 --   both would be the same PII twice.
--- * Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) are STRIPPED, like any other character
---   outside [0-9], not transliterated. An Arabic-locale admin typing native
---   digits therefore still gets no match. Closing that would need
---   `translate(phone, '٠١٢٣٤٥٦٧٨٩', '0123456789')` ahead of the strip — a
---   behaviour change worth deciding on its own, so it is deliberately not
---   bundled here.
+-- Arabic-Indic digits — a SECOND defect this same expression has to fix
+-- --------------------------------------------------------------------
+-- The strip is `[^0-9]`, which is ASCII-only. An Arabic-locale customer who
+-- entered ٠١٠١٢٣٤٥٦٧٨ does NOT get a `phone_digits` that keeps the digits
+-- differently — Postgres DELETES every one of them, and the column comes out
+-- EMPTY. So the row is unreachable by any digit search at all, including an
+-- ASCII one typed by an admin who knows nothing about the encoding.
+--
+-- That is a strictly worse failure than the separator one this migration was
+-- written for, and it is why the expression transliterates BEFORE it strips:
+-- `translate` maps the digit characters to ASCII, and the strip then has ASCII
+-- digits left to keep. This is why the order of the two calls is load-bearing
+-- rather than stylistic.
+--
+-- Both Arabic digit ranges are mapped, not just the one the app's own locale
+-- uses:
+--   * Arabic-Indic           U+0660–U+0669   ٠١٢٣٤٥٦٧٨٩   (Egypt, Saudi)
+--   * Extended Arabic-Indic  U+06F0–U+06F9   ۰۱۲۳۴۵۶۷۸۹   (Persian, Urdu)
+-- Arabic script is shared across languages, so a customer is as likely to have
+-- typed one as the other, and partial normalisation would reproduce this exact
+-- bug for the half left out. Both are `translate` tables, so the cost is
+-- characters in a literal, not a second code path.
+--
+-- `translate(text, text, text)` is IMMUTABLE, so the generated column accepts
+-- it. Not taken on trust either — the ALTER below is what proves it, and the
+-- harness reads the computed values back.
 --
 -- ORDERING COUPLING — read before deploying the matching client build
 -- ------------------------------------------------------------------
@@ -77,6 +100,24 @@
 -- duration. At today's row counts that is a blink; on a large table this would
 -- need an out-of-band build instead of a plain statement in a migration.
 --
+-- ⚠️ `IF NOT EXISTS` does NOT cover the expression
+-- ------------------------------------------------
+-- `ADD COLUMN IF NOT EXISTS` makes the STATEMENT idempotent, not the column
+-- DEFINITION. If this migration has already been applied anywhere with an
+-- earlier revision of the expression, re-running it is a silent no-op and the
+-- column keeps the OLD expression — with no error, and the only visible
+-- symptom being searches that quietly miss rows. This is exactly how the
+-- Arabic-Indic transliteration below could fail to take effect on a database
+-- where a pre-transliteration 065 was already applied. Check first:
+--     select pg_get_expr(d.adbin, d.adrelid)
+--       from pg_attrdef d join pg_attribute a
+--         on a.attrelid = d.adrelid and a.attnum = d.adnum
+--      where d.adrelid = 'public.profiles'::regclass
+--        and a.attname = 'phone_digits';
+-- If it does not mention `translate`, drop and re-add the column (see Rollback,
+-- then apply 065 again). Verified NOT yet applied anywhere, so today the plain
+-- statement is correct as written.
+--
 -- Rollback
 -- --------
 -- ALTER TABLE public.profiles DROP COLUMN IF EXISTS phone_digits;
@@ -91,7 +132,19 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- The digits of `phone`, with every separator removed. Read-only, server-owned.
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS phone_digits TEXT
-  GENERATED ALWAYS AS (regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g'))
+  GENERATED ALWAYS AS (
+    regexp_replace(
+      -- TRANSLITERATE FIRST, then strip. The order is the whole point: the
+      -- strip is `[^0-9]`, i.e. ASCII-only, so Arabic-Indic digits are not
+      -- "not a digit" in a way it can keep — they are characters it DELETES.
+      translate(
+        COALESCE(phone, ''),
+        '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
+        '01234567890123456789'
+      ),
+      '[^0-9]', '', 'g'
+    )
+  )
   STORED;
 
 -- Digit-only searches match this column with a LEADING wildcard, exactly as

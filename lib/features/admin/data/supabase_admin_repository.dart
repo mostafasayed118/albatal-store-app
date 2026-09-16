@@ -35,10 +35,41 @@ String customerSearchPattern(String term) {
 /// Deliberately a small, closed set. Everything outside it is what makes a term
 /// a literal search rather than a phone one (see [customerPhoneDigitPattern]),
 /// and that is also why no character can be slipped past it and into the query.
+///
+/// ASCII-only because it is applied AFTER [_asciiDigits] has mapped the Arabic
+/// digit ranges into it — so this set does not have to grow by 20 codepoints,
+/// and cannot fall out of step with the migration's `translate` tables.
 final RegExp _digitOrSeparator = RegExp(r'[0-9+\-.()/ ]');
 
 /// The complement of "is a digit".
 final RegExp _nonDigit = RegExp(r'[^0-9]');
+
+/// Maps Arabic-Indic (U+0660–U+0669) and Extended Arabic-Indic (U+06F0–U+06F9)
+/// digits onto their ASCII equivalents, leaving every other character alone.
+///
+/// Written as codepoint arithmetic rather than two string constants kept in
+/// lockstep with a `translate` call: each range is contiguous, so there is no
+/// table to get out of sync — and this is the same reason the migration's
+/// `translate` tables are positionally aligned.
+///
+/// Both ranges, not just the one this app's locale uses: Arabic script is
+/// shared, so a customer may have typed either, and normalising half the range
+/// would reproduce the defect for the half left out.
+String _asciiDigits(String term) {
+  final buffer = StringBuffer();
+  for (final rune in term.runes) {
+    final arabicIndic = rune - 0x0660;
+    final extended = rune - 0x06F0;
+    if (arabicIndic >= 0 && arabicIndic <= 9) {
+      buffer.write(arabicIndic);
+    } else if (extended >= 0 && extended <= 9) {
+      buffer.write(extended);
+    } else {
+      buffer.writeCharCode(rune);
+    }
+  }
+  return buffer.toString();
+}
 
 /// The `ILIKE` pattern for a **phone-shaped** [term], or `null` when the term
 /// is not one.
@@ -60,10 +91,20 @@ final RegExp _nonDigit = RegExp(r'[^0-9]');
 /// No LIKE escaping is needed on the result, and that is structural rather than
 /// an omission: the value is built by *removing* everything that is not `0-9`,
 /// so `%`, `_` and `\` cannot survive into it. The surrounding `%` are ours.
+/// Arabic-Indic digits are transliterated FIRST, and the order is load-bearing
+/// rather than tidy: [_nonDigit] is `[^0-9]`, i.e. ASCII-only, so it does not
+/// treat `٠١٢` as digits it should keep — it treats them as characters to
+/// DELETE. An AR-locale admin typing native digits would otherwise reduce to
+/// the empty string and fall back to a literal search that matches nothing.
+///
+/// Only the phone pattern is transliterated. The term's NAME branch stays
+/// exactly as typed, because Arabic names are stored in Arabic script and must
+/// be matched literally.
 String? customerPhoneDigitPattern(String term) {
-  final digits = term.replaceAll(_nonDigit, '');
+  final ascii = _asciiDigits(term);
+  final digits = ascii.replaceAll(_nonDigit, '');
   if (digits.isEmpty) return null;
-  if (term.replaceAll(_digitOrSeparator, '').isNotEmpty) return null;
+  if (ascii.replaceAll(_digitOrSeparator, '').isNotEmpty) return null;
   return '%$digits%';
 }
 
