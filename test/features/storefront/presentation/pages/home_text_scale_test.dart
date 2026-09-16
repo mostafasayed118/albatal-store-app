@@ -16,6 +16,7 @@ import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -162,6 +163,31 @@ void main() {
       scrolls++;
     }
     expect(find.byType(StitchProductGridCard), findsWidgets);
-    expect(tester.takeException(), isNull);
+    expect(tester.takeException(),
+        isNull); // ...and every mounted card's amounts must be READABLE at 1.4x, not
+    // clipped. This is the end-to-end half of the grid-card price fix: the
+    // card's own pin covers the 158dp cell in isolation, this one covers the
+    // real grid cell at the real scale under the app theme. It checks every
+    // mounted card, not just the first — a card WITHOUT a discount has the
+    // whole row to itself and would pass even with the old layout.
+    for (final element in find.byType(StitchProductGridCard).evaluate()) {
+      final product = (element.widget as StitchProductGridCard).product;
+      for (final amount in <String>[
+        product.price.format(),
+        if (product.oldPrice != null) product.oldPrice!.format(),
+      ]) {
+        final matches = find
+            .descendant(
+                of: find.byType(StitchProductGridCard),
+                matching: find.text(amount))
+            .evaluate();
+        expect(matches, isNotEmpty, reason: '$amount is mounted');
+        for (final match in matches) {
+          expect((match.renderObject! as RenderParagraph).didExceedMaxLines,
+              isFalse,
+              reason: '$amount must not be clipped in the home grid at 1.4x');
+        }
+      }
+    }
   });
 }

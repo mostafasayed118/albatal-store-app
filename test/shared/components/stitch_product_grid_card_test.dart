@@ -4,6 +4,7 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/app_fonts.dart';
@@ -48,24 +49,31 @@ Widget _harness(Widget card, {TextScaler textScaler = TextScaler.noScaling}) =>
       ),
     );
 
-/// KNOWN DEFECT, measured but deliberately NOT pinned here (2026-09-16).
+/// PRICE CLIPPING (found and fixed 2026-09-16) — the overflow pins could not
+/// see this, because a clipped amount raises no exception and "no RenderFlex
+/// overflow" is not a fit check.
 ///
-/// The price row splits the cell's inner width evenly between the price and
-/// the struck-through old price (`Flexible` + `maxLines: 1` + ellipsis on
-/// both). In the real fonts, with a discount present, that leaves the price
-/// 0.9dp short at the default scale and ~27dp short at 1.4x:
+/// The price row was a Row that split the cell's inner width evenly between
+/// the price and the struck-through old price. With a discount present that
+/// left the amount short in the real fonts, in this exact 158dp cell:
 ///
-///   theme + Inter, cell 158dp  ->  intrinsic / slot
-///     price     @1.0x  ``1450 EGY``  66.9 / 66.0  -> clipped
-///     price     @1.4x  ``1450 EGY``  93.2 / 66.0  -> clipped
-///   (unthemed, i.e. test font, the same string measures 112.8 / 157.6)
+///   theme + Inter            intrinsic / slot
+///     price @1.0x            66.9 / 66.0  -> clipped
+///     price @1.4x            93.2 / 66.0  -> clipped
+///   (unthemed = test font:  112.8 / 157.6, which is why the old harness
+///    could not tell either way)
 ///
-/// So the amount is silently ellipsized in the grid, and this file's pins —
-/// which only ever asserted "no overflow exception" — could not see it. It is
-/// PRE-EXISTING (the amounts here are whole pounds; this branch does not touch
-/// the card) and fixing it means re-balancing the row, which is a design call.
-/// Reported to the owner instead of pinned, so the test does not lock in the
-/// clipped rendering as correct.
+/// The row is now a Wrap: each amount takes the width it needs and the old
+/// price drops to a second line when it no longer fits beside the price. At
+/// the default scale both still share one line, so the shipped look is
+/// unchanged. These pins assert the amounts render IN FULL at both scales.
+void _expectPriceVisibleInFull(WidgetTester tester, String amount) {
+  expect(find.text(amount), findsOneWidget);
+  final paragraph = tester.renderObject<RenderParagraph>(find.text(amount));
+  expect(paragraph.didExceedMaxLines, isFalse,
+      reason: '$amount must not be clipped in the 158dp grid cell');
+}
+
 void main() {
   testWidgets('no overflow at the device-found cell size (158 x 232.35)',
       (tester) async {
@@ -78,9 +86,8 @@ void main() {
       ),
     ));
     expect(tester.takeException(), isNull);
-    // The amount reaches the widget tree intact (it is the RENDERING that is
-    // clipped, per the KNOWN DEFECT note above).
-    expect(find.text('1450 EGY'), findsOneWidget);
+    _expectPriceVisibleInFull(tester, '1450 EGY');
+    _expectPriceVisibleInFull(tester, '1900 EGY');
   });
 
   testWidgets('no overflow with large system font scale', (tester) async {
@@ -92,7 +99,9 @@ void main() {
       textScaler: const TextScaler.linear(1.4),
     ));
     expect(tester.takeException(), isNull);
-    expect(find.text('1450 EGY'), findsOneWidget);
+    // 1.4x is where the old Row clipped hardest (~27dp short).
+    _expectPriceVisibleInFull(tester, '1450 EGY');
+    _expectPriceVisibleInFull(tester, '1900 EGY');
   });
 
   testWidgets('renders name, category and price', (tester) async {
@@ -101,6 +110,6 @@ void main() {
     )));
     expect(find.text('Royal Emerald Silk'), findsOneWidget);
     expect(find.text('Silk'), findsOneWidget);
-    expect(find.text('1450 EGY'), findsOneWidget);
+    _expectPriceVisibleInFull(tester, '1450 EGY');
   });
 }
