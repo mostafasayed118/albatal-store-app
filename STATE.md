@@ -1,6 +1,19 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 10: **pg_trgm SEARCH INDEXES** for the customer
+Last run: 2026-09-16 (part 11: **PHONE NORMALISATION** — closes the residual
+recorded in parts 9 and 10. `profiles.phone` stores whatever the customer typed
+(`+966 50 123 4567`), so a digit-only search matched nothing; the fix is a
+STORED generated `phone_digits` column (migration 065) PLUS term normalisation
+in the client, because normalising only one half cannot work. Branch
+`feat/admin-customer-tier`, commit `9a306d9`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74**. Evidence: `flutter analyze` 0 issues, format clean
+(429 files), `flutter test` **947/947** (940 baseline + 7), 9/9 Dart mutations
+bite, the SQL expression mutated to strip only spaces fails 7 live checks, the
+new index assertion is non-vacuous (exit 3 when dropped), and the HTTP probe is
+**30/30 against live PostgREST 12.2.3 / PostgreSQL 15.19** including the
+decisive pre-065 negative control. Touches `supabase/` — OUTSIDE the `lib/`-only
+auto-fix scope; migrations **NOT applied**, and they must ship BEFORE the
+matching client build (see the ordering hazard below). Prior run: 2026-09-16 (part 10: **pg_trgm SEARCH INDEXES** for the customer
 directory — the search's leading-wildcard ILIKE was a full sequential scan.
 Branch `feat/admin-customer-tier`, commit `2a152e8`, worktree `.trees/customer-tier`,
 PUSHED onto **draft PR #74**. Evidence: the new planner check ASSERTS the index
@@ -57,6 +70,102 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 11: phone normalisation — commit `9a306d9`)
+
+Owner: "Normalize phone numbers server-side so digit-only searches match stored
+values with separators". Same branch; PUSHED onto draft PR #74.
+
+### What was actually broken
+
+`profiles.phone` is raw TEXT captured from auth metadata
+(`003_auth_profiles_and_hardening.sql:13-17` reads
+`NEW.raw_user_meta_data->>'phone'`). Nothing in this repo normalises it — no
+write trigger, no client reformat. The directory matched it literally
+(`phone.ilike.'%term%'`), so an admin typing a bare digit run matched nothing
+whenever the stored value had separators. The search looked broken while being
+technically correct, and "no such customer" was indistinguishable from "their
+number has spaces in it".
+
+### Two halves, because neither works alone
+
+- **Stored side** — `065_profiles_phone_digits.sql`: a STORED generated
+  `phone_digits` column holding the digits of `phone`.
+- **Query side** — the client reduces a phone-shaped TERM to its digits too, so
+  the admin's OWN punctuation is handled. `'+966 50 123-4567'` →
+  `phone_digits.ilike.'%966501234567%'`.
+
+Normalising only the column leaves `'+966 50'` typed by an admin unmatched;
+normalising only the term compares against a column that still has separators.
+
+Three design calls worth naming:
+
+| Call | Why |
+|---|---|
+| STORED generated, not trigger-maintained | Postgres owns the invariant, so it cannot drift; and a generated column **rejects writes**, verified live: `ERROR: cannot insert a non-DEFAULT value into column "phone_digits"` — so it cannot smuggle a value past RLS. |
+| Digit-shaped is a **strict** test | Not "contains a digit". Loosening it reduces `A1` to the digit `1`, matching nearly every row's phone and turning a typed name into a directory-wide result. `Branch 2` must keep matching via `full_name`. |
+| The two columns are **alternatives**, not cumulative | For a digit-only term, `phone_digits` already subsumes `phone`: a digit run found inside the stored value sits on an unbroken run of digits and survives normalisation unchanged. Emitting both would be a redundant condition on every phone search. |
+
+### The negative control is the whole proof
+
+30/30 live checks. The one that makes the rest meaningful is the **pre-065
+filter shape**, run against the same fixture: it cannot reach ANY of the three
+separator-laden rows. Without it, a pass could just mean the fixture was
+matchable all along. Two more controls: an absent digit run (`77777777777`)
+matches nothing, and `Layla1` stays literal (Layla's stored number contains a
+`1`, so a loosened gate would match her).
+
+Mutation evidence, both halves, each confirmed an ASSERTION not a compile error:
+
+- **9/9 Dart mutations bite** — empty-digits guard dropped; shape gate
+  loosened; term not normalised; digit branch never taken; only spaces
+  stripped; `-` removed from / `%` added to the separator set; digit pattern
+  left unquoted; digit pattern pointed back at the RAW `phone` column. Restored
+  byte-identically (in-memory snapshot, **not** `git checkout`).
+- **The SQL expression mutated** to `'[^ ]'` (i.e. the naive
+  `replace(phone,' ','')`) fails **7** live checks: `+` and `-` survive it.
+- **The new index assertion is not vacuous** — dropping
+  `idx_profiles_phone_digits_trgm` raises and exits **3**; restored, 0. At
+  20 127 rows the same search goes from `Seq Scan, Rows Removed by Filter:
+  20027, 288 buffers` to `Bitmap Index Scan, 106 buffers`.
+
+### Two things I got wrong and caught
+
+1. **My first SQL-mutation attempt proved nothing.** I piped a mutated seed
+   into `psql` and the probe passed 30/30 — because `docker-compose.yml` mounts
+   `seed.sql` as an init script (`/docker-entrypoint-initdb.d/`), so the
+   container had ALREADY applied the pristine seed and my pipe aborted on
+   `role "authenticator" already exists`. The "pass" was the unmutated schema.
+   Redone by `DROP COLUMN` + `ADD COLUMN` on the live DB, which fails 7 checks.
+   **Lesson: a green mutation run is not evidence until the mutation is shown
+   to have applied.**
+2. **A fixture collision.** `'(010) 987-6543'` was the obvious third separator
+   style and its digits (`0109876543`) are a **prefix** of Layla's existing
+   `01098765432` — so "matched exactly one row" would have been measuring the
+   collision, not the normalisation. Replaced with `(015) 111-2222`; the reason
+   is recorded in `seed.sql` so it is not "tidied" back.
+
+### ⚠️ Deploy-ordering hazard (new, and not obvious)
+
+The client on this branch emits `phone_digits.ilike`, and PostgREST answers an
+unknown column with `42703`/HTTP 400 — which fails the **WHOLE directory
+request**, not just the phone branch of the search. So **063–065 must be applied
+before the matching app build ships.** Precedent already exists on this branch
+(the tier control needs 046), so the order is: migrations, then app. Recorded in
+065's header.
+
+### Residuals — deliberately not closed
+
+1. **Arabic-Indic digits are stripped, not transliterated**, so an
+   Arabic-locale admin typing native digits still gets no match. Needs
+   `translate(phone, '٠١٢٣٤٥٦٧٨٩', '0123456789')` before the strip — a behaviour
+   change worth deciding on its own.
+2. **`idx_profiles_phone_trgm` (064) is now largely vestigial** — a
+   phone-shaped term is routed to `phone_digits`, leaving the raw-column index to
+   serve only "the admin pasted the stored value verbatim". Flagged in 064's
+   header rather than dropped unilaterally; 064 is still unapplied and unreviewed.
+3. Staging has 25 customers and production 0 admins, so no search path has met
+   real volume.
 
 ## New — 2026-09-16 (part 10: pg_trgm search indexes — commit `2a152e8`)
 
