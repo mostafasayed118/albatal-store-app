@@ -10,7 +10,8 @@
 //   1. An `or` tree resuming the walk:
 //        created_at.lt.TS,and(created_at.eq.TS,id.lt.ID)
 //   2. An `or` tree searching two columns at once:
-//        full_name.ilike."%term%",phone.ilike."%term%"
+//        full_name.ilike."%term%",phone_digits.ilike."%digits%"
+//      (or `phone.ilike` for a term that is not phone-shaped — migration 065)
 //
 // A Dart test can pin the STRING the client emits (and does), but only a live
 // PostgREST can answer whether that string is accepted, whether the quoting
@@ -74,12 +75,47 @@ function customerSearchPattern(term) {
 }
 
 /**
+ * `customerPhoneDigitPattern` — the digit-only pattern for a phone-SHAPED term,
+ * or null when the term is not one. Mirrors the Dart `RegExp`s: only `[0-9]`
+ * plus the phone separators `+ - . ( ) /` and space, with at least one digit.
+ */
+function customerPhoneDigitPattern(term) {
+  const digits = term.replaceAll(/[^0-9]/g, '');
+  if (digits.length === 0) return null;
+  if (term.replaceAll(/[0-9+\-.()/ ]/g, '').length > 0) return null;
+  return `%${digits}%`;
+}
+
+/** The or-tree quoting: a typed `,` must not split the condition. */
+function literalInOrTree(pattern) {
+  return `"${pattern.replaceAll('"', '\\"')}"`;
+}
+
+/**
  * `customerSearchFilter` — name OR phone, escaped for LIKE and then quoted for
  * the `or` tree so a typed `,` cannot split the condition.
+ *
+ * The phone half is chosen by TERM SHAPE: a phone-shaped term searches the
+ * normalised `phone_digits` column (migration 065), anything else searches
+ * `phone` literally. Alternatives, not cumulative — for a digit-only term,
+ * `phone_digits` already subsumes `phone`.
  */
 function customerSearchFilter(term) {
-  const pattern = customerSearchPattern(term);
-  const quoted = `"${pattern.replaceAll('"', '\\"')}"`;
+  const digitPattern = customerPhoneDigitPattern(term);
+  const phoneClause = digitPattern === null
+    ? `phone.ilike.${literalInOrTree(customerSearchPattern(term))}`
+    : `phone_digits.ilike.${literalInOrTree(digitPattern)}`;
+  const nameClause = `full_name.ilike.${literalInOrTree(customerSearchPattern(term))}`;
+  return `${nameClause},${phoneClause}`;
+}
+
+/**
+ * The PRE-065 filter shape: always `phone`, always the raw term. Kept so the
+ * probe can run it as a negative control and show that the old query genuinely
+ * could not reach a separator-laden number.
+ */
+function legacySearchFilter(term) {
+  const quoted = literalInOrTree(customerSearchPattern(term));
   return `full_name.ilike.${quoted},phone.ilike.${quoted}`;
 }
 
@@ -189,6 +225,115 @@ function section(title) {
 }
 
 // ── THE SUBJECT UNDER TEST ──────────────────────────────────────────────────
+
+/**
+ * The separator-laden fixture rows, with the digits each must normalise to.
+ * Digit runs are mutually non-overlapping and absent from every other fixture
+ * number, so a match can only come from the row named here.
+ */
+const SEPARATED_PHONES = [
+  {
+    id: '00000000-0000-0000-0000-000000000301',
+    stored: '+966 50 123 4567',
+    digits: '966501234567',
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000302',
+    stored: '050-123-4567',
+    digits: '0501234567',
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000303',
+    stored: '(015) 111-2222',
+    digits: '0151112222',
+  },
+];
+
+/**
+ * Phone normalisation (migration 065).
+ *
+ * Three claims, and the middle one is what makes the others worth anything:
+ *   1. Postgres really does compute `phone_digits` from `phone` — read back
+ *      from the server, never recomputed in JS, or this would only be testing
+ *      the probe's own arithmetic.
+ *   2. The pre-065 filter shape cannot reach a separator-laden row. Without
+ *      this, a passing (3) could just mean the fixture was matchable all along.
+ *   3. The new filter does reach it — by its digits, and by a term the admin
+ *      typed with the separators still in it.
+ */
+async function phoneNormalisationChecks() {
+  for (const { id, stored, digits } of SEPARATED_PHONES) {
+    const row = await rest('/profiles', {
+      select: 'phone,phone_digits',
+      id: `eq.${id}`,
+    });
+    const computed =
+      row.ok && row.rows.length === 1 ? row.rows[0].phone_digits : null;
+    check(
+      `Postgres computes phone_digits for "${stored}" → ${digits}`,
+      computed === digits,
+      `server said ${JSON.stringify(computed)} (HTTP ${row.status})`,
+    );
+
+    // NEGATIVE CONTROL — the old query. Keyed on THIS row rather than on a
+    // global zero: a digit run may legitimately appear inside another fixture
+    // number, and a count assertion would then fail for the wrong reason.
+    const legacy = await searchForFilter(legacySearchFilter(digits));
+    check(
+      `pre-065 filter cannot reach "${stored}" by its digits`,
+      legacy.ok && !legacy.rows.some((r) => r.id === id),
+      `the old query already matched it — the fixture does not exercise the ` +
+        `defect and this proof would be hollow`,
+    );
+    console.log(
+      `  ℹ️  pre-065 filter for ${digits} matched ` +
+        `${legacy.rows?.length ?? '?'} row(s), none of them the target`,
+    );
+
+    const normalised = await searchFor(digits);
+    check(
+      `digit-only search "${digits}" reaches "${stored}" and nothing else`,
+      normalised.ok &&
+        normalised.rows.length === 1 &&
+        normalised.rows[0].id === id,
+      `HTTP ${normalised.status}, matched ${normalised.rows?.length ?? 0}`,
+    );
+  }
+
+  // Normalising only the column would leave the admin's OWN punctuation
+  // unhandled, so the term is normalised too. Same target row as entry 1.
+  const typedWithSeparators = await searchFor('+966 50 123 4567');
+  check(
+    'a term typed WITH separators normalises to the same digits',
+    typedWithSeparators.ok &&
+      typedWithSeparators.rows.length === 1 &&
+      typedWithSeparators.rows[0].id === SEPARATED_PHONES[0].id,
+    `HTTP ${typedWithSeparators.status}, matched ` +
+      `${typedWithSeparators.rows?.length ?? 0}`,
+  );
+
+  // The digit branch must not match everything — otherwise the checks above
+  // would pass for a query that simply returns the whole directory.
+  const absent = await searchFor('77777777777');
+  check(
+    'a digit run present in no stored number matches nothing',
+    absent.ok && absent.rows.length === 0,
+    `unexpectedly matched ${absent.rows?.length ?? '?'} row(s)`,
+  );
+
+  // NEGATIVE CONTROL for the SHAPE GATE. 'Layla1' is not phone-shaped, so it
+  // must stay a literal search. No name contains it, while Layla's stored phone
+  // '01098765432' does contain a '1': if the gate were loosened to "contains a
+  // digit", the term would reduce to '%1%', match her here, and in production
+  // match roughly the whole directory.
+  const mixed = await searchFor('Layla1');
+  check(
+    'a mixed alphanumeric term is not reinterpreted as a digit search',
+    mixed.ok && mixed.rows.length === 0,
+    `matched ${mixed.rows?.length ?? '?'} row(s) — the shape gate leaked ` +
+      `digits out of a literal term`,
+  );
+}
 
 /**
  * Walks the directory exactly as the Dart repository does: ask for one row past
@@ -321,8 +466,8 @@ async function main() {
   const baseline = await readAllIds();
   if (mode === 'local') {
     check(
-      'fixture is loaded (124 rows: 120 walk + 4 search)',
-      baseline.length === 124,
+      'fixture is loaded (127 rows: 120 walk + 4 search + 3 normalisation)',
+      baseline.length === 127,
       `saw ${baseline.length}`,
     );
   }
@@ -444,6 +589,9 @@ async function main() {
       (unquoted.body?.message ? ` (${unquoted.body.message})` : ''),
   );
 
+  section('Phone normalisation — a digit term must reach a separated number');
+  await phoneNormalisationChecks();
+
   section('Search + paging together — two `or` params must conjoin');
   // 'Customer' matches the 120 walk rows. If the second `or` replaced the
   // first, this set would grow to 124; if the search were dropped mid-walk, the
@@ -488,11 +636,16 @@ async function main() {
 
 /** The single search request shape the repository sends. */
 async function searchFor(term) {
+  return searchForFilter(customerSearchFilter(term));
+}
+
+/** Same request, with the filter string supplied rather than derived. */
+async function searchForFilter(filter) {
   return rest('/profiles', {
     select: SELECT_COLUMNS,
     order: ORDER,
     limit: '100',
-    or: orTree(customerSearchFilter(term)),
+    or: orTree(filter),
   });
 }
 

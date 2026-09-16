@@ -83,3 +83,46 @@ insert into public.profiles (id, full_name, phone, membership_tier, created_at) 
   -- Phone-search fixture: the number is NOT derivable from the name, so a match
   -- on it can only have come from the phone column.
   ('00000000-0000-0000-0000-000000000204', 'Layla Hassan',     '01098765432', 'premium',  timestamptz '2026-09-16 06:00:00+00');
+
+-- ---------------------------------------------------------------------------
+-- Phone-normalisation fixture (migration 065).
+--
+-- Every stored value here carries separators, which is the whole point: a
+-- digit-only search can only reach these rows through `phone_digits`, so if the
+-- normalised column or the matching clause is broken they are unreachable and
+-- the probe fails. Three different separator styles because the expression
+-- strips a character CLASS, and a fixture using only spaces would not notice if
+-- it had been written as `replace(phone, ' ', '')`.
+--
+-- Distinct older instants, so they do not collide with the tie groups above.
+-- ---------------------------------------------------------------------------
+insert into public.profiles (id, full_name, phone, membership_tier, created_at) values
+  ('00000000-0000-0000-0000-000000000301', 'Nour Separated', '+966 50 123 4567', 'standard', timestamptz '2026-09-16 05:00:00+00'),
+  ('00000000-0000-0000-0000-000000000302', 'Hana Dashes',    '050-123-4567',     'premium',  timestamptz '2026-09-16 04:00:00+00'),
+  ('00000000-0000-0000-0000-000000000303', 'Rania Parens',   '(015) 111-2222',   'standard', timestamptz '2026-09-16 03:00:00+00');
+-- Digit runs were chosen to be mutually NON-overlapping and absent from every
+-- other fixture number. '(010) 987-6543' was the obvious third style and was
+-- rejected: its digits ('0109876543') are a PREFIX of Layla's stored
+-- '01098765432', so a digit search for one would also match the other and the
+-- "matched exactly one row" assertions would be measuring the collision rather
+-- than the normalisation.
+
+-- ---------------------------------------------------------------------------
+-- Phone normalisation: MIRROR OF MIGRATION 065
+-- (065_profiles_phone_digits.sql).
+--
+-- The ALTER runs here, at the END of the fixture and after rows exist, rather
+-- than inside the CREATE TABLE above — that is the production path, where the
+-- column is added to a table that already holds rows and Postgres has to
+-- backfill every one. Adding it to the DDL would skip that entirely.
+--
+-- If 065 changes, change this in the same commit or the probe silently stops
+-- testing the real expression.
+-- ---------------------------------------------------------------------------
+alter table public.profiles
+  add column if not exists phone_digits text
+  generated always as (regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'))
+  stored;
+
+create index if not exists idx_profiles_phone_digits_trgm
+  on public.profiles using gin (phone_digits gin_trgm_ops);

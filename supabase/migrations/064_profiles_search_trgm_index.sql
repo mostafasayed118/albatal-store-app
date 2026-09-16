@@ -42,13 +42,20 @@
 --
 -- Interaction with phone normalisation — read before extending this
 -- -----------------------------------------------------------------
--- A separate, still-unstarted piece of work proposes a generated `phone_digits`
--- column so a digit-only search can match a stored value containing separators.
--- If that lands, `phone` will only serve literal searches, `phone_digits` will
--- carry the digit searches, and THAT column will need its own trigram index —
--- this migration alone would not cover it. Deliberately not pre-created here:
+-- 065_profiles_phone_digits.sql adds a generated `phone_digits` column so a
+-- digit-only search can match a stored value containing separators. It ships
+-- that column's own trigram index, which this migration cannot create:
 -- indexing a column that does not exist yet would fail, and guessing at an
 -- unapproved schema change is worse than a follow-up migration.
+--
+-- Consequence for the index below: once 065 is applied, a phone-SHAPED term
+-- (digits and phone punctuation only) is routed to `phone_digits`, leaving
+-- `idx_profiles_phone_trgm` to serve only terms that are not phone-shaped yet
+-- still appear in a stored number — in practice "the admin pasted the stored
+-- value verbatim". It also costs nothing to keep beyond write amplification on
+-- one more column. Flagged rather than dropped unilaterally: removing it is a
+-- separate decision from adding the column, and 064 is still unapplied and
+-- unreviewed.
 --
 -- Why not CONCURRENTLY
 -- --------------------

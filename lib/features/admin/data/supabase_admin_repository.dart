@@ -29,6 +29,55 @@ String customerSearchPattern(String term) {
   return '%$escaped%';
 }
 
+/// The whole alphabet a **phone-shaped** term is allowed to use: digits, plus
+/// the `+ - . ( ) /` and space that separate them in a typed number.
+///
+/// Deliberately a small, closed set. Everything outside it is what makes a term
+/// a literal search rather than a phone one (see [customerPhoneDigitPattern]),
+/// and that is also why no character can be slipped past it and into the query.
+final RegExp _digitOrSeparator = RegExp(r'[0-9+\-.()/ ]');
+
+/// The complement of "is a digit".
+final RegExp _nonDigit = RegExp(r'[^0-9]');
+
+/// The `ILIKE` pattern for a **phone-shaped** [term], or `null` when the term
+/// is not one.
+///
+/// `profiles.phone` stores whatever the customer typed, separators included
+/// ('+966 50 123 4567'), while an admin searching for a customer types the
+/// digits ('966501234567'). Comparing the two literally can never match, and
+/// there is no normalisation on the way in. So the term is reduced to its
+/// digits and matched against `profiles.phone_digits`, the generated column
+/// (migration 065) that holds the stored number's digits.
+///
+/// **Digit-shaped is a strict test, not "contains a digit".** Every character
+/// must be a digit or a phone separator, and there must be at least one digit.
+/// Anything looser would reinterpret ordinary text as a phone query: `A1`
+/// reduces to the digit `1`, which matches nearly every row's phone and turns a
+/// typed name into a directory-wide result. Names may legitimately contain
+/// digits (`Branch 2`), and those must keep matching through `full_name`.
+///
+/// No LIKE escaping is needed on the result, and that is structural rather than
+/// an omission: the value is built by *removing* everything that is not `0-9`,
+/// so `%`, `_` and `\` cannot survive into it. The surrounding `%` are ours.
+String? customerPhoneDigitPattern(String term) {
+  final digits = term.replaceAll(_nonDigit, '');
+  if (digits.isEmpty) return null;
+  if (term.replaceAll(_digitOrSeparator, '').isNotEmpty) return null;
+  return '%$digits%';
+}
+
+/// Wraps [pattern] so PostgREST reads it as a literal value inside an `or`
+/// tree, where a raw `,` would split one condition into two and `(`/`)`
+/// re-group the tree. A quote inside the value is itself backslash-escaped so
+/// it cannot close the wrapper early.
+///
+/// Applied to the digit pattern as well. That one cannot contain structure
+/// today — it is built by removing every non-digit — but routing both clauses
+/// through one wrapper means no future reader has to re-derive that to be sure.
+String _literalInOrTree(String pattern) =>
+    '"${pattern.replaceAll('"', r'\"')}"';
+
 /// The PostgREST filter matching the directory's searchable columns for
 /// [term]: the customer's name **or** their phone number.
 ///
@@ -38,21 +87,31 @@ String customerSearchPattern(String term) {
 /// phone-shaped query is the empty set.
 ///
 /// **The term is escaped twice, because it crosses two parsers.** The LIKE
-/// stage ([customerSearchPattern]) neutralises `\`, `%` and `_`. This stage
-/// then neutralises what PostgREST reads as *structure* inside an `or` tree: a
-/// raw `,` would split one condition into two (`.ilike.%a` plus `b%`) and
-/// `(`/`)` would re-group the tree, so a search for `Smith, John` would either
-/// fail outright or silently query something else. Wrapping the value in
-/// double quotes makes PostgREST read it literally, and a quote inside the term
-/// is itself backslash-escaped so it cannot close the wrapper early.
+/// stage ([customerSearchPattern]) neutralises `\`, `%` and `_`; the `or`-tree
+/// stage ([_literalInOrTree]) neutralises what PostgREST reads as *structure*,
+/// so a search for `Smith, John` cannot fail outright or silently query
+/// something else.
+///
+/// The phone half is chosen by term shape via [customerPhoneDigitPattern]: a
+/// phone-shaped term searches the normalised `phone_digits` column, everything
+/// else searches `phone` literally. The two are alternatives rather than
+/// cumulative on purpose — for a term that is nothing but digits, matching
+/// `phone_digits` already subsumes matching `phone`, because a digit-only term
+/// found inside the stored value sits on an unbroken run of digits and so
+/// survives normalisation unchanged. Emitting both would be a redundant second
+/// condition on every phone search.
 ///
 /// This is the first place user-typed text reaches an `or` tree —
 /// [customerKeysetFilter] is safe only because a UTC timestamp's alphabet has
 /// no structural characters.
 String customerSearchFilter(String term) {
-  final pattern = customerSearchPattern(term);
-  final quoted = '"${pattern.replaceAll('"', r'\"')}"';
-  return 'full_name.ilike.$quoted,phone.ilike.$quoted';
+  final digitPattern = customerPhoneDigitPattern(term);
+  final phoneClause = digitPattern == null
+      ? 'phone.ilike.${_literalInOrTree(customerSearchPattern(term))}'
+      : 'phone_digits.ilike.${_literalInOrTree(digitPattern)}';
+  final nameClause =
+      'full_name.ilike.${_literalInOrTree(customerSearchPattern(term))}';
+  return '$nameClause,$phoneClause';
 }
 
 /// The PostgREST filter that resumes a newest-first directory walk *after*

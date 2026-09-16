@@ -1,5 +1,5 @@
 -- ============================================================================
--- Planner check for migration 064 (pg_trgm search indexes).
+-- Planner check for migrations 064 and 065 (pg_trgm search indexes).
 -- ============================================================================
 -- Proves the claim the migration makes: that the directory's leading-wildcard
 -- search stops being a sequential scan. "The index exists" is not that claim —
@@ -18,10 +18,13 @@
 --     < supabase/tests/keyset-proof/search_index_plan.sql
 -- ON_ERROR_STOP=1 is what makes the assertions below fail the command.
 --
--- WHY A BULK LOAD AT ALL: on the probe's 124-row fixture the planner picks a
+-- WHY A BULK LOAD AT ALL: on the probe's 127-row fixture the planner picks a
 -- sequential scan whatever indexes exist, and it is right to — a 2-page table
 -- is cheaper to scan. Asserting index usage there would be asserting a fiction.
 -- The indexes have to be measured at a size where the choice is real.
+--
+-- The indexes themselves come from seed.sql, which mirrors 064 and 065; this
+-- script only supplies the volume that makes the planner's choice meaningful.
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -82,6 +85,27 @@ begin
   end if;
 
   raise notice 'phone search uses idx_profiles_phone_trgm';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Assertion 3: and for the NORMALISED phone column (migration 065). This is the
+-- branch a digit-only search actually takes — digits are the common case — so
+-- without this index 064's benefit would cover only the rarer half of searches.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  plan json;
+begin
+  execute $q$explain (format json)
+    select id from public.profiles where phone_digits ilike '%01000012%'$q$ into plan;
+
+  if position('idx_profiles_phone_digits_trgm' in plan::text) = 0 then
+    raise exception
+      'normalised phone search did not use idx_profiles_phone_digits_trgm — migration 065 is not doing its job. Plan: %',
+      plan::text;
+  end if;
+
+  raise notice 'normalised phone search uses idx_profiles_phone_digits_trgm';
 end $$;
 
 -- ---------------------------------------------------------------------------

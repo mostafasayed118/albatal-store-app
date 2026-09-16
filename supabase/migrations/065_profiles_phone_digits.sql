@@ -1,0 +1,109 @@
+-- ============================================================================
+-- 065_profiles_phone_digits.sql — REVIEW-GATED PROPOSAL
+-- ============================================================================
+-- Owner review required before applying (AGENTS.md migration gate).
+-- Provenance: owner-requested follow-up on branch feat/admin-customer-tier.
+-- Closes the residual recorded in 064's "Interaction with phone normalisation"
+-- section, in STATE.md, and in the PR description.
+--
+-- Problem
+-- -------
+-- `profiles.phone` is raw TEXT captured from auth metadata
+-- (003_auth_profiles_and_hardening.sql reads
+-- `NEW.raw_user_meta_data->>'phone'`), so it stores whatever the customer
+-- typed: '+966 50 123 4567', '050-123-4567', '(010) 987-6543'. Nothing in this
+-- repo normalises it — there is no write-time trigger and no client-side
+-- reformat.
+--
+-- The admin directory's search matches that column literally:
+--     phone.ilike.'%<term>%'
+-- (see `customerSearchFilter` in
+-- lib/features/admin/data/supabase_admin_repository.dart). So an admin who
+-- types a bare digit run — which is how a phone number is normally read back
+-- and searched — matches NOTHING whenever the stored value carries separators.
+-- The search looks broken while being technically correct, and the admin has no
+-- way to tell the difference between "no such customer" and "the customer's
+-- number has spaces in it".
+--
+-- Fix
+-- ---
+-- A STORED generated column holding the digits of `phone`, giving the query a
+-- punctuation-free column to match a digit-only term against.
+--
+-- Generated rather than trigger-maintained because Postgres then owns the
+-- invariant: `phone_digits` cannot drift from `phone`, no write path has to
+-- remember to maintain it, and clients cannot write it at all (a generated
+-- column rejects INSERT/UPDATE, so this cannot be used to smuggle a value past
+-- RLS).
+--
+-- Design notes
+-- ------------
+-- * Expression: COALESCE(phone, '') first, then strip every non-digit.
+--   COALESCE is load-bearing, not defensive: without it a NULL `phone` makes
+--   the generated value NULL, and a NULL is not "no digits" — it is a
+--   comparison that can never be true. With it, a row that has no phone yields
+--   '' and simply never matches a digit term, which is the correct outcome.
+-- * `regexp_replace(text, text, text, text)` is IMMUTABLE in PostgreSQL 15,
+--   which STORED requires. Not taken on trust: the probe in
+--   supabase/tests/keyset-proof/ applies this exact statement against a live
+--   PostgreSQL 15.19 instance (postgres:15-alpine, pg_config reports this
+--   project's own pinned major_version) and then READS THE COMPUTED VALUES
+--   BACK, so a non-immutable expression would fail at the ALTER and a wrong
+--   expression would fail the read-back rather than reach production.
+-- * Column name matches the one 064's header already anticipates.
+-- * NOT added to the client's SELECT list. The directory filters on this column
+--   but never displays it — `phone` stays the value the admin sees. Returning
+--   both would be the same PII twice.
+-- * Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) are STRIPPED, like any other character
+--   outside [0-9], not transliterated. An Arabic-locale admin typing native
+--   digits therefore still gets no match. Closing that would need
+--   `translate(phone, '٠١٢٣٤٥٦٧٨٩', '0123456789')` ahead of the strip — a
+--   behaviour change worth deciding on its own, so it is deliberately not
+--   bundled here.
+--
+-- ORDERING COUPLING — read before deploying the matching client build
+-- ------------------------------------------------------------------
+-- The client build on this branch emits `phone_digits.ilike.'%…%'` for a
+-- phone-shaped search term. PostgREST answers an unknown column with
+-- `42703`/HTTP 400, i.e. THE WHOLE DIRECTORY REQUEST FAILS, not just the phone
+-- branch of the search. So this migration must be applied BEFORE that client
+-- build ships. Pairing already exists in this branch (the tier control calls
+-- `admin_set_membership_tier` from 046), so the deploy order is: migrations
+-- 063–065, then the app.
+--
+-- Cost
+-- ----
+-- ADD COLUMN … STORED rewrites `profiles` and holds ACCESS EXCLUSIVE for the
+-- duration. At today's row counts that is a blink; on a large table this would
+-- need an out-of-band build instead of a plain statement in a migration.
+--
+-- Rollback
+-- --------
+-- ALTER TABLE public.profiles DROP COLUMN IF EXISTS phone_digits;
+-- (Dropping the column drops idx_profiles_phone_digits_trgm with it.)
+-- Rollback restores the pre-065 behaviour: a digit-only search again matches
+-- nothing when the stored number has separators. No other data changes either
+-- way — `phone` is never modified by this migration.
+-- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- The digits of `phone`, with every separator removed. Read-only, server-owned.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS phone_digits TEXT
+  GENERATED ALWAYS AS (regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g'))
+  STORED;
+
+-- Digit-only searches match this column with a LEADING wildcard, exactly as
+-- 064's indexes serve the name search, so it needs the same trigram treatment.
+-- Without it, every phone-shaped search is a sequential scan — and digits are
+-- the *common* case, which would make 064's benefit the rarer half.
+--
+-- Measured at 20 127 rows (the planner check in supabase/tests/keyset-proof/),
+-- searching for a run that matches 100 of them:
+--   without this index   Seq Scan, 20 027 rows removed by filter, 288 buffers
+--   with this index      Bitmap Index Scan, 106 buffers
+-- Buffers rather than wall-clock are the scale-relevant number: 12.5 ms →
+-- 2.8 ms is not the point, 288 pages → 106 is.
+CREATE INDEX IF NOT EXISTS idx_profiles_phone_digits_trgm
+  ON public.profiles USING gin (phone_digits gin_trgm_ops);

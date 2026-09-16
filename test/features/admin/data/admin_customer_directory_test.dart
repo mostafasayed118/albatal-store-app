@@ -516,9 +516,35 @@ void main() {
           'full_name.ilike."%Layla%",phone.ilike."%Layla%"');
     });
 
-    test('matches a phone number against the phone column', () {
-      expect(customerSearchFilter('01012345678'),
-          'full_name.ilike."%01012345678%",phone.ilike."%01012345678%"');
+    test('routes a digit-only term to the normalised phone column', () {
+      // `phone` stores whatever the customer typed, separators included, so a
+      // digit-only search can only match the generated `phone_digits` column
+      // (migration 065). The literal `phone` branch is not also emitted: for a
+      // digit-only term it cannot match anything `phone_digits` does not.
+      expect(
+          customerSearchFilter('01012345678'),
+          'full_name.ilike."%01012345678%",'
+          'phone_digits.ilike."%01012345678%"');
+    });
+
+    test('normalises a term typed WITH separators down to its digits', () {
+      // The admin reading a number back off a screen types the digits; the
+      // customer typed the number with punctuation. Normalising only the
+      // column would leave this case broken.
+      expect(
+          customerSearchFilter('+966 50 123-4567'),
+          'full_name.ilike."%+966 50 123-4567%",'
+          'phone_digits.ilike."%966501234567%"');
+    });
+
+    test('keeps a mixed alphanumeric term literal', () {
+      // The shape gate is strict on purpose. Loosening it to "contains a
+      // digit" would reduce `A1` to the digit `1`, matching almost every
+      // row's phone and turning a typed name into a directory-wide result.
+      expect(customerSearchFilter('A1'),
+          'full_name.ilike."%A1%",phone.ilike."%A1%"');
+      expect(customerSearchFilter('Branch 2'),
+          'full_name.ilike."%Branch 2%",phone.ilike."%Branch 2%"');
     });
 
     test('quotes the value so a comma cannot split the or tree', () {
@@ -541,6 +567,54 @@ void main() {
     test('applies LIKE escaping and or-tree quoting together', () {
       expect(customerSearchFilter('50% off, now'),
           r'full_name.ilike."%50\% off, now%",phone.ilike."%50\% off, now%"');
+    });
+  });
+
+  group('customerPhoneDigitPattern', () {
+    test('reduces a separator-laden number to its digits', () {
+      expect(customerPhoneDigitPattern('+966 50 123 4567'), '%966501234567%');
+      expect(customerPhoneDigitPattern('050-123-4567'), '%0501234567%');
+      expect(customerPhoneDigitPattern('(010) 987/6543'), '%0109876543%');
+    });
+
+    test('passes a bare digit run through unchanged', () {
+      expect(customerPhoneDigitPattern('01012345678'), '%01012345678%');
+    });
+
+    test('returns null for anything that is not digit-shaped', () {
+      // null means "search the phone column literally instead".
+      expect(customerPhoneDigitPattern(''), isNull);
+      expect(customerPhoneDigitPattern('Layla'), isNull); // letters
+      expect(customerPhoneDigitPattern('A1'), isNull); // contains a digit
+      expect(customerPhoneDigitPattern('Branch 2'), isNull);
+      expect(customerPhoneDigitPattern('50% off'), isNull); // LIKE metachar
+      expect(customerPhoneDigitPattern('---'), isNull); // no digits at all
+      expect(customerPhoneDigitPattern('()+'), isNull);
+    });
+
+    test('a LIKE metacharacter makes the term literal, not digit-shaped', () {
+      // Which is exactly why the digit pattern needs no escaping of its own:
+      // no metacharacter can get as far as being a phone-shaped term.
+      expect(customerPhoneDigitPattern('50%'), isNull);
+      expect(customerPhoneDigitPattern('a_b'), isNull);
+      expect(customerPhoneDigitPattern(r'a\b'), isNull);
+      expect(customerPhoneDigitPattern('+966%50'), isNull);
+    });
+
+    test('the middle of a returned pattern is nothing but digits', () {
+      for (final term in [
+        '+966 50 123 4567',
+        '050-123-4567',
+        '(010) 987/6543',
+        '01012345678',
+      ]) {
+        final pattern = customerPhoneDigitPattern(term)!;
+        expect(pattern, startsWith('%'));
+        expect(pattern, endsWith('%'));
+        expect(pattern.substring(1, pattern.length - 1),
+            matches(RegExp(r'^[0-9]+$')),
+            reason: '$term should reduce to digits only');
+      }
     });
   });
 
