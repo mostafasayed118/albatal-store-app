@@ -1142,6 +1142,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get adminSearch;
 
+  /// No description provided for @adminSearchCustomersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search name or phone'**
+  String get adminSearchCustomersHint;
+
   /// Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.
   ///
   /// In en, this message translates to:

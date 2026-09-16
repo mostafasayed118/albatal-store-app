@@ -460,9 +460,13 @@ void main() {
     );
 
     // Paging must not quietly drop the search: the second page of a filtered
-    // directory is a filtered directory, not the whole table.
-    expect(filters.filters, [('ilike', 'full_name', '%Layla%')]);
-    expect(filters.orFilters, hasLength(1));
+    // directory is a filtered directory, not the whole table. Both `or` params
+    // ride along — the search tree, then the cursor.
+    expect(filters.orFilters, [
+      'full_name.ilike."%Layla%",phone.ilike."%Layla%"',
+      'created_at.lt.2026-09-16T10:00:00Z,'
+          'and(created_at.eq.2026-09-16T10:00:00Z,id.lt.c2)',
+    ]);
   });
 
   test('fetchCustomers filters the search on the server, trimmed', () async {
@@ -470,7 +474,8 @@ void main() {
 
     await repo.fetchCustomers(query: '  Layla  ');
 
-    expect(filters.filters, [('ilike', 'full_name', '%Layla%')],
+    expect(
+        filters.orFilters, ['full_name.ilike."%Layla%",phone.ilike."%Layla%"'],
         reason: 'a search must narrow the query, not the loaded page');
   });
 
@@ -480,6 +485,8 @@ void main() {
     await repo.fetchCustomers(query: '   ');
 
     expect(filters.filters, isEmpty);
+    expect(filters.orFilters, isEmpty,
+        reason: 'a blank search must not add an or tree of its own');
   });
 
   test('customerSearchPattern escapes LIKE metacharacters', () {
@@ -496,7 +503,45 @@ void main() {
 
     await repo.fetchCustomers(query: '%');
 
-    expect(filters.filters.single.$3, r'%\%%');
+    expect(
+        filters.orFilters.single, r'full_name.ilike."%\%%",phone.ilike."%\%%"');
+  });
+
+  group('customerSearchFilter', () {
+    test('searches name and phone as alternates', () {
+      // Chained `.ilike()` calls would AND the columns, matching only a row
+      // whose name *and* phone both contain the term — for a phone-shaped
+      // query, the empty set.
+      expect(customerSearchFilter('Layla'),
+          'full_name.ilike."%Layla%",phone.ilike."%Layla%"');
+    });
+
+    test('matches a phone number against the phone column', () {
+      expect(customerSearchFilter('01012345678'),
+          'full_name.ilike."%01012345678%",phone.ilike."%01012345678%"');
+    });
+
+    test('quotes the value so a comma cannot split the or tree', () {
+      // Unquoted, the comma would end the first condition and start a bogus
+      // second one instead of narrowing the search.
+      expect(customerSearchFilter('Smith, John'),
+          'full_name.ilike."%Smith, John%",phone.ilike."%Smith, John%"');
+    });
+
+    test('quotes the value so parentheses cannot regroup the or tree', () {
+      expect(customerSearchFilter('a(b)'),
+          'full_name.ilike."%a(b)%",phone.ilike."%a(b)%"');
+    });
+
+    test('escapes a quote in the term so it cannot close the wrapper', () {
+      expect(customerSearchFilter('a"b'),
+          r'full_name.ilike."%a\"b%",phone.ilike."%a\"b%"');
+    });
+
+    test('applies LIKE escaping and or-tree quoting together', () {
+      expect(customerSearchFilter('50% off, now'),
+          r'full_name.ilike."%50\% off, now%",phone.ilike."%50\% off, now%"');
+    });
   });
 
   test('fetchCustomers maps a PostgREST failure to Failure (never throws)',

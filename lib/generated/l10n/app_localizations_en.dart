@@ -574,6 +574,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSearch => 'Search';
 
   @override
+  String get adminSearchCustomersHint => 'Search name or phone';
+
+  @override
   String customersShownOf(int shown, int total) {
     return 'Showing $shown of $total';
   }

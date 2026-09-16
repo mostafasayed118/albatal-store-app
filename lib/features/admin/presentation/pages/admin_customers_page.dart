@@ -127,11 +127,14 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   child: TextField(
                     controller: _searchController,
                     // Searches the server, so the term reaches customers on
-                    // pages this screen has not loaded yet.
+                    // pages this screen has not loaded yet. `adminSearch` is
+                    // the shared generic label (the catalog hub uses it too),
+                    // so the directory names its own columns here — a phone
+                    // search nobody knows about is barely better than none.
                     onChanged: (q) =>
                         context.read<AdminCustomersCubit>().search(q),
                     decoration: InputDecoration(
-                      hintText: l.adminSearch,
+                      hintText: l.adminSearchCustomersHint,
                       prefixIcon: const Icon(Icons.search),
                       isDense: true,
                     ),

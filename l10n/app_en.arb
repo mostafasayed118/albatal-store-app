@@ -244,6 +244,7 @@
   "updateRequiredBody": "This version is no longer supported. Please update the app to continue shopping.",
   "adminCustomers": "Customers",
   "adminSearch": "Search",
+  "adminSearchCustomersHint": "Search name or phone",
   "customersShownOf": "Showing {shown} of {total}",
   "@customersShownOf": {
     "description": "Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.",

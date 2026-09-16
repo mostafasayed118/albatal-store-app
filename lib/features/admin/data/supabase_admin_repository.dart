@@ -29,6 +29,32 @@ String customerSearchPattern(String term) {
   return '%$escaped%';
 }
 
+/// The PostgREST filter matching the directory's searchable columns for
+/// [term]: the customer's name **or** their phone number.
+///
+/// Expressed as a single `or` tree because the two columns are alternates.
+/// Chaining `.ilike('full_name', ...).ilike('phone', ...)` would AND them and
+/// return only rows whose name *and* phone both contain the term, which for a
+/// phone-shaped query is the empty set.
+///
+/// **The term is escaped twice, because it crosses two parsers.** The LIKE
+/// stage ([customerSearchPattern]) neutralises `\`, `%` and `_`. This stage
+/// then neutralises what PostgREST reads as *structure* inside an `or` tree: a
+/// raw `,` would split one condition into two (`.ilike.%a` plus `b%`) and
+/// `(`/`)` would re-group the tree, so a search for `Smith, John` would either
+/// fail outright or silently query something else. Wrapping the value in
+/// double quotes makes PostgREST read it literally, and a quote inside the term
+/// is itself backslash-escaped so it cannot close the wrapper early.
+///
+/// This is the first place user-typed text reaches an `or` tree —
+/// [customerKeysetFilter] is safe only because a UTC timestamp's alphabet has
+/// no structural characters.
+String customerSearchFilter(String term) {
+  final pattern = customerSearchPattern(term);
+  final quoted = '"${pattern.replaceAll('"', r'\"')}"';
+  return 'full_name.ilike.$quoted,phone.ilike.$quoted';
+}
+
 /// The PostgREST filter that resumes a newest-first directory walk *after*
 /// [cursor].
 ///
@@ -476,7 +502,9 @@ final class SupabaseAdminRepository implements AdminRepository {
           .from('profiles')
           .select('id, full_name, phone, membership_tier, created_at');
       if (term.isNotEmpty) {
-        request = request.ilike('full_name', customerSearchPattern(term));
+        // Name *or* phone — see [customerSearchFilter]. ANDed with the cursor
+        // filter below as a second `or` parameter, which PostgREST conjoins.
+        request = request.or(customerSearchFilter(term));
       }
       if (cursor != null) {
         request = request.or(customerKeysetFilter(cursor));

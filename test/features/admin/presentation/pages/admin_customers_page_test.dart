@@ -163,6 +163,20 @@ void main() {
     expect(find.text('Load more'), findsNothing);
   });
 
+  testWidgets('the search field advertises that phone numbers are searchable',
+      (tester) async {
+    when(() => repo.fetchCustomers(query: null, limit: 50)).thenAnswer(
+        (_) async => Success<_Page>(
+            (customers: [_customer()], total: 1, nextCursor: null)));
+
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    // A phone search an admin cannot discover is barely better than none, and
+    // the shared `adminSearch` label ("Search") never mentions the phone.
+    expect(find.text('Search name or phone'), findsOneWidget);
+  });
+
   testWidgets('a search queries the server and reports no matches honestly',
       (tester) async {
     final cubit = AdminCustomersCubit(
