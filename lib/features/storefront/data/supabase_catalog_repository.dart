@@ -175,24 +175,17 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchCategories() async {
-    try {
-      final rows = await _client
-          .from('categories')
-          .select('name')
-          .eq('is_active', true)
-          .order('sort_order');
-
-      final names = rows
-          .map((r) => safeString(r, 'name'))
-          .where((n) => n.isNotEmpty)
-          .toList();
-
-      return Success(names);
-    } on Exception catch (e) {
-      return Failure(AppError('Failed to load categories', cause: e));
-    }
-  }
+  Future<Result<List<String>>> fetchCategories() => Result.guard(() async {
+        final rows = await _client
+            .from('categories')
+            .select('name')
+            .eq('is_active', true)
+            .order('sort_order');
+        return rows
+            .map((r) => safeString(r, 'name'))
+            .where((n) => n.isNotEmpty)
+            .toList();
+      }, 'Failed to load categories');
 
   @override
   Future<Result<Product>> fetchProductById(String id) async {
@@ -320,17 +313,12 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// `product_id` are skipped and transport errors fail closed to [Failure]
   /// (the cubit treats flash sales as non-critical and keeps the catalog).
   @override
-  Future<Result<List<FlashSale>>> getActiveFlashSales() async {
-    try {
-      final value = await _client.rpc('get_active_flash_sales');
-      final rows = (value as List).whereType<Map<String, dynamic>>();
-      return Success(
-        rows.map(FlashSaleCodec.fromRow).whereType<FlashSale>().toList(),
-      );
-    } catch (e) {
-      return Failure(AppError('Failed to load flash sales', cause: e));
-    }
-  }
+  Future<Result<List<FlashSale>>> getActiveFlashSales() =>
+      Result.guard(() async {
+        final value = await _client.rpc('get_active_flash_sales');
+        final rows = (value as List).whereType<Map<String, dynamic>>();
+        return rows.map(FlashSaleCodec.fromRow).whereType<FlashSale>().toList();
+      }, 'Failed to load flash sales');
 
   @override
   List<String> get defaultCategories => defaultCatalogCategories;

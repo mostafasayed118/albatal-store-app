@@ -1,9 +1,48 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (PR #68 — data-layer guard — MERGED to master as
-`a6760c6`; PR #69 (FeedbackView adoption) and PR #70 (last 4 guard
-migrations) are ready and merging in sequence, each resolving the STATE.md
-union on its branch first).
+Last run: 2026-09-16 (PR #68 (data-layer guard) and PR #69 (FeedbackView
+adoption) MERGED to master; PR #70 - the last 4 guard migrations - merging
+now, after the same STATE.md union resolution on its branch).
+
+## New — 2026-09-16 (refactor: the last 4 data-layer guard migrations; branch `refactor/data-layer-guard-2`)
+
+Follow-up to draft PR #68 (`refactor/data-layer-guard`, which moved the admin
+and profile repositories onto `Result.guard`). Branched from master `4cedc42`
+on purpose so this is an independent review unit: the two files touched here
+are untouched by #68 (verified - `git diff master refactor/data-layer-guard --
+<both files>` is empty).
+
+- **Surveyed every `catch` in `lib/**/data/**`: 44 sites across 11 files.**
+  Migrated the 4 that satisfy the guard contract (a single fixed message, no
+  logging, no typed mapping, no recovery branch):
+  `supabase_auth_repository.checkSession`, `.signOut`,
+  `supabase_catalog_repository.fetchCategories`, `.getActiveFlashSales`.
+- **The other 40 sites stay hand-written**, by reason:
+  typed mapping (20) - auth `signUp`/`signIn`/`resetPassword`/`updatePassword`
+  plus `deleteAccount`'s `FunctionException` parse (10), coupons `validate`
+  (2), reviews `fetchReviews`/`submit` (4), checkout `createOrder` (2),
+  catalog `getProductById` (2);
+  logging side effect (9) - catalog `fetchProducts`, orders `readOrders`,
+  paymob x5, the payment-watcher poll;
+  recovery/fallback (3) - catalog cache-degrade paths;
+  fail-soft returning data rather than a `Result` (6) -
+  storefront_persistence x5, local_address_repository;
+  non-`Result` returns - catalog `_persistCache`/`_restorePersistentCache`,
+  paymob's `PaymentResult`, the watcher;
+  admin repo (2) - `isCurrentUserAdmin` (bool, fails closed + logs),
+  `fetchCustomers` (logs the cause).
+- **Behaviour delta to review:** `fetchCategories` moved from `on Exception`
+  to the guard's catch-all, so an `Error` (a TypeError from a malformed
+  payload) is now mapped to a `Failure` instead of escaping the boundary.
+  Consistent with the boundary contract, but it is a widening.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (424 files); `flutter test`
+  **893/893 PASS** (master baseline - no test changes were needed, the
+  existing auth and storefront data suites already pin all four methods).
+- **Churn:** pubspec.lock / .flutter-plugins-dependencies reverted (the
+  toolchain on this box rewrites them on pub get).
+- NEXT GATES: owner review of this draft PR -> mark ready + merge. Related
+  but independent: draft PR #68 (admin/profile guard migration).
 
 ## New — 2026-09-16 (refactor: FeedbackView adoption completed; branch `refactor/feedback-view-adoption`)
 
