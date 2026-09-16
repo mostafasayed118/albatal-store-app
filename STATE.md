@@ -27,6 +27,35 @@ until app release ships).
   production release from the swapped .env, then disable production
   legacy keys; optional visual tap-through of admin screens.
 
+## New — 2026-09-15 (release + production legacy-key retirement; cycle COMPLETE)
+
+- **PR #65 MERGED** (e629af2, fully green CI incl. Flutter Tests
+  6m37s + Android Release Build 8m36s). Master now carries the v5
+  fixes; 893/893.
+- **Production release shipped as direct APK** (owner does not use
+  Play Store): built locally with
+  --dart-define-from-file=config/env.production.local.json (real
+  prod URL + sb_publishable_ key + Sentry DSN; file gitignored).
+  Artifact-verified: publishable key + production URL present in
+  libapp.so, ZERO legacy JWT patterns. Owner installed the new APK
+  on their device.
+- **PRODUCTION LEGACY KEYS DISABLED + VERIFIED (final AUD-014
+  closure on both projects):** PUT api-keys/legacy?enabled=false on
+  alxwvyflasewslinufqe -> 200; probes: legacy anon -> 401 (instant,
+  no propagation delay), publishable -> 200. No installed build
+  carries a legacy JWT anymore (the old JWT only lived in pre-release
+  APKs; the single active user updated). Staging was already disabled
+  earlier today. Both projects now run new-style keys exclusively.
+- **Known gap (needs owner-approved CI fix):** android-release.yml
+  builds artifacts WITHOUT dart-defines — CI-built release binaries
+  would crash at startup (SUPABASE_URL missing assertion). Viable
+  releases are local builds with --dart-define-from-file until the
+  workflow is fixed.
+- NEXT GATES: none blocking. Optional: CI workflow dart-define fix
+  (PR on approval); migration 060 + rate-limited functions still not
+  deployed on production (parity, owner-coordinated); performance
+  re-score on new measured evidence.
+
 ## New — 2026-09-15 (owner follow-up batch: git repair + AUD-014/009/008; 888/888, analyze clean)
 
 Owner approved the follow-up list ("do this steps"). Three new commits on
