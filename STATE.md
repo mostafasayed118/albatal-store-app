@@ -1,6 +1,17 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 11: **PHONE NORMALISATION** — closes the residual
+Last run: 2026-09-16 (part 12: **NATIVE-DIGIT NORMALISATION** + dropping the now
+vestigial phone trigram index — two owner asks). Branch `feat/admin-customer-tier`,
+commit `e12bc67`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
+The headline is a SECOND defect found in the same expression: `[^0-9]` is
+ASCII-only, so a number stored in Arabic-Indic digits had every digit DELETED
+and `phone_digits` came out EMPTY — those rows were unreachable by ANY digit
+search, ASCII ones included. Verified server-side: the old expression maps
+٠١٢٣٤٥٦٧٨٩ to `''`, the new one to `0123456789`. Evidence: live probe **36/36**
+(was 30/30) with the Arabic rows checked from both directions, 5/5 Dart and
+3/3 SQL mutations (each failing for the right reason), `flutter analyze` 0,
+format clean (429 files), `flutter test` **951/951**. Touches `supabase/` —
+OUTSIDE the `lib/`-only auto-fix scope; migrations **NOT applied**. Prior run: 2026-09-16 (part 11: **PHONE NORMALISATION** — closes the residual
 recorded in parts 9 and 10. `profiles.phone` stores whatever the customer typed
 (`+966 50 123 4567`), so a digit-only search matched nothing; the fix is a
 STORED generated `phone_digits` column (migration 065) PLUS term normalisation
@@ -70,6 +81,98 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 12: native-digit normalisation + phone-index drop — `e12bc67`)
+
+Two owner asks. They overlap in `seed.sql` (which carries both the
+generated-column expression and the index list), so they landed as one commit
+with the decisions separated in the message.
+
+### 1. The second defect: the strip DELETED native digits
+
+`phone_digits` was `regexp_replace(..., '[^0-9]', '', 'g')`. `[^0-9]` is
+ASCII-only, so it cannot tell "a digit I keep" from "a character I remove" —
+for a customer who typed `٠١٠١٢٣٤٥٦٧٨` it DELETED every digit and the column came
+out **empty**. Those rows were unreachable by **any** digit search, including an
+ASCII one typed by an admin who knows nothing about the encoding. Strictly worse
+than the separator bug 065 was written for.
+
+Server-side proof, both expressions applied to the same input:
+
+```
+old: ''          -- ٠١٢٣٤٥٦٧٨٩ after regexp_replace(..., '[^0-9]', '', 'g')
+new: '0123456789'  -- after translate(...) THEN the strip
+```
+
+`translate` now runs **before** the strip, and that order is load-bearing rather
+than stylistic. Both Arabic ranges are mapped — Arabic-Indic
+(U+0660–U+0669, Egypt/Saudi) and Extended Arabic-Indic (U+06F0–U+06F9,
+Persian/Urdu) — because Arabic script is shared and normalising one range
+reproduces the same bug for the other. Backed by a mutation that maps only the
+first range and fails **exactly** the 2 Extended checks.
+
+The client transliterates the TERM too (same reason, reversed: `[^0-9]` would
+delete an AR-locale admin's digits and the term would fall back to a literal
+search matching nothing). **Only the phone half** — the name half still gets
+exactly what was typed, because Arabic names are stored in Arabic script.
+A mutation that transliterates the name clause too is caught.
+
+### 2. Dropped `idx_profiles_phone_trgm` from 064 (owner's call)
+
+Follows from the routing: a phone-SHAPED term goes to `phone_digits`, so `phone`
+is reached only by a term that is not phone-shaped yet still appears in a stored
+number — "the admin pasted the stored value verbatim, letters and all". Paying
+write amplification on every signup and profile edit to index a path that is
+rare by construction is not worth it.
+
+The capability **does narrow, deliberately**: pasting the stored value *with*
+its separators still matches (that term is phone-shaped), but a paste containing
+letters is now an unindexed scan of `phone`. Documented in 064's SCOPE section.
+064 is unapplied, so removing the statement is the whole change — had it been
+applied anywhere, this would need its own `DROP INDEX`.
+
+The planner check **lost** its `phone` assertion rather than being pointed at an
+index that no longer exists, and now asserts exactly the two indexes the
+directory reaches: the name index (064) and the normalised-phone index (065).
+
+### Evidence
+
+- Live probe **36/36** (was 30/30). The Arabic rows are checked from **both**
+  directions: an ASCII digit term reaches an Arabic-stored number, and a
+  native-digit term reaches its own row. Each row also has the legacy
+  (pre-065) filter run against it as a negative control.
+- **5/5 Dart mutations** — transliteration removed; only Arabic-Indic mapped;
+  only Extended mapped; codepoint offset off by one; transliteration applied to
+  the name clause as well. Restored byte-identically.
+- **3/3 SQL mutations**, each failing for the *right* reason: `translate`
+  removed → 4 checks fail; only Arabic-Indic mapped → exactly the 2 Extended
+  checks fail; order swapped (strip then translate) → 4 checks fail.
+- Fixture now holds exactly two trigram indexes; asserted by querying
+  `pg_indexes` (`idx_profiles_full_name_trgm`,
+  `idx_profiles_phone_digits_trgm`, no `phone`).
+- `flutter analyze` 0 · format clean (429 files) · `flutter test` **951/951**.
+
+### Method note — SECOND instance of the same class of error
+
+My first pass at the SQL mutations "failed" for the **wrong reason**: the
+planner script's 20 000-row bulk load was still in the database, so the probe
+aborted on its fixture count and every mutation *looked* caught. Same class as
+part 11's mutation that never applied at all. Redone from `down -v`. **Twice
+now, a mutation result was meaningless until the state it ran against was
+verified.** Treat "all mutations bite" as unproven until the baseline is shown
+clean in the same session.
+
+### Residuals
+
+1. **The dropped phone index narrows one path to a seq scan** — a paste
+   containing letters. Accepted deliberately (see 064).
+2. Arabic-Indic is now handled for both digit ranges, but a **non-Arabic
+   non-ASCII digit** (e.g. Devanagari) still falls outside both.
+3. Staging has 25 customers and production 0 admins; no search path has met
+   real volume. 065 must still ship before the matching client build.
+4. **OPEN:** the owner's third ask — a widget test asserting the directory sends
+   the `phone_digits` filter — was **not** started; the approach needs a
+   decision first (see below in the PR discussion).
 
 ## New — 2026-09-16 (part 11: phone normalisation — commit `9a306d9`)
 
