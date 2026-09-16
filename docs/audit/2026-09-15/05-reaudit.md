@@ -220,3 +220,37 @@ security issues; RLS + key-state evidence from rounds 1-4 stands).
 - Customers screen data-path sign-off (staging, 061 RLS): owner sub
   25/25 rows, admin@albatal.com 25/25, non-admin 1; column shapes
   match fetchCustomers' select exactly.
+
+---
+
+## v7 addendum — final completion sweep (2026-09-16)
+
+**Code cleanup (branch fix/final-cleanup):** v5 minors fixed — _optInt
+doc comment corrected (described _optStr), old_price coercion now uses
+_optInt (dedup), fetchCustomers Log.w carries the caught error,
+payment watcher: removeChannel on cancel (channel no longer
+accumulates on the client) + zero-amount PaymentSuccess contract
+documented. Test fakes extended with removeChannel (real semantics:
+remove detaches AND unsubscribes). Gates: analyze 0, format 424
+clean, 893/893.
+
+**CI release workflow fixed:** android-release.yml now writes
+config/env.production.local.json from repo secrets
+(SUPABASE_URL/SUPABASE_ANON_KEY/SENTRY_DSN — set via gh secret set,
+2026-09-16) and passes --dart-define-from-file to both builds.
+Previously CI release artifacts lacked config and would have crashed
+at startup (assertion).
+
+**Production parity COMPLETED (alxwvyflasewslinufqe):**
+- Migration 060 applied (rate_limits table + rate_limit_take live).
+- 4 missing functions deployed via CLI (--use-api): delete-account,
+  instapay-initiate, instapay-submit-proof, instapay-review — all
+  probe 401 unauth (healthy auth, no 503 config errors).
+- GoTrue password_min_length 6 -> 8 (PATCH verified).
+- With legacy keys already disabled and is_admin promoted earlier,
+  production is now at FULL parity with staging hardening.
+
+**Housekeeping:** 20 stale worktrees removed; 11 merged branches
+deleted (unmerged kept: feat/app-colors-tokens, etc.); /C*/ landmine
+removed from .git/info/exclude; release APK rebuilt from the final
+tree.
