@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../../helpers/supabase_admin_fakes.dart';
+
 /// First widget coverage for the customer directory (feature-batch §14).
 /// The page previously had none, so the tier control and the paging contract
 /// arrive with the surface they change pinned end to end — including that a
@@ -49,7 +51,14 @@ void main() {
     repo = _MockAdminRepository();
   });
 
-  Widget harness({double textScale = 1.0, AdminCustomersCubit? cubit}) =>
+  /// [repository] defaults to the module-level stub. A test passes a real
+  /// `SupabaseAdminRepository` when it needs to assert what reaches the WIRE
+  /// rather than what the page hands down — see the filter tests below.
+  Widget harness({
+    double textScale = 1.0,
+    AdminCustomersCubit? cubit,
+    AdminRepository? repository,
+  }) =>
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -60,7 +69,10 @@ void main() {
             // the surface size, which is not what a scaled-up phone is.
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(textScale)),
-            child: AdminCustomersPage(repository: repo, cubit: cubit),
+            child: AdminCustomersPage(
+              repository: repository ?? repo,
+              cubit: cubit,
+            ),
           ),
         ),
       );
@@ -201,6 +213,101 @@ void main() {
     // The old screen rendered the bare word "Search" here, hint text and all.
     expect(find.text('No results found'), findsOneWidget);
     expect(find.text('Sara Ali'), findsNothing);
+  });
+
+  // ─── The filter that actually reaches PostgREST ───────────────────────────
+  //
+  // These two drive the REAL `SupabaseAdminRepository`, not the module-level
+  // stub, and read the `or` tree it built. That matters: the filter string is
+  // assembled in the DATA layer, so a stubbed repository can only prove the
+  // page hands down a term — not what the term becomes on the wire. Asserting
+  // the string from here is what makes "the directory sends a phone_digits
+  // filter" a single end-to-end claim instead of two half-claims in different
+  // files.
+  testWidgets('a digit-only search asks the server for the NORMALISED column',
+      (tester) async {
+    final (realRepo, filters) = directoryRepo(
+      rows: [
+        {
+          'id': 'p1',
+          'full_name': 'Layla Hassan',
+          // Stored the way a customer actually types it.
+          'phone': '+966 50 123 4567',
+          'membership_tier': 'standard',
+          'created_at': '2026-09-16T10:00:00.000000Z',
+        },
+      ],
+      total: 1,
+    );
+    final cubit = AdminCustomersCubit(
+      repository: realRepo,
+      searchDebounce: Duration.zero,
+    );
+
+    await tester.pumpWidget(harness(repository: realRepo, cubit: cubit));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '966501234567');
+    await tester.pump(Duration.zero); // fire the debounce timer
+    await tester.pump(); // let the response land
+
+    expect(
+      filters.orFilters.last,
+      'full_name.ilike."%966501234567%",'
+      'phone_digits.ilike."%966501234567%"',
+      reason: 'the stored number carries separators, so matching `phone` '
+          'literally would find nothing — the digit term has to reach the '
+          'normalised column',
+    );
+
+    // The branch is chosen by SHAPE, so an ordinary name must not be routed
+    // to the digit column. Asserted here rather than only at the data layer
+    // because this is the pair of behaviours an admin actually experiences as
+    // they type.
+    await tester.enterText(find.byType(TextField), 'Layla');
+    await tester.pump(Duration.zero);
+    await tester.pump();
+    expect(filters.orFilters.last,
+        'full_name.ilike."%Layla%",phone.ilike."%Layla%"');
+  });
+
+  testWidgets('native digits reach the same normalised pattern',
+      (tester) async {
+    // Pins the round trip end to end: an AR-locale admin types Arabic-Indic
+    // digits, and the request that leaves carries ASCII ones.
+    final (realRepo, filters) = directoryRepo(
+      rows: [
+        {
+          'id': 'p1',
+          'full_name': 'Nour Separated',
+          'phone': '+٩٦٦ ٥٠ ٧٧٧ ٨٨٨٨',
+          'membership_tier': 'standard',
+          'created_at': '2026-09-16T10:00:00.000000Z',
+        },
+      ],
+      total: 1,
+    );
+    final cubit = AdminCustomersCubit(
+      repository: realRepo,
+      searchDebounce: Duration.zero,
+    );
+
+    await tester.pumpWidget(harness(repository: realRepo, cubit: cubit));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '٩٦٦٥٠٧٧٧٨٨٨٨');
+    await tester.pump(Duration.zero);
+    await tester.pump();
+
+    expect(
+      filters.orFilters.last,
+      // The NAME half keeps the term as typed — Arabic names live in Arabic
+      // script, so transliterating it there would break name search.
+      'full_name.ilike."%٩٦٦٥٠٧٧٧٨٨٨٨%",'
+      'phone_digits.ilike."%966507778888%"',
+      reason: 'without transliteration the term reduces to nothing and the '
+          'directory silently falls back to a literal search that cannot match',
+    );
   });
 
   testWidgets('opens the picker seeded with the customer\'s current tier',
