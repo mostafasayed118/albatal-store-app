@@ -1,0 +1,78 @@
+-- ============================================================================
+-- 064_profiles_search_trgm_index.sql — REVIEW-GATED PROPOSAL
+-- ============================================================================
+-- Owner review required before applying (AGENTS.md migration gate).
+-- Provenance: owner-requested follow-up on branch feat/admin-customer-tier,
+-- after the customer directory's search moved server-side (d9ffb92) and started
+-- running on every debounced keystroke.
+--
+-- Problem
+-- -------
+-- SupabaseAdminRepository.fetchCustomers searches with a LEADING wildcard:
+--     full_name.ilike.'%term%'   (OR  phone.ilike.'%term%')
+-- (see `customerSearchFilter` in
+-- lib/features/admin/data/supabase_admin_repository.dart).
+--
+-- A pattern that begins with `%` cannot use a btree index, and public.profiles
+-- has no index on either column, so every search is a sequential scan of the
+-- whole table. Search is debounced (300ms), so this is not one scan per
+-- keystroke, but it is still one scan per typing pause — and it grows with the
+-- table rather than with the number of matches.
+--
+-- Fix
+-- ---
+-- Trigram GIN indexes, matching the precedent in 055_search_suggestions.sql
+-- (idx_products_name_trgm, created for exactly this shape of query). Between
+-- those two migrations the pattern is already established in this repo.
+--
+-- Be precise about what `gin_trgm_ops` does and does not give:
+--   * It DOES accelerate `ILIKE '%x%'` — leading wildcards are the case a
+--     trigram index exists for. (Measured: see the planner check in
+--     supabase/tests/keyset-proof/, which shows the plan switching to a bitmap
+--     index scan once the table is large enough for the planner to care.)
+--   * It DOES NOT help patterns with fewer than 3 extractable characters.
+--     `'%ab%'` yields no trigrams, so a 1- or 2-character search still scans.
+--     That is a real limit of the technique, not a misconfiguration, and it is
+--     why the directory's own debounce still matters.
+--   * It adds write cost to profiles. That trade is cheap here: profiles are
+--     written on signup and on profile edit, and searched on every typing
+--     pause.
+--   * NULL `phone` rows are simply not indexed (correct — a NULL has no
+--     substring to match).
+--
+-- Interaction with phone normalisation — read before extending this
+-- -----------------------------------------------------------------
+-- A separate, still-unstarted piece of work proposes a generated `phone_digits`
+-- column so a digit-only search can match a stored value containing separators.
+-- If that lands, `phone` will only serve literal searches, `phone_digits` will
+-- carry the digit searches, and THAT column will need its own trigram index —
+-- this migration alone would not cover it. Deliberately not pre-created here:
+-- indexing a column that does not exist yet would fail, and guessing at an
+-- unapproved schema change is worse than a follow-up migration.
+--
+-- Why not CONCURRENTLY
+-- --------------------
+-- CREATE INDEX CONCURRENTLY cannot run inside a transaction block, and tooling
+-- applies each migration in one. At today's row counts a plain build is
+-- instant. A table large enough to need CONCURRENTLY would need these built
+-- out-of-band instead, not by editing these statements.
+--
+-- Rollback
+-- --------
+-- DROP INDEX IF EXISTS public.idx_profiles_full_name_trgm;
+-- DROP INDEX IF EXISTS public.idx_profiles_phone_trgm;
+-- (The pg_trgm extension is left in place — 055 depends on it.)
+-- Rollback restores the pre-064 plan: one sequential scan per search. No data
+-- change either way.
+-- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Case-insensitive substring search on the customer's name.
+CREATE INDEX IF NOT EXISTS idx_profiles_full_name_trgm
+  ON public.profiles USING gin (full_name gin_trgm_ops);
+
+-- Literal substring search on the stored phone number. Note this matches the
+-- value as stored — it does not normalise separators (see the note above).
+CREATE INDEX IF NOT EXISTS idx_profiles_phone_trgm
+  ON public.profiles USING gin (phone gin_trgm_ops);

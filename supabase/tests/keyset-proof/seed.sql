@@ -30,6 +30,25 @@ grant usage on schema public to web_anon;
 grant select on public.profiles to web_anon;
 
 -- ---------------------------------------------------------------------------
+-- Search indexes: MIRROR OF MIGRATION 064 (064_profiles_search_trgm_index.sql).
+--
+-- Duplicated here on purpose so the planner check in search_index_plan.sql runs
+-- against the schema shape the migration actually proposes. If 064 changes,
+-- change this in the same commit or the check silently stops testing it.
+--
+-- Created after the walk fixture and before the bulk load in
+-- search_index_plan.sql, which is where they matter: on 124 rows the planner
+-- will choose a sequential scan whatever indexes exist, and rightly so.
+-- ---------------------------------------------------------------------------
+create extension if not exists pg_trgm;
+
+create index if not exists idx_profiles_full_name_trgm
+  on public.profiles using gin (full_name gin_trgm_ops);
+
+create index if not exists idx_profiles_phone_trgm
+  on public.profiles using gin (phone gin_trgm_ops);
+
+-- ---------------------------------------------------------------------------
 -- The walk fixture: 120 rows sharing only 12 distinct instants (10 rows each).
 --
 -- Duplicate sort keys are the POINT. `ORDER BY created_at DESC` alone is stable
