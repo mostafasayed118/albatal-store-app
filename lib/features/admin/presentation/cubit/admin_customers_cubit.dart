@@ -13,6 +13,7 @@ final class AdminCustomersState extends Equatable {
     this.customers = const [],
     this.visible = const [],
     this.errorMessage,
+    this.tierError,
   });
 
   final AdminCustomersStatus status;
@@ -22,21 +23,32 @@ final class AdminCustomersState extends Equatable {
   final List<AdminCustomer> visible;
   final String? errorMessage;
 
+  /// Failure from a tier *write*, kept off [status] deliberately: this page
+  /// renders a whole-screen error view for [AdminCustomersStatus.error], so
+  /// reusing it would erase the loaded directory whenever a write bounced.
+  /// The page surfaces this as a floating message and clears it.
+  final String? tierError;
+
   AdminCustomersState copyWith({
     AdminCustomersStatus? status,
     List<AdminCustomer>? customers,
     List<AdminCustomer>? visible,
     String? errorMessage,
+    String? tierError,
+    bool clearTierError = false,
   }) =>
       AdminCustomersState(
         status: status ?? this.status,
         customers: customers ?? this.customers,
         visible: visible ?? this.visible,
         errorMessage: errorMessage,
+        // Same sentinel convention as AdminState.copyWith(clearSelectedOrder).
+        tierError: clearTierError ? null : (tierError ?? this.tierError),
       );
 
   @override
-  List<Object?> get props => [status, customers, visible, errorMessage];
+  List<Object?> get props =>
+      [status, customers, visible, errorMessage, tierError];
 }
 
 /// Customer directory for the admin hub (feature-batch §14). The page
@@ -49,6 +61,11 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
 
   final AdminRepository _repository;
 
+  /// The active search text, lower-cased. Held so a tier write can re-derive
+  /// [AdminCustomersState.visible] instead of leaving the filtered view
+  /// showing the pre-write tier.
+  String _query = '';
+
   Future<void> load() async {
     emit(state.copyWith(status: AdminCustomersStatus.loading));
     final result = await _repository.fetchCustomers();
@@ -58,7 +75,7 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
         emit(state.copyWith(
           status: AdminCustomersStatus.ready,
           customers: value,
-          visible: value,
+          visible: _filtered(value),
         ));
       case Failure(:final error):
         emit(state.copyWith(
@@ -67,15 +84,39 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   }
 
   void filter(String query) {
-    final q = query.trim().toLowerCase();
-    emit(state.copyWith(
-      visible: q.isEmpty
-          ? state.customers
-          : state.customers
-              .where((c) =>
-                  c.name.toLowerCase().contains(q) ||
-                  c.email.toLowerCase().contains(q))
-              .toList(),
-    ));
+    _query = query.trim().toLowerCase();
+    emit(state.copyWith(visible: _filtered(state.customers)));
   }
+
+  /// Set a customer's membership tier via the admin-gated RPC (migration
+  /// 046). On success the directory row reflects the new tier immediately —
+  /// the repository confirmed the write before this emits, so the page can
+  /// verify its ack against state like every other admin transition.
+  ///
+  /// A failure never touches [AdminCustomersState.status] (see
+  /// [AdminCustomersState.tierError]); it must not erase the directory.
+  Future<void> setMembershipTier(String profileId, String tier) async {
+    final result = await _repository.setMembershipTier(profileId, tier);
+    if (isClosed) return;
+    switch (result) {
+      case Success():
+        final updated = state.customers
+            .map((c) => c.id == profileId ? c.copyWith(tier: tier) : c)
+            .toList();
+        emit(state.copyWith(customers: updated, visible: _filtered(updated)));
+      case Failure(:final error):
+        emit(state.copyWith(tierError: error.message));
+    }
+  }
+
+  /// Dismiss the tier-write error once the page has surfaced it.
+  void clearTierError() => emit(state.copyWith(clearTierError: true));
+
+  List<AdminCustomer> _filtered(List<AdminCustomer> all) => _query.isEmpty
+      ? all
+      : all
+          .where((c) =>
+              c.name.toLowerCase().contains(_query) ||
+              c.email.toLowerCase().contains(_query))
+          .toList();
 }

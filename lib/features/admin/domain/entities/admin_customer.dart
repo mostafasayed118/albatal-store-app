@@ -34,6 +34,18 @@ final class AdminCustomer extends Equatable {
   /// rendering a blank subtitle).
   String get contact => email.isNotEmpty ? email : phone;
 
+  /// Narrow copy holding [tier] — the one field the directory can change
+  /// (matches [AdminCoupon.copyWith]). Used by [AdminCustomersCubit] to
+  /// reflect a confirmed tier write without reloading the whole page.
+  AdminCustomer copyWith({String? tier}) => AdminCustomer(
+        id: id,
+        name: name,
+        email: email,
+        phone: phone,
+        tier: tier ?? this.tier,
+        isBlocked: isBlocked,
+      );
+
   @override
   List<Object?> get props => [id, name, email, phone, tier, isBlocked];
 }
