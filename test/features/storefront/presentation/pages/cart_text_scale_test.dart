@@ -47,6 +47,8 @@ void main() {
   testWidgets(
       'CartItemTile with a long product name does not overflow at 1.4 scale '
       'in a 360dp-wide column', (tester) async {
+    // Real Inter/Montserrat: measured against the fonts the app ships.
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -97,6 +99,7 @@ void main() {
       'Cart page renders item tile, quantity stepper and totals row without '
       'overflow at a 360dp phone viewport with 1.4 system font scale',
       (tester) async {
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);

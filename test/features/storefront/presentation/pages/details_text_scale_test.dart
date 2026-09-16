@@ -22,6 +22,11 @@ import '../../../../helpers/memory_storefront_persistence.dart';
 Widget _harness(String productId) {
   final persistence = MemoryStorefrontPersistence();
   return MaterialApp(
+    // The APP theme, not the Material default: `loadAppFonts` only takes
+    // effect through a font family the theme declares (Inter/Montserrat).
+    // Unthemed, the CTA label measures ~2x its real width and the fit
+    // assertion below reports a false ellipsis.
+    theme: AppTheme.light(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: MultiBlocProvider(
@@ -93,6 +98,9 @@ void main() {
   testWidgets(
       'Details page renders name/price block and CTA without overflow at a '
       '360dp phone viewport with 1.4 system font scale', (tester) async {
+    // Real Inter/Montserrat: the CTA's fit claim is only meaningful against
+    // the fonts the app ships, not the test font.
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -104,20 +112,23 @@ void main() {
     // Name/price block: AppBar title + body title → two occurrences.
     expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
     expect(find.text('1290 EGY'), findsOneWidget);
-    // CTA line total still renders at scale.
-    expect(find.text('Add to Cart - 1290 EGY'), findsOneWidget);
+    // CTA line total renders at scale AND in full — with the real fonts
+    // loaded, "not ellipsized" is a claim this pin can actually make.
+    _expectFitsInFull(tester, 'Add to Cart - 1290 EGY');
   });
 
   testWidgets(
       'RelatedCard renders name and price without overflow at 1.4 scale '
       'in its 140x200 strip slot', (tester) async {
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: MediaQuery(
+      home: const MediaQuery(
         data: MediaQueryData(textScaler: TextScaler.linear(1.4)),
         child: Scaffold(
           body: Center(

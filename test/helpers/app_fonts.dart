@@ -11,6 +11,15 @@ import 'package:flutter/services.dart';
 ///
 /// So any test that reasons about whether copy FITS must load these first,
 /// otherwise it measures the test font rather than the app.
+///
+/// IMPORTANT — loading alone is not enough. A widget only renders in these
+/// families if it inherits them, and the family comes from the theme. The
+/// harness must apply `AppTheme.light()`; a bare `MaterialApp` leaves the
+/// family null and the text falls back to the test font anyway. Measured on
+/// the same grid-card price string in the same 158dp cell:
+///
+///   unthemed (test font)  intrinsic 112.8dp @1.0x / 157.6dp @1.4x
+///   themed  (real Inter)  intrinsic  66.9dp @1.0x /  93.2dp @1.4x
 Future<void> loadAppFonts() async {
   await (FontLoader('Inter')
         ..addFont(
