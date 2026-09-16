@@ -1,8 +1,9 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (FeedbackView adoption + retry coverage committed and
-pushed on `refactor/feedback-view-adoption` (0c392cc, 04d7723, 548535f);
-draft PR #69 open — CI was running at push time).
+Last run: 2026-09-16 (PR #68 — data-layer guard — MERGED to master as
+`a6760c6`; PR #69 (FeedbackView adoption) and PR #70 (last 4 guard
+migrations) are ready and merging in sequence, each resolving the STATE.md
+union on its branch first).
 
 ## New — 2026-09-16 (refactor: FeedbackView adoption completed; branch `refactor/feedback-view-adoption`)
 
@@ -61,6 +62,46 @@ Continues the previous session's in-flight refactor in worktree
   was used here, then reverted where it landed in the wrong tree).
 - NEXT GATES: owner review of draft PR #69 -> mark ready + merge. The
   sibling branch refactor/data-layer-guard is pushed as draft PR #68.
+
+## New — 2026-09-16 (refactor: data-layer guard migration; branch `refactor/data-layer-guard`)
+
+Continues the previous session's in-flight refactor in worktree
+`.trees/data-layer-guard` (branch `refactor/data-layer-guard` from master
+`4cedc42`). The refactor is committed on that branch and NOT pushed; master
+untouched. This run finished the migration and recorded the evidence.
+
+- **Migrated the two Supabase repository boundaries to the shared
+  `Result.guard` helper** (lib/core/error/result.dart):
+  `supabase_admin_repository.dart` (20 of its 21 Result-returning methods;
+  2 `catch` sites left) + `supabase_profile_repository.dart` (2 of 2).
+  Failure message text is byte-identical at every call site; the mapped
+  `AppError` now also carries the stack trace.
+- **Two boundaries deliberately stay hand-written**, each with an in-code
+  reason: `isCurrentUserAdmin` (answers with a bool and fails closed +
+  logs, so there is no `Result` to guard) and `fetchCustomers` (logs the
+  cause via `Log.w` before mapping; `Result.guard` has no logging hook).
+  `updateOrderStatus` keeps its pre-flight domain validation outside the
+  guard so the boundary cannot relabel it.
+- **The two upsert RPCs** (`adminUpsertProduct`, `adminUpsertVariant`) are
+  now guarded; their empty-id protocol violation is thrown so the guard
+  maps it to the same message, with the empty payload as the cause.
+- **Churn reverted:** `pubspec.lock` + `.flutter-plugins-dependencies`
+  (pub get on this box's Flutter 3.47.4 had bumped meta, test,
+  vector_math, ...) were reverted in BOTH worktrees so each branch diff
+  carries only refactor content. Lock changes need owner approval per
+  loop-constraints.md.
+- **Evidence (post-edit, in this worktree):** `flutter analyze` 0 issues;
+  `dart format --set-exit-if-changed lib test` clean (424 files);
+  `flutter test` **893/893 PASS** (exit 0; master baseline parity).
+  Existing tests already pin both migrated paths —
+  admin_catalog_repository_test.dart asserts throw -> `Failure` and
+  non-string payload -> `Failure` — so no new tests were needed.
+- **Sibling workstream left untouched by owner scope call:**
+  `refactor/feedback-view-adoption` (worktree `.trees/feedback-view`) has
+  11 pages adopting the shared `FeedbackView` widget, still uncommitted
+  and unverified.
+- NEXT GATES: owner review of the branch -> push + PR approval;
+  optional follow-up round on the feedback-view branch.
 
 ## New — 2026-09-16 (performance re-score on device; AUDIT AT 10.0)
 

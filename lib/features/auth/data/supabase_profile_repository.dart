@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/profile.dart';
-import '../../../core/error/app_error.dart';
 import '../../../core/error/result.dart';
 
 import '../domain/repositories/profile_repository.dart';
@@ -18,31 +17,28 @@ class SupabaseProfileRepository implements ProfileRepository {
   final SupabaseClient _client;
 
   @override
-  Future<Result<Profile?>> readProfile(String userId) async {
-    try {
-      final response = await _client
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+  Future<Result<Profile?>> readProfile(String userId) => Result.guard(
+        () async {
+          final response = await _client
+              .from('profiles')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
 
-      if (response == null) return const Success(null);
-      return Success(Profile.fromRow(response));
-    } catch (e) {
-      return Failure(AppError('Failed to load profile', cause: e));
-    }
-  }
+          if (response == null) return null;
+          return Profile.fromRow(response);
+        },
+        'Failed to load profile',
+      );
 
   @override
-  Future<Result<void>> upsertProfile(Profile profile) async {
-    try {
-      // toProfileRow() deliberately omits is_admin/membership_tier — the
-      // tier is admin-managed (migration 046) and RLS pins privileged
-      // columns to their existing values.
-      await _client.from('profiles').upsert(profile.toProfileRow());
-      return const Success(null);
-    } catch (e) {
-      return Failure(AppError('Failed to save profile', cause: e));
-    }
-  }
+  Future<Result<void>> upsertProfile(Profile profile) => Result.guard<void>(
+        () async {
+          // toProfileRow() deliberately omits is_admin/membership_tier — the
+          // tier is admin-managed (migration 046) and RLS pins privileged
+          // columns to their existing values.
+          await _client.from('profiles').upsert(profile.toProfileRow());
+        },
+        'Failed to save profile',
+      );
 }
