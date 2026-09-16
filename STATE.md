@@ -1,6 +1,12 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (§14 **membership control MOVED onto the customer directory**
+Last run: 2026-09-16 (§14 **customer directory PAGED + searched server-side** —
+closes part 5's finding #1, the silent 500-row cap. Branch
+`feat/admin-customer-tier`, commit `d9ffb92`, worktree `.trees/customer-tier`,
+**NOT pushed**; master untouched except the docs-only `e80e248`. Evidence:
+`flutter analyze` 0 issues, format clean (429 files), `flutter test` **926/926**
+(899 baseline + 27 on this branch), 8/8 mutation checks bite with
+byte-identical restore. Prior run: 2026-09-16 (§14 **membership control MOVED onto the customer directory**
 — closes the audit's finding #3. Branch `feat/admin-customer-tier`, commit
 `053ff16`, worktree `.trees/customer-tier`, **NOT pushed** (a new branch needs
 push approval); master untouched at `533c232`. Evidence: `flutter analyze` 0
@@ -27,6 +33,99 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 7: customer directory paging + server-side search — commit `d9ffb92`)
+
+Owner: "add paging to the admin customer directory so the silent 500-customer cap
+is gone". Closes part 5's finding #1.
+
+**Reframing that shaped the fix (do NOT "fix" this the other way):** the 500 cap
+was NOT an oversight. `docs/audit/2026-09-15/03-audit-report.md:138` lists
+`customers limit(500)` under **"Query discipline: every list read is bounded"** as a
+*good* property, and the repo's page idiom is an explicit `.range(0, 99)`. So the fix
+keeps the read bounded and removes the **silence + unreachability** instead.
+
+**Owner decision (asked, 3 options offered):** server-side search + paging, not
+"paged list with search over loaded rows" and not "load everything, drop the cap".
+Rationale recorded: a client-side filter could only ever see the page it happened to
+have loaded, so paging alone would have *weakened* search.
+
+**What shipped**
+
+1. **`fetchCustomers({query, offset, limit})` → `({customers, total})`.** One explicit
+   `.range(offset, offset + limit - 1)` plus `.count(CountOption.exact)`, so a single
+   round trip returns the page *and* the total. `defaultCustomersPageSize = 50` lives
+   in `admin_repository.dart` and is shared by the repository default and the cubit,
+   so the paging contract has one number.
+2. **Search is server-side**: `.ilike('full_name', customerSearchPattern(term))`. This
+   matches the *effective* old behaviour — the old client filter matched name OR
+   `email`, and `email` is always `''` in this schema (no such column on `profiles`),
+   so it was name-only in practice. **No regression, but phone is still not
+   searchable** even though it is displayed (follow-up).
+3. **`customerSearchPattern` escapes LIKE metacharacters** (backslash-first, then `%`
+   and `_`), Postgres' default LIKE escape being `\`. Without it a search for `%`
+   returns the whole table. Public + directly tested.
+4. **Cubit**: 300ms debounce mirroring CatalogCubit's `updateQuery`, an **injectable
+   `searchDebounce`** (house style: CatalogCubit takes a clock seam) and an injectable
+   `pageSize`, plus a **generation counter** so a superseded response is discarded.
+   Live search + paging makes overlapping requests routine.
+5. **`_offset` counts rows CONSUMED from the server, not rows loaded.** The repository
+   silently skips undecodable rows, so a page can come back short; paging off
+   `customers.length` would re-request already-consumed slots. `hasMore` is stored as
+   `_offset < total` for the same reason.
+6. **`visible` field REMOVED from `AdminCustomersState`.** With the search server-side
+   it was always identical to `customers` — two fields holding the same list is exactly
+   the drift class part 6 pinned with mutation B.
+7. **Page**: count line (`customersShownOf`, "Showing 25 of 1,240"), a **Load more**
+   footer (spinner while `isLoadingMore`), and the empty state now uses the existing
+   `noResultsFound` key — which **also closes part 5's finding #4** (it used to render
+   the bare hint word "Search").
+8. **ARB**: 2 new keys (`customersShownOf` with `{shown}`/`{total}` int placeholders +
+   a `description`, `loadMore`) in EN **and** AR; `flutter gen-l10n` re-run and the
+   3 tracked `lib/generated/l10n/*` files committed. ARB lives outside `lib/` (the loop
+   scope rule) — added because the requested feature needs the copy.
+
+**⚠️ A mutation found one of MY OWN new tests was vacuous.** `_offset += pageSize` vs
+`_offset += value.customers.length` only diverge once a page comes back *short* — and
+only from the **third** fetch onward. My first version of the short-page test made two
+fetches, where both formulas agree, so the mutation **passed**. Rewritten to walk three
+pages (page 2 returns 1 row for a 2-row request); it now fails under the mutation. Same
+class of self-caught trap as the money-probe and `AppClip` runs.
+
+**Mutation evidence (8/8 bite; `/tmp` backup + `md5sum -c` byte-identical after):**
+
+| Mutation | Caught by |
+|---|---|
+| stale search response still applied (`_loadFirstPage` guard removed) | "a slow response cannot overwrite a newer search" |
+| superseded page still appended (`loadMore` guard removed) | "an in-flight page cannot append onto a newer search" |
+| offset advanced by rows loaded | "a short page still advances by the page size" |
+| `hasMore` from loaded rows, not consumed | same |
+| search fires per keystroke (debounce removed) | "keystrokes collapse into one query" |
+| page window ignores the offset (`.range(0, …)`) | "pages by offset rather than re-reading the head" |
+| search not applied server-side (no `ilike`) | "filters the search on the server, trimmed" |
+| LIKE metacharacters not escaped | "customerSearchPattern escapes…" + "escapes the term it hands to the server" |
+
+**Also self-caught while writing the tests:** a `verifyNever(() => … any(named: 'offset') …)`
+pattern was loose enough to also match the *first-page* load, so it would have passed for
+the wrong reason; narrowed to `offset: 2`. And a mutable `transform` field on the
+`@immutable` mock fake became `late final` (it is built once and handed back by both
+`order` and `limit`).
+
+**Known limitations (recorded, not hidden):**
+- **Offset-paging drift.** `ORDER BY created_at DESC` + offset means a customer
+  registering between page 1 and page 2 shifts the window: one row can be shown twice
+  and another skipped. Keyset/cursor paging is the fix if it ever matters.
+- **`.count()` asserts non-null** (`count!` inside the package) — it needs PostgREST's
+  `Content-Range` header. A proxy that strips it would throw and surface as a `Failure`,
+  not a wrong total.
+- Staging has **25** customers and production has **0** admins, so paging is not yet
+  exercised against real volume; the RPC/count path is mock-driven.
+- Search matches `full_name` only (see item 2).
+
+**Verification:** `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean
+(429 files) · `flutter test` **926/926** (899 baseline) · 16 files, +827/−158. The new
+`fetchCustomers` signature also required updating 4 `AdminRepository` fakes in other test
+files. Toolchain churn reverted and kept out of the commit.
 
 ## New — 2026-09-16 (part 6: membership tier control on the customer directory — commit `053ff16`)
 
