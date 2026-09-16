@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -47,13 +48,17 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           if (state.status == AdminCustomersStatus.loading) {
             return Scaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
-              body: const Center(child: CircularProgressIndicator()),
+              body: const FeedbackView(type: FeedbackViewType.loading),
             );
           }
           if (state.status == AdminCustomersStatus.error) {
             return Scaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
-              body: Center(child: Text(state.errorMessage ?? '')),
+              body: FeedbackView(
+                type: FeedbackViewType.error,
+                body: state.errorMessage,
+                onAction: () => context.read<AdminCustomersCubit>().load(),
+              ),
             );
           }
           return Scaffold(

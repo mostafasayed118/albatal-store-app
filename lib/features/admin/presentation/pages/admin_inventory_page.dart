@@ -73,7 +73,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
         child: BlocBuilder<AdminCubit, AdminState>(
           builder: (context, state) {
             if (state.status == AdminStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
+              return const FeedbackView(type: FeedbackViewType.loading);
             }
             if (state.status == AdminStatus.error) {
               // A failed load must not render as "all stock healthy" —

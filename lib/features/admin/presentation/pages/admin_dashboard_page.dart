@@ -43,7 +43,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
             return FeedbackView(
