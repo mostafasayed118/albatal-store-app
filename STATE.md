@@ -1,9 +1,17 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (§14 **customer directory PAGED + searched server-side** —
+Last run: 2026-09-16 (part 8: §14 customer directory switched from OFFSET paging
+to **KEYSET paging** — a row can no longer be duplicated or skipped when two
+profiles share a `created_at`, or when a customer signs up mid-scroll. Branch
+`feat/admin-customer-tier`, commit `f8004b8`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74** (the run also opened the PR and, on the owner's
+ask, added phone search to the open backlog). Evidence: `flutter analyze` 0
+issues, format clean (429 files), `flutter test` **933/933** (899 baseline + 34
+on this branch), 8/8 mutation checks bite. `lib/` scope only — no ARB, no
+`pubspec.*`. Prior run: 2026-09-16 (part 7: §14 **customer directory PAGED + searched server-side** —
 closes part 5's finding #1, the silent 500-row cap. Branch
 `feat/admin-customer-tier`, commit `d9ffb92`, worktree `.trees/customer-tier`,
-**NOT pushed**; master untouched except the docs-only `e80e248`. Evidence:
+PUSHED onto draft PR #74; master untouched except the docs-only `e80e248`. Evidence:
 `flutter analyze` 0 issues, format clean (429 files), `flutter test` **926/926**
 (899 baseline + 27 on this branch), 8/8 mutation checks bite with
 byte-identical restore. Prior run: 2026-09-16 (§14 **membership control MOVED onto the customer directory**
@@ -33,6 +41,111 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 8: OFFSET paging → KEYSET paging in the customer directory — commit `f8004b8`)
+
+Owner: "switch the customer directory to keyset paging so new signups cannot
+duplicate or skip a row". A follow-up to part 7, on the same branch; PUSHED onto
+draft PR #74.
+
+### The defect, stated precisely
+
+Part 7 made the read bounded and visible but paged it by **offset** over
+`ORDER BY created_at DESC`. That sort key is **not unique** — a seed, a bulk
+import, or two signups in the same tick all share an instant — so Postgres is
+free to order those ties differently between two queries. Two failures follow:
+
+1. **Ties**: a row can land on two consecutive pages, or on neither.
+2. **Movement**: a customer registering while the admin scrolls shifts every
+   later row down by one, so the next offset steps over a row never shown.
+
+Checked the schema rather than assuming: `profiles.created_at` is
+`TIMESTAMPTZ NOT NULL DEFAULT now()` (001_initial_schema.sql:17) and `id` is the
+**primary key** (line 13). So `(created_at, id)` is a strict total order, and
+the NULL-in-a-keyset-comparison hazard is off the table.
+
+### What changed (`lib/` only)
+
+| Piece | Change |
+|---|---|
+| port | `CustomerCursor` typedef `({String createdAt, String id})`; `fetchCustomers({query, cursor, limit})` → `({customers, int? total, CustomerCursor? nextCursor})` |
+| repository | `.order('created_at' desc).order('id' desc)` — the tiebreaker in the ORDER BY; `.or(customerKeysetFilter(cursor))`; `.limit(limit + 1)`; `created_at` added to the select |
+| the filter | pure `customerKeysetFilter` → `created_at.lt.TS,and(created_at.eq.TS,id.lt.ID)` |
+| bookmark | private `_customerCursor(row)`, normalising `created_at` to UTC ISO-8601 |
+| cubit | `_offset` → `_cursor`; `hasMore` from `nextCursor != null`; `loadMore` does not read `total` at all |
+
+Three decisions worth not re-litigating:
+
+- **`limit + 1` (look-ahead).** "Is there another page?" is answered by the data
+  rather than by comparing a running count against `total` — the comparison that
+  part 7 already had to fix once.
+- **`total` is nullable, and only the first page reports it.** A cursor narrows
+  the filter an exact count is taken over, so a continuation page's count is the
+  rows *remaining*. Publishing that would turn "showing 50 of 120" into
+  "showing 100 of 70".
+- **`loadMore` ignoring `total` is structural, not defensive.** It does not read
+  the field, so no continuation page can move the number regardless of what a
+  future repository reports.
+
+### The one thing I could NOT verify here — do not claim otherwise
+
+The `.or()` tree syntax is **pinned by a unit test asserting the exact string**,
+but it was **not** exercised against a live PostgREST: this sandbox has no
+running instance and the PostgREST docs were 429 for the whole run (web search
+returned nothing all session). The reasoning that it is correct — PostgREST reads
+everything after `column.operator.` as the value, which is why the canonical
+`?created_at=gte.2024-01-01T00:00:00.000Z` works, and the UTC-`Z` value can never
+contain a `,` or `)`, which *are* structural in an `or` tree — is recorded in the
+code comment where a reviewer can check it. **Treat live acceptance as an
+integration-test gap, not as verified.**
+
+### INCIDENT — my own mutation harness destroyed uncommitted work (recovered)
+
+First mutation run used `git checkout -- <path>` to undo each mutation. That
+reverts to the **index**, not to the pre-mutation working tree, so it discarded
+the entire uncommitted keyset change in both `lib/` files mid-battery. Detected by
+the harness's own `md5` check printing `restore … DIFFERS!` instead of swallowing
+it.
+
+Recovery: re-applied both files from the exact edits, then re-verified (`analyze`
+0 issues, 41 focused tests green) before re-running the battery. The corrected
+harness snapshots the file **bytes in memory** and writes them back verbatim, and
+now also classifies each catch so a **compile error cannot masquerade as a caught
+mutation**.
+
+Lesson for future loops: never `git checkout -- <path>` to undo a mutation on a
+tree with uncommitted work. Snapshot bytes and restore them.
+
+### Verification
+
+- `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean (429 files)
+- `flutter test` **933/933** (899 baseline + 34 on this branch; +7 net this run)
+- **8/8 mutations bite, each an assertion failure (verified not a compile error),
+  files restored byte-identically:**
+
+| Mutation | Caught by |
+|---|---|
+| ORDER BY drops the `id` tiebreaker | `orders == ['created_at','id']` |
+| keyset filter drops the `eq`/`id` clause | exact filter-string pins |
+| keyset filter uses `lte` (repeats the boundary row) | exact filter-string pins |
+| `total` reported on continuation pages | `total isNull` on page 2 |
+| `loadMore` overwrites the total | total-preservation pin |
+| no look-ahead (`limit`, not `limit + 1`) | `limits == [51]` |
+| bookmark taken from the look-ahead row | bookmark pin |
+| bookmark never advances between pages | three-page walk pin |
+
+### Residual / open
+
+1. **Phone search was asked for and NOT started.** Owner: "make phone numbers
+   searchable". I acknowledged it, then chose to first finish the draft PR that
+   was still unopened from the previous ask; the owner's next message moved on to
+   keyset paging. Still outstanding — `ilike` matches `full_name` only.
+2. **No index on `(created_at DESC, id DESC)`.** Keyset is index-friendly, but
+   `profiles` has only the PK, so Postgres sorts. Irrelevant at 25 staging rows;
+   a migration to add one is owner-gated (`supabase/`).
+3. **Live PostgREST acceptance of the `.or()` tree is unverified** (see above).
+4. **Device/volume:** staging holds 25 customers and production 0 admins, so
+   neither paging path has been exercised against real volume.
 
 ## New — 2026-09-16 (part 7: customer directory paging + server-side search — commit `d9ffb92`)
 
