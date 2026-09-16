@@ -1,6 +1,13 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 9: §14 customer directory **PHONE SEARCH** + the keyset
+Last run: 2026-09-16 (part 10: **pg_trgm SEARCH INDEXES** for the customer
+directory — the search's leading-wildcard ILIKE was a full sequential scan.
+Branch `feat/admin-customer-tier`, commit `2a152e8`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74**. Evidence: the new planner check ASSERTS the index
+is used and **fails when it is dropped** (exit 3), 249 → 37 shared buffers and
+10.8 ms → 0.24 ms at 20 124 rows, HTTP probe still **18/18**. No Dart changed —
+`lib/`+`test/` are byte-identical to the verified 940/940 state. Still OUTSIDE
+the `lib/`-only auto-fix scope; the migration is **NOT applied**. Prior run: 2026-09-16 (part 9: §14 customer directory **PHONE SEARCH** + the keyset
 **index migration** + a **REAL PostgREST proof** of both query strings). Branch
 `feat/admin-customer-tier`, commits `e67f05f` + `e454514` + `6db46a1`, worktree
 `.trees/customer-tier`, PUSHED onto **draft PR #74**. Evidence: `flutter analyze`
@@ -50,6 +57,74 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 10: pg_trgm search indexes — commit `2a152e8`)
+
+Owner: "add a pg_trgm index so the customer directory's ilike search stops
+scanning the table". Same branch; PUSHED onto draft PR #74.
+
+### Why there was a scan at all
+
+The search is a LEADING-wildcard `ILIKE '%term%'` on `full_name` (OR `phone`), and
+a pattern starting with `%` cannot use a btree index. `profiles` had no index on
+either column, so every search scanned the table — once per typing pause (the
+term is debounced), growing with the table rather than with the match count.
+
+New `supabase/migrations/064_profiles_search_trgm_index.sql`: two `pg_trgm` GIN
+indexes, following the precedent already in this repo for this exact query shape
+(`idx_products_name_trgm`, `055_search_suggestions.sql:9-12`).
+
+### Verified by PLAN, not by "the index exists"
+
+An index the planner cannot use, or will not choose, leaves the scan in place —
+so the claim was measured. `supabase/tests/keyset-proof/search_index_plan.sql`
+bulk-loads 20 000 rows, ANALYZEs, and ASSERTS via `EXPLAIN (FORMAT JSON)` that
+the plan names each index.
+
+| | plan | shared buffers | exec |
+|---|---|---|---|
+| without index | `Seq Scan` … `Rows Removed by Filter: 20123` | **249** | 10.8 ms |
+| with index | `Bitmap Index Scan on idx_profiles_full_name_trgm` | **37** | 0.24 ms |
+
+**The assertion is not vacuous:** with both indexes dropped the same script
+raises and exits **3**; restored, it exits 0. Shared buffers are the
+scale-relevant number (249 → 37 ≈ 6.7x fewer pages touched), not the wall-clock
+at a size this small.
+
+Two real limits recorded IN the check rather than glossed:
+
+- **A 1–2 character pattern yields no trigrams**, so it still seq-scans. Printed
+  as an informational row (falling back is correct, not a failure) — and it is
+  why the directory's debounce still matters even with 064 applied.
+- Index creation is **not** `CONCURRENTLY` (cannot run inside a transaction
+  block); noted in the migration with the out-of-band path if the table ever
+  warrants it.
+
+### Phone normalisation — deferred AGAIN, now with a recorded dependency
+
+The owner redirected away from **phone normalisation** mid-investigation (a
+generated `phone_digits` column so a digit-only query matches a value stored with
+separators). It is **NOT started** — deferred twice now. Facts gathered before
+the redirect, so the next attempt need not re-derive them:
+
+- `profiles` has **no column-level grants**; access is table-level + RLS, so
+  adding a derived column does not change WHO can read it (`phone` is already
+  admin/own-row visible per `061`).
+- No generated-column precedent exists in the migrations — `025` uses
+  `GENERATED ALWAYS AS IDENTITY`, an identity column, not a computed one.
+- The expression must be IMMUTABLE for `STORED`;
+  `regexp_replace(phone,'[^0-9]','','g')` is.
+- **DEPENDENCY, recorded in the 064 header so the two changes stay linked:** if
+  it lands, digit searches move to `phone_digits`, so THAT column needs its own
+  trigram index. 064 does not and cannot cover it.
+
+### Gates
+
+No Dart changed: `lib/` and `test/` are byte-identical to the verified
+**940/940** state (proved by `git status`), so that run still stands. The HTTP
+probe was re-run with the new indexes present: **18/18**. Planner check passes
+and fails when the index is removed. `supabase/` remains outside the
+`lib/`-only scope; **064 is NOT applied**.
 
 ## New — 2026-09-16 (part 9: phone search + keyset index migration + a REAL PostgREST proof — commits `e67f05f`, `e454514`, `6db46a1`)
 
