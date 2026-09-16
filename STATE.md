@@ -1,9 +1,8 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (FeedbackView adoption + retry coverage committed on
-`refactor/feedback-view-adoption` (0c392cc + 04d7723); image-manager retry
-coverage added on top and committed on the branch: 899/899, analyze 0,
-format clean — NOT pushed).
+Last run: 2026-09-16 (FeedbackView adoption + retry coverage committed and
+pushed on `refactor/feedback-view-adoption` (0c392cc, 04d7723, 548535f);
+draft PR #69 open — CI was running at push time).
 
 ## New — 2026-09-16 (refactor: FeedbackView adoption completed; branch `refactor/feedback-view-adoption`)
 
@@ -60,8 +59,8 @@ Continues the previous session's in-flight refactor in worktree
   paths against the data-layer-guard worktree (the reported project root),
   so edits to THIS worktree must be made from it (a verified patch script
   was used here, then reverted where it landed in the wrong tree).
-- NEXT GATES: owner review of the uncommitted diff -> commit approval ->
-  push + PR (draft first).
+- NEXT GATES: owner review of draft PR #69 -> mark ready + merge. The
+  sibling branch refactor/data-layer-guard is pushed as draft PR #68.
 
 ## New — 2026-09-16 (performance re-score on device; AUDIT AT 10.0)
 
