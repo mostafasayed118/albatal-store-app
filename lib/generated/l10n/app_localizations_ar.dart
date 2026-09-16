@@ -579,6 +579,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adminSearch => 'بحث';
 
   @override
+  String customersShownOf(int shown, int total) {
+    return 'عرض $shown من $total';
+  }
+
+  @override
+  String get loadMore => 'تحميل المزيد';
+
+  @override
   String get invoiceSave => 'حفظ الفاتورة';
 
   @override

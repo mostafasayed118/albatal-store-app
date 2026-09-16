@@ -1142,6 +1142,18 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get adminSearch;
 
+  /// Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {shown} of {total}'**
+  String customersShownOf(int shown, int total);
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
+
   /// No description provided for @invoiceSave.
   ///
   /// In en, this message translates to:

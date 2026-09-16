@@ -5,6 +5,7 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,9 +30,17 @@ class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 /// Awaitable terminal builder (the repository `await`s the chain).
 class FakeTransformBuilder<T> extends Fake
     implements PostgrestTransformBuilder<T> {
-  FakeTransformBuilder(this._value);
+  FakeTransformBuilder(this._value, {this.total = 0});
 
   final T _value;
+
+  /// Exact row count the server reports for the same filter — what
+  /// `Prefer: count=exact` adds to the response.
+  final int total;
+
+  /// The `from`/`to` pairs requested, in order, so a test can pin the page
+  /// window itself rather than only the rows that came back.
+  final List<(int, int)> ranges = [];
 
   @override
   PostgrestTransformBuilder<T> order(
@@ -45,6 +54,22 @@ class FakeTransformBuilder<T> extends Fake
   @override
   PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
       this;
+
+  @override
+  PostgrestTransformBuilder<T> range(
+    int from,
+    int to, {
+    String? referencedTable,
+  }) {
+    ranges.add((from, to));
+    return this;
+  }
+
+  @override
+  ResponsePostgrestBuilder<PostgrestResponse<T>, T, T> count([
+    CountOption count = CountOption.exact,
+  ]) =>
+      FakeResponseBuilder<T>(_value, total);
 
   @override
   Future<R> then<R>(FutureOr<R> Function(T value) onValue,
@@ -67,10 +92,59 @@ class FakeTransformBuilder<T> extends Fake
       Future.value(_value).timeout(timeLimit, onTimeout: onTimeout);
 }
 
+/// Awaiting a counted request yields a [PostgrestResponse] carrying both the
+/// page and the total — the whole point of asking for an exact count.
+class FakeResponseBuilder<T> extends Fake
+    implements ResponsePostgrestBuilder<PostgrestResponse<T>, T, T> {
+  FakeResponseBuilder(this._data, this._count);
+
+  final T _data;
+  final int _count;
+
+  PostgrestResponse<T> get _response =>
+      PostgrestResponse<T>(data: _data, count: _count);
+
+  @override
+  Future<R> then<R>(FutureOr<R> Function(PostgrestResponse<T> value) onValue,
+          {Function? onError}) =>
+      Future.value(_response).then(onValue, onError: onError);
+
+  @override
+  Future<PostgrestResponse<T>> catchError(Function onError,
+          {bool Function(Object error)? test}) =>
+      Future.value(_response).catchError(onError, test: test);
+
+  @override
+  Future<PostgrestResponse<T>> whenComplete(FutureOr<void> Function() action) =>
+      Future.value(_response).whenComplete(action);
+
+  @override
+  Stream<PostgrestResponse<T>> asStream() => Future.value(_response).asStream();
+
+  @override
+  Future<PostgrestResponse<T>> timeout(Duration timeLimit,
+          {FutureOr<PostgrestResponse<T>> Function()? onTimeout}) =>
+      Future.value(_response).timeout(timeLimit, onTimeout: onTimeout);
+}
+
 /// `select()` returns a `PostgrestFilterBuilder`, which is NOT a subtype of
 /// the transform builder, so it needs its own fake that hands back one.
 class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
-  FakeFilterBuilder(this._rows);
+  FakeFilterBuilder(this._rows, {this.total = 0});
+
+  /// Exact match count the server reports alongside the page.
+  final int total;
+
+  /// Server-side filters the repository applied, as (operator, column,
+  /// pattern) — evidence that the search is not done client-side.
+  final List<(String, String, String)> filters = [];
+
+  /// The transform builder the chain continues onto, so tests can read the
+  /// page window it recorded. Built once and handed back by both `order` and
+  /// `limit`, which is also why it is `late final` rather than a mutable
+  /// field on an immutable fake.
+  late final FakeTransformBuilder<T> transform =
+      FakeTransformBuilder<T>(_typed, total: total);
 
   /// `dynamic` element type on purpose: the total-decode regression tests
   /// deliberately plant mistyped rows (e.g. a bare String) to prove they
@@ -89,17 +163,23 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   PostgrestFilterBuilder<T> eq(String column, Object? value) => this;
 
   @override
+  PostgrestFilterBuilder<T> ilike(String column, String pattern) {
+    filters.add(('ilike', column, pattern));
+    return this;
+  }
+
+  @override
   PostgrestTransformBuilder<T> order(
     String column, {
     bool ascending = false,
     bool nullsFirst = false,
     String? referencedTable,
   }) =>
-      FakeTransformBuilder<T>(_typed);
+      transform;
 
   @override
   PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
-      FakeTransformBuilder<T>(_typed);
+      transform;
 
   @override
   Future<R> then<R>(FutureOr<R> Function(T value) onValue,
@@ -156,38 +236,103 @@ void main() {
   // whole screen degraded to a permanent error. The stub below matches the
   // exact column list the repository MUST request — any drift (including
   // re-adding `email`) misses the stub and fails the test.
-  test('fetchCustomers selects only real profiles columns and maps rows',
-      () async {
+  /// Repository whose profiles read answers with [rows] and a server total of
+  /// [total], plus the filter builder so a test can read the page window and
+  /// any server-side filter it recorded.
+  (SupabaseAdminRepository, FakeFilterBuilder<PostgrestList>) directoryRepo({
+    required List<dynamic> rows,
+    int total = 0,
+  }) {
     final client = MockSupabaseClient();
     final builder = MockSupabaseQueryBuilder();
     when(() => client.from('profiles')).thenAnswer((_) => builder);
+    final filters = FakeFilterBuilder<PostgrestList>(rows, total: total);
     when(() => builder.select('id, full_name, phone, membership_tier'))
-        .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
-              {
-                'id': 'c1',
-                'full_name': 'Layla',
-                'phone': '01000000000',
-                'membership_tier': 'premium',
-              },
-              {'id': 'c2', 'full_name': 'Omar'},
-            ]));
-    final repo = SupabaseAdminRepository(client: client);
+        .thenAnswer((_) => filters);
+    return (SupabaseAdminRepository(client: client), filters);
+  }
+
+  test('fetchCustomers asks for one explicit page and reports the exact total',
+      () async {
+    final (repo, filters) = directoryRepo(
+      rows: [
+        {
+          'id': 'c1',
+          'full_name': 'Layla',
+          'phone': '01000000000',
+          'membership_tier': 'premium',
+        },
+        {'id': 'c2', 'full_name': 'Omar'},
+      ],
+      // The server holds far more rows than this page carries; that gap is
+      // what the directory has to be able to state out loud.
+      total: 120,
+    );
 
     final result = await repo.fetchCustomers();
 
-    verify(() => builder.select('id, full_name, phone, membership_tier'))
-        .called(1);
-    final customers = result.when(success: (v) => v, failure: (_) => null);
-    expect(customers, isNotNull);
-    expect(customers!.length, 2);
-    expect(customers[0].id, 'c1');
-    expect(customers[0].name, 'Layla');
-    expect(customers[0].phone, '01000000000');
-    expect(customers[0].contact, '01000000000'); // no email column → phone
-    expect(customers[0].tier, 'premium');
-    expect(customers[0].isBlocked, isFalse); // §14 read-only directory
-    expect(customers[1].tier, 'standard'); // tolerant default
-    expect(customers[1].phone, '');
+    // One explicit range page. The old `.limit(500)` truncated the directory
+    // silently and offered no way past it.
+    expect(filters.transform.ranges, [(0, defaultCustomersPageSize - 1)]);
+    final page = result.when(success: (v) => v, failure: (_) => null);
+    expect(page, isNotNull,
+        reason: 'the exact column list is the 42703 regression guard: any '
+            'drift misses the stub and lands here as a Failure');
+    expect(page!.total, 120, reason: 'total comes from the exact count');
+    expect(page.customers.length, 2);
+    expect(page.customers[0].id, 'c1');
+    expect(page.customers[0].name, 'Layla');
+    expect(page.customers[0].phone, '01000000000');
+    expect(page.customers[0].contact, '01000000000'); // no email column → phone
+    expect(page.customers[0].tier, 'premium');
+    expect(page.customers[0].isBlocked, isFalse); // §14 read-only directory
+    expect(page.customers[1].tier, 'standard'); // tolerant default
+    expect(page.customers[1].phone, '');
+    // No search term means no server-side filter at all.
+    expect(filters.filters, isEmpty);
+  });
+
+  test('fetchCustomers pages by offset rather than re-reading the head',
+      () async {
+    final (repo, filters) = directoryRepo(rows: [], total: 120);
+
+    await repo.fetchCustomers(offset: 50, limit: 25);
+
+    expect(filters.transform.ranges, [(50, 74)]);
+  });
+
+  test('fetchCustomers filters the search on the server, trimmed', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '  Layla  ');
+
+    expect(filters.filters, [('ilike', 'full_name', '%Layla%')],
+        reason: 'a search must narrow the query, not the loaded page');
+  });
+
+  test('fetchCustomers sends no filter for a blank search', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '   ');
+
+    expect(filters.filters, isEmpty);
+  });
+
+  test('customerSearchPattern escapes LIKE metacharacters', () {
+    expect(customerSearchPattern('sara'), '%sara%');
+    // Unescaped, a bare `%` stands in for "any run of characters", so typing
+    // it would return the whole table instead of narrowing it.
+    expect(customerSearchPattern('%'), r'%\%%');
+    expect(customerSearchPattern('a_b'), r'%a\_b%');
+    expect(customerSearchPattern(r'a\b'), r'%a\\b%');
+  });
+
+  test('fetchCustomers escapes the term it hands to the server', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '%');
+
+    expect(filters.filters.single.$3, r'%\%%');
   });
 
   test('fetchCustomers maps a PostgREST failure to Failure (never throws)',
@@ -201,7 +346,10 @@ void main() {
 
     final result = await repo.fetchCustomers();
 
-    expect(result, isA<Failure<List<AdminCustomer>>>());
+    expect(
+      result,
+      isA<Failure<({List<AdminCustomer> customers, int total})>>(),
+    );
   });
 
   // ─── getOrderDetails ────────────────────────────────────

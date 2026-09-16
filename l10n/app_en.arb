@@ -244,6 +244,19 @@
   "updateRequiredBody": "This version is no longer supported. Please update the app to continue shopping.",
   "adminCustomers": "Customers",
   "adminSearch": "Search",
+  "customersShownOf": "Showing {shown} of {total}",
+  "@customersShownOf": {
+    "description": "Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.",
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "loadMore": "Load more",
   "invoiceSave": "Save invoice",
   "signInWithGoogle": "Google",
   "signInWithApple": "Apple",

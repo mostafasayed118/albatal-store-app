@@ -48,8 +48,12 @@ class _FakeAdminRepository implements AdminRepository {
       const Success(null);
 
   @override
-  Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
-      const Success(<AdminCustomer>[]);
+  Future<Result<({List<AdminCustomer> customers, int total})>> fetchCustomers({
+    String? query,
+    int offset = 0,
+    int limit = defaultCustomersPageSize,
+  }) async =>
+      const Success((customers: <AdminCustomer>[], total: 0));
 
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>

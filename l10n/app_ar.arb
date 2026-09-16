@@ -206,6 +206,8 @@
   "updateRequiredBody": "هذه النسخة لم تعد مدعومة. يُرجى تحديث التطبيق للمتابعة.",
   "adminCustomers": "العملاء",
   "adminSearch": "بحث",
+  "customersShownOf": "عرض {shown} من {total}",
+  "loadMore": "تحميل المزيد",
   "invoiceSave": "حفظ الفاتورة",
   "signInWithGoogle": "جوجل",
   "signInWithApple": "آبل",

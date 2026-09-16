@@ -14,6 +14,21 @@ import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_repository.dart';
 import 'admin_mappers.dart';
 
+/// Turns a user-typed search term into the `ILIKE` pattern PostgREST applies.
+///
+/// The term is escaped for LIKE metacharacters first: PostgreSQL's default
+/// LIKE escape character is a backslash, and without this a search for `%`
+/// stands in for "any run of characters" — typing it would return the entire
+/// table instead of narrowing it. The surrounding `%` are the actual
+/// substring wildcards we want.
+String customerSearchPattern(String term) {
+  final escaped = term
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
+  return '%$escaped%';
+}
+
 /// Supabase-backed implementation of [AdminRepository].
 ///
 /// The only place in the admin feature that knows about Supabase. Raw
@@ -392,22 +407,39 @@ final class SupabaseAdminRepository implements AdminRepository {
   /// `42703 column profiles.email does not exist`. Because the failure was
   /// mapped to a `Failure`, the whole Customers screen rendered an error and
   /// no customer could ever be listed. `phone` is the real contact column.
+  ///
+  /// Paged (audit follow-up): one explicit `range` page plus an exact
+  /// `count`. The read stays bounded, but the 501st customer is now
+  /// reachable and the UI can say how many it is not showing — the previous
+  /// `.limit(500)` truncated the directory silently.
   @override
-  Future<Result<List<AdminCustomer>>> fetchCustomers() async {
+  Future<Result<({List<AdminCustomer> customers, int total})>> fetchCustomers({
+    String? query,
+    int offset = 0,
+    int limit = defaultCustomersPageSize,
+  }) async {
     // Deliberately hand-written rather than `Result.guard`: this boundary
     // logs the cause before mapping it (see below) and the guard helper has
     // no logging hook. Every other method in this repository delegates to
     // the shared boundary.
     try {
-      final rows = await _client
+      final term = query?.trim() ?? '';
+      var request = _client
           .from('profiles')
-          .select('id, full_name, phone, membership_tier')
+          .select('id, full_name, phone, membership_tier');
+      if (term.isNotEmpty) {
+        request = request.ilike('full_name', customerSearchPattern(term));
+      }
+      final response = await request
           .order('created_at', ascending: false)
-          .limit(500);
+          .range(offset, offset + limit - 1)
+          // `.count()` sets `Prefer: count=exact`, so one round trip carries
+          // both the page and the total matching the same filter.
+          .count(CountOption.exact);
       // Total decode parity with getAllOrders: mistyped rows degrade to
       // skips (audit 2026-09-14 P0-3) — previously `rows as List` threw on
       // a malformed payload and `row as Map` threw per-row.
-      final list = (rows as List)
+      final list = (response.data as List)
           .whereType<Map<String, dynamic>>()
           // Rows without a string id cannot be navigated to; skip them.
           .where((row) => row['id'] is String)
@@ -421,7 +453,7 @@ final class SupabaseAdminRepository implements AdminRepository {
               ))
           .where((c) => c.id.isNotEmpty)
           .toList();
-      return Success(list);
+      return Success((customers: list, total: response.count));
     } catch (e) {
       // NOTE: this endpoint needs an admin SELECT policy on `profiles`
       // (see supabase/migrations/061_admin_profiles_read.sql).

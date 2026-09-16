@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
+import 'package:al_batal_elite/features/admin/presentation/cubit/admin_customers_cubit.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_customers_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -9,11 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 /// First widget coverage for the customer directory (feature-batch §14).
-/// The page previously had none, so the tier control arrives with the
-/// surface it changes pinned end to end: picker seeding, the earned-ack
-/// contract, and — most importantly — that a failed write leaves the
-/// directory on screen instead of tripping the full-page error state.
+/// The page previously had none, so the tier control and the paging contract
+/// arrive with the surface they change pinned end to end — including that a
+/// failed write leaves the directory on screen instead of tripping the
+/// full-page error state, and that the count line tells the admin how many
+/// customers exist beyond the page they can see.
 class _MockAdminRepository extends Mock implements AdminRepository {}
+
+typedef _Page = ({List<AdminCustomer> customers, int total});
 
 AdminCustomer _customer({
   String id = 'profile-9',
@@ -36,7 +40,8 @@ void main() {
     repo = _MockAdminRepository();
   });
 
-  Widget harness({double textScale = 1.0}) => MaterialApp(
+  Widget harness({double textScale = 1.0, AdminCustomersCubit? cubit}) =>
+      MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
@@ -46,7 +51,7 @@ void main() {
             // the surface size, which is not what a scaled-up phone is.
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(textScale)),
-            child: AdminCustomersPage(repository: repo),
+            child: AdminCustomersPage(repository: repo, cubit: cubit),
           ),
         ),
       );
@@ -69,8 +74,10 @@ void main() {
 
   testWidgets('renders each customer with its tier and a Change control',
       (tester) async {
-    when(() => repo.fetchCustomers())
-        .thenAnswer((_) async => Success([_customer()]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer(
+            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
 
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
@@ -80,12 +87,89 @@ void main() {
     // reads as a value plus an action rather than a captioned button.
     expect(find.text('0100 • Standard Member'), findsOneWidget);
     expect(find.text('Change'), findsOneWidget);
+    expect(find.text('Showing 1 of 1'), findsOneWidget);
+    // Everything is loaded, so there is no next page to offer.
+    expect(find.text('Load more'), findsNothing);
+  });
+
+  testWidgets('states the server total and offers the next page',
+      (tester) async {
+    when(() =>
+        repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit'))).thenAnswer(
+        (_) async => Success<_Page>((customers: [_customer()], total: 120)));
+
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    // The old screen showed one row and said nothing about the other 119.
+    expect(find.text('Showing 1 of 120'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
+  });
+
+  testWidgets('Load more appends the next page and then stops offering it',
+      (tester) async {
+    final cubit = AdminCustomersCubit(
+      repository: repo,
+      pageSize: 1,
+      searchDebounce: Duration.zero,
+    );
+    when(() => repo.fetchCustomers(query: null, limit: 1)).thenAnswer(
+        (_) async => Success<_Page>((customers: [_customer()], total: 2)));
+    when(() => repo.fetchCustomers(query: null, offset: 1, limit: 1))
+        .thenAnswer((_) async => Success<_Page>((
+              customers: [_customer(id: 'profile-8', name: 'Omar Nabil')],
+              total: 2,
+            )));
+
+    await tester.pumpWidget(harness(cubit: cubit));
+    await tester.pumpAndSettle();
+    expect(find.text('Sara Ali'), findsOneWidget);
+    expect(find.text('Omar Nabil'), findsNothing);
+
+    await tester.tap(find.text('Load more'));
+    // Pump (not settle) through the in-flight spinner, then let the page land.
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Omar Nabil'), findsOneWidget);
+    expect(find.text('Showing 2 of 2'), findsOneWidget);
+    expect(find.text('Load more'), findsNothing);
+  });
+
+  testWidgets('a search queries the server and reports no matches honestly',
+      (tester) async {
+    final cubit = AdminCustomersCubit(
+      repository: repo,
+      searchDebounce: Duration.zero,
+    );
+    when(() => repo.fetchCustomers(query: null, limit: 50)).thenAnswer(
+        (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+    when(() => repo.fetchCustomers(query: 'zzz', limit: 50)).thenAnswer(
+        (_) async => const Success<_Page>((customers: [], total: 0)));
+
+    await tester.pumpWidget(harness(cubit: cubit));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.pump(Duration.zero); // fire the debounce timer
+    await tester.pump(); // let the response land
+
+    verify(() => repo.fetchCustomers(query: 'zzz', limit: 50)).called(1);
+    // The old screen rendered the bare word "Search" here, hint text and all.
+    expect(find.text('No results found'), findsOneWidget);
+    expect(find.text('Sara Ali'), findsNothing);
   });
 
   testWidgets('opens the picker seeded with the customer\'s current tier',
       (tester) async {
-    when(() => repo.fetchCustomers())
-        .thenAnswer((_) async => Success([_customer(tier: 'premium')]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer((_) async => Success<_Page>((
+              customers: [_customer(tier: 'premium')],
+              total: 1,
+            )));
 
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
@@ -100,8 +184,10 @@ void main() {
 
   testWidgets('a confirmed change writes the tier and then confirms it',
       (tester) async {
-    when(() => repo.fetchCustomers())
-        .thenAnswer((_) async => Success([_customer()]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer(
+            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
     when(() => repo.setMembershipTier('profile-9', 'premium'))
         .thenAnswer((_) async => const Success(null));
 
@@ -120,8 +206,10 @@ void main() {
 
   testWidgets('confirming the tier already in effect writes nothing',
       (tester) async {
-    when(() => repo.fetchCustomers())
-        .thenAnswer((_) async => Success([_customer()]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer(
+            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
     when(() => repo.setMembershipTier(any(), any()))
         .thenAnswer((_) async => const Success(null));
 
@@ -140,8 +228,10 @@ void main() {
   testWidgets(
       'a failed write floats the error and keeps the directory on screen',
       (tester) async {
-    when(() => repo.fetchCustomers())
-        .thenAnswer((_) async => Success([_customer()]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer(
+            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
     when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
         (_) async => const Failure(AppError('tier change rejected')));
 
@@ -167,10 +257,15 @@ void main() {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    when(() => repo.fetchCustomers()).thenAnswer((_) async => Success([
-          _customer(),
-          _customer(id: 'profile-8', name: 'Omar Nabil', tier: 'premium'),
-        ]));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer((_) async => Success<_Page>((
+              customers: [
+                _customer(),
+                _customer(id: 'profile-8', name: 'Omar Nabil', tier: 'premium'),
+              ],
+              total: 2,
+            )));
 
     await tester.pumpWidget(harness(textScale: 1.4));
     await tester.pumpAndSettle();
@@ -179,5 +274,6 @@ void main() {
         reason: 'a trailing control in a ListTile is where large text breaks');
     expect(find.text('Change'), findsNWidgets(2));
     expect(find.textContaining('Premium Member'), findsOneWidget);
+    expect(find.text('Showing 2 of 2'), findsOneWidget);
   });
 }

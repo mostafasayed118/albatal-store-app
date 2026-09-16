@@ -7,6 +7,13 @@ import '../entities/admin_sales.dart';
 import '../entities/admin_variant.dart';
 import '../entities/low_stock_variant.dart';
 
+/// Rows per customer-directory page when a caller does not choose a size.
+///
+/// Shared by the repository default and the directory cubit so the paging
+/// contract has a single number: the cubit decides *when* to ask for the next
+/// offset, this decides how much arrives.
+const defaultCustomersPageSize = 50;
+
 /// Admin operations for order-queue and inventory management.
 ///
 /// Domain port for the admin feature. The data layer implements this
@@ -52,8 +59,23 @@ abstract interface class AdminRepository {
 
   // ─── Customers (feature-batch §14) ──────────────────────
 
-  /// All customer profiles, newest first (admin-only by RLS).
-  Future<Result<List<AdminCustomer>>> fetchCustomers();
+  /// One bounded page of customer profiles, newest first (admin-only by
+  /// RLS), plus the total row count for the same filter.
+  ///
+  /// [query] is applied on the **server** — a case-insensitive substring of
+  /// the name — so a search covers the whole table rather than only the pages
+  /// already loaded. Blank means no filter.
+  ///
+  /// Reads stay bounded by [limit] on purpose (audit query discipline):
+  /// [offset] is how a caller reaches the rest, and the returned `total` is
+  /// what lets the UI say how much it is *not* showing. Before this, the
+  /// directory was one `.limit(500)` with no way past it, so the 501st
+  /// customer was unreachable and nothing said so.
+  Future<Result<({List<AdminCustomer> customers, int total})>> fetchCustomers({
+    String? query,
+    int offset = 0,
+    int limit = defaultCustomersPageSize,
+  });
 
   // ─── Review moderation (feature-batch §9) ───────────────
 

@@ -574,6 +574,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminSearch => 'Search';
 
   @override
+  String customersShownOf(int shown, int total) {
+    return 'Showing $shown of $total';
+  }
+
+  @override
+  String get loadMore => 'Load more';
+
+  @override
   String get invoiceSave => 'Save invoice';
 
   @override

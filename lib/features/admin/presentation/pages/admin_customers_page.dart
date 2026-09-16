@@ -126,8 +126,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   padding: const EdgeInsetsDirectional.all(16),
                   child: TextField(
                     controller: _searchController,
+                    // Searches the server, so the term reaches customers on
+                    // pages this screen has not loaded yet.
                     onChanged: (q) =>
-                        context.read<AdminCustomersCubit>().filter(q),
+                        context.read<AdminCustomersCubit>().search(q),
                     decoration: InputDecoration(
                       hintText: l.adminSearch,
                       prefixIcon: const Icon(Icons.search),
@@ -135,17 +137,56 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                     ),
                   ),
                 ),
+                // The count is the antidote to the old silent cap: it says
+                // how many customers exist, not just how many are on screen.
+                if (state.customers.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        l.customersShownOf(state.customers.length, state.total),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ),
                 Expanded(
-                  child: state.visible.isEmpty
-                      ? Center(child: Text(l.adminSearch))
+                  child: state.customers.isEmpty
+                      ? Center(child: Text(l.noResultsFound))
                       : ListView.separated(
                           padding: const EdgeInsetsDirectional.symmetric(
                               horizontal: 16),
-                          itemCount: state.visible.length,
+                          itemCount:
+                              state.customers.length + (state.hasMore ? 1 : 0),
                           separatorBuilder: (context, i) =>
                               const SizedBox(height: 8),
                           itemBuilder: (context, i) {
-                            final c = state.visible[i];
+                            // Last slot is the paging footer, present only
+                            // while the server still holds unloaded rows.
+                            if (i == state.customers.length) {
+                              return Padding(
+                                padding: const EdgeInsetsDirectional.symmetric(
+                                    vertical: 16),
+                                child: state.isLoadingMore
+                                    ? const Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      )
+                                    : Center(
+                                        child: TextButton(
+                                          onPressed: () => context
+                                              .read<AdminCustomersCubit>()
+                                              .loadMore(),
+                                          child: Text(l.loadMore),
+                                        ),
+                                      ),
+                              );
+                            }
+                            final c = state.customers[i];
                             // Contact column: email when the schema supplies
                             // one, otherwise the phone that `profiles`
                             // actually has. Hidden when empty so the row
