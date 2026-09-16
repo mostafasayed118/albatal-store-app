@@ -611,6 +611,35 @@ void main() {
       );
     });
 
+    testWidgets('load failure offers a retry that re-reads the gallery',
+        (tester) async {
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Failure(AppError('offline')));
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+            productId: 'pid', repository: repo, storage: storage),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(FeedbackView), findsOneWidget);
+      expect(find.text('offline'), findsOneWidget);
+
+      // The retry must go back to the repository, not merely clear the
+      // message: the second read has to land as a rendered tile.
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Success(['product-images/pid/a.jpg']));
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      await tester.pump();
+
+      verify(() => repo.getProductImagePaths('pid')).called(2);
+      expect(find.byType(AppImage), findsOneWidget,
+          reason: 'the retry re-reads the gallery instead of only clearing it');
+      expect(find.text('offline'), findsNothing);
+    });
+
     testWidgets('deleting an image confirms first, then confirms the outcome',
         (tester) async {
       when(() => repo.getProductImagePaths('pid'))

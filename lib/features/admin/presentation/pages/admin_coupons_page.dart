@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -44,15 +45,23 @@ final class _AdminCouponsView extends StatelessWidget {
       body: BlocBuilder<AdminCouponsCubit, AdminCouponsState>(
         builder: (context, state) {
           if (state.status == AdminCouponsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminCouponsStatus.error) {
-            return Center(
-              child: Text(state.errorMessage ?? l.couponInvalid),
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              body: state.errorMessage ?? l.couponInvalid,
+              onAction: () => context.read<AdminCouponsCubit>().load(),
             );
           }
           if (state.coupons.isEmpty) {
-            return Center(child: Text(l.adminAddCoupon));
+            // Bare empty state: the create-coupon FAB carries the action, so
+            // no CTA renders here.
+            return FeedbackView(
+              type: FeedbackViewType.empty,
+              icon: Icons.local_offer_outlined,
+              body: l.adminAddCoupon,
+            );
           }
           return ListView.separated(
             padding: const EdgeInsetsDirectional.all(16),

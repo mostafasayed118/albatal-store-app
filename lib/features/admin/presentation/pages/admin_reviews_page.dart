@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -39,10 +40,14 @@ final class _AdminReviewsView extends StatelessWidget {
       body: BlocBuilder<AdminReviewsCubit, AdminReviewsState>(
         builder: (context, state) {
           if (state.status == AdminReviewsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminReviewsStatus.error) {
-            return Center(child: Text(state.errorMessage ?? ''));
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              body: state.errorMessage,
+              onAction: () => context.read<AdminReviewsCubit>().load(),
+            );
           }
           return RefreshIndicator(
             onRefresh: () => context.read<AdminReviewsCubit>().load(),

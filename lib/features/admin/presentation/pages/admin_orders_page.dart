@@ -57,7 +57,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
             // A failed load must not read as an empty queue.

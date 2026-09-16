@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -204,7 +205,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
     return Scaffold(
       appBar: AppBar(title: Text(l10n.variants)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
               ? Center(
                   child: Padding(

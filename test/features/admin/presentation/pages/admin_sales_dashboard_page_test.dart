@@ -9,6 +9,8 @@ import 'package:al_batal_elite/features/admin/presentation/widgets/sales_low_sto
 import 'package:al_batal_elite/features/admin/presentation/widgets/sales_revenue_chart.dart';
 import 'package:al_batal_elite/features/admin/presentation/widgets/sales_status_counts_list.dart';
 import 'package:al_batal_elite/features/admin/presentation/widgets/sales_top_products_list.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/components/feedback_view.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,7 +55,11 @@ void main() {
               ]));
 
       await tester.pumpWidget(
-        MaterialApp(home: AdminSalesDashboardPage(repository: repo)),
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AdminSalesDashboardPage(repository: repo),
+        ),
       );
       // Loading frame, then the loaded frame; an extra beat lets the
       // chart's implicit entrance animation settle deterministically.
@@ -85,12 +91,47 @@ void main() {
         .thenAnswer((_) async => const Success([]));
 
     await tester.pumpWidget(
-      MaterialApp(home: AdminSalesDashboardPage(repository: repo)),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AdminSalesDashboardPage(repository: repo),
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Failed to load sales overview'), findsOneWidget);
     expect(find.byType(BarChart), findsNothing);
+  });
+
+  testWidgets('error state offers a retry that reloads the overview',
+      (tester) async {
+    final repo = _MockAdminRepository();
+    when(() => repo.getSalesOverview()).thenAnswer(
+        (_) async => const Failure(AppError('Failed to load sales overview')));
+    when(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
+        .thenAnswer((_) async => const Success([]));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AdminSalesDashboardPage(repository: repo),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(FeedbackView), findsOneWidget);
+
+    when(() => repo.getSalesOverview())
+        .thenAnswer((_) async => Success(_overview()));
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    verify(() => repo.getSalesOverview()).called(2);
+    expect(find.byType(BarChart), findsOneWidget,
+        reason: 'the retry reloads instead of only clearing the error');
   });
 }
