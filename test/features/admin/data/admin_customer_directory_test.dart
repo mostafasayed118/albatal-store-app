@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -38,9 +38,17 @@ class FakeTransformBuilder<T> extends Fake
   /// `Prefer: count=exact` adds to the response.
   final int total;
 
-  /// The `from`/`to` pairs requested, in order, so a test can pin the page
-  /// window itself rather than only the rows that came back.
-  final List<(int, int)> ranges = [];
+  /// The `limit` the repository asked for, in order (a list rather than a
+  /// mutable field because [Fake] is `@immutable`).
+  ///
+  /// Paging is positional now, so this is the page's *size* rather than a
+  /// window into an offset — hence one more than a page: the look-ahead row is
+  /// how "is there more?" is answered without a second request.
+  final List<int> limits = [];
+
+  /// The `order` clauses applied, in order, so a test can pin that the sort is
+  /// TOTAL — `created_at` *and* the `id` tiebreaker keyset paging needs.
+  final List<String> orders = [];
 
   @override
   PostgrestTransformBuilder<T> order(
@@ -48,20 +56,14 @@ class FakeTransformBuilder<T> extends Fake
     bool ascending = false,
     bool nullsFirst = false,
     String? referencedTable,
-  }) =>
-      this;
-
-  @override
-  PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
-      this;
-
-  @override
-  PostgrestTransformBuilder<T> range(
-    int from,
-    int to, {
-    String? referencedTable,
   }) {
-    ranges.add((from, to));
+    orders.add(column);
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) {
+    limits.add(count);
     return this;
   }
 
@@ -139,6 +141,11 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   /// pattern) — evidence that the search is not done client-side.
   final List<(String, String, String)> filters = [];
 
+  /// `or` trees the repository applied, kept verbatim. The *syntax* is the
+  /// thing under test: PostgREST parses this string by hand, so a test pins
+  /// the exact characters rather than a re-rendered equivalent.
+  final List<String> orFilters = [];
+
   /// The transform builder the chain continues onto, so tests can read the
   /// page window it recorded. Built once and handed back by both `order` and
   /// `limit`, which is also why it is `late final` rather than a mutable
@@ -163,6 +170,12 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
   PostgrestFilterBuilder<T> eq(String column, Object? value) => this;
 
   @override
+  PostgrestFilterBuilder<T> or(String filters, {String? referencedTable}) {
+    orFilters.add(filters);
+    return this;
+  }
+
+  @override
   PostgrestFilterBuilder<T> ilike(String column, String pattern) {
     filters.add(('ilike', column, pattern));
     return this;
@@ -174,8 +187,12 @@ class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
     bool ascending = false,
     bool nullsFirst = false,
     String? referencedTable,
-  }) =>
-      transform;
+  }) {
+    // Recorded here as well as on the transform: the repository chains
+    // `order` twice, and the first call is the one that leaves this builder.
+    transform.orders.add(column);
+    return transform;
+  }
 
   @override
   PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
@@ -247,12 +264,13 @@ void main() {
     final builder = MockSupabaseQueryBuilder();
     when(() => client.from('profiles')).thenAnswer((_) => builder);
     final filters = FakeFilterBuilder<PostgrestList>(rows, total: total);
-    when(() => builder.select('id, full_name, phone, membership_tier'))
+    when(() =>
+            builder.select('id, full_name, phone, membership_tier, created_at'))
         .thenAnswer((_) => filters);
     return (SupabaseAdminRepository(client: client), filters);
   }
 
-  test('fetchCustomers asks for one explicit page and reports the exact total',
+  test('fetchCustomers asks for one page, newest first, and reports the total',
       () async {
     final (repo, filters) = directoryRepo(
       rows: [
@@ -261,8 +279,13 @@ void main() {
           'full_name': 'Layla',
           'phone': '01000000000',
           'membership_tier': 'premium',
+          'created_at': '2026-09-16T10:00:00.000300Z',
         },
-        {'id': 'c2', 'full_name': 'Omar'},
+        {
+          'id': 'c2',
+          'full_name': 'Omar',
+          'created_at': '2026-09-16T10:00:00.000200Z',
+        },
       ],
       // The server holds far more rows than this page carries; that gap is
       // what the directory has to be able to state out loud.
@@ -271,9 +294,15 @@ void main() {
 
     final result = await repo.fetchCustomers();
 
-    // One explicit range page. The old `.limit(500)` truncated the directory
+    // One page plus a look-ahead row, so "is there another page?" is answered
+    // by the data itself. The old `.limit(500)` truncated the directory
     // silently and offered no way past it.
-    expect(filters.transform.ranges, [(0, defaultCustomersPageSize - 1)]);
+    expect(filters.transform.limits, [defaultCustomersPageSize + 1]);
+    // The sort key has to be TOTAL. `created_at` alone is not unique — a seed,
+    // a bulk import or two signups in the same tick share it — and a
+    // non-unique key is exactly what lets a row land on two consecutive pages,
+    // or on neither, once paging stops being offset-based.
+    expect(filters.transform.orders, ['created_at', 'id']);
     final page = result.when(success: (v) => v, failure: (_) => null);
     expect(page, isNotNull,
         reason: 'the exact column list is the 42703 regression guard: any '
@@ -288,17 +317,152 @@ void main() {
     expect(page.customers[0].isBlocked, isFalse); // §14 read-only directory
     expect(page.customers[1].tier, 'standard'); // tolerant default
     expect(page.customers[1].phone, '');
-    // No search term means no server-side filter at all.
+    // A page that came back short IS the last page, and says so rather than
+    // making the UI spend a request to discover the same thing.
+    expect(page.nextCursor, isNull);
+    // No search term means no server-side filter at all…
     expect(filters.filters, isEmpty);
+    // …and no bookmark either: the first page starts at the newest row.
+    expect(filters.orFilters, isEmpty);
   });
 
-  test('fetchCustomers pages by offset rather than re-reading the head',
+  test('fetchCustomers bookmarks the last row it actually returned', () async {
+    final (repo, filters) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T10:00:00.000300Z'},
+      {'id': 'c2', 'created_at': '2026-09-16T10:00:00.000200Z'},
+      // One row past the page: evidence that there is more, never a result.
+      {'id': 'c3', 'created_at': '2026-09-16T10:00:00.000100Z'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.customers.map((c) => c.id), ['c1', 'c2']);
+    expect(
+      page.nextCursor,
+      (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2'),
+      reason: 'the bookmark is the last RETURNED row, so the next page can '
+          'neither repeat c2 nor skip it',
+    );
+    expect(filters.orFilters, isEmpty);
+  });
+
+  test('fetchCustomers resumes from the bookmark with a keyset filter',
       () async {
-    final (repo, filters) = directoryRepo(rows: [], total: 120);
+    final (repo, filters) = directoryRepo(rows: []);
 
-    await repo.fetchCustomers(offset: 50, limit: 25);
+    await repo.fetchCustomers(
+      cursor: (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2'),
+      limit: 2,
+    );
 
-    expect(filters.transform.ranges, [(50, 74)]);
+    // The `id` clause is what makes the walk total. Drop it and two customers
+    // created in the same tick can be ordered either way between two queries:
+    // one of them then shows up twice, or not at all.
+    expect(filters.orFilters, [
+      'created_at.lt.2026-09-16T10:00:00.000200Z,'
+          'and(created_at.eq.2026-09-16T10:00:00.000200Z,id.lt.c2)',
+    ]);
+    expect(filters.transform.limits, [3],
+        reason: 'a continuation page is still a page plus one');
+  });
+
+  test('customerKeysetFilter covers ties on the sort key', () {
+    expect(
+      customerKeysetFilter(
+          (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2')),
+      'created_at.lt.2026-09-16T10:00:00.000200Z,'
+      'and(created_at.eq.2026-09-16T10:00:00.000200Z,id.lt.c2)',
+      reason: 'three clauses in two forms: strictly older, or the same '
+          'instant and a lower id',
+    );
+  });
+
+  test('fetchCustomers reports no total on a continuation page', () async {
+    // A cursor narrows the filter the exact count is taken over, so the server
+    // would be counting the rows REMAINING. Publishing that would make
+    // "showing 50 of 120" turn into "showing 100 of 70" as the admin scrolled.
+    final (repo, _) = directoryRepo(rows: [], total: 70);
+
+    final page = (await repo.fetchCustomers(
+            cursor: (createdAt: '2026-09-16T10:00:00Z', id: 'c2')))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.total, isNull,
+        reason: 'the cubit keeps the first page\'s total instead');
+  });
+
+  test('fetchCustomers normalises the bookmark timestamp to UTC', () async {
+    // Newest first, as the server returns them, with a non-UTC offset.
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T14:00:00.000500+02:00'},
+      {'id': 'c2', 'created_at': '2026-09-16T13:00:00.000100+02:00'},
+      {'id': 'c3', 'created_at': '2026-09-16T12:00:00.000100+02:00'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    // 13:00+02:00 is 11:00Z — and the microseconds survive the round trip. A
+    // lost digit would move the boundary and repeat or drop the row it names.
+    expect(
+      page.nextCursor,
+      (createdAt: '2026-09-16T11:00:00.000100Z', id: 'c2'),
+    );
+  });
+
+  test('fetchCustomers stops paging when a row cannot anchor a bookmark',
+      () async {
+    // `profiles.created_at` is NOT NULL, so this is a defensive path. Resuming
+    // from an invented position could repeat or skip rows, so ending the walk
+    // is the safe answer.
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1'},
+      {'id': 'c2'},
+      {'id': 'c3'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.customers.length, 2);
+    expect(page.nextCursor, isNull);
+  });
+
+  test('fetchCustomers drops unnavigable rows before cutting the page',
+      () async {
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T10:00:00.000300Z'},
+      {'id': 42, 'created_at': '2026-09-16T10:00:00.000200Z'}, // not a String
+      {'id': '', 'created_at': '2026-09-16T10:00:00.000150Z'}, // empty
+      {'id': 'c2', 'created_at': '2026-09-16T10:00:00.000100Z'},
+      {'id': 'c3', 'created_at': '2026-09-16T10:00:00.000050Z'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    // A row nobody can navigate to must not occupy a slot, or the bookmark
+    // would name a row that was never returned and the page would come up
+    // short at the boundary.
+    expect(page.customers.map((c) => c.id), ['c1', 'c2']);
+    expect(
+        page.nextCursor, (createdAt: '2026-09-16T10:00:00.000100Z', id: 'c2'));
+  });
+
+  test('fetchCustomers keeps the search filter on a continuation page',
+      () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(
+      query: 'Layla',
+      cursor: (createdAt: '2026-09-16T10:00:00Z', id: 'c2'),
+    );
+
+    // Paging must not quietly drop the search: the second page of a filtered
+    // directory is a filtered directory, not the whole table.
+    expect(filters.filters, [('ilike', 'full_name', '%Layla%')]);
+    expect(filters.orFilters, hasLength(1));
   });
 
   test('fetchCustomers filters the search on the server, trimmed', () async {
@@ -340,7 +504,8 @@ void main() {
     final client = MockSupabaseClient();
     final builder = MockSupabaseQueryBuilder();
     when(() => client.from('profiles')).thenAnswer((_) => builder);
-    when(() => builder.select('id, full_name, phone, membership_tier'))
+    when(() =>
+            builder.select('id, full_name, phone, membership_tier, created_at'))
         .thenThrow(Exception('42703 column profiles.email does not exist'));
     final repo = SupabaseAdminRepository(client: client);
 
@@ -348,7 +513,13 @@ void main() {
 
     expect(
       result,
-      isA<Failure<({List<AdminCustomer> customers, int total})>>(),
+      isA<
+          Failure<
+              ({
+                List<AdminCustomer> customers,
+                int? total,
+                CustomerCursor? nextCursor,
+              })>>(),
     );
   });
 

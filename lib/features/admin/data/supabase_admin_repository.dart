@@ -29,6 +29,44 @@ String customerSearchPattern(String term) {
   return '%$escaped%';
 }
 
+/// The PostgREST filter that resumes a newest-first directory walk *after*
+/// [cursor].
+///
+/// Spelled `created_at < ts OR (created_at = ts AND id < lastId)` — the rows
+/// the previous page did not reach under the `(created_at DESC, id DESC)`
+/// order this repository asks for, which is why the tie-breaking `id` clause
+/// is not optional (see `_customerCursor`).
+///
+/// PostgREST reads everything after `column.operator.` as the value, so the
+/// dots inside a timestamp are part of the value rather than further
+/// separators — the same reason the canonical
+/// `?created_at=gte.2024-01-01T00:00:00.000Z` works. The value is kept in UTC
+/// with a `Z` suffix, so it can never contain a `,` or `)`, which *are*
+/// structural inside an `or` tree.
+String customerKeysetFilter(CustomerCursor cursor) =>
+    'created_at.lt.${cursor.createdAt},'
+    'and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})';
+
+/// The keyset bookmark for [row], or null when that row cannot anchor a page.
+///
+/// Returns null for a row whose `created_at` is absent or unparseable, and the
+/// caller reads that as the end of the list. Stopping is deliberate: resuming
+/// from an unknown position could repeat or skip rows, which is the exact
+/// defect this paging exists to remove. `profiles.created_at` is NOT NULL and
+/// the select asks for it, so this is unreachable unless one of those two
+/// facts changes.
+CustomerCursor? _customerCursor(Map<String, dynamic> row) {
+  final id = row['id'];
+  final createdAt = row['created_at'];
+  if (id is! String || id.isEmpty || createdAt is! String) return null;
+  final parsed = DateTime.tryParse(createdAt);
+  if (parsed == null) return null;
+  // Normalised to UTC so the value is canonical and its alphabet stays
+  // digits/`-`/`:`/`T`/`.`/`Z` — nothing structural inside the `or` filter
+  // that [customerKeysetFilter] builds from it.
+  return (createdAt: parsed.toUtc().toIso8601String(), id: id);
+}
+
 /// Supabase-backed implementation of [AdminRepository].
 ///
 /// The only place in the admin feature that knows about Supabase. Raw
@@ -408,14 +446,24 @@ final class SupabaseAdminRepository implements AdminRepository {
   /// mapped to a `Failure`, the whole Customers screen rendered an error and
   /// no customer could ever be listed. `phone` is the real contact column.
   ///
-  /// Paged (audit follow-up): one explicit `range` page plus an exact
-  /// `count`. The read stays bounded, but the 501st customer is now
+  /// `created_at` is requested for **position, not display**: it is half of
+  /// the keyset bookmark (see [customerKeysetFilter]) and no caller renders
+  /// it.
+  ///
+  /// Paged (audit follow-up): one bounded page plus an exact `count`, reached
+  /// by keyset cursor. The read stays bounded, but the 501st customer is now
   /// reachable and the UI can say how many it is not showing — the previous
   /// `.limit(500)` truncated the directory silently.
   @override
-  Future<Result<({List<AdminCustomer> customers, int total})>> fetchCustomers({
+  Future<
+      Result<
+          ({
+            List<AdminCustomer> customers,
+            int? total,
+            CustomerCursor? nextCursor,
+          })>> fetchCustomers({
     String? query,
-    int offset = 0,
+    CustomerCursor? cursor,
     int limit = defaultCustomersPageSize,
   }) async {
     // Deliberately hand-written rather than `Result.guard`: this boundary
@@ -426,23 +474,50 @@ final class SupabaseAdminRepository implements AdminRepository {
       final term = query?.trim() ?? '';
       var request = _client
           .from('profiles')
-          .select('id, full_name, phone, membership_tier');
+          .select('id, full_name, phone, membership_tier, created_at');
       if (term.isNotEmpty) {
         request = request.ilike('full_name', customerSearchPattern(term));
       }
+      if (cursor != null) {
+        request = request.or(customerKeysetFilter(cursor));
+      }
+      // One row past the page is requested so "is there another page?" is
+      // answered by the data itself instead of by comparing a running count
+      // against `total`. The extra row is dropped before returning.
       final response = await request
+          // `id` is the tiebreaker, not decoration: `created_at` is not
+          // unique (a seed, a bulk import, or two signups in the same tick all
+          // share it) and a non-total sort key lets Postgres order those ties
+          // differently per query — which is how a row lands on two
+          // consecutive pages, or on neither. Matches [customerKeysetFilter].
           .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1)
+          .order('id', ascending: false)
+          .limit(limit + 1)
           // `.count()` sets `Prefer: count=exact`, so one round trip carries
-          // both the page and the total matching the same filter.
+          // both the page and the total matching the same filter. It is asked
+          // for on every page because a single response carries both, but is
+          // only *reported* on the first: a cursor narrows the counted filter,
+          // so a continuation page's count is the rows remaining rather than
+          // the rows that match.
           .count(CountOption.exact);
       // Total decode parity with getAllOrders: mistyped rows degrade to
       // skips (audit 2026-09-14 P0-3) — previously `rows as List` threw on
       // a malformed payload and `row as Map` threw per-row.
-      final list = (response.data as List)
+      //
+      // Rows without a usable string id are dropped *before* the page is cut
+      // to size: they cannot be navigated to, and a bookmark taken past them
+      // is what keeps `nextCursor` describing a row that was actually
+      // returned.
+      final rows = (response.data as List)
           .whereType<Map<String, dynamic>>()
-          // Rows without a string id cannot be navigated to; skip them.
-          .where((row) => row['id'] is String)
+          .where((row) {
+        final id = row['id'];
+        return id is String && id.isNotEmpty;
+      }).toList();
+      final hasMore = rows.length > limit;
+      final page = hasMore ? rows.sublist(0, limit) : rows;
+      final nextCursor = hasMore ? _customerCursor(page.last) : null;
+      final list = page
           .map((row) => AdminCustomer(
                 id: safeString(row, 'id'),
                 name: safeString(row, 'full_name'),
@@ -451,9 +526,15 @@ final class SupabaseAdminRepository implements AdminRepository {
                 isBlocked:
                     false, // no suspension flag in profiles (§14 read-only)
               ))
-          .where((c) => c.id.isNotEmpty)
           .toList();
-      return Success((customers: list, total: response.count));
+      return Success((
+        customers: list,
+        // Only the first page can report a total (see the port's doc comment
+        // and `AdminCustomersCubit`, which preserves the value it already
+        // has).
+        total: cursor == null ? response.count : null,
+        nextCursor: nextCursor,
+      ));
     } catch (e) {
       // NOTE: this endpoint needs an admin SELECT policy on `profiles`
       // (see supabase/migrations/061_admin_profiles_read.sql).

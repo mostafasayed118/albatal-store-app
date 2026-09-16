@@ -16,7 +16,17 @@ import 'package:mocktail/mocktail.dart';
 /// applied.
 class _MockAdminRepository extends Mock implements AdminRepository {}
 
-typedef _Page = ({List<AdminCustomer> customers, int total});
+typedef _Page = ({
+  List<AdminCustomer> customers,
+  int? total,
+  CustomerCursor? nextCursor,
+});
+
+/// The bookmark naming [id]. The timestamp is fixed because these tests are
+/// about *which* row the walk resumes from, not about the instant: the
+/// repository is where the timestamp's meaning is pinned.
+CustomerCursor _bookmark(String id) =>
+    (createdAt: '2026-09-16T10:00:00.000000Z', id: id);
 
 AdminCustomer _customer(
   String id,
@@ -64,8 +74,12 @@ void main() {
     blocTest<AdminCustomersCubit, AdminCustomersState>(
       'loads the first page and reports that the server holds more',
       build: () {
-        when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-            (_) async => Success<_Page>((customers: [_sara, _omar], total: 5)));
+        when(() => repo.fetchCustomers(query: null, limit: 2))
+            .thenAnswer((_) async => Success<_Page>((
+                  customers: [_sara, _omar],
+                  total: 5,
+                  nextCursor: _bookmark('profile-8'),
+                )));
         return buildCubit();
       },
       act: (cubit) => cubit.load(),
@@ -76,6 +90,8 @@ void main() {
             .having((s) => s.status, 'status', AdminCustomersStatus.ready)
             .having((s) => s.customers.length, 'customers.length', 2)
             .having((s) => s.total, 'total', 5)
+            // The server handed back a bookmark, which is the whole of
+            // hasMore: it is not derived from a count.
             .having((s) => s.hasMore, 'hasMore', true),
       ],
     );
@@ -100,12 +116,23 @@ void main() {
   });
 
   group('AdminCustomersCubit.loadMore', () {
-    test('appends the next page at the next offset and then stops', () async {
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara, _omar], total: 3)));
-      when(() => repo.fetchCustomers(query: null, offset: 2, limit: 2))
-          .thenAnswer(
-              (_) async => Success<_Page>((customers: [_nour], total: 3)));
+    test('appends the page the bookmark names, then stops when told to',
+        () async {
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara, _omar],
+                total: 3,
+                nextCursor: _bookmark('profile-8'),
+              )));
+      when(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          )).thenAnswer((_) async => Success<_Page>((
+            customers: [_nour],
+            total: null, // a continuation page carries no count
+            nextCursor: null, // and this was the last one
+          )));
       final cubit = buildCubit();
 
       await cubit.load();
@@ -116,18 +143,33 @@ void main() {
       expect(cubit.state.customers.map((c) => c.id),
           ['profile-9', 'profile-8', 'profile-7']);
       expect(cubit.state.isLoadingMore, isFalse);
-      // Two rows asked for, three rows known: the offset advanced by the page
-      // size, not by what came back, so the extra row is not re-requested.
+      // The walk ends because the server said so, not because a running count
+      // caught up with a total.
       expect(cubit.state.hasMore, isFalse,
-          reason: 'offset 4 has reached the server total of 3');
+          reason: 'no bookmark came back, so there is nothing after profile-7');
+      // The "showing X of Y" line must survive a page that carried no count of
+      // its own — otherwise it would read "showing 3 of 0".
+      expect(cubit.state.total, 3,
+          reason: 'the first page\'s total is the one that means anything');
 
       await cubit.loadMore();
-      verifyNever(() => repo.fetchCustomers(query: null, offset: 4, limit: 2));
+      // Named against the bookmark, not `any(named: 'cursor')`: a first-page
+      // load carries `cursor: null`, and matching on "some cursor" would count
+      // the load as a page fetch and pass for the wrong reason.
+      verify(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          )).called(1);
     });
 
     test('does not fetch when the server has nothing more', () async {
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara], total: 1)));
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara],
+                total: 1,
+                nextCursor: null,
+              )));
       final cubit = buildCubit();
 
       await cubit.load();
@@ -135,48 +177,79 @@ void main() {
 
       await cubit.loadMore();
 
-      // Specific to the next offset: a looser pattern would also match the
-      // first-page load and pass for the wrong reason.
-      verifyNever(() => repo.fetchCustomers(query: null, offset: 2, limit: 2));
+      // The load itself is one call, and it passes `cursor: null`, so a page
+      // fetch would be indistinguishable from it by cursor alone — pin the
+      // total number of calls instead. Two would mean `loadMore` ran despite
+      // the server having said there was nothing more.
+      verify(() => repo.fetchCustomers(
+            query: any(named: 'query'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+          )).called(1);
     });
 
-    test('a short page still advances by the page size, not by rows loaded',
-        () async {
-      // The repository skips rows it cannot decode, so a page can come back
-      // short while the server holds more. Paging off the loaded count would
-      // re-request rows that were already consumed.
-      //
-      // Three pages on purpose: after only two, "consumed" and "displayed"
-      // still agree, so the mistake is invisible. Page two returns a single
-      // row for a two-row request, which is where they diverge — page three
-      // must therefore ask for offset 4 (two consumed, then two more), not 3.
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara, _omar], total: 5)));
-      when(() => repo.fetchCustomers(query: null, offset: 2, limit: 2))
-          .thenAnswer(
-              (_) async => Success<_Page>((customers: [_nour], total: 5)));
-      when(() => repo.fetchCustomers(query: null, offset: 4, limit: 2))
-          .thenAnswer(
-              (_) async => Success<_Page>((customers: [_hoda], total: 5)));
+    test('walks three pages by advancing the bookmark each time', () async {
+      // Three pages on purpose. With only two, a bookmark that never advanced
+      // still produces a plausible result set: page two would be fetched with
+      // the *first* bookmark and `_nour` would simply arrive twice. Only the
+      // third step makes the mistake visible as a duplicate row, which is the
+      // exact failure keyset paging exists to prevent.
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara, _omar],
+                total: 5,
+                nextCursor: _bookmark('profile-8'),
+              )));
+      when(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          )).thenAnswer((_) async => Success<_Page>((
+            customers: [_nour],
+            total: null,
+            nextCursor: _bookmark('profile-7'),
+          )));
+      when(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-7'),
+            limit: 2,
+          )).thenAnswer((_) async => Success<_Page>((
+            customers: [_hoda],
+            total: null,
+            nextCursor: null,
+          )));
       final cubit = buildCubit();
 
       await cubit.load();
       await cubit.loadMore();
       await cubit.loadMore();
 
-      verify(() => repo.fetchCustomers(query: null, offset: 4, limit: 2))
-          .called(1);
       expect(cubit.state.customers.map((c) => c.id),
-          ['profile-9', 'profile-8', 'profile-7', 'profile-6']);
-      expect(cubit.state.hasMore, isFalse,
-          reason: 'offset 6 is past the server total of 5');
+          ['profile-9', 'profile-8', 'profile-7', 'profile-6'],
+          reason: 'no row may appear twice, and none may be stepped over');
+      verify(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-7'),
+            limit: 2,
+          )).called(1);
+      expect(cubit.state.hasMore, isFalse);
+      expect(cubit.state.total, 5,
+          reason: 'the total survives both continuation pages');
     });
 
     test('a failed page reports the error rather than a shorter list',
         () async {
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara, _omar], total: 5)));
-      when(() => repo.fetchCustomers(query: null, offset: 2, limit: 2))
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara, _omar],
+                total: 5,
+                nextCursor: _bookmark('profile-8'),
+              )));
+      when(() => repo.fetchCustomers(
+                query: null,
+                cursor: _bookmark('profile-8'),
+                limit: 2,
+              ))
           .thenAnswer(
               (_) async => const Failure(AppError('page 2 unavailable')));
       final cubit = buildCubit();
@@ -192,10 +265,18 @@ void main() {
 
   group('AdminCustomersCubit.search', () {
     test('queries the server and replaces the list with the matches', () async {
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara, _omar], total: 5)));
-      when(() => repo.fetchCustomers(query: 'omar', limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_omar], total: 1)));
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara, _omar],
+                total: 5,
+                nextCursor: _bookmark('profile-8'),
+              )));
+      when(() => repo.fetchCustomers(query: 'omar', limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_omar],
+                total: 1,
+                nextCursor: null,
+              )));
       final cubit = buildCubit();
       await cubit.load();
 
@@ -210,8 +291,12 @@ void main() {
 
     test('keystrokes within the debounce window collapse into one query',
         () async {
-      when(() => repo.fetchCustomers(query: 's', limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara], total: 1)));
+      when(() => repo.fetchCustomers(query: 's', limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara],
+                total: 1,
+                nextCursor: null,
+              )));
       final cubit = AdminCustomersCubit(
         repository: repo,
         pageSize: 2,
@@ -231,8 +316,12 @@ void main() {
       final slow = Completer<Result<_Page>>();
       when(() => repo.fetchCustomers(query: 'slow', limit: 2))
           .thenAnswer((_) => slow.future);
-      when(() => repo.fetchCustomers(query: 'fast', limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_omar], total: 1)));
+      when(() => repo.fetchCustomers(query: 'fast', limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_omar],
+                total: 1,
+                nextCursor: null,
+              )));
       final cubit = buildCubit();
 
       cubit.search('slow');
@@ -242,7 +331,11 @@ void main() {
       expect(cubit.state.customers.single.id, 'profile-8');
 
       // The superseded response lands last and must be discarded.
-      slow.complete(Success<_Page>((customers: [_sara], total: 5)));
+      slow.complete(Success<_Page>((
+        customers: [_sara],
+        total: 5,
+        nextCursor: null,
+      )));
       await settle();
 
       expect(cubit.state.customers.single.id, 'profile-8',
@@ -251,13 +344,24 @@ void main() {
     });
 
     test('an in-flight page cannot append onto a newer search', () async {
-      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_sara, _omar], total: 5)));
+      when(() => repo.fetchCustomers(query: null, limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_sara, _omar],
+                total: 5,
+                nextCursor: _bookmark('profile-8'),
+              )));
       final pending = Completer<Result<_Page>>();
-      when(() => repo.fetchCustomers(query: null, offset: 2, limit: 2))
-          .thenAnswer((_) => pending.future);
-      when(() => repo.fetchCustomers(query: 'nour', limit: 2)).thenAnswer(
-          (_) async => Success<_Page>((customers: [_nour], total: 1)));
+      when(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          )).thenAnswer((_) => pending.future);
+      when(() => repo.fetchCustomers(query: 'nour', limit: 2))
+          .thenAnswer((_) async => Success<_Page>((
+                customers: [_nour],
+                total: 1,
+                nextCursor: null,
+              )));
       final cubit = buildCubit();
       await cubit.load();
 
@@ -269,12 +373,18 @@ void main() {
 
       // Page 2 of the *previous* query resolves now: appending it would mix
       // two result sets together.
-      pending.complete(Success<_Page>((customers: [_hoda], total: 5)));
+      pending.complete(Success<_Page>((
+        customers: [_hoda],
+        total: null,
+        nextCursor: null,
+      )));
       await more;
       await settle();
 
       expect(cubit.state.customers.single.id, 'profile-7',
           reason: 'the superseded page must not join the new search results');
+      expect(cubit.state.total, 1,
+          reason: 'nor may its missing count blank the search\'s total');
     });
   });
 

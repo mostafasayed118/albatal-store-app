@@ -89,11 +89,16 @@ final class AdminCustomersState extends Equatable {
 /// renders this cubit instead of calling the repository from its State
 /// (audit 2026-09-13).
 ///
-/// The directory is **paged**, and the search is **server-side**: a filtered
-/// read covers the whole `profiles` table rather than only the pages already
-/// loaded. Both exist because of the same defect — the directory used to be a
-/// single `.limit(500)` that silently hid the 501st customer, with a
-/// client-side filter that could therefore only ever see the same 500.
+/// The directory is **paged by keyset cursor**, and the search is
+/// **server-side**: a filtered read covers the whole `profiles` table rather
+/// than only the pages already loaded. Both exist because of the same defect —
+/// the directory used to be a single `.limit(500)` that silently hid the 501st
+/// customer, with a client-side filter that could therefore only ever see the
+/// same 500.
+///
+/// Paging is positional by the last row's `(createdAt, id)` rather than by an
+/// offset, so a customer signing up mid-scroll cannot make the next page
+/// repeat a row or step over one (see [_cursor]).
 class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   AdminCustomersCubit({
     required AdminRepository repository,
@@ -115,11 +120,16 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   /// Active search term, already trimmed and sent to the server.
   String _query = '';
 
-  /// Rows already consumed from the server — deliberately NOT
-  /// `state.customers.length`, which is smaller whenever the repository skips
-  /// a malformed row. Paging off the loaded count would re-request or skip
-  /// rows at that boundary.
-  int _offset = 0;
+  /// Bookmark for the next page: the `(createdAt, id)` of the last row the
+  /// server returned for the active search, or null before the first page.
+  ///
+  /// Deliberately a position *value* rather than an offset derived from
+  /// `state.customers.length`. A count is wrong at both ends of the same
+  /// problem: the repository drops undecodable rows (so the loaded count is
+  /// short of what the server consumed), and a customer who signs up while an
+  /// admin is scrolling shifts every later row down by one, so the next offset
+  /// steps over a row that was never shown. A cursor cannot do either.
+  CustomerCursor? _cursor;
 
   /// Bumped whenever the result set is replaced (initial load or a new
   /// search). A page load is applied only if the generation still matches, so
@@ -149,25 +159,30 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   }
 
   /// Appends the next page. A no-op when nothing more is known or a page is
-  /// already in flight, so a double tap cannot fetch the same offset twice.
+  /// already in flight, so a double tap cannot fetch the same page twice.
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore) return;
     final generation = _generation;
     emit(state.copyWith(isLoadingMore: true));
     final result = await _repository.fetchCustomers(
       query: _query.isEmpty ? null : _query,
-      offset: _offset,
+      cursor: _cursor,
       limit: pageSize,
     );
     if (isClosed || generation != _generation) return;
     switch (result) {
       case Success(:final value):
-        _offset += pageSize;
+        _cursor = value.nextCursor;
+        // `total` is deliberately NOT taken from this response. A cursor
+        // narrows the filter the exact count is taken over, so a continuation
+        // page can only ever report the rows *remaining*; the first page's
+        // count is the one the "showing X of Y" line means. Ignoring it here
+        // (rather than trusting the repository to leave it null) makes that
+        // invariant structural: no continuation page can move the number.
         emit(state.copyWith(
           status: AdminCustomersStatus.ready,
           customers: [...state.customers, ...value.customers],
-          total: value.total,
-          hasMore: _offset < value.total,
+          hasMore: value.nextCursor != null,
           isLoadingMore: false,
         ));
       case Failure(:final error):
@@ -195,14 +210,16 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
       limit: pageSize,
     );
     if (isClosed || generation != _generation) return;
-    _offset = pageSize;
     switch (result) {
       case Success(:final value):
+        _cursor = value.nextCursor;
         emit(state.copyWith(
           status: AdminCustomersStatus.ready,
           customers: value.customers,
-          total: value.total,
-          hasMore: _offset < value.total,
+          // A first page always carries the exact total; the fallback only
+          // exists so a compliant repository cannot silently blank the line.
+          total: value.total ?? 0,
+          hasMore: value.nextCursor != null,
           isLoadingMore: false,
         ));
       case Failure(:final error):

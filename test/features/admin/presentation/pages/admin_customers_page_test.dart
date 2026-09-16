@@ -17,7 +17,16 @@ import 'package:mocktail/mocktail.dart';
 /// customers exist beyond the page they can see.
 class _MockAdminRepository extends Mock implements AdminRepository {}
 
-typedef _Page = ({List<AdminCustomer> customers, int total});
+typedef _Page = ({
+  List<AdminCustomer> customers,
+  int? total,
+  CustomerCursor? nextCursor,
+});
+
+/// The bookmark naming [id]; the instant is fixed because the page only cares
+/// that a next page exists, not where the boundary falls.
+CustomerCursor _bookmark(String id) =>
+    (createdAt: '2026-09-16T10:00:00.000000Z', id: id);
 
 AdminCustomer _customer({
   String id = 'profile-9',
@@ -74,10 +83,11 @@ void main() {
 
   testWidgets('renders each customer with its tier and a Change control',
       (tester) async {
-    when(() => repo.fetchCustomers(
-            query: any(named: 'query'), limit: any(named: 'limit')))
-        .thenAnswer(
-            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+    when(() =>
+        repo.fetchCustomers(
+            query: any(named: 'query'),
+            limit: any(named: 'limit'))).thenAnswer((_) async =>
+        Success<_Page>((customers: [_customer()], total: 1, nextCursor: null)));
 
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
@@ -94,10 +104,17 @@ void main() {
 
   testWidgets('states the server total and offers the next page',
       (tester) async {
-    when(() =>
-        repo.fetchCustomers(
-            query: any(named: 'query'), limit: any(named: 'limit'))).thenAnswer(
-        (_) async => Success<_Page>((customers: [_customer()], total: 120)));
+    when(() => repo.fetchCustomers(
+            query: any(named: 'query'), limit: any(named: 'limit')))
+        .thenAnswer((_) async => Success<_Page>((
+              customers: [_customer()],
+              total: 120,
+              // A total larger than the loaded page is no longer what makes
+              // the footer appear; the server saying "there is a next page"
+              // is. Both are present here because that is what the server
+              // actually answers.
+              nextCursor: _bookmark('profile-9'),
+            )));
 
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();
@@ -114,13 +131,21 @@ void main() {
       pageSize: 1,
       searchDebounce: Duration.zero,
     );
-    when(() => repo.fetchCustomers(query: null, limit: 1)).thenAnswer(
-        (_) async => Success<_Page>((customers: [_customer()], total: 2)));
-    when(() => repo.fetchCustomers(query: null, offset: 1, limit: 1))
+    when(() => repo.fetchCustomers(query: null, limit: 1))
         .thenAnswer((_) async => Success<_Page>((
-              customers: [_customer(id: 'profile-8', name: 'Omar Nabil')],
+              customers: [_customer()],
               total: 2,
+              nextCursor: _bookmark('profile-9'),
             )));
+    when(() => repo.fetchCustomers(
+          query: null,
+          cursor: _bookmark('profile-9'),
+          limit: 1,
+        )).thenAnswer((_) async => Success<_Page>((
+          customers: [_customer(id: 'profile-8', name: 'Omar Nabil')],
+          total: null,
+          nextCursor: null,
+        )));
 
     await tester.pumpWidget(harness(cubit: cubit));
     await tester.pumpAndSettle();
@@ -145,9 +170,11 @@ void main() {
       searchDebounce: Duration.zero,
     );
     when(() => repo.fetchCustomers(query: null, limit: 50)).thenAnswer(
-        (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+        (_) async => Success<_Page>(
+            (customers: [_customer()], total: 1, nextCursor: null)));
     when(() => repo.fetchCustomers(query: 'zzz', limit: 50)).thenAnswer(
-        (_) async => const Success<_Page>((customers: [], total: 0)));
+        (_) async =>
+            const Success<_Page>((customers: [], total: 0, nextCursor: null)));
 
     await tester.pumpWidget(harness(cubit: cubit));
     await tester.pumpAndSettle();
@@ -169,6 +196,7 @@ void main() {
         .thenAnswer((_) async => Success<_Page>((
               customers: [_customer(tier: 'premium')],
               total: 1,
+              nextCursor: null,
             )));
 
     await tester.pumpWidget(harness());
@@ -184,10 +212,11 @@ void main() {
 
   testWidgets('a confirmed change writes the tier and then confirms it',
       (tester) async {
-    when(() => repo.fetchCustomers(
-            query: any(named: 'query'), limit: any(named: 'limit')))
-        .thenAnswer(
-            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+    when(() =>
+        repo.fetchCustomers(
+            query: any(named: 'query'),
+            limit: any(named: 'limit'))).thenAnswer((_) async =>
+        Success<_Page>((customers: [_customer()], total: 1, nextCursor: null)));
     when(() => repo.setMembershipTier('profile-9', 'premium'))
         .thenAnswer((_) async => const Success(null));
 
@@ -206,10 +235,11 @@ void main() {
 
   testWidgets('confirming the tier already in effect writes nothing',
       (tester) async {
-    when(() => repo.fetchCustomers(
-            query: any(named: 'query'), limit: any(named: 'limit')))
-        .thenAnswer(
-            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+    when(() =>
+        repo.fetchCustomers(
+            query: any(named: 'query'),
+            limit: any(named: 'limit'))).thenAnswer((_) async =>
+        Success<_Page>((customers: [_customer()], total: 1, nextCursor: null)));
     when(() => repo.setMembershipTier(any(), any()))
         .thenAnswer((_) async => const Success(null));
 
@@ -228,10 +258,11 @@ void main() {
   testWidgets(
       'a failed write floats the error and keeps the directory on screen',
       (tester) async {
-    when(() => repo.fetchCustomers(
-            query: any(named: 'query'), limit: any(named: 'limit')))
-        .thenAnswer(
-            (_) async => Success<_Page>((customers: [_customer()], total: 1)));
+    when(() =>
+        repo.fetchCustomers(
+            query: any(named: 'query'),
+            limit: any(named: 'limit'))).thenAnswer((_) async =>
+        Success<_Page>((customers: [_customer()], total: 1, nextCursor: null)));
     when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
         (_) async => const Failure(AppError('tier change rejected')));
 
@@ -265,6 +296,7 @@ void main() {
                 _customer(id: 'profile-8', name: 'Omar Nabil', tier: 'premium'),
               ],
               total: 2,
+              nextCursor: null,
             )));
 
     await tester.pumpWidget(harness(textScale: 1.4));
