@@ -10,20 +10,21 @@ import '../cubit/admin_coupons_cubit.dart';
 
 /// Admin coupon management (feature-batch §8): list, create, activate.
 ///
-/// Reads the repository via the locator (admin routes are gated by
-/// profile.isAdmin in the router) with an optional injected cubit for
-/// widget tests.
+/// The router resolves [repository] at the composition root (audit P1) and
+/// the `getIt` lookup below stays as the test-only fallback, matching the
+/// other admin pages; [cubit] can be injected outright by widget tests.
 class AdminCouponsPage extends StatelessWidget {
-  const AdminCouponsPage({super.key, this.cubit});
+  const AdminCouponsPage({super.key, this.cubit, this.repository});
 
   final AdminCouponsCubit? cubit;
+  final AdminRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminCouponsCubit>(
-      create: (_) =>
-          (cubit ?? AdminCouponsCubit(repository: getIt<AdminRepository>()))
-            ..load(),
+      create: (_) => (cubit ??
+          AdminCouponsCubit(repository: repository ?? getIt<AdminRepository>()))
+        ..load(),
       child: const _AdminCouponsView(),
     );
   }

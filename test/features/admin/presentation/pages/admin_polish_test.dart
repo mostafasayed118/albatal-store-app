@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
+import 'package:al_batal_elite/features/admin/presentation/pages/admin_coupons_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_image_manager_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_inventory_page.dart';
@@ -22,6 +24,7 @@ import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -122,6 +125,62 @@ void main() {
       verify(() => repo.getAllOrders(status: any(named: 'status'))).called(1);
       verify(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
           .called(1);
+    });
+
+    testWidgets('the Coupons tile reaches the coupon manager', (tester) async {
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => const Success([]));
+      when(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
+          .thenAnswer((_) async => const Success([]));
+      when(() => repo.isCurrentUserAdmin()).thenAnswer((_) async => true);
+      when(() => repo.fetchCoupons())
+          .thenAnswer((_) async => const Success(<AdminCoupon>[]));
+
+      // Tall viewport: the tile sits below the stat cards and the other
+      // quick actions, so the default 800x600 window never lays it out.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // The tile is the ONLY way an admin reaches coupon management: §8
+      // shipped the page, cubit and repository methods with no destination,
+      // so a coupon could be redeemed at checkout but never created.
+      final router = GoRouter(
+        initialLocation: '/admin',
+        routes: [
+          GoRoute(
+              path: '/admin', builder: (_, __) => const AdminDashboardPage()),
+          GoRoute(
+              path: '/admin/coupons',
+              builder: (_, __) => AdminCouponsPage(repository: repo)),
+        ],
+      );
+      addTearDown(router.dispose);
+      final adminCubit = AdminCubit(repo);
+      addTearDown(adminCubit.close);
+
+      // The cubit sits above the router, as it does in the app (the routed
+      // pages read it from the root providers).
+      await tester.pumpWidget(BlocProvider.value(
+        value: adminCubit,
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Coupons'), findsOneWidget);
+
+      await tester.tap(find.text('Coupons'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(AdminCouponsPage), findsOneWidget,
+          reason: 'the tile must land on the coupon manager, not a 404');
+      verify(() => repo.fetchCoupons()).called(1);
     });
 
     testWidgets('error state offers a retry that actually reloads',

@@ -104,6 +104,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 subtitle: l.manageProducts,
                 onTap: () => context.push(Routes.adminCatalog),
               ),
+              // Promo codes (§8): the page, cubit and repository methods
+              // shipped with no destination, so a coupon could be redeemed
+              // at checkout but never created. Both labels already exist in
+              // EN + AR, so no ARB change was needed.
+              _ActionTile(
+                icon: Icons.local_offer_outlined,
+                title: l.adminCoupons,
+                subtitle: l.adminAddCoupon,
+                onTap: () => context.push(Routes.adminCoupons),
+              ),
             ],
           );
         },
