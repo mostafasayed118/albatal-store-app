@@ -4,11 +4,11 @@ import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 
-/// Returns the string value for [key], or null when missing or mistyped.
+/// Returns the int value for [key], or null when missing or mistyped.
 ///
-/// Unlike [safeString] (which falls back to `''`), optional text fields
-/// degrade to null so callers keep the exact old `as String?` semantics for
-/// well-typed inputs while mistypes degrade instead of throwing [TypeError].
+/// Ints pass through unchanged; other nums are truncated via [num.toInt];
+/// everything else (including bool/string) degrades to null instead of
+/// throwing [TypeError].
 int? _optInt(Map m, String k) {
   final v = m[k];
   if (v is int) return v;
@@ -23,6 +23,11 @@ double? _optDouble(Map m, String k) {
   return null;
 }
 
+/// Returns the string value for [key], or null when missing or mistyped.
+///
+/// Unlike [safeString] (which falls back to `''`), optional text fields
+/// degrade to null so callers keep the exact old `as String?` semantics for
+/// well-typed inputs while mistypes degrade instead of throwing [TypeError].
 String? _optStr(Map m, String k) {
   final v = m[k];
   return v is String ? v : null;
@@ -58,10 +63,7 @@ extension ProductCodec on Product {
     if (id.isEmpty || name.isEmpty) return null;
 
     final basePrice = safeInt(row, 'base_price');
-    final oldPriceRaw = row['old_price'];
-    final oldPrice = oldPriceRaw is int
-        ? oldPriceRaw
-        : (oldPriceRaw is num ? oldPriceRaw.toInt() : null);
+    final oldPrice = _optInt(row, 'old_price');
 
     // Derive sizes and colors from variants. Malformed variant rows are
     // skipped rather than throwing into the repository.

@@ -114,6 +114,15 @@ class _FakeSupabaseClient extends Fake implements SupabaseClient {
           {RealtimeChannelConfig opts = const RealtimeChannelConfig()}) =>
       silentChannel;
 
+  /// Mirrors real client semantics: removeChannel detaches AND
+  /// unsubscribes the channel (the watcher relies on this so per-order
+  /// channels do not accumulate on the client).
+  @override
+  Future<String> removeChannel(RealtimeChannel channel) async {
+    if (channel is _SilentRealtimeChannel) channel.unsubscribed = true;
+    return 'ok';
+  }
+
   @override
   SupabaseQueryBuilder from(String table) => _FakeQueryBuilder(pollRow);
 }

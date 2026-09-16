@@ -474,7 +474,7 @@ final class SupabaseAdminRepository implements AdminRepository {
       // (see supabase/migrations/061_admin_profiles_read.sql).
       // Without it RLS limits the result to the caller's own row; the call
       // still succeeds, so the directory is simply short.
-      Log.w('fetchCustomers failed', category: LogCategory.network);
+      Log.w('fetchCustomers failed', category: LogCategory.network, error: e);
       return Failure(AppError('Failed to fetch customers', cause: e));
     }
   }
