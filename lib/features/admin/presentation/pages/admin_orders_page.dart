@@ -39,8 +39,11 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   Future<void> _exportCsv() async {
     final orders = context.read<AdminCubit>().state.filteredOrders;
     if (orders.isEmpty) return;
-    await (widget.shareService ?? getIt<ShareService>())
-        .shareText(buildOrdersCsv(orders));
+    await (widget.shareService ?? getIt<ShareService>()).shareFile(
+      fileName: ordersCsvFileName(DateTime.now()),
+      content: buildOrdersCsv(orders),
+      mimeType: 'text/csv',
+    );
   }
 
   @override

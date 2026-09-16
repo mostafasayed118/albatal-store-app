@@ -64,9 +64,18 @@ class _ShrinkCompressor implements ImageCompressor {
 /// assertions can read the real payload instead of trusting the call.
 class _RecordingShareService implements ShareService {
   final List<String> shared = [];
+  final List<({String fileName, String content, String mimeType})> files = [];
 
   @override
   Future<void> shareText(String message) async => shared.add(message);
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async =>
+      files.add((fileName: fileName, content: content, mimeType: mimeType));
 }
 
 AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
@@ -193,8 +202,7 @@ void main() {
       expect(find.text('offline'), findsOneWidget);
       expect(find.text('No orders found'), findsNothing);
     });
-
-    testWidgets('CSV export shares the loaded queue through the share sink',
+    testWidgets('CSV export attaches the loaded queue as a real .csv file',
         (tester) async {
       final share = _RecordingShareService();
       when(() => repo.getAllOrders(status: any(named: 'status')))
@@ -210,15 +218,20 @@ void main() {
       await tester.tap(find.byTooltip('Export orders as CSV'));
       await tester.pump();
 
-      expect(share.shared, hasLength(1),
+      expect(share.files, hasLength(1),
           reason: 'the export action must actually reach the share sheet');
-      final csv = share.shared.single;
+      expect(share.shared, isEmpty,
+          reason: 'a CSV is an attachment, not share-sheet body text');
+      final file = share.files.single;
       expect(
-          csv,
+          file.content,
           startsWith(
               'order_id,placed_at,status,items,total_minor,customer_name'));
-      expect(csv, contains('ORD-1'));
-      expect(csv, contains('ORD-2'));
+      expect(file.content, contains('ORD-1'));
+      expect(file.content, contains('ORD-2'));
+      expect(file.fileName, endsWith('.csv'));
+      expect(file.mimeType, 'text/csv',
+          reason: 'spreadsheet apps pick the handler off the mime type');
     });
 
     testWidgets('CSV export follows the status filter, not the whole queue',
@@ -243,8 +256,8 @@ void main() {
       await tester.tap(find.byTooltip('Export orders as CSV'));
       await tester.pump();
 
-      expect(share.shared.single, contains('ORD-1'));
-      expect(share.shared.single, isNot(contains('ORD-2')),
+      expect(share.files.single.content, contains('ORD-1'));
+      expect(share.files.single.content, isNot(contains('ORD-2')),
           reason: 'the CSV must mirror the queue on screen');
     });
 
@@ -262,7 +275,7 @@ void main() {
           find.widgetWithIcon(IconButton, Icons.share_outlined));
       expect(button.onPressed, isNull,
           reason: 'a header-only CSV is not worth offering');
-      expect(share.shared, isEmpty);
+      expect(share.files, isEmpty);
     });
   });
 

@@ -330,6 +330,13 @@ final class _NoOpShareService implements ShareService {
 
   @override
   Future<void> shareText(String message) async {}
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async {}
 }
 
 final class _StubAuthRepository implements AuthRepository {
