@@ -1,8 +1,703 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (PR #68 (data-layer guard) and PR #69 (FeedbackView
-adoption) MERGED to master; PR #70 - the last 4 guard migrations - merging
-now, after the same STATE.md union resolution on its branch).
+Last run: 2026-09-16 (§14 **membership control MOVED onto the customer directory**
+— closes the audit's finding #3. Branch `feat/admin-customer-tier`, commit
+`053ff16`, worktree `.trees/customer-tier`, **NOT pushed** (a new branch needs
+push approval); master untouched at `533c232`. Evidence: `flutter analyze` 0
+issues, format clean (429 files), `flutter test` **913/913** (899 baseline + 8
+cubit pins + 6 widget pins), 4/4 mutation checks bite with byte-identical
+restore. Prior run: 2026-09-16 (§14 orders CSV export WIRED → real .csv attachment → share
+sink split into `share_service.dart` → exporter test relocated; then a
+**report-only §14 admin-ops audit** that found three more spec'd-but-undelivered
+items. Branch `feat/orders-csv-export`, commits `d8e4791` + `4f74806` + `8c5ef62`
++ `06f8e23`, worktree `.trees/orders-csv-export`, PUSHED as **draft PR #73**
+(18 files / 4 commits); master untouched at `533c232`. Evidence: `flutter analyze`
+0 issues, format clean (427 files), `flutter test` **904/904** (899 baseline + 3
+wiring pins + 2 filename pins). Prior run: backlog #4 CLOSED — the Stitch card
+decoration now has
+ONE definition: new `AppCard` in `lib/shared/components/app_card.dart`,
+adopted by all 12 hand-rolled call sites across 10 files, with the four literal
+`circular(16)` radii replaced by the token — branch `refactor/card-decoration`,
+commit `e94c24e`, worktree `.trees/card-decoration`, **NOT pushed** (a new
+branch needs push approval); master untouched at `533c232`. Evidence:
+`flutter analyze` 0 issues, format clean (428 files), `flutter test`
+**903/903**. Prior run: the admin coupon surface WIRED (`feat/admin-coupons-route`,
+`5c08a4e`) plus the vacuous admin-path probe fix, PUSHED as **draft PR #72**,
+900/900. Before that: `refactor/money-piasters` (`643d39a`, `2aecd76`,
+`0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
+real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
+PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 6: membership tier control on the customer directory — commit `053ff16`)
+
+Owner: "put the membership tier control on the admin customers page so tiers can be
+changed without finding an order". Closes part 5's finding #3.
+
+**What shipped** (`AdminCustomer.copyWith(tier)` + `AdminCustomersCubit.setMembershipTier`
++ a shared picker + the page's trailing control):
+
+1. **The picker is now ONE widget** — `lib/features/admin/presentation/widgets/membership_tier_dialog.dart`
+   (`showMembershipTierDialog`), used by the order-detail card AND the directory.
+   Only the write stays page-specific. `admin_order_detail_page._showTierDialog` went
+   from ~55 lines of inline dialog to a ~12-line caller; −70/+12 there.
+2. **The dialog owns tier normalisation** (`membershipTierFromServerValue(raw).name`)
+   and the radio values are `MembershipTier.standard.name` / `.premium.name`, so the
+   tier vocabulary has one source of truth and an absent *or* unexpected server value
+   can never leave the radio group with nothing selected. This removed the magic
+   `'standard'`/`'premium'` literals the old inline dialog carried.
+3. **The no-change guard is now shared, and newly pinned.** The old contract ("confirm
+   the tier you are already on" = no write) lived inside the order page's dialog and
+   was **never tested there**. Mutation C proves the new pin bites.
+4. **A failed write reports through a NEW `tierError` channel, deliberately not
+   `status`.** This page renders a full-screen `FeedbackView` error for
+   `AdminCustomersStatus.error`, so routing a bounced write through `status` would
+   have *erased the loaded directory*. `copyWith(clearTierError: true)` follows the
+   existing `AdminState.copyWith(clearSelectedOrder)` sentinel convention. Mutation A
+   proves it: with the failure routed through `status`, the state literally reads
+   `AdminCustomersStatus.error` and the test fails.
+5. **A write under an active search re-derives the filtered view.** `AdminCustomersCubit`
+   now holds `_query`, so updating only `customers` can no longer leave the *visible*
+   row showing the pre-write tier until the admin retyped. Mutation B proves it.
+6. **Row layout:** the tier moved from `trailing: Text(c.tier)` onto the contact line
+   (`'0100 • Standard Member'`) and `trailing` is now the `Change` control — a tier
+   label in the trailing slot would have read as the button's caption. This ALSO fixes
+   a latent display bug: the row used to print the raw column value (`standard` /
+   `premium`) instead of the localised `Standard Member` / `Premium Member`. **No ARB
+   change was needed** — `change`, `changeMembershipTier`, `membershipTierUpdated`,
+   `standardMember`, `premiumMember`, `confirm`, `cancel` all already existed in EN
+   **and** AR.
+
+**⚠️ The new test immediately caught a real bug in my own implementation.**
+`_changeTier` first read the cubit via `context.read<AdminCustomersCubit>()` using the
+**State's** context — but this page *creates* its `BlocProvider` inside `build()`, so the
+provider is a **descendant** of that context, not an ancestor. The very first tap threw
+`ProviderNotFoundException` at runtime. This is the mirror image of the hazard documented
+on the order-detail page (where `AdminCubit` comes from *above* the page, so
+`context.read` works there). Fix: the row's context resolves the cubit and hands it to
+`_changeTier(cubit, customer)`; every post-await use is the State's own context guarded
+by `mounted`. **The page had zero widget tests before this, which is exactly why nobody
+had hit it.**
+
+**Mutation evidence (4/4 bite; `/tmp` backup + `md5sum -c` byte-identical after):**
+
+| Mutation | Result |
+|---|---|
+| A failed-write emits `status: error` instead of `tierError` | cubit failure pin fails — asserts `tierError: <null>` with state at `AdminCustomersStatus.error` (verified a real *assertion*, not a compile error) |
+| B write emits `customers` only, skipping `visible` | "write under an active search" pin fails |
+| C dialog drops the `chosen == current` no-change guard | "confirming the tier already in effect writes nothing" pin fails |
+| D page passes `currentTier: 'standard'` instead of the row's tier | picker-seeding pin fails |
+
+**Tests added (both files NEW — this cubit and page had NONE):**
+`test/features/admin/presentation/cubit/admin_customers_cubit_test.dart` (8) and
+`test/features/admin/presentation/pages/admin_customers_page_test.dart` (6, including a
+1.4-scale pin using master's plain-`MediaQuery` convention). The order page's 4 existing
+tier tests all still pass, which is the regression net for the extraction.
+
+**Deliberately NOT done:**
+- **Paging is still not started.** The owner asked for it one message earlier, then
+  redirected here; I had only read the cubit/page, no code written. The 500-row cap
+  (part 5 finding #1) is **still open**.
+- The empty-state `Text(l.adminSearch)` (part 5 finding #4) needs a new l10n key, and
+  ARB is outside `lib/` — left alone on purpose.
+- No test for `share_service`-style pure-CDI wrappers here; nothing else was padded over.
+
+**Verification:** `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean
+(429 files, +3 for the new files) · `flutter test` **913/913** (899 baseline + 14) ·
+7 files, +614/−68. Toolchain churn (`pubspec.lock` + `.flutter-plugins-dependencies`)
+reverted and kept out of the commit — the 7-package re-resolve (part 3's finding) still
+reproduces on every `pub get` in this environment.
+
+**Device-only gap:** the RPC (`admin_set_membership_tier`, migration 046) is exercised
+through a mock; that the tier actually persists server-side is confirmable only on a
+device.
+
+## New — 2026-09-16 (part 5: §14 admin-ops AUDIT — report-only, no code changed)
+
+Owner: "audit the rest of the §14 admin ops surface for other spec'd-but-unwired
+actions like the CSV export was". L1, no code touched.
+
+**Method (reusable):** `§14` spec text + plan task → every admin page vs its route
+vs its navigator → repository methods vs UI callers → **ARB keys that render
+nowhere** (the detector that exposed the coupons gap).
+
+Findings, strongest first:
+
+1. **`fetchCustomers()` silently caps at 500 with no paging.**
+   `supabase_admin_repository.dart:402-406` is `.order('created_at',
+   ascending: false).limit(500)`, and `AdminCustomersCubit` exposes only `load()` /
+   `filter()`. The plan's §14 test item named "customers cubit **paging**/search";
+   search shipped, paging did not. Customers past the 500 newest are invisible with
+   no signal.
+2. **The customers cubit has NO test at all.** Zero references to
+   `AdminCustomersCubit` under `test/`. The only customer test
+   (`test/features/admin/data/admin_customer_directory_test.dart`) exercises the
+   *repository*, not the cubit — so §14's "customers cubit … search" tests were
+   never written.
+3. **Membership control is not on the customers page.** The spec says
+   "AdminCustomersPage (profiles list, search, **membership control reuse**)"; the
+   page's own doc comment says "Read-only in this batch — tier control lives on the
+   order-detail surface". `setMembershipTier` is called from exactly one place
+   (`admin_order_detail_page.dart:290`), so changing a tier means finding an **order**
+   from that customer. Deliberate, but the spec item is undelivered.
+4. **The customers page's empty state renders the word "Search".**
+   `state.visible.isEmpty ? Center(child: Text(l.adminSearch))` and
+   `adminSearch` == `'Search'` (also the TextField hint). A zero-result search shows a
+   bare hint label instead of a no-results message.
+5. **Dead demo string in the shipping ARB:** `mockCustomerName` = `'Ahmed Mansour'`
+   is unused in `lib/` — a mock/demo value in the production localization bundle.
+
+**Not bugs — corrected suspicions (do NOT re-report):** every admin route DOES have
+navigator: `adminCustomers` / `adminReviews` / `adminSales` are pushed from
+`admin_catalog_page.dart`, the hub the dashboard links to. So §14's "dashboard
+links" is met via the hub, not missing.
+
+**Unused ARB keys that look like abandoned UI** (hints, not proof):
+`membershipTier` ('Membership tier' — plausibly the intended column label for the
+bare `trailing: Text(c.tier)`), `advanceOrder` ('Advance Order' — no such action
+exists anywhere in admin), `orderMarkedAsShipped` (superseded by
+`orderStatusUpdatedTo`), `orderSummary`, `manageCoupons` + `couponActive` (coupons
+still unreachable on master; `manageCoupons` stays unused even after PR #72, which
+uses `adminCoupons`/`adminAddCoupon`).
+
+**Root cause of this whole bug class:** the plan's §14 checkboxes are ALL still
+`[ ]` even where work shipped, and commit `32a2bf6` is titled "admin customers list +
+**orders CSV export**" while touching only `orders_csv_exporter.dart` — never
+`admin_orders_page.dart`. **Neither the plan nor the commit messages are a delivery
+record**, which is exactly how the CSV gap survived to the backlog sweep.
+
+## New — 2026-09-16 (part 4: exporter test relocated — commit `06f8e23`)
+
+Moved `test/features/storefront/data/orders_csv_exporter_test.dart` →
+`test/features/admin/domain/orders_csv_exporter_test.dart` (git recorded a 100%
+rename; content unchanged). It mirrors the source tree and now sits beside
+`invoice_pdf_test.dart`. No path coupling existed — imports were all `package:` and
+nothing referenced the old path. 904/904 after the move.
+
+## New — 2026-09-16 (part 3: the share sink split out — `share_service.dart`, commit `8c5ef62`)
+
+Owner: "split the generic share sink out of product_share_service.dart so the file
+name matches ShareService". This closes the naming residual PR #73 had listed.
+
+- **`share_service.dart`** (new, 64 lines) holds `ShareService` +
+  `SharePlusShareService`; **`product_share_service.dart`** (now 11 lines) keeps only
+  the two pure §5 helpers (`productShareMessage`, `productUrl`).
+- **Why it mattered:** any caller outside the product flow had to import a
+  *product-named* file to reach a generic capability — exactly what the §14 export hit.
+- **6 import updates:** `details_page` needs **both** files (the helpers *and* the
+  sink); `admin_orders_page`, `app_router`, `service_locator` and the two test
+  harnesses need only the sink.
+- **Pure move — no behaviour change**, so there is nothing new to mutation-check.
+  Verified structurally instead: exactly one definition of `ShareService` and one of
+  `SharePlusShareService` across `lib/`+`test/`. `share_service.dart` holds no pure
+  logic, so **no test was added for it** — a wrapper-only file would only get a
+  vacuous test.
+- Also reattached a stale comment: the "§5 inbound deep links (initial + warm
+  events)" note sat on the old share-sink registration but describes the
+  `DeepLinkService` registration a few lines below it.
+
+## New — 2026-09-16 (part 2: the CSV now goes out as a real .csv FILE — commit `4f74806`, draft PR #73)
+
+Owner: "make the admin CSV export attach a real .csv file instead of share-sheet
+text".
+
+- `share_plus` supports attachments natively (`ShareParams(files: [XFile])`), so
+  `ShareService` gained `shareFile({fileName, content, mimeType})` and the page
+  calls it. The temp-dir write lives in the service, not the page.
+- **`Printing.sharePdf` was rejected on correctness, not taste:** `printing`'s
+  Android implementation hardcodes `shareIntent.setType("application/pdf")`, so a
+  `.csv` routed through it would be announced with the wrong MIME. Don't reach for
+  it as a generic file-share shortcut.
+- **`path_provider` was NOT a direct dependency**, and `depend_on_referenced_packages:
+  true` is enabled in `analysis_options.yaml`, so importing it transitively would
+  fail analyze. Adding it is a `pubspec.yaml` change → **asked the owner, who
+  approved** (`path_provider: ^2.1.6`, already resolved transitively via `printing`).
+- `ordersCsvFileName(DateTime)` is a new **pure** helper in `orders_csv_exporter.dart`
+  (dated, zero-padded) so repeat exports are distinguishable; pinned by 2 tests.
+- Mutation-checked (each restored byte-identical): `mimeType` → `text/plain` fails the
+  mime pin; reverting to `shareText` fails the file pin; dropping `padLeft` fails both
+  filename pins.
+
+### ⚠️ REPO-LEVEL FINDING — the committed `pubspec.lock` cannot be installed here
+
+`flutter pub get --enforce-lockfile` fails with **"Unable to satisfy `pubspec.yaml`
+using `pubspec.lock`"** on this environment's **Flutter 3.47.4**. Every `pub get`
+(and every `flutter test`, which re-runs it) silently re-resolves **7** packages:
+`intl` 0.20.2→0.20.3, `test` 1.31.0→1.31.1, `meta` 1.18.0→1.19.0, `matcher`
+0.12.19→0.12.20, `test_api` 0.7.11→0.7.12, `test_core` 0.6.17→0.6.18,
+`vector_math` 2.2.0→2.4.2.
+
+- This is **environmental, not caused by any change here** — it happened on the
+  very first `pub get` in a clean worktree.
+- `pubspec.yaml` itself says: *"intl 0.20.3 requires a newer flutter_localizations
+  pin; revisit after next Flutter stable."* The next stable **is** 3.47.4, so the
+  upgrade is *due* — but it **reverses an owner-authored pin decision** and is out
+  of scope for a CSV-export branch. **Do not silently absorb it.**
+- **What was done:** `pubspec.lock` was committed with the **single** intended change
+  (`path_provider: dependency: transitive` → `"direct main"`). To reproduce: revert
+  the lock and hand-apply that one line; plain `pub get` re-churns it.
+- **Honest consequence:** the suite above ran with the *upgraded* transitive
+  versions, i.e. not exactly what the lock declares. The lock is the repo's
+  documented state; the test environment is this sandbox's.
+- **Recipe for a future loop:** after any `flutter test`/`pub get` here, `git restore
+  -- pubspec.lock` and re-apply the one-line edit before committing, or the lock
+  upgrade rides along invisibly.
+
+### Other residuals
+
+- **Device-only gap:** the fake covers the call and payload; the actual temp-file
+  write and the real share sheet are verifiable only on a device.
+- `orders_csv_exporter_test.dart` sits under `test/features/storefront/data/` while
+  the code is in `lib/features/admin/domain/` — a pre-existing mislocation, left
+  alone (noted, not fixed).
+
+## New — 2026-09-16 (part 1: §14 orders CSV export WIRED; commit `d8e4791`)
+
+Owner: "delete the dead orders CSV exporter and its test". Verified before acting,
+and **the premise did not hold** — so the question went back to the owner first.
+
+- **It was not dead code; it was an unwired spec deliverable.** The plan task is
+  "Impl `admin_customers_page` + **CSV export button on admin orders** + dashboard
+  links" (`docs/superpowers/plans/2026-09-12-feature-batch.md:149`) and the design
+  says "`OrdersCsvExporter` (pure CSV builder; **share via share_plus**)". The
+  builder and its 5 tests landed; the button never did. Only its own test
+  referenced it — dead in *reach*, not in *intent*. It also carries a
+  formula-injection guard (`=`, `+`, `-`, `@`, TAB, CR) worth keeping.
+- **`share_plus: ^13.3.0` was already in `pubspec.yaml`**, annotated
+  `# §5 product share, §14 CSV export, §16 invoice share` → **no pubspec change
+  needed**, so wiring never required an approval gate. Owner chose WIRE.
+- **The wiring.** `admin_orders_page` gains an app-bar export action that shares
+  `state.filteredOrders` — the rows on screen, not every loaded order — and
+  disables itself on an empty queue instead of sharing a header-only file. Optional
+  `shareService` constructor param with a `getIt` fallback, and the router resolves
+  it at the composition root (audit P1) exactly like `adminReviews`.
+- **Rename `ProductShareService` → `ShareService`** (and
+  `SharePlusProductShareService` → `SharePlusShareService`). The interface only ever
+  wrapped `SharePlus.instance.share`; the product naming implied an owner and would
+  have read as a mistake when called from an admin page. Only **3 lib call sites** and **zero test references** (the test covers the pure `productUrl`/
+  `productShareMessage` helpers, which keep their names). Deliberate scope call,
+  flagged: it does touch §5 code. **Residual:** the *file* is still
+  `product_share_service.dart` because it also hosts those product helpers.
+- **l10n:** new `exportOrdersCsv` in EN **and** AR; `lib/generated/l10n/*`
+  regenerated via `flutter gen-l10n` and committed (the generated files are
+  tracked in this repo — forgetting this leaves the build red).
+- **Tests (3 new pins** in `admin_polish_test`, 22 → 25 in that file): the payload
+  actually reaches the share sink; the CSV follows the status filter; the action is
+  disabled on an empty queue. The router harness gained a `_NoOpShareService`
+  registration.
+- **Mutation evidence** (`/tmp` backup, restored byte-identical): (A) export
+  `state.orders` instead of `filteredOrders` → the filter pin fails; (B) action
+  always enabled → the disabled pin fails; (C) payload dropped → the share pin
+  fails.
+- **Gotcha for future loops:** wiring at the composition root makes the router
+  *eagerly* require `ShareService`. The first full-suite run failed
+  `app_router_test`'s "every admin route resolves" probe with `GetIt: Object/factory
+  with type ShareService is not registered`. This is inherent to audit-P1
+  resolution: **any harness that boots the router must register everything the
+  route builders resolve.**
+- **Toolchain churn:** `flutter pub get` bumped `pubspec.lock` (14 lines) and
+  `.flutter-plugins-dependencies`; both reverted and kept out of the commit.
+- **Do NOT re-delete `orders_csv_exporter.dart`** — it is now reachable. If the
+  owner ever descopes §14 CSV export, that is a product decision, not a cleanup.
+
+## New — 2026-09-16 (refactor: ONE card surface — backlog #4 CLOSED; branch `refactor/card-decoration`, commit `e94c24e`, NOT pushed)
+
+Owner: "consolidate the duplicated card decoration into one shared component".
+
+- **The duplication, re-derived (and the earlier estimate corrected).** The
+  old note said "9 sites across 8 files". The real count is **12 sites across 10
+  files**, because `details_page.dart:169` is NOT a `Card` — it is a `ClipRRect`
+  clipping media to the card radius, i.e. legitimate token reuse that must stay.
+  Four more sites were missing from the old count: `categories_page`,
+  `order_card`, and both stitch cards. Twelve: `checkout_page` x3,
+  `cart_item_tile`, `reviews_section`, `categories_page`, `order_card`,
+  `admin_customers_page`, `admin_coupons_page`, `admin_reviews_page`,
+  `stitch_product_grid_card`, `stitch_flash_sale_card`.
+- **The drift the consolidation removes:** four of the twelve (categories,
+  order_card, both stitch cards) wrote `BorderRadius.circular(16)` /
+  `BorderRadius.all(Radius.circular(16))` instead of `AppTheme.cardRadius`. Same
+  value *today*, which is exactly why nothing failed when the grid and the token
+  could diverge. The literals are gone; the token is now the only source.
+- **`AppCard`** = surface fill + 1dp `outlineVariant` border + `cardRadius`.
+  Deliberate design call: its defaults MIRROR `Card`'s, so `clipBehavior`,
+  padding and `elevation` stay per-site concerns. That is what makes the change
+  rendering-neutral — the four ink surfaces still pass `Clip.antiAlias` and the
+  other eight still do not clip — and it keeps each diff to the decoration lines
+  only (no re-indenting of the ~12 nested child trees). No `padding` parameter
+  for the same reason: `Padding` stays visible at the call site.
+- **Five files dropped the `shared/theme/app_theme.dart` import** where the card
+  radius was its only use (cart_item_tile, reviews_section, admin_customers,
+  admin_coupons, admin_reviews). The other five still use `AppTheme` elsewhere.
+- **Left alone on purpose — do not "finish" these:** `details_page.dart:169`
+  (`ClipRRect` media), `catalog_page.dart:248` (modal bottom-sheet shape, top
+  radius 20 + outlineVariant — a different spec), `wishlist_tile` (bare theme
+  `Card` + an `InkWell` radius, no hand-rolled decoration), and the radius-16
+  literals in `stitch_category_chips` / `stitch_hero_carousel` (chips and
+  carousel, not cards).
+- **Tests:** new `test/shared/components/app_card_test.dart` (4 pins — tokens
+  incl. radius == `AppTheme.cardRadius` and the 1dp border colour, default
+  `Clip.none`, explicit `Clip.antiAlias` propagation, child rendered). **No
+  existing test needed changing:** `stitch_checkout_test` and
+  `stitch_catalog_test` already pin `color == scheme.surface` + the
+  `RoundedRectangleBorder` shape on the real widgets, so they are the
+  regression net for the sites that are covered, and the whole suite passed
+  untouched. `find.byType(Card)` in the accessibility/skeleton tests still
+  matches because `AppCard` renders a real `Card`.
+- **A vacuous pin caught before shipping (the same trap as the money-probe
+  run):** the harness originally took `Clip clipBehavior = Clip.none` and always
+  passed it through, so the "defaults to Clip.none" pin would have asserted
+  nothing about the default. The harness now leaves it unset when omitted; the
+  mutation check below proves the pin now bites.
+- **Mutation-checked, all three bite (`/tmp` backup + restore, byte-identical
+  afterwards):** (A) radius token → literal `circular(12)` fails the token pin;
+  (B) default `Clip.none` → `Clip.antiAlias` fails the default-clip pin;
+  (C) border removed fails the token pin (the side colour falls back to black).
+- **Deliberately NOT added — a source-scanning "no hand-rolled card" guard.**
+  The only stable scan target (`AppTheme.cardRadius` anywhere under `lib/`)
+  legitimately appears in `details_page`'s media `ClipRRect`, so such a guard
+  would forbid correct token reuse; the narrower `Card`-with-inline-radius scan
+  cannot distinguish a Card shape from an `InkWell` radius. Recorded so the next
+  loop does not "add" it: the component pin plus the two Stitch site tests are
+  the guard.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (428 files); `flutter test`
+  **903/903 PASS** (899 master baseline + 4 new). `pubspec.lock` /
+  `.flutter-plugins-dependencies` churn reverted, not committed. 12 files,
+  +140/-85.
+- **Merge note for reviewers:** `cart_item_tile.dart` is also touched by draft
+  PR #71 (money), which DELETES `core/utils/currency.dart` — a file this branch
+  still imports from that widget. Expect a trivial import conflict if both land;
+  nothing else overlaps (the coupon PR's hunks in `admin_coupons_page` are the
+  constructor/DI region, not the card).
+- **NOT pushed on purpose:** a NEW branch needs push approval.
+- NEXT GATES: owner approval to push + open a draft PR, then review. Backlog
+  left: `orders_csv_exporter.dart` (dead), `Result.guard` `onError` hook
+  (small). Draft PRs #71 and #72 are independent and still open.
+
+## New — 2026-09-16 (feat: WIRE the admin coupon manager — backlog item #5 CLOSED; branch `feat/admin-coupons-route`, commit `5c08a4e`, PUSHED as draft PR #72)
+
+Owner answered the outstanding decision from the backlog re-check: **wire it**,
+not delete it.
+
+- **The gap:** §8 shipped `AdminCouponsPage` + cubit + entity + 3 repository
+  coupon methods but no `Routes.adminCoupons` constant and no `GoRoute`, while
+  every OTHER admin page was routed. Customers could redeem a coupon at
+  checkout but no reachable UI could create or activate one.
+- **The wiring:** `Routes.adminCoupons = '/admin/coupons'` in `app_routes.dart`;
+  a `GoRoute` in `app_router.dart` resolving `getIt<AdminRepository>()`
+  (audit-P1 composition-root convention, like every other admin destination);
+  `AdminCouponsPage` gained an optional `repository` param so its injected
+  lookup is the test-only fallback; a dashboard `_ActionTile`
+  ("Coupons" / "Add coupon") pushing the new route. The "~3 lines" estimate
+  held.
+- **l10n:** NO ARB change was needed — `adminCoupons` and `adminAddCoupon`
+  already existed in BOTH `l10n/app_en.arb` and `l10n/app_ar.arb`. NOTE the
+  ARB path is `l10n/`, NOT `lib/l10n/`.
+- **⚠ THE REAL FINDING — the admin-path probe could not fail for the bug it
+  was named after.** `app_router_test`'s "every admin route resolves" probe
+  compares `harness.currentPath`, which reads
+  `routerDelegate.currentConfiguration.uri.path`. When nothing matches,
+  GoRouter KEEPS the *requested* URI and swaps in its error page, so an
+  unregistered path reports itself as current and the assertion passes. Proven
+  by temporarily probing the real router: `currentPath =
+  /admin/definitely-not-registered`, `currentConfiguration.matches == []`, and
+  the rendered text `[Page Not Found, GoException: no routes for location: ...,
+  Go to home page]`. So the probe was vacuous for unregistered routes — it
+  only ever caught a *redirect* (double-guard). Fix: the harness now exposes
+  `isMatched` (`currentConfiguration.matches.isNotEmpty`) and the loop asserts
+  it, making the guard catch exactly the regression it documents. The temp
+  probe was removed; the shipped test file was diffed against a backup.
+- **Tests (+1 test, +1 strengthened probe):** the probe list gained
+  `/admin/reviews`, `/admin/customers`, `/admin/sales` (registered earlier but
+  never listed — the loop only protects paths it walks) and `/admin/coupons`;
+  new `admin_polish_test` case taps the dashboard's Coupons tile and asserts it
+  lands on `AdminCouponsPage` (not a 404) and that `fetchCoupons` was called.
+  Tall viewport (1080x2400) because the tile sits below the stat cards and the
+  other quick actions; the `AdminCubit` provider must sit ABOVE the router, as
+  in the app.
+- **Mutation-checked, both halves bite (each lib patch reverse-applied with
+  `git apply -R`; no `git checkout`, per the earlier incident):** (1) route
+  registration removed → the probe FAILS on exactly `/admin/coupons`
+  ("rendered GoRouter's Page Not Found page — the path is not registered") and
+  nothing else; (2) dashboard tile removed → the tile test FAILS ("Found 0
+  widgets with text \"Coupons\""). Both patches re-applied and diffed
+  byte-identical to their pre-mutation backups. Division of labour: the tile
+  test uses the route string LITERAL in its own local router, so it also
+  catches a constant/registration mismatch; the probe covers the production
+  router.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (426 files); `flutter test`
+  **900/900 PASS** (899 master baseline + the new tile test).
+  `.flutter-plugins-dependencies` churn reverted, not committed.
+- **PUSHED as draft PR #72** (owner asked for push + draft PR):
+  https://github.com/mostafasayed118/albatal-store-app/pull/72 — base master,
+  head `feat/admin-coupons-route`, MERGEABLE, 6 files (+112/-10), 1 commit.
+  `origin/master` was already `533c232` (the branch base), so no master merge
+  was needed — unlike the #50/#52/#54/#64 pattern where the branch had fallen
+  behind. PR body records the gap, the changed files, the vacuous-probe
+  finding with its probe output, the mutation table and the reviewer notes.
+  CI was IN PROGRESS at the time of this run — NOT watched to completion.
+- NEXT GATES: owner review of draft PR #72 → mark ready + merge. Backlog now
+  left: `orders_csv_exporter.dart` (dead) and the `Result.guard` `onError` hook
+  (small) — #4 card decoration landed afterwards as `e94c24e` on
+  `refactor/card-decoration`. Draft PR #71 (money) is independent and still
+  open.
+
+## New — 2026-09-16 (backlog re-check against master `533c232`; L1, NO code changed)
+
+Re-derived the original refactor backlog against the current tree rather than
+restating the old report — items #2/#3 landed upstream (#68/#69/#70) and #1 is
+in flight as draft PR #71, so the numbering has shifted.
+
+- **CLOSED — money rendering (#1):** fixed on `refactor/money-piasters` (draft
+  PR #71). NOTE: master still truncates until that PR merges.
+- **CLOSED — data-layer guard adoption (#2):** 39 `Result.guard` usages; the
+  ~32 remaining `catch (e)` sites in `features/*/data` are the categories
+  STATE.md already recorded as deliberate (typed mapping, logging side effect,
+  recovery, fail-soft, non-`Result` returns). Do not re-litigate.
+- **CLOSED — FeedbackView adoption (#3):** 48 usages across 28 files; the raw
+  `CircularProgressIndicator` sites left are in-button (`strokeWidth: 2`),
+  section-level, or the payment overlay — documented reasons.
+- **CLOSED 2026-09-16 (commit `e94c24e`, `refactor/card-decoration`, not
+  pushed) — card-decoration duplication.** The "9 sites / 8 files" estimate
+  below was wrong in both directions: **12 sites across 10 files** (the
+  `details_page` entry is a `ClipRRect`, not a card, and four newer sites were
+  missed). All twelve now use `AppCard`; see the section at the top of this
+  file. Original finding: 9 sites hand-rolled `Card` + `borderRadius:
+  AppTheme.cardRadius` + `side: BorderSide(color: scheme.outlineVariant)`,
+  including four that used a literal `circular(16)` — the token and the grid
+  could drift with nothing failing.
+- **CLOSED 2026-09-16 (WIRED) — was: UNREACHABLE ADMIN SURFACE, owner
+  decision outstanding.** The owner answered "wire it", so commit `5c08a4e`
+  (draft PR #72) registers the route and adds the dashboard tile — not merged
+  yet, so **on master `533c232` everything below is still true.**
+  The original finding, for the record: `AdminCouponsPage` has
+  ZERO references in `lib/` other than its own constructor, and there is no
+  `Routes.adminCoupons` constant and no `GoRoute` for it — every OTHER admin
+  page is routed (`app_router.dart:211-288`). Dead surface: page 159 + cubit 83
+  + entity 29 + test 70 = **341 lines**, plus 3 `AdminRepository` coupon methods
+  (all already guard-migrated). **This is a functional gap, not just dead code:
+  customers CAN redeem coupons** (`CouponDiscount` + `validate` in checkout),
+  but no reachable UI can create or activate one. Wiring it is ~3 lines (route
+  constant + `GoRoute` + dashboard tile); the alternative is deleting the
+  surface. DONE as predicted — see the wiring section at the top of this file,
+  including the vacuous-probe bug the wiring exposed.
+- **OPEN (small) — also dead in production:** `orders_csv_exporter.dart`
+  (39 lines) + its 67-line test; only the test references it. The §14 CSV
+  export was never wired to a UI action.
+- **CLOSED — "god class" split: NOT WARRANTED.** The old concern was
+  `supabase_admin_repository.dart` as the largest file; after the guard
+  migration it is 21 `Future<Result>` methods all via `Result.guard` (479 lines
+  of one-liners), i.e. a thin facade. The largest file is now `checkout_page`
+  (503 lines) and it composes 5 private section widgets (`_CouponCard`,
+  `_ShippingAddressCard`, `_ServerTotalsCard`, `_ServerTotalRow`) — splitting it
+  would be churn.
+- **OPEN (small) — `Result.guard` has no `onError` hook** (`result.dart:22` is
+  the only signature). Verified candidates: `orders readOrders` is clean
+  (single `on Exception catch`: logs, then returns one fixed message).
+  `reviews fetchReviews` is only a PARTIAL candidate — it has two catches
+  (`PostgrestException` logs `e.code` as network; the generic `Exception` catch
+  does not log at all), so a hook would need the error object and the generic
+  path would GAIN logging. Behaviour delta to note if it is ever done.
+- NEXT GATES: money PR #71 merge review. **Owner decision needed on the
+  coupons surface (wire vs delete)** — the single largest open item.
+
+## New — 2026-09-16 (fix: money truncation, formatter consolidation + invoice money pins + 1.4-scale fit pins + real-font retrofit of every scale pin + the grid-card price-clipping fix it exposed; branch `refactor/money-piasters`, commits `643d39a` + `2aecd76` + `0c9e759` + `d342383` + `eb7feb9`, PUSHED as draft PR #71)
+
+Owner decisions this run: keep the `EGY` symbol and print decimals only when
+non-zero; scope = the truncation fix plus formatter consolidation.
+
+- **The bug (was live on master `533c232`):** `Money.format()` used
+  `minorUnits ~/ 100`, truncating piasters. `meteredLineTotal` produces
+  whole *minor* units, not whole pounds — 399.50 EGP/m × 2.5 m = 99875
+  (998.75 EGP) — so the Add-to-Cart CTA showed "998 EGY" while
+  `checkout_service.dart:84` submitted `line_total` 99875 for the same
+  line: the customer saw less than the amount recorded on the order.
+- **`Money.format({symbol = 'EGY'})`** now prints decimals only when the
+  piasters are non-zero. Every pre-existing pin is a whole amount, so all
+  23 `EGY` assertions across 9 test files stayed green untouched.
+- **`Money.formatExact({symbol = 'EGP'})`** added: fixed two decimals, and
+  an empty symbol yields digits only with no trailing space. This absorbed
+  the other two dialects so the document style is preserved exactly:
+  `invoice_pdf_builder`'s unit/line/total cells now call it instead of
+  inline `toStringAsFixed(2)` (output identical), and `safeMinorToEgpLabel`
+  in the admin coupons page keeps its "EGP x.yy" look while delegating the
+  digits.
+- **`core/utils/currency.dart` deleted:** the one-line `money()` wrapper is
+  folded into `Money.format()`; its 3 importers (cart_summary, price_text,
+  cart_item_tile) call `.format()` directly. No test referenced it.
+- **Doc correction:** `cut_length_pricing.dart` claimed rounding was "exact
+  for the tier grid" — it is exact in minor units, not whole pounds; the
+  note now says so and points at the display requirement.
+- **Tests (+8):** new `test/core/entities/money_format_test.dart` (6 pins
+  across both styles — whole amounts, piasters, single-digit padding,
+  symbol override, two decimals, empty symbol); a metered-total render pin
+  in cut_length_pricing_test; `safeMinorToEgpLabel` delegation pins in
+  admin_coupons_page_test plus a rendered "EGP 10.00" assertion.
+- **Mutation-checked, both bites verified:** restoring the truncation fails
+  the metered pin ("998.75 EGY" → "998 EGY") and only that test; dropping
+  formatExact's decimals fails the formatter pins and the coupon-label pin.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (428 files); `flutter test`
+  **914/914 PASS** (`643d39a` reached 907 = 899 baseline + 8; `2aecd76`
+  added 4 invoice pins = 911; `0c9e759` added 3 scale pins = 914).
+  Generated-file churn
+  (`pubspec.lock`, `.flutter-plugins-dependencies`) reverted in both the
+  worktree and the main tree so the branch diff carries only refactor
+  content.
+- **Swept for stragglers after the change:** no manual money display
+  formatting remains in `lib/`. The surviving `toStringAsFixed` sites are
+  not money renderers — meters/quantity display in pricing_tier_table,
+  variant_selector and product_details_cubit, and
+  `admin_product_edit_page._trimTrailingZeros`, which prefills an editable
+  price *text field* from a double (input formatting, not display).
+  `cut_length_pricing.dart:41`'s integer `~/ 100` is intentional
+  minor-unit tier math.
+- **The residual is now CLOSED — follow-up commit `2aecd76`.** The invoice
+  PDF's *text* is pinned: `invoice_pdf_test` asserted only PDF shape
+  (bytes/header/isolate path), so a cell or grand-total regression would have
+  shipped silently. New
+  `test/features/admin/domain/invoice_pdf_money_test.dart` inflates the Flate
+  content streams with `dart:io`'s `ZLibCodec` — no new dependency, and no
+  `lib/` reshaping for testability — then asserts the REAL rendered runs:
+  unit cell `499.50`, line cell `999.00` (price × qty), grand total
+  `3600.00`, the currency-run count (EGP exactly once, on the total; never
+  EGY), and that whole-pound amounts keep their trailing decimals.
+- **The document pins were mutation-checked too:** switching the three invoice
+  call sites back to compact `Money.format()` fails 3 of the 4 new pins while
+  the older `invoice_pdf_test` still passes 4/4 — i.e. the new file carries
+  coverage the suite lacked. One assertion was found VACUOUS during that
+  check (a `contains`-`isNot` that passed in both the correct and the mutated
+  state) and was replaced with a rendered-run count that does bite.
+- **Incident, recorded:** while mutation-checking I ran `git checkout --
+  lib/core/entities/money.dart` to undo a mutation, which discarded the
+  uncommitted fix itself. Caught immediately, re-applied from the same
+  edit, and re-verified; the second mutation round used a `/tmp` backup
+  instead. The committed file was diffed against that backup and is
+  byte-identical.
+- **PUSHED + DRAFT PR #71 opened** (owner asked for push + draft PR):
+  https://github.com/mostafasayed118/albatal-store-app/pull/71 — base master,
+  head `refactor/money-piasters`, MERGEABLE, 11 files. `origin/master` was
+  already `533c232` (the branch base), so no master merge was needed. PR body
+  records the bug table, the behaviour deltas, the verification and the
+  invoice-text residual.
+- **1.4-scale fit pins — commit `0c9e759`, and a TEST-HARNESS FINDING
+  FUTURE LOOPS SHOULD KNOW ABOUT.** The existing 1.4-scale pins only asserted
+  "no overflow exception", and they ran with the **default test font**, whose
+  uniform glyph advances are much wider than Inter. Measured: under that font
+  EVERY CTA label — including the whole-pound `Add to Cart - 1290 EGY` the app
+  already ships — reports a `TextOverflow` ellipsis at a clamped 263.6dp,
+  while in Inter the same labels render at 220.6-253.8dp with room to spare.
+  So a naive "did it ellipsize?" assertion on those pins reports a failure for
+  code that is fine (it produced exactly that false alarm first). New
+  `test/helpers/app_fonts.dart` loads the pubspec fonts (Inter + Montserrat)
+  via `FontLoader`; any future test that reasons about whether copy FITS must
+  call it first, or it is measuring the test font.
+- **Pins added:** the CTA with a fractional metered total (`998.75 EGY`,
+  qty 1) renders in full — present, NOT ellipsized, inside the 360dp viewport
+  — and a headroom pin at qty 9 (`8988.75 EGY`, the widest label still inside
+  the CTA's 263.6dp of text room in Inter). Cart pins cover `998.75 EGY` in
+  the tile and `1073.75 EGY` in the totals row (subtotal + 75.00 shipping), so
+  fractional piasters are pinned through the whole cart path.
+- **Boundary measured and recorded, not hidden:** qty 99 (the cubit's clamp
+  ceiling → 5-digit `98876.25 EGY`) does ellipsize — the `Flexible` guard's
+  designed soft fallback, never an overflow, and the full string stays in the
+  widget tree for assistive tech. Left as-is: shortening the icon or shrinking
+  type would be a design call, not a bug fix. The piasters themselves cost
+  ~20dp (220.6 → 241.1dp at qty 1).
+- **Mutation-checked, third layer too:** widening the CTA lead-in gap from 8dp
+  to 40dp fails BOTH new CTA fit pins while the two pre-existing scale pins
+  still pass — i.e. the new pins carry coverage the suite did not have.
+- **Real-font retrofit of every scale pin — commit `d342383`.** Five files
+  carried 1.4-scale pins: `details_`, `cart_`, `home_`, `checkout_text_scale_test`
+  and `stitch_product_grid_card_test`. All now call the shared
+  `loadAppFonts()`. **Two conditions are required, and the second is the easy
+  one to miss:** (a) load Inter/Montserrat, AND (b) the harness must apply
+  `AppTheme.light()`. A bare `MaterialApp` leaves `fontFamily` null, so text
+  falls back to the test font *no matter what was loaded* — the loader is then
+  decorative. Three harnesses were unthemed (home, grid card, details page +
+  RelatedCard) and now apply the app theme, which also makes their layout
+  representative. Measured on the same string in the same 158dp cell: test font
+  112.8dp @1.0x / 157.6dp @1.4x vs Inter 66.9dp / 93.2dp.
+- **Pins upgraded where ellipsis can hide content:** the details-page CTA label
+  is now asserted to render IN FULL at 1.4x (the old `find.text` could never
+  see a clipped amount), and the cart amounts likewise. Mutation re-check
+  (CTA lead-in 8dp → 40dp) still fails the two CTA fit pins.
+- **DEFECT SURFACED BY THE RETROFIT, THEN FIXED — commit `eb7feb9`.** The
+  product grid card's price row was a `Row`, so it split the cell's inner width
+  evenly between the price and the struck-through old price. With a discount
+  present the amount was **silently ellipsized**: needed 66.9dp against a
+  66.0dp slot at the default scale, and 93.2dp at 1.4x (real Inter, 158dp cell)
+  — 0.9dp short and ~27dp short respectively. Pre-existing (whole-pound
+  amounts; the card was untouched by this branch) and accessibility-visible at
+  large text scale. The old pins could not see it because they only asserted
+  "no RenderFlex overflow", and a clipped amount raises no exception.
+- **The fix:** the row is a `Wrap` now. Each amount takes the width it needs,
+  and the old price drops to a second line only when it no longer fits beside
+  the price — at the default scale both still share one line
+  (66.9 + 6 + ~44 = 117 within 138dp), so the shipped look is unchanged; at
+  1.4x the old price wraps instead of the price being clipped. The media above
+  is `Expanded`, so the extra line shrinks the image rather than overflowing
+  the cell. One widget-level layout change; no BLoC/state/router/schema touch.
+- **Pins that had to be withheld are now asserted:** the card pins require the
+  amounts to render IN FULL at both scales, and the home pin checks EVERY
+  mounted card at 1.4x rather than the first — a card without a discount has
+  the whole row to itself and would pass even with the old layout, so pinning
+  only the first card would have missed this. **Mutation-checked by
+  reverse-applying the commit's lib patch**: all three card pins fail on
+  "must not be clipped" AND the home grid pin fails ("1290 EGY must not be
+  clipped in the home grid at 1.4x"); patch re-applied, all green.
+- **PR #71 refreshed after each commit:** the body was rewritten via
+  `gh pr edit` so the previously-declared residual reads as closed and the
+  scale-pin section records the test-font finding and the measured table; 15
+  files / 3 commits, still draft. CI was live at the time of this run (one
+  run in progress, one pending) — NOT watched to completion.
+- NEXT GATES: owner review of draft PR #71 → mark ready + merge. Master
+  untouched at `533c232`; no merge performed. The grid-card defect found in
+  this branch is fixed rather than deferred, so no owner decision is
+  outstanding on it — a visual eyeball of a discounted card at large text
+  scale on device would still be worth one look.
+
+## New — 2026-09-16 (refactor-analysis follow-up: #2/#3 verified merged, #1 money truncation still OPEN — L1, no code changed)
+
+- **The earlier session's worktrees are gone** — this box is a fresh clone
+  (`git reflog` is just clone + fast-forward), so the local `.trees/*`
+  refactor worktrees and local `refactor/*` branches did not survive.
+  **Nothing was lost:** #68/#69/#70 are all merged into master `533c232`,
+  so that work landed upstream before the re-clone.
+- **Merged state re-verified on master `533c232`:** `flutter analyze`
+  0 issues; `flutter test` **899/899 PASS**. Both refactors hold
+  (`Result.guard` in the admin/profile repository boundaries; page-level
+  raw spinners down from 15 to 4).
+- **#1 (money rendering) remains the only open item from the analysis, and
+  it is a live correctness bug**, still present on `533c232`:
+  - `core/entities/money.dart:37` — `'${minorUnits ~/ 100} $symbol'`
+    truncates piasters; the default symbol is `EGY`.
+  - `storefront/domain/pricing/cut_length_pricing.dart:48` —
+    `meteredLineTotal` = `(perMeter.minorUnits * meters).round() * quantity`
+    gives integral minor units, but NOT a whole major unit (399.50 EGP/m
+    × 2.5 m = 99875 minor = 998.75 EGP).
+  - `storefront/presentation/widgets/add_to_cart_button.dart:37` renders
+    that value in the CTA → "Add to Cart - 998 EGY", while
+    `storefront/data/checkout_service.dart:84` submits
+    `'line_total': item.effectiveLineTotal.minorUnits` (99875). One source
+    value, two representations: the displayed estimate sits 0.75 EGP under
+    the line total recorded on the order.
+  - Doc inaccuracy at `cut_length_pricing.dart:46-47`: the "plain rounding
+    is exact for the tier grid" note is wrong for display — rounding makes
+    minor units integral, not whole major units.
+  - Blast radius of the SYMBOL/locale half only: 23 `EGY` occurrences across
+    9 test files; 24 `.format()` call sites in `lib/`; `core/utils/currency.dart`
+    is a 1-line wrapper with 3 importers.
+- **Blast radius of the TRUNCATION half: zero** — every currently pinned
+  amount is a whole major unit, so showing piasters only when non-zero
+  leaves all 23 pins green. The two halves are separable.
+- **NOT changed:** `lib/` untouched this run (L1 report-only per LOOP.md).
+  Proposed split: land the non-breaking truncation fix first, decide the
+  symbol/locale question separately.
+- NEXT GATES: owner decision on money display (symbol `EGY` vs `EGP`;
+  decimals only when non-zero vs always 2dp); then L2 + a worktree for the
+  fix. Separate optional owner call: delete the stale unmerged branches
+  listed above as unknown state.
 
 ## New — 2026-09-16 (refactor: the last 4 data-layer guard migrations; branch `refactor/data-layer-guard-2`)
 
@@ -22,8 +717,15 @@ are untouched by #68 (verified - `git diff master refactor/data-layer-guard --
   plus `deleteAccount`'s `FunctionException` parse (10), coupons `validate`
   (2), reviews `fetchReviews`/`submit` (4), checkout `createOrder` (2),
   catalog `getProductById` (2);
-  logging side effect (9) - catalog `fetchProducts`, orders `readOrders`,
-  paymob x5, the payment-watcher poll;
+  logging side effect (8) - orders `readOrders`, paymob x5, the
+  payment-watcher poll, catalog `fetchProducts` (this bucket overlaps the
+  recovery and non-`Result` buckets below, which is how it got over-counted
+  as 9 on first pass). CORRECTION from a later review of the same sites:
+  only 2 of them are `Result` boundaries that a `Result.guard(onError:)` hook
+  could actually unlock - `orders readOrders` and `reviews fetchReviews`
+  (both log and then return a single fixed message). Paymob returns its own
+  `PaymentResult` sealed type (5 catches), the payment-watcher catch guards a
+  stream poll, and catalog `fetchProducts` needs the recovery hook as well;
   recovery/fallback (3) - catalog cache-degrade paths;
   fail-soft returning data rather than a `Result` (6) -
   storefront_persistence x5, local_address_repository;
