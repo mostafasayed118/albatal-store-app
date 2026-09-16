@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
-import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_customers_cubit.dart';
 
@@ -94,13 +94,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                             // actually has. Hidden when empty so the row
                             // never renders a blank subtitle.
                             final contact = c.contact;
-                            return Card(
-                              color: scheme.surface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppTheme.cardRadius,
-                                side: BorderSide(
-                                    color: scheme.outlineVariant, width: 1),
-                              ),
+                            return AppCard(
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: scheme.primaryContainer,

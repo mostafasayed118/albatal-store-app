@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
-import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_coupons_cubit.dart';
 
@@ -69,14 +69,7 @@ final class _AdminCouponsView extends StatelessWidget {
             separatorBuilder: (context, i) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final coupon = state.coupons[i];
-              return Card(
-                color: Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppTheme.cardRadius,
-                  side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      width: 1),
-                ),
+              return AppCard(
                 child: SwitchListTile(
                   title: Text(coupon.code),
                   subtitle: Text(safeMinorToEgpLabel(coupon.discountMinor)),

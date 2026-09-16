@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../cubit/orders_cubit.dart';
 import '../cubit/reorder_cubit.dart';
@@ -40,12 +41,7 @@ class _OrderCardState extends State<OrderCard> {
     final firstProductName = o.items.isEmpty ? '' : o.items.first.product.name;
     final isActive = !widget.isCompleted && o.status != OrderStatus.cancelled;
 
-    return Card(
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-        side: BorderSide(color: scheme.outlineVariant, width: 1),
-      ),
+    return AppCard(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => setState(() => _expanded = !_expanded),
