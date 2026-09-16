@@ -44,7 +44,12 @@ Money tieredPerMeterPrice(Money basePerMeter, double meters) {
 /// Line total for a metered cut: per-meter price × meters × quantity,
 /// computed in minor units. [meters] sits on the 0.5 m grid, so
 /// `minorUnits × meters` is at most a half-minor-unit fraction away
-/// from an integer; plain rounding is exact for the tier grid.
+/// from an integer, and rounding lands on exact minor units.
+///
+/// NOTE: the result is whole *minor* units, not whole major units —
+/// 39950 × 2.5 = 99875, i.e. 998.75 EGP. Rendering it must therefore
+/// keep the piasters ([Money.format] does); truncating to whole pounds
+/// would display less than the `line_total` submitted at checkout.
 Money meteredLineTotal(Money perMeter, double meters, {int quantity = 1}) =>
     Money((perMeter.minorUnits * meters).round() * quantity);
 

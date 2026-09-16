@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/product.dart';
-import '../../../../core/utils/currency.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -94,7 +93,7 @@ class CartItemTile extends StatelessWidget {
                     Text(item.sample
                         ? '${item.color} · ${l.sampleLineItem}'
                         : '${item.color} · ${item.length}'),
-                    Text(money(item.effectiveLineTotal)),
+                    Text(item.effectiveLineTotal.format()),
                     if (!item.sample)
                       QuantityStepper(
                         quantity: item.quantity,

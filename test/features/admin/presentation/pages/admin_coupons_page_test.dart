@@ -20,6 +20,15 @@ Widget _harness(AdminCouponsCubit cubit) => MaterialApp(
     );
 
 void main() {
+  group('safeMinorToEgpLabel', () {
+    test('delegates to Money.formatExact', () {
+      expect(safeMinorToEgpLabel(1000), 'EGP 10.00');
+      expect(safeMinorToEgpLabel(129000), 'EGP 1290.00');
+      expect(safeMinorToEgpLabel(99875), 'EGP 998.75');
+      expect(safeMinorToEgpLabel(0), 'EGP 0.00');
+    });
+  });
+
   testWidgets('error state offers a retry that reloads the coupon list',
       (WidgetTester tester) async {
     final repo = _MockAdminRepository();
@@ -47,6 +56,8 @@ void main() {
     verify(() => repo.fetchCoupons()).called(2);
     expect(find.text('EID25'), findsOneWidget);
     expect(find.text('offline'), findsNothing);
+    // The discount label still comes from the shared formatter.
+    expect(find.text('EGP 10.00'), findsOneWidget);
   });
 
   testWidgets('empty list renders the empty state without a second add control',
