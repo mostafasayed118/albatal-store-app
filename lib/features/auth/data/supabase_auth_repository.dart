@@ -20,15 +20,11 @@ class SupabaseAuthRepository implements AuthRepository {
   final SupabaseClient _client;
 
   @override
-  Future<Result<Authenticated?>> checkSession() async {
-    try {
-      final session = _client.auth.currentSession;
-      if (session == null) return const Success(null);
-      return Success(Authenticated(session.user.id));
-    } catch (e) {
-      return Failure(AppError('Failed to read session', cause: e));
-    }
-  }
+  Future<Result<Authenticated?>> checkSession() => Result.guard(() async {
+        final session = _client.auth.currentSession;
+        if (session == null) return null;
+        return Authenticated(session.user.id);
+      }, 'Failed to read session');
 
   @override
   Future<Result<AuthOutcome>> signUp({
@@ -103,14 +99,9 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Result<void>> signOut() async {
-    try {
-      await _client.auth.signOut();
-      return const Success(null);
-    } catch (e) {
-      return Failure(AppError('Failed to sign out', cause: e));
-    }
-  }
+  Future<Result<void>> signOut() => Result.guard<void>(() async {
+        await _client.auth.signOut();
+      }, 'Failed to sign out');
 
   @override
   Future<Result<void>> deleteAccount({required String email}) async {
