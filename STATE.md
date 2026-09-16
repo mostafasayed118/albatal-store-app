@@ -1,6 +1,17 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 12: **NATIVE-DIGIT NORMALISATION** + dropping the now
+Last run: 2026-09-16 (part 13: the directory's phone filter pinned **END TO END**
+from a widget test, which required extracting the mock-PostgREST fakes into
+`test/helpers/supabase_admin_fakes.dart`). Branch `feat/admin-customer-tier`,
+commit `e856d7e`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
+The point: the filter string is built in the DATA layer, so the old widget
+harness could only prove the page *hands down* a term — "the directory sends a
+phone_digits filter" was two half-claims in different files with nothing pinning
+the join. Two new widget tests now drive the REAL `SupabaseAdminRepository` and
+read the `or` tree it built. Evidence: **5/5 mutations bite including one of the
+PAGE itself**, so the tests provably fail when the data layer or the page is
+wrong; `flutter analyze` 0, format clean (430 files), `flutter test` **953/953**.
+**No production code changed** — `test/` only. Prior run: 2026-09-16 (part 12: **NATIVE-DIGIT NORMALISATION** + dropping the now
 vestigial phone trigram index — two owner asks). Branch `feat/admin-customer-tier`,
 commit `e12bc67`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
 The headline is a SECOND defect found in the same expression: `[^0-9]` is
@@ -81,6 +92,68 @@ branch needs push approval); master untouched at `533c232`. Evidence:
 `0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
 real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
 PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 13: end-to-end filter pin + harness extraction — `e856d7e`)
+
+Owner: "add a widget test that types a digit-only query and asserts the
+directory sends the phone_digits filter". Owner chose the approach: extract the
+harness rather than pin a weaker seam.
+
+### Why the assertion was not possible before
+
+`customerSearchFilter` builds the filter string in the **data** layer, and the
+page tests drive a stubbed `AdminRepository` (mocktail). So a widget test there
+proves the page hands down a *term* — nothing about what the term becomes on the
+wire. "The directory sends a `phone_digits` filter" was really **two
+half-claims living in different files, with nothing pinning the join**: one test
+for "the page passes the term", another for "the repository turns a term into a
+filter", and no test asserting the composed behaviour.
+
+### The extraction
+
+The mock-PostgREST fakes (`MockSupabaseClient`, `FakeFilterBuilder`,
+`FakeTransformBuilder`, `FakeResponseBuilder`, the RPC builder) plus the
+`directoryRepo` factory moved **verbatim** out of
+`admin_customer_directory_test.dart` into `test/helpers/supabase_admin_fakes.dart`
+(an existing directory, so this establishes no new convention). `_FakeRpcBuilder`
+became public `FakeRpcBuilder` for its new home. Net: −247/+384 across three
+files, of which the +384 includes the two new tests.
+
+**One shared harness, deliberately, over a smaller fake local to the widget
+test.** A second fake would be ~50 lines instead of a 220-line move, but the two
+would drift — and the drift would be *invisible*, because each fake would still
+satisfy its own test. That is the same class of failure as the earlier vacuous
+mutation runs: a check that keeps passing while testing less than it claims.
+
+### The two tests
+
+Both drive the REAL `SupabaseAdminRepository` through the real page, then read
+`filters.orFilters.last` — the `or` tree the repository actually built.
+
+| typed | asserted request |
+|---|---|
+| `966501234567` (row stored `+966 50 123 4567`) | `full_name.ilike."%966501234567%",phone_digits.ilike."%966501234567%"` |
+| `Layla` (same screen) | `full_name.ilike."%Layla%",phone.ilike."%Layla%"` — the shape gate, from the UI side |
+| `٩٦٦٥٠٧٧٧٨٨٨٨` (Arabic-Indic) | name half keeps the native digits, phone half is `"%966507778888%"` |
+
+The second and third are the interesting ones: the first pins the routing, the
+second pins that a *name* is **not** routed to the digit column, and the third
+pins the transliteration round trip plus that the **name half stays as typed**
+(Arabic names are stored in Arabic script, so transliterating that half would
+break name search).
+
+### Verification
+
+**5/5 mutations bite, and four of them are mutations of the DATA layer** — digit
+branch never taken; digit pattern pointed at the raw `phone` column;
+transliteration removed; name clause transliterated. The fifth mutates the
+**page** (the term upper-cased before it reaches the cubit), which is what
+proves the page→repository link is covered rather than just the repository.
+Files restored byte-identically.
+
+`flutter analyze` 0 · format clean (**430** files — one more, for the new
+helper) · `flutter test` **953/953** (951 + 2). **No production code changed:**
+the commit is `test/` only.
 
 ## New — 2026-09-16 (part 12: native-digit normalisation + phone-index drop — `e12bc67`)
 
@@ -170,9 +243,9 @@ clean in the same session.
    non-ASCII digit** (e.g. Devanagari) still falls outside both.
 3. Staging has 25 customers and production 0 admins; no search path has met
    real volume. 065 must still ship before the matching client build.
-4. **OPEN:** the owner's third ask — a widget test asserting the directory sends
-   the `phone_digits` filter — was **not** started; the approach needs a
-   decision first (see below in the PR discussion).
+4. The owner's third ask — a widget test asserting the directory sends the
+   `phone_digits` filter — is **CLOSED in part 13** (owner chose the harness
+   extraction).
 
 ## New — 2026-09-16 (part 11: phone normalisation — commit `9a306d9`)
 
