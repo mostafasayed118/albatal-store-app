@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
@@ -52,15 +53,16 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
             ),
             body: switch (state.status) {
               AdminSalesDashboardStatus.loading =>
-                const Center(child: CircularProgressIndicator()),
-              AdminSalesDashboardStatus.error => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Text(
-                      state.errorMessage ?? 'Failed to load sales data.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                const FeedbackView(type: FeedbackViewType.loading),
+              AdminSalesDashboardStatus.error => FeedbackView(
+                  type: FeedbackViewType.error,
+                  // Admin-only copy stays English in-code (no ARB keys),
+                  // matching this screen's documented convention.
+                  title: 'Could not load sales',
+                  body: state.errorMessage ?? 'Failed to load sales data.',
+                  actionLabel: 'Retry',
+                  onAction: () =>
+                      context.read<AdminSalesDashboardCubit>().load(),
                 ),
               AdminSalesDashboardStatus.loaded =>
                 _SalesDashboardBody(state: state),

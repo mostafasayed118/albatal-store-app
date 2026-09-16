@@ -256,21 +256,16 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.productImages)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        // Admin-only, intentionally unlocalized.
-                        AppButton(label: 'Retry', onPressed: _loadImages),
-                      ],
-                    ),
-                  ),
+              ? FeedbackView(
+                  type: FeedbackViewType.error,
+                  // Admin-only, intentionally unlocalized (same convention as
+                  // this screen's empty gallery state).
+                  title: 'Could not load images',
+                  body: _error,
+                  actionLabel: 'Retry',
+                  onAction: _loadImages,
                 )
               : Column(
                   children: [

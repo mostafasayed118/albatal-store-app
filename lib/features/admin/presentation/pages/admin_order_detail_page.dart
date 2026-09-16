@@ -121,7 +121,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
         child: BlocBuilder<AdminCubit, AdminState>(
           builder: (context, state) {
             if (state.status == AdminStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
+              return const FeedbackView(type: FeedbackViewType.loading);
             }
             final order = state.selectedOrder;
             if (order == null) {
