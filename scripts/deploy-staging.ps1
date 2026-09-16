@@ -31,7 +31,11 @@ $functions = @(
     "paymob-initiate",
     "paymob-callback",
     "cancel-expired-orders",
-    "send-order-notification"
+    "send-order-notification",
+    "delete-account",
+    "instapay-initiate",
+    "instapay-submit-proof",
+    "instapay-review"
 )
 
 foreach ($func in $functions) {

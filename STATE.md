@@ -56,6 +56,29 @@ until app release ships).
   deployed on production (parity, owner-coordinated); performance
   re-score on new measured evidence.
 
+## New — 2026-09-16 (final completion sweep; branch fix/final-cleanup)
+
+- **v5 minors FIXED:** _optInt doc corrected, old_price dedup to
+  _optInt, fetchCustomers log carries cause, watcher removeChannel on
+  cancel + zero-amount success documented. Test fakes gained
+  removeChannel. Gates: analyze 0, format clean, 893/893.
+- **CI release workflow FIXED:** writes env json from secrets
+  (SUPABASE_URL, SUPABASE_ANON_KEY, SENTRY_DSN — all three set via
+  `gh secret set` on 2026-09-16) + --dart-define-from-file on both
+  builds. CI artifacts are now runnable.
+- **PRODUCTION PARITY COMPLETE:** 060 applied (rate_limits live);
+  delete-account, instapay-initiate, instapay-submit-proof,
+  instapay-review deployed (all 401 unauth = healthy); password floor
+  6 → 8 verified. Production == staging hardening. No blockers left.
+- **Housekeeping:** 20 stale worktrees removed; 11 merged branches
+  deleted; /C*/ exclude landmine removed; APK rebuilt from final tree
+  (72.3MB, publishable key verified baked, no legacy JWT).
+- OPEN (cannot be finished here): performance 9.0 → 10.0 re-score
+  needs a measured perf run on a real device (no fabricatable
+  evidence); owner should reinstall the rebuilt APK once (it now
+  matches final master); stale unmerged branches kept on purpose
+  (feat/app-colors-tokens, fix/admin-cubitify, etc. — unknown state).
+
 ## New — 2026-09-15 (owner follow-up batch: git repair + AUD-014/009/008; 888/888, analyze clean)
 
 Owner approved the follow-up list ("do this steps"). Three new commits on

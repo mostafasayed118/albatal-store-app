@@ -67,6 +67,15 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
 
   FakeSupabaseClient({required this.fakeChannel, this.fallbackRow});
 
+  /// Mirrors real client semantics: removeChannel detaches AND
+  /// unsubscribes the channel (the watcher relies on this so per-order
+  /// channels do not accumulate on the client).
+  @override
+  Future<String> removeChannel(RealtimeChannel channel) async {
+    if (channel is FakeRealtimeChannel) channel.unsubscribed = true;
+    return 'ok';
+  }
+
   @override
   RealtimeChannel channel(String name,
           {RealtimeChannelConfig opts = const RealtimeChannelConfig()}) =>

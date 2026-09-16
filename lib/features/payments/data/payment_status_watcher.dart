@@ -26,6 +26,11 @@ final class PaymentStatusWatcher {
   /// (`pending`/unknown/missing status) so both callers keep polling.
   /// Payloads are byte-identical to the pre-refactor inline branches
   /// (no `code` on the gateway-decline failure — codes unchanged).
+  /// [PaymentSuccess.amount] is intentionally always [Money.zero]: the
+  /// order total is server-authoritative and already persisted on the
+  /// order row, so the watcher never re-states an amount (same
+  /// placeholder convention as [PaymobPaymentService]'s login-only
+  /// success paths).
   /// `cancelled`/`expired` (and `canceled`) map to [PaymentCancelled] so
   /// the cubit ends its wait instead of polling until the 15min timeout.
   static PaymentResult? terminalResultForRow(Map<String, dynamic> row) {
@@ -142,7 +147,15 @@ final class PaymentStatusWatcher {
 
     controller.onCancel = () {
       fallbackTimer?.cancel();
-      channel?.unsubscribe();
+      // Unsubscribe AND remove: unsubscribe() only detaches the socket
+      // subscription, while the channel stays registered on the client's
+      // internal list — a per-order watcher used repeatedly would
+      // accumulate stale channel entries (v5 audit minor). removeChannel
+      // also unsubscribes if needed, so it alone is sufficient.
+      if (channel != null) {
+        unawaited(_client.removeChannel(channel!));
+        channel = null;
+      }
       // Release the controller itself: single-subscription by contract, so
       // after the cubit cancels, nobody can listen again. Closing here
       // (guarded) makes the teardown deterministic instead of waiting for

@@ -38,6 +38,8 @@ jobs:
           [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ] && MISSING+=("KEYSTORE_PASSWORD")
           [ -z "${{ secrets.KEY_ALIAS }}" ] && MISSING+=("KEY_ALIAS")
           [ -z "${{ secrets.KEY_PASSWORD }}" ] && MISSING+=("KEY_PASSWORD")
+          [ -z "${{ secrets.SUPABASE_URL }}" ] && MISSING+=("SUPABASE_URL")
+          [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ] && MISSING+=("SUPABASE_ANON_KEY")
 
           if [ ${#MISSING[@]} -ne 0 ]; then
             echo "::error::Missing required secrets: ${MISSING[*]}"
@@ -114,13 +116,35 @@ jobs:
           echo "key.properties written (secrets not logged)."
 
       # -----------------------------------------------------------------
-      # 5. Build release AAB + APK
+      # 4b. Write build-time env (dart-defines) from secrets.
+      #     The app asserts at startup without SUPABASE_URL/ANON_KEY, so
+      #     CI-built artifacts MUST carry them. Values are public-safe
+      #     (project URL + publishable key + public Sentry id) but are
+      #     still passed as secrets and never logged.
+      # -----------------------------------------------------------------
+      - name: Write build-time env
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          cat > config/env.production.local.json << EOF
+          {
+            "SUPABASE_URL": "${SUPABASE_URL}",
+            "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}",
+            "SENTRY_DSN": "${SENTRY_DSN}"
+          }
+          EOF
+          echo "config/env.production.local.json written (values not logged)."
+
+      # -----------------------------------------------------------------
+      # 5. Build release AAB + APK (config baked via dart-defines)
       # -----------------------------------------------------------------
       - name: Build App Bundle
-        run: flutter build appbundle --release --no-tree-shake-icons
+        run: flutter build appbundle --release --no-tree-shake-icons --dart-define-from-file=config/env.production.local.json
 
       - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons --dart-define-from-file=config/env.production.local.json
 
       # -----------------------------------------------------------------
       # 6. Locate build artifacts
