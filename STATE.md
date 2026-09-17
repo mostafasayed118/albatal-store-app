@@ -1,6 +1,21 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-17 (part 14: **FULL-RANGE DIGIT TRANSLITERATION** — 065 now maps
+Last run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
+from the part-5 report is fixed. `mockCustomerName` ('Ahmed Mansour' /
+'أحمد منصور'), a dead demo value riding in the production ARBs since it landed,
+removed from both ARBs and the generated l10n regenerated (5 files, 14
+deletions). Branch `feat/admin-customer-tier`, commit `c04e386`, PUSHED onto
+draft PR #74. Removal is compile-proven: zero references in lib/ and test/
+(word-boundary sweep over lib/features, lib/shared, lib/core and the test
+trees), and `flutter analyze` stays 0 now that the getter is gone from the
+abstract class — any leftover caller would be a compile error. The six OTHER
+candidate dead keys (`membershipTier`, `advanceOrder`, `orderMarkedAsShipped`,
+`orderSummary`, `manageCoupons`, `couponActive`) were NOT deleted — each is a
+product decision (build the UI that uses it, or drop the string), and
+`advanceOrder`'s history (UX-001, removed for safety) makes its deletion
+contentious. Finding #2 (the untested cubit) verified CLOSED: the cubit test
+file pins load/loadMore/search/setMembershipTier. Evidence: analyze 0 · format
+clean (430) · `flutter test` **955/955**. Prior run: 2026-09-17 (part 14: **FULL-RANGE DIGIT TRANSLITERATION** — 065 now maps
 EVERY Unicode Nd block (75 non-ASCII, unicodedata 16.0.0), not just the two
 Arabic ranges, closing the Devanagari-class residual recorded in part 12.
 Branch `feat/admin-customer-tier`, commit `daaf7b8`, worktree
