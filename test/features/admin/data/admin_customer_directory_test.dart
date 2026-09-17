@@ -365,11 +365,42 @@ void main() {
       expect(customerPhoneDigitPattern('٠٥٠1234567'), '%0501234567%');
     });
 
+    test('transliterates EVERY Unicode Nd block, not only the Arabic ones', () {
+      // Devanagari (U+0966–), the range this generalisation exists for.
+      expect(customerPhoneDigitPattern('०९०१२३४५'), '%09012345%');
+      // Thai (U+0E50–).
+      expect(customerPhoneDigitPattern('๐๑๒๓๔๕๖๗๘๙'), '%0123456789%');
+      // Fullwidth (U+FF10–) — an IME frequently produces these.
+      expect(customerPhoneDigitPattern('０９０１２３'), '%090123%');
+      // Mathematical bold (U+1D7CE–) — astral plane, i.e. surrogate PAIRS in
+      // UTF-16, which is why _asciiDigits iterates runes rather than code units.
+      expect(customerPhoneDigitPattern('𝟎𝟗𝟏𝟐'), '%0912%');
+      // Segmented display (U+1FBF0–) — seven-segment LCD style.
+      expect(customerPhoneDigitPattern('🯰🯹'), '%09%');
+      // Native digits mixed with ASCII separators still stay digit-shaped.
+      expect(customerPhoneDigitPattern('०९-०८/०७'), '%090807%');
+      // Two different scripts in one term — a pasted value plus a typed digit.
+      expect(customerPhoneDigitPattern('٠५०६०'), '%05060%');
+    });
+
     test('transliterates Extended Arabic-Indic (Persian/Urdu) digits too', () {
       // A different range entirely (U+06F0–U+06F9). Arabic script is shared,
       // so normalising only one of the two ranges reproduces the bug for the
       // other.
       expect(customerPhoneDigitPattern('۰۱۲۳۴۵۶۷۸۹۰'), '%01234567890%');
+    });
+
+    test('numeric-looking characters that are NOT Nd stay literal', () {
+      // Unicode is full of characters that LOOK numeric but are category No
+      // (Other Number), not Nd (Decimal Digit): ½ is 'one half' with no
+      // positional digit value, ⑦ is a circled seven. Mapping them by eye is
+      // exactly how a corrupting table entry happens, so they are excluded
+      // wholesale — the term stays a literal search instead.
+      expect(customerPhoneDigitPattern('½'), isNull);
+      expect(customerPhoneDigitPattern('⑦'), isNull);
+      expect(customerPhoneDigitPattern('¼½¾'), isNull);
+      expect(customerPhoneDigitPattern('١½'), isNull,
+          reason: 'one non-Nd character in the term keeps it a literal search');
     });
 
     test('a lone Arabic-Indic digit is still phone-shaped', () {

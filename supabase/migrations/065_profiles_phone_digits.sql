@@ -50,20 +50,27 @@
 --   matching this project's pinned major_version) and then READS THE COMPUTED
 --   VALUES BACK, so a non-immutable expression would fail at the ALTER and a
 --   wrong expression would fail the read-back rather than reach production.
--- * The two `translate` tables are 20 characters each, positionally aligned,
---   and contain no duplicates (duplicates would silently make the first
---   mapping win).
+-- * The `translate` tables are GENERATED, not hand-written: 75 blocks x 10
+--   codepoints is 750 characters of exotic Unicode, and a wrong entry does not
+--   merely miss a match — it CORRUPTS the stored value. They are emitted by
+--   supabase/tests/gen_phone_digit_ranges.py from Python's `unicodedata` (the
+--   Unicode database), which also asserts the structural facts the SQL
+--   depends on: every block starts at digit value 0, values map positionally
+--   (base + i -> i), and no block appears twice. The TO table is
+--   `repeat('0123456789', N)` rather than a second literal, so it cannot fall
+--   out of alignment with the FROM table. Re-run with --verify to check the
+--   shipped artifacts still agree with the Unicode database.
 -- * Column name matches the one 064's header already anticipates.
 -- * NOT added to the client's SELECT list. The directory filters on this column
 --   but never displays it — `phone` stays the value the admin sees. Returning
 --   both would be the same PII twice.
--- Arabic-Indic digits — a SECOND defect this same expression has to fix
--- --------------------------------------------------------------------
--- The strip is `[^0-9]`, which is ASCII-only. An Arabic-locale customer who
--- entered ٠١٠١٢٣٤٥٦٧٨ does NOT get a `phone_digits` that keeps the digits
--- differently — Postgres DELETES every one of them, and the column comes out
--- EMPTY. So the row is unreachable by any digit search at all, including an
--- ASCII one typed by an admin who knows nothing about the encoding.
+-- Native digits of EVERY script — the same defect, generalised
+-- ------------------------------------------------------------
+-- The strip is `[^0-9]`, which is ASCII-only. A customer who entered ٠١٠١٢٣٤٥٦٧٨
+-- does NOT get a `phone_digits` that keeps the digits differently — Postgres
+-- DELETES every one of them, and the column comes out EMPTY. So the row is
+-- unreachable by any digit search at all, including an ASCII one typed by an
+-- admin who knows nothing about the encoding.
 --
 -- That is a strictly worse failure than the separator one this migration was
 -- written for, and it is why the expression transliterates BEFORE it strips:
@@ -71,18 +78,19 @@
 -- digits left to keep. This is why the order of the two calls is load-bearing
 -- rather than stylistic.
 --
--- Both Arabic digit ranges are mapped, not just the one the app's own locale
--- uses:
---   * Arabic-Indic           U+0660–U+0669   ٠١٢٣٤٥٦٧٨٩   (Egypt, Saudi)
---   * Extended Arabic-Indic  U+06F0–U+06F9   ۰۱۲۳۴۵۶۷۸۹   (Persian, Urdu)
--- Arabic script is shared across languages, so a customer is as likely to have
--- typed one as the other, and partial normalisation would reproduce this exact
--- bug for the half left out. Both are `translate` tables, so the cost is
--- characters in a literal, not a second code path.
+-- EVERY Unicode Nd (decimal digit) block is mapped, not only the Arabic ones:
+-- Arabic-Indic (U+0660–U+0669), Extended Arabic-Indic (U+06F0–U+06F9),
+-- Devanagari (U+0966–U+096F), Thai (U+0E50–U+0E59), fullwidth (U+FF10–U+FF19),
+-- the five Mathematical Alphanumeric digit blocks, and every other Nd block in
+-- Unicode 16.0.0 — 75 in all. Digit systems are not confined to Arabic script,
+-- and a table covering only the ranges the author had heard of would reproduce
+-- this exact bug for a customer who typed a number in any of the others. The
+-- full list lives in the generated region below; the generator is the source
+-- of truth, not this prose.
 --
--- `translate(text, text, text)` is IMMUTABLE, so the generated column accepts
--- it. Not taken on trust either — the ALTER below is what proves it, and the
--- harness reads the computed values back.
+-- `translate(text, text, text)` and `repeat(text, int)` are IMMUTABLE, so the
+-- generated column accepts them. Not taken on trust either — the ALTER below
+-- is what proves it, and the harness reads the computed values back.
 --
 -- ORDERING COUPLING — read before deploying the matching client build
 -- ------------------------------------------------------------------
@@ -135,13 +143,17 @@ ALTER TABLE public.profiles
   GENERATED ALWAYS AS (
     regexp_replace(
       -- TRANSLITERATE FIRST, then strip. The order is the whole point: the
-      -- strip is `[^0-9]`, i.e. ASCII-only, so Arabic-Indic digits are not
-      -- "not a digit" in a way it can keep — they are characters it DELETES.
+      -- strip is `[^0-9]`, i.e. ASCII-only, so native digits are not "not a
+      -- digit" in a way it can keep — they are characters it DELETES.
+-- unicode-digit-tables:generated — do not edit by hand
+      -- 75 non-ASCII Nd blocks, unicodedata 16.0.0; regenerate with
+      --   python3 supabase/tests/gen_phone_digit_ranges.py --apply
       translate(
         COALESCE(phone, ''),
-        '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹',
-        '01234567890123456789'
+        '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹߀߁߂߃߄߅߆߇߈߉०१२३४५६७८९০১২৩৪৫৬৭৮৯੦੧੨੩੪੫੬੭੮੯૦૧૨૩૪૫૬૭૮૯୦୧୨୩୪୫୬୭୮୯௦௧௨௩௪௫௬௭௮௯౦౧౨౩౪౫౬౭౮౯೦೧೨೩೪೫೬೭೮೯൦൧൨൩൪൫൬൭൮൯෦෧෨෩෪෫෬෭෮෯๐๑๒๓๔๕๖๗๘๙໐໑໒໓໔໕໖໗໘໙༠༡༢༣༤༥༦༧༨༩၀၁၂၃၄၅၆၇၈၉႐႑႒႓႔႕႖႗႘႙០១២៣៤៥៦៧៨៩᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙᥆᥇᥈᥉᥊᥋᥌᥍᥎᥏᧐᧑᧒᧓᧔᧕᧖᧗᧘᧙᪀᪁᪂᪃᪄᪅᪆᪇᪈᪉᪐᪑᪒᪓᪔᪕᪖᪗᪘᪙᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹᱀᱁᱂᱃᱄᱅᱆᱇᱈᱉᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩꣐꣑꣒꣓꣔꣕꣖꣗꣘꣙꤀꤁꤂꤃꤄꤅꤆꤇꤈꤉꧐꧑꧒꧓꧔꧕꧖꧗꧘꧙꧰꧱꧲꧳꧴꧵꧶꧷꧸꧹꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙꯰꯱꯲꯳꯴꯵꯶꯷꯸꯹０１２３４５６７８９𐒠𐒡𐒢𐒣𐒤𐒥𐒦𐒧𐒨𐒩𐴰𐴱𐴲𐴳𐴴𐴵𐴶𐴷𐴸𐴹𐵀𐵁𐵂𐵃𐵄𐵅𐵆𐵇𐵈𐵉𑁦𑁧𑁨𑁩𑁪𑁫𑁬𑁭𑁮𑁯𑃰𑃱𑃲𑃳𑃴𑃵𑃶𑃷𑃸𑃹𑄶𑄷𑄸𑄹𑄺𑄻𑄼𑄽𑄾𑄿𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙𑋰𑋱𑋲𑋳𑋴𑋵𑋶𑋷𑋸𑋹𑑐𑑑𑑒𑑓𑑔𑑕𑑖𑑗𑑘𑑙𑓐𑓑𑓒𑓓𑓔𑓕𑓖𑓗𑓘𑓙𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉𑛐𑛑𑛒𑛓𑛔𑛕𑛖𑛗𑛘𑛙𑛚𑛛𑛜𑛝𑛞𑛟𑛠𑛡𑛢𑛣𑜰𑜱𑜲𑜳𑜴𑜵𑜶𑜷𑜸𑜹𑣠𑣡𑣢𑣣𑣤𑣥𑣦𑣧𑣨𑣩𑥐𑥑𑥒𑥓𑥔𑥕𑥖𑥗𑥘𑥙𑯰𑯱𑯲𑯳𑯴𑯵𑯶𑯷𑯸𑯹𑱐𑱑𑱒𑱓𑱔𑱕𑱖𑱗𑱘𑱙𑵐𑵑𑵒𑵓𑵔𑵕𑵖𑵗𑵘𑵙𑶠𑶡𑶢𑶣𑶤𑶥𑶦𑶧𑶨𑶩𑽐𑽑𑽒𑽓𑽔𑽕𑽖𑽗𑽘𑽙𖄰𖄱𖄲𖄳𖄴𖄵𖄶𖄷𖄸𖄹𖩠𖩡𖩢𖩣𖩤𖩥𖩦𖩧𖩨𖩩𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉𖭐𖭑𖭒𖭓𖭔𖭕𖭖𖭗𖭘𖭙𖵰𖵱𖵲𖵳𖵴𖵵𖵶𖵷𖵸𖵹𜳰𜳱𜳲𜳳𜳴𜳵𜳶𜳷𜳸𜳹𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗𝟘𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵𝟶𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿𞅀𞅁𞅂𞅃𞅄𞅅𞅆𞅇𞅈𞅉𞋰𞋱𞋲𞋳𞋴𞋵𞋶𞋷𞋸𞋹𞓰𞓱𞓲𞓳𞓴𞓵𞓶𞓷𞓸𞓹𞗱𞗲𞗳𞗴𞗵𞗶𞗷𞗸𞗹𞗺𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙🯰🯱🯲🯳🯴🯵🯶🯷🯸🯹',
+        repeat('0123456789', 75)
       ),
+-- unicode-digit-tables:end
       '[^0-9]', '', 'g'
     )
   )
