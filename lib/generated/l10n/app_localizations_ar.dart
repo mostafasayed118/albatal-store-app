@@ -238,9 +238,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myProfile => 'حسابي';
 
   @override
-  String get mockCustomerName => 'أحمد منصور';
-
-  @override
   String get premiumMember => 'عضو مميز';
 
   @override

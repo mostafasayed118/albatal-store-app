@@ -548,12 +548,6 @@ abstract class AppLocalizations {
   /// **'My Profile'**
   String get myProfile;
 
-  /// No description provided for @mockCustomerName.
-  ///
-  /// In en, this message translates to:
-  /// **'Ahmed Mansour'**
-  String get mockCustomerName;
-
   /// No description provided for @premiumMember.
   ///
   /// In en, this message translates to:

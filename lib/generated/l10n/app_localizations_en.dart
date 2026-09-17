@@ -239,9 +239,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myProfile => 'My Profile';
 
   @override
-  String get mockCustomerName => 'Ahmed Mansour';
-
-  @override
   String get premiumMember => 'Premium Member';
 
   @override
