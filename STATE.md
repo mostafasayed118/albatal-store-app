@@ -1,6 +1,32 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-16 (part 13: the directory's phone filter pinned **END TO END**
+Last run: 2026-09-17 (part 14: **FULL-RANGE DIGIT TRANSLITERATION** — 065 now maps
+EVERY Unicode Nd block (75 non-ASCII, unicodedata 16.0.0), not just the two
+Arabic ranges, closing the Devanagari-class residual recorded in part 12.
+Branch `feat/admin-customer-tier`, commit `daaf7b8`, worktree
+`.trees/customer-tier`, PUSHED onto **draft PR #74**. The tables are GENERATED:
+`supabase/tests/gen_phone_digit_ranges.py` derives the migration's `translate`
+tables, the Dart block list and the probe fixtures from one Unicode enumeration
+and `--verify` fails when any shipped artifact drifts — a wrong table entry
+**corrupts** `phone_digits` rather than missing a match, so hand-writing 750
+codepoints was the risk being removed. **Second find: the probe's JS mirror did
+not transliterate the term** — a native-digit term failed its ASCII shape gate
+and matched via the literal `phone` fallback, so the native-direction checks
+introduced in part 12 had been green-checking a filter the real client never
+builds. The mirror now uses a generated `TRANSLIT_PAIRS` table (parity is
+asserted as a chain: filter → digit gate → transliterate → table), and the SQL
+mutation battery was re-baselined against the fixed mirror: translate removed →
+**225 checks fail (75×3)**, one base dropped → **exactly 3**, TO-table truncated
+→ **all but the first block's 3**. Dart mutations **4/4** (generated list, rune
+vs code-unit iteration, shape gate, positional mapping). Evidence: live probe
+**255/255** against PostgREST 12.2.3 / PG 15.19 (all 75 blocks in BOTH
+directions), `--verify` OK, `flutter analyze` 0, format clean (430 files),
+`flutter test` **955/955** (953 + the 2 extended-range pins the interrupted run
+had added but never re-ran the suite for). Generator layout matches `dart
+format`, so `--apply` output is byte-stable. Touches `supabase/` — OUTSIDE the
+`lib/`-only auto-fix scope; migrations **NOT applied**.
+
+Prior run: 2026-09-16 (part 13: the directory's phone filter pinned **END TO END**
 from a widget test, which required extracting the mock-PostgREST fakes into
 `test/helpers/supabase_admin_fakes.dart`). Branch `feat/admin-customer-tier`,
 commit `e856d7e`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
