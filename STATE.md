@@ -1,6 +1,26 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (PR #77 merge: origin/master merged into `fix/audit-findings-0919`, 7 conflicts resolved, gates 985/985; owner said "merge").
+Last run: 2026-09-19 (PR #77 MERGED to master as 024dedd; owner said "merge"; branch left for owner to delete).
+
+## New — 2026-09-19 (PR #77 MERGED — audit top-5 + part-16 union live on master 024dedd)
+
+- **CI gate on e675c18:** Format & Analyze PASS, Flutter Tests PASS (5m47s),
+  Edge PASS, Secret Scan PASS, Deployment Readiness PASS (Android unwatched
+  per standing call). One CI round failed first (dart-format on the
+  ShareService call site — local analyze was clean; fixed as e675c18,
+  fix attempt 2/3).
+- **Squash-merged** `fix/audit-findings-0919` → `master`:
+  **024dedd** "fix(audit): close remaining top-5 gaps - DI client, route
+  constants, share/test fakes (#77)". origin/master now
+  0962085 → 024dedd. Local master NOT fast-forwarded (owner pulls when
+  convenient). Remote PR branch left for the owner to delete.
+- Net effect on master: audit P1 DI (required Supabase client, injected
+  ImageCompressor/share), Routes literal `:id` pattern consts (incl. the
+  `%3Aid` fix), Settings AccountDeletionPort, master-side money/AppCard/
+  coupons-route/ShareService/063–065 work preserved via semantic merge.
+- Verifier sub-agent: not dispatched (dispatch non-functional in this
+  environment, 7/7 prior failures; compensating controls: cold gates
+  re-run on merge head — analyze 0, test 985/985 — plus CI green).
 
 ## New — 2026-09-19 (PR #77 merge prep: master merged in, conflicts resolved, 985/985)
 
