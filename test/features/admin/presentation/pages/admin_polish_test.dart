@@ -39,6 +39,33 @@ class _FakeStorageService extends StorageService {
   @override
   String getProductImageUrl(String storagePath) =>
       'https://example.com/$storagePath';
+
+  // Overridden so the page's render-URL request stays deterministic instead of
+  // falling through to the real helper with a fake base (which would derive a
+  // garbage-but-non-empty URL and make the harness accidental).
+  @override
+  String getProductImageUrlForWidth(String storagePath, int width) =>
+      'https://example.com/render/$width/$storagePath';
+}
+
+/// Records the render budget the admin gallery asked for, and counts any bare
+/// full-resolution request — the thing the P0-4 cutover removed from this
+/// surface.
+class _WidthRecordingStorageService extends _FakeStorageService {
+  final requestedWidths = <int>[];
+  int bareUrlCalls = 0;
+
+  @override
+  String getProductImageUrl(String storagePath) {
+    bareUrlCalls++;
+    return super.getProductImageUrl(storagePath);
+  }
+
+  @override
+  String getProductImageUrlForWidth(String storagePath, int width) {
+    requestedWidths.add(width);
+    return super.getProductImageUrlForWidth(storagePath, width);
+  }
 }
 
 /// Records upload file names without touching Supabase.
@@ -791,6 +818,36 @@ void main() {
       expect(find.byType(AppImage), findsOneWidget,
           reason: 'the retry re-reads the gallery instead of only clearing it');
       expect(find.text('offline'), findsNothing);
+    });
+
+    testWidgets('a tile preview requests the grid render, not the original',
+        (tester) async {
+      // Audit P0-4: the admin gallery was the last surface still asking Storage
+      // for the full upload while decoding the tile at 420. Both halves are
+      // pinned — a fix that bounded only the decode would look like a pass.
+      final recording = _WidthRecordingStorageService();
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Success(['product-images/pid/a.jpg']));
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+            productId: 'pid', repository: repo, storage: recording),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(recording.requestedWidths, [StorageService.gridImageWidth]);
+      expect(recording.bareUrlCalls, 0,
+          reason: 'no full-resolution URL may be requested on this surface');
+
+      final tile = tester.widget<AppImage>(find.byType(AppImage));
+      expect(
+        tile.source,
+        'https://example.com/render/${StorageService.gridImageWidth}/'
+        'product-images/pid/a.jpg',
+      );
+      expect(tile.cacheWidth, StorageService.gridImageWidth,
+          reason: 'the download budget and the decode budget must agree');
     });
 
     testWidgets('deleting an image confirms first, then confirms the outcome',

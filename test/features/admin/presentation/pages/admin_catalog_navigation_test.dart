@@ -235,6 +235,13 @@ class FakeStorageService extends StorageService {
   String getProductImageUrl(String storagePath) =>
       'https://example.com/$storagePath';
 
+  // Keeps the page's render-URL request deterministic instead of letting it
+  // fall through to the real helper with a fake base (the page asks for
+  // `getProductImageUrlForWidth` since the P0-4 cutover).
+  @override
+  String getProductImageUrlForWidth(String storagePath, int width) =>
+      'https://example.com/render/$width/$storagePath';
+
   @override
   Future<void> deleteProductImage(String storagePath) async {}
 }

@@ -9,6 +9,40 @@ class ImageGallery extends StatefulWidget {
   const ImageGallery({super.key, required this.product});
   final Product product;
 
+  /// The gallery's resolved image list: the primary (when the list does not
+  /// already carry the same photo) followed by [Product.images].
+  ///
+  /// Public only so the width-dedupe pins can exercise it without rendering
+  /// network images in a widget test; not part of the widget's API.
+  @visibleForTesting
+  static List<String> resolveImages(Product product) {
+    // The primary is kept only when the gallery list does not already carry
+    // the SAME photo. A remote primary arrives at the card budget
+    // (`StorageService.gridImageWidth`, 420) while the gallery render is the
+    // detail width (720), so equality on the URL would read one photo as two
+    // and duplicate the first slide — compare the object the URL points at
+    // (everything before the render query) instead.
+    final primary = product.imageAsset;
+    final alreadyListed = primary != null &&
+        product.images.any(
+          (i) => _imageObject(i) == _imageObject(primary),
+        );
+    final images = [
+      if (primary != null && !alreadyListed) primary,
+      ...product.images,
+    ];
+    if (images.isEmpty) images.add('');
+    return images;
+  }
+
+  /// The stored object a public/render URL points at, ignoring the width the
+  /// requesting surface asked for: `…/a.jpg?width=420` and `…/a.jpg?width=720`
+  /// are the same photo. Local asset paths carry no query and pass through.
+  static String _imageObject(String url) {
+    final query = url.indexOf('?');
+    return query < 0 ? url : url.substring(0, query);
+  }
+
   @override
   State<ImageGallery> createState() => _ImageGalleryState();
 }
@@ -20,7 +54,7 @@ class _ImageGalleryState extends State<ImageGallery> {
   @override
   void initState() {
     super.initState();
-    _allImages = _resolveImages(widget.product);
+    _allImages = ImageGallery.resolveImages(widget.product);
   }
 
   @override
@@ -30,18 +64,9 @@ class _ImageGalleryState extends State<ImageGallery> {
     // a related-tap that reuses the widget): rebuild the image list and
     // reset the page instead of showing the previous product's photos.
     if (oldWidget.product != widget.product) {
-      _allImages = _resolveImages(widget.product);
+      _allImages = ImageGallery.resolveImages(widget.product);
       _current = 0;
     }
-  }
-
-  static List<String> _resolveImages(Product product) {
-    final images = [
-      if (product.imageAsset != null) product.imageAsset!,
-      ...product.images.where((i) => i != product.imageAsset),
-    ];
-    if (images.isEmpty) images.add('');
-    return images;
   }
 
   @override
