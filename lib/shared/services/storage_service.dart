@@ -52,14 +52,24 @@ class StorageService {
     return _client.storage.from(_bucket).getPublicUrl(storagePath);
   }
 
+  /// Render-URL width budget for the list/card surfaces (product grid,
+  /// flash-sale row, wishlist/cart thumbnails) — audit 2026-09-14 P0-4.
+  static const gridImageWidth = 420;
+
+  /// Render-URL width budget for the detail gallery and the full-screen
+  /// zoom view, which share one image list (audit 2026-09-14 P0-4).
+  static const detailImageWidth = 720;
+
   /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
   ///
-  /// Serves the downsized variant instead of the full upload: grid 420,
-  /// detail 720, zoom 1080. Falls back to the bare public URL when the
-  /// path has no usable image extension (fail-open, same posture as
-  /// `ImageCompressor`) so a bad path never breaks the image pipeline.
-  /// Widths are allowlisted — arbitrary caller input can never reach the
-  /// URL builder.
+  /// Serves the downsized variant instead of the full upload. Pass one of the
+  /// named budgets on this class rather than a literal: [gridImageWidth] for
+  /// list/card surfaces, [detailImageWidth] for the detail gallery — which the
+  /// full-screen zoom view shares, so a product's photos are fetched once.
+  /// Falls back to the bare public URL when the path has no usable image
+  /// extension (fail-open, same posture as `ImageCompressor`) so a bad path
+  /// never breaks the image pipeline. Widths are allowlisted — arbitrary
+  /// caller input can never reach the URL builder.
   String getProductImageUrlForWidth(String storagePath, int width) {
     const allowed = <int>{180, 420, 720, 1080};
     final w = allowed.contains(width) ? width : 720;

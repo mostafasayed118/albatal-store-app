@@ -115,4 +115,39 @@ void main() {
     expect(slide.subtitle, '850 EGY');
     expect(slide.swatchColor, const Color(0xFF176B57));
   });
+
+  test('a product slide takes the DETAIL render, not the card-width copy', () {
+    // Audit 2026-09-14 P0-4: the mapper puts the 420 card render in
+    // `imageAsset` and the 720 detail renders in `images`. The hero is the
+    // largest surface in the app (full-bleed, 840px decode budget), so serving
+    // it the 420 copy would be a visible quality regression.
+    const grid =
+        'https://cdn.test/render/image/public/product-images/p/a.jpg?width=420';
+    const detail =
+        'https://cdn.test/render/image/public/product-images/p/a.jpg?width=720';
+    const remote = Product(
+      id: 'p1',
+      name: 'Silk',
+      category: 'Silk',
+      price: Money.egp(100),
+      imageColor: 0xFF176B57,
+      imageAsset: grid,
+      images: [detail],
+    );
+    expect(StitchHeroSlide.fromProduct(remote).imageAsset, detail);
+
+    // Local products (asset paths, no image list) keep their primary asset.
+    const local = Product(
+      id: 'p2',
+      name: 'Local',
+      category: 'Silk',
+      price: Money.egp(100),
+      imageColor: 0xFF176B57,
+      imageAsset: 'assets/images/1.svg',
+    );
+    expect(
+      StitchHeroSlide.fromProduct(local).imageAsset,
+      'assets/images/1.svg',
+    );
+  });
 }
