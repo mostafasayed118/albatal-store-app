@@ -1,6 +1,6 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (review + commit + push of `fix/audit-findings-0919`; owner-approved; gates re-verified green).
+Last run: 2026-09-19 (PR #77 opened as draft for `fix/audit-findings-0919`; owner-approved; merge stays gated).
 
 ## New — 2026-09-19 (owner-approved review + commit + push; gates re-verified)
 
@@ -23,6 +23,10 @@ Last run: 2026-09-19 (review + commit + push of `fix/audit-findings-0919`; owner
   files, leaves staging artifacts untracked); push `-u origin
   fix/audit-findings-0919` (new remote branch). No merge; PR/merge stays
   owner-gated.
+- **PR #77 (draft):** owner said "approve" after the push report; opened
+  `fix/audit-findings-0919` → `master` as draft (commit ef699ec).
+  https://github.com/mostafasayed118/albatal-store-app/pull/77
+  Merge NOT done — needs explicit "merge" per convention.
 
 ## New — 2026-09-19 (L2: closed remaining top-5 gaps; verifier: dart analyze)
 
