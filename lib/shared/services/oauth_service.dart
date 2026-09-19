@@ -24,8 +24,10 @@ abstract interface class OAuthService {
 /// when they are not, the auth call throws and this maps it to
 /// `oauth_unavailable` so the sign-in page shows a graceful message.
 class SupabaseOAuthService implements OAuthService {
-  SupabaseOAuthService({supabase.SupabaseClient? client})
-      : _client = client ?? supabase.Supabase.instance.client;
+  /// Audit P1 (2026-09-19): the client is required — resolved at the
+  /// composition root, never pulled from the global.
+  SupabaseOAuthService({required supabase.SupabaseClient client})
+      : _client = client;
 
   final supabase.SupabaseClient _client;
 

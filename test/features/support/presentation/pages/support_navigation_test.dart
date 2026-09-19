@@ -8,6 +8,7 @@ import 'package:al_batal_elite/features/auth/domain/repositories/profile_reposit
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/auth/presentation/pages/profile_page.dart';
 import 'package:al_batal_elite/features/settings/data/local_settings_repository.dart';
+import 'package:al_batal_elite/features/settings/domain/account_deletion_port.dart';
 import 'package:al_batal_elite/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:al_batal_elite/features/settings/presentation/pages/settings_page.dart';
 import 'package:al_batal_elite/features/support/data/local_support_repository.dart';
@@ -54,12 +55,12 @@ void main() {
               path: '/settings',
               builder: (_, __) => BlocProvider.value(
                 value: _settingsCubit,
-                child: BlocProvider.value(
-                  // The settings page renders an account-deletion section
-                  // gated on AuthCubit (UX-043); the no-session stub keeps
-                  // it hidden in these navigation tests.
-                  value: authCubit,
-                  child: const SettingsPage(),
+                // The settings page renders an account-deletion section
+                // gated on the AccountDeletionPort (UX-043); the fake's
+                // unauthenticated flag keeps it hidden in these navigation
+                // tests.
+                child: SettingsPage(
+                  accountDeletion: _UnauthenticatedAccountDeletionPort(),
                 ),
               ),
             ),
@@ -229,4 +230,18 @@ final class _StubProfileRepository implements ProfileRepository {
   @override
   Future<Result<void>> upsertProfile(Profile profile) async =>
       const Success(null);
+}
+
+/// Unauthenticated fake port: the settings account-deletion row stays
+/// hidden (these tests only navigate to support, never delete).
+final class _UnauthenticatedAccountDeletionPort implements AccountDeletionPort {
+  @override
+  bool get isAuthenticated => false;
+
+  @override
+  Future<Result<void>> deleteAccount({required String email}) async =>
+      const Success(null);
+
+  @override
+  void clearGuestData() {}
 }

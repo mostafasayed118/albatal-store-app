@@ -47,13 +47,19 @@ class AppImage extends StatelessWidget {
     if (path == null || path.isEmpty) return _fallback(context);
 
     if (path.startsWith('http://') || path.startsWith('https://')) {
+      // Default downsampling (audit): explicit cacheWidth/cacheHeight win;
+      // otherwise decode at the layout size * devicePixelRatio, capped at
+      // 1080px, so callers that size the widget never decode full-res.
+      final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+      int? defaultFor(double? extent) =>
+          extent == null ? null : (extent * dpr).round().clamp(1, 1080);
       return CachedNetworkImage(
         imageUrl: path,
         width: width,
         height: height,
         fit: fit,
-        memCacheWidth: cacheWidth,
-        memCacheHeight: cacheHeight,
+        memCacheWidth: cacheWidth ?? defaultFor(width),
+        memCacheHeight: cacheHeight ?? defaultFor(height),
         placeholder: (_, __) => _fallback(context),
         errorWidget: (_, __, ___) => _fallback(context),
       );

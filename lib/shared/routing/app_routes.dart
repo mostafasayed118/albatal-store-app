@@ -47,6 +47,13 @@ abstract final class Routes {
   static const adminSales = '/admin/sales';
   static const maintenance = '/maintenance';
 
+  // ─── Router-declaration patterns (with `:id` placeholders). Only the
+  // router's `path:` arguments reference these — real destinations are
+  // always built via the factory methods above. The `/new` create route
+  // is declared BEFORE this pattern so GoRouter matches it first. ──────
+  static const adminProductEdit = '/admin/products/:id';
+  static const adminImages = '/admin/images/:id';
+
   /// Product details for [id].
   ///
   /// The id segment is percent-encoded by the builder itself so call sites

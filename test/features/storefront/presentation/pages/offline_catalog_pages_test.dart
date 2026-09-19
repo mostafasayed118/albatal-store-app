@@ -27,6 +27,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../fixtures/products_data.dart';
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
@@ -141,6 +142,8 @@ Widget _detailsHarness(CatalogRepository repo, String id) {
         id: id,
         catalogRepository: repo,
         gate: offlineGate,
+        whatsappShareService: const NoOpWhatsAppShareService(),
+        productShareService: const NoOpProductShareService(),
       ),
     ),
   );

@@ -33,6 +33,8 @@ import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
+import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
+import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/storefront/presentation/pages/cart_page.dart';
 import '../../features/storefront/presentation/pages/catalog_page.dart';
@@ -49,9 +51,14 @@ import '../components/app_shell.dart';
 import '../services/connectivity_gate.dart';
 import '../services/image_compressor.dart';
 import '../services/navigation_observer.dart';
+import '../services/notification_service.dart';
 import '../services/oauth_service.dart';
+import '../services/product_share_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/service_locator.dart';
 import '../services/storage_service.dart';
+import '../services/whatsapp_share_service.dart';
+import '../settings_account_adapter.dart';
 import 'app_routes.dart';
 import 'auth_refresh_notifier.dart';
 
@@ -105,7 +112,16 @@ String? _redirect(AuthState auth, GoRouterState state) {
 }
 
 final _routes = <RouteBase>[
-  GoRoute(path: Routes.splash, builder: (_, __) => const SplashPage()),
+  GoRoute(
+    path: Routes.splash,
+    builder: (_, __) => SplashPage(
+      // §13 remote config is resolved at the composition root; the
+      // fail-soft probe keeps tests (which pump pre-DI) advisory-only.
+      remoteConfig: getIt.isRegistered<RemoteConfigService>()
+          ? getIt<RemoteConfigService>()
+          : null,
+    ),
+  ),
   GoRoute(path: Routes.onboarding, builder: (_, __) => const OnboardingPage()),
   ShellRoute(
       builder: (_, __, child) =>
@@ -122,16 +138,37 @@ final _routes = <RouteBase>[
           ),
         ),
         GoRoute(
-            path: Routes.wishlist, builder: (_, __) => const WishlistPage()),
+          path: Routes.wishlist,
+          builder: (_, __) => WishlistPage(
+            // §5 restock notifications resolved at the composition root;
+            // the NoOp keeps pre-DI widget tests silent.
+            notificationService: getIt.isRegistered<NotificationService>()
+                ? getIt<NotificationService>()
+                : const NoOpNotificationService(),
+          ),
+        ),
         GoRoute(path: Routes.cart, builder: (_, __) => const CartPage()),
         GoRoute(path: Routes.profile, builder: (_, __) => const ProfilePage()),
       ]),
   GoRoute(
-    path: '/product/:id',
+    // Route-declaration pattern: the placeholder passes through
+    // `Uri.encodeComponent` unchanged (a no-op on a bare `:id`).
+    path: Routes.product(':id'),
     builder: (_, s) => DetailsPage(
       id: s.pathParameters['id']!,
       catalogRepository: getIt<CatalogRepository>(),
       gate: getIt<ConnectivityGate>(),
+      whatsappShareService: getIt<WhatsAppShareService>(),
+      productShareService: getIt<ProductShareService>(),
+      reviewsRepository: getIt.isRegistered<ReviewsRepository>()
+          ? getIt<ReviewsRepository>()
+          : null,
+      imageCompressor: getIt.isRegistered<ImageCompressor>()
+          ? getIt<ImageCompressor>()
+          : null,
+      recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
+          ? getIt<RecentlyViewedStore>()
+          : null,
     ),
   ),
   GoRoute(
@@ -148,6 +185,10 @@ final _routes = <RouteBase>[
     path: Routes.orderSuccess,
     builder: (_, state) => OrderSuccessPage(
       orderId: state.extra is String ? state.extra as String : '',
+      // §12 local order confirmation resolved at the composition root.
+      notificationService: getIt.isRegistered<NotificationService>()
+          ? getIt<NotificationService>()
+          : const NoOpNotificationService(),
     ),
   ),
   GoRoute(path: Routes.orders, builder: (_, __) => const OrdersPage()),
@@ -155,7 +196,15 @@ final _routes = <RouteBase>[
     path: Routes.addresses,
     builder: (_, __) => const AddressesPage(),
   ),
-  GoRoute(path: Routes.settings, builder: (_, __) => const SettingsPage()),
+  GoRoute(
+    path: Routes.settings,
+    // Composition root (audit 2026-09): the page depends on the domain
+    // AccountDeletionPort, never on other features' presentation cubits;
+    // the shared adapter resolves the app-scoped cubits from this route
+    // builder's context (inside its callbacks — no rebuilds needed).
+    builder: (context, __) =>
+        SettingsPage(accountDeletion: SettingsAccountAdapter(context)),
+  ),
   GoRoute(
     path: Routes.signIn,
     builder: (_, __) => SignInPage(
@@ -200,7 +249,11 @@ final _routes = <RouteBase>[
       final map = extra is Map<String, dynamic> ? extra : null;
       final cubit = map?['cubit'];
       final orderId = map?['orderId'];
+      final compressor = getIt.isRegistered<ImageCompressor>()
+          ? getIt<ImageCompressor>()
+          : null;
       return InstapayInstructionsPage(
+        imageCompressor: compressor,
         cubit: cubit is PaymentCubit ? cubit : null,
         orderId: orderId is String ? orderId : null,
         // Rehydration path resolves at the composition root.
@@ -225,7 +278,7 @@ final _routes = <RouteBase>[
       builder: (_, __) =>
           AdminCustomersPage(repository: getIt<AdminRepository>())),
   GoRoute(
-    path: '/admin/orders/:id',
+    path: Routes.adminOrder(':id'), // declaration pattern (see Routes.product)
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
   ),
   GoRoute(
@@ -256,7 +309,7 @@ final _routes = <RouteBase>[
         AdminProductEditPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
-    path: '/admin/products/:id',
+    path: Routes.adminProductEdit,
     builder: (_, s) => AdminProductEditPage(
       productId: s.pathParameters['id']!,
       repository: getIt<AdminRepository>(),
@@ -268,7 +321,7 @@ final _routes = <RouteBase>[
         AdminCategoriesPage(repository: getIt<AdminRepository>()),
   ),
   GoRoute(
-    path: '/admin/images/:id',
+    path: Routes.adminImages,
     builder: (_, s) => AdminImageManagerPage(
       productId: s.pathParameters['id']!,
       // Composition root (audit P1): the only place that resolves
@@ -282,7 +335,7 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: '/admin/variants/:id',
+    path: Routes.adminVariant(':id'), // declaration pattern
     builder: (_, s) => AdminVariantEditorPage(
       productId: s.pathParameters['id']!,
       repository: getIt<AdminRepository>(),

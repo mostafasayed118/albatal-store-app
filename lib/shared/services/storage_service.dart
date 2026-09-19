@@ -15,11 +15,21 @@ import 'package:uuid/uuid.dart';
 /// documented rather than "fixed". `test/shared/services/storage_service_prefix_test.dart`
 /// pins the contract.
 class StorageService {
-  StorageService({SupabaseClient? client}) : _clientOverride = client;
+  /// Audit P1 (2026-09-19): the client is a REQUIRED constructor
+  /// parameter — no hidden `Supabase.instance.client` fallback so unit
+  /// tests can never silently hit the global. Tests that only exercise
+  /// the pure path contract (never touching `_client`) pass `null`.
+  StorageService({required SupabaseClient? client}) : _client = client;
 
-  final SupabaseClient? _clientOverride;
+  final SupabaseClient? _client;
 
-  SupabaseClient get _client => _clientOverride ?? Supabase.instance.client;
+  /// Resolves the injected client, throwing a clear error if a caller
+  /// built the service without one and actually uses the network —
+  /// visible in tests instead of a silent global hit.
+  SupabaseClient get _requiredClient =>
+      _client ??
+      (throw StateError(
+          'StorageService used without an injected SupabaseClient'));
 
   static const _bucket = 'product-images';
 
@@ -40,7 +50,7 @@ class StorageService {
   ) async {
     final path = buildProductImagePath(productId, fileName);
     final data = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
-    await _client.storage.from(_bucket).uploadBinary(
+    await _requiredClient.storage.from(_bucket).uploadBinary(
           path,
           data,
           fileOptions: FileOptions(contentType: contentType, upsert: false),
@@ -49,7 +59,7 @@ class StorageService {
   }
 
   String getProductImageUrl(String storagePath) {
-    return _client.storage.from(_bucket).getPublicUrl(storagePath);
+    return _requiredClient.storage.from(_bucket).getPublicUrl(storagePath);
   }
 
   /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
@@ -87,7 +97,9 @@ class StorageService {
   }
 
   String getAvatarUrl(String userId, String fileName) {
-    return _client.storage.from('avatars').getPublicUrl('$userId/$fileName');
+    return _requiredClient.storage
+        .from('avatars')
+        .getPublicUrl('$userId/$fileName');
   }
 
   /// Extensions the `avatars` bucket accepts (client-side pre-check; the
@@ -127,7 +139,7 @@ class StorageService {
     // Never upsert: an avatar row is immutable-once-written; a repeat
     // upload surfaces as a storage error instead of silently replacing
     // the previous file (same fail-closed posture as product images).
-    await _client.storage.from('avatars').upload(
+    await _requiredClient.storage.from('avatars').upload(
           storagePath,
           file,
           fileOptions: FileOptions(
@@ -140,6 +152,6 @@ class StorageService {
   }
 
   Future<void> deleteProductImage(String storagePath) async {
-    await _client.storage.from(_bucket).remove([storagePath]);
+    await _requiredClient.storage.from(_bucket).remove([storagePath]);
   }
 }

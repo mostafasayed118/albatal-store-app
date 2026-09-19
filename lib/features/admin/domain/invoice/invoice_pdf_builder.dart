@@ -107,9 +107,8 @@ final class InvoicePdfBuilder {
                   item.size,
                   item.color,
                   item.quantity.toString(),
-                  (item.unitPrice.minorUnits / 100).toStringAsFixed(2),
-                  (item.unitPrice.minorUnits * item.quantity / 100)
-                      .toStringAsFixed(2),
+                  item.unitPrice.majorLabel(),
+                  (item.unitPrice * item.quantity).majorLabel(),
                 ])
             .toList(),
       );
@@ -117,7 +116,7 @@ final class InvoicePdfBuilder {
   static pw.Widget _totals(AdminOrder order) => pw.Container(
         alignment: pw.Alignment.centerRight,
         child: pw.Text(
-          'Total: ${(order.total.minorUnits / 100).toStringAsFixed(2)} EGP',
+          'Total: ${order.total.majorLabel()} EGP',
           style: const pw.TextStyle(
               fontSize: 14, color: _emerald, fontWeight: pw.FontWeight.bold),
         ),

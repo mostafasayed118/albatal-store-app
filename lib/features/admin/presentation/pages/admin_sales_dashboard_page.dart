@@ -36,7 +36,17 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
           AdminSalesDashboardCubit(
               repository: widget.repository ?? getIt<AdminRepository>()))
         ..load(),
+      // service_locator stays only as the test-only fallback above; the
+      // router always injects [AdminSalesDashboardPage.repository].
       child: BlocBuilder<AdminSalesDashboardCubit, AdminSalesDashboardState>(
+        // Audit (buildWhen): only the fields the cards render below gate
+        // a rebuild — any future state field that no card reads stays
+        // rebuild-free.
+        buildWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.overview != current.overview ||
+            previous.lowStock != current.lowStock ||
+            previous.errorMessage != current.errorMessage,
         builder: (context, state) {
           return Scaffold(
             appBar: AppBar(
@@ -85,14 +95,15 @@ final class _SalesDashboardBody extends StatelessWidget {
     if (overview == null) {
       return const Center(child: Text('No sales data available.'));
     }
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      children: [
-        SalesRevenueChartCard(points: overview.revenueByDay),
-        SalesStatusCountsCard(counts: overview.statusCounts),
-        SalesTopProductsCard(products: overview.topProducts),
-        SalesLowStockCard(variants: state.lowStock),
-      ],
+      itemCount: 4,
+      itemBuilder: (_, i) => switch (i) {
+        0 => SalesRevenueChartCard(points: overview.revenueByDay),
+        1 => SalesStatusCountsCard(counts: overview.statusCounts),
+        2 => SalesTopProductsCard(products: overview.topProducts),
+        _ => SalesLowStockCard(variants: state.lowStock),
+      },
     );
   }
 }

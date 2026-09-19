@@ -50,17 +50,17 @@ class _GuestProfile extends StatelessWidget {
                 textAlign: TextAlign.center),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: () => context.push('/sign-in'),
+              onPressed: () => context.push(Routes.signIn),
               child: Text(l.signIn),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: () => context.push('/sign-up'),
+              onPressed: () => context.push(Routes.signUp),
               child: Text(l.signUp),
             ),
             const SizedBox(height: 12),
             TextButton.icon(
-              onPressed: () => context.push('/support'),
+              onPressed: () => context.push(Routes.support),
               icon: const Icon(Icons.support_agent_outlined),
               label: Text(l.customerSupport),
             ),
@@ -79,108 +79,114 @@ class _AuthenticatedProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = state.profile;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: CircleAvatar(
-              radius: 30,
-              child: Text(profile?.fullName.isNotEmpty == true
-                  ? profile!.fullName.characters.first
-                  : '?'),
+    // Lazy build (audit): the children list is the same widget tree as
+    // before; ListView.builder only inflates visible rows.
+    final children = <Widget>[
+      Card(
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(16),
+          leading: CircleAvatar(
+            radius: 30,
+            child: Text(profile?.fullName.isNotEmpty == true
+                ? profile!.fullName.characters.first
+                : '?'),
+          ),
+          title: Text(profile?.fullName ?? l.unknownUser),
+          subtitle: Text(profile?.phone ?? ''),
+        ),
+      ), // Stitch mockup (Categories/Profile/Orders) shows a Premium Member
+      // badge under the identity card — now driven by the real,
+      // admin-managed membership_tier (migration 046), so only
+      // premium-tier customers see it.
+      if (profile?.tier == MembershipTier.premium) ...[
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.workspace_premium,
+                size: 18, color: AppColors.gold),
+            const SizedBox(width: 6),
+            Text(
+              l.premiumMember,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.gold, fontWeight: FontWeight.w600),
             ),
-            title: Text(profile?.fullName ?? l.unknownUser),
-            subtitle: Text(profile?.phone ?? ''),
-          ),
-        ), // Stitch mockup (Categories/Profile/Orders) shows a Premium Member
-        // badge under the identity card — now driven by the real,
-        // admin-managed membership_tier (migration 046), so only
-        // premium-tier customers see it.
-        if (profile?.tier == MembershipTier.premium) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.workspace_premium,
-                  size: 18, color: AppColors.gold),
-              const SizedBox(width: 6),
-              Text(
-                l.premiumMember,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.gold, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l.premiumFreeShipping,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-        ],
-        const SizedBox(height: 16),
-        ListTile(
-          leading: const Icon(Icons.receipt_long_outlined),
-          title: Text(l.myOrders),
-          // Drill-in chevron points in the reading direction (flips in RTL).
-          trailing: Icon(context.directionalTrailingIcon),
-          onTap: () => context.push('/profile/orders'),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.location_on_outlined),
-          title: Text(l.shippingAddresses),
-          // Drill-in chevron points in the reading direction (flips in RTL).
-          trailing: Icon(context.directionalTrailingIcon),
-          onTap: () => context.push('/profile/addresses'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.favorite_border),
-          title: Text(l.wishlist),
-          // Drill-in chevron points in the reading direction (flips in RTL).
-          trailing: Icon(context.directionalTrailingIcon),
-          onTap: () => context.go('/wishlist'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.support_agent_outlined),
-          title: Text(l.customerSupport),
-          // Drill-in chevron points in the reading direction (flips in RTL).
-          trailing: Icon(context.directionalTrailingIcon),
-          onTap: () => context.push('/support'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.settings_outlined),
-          title: Text(l.settings),
-          // Drill-in chevron points in the reading direction (flips in RTL).
-          trailing: Icon(context.directionalTrailingIcon),
-          onTap: () => context.push('/settings'),
-        ),
-        // Admin surface (owner request 2026-09-13): the /admin route is
-        // router-gated on profile.isAdmin, but until now nothing in the
-        // UI navigated to it — admins had no path to the dashboard. The
-        // tile is only rendered for admins; the router redirect is the
-        // real guard (non-admins bounce to /home even if forced).
-        if (profile?.isAdmin == true) ...[
-          ListTile(
-            leading: const Icon(Icons.admin_panel_settings_outlined),
-            title: Text(l.adminDashboard),
-            trailing: Icon(context.directionalTrailingIcon),
-            onTap: () => context.push(Routes.admin),
-          ),
-        ],
-        const SizedBox(height: 24),
-        TextButton.icon(
-          onPressed: () async {
-            await context.read<AuthCubit>().signOut();
-            if (context.mounted) {
-              showConfirmation(context, l.signedOut);
-              context.go('/home');
-            }
-          },
-          icon: const Icon(Icons.logout),
-          label: Text(l.logOut),
+        const SizedBox(height: 4),
+        Text(
+          l.premiumFreeShipping,
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ],
+      const SizedBox(height: 16),
+      ListTile(
+        leading: const Icon(Icons.receipt_long_outlined),
+        title: Text(l.myOrders),
+        // Drill-in chevron points in the reading direction (flips in RTL).
+        trailing: Icon(context.directionalTrailingIcon),
+        onTap: () => context.push(Routes.orders),
+      ),
+      ListTile(
+        leading: const Icon(Icons.location_on_outlined),
+        title: Text(l.shippingAddresses),
+        // Drill-in chevron points in the reading direction (flips in RTL).
+        trailing: Icon(context.directionalTrailingIcon),
+        onTap: () => context.push(Routes.addresses),
+      ),
+      ListTile(
+        leading: const Icon(Icons.favorite_border),
+        title: Text(l.wishlist),
+        // Drill-in chevron points in the reading direction (flips in RTL).
+        trailing: Icon(context.directionalTrailingIcon),
+        onTap: () => context.go(Routes.wishlist),
+      ),
+      ListTile(
+        leading: const Icon(Icons.support_agent_outlined),
+        title: Text(l.customerSupport),
+        // Drill-in chevron points in the reading direction (flips in RTL).
+        trailing: Icon(context.directionalTrailingIcon),
+        onTap: () => context.push(Routes.support),
+      ),
+      ListTile(
+        leading: const Icon(Icons.settings_outlined),
+        title: Text(l.settings),
+        // Drill-in chevron points in the reading direction (flips in RTL).
+        trailing: Icon(context.directionalTrailingIcon),
+        onTap: () => context.push(Routes.settings),
+      ),
+      // Admin surface (owner request 2026-09-13): the /admin route is
+      // router-gated on profile.isAdmin, but until now nothing in the
+      // UI navigated to it — admins had no path to the dashboard. The
+      // tile is only rendered for admins; the router redirect is the
+      // real guard (non-admins bounce to /home even if forced).
+      if (profile?.isAdmin == true) ...[
+        ListTile(
+          leading: const Icon(Icons.admin_panel_settings_outlined),
+          title: Text(l.adminDashboard),
+          trailing: Icon(context.directionalTrailingIcon),
+          onTap: () => context.push(Routes.admin),
+        ),
+      ],
+      const SizedBox(height: 24),
+      TextButton.icon(
+        onPressed: () async {
+          await context.read<AuthCubit>().signOut();
+          if (context.mounted) {
+            showConfirmation(context, l.signedOut);
+            context.go(Routes.home);
+          }
+        },
+        icon: const Icon(Icons.logout),
+        label: Text(l.logOut),
+      ),
+    ];
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: children.length,
+      itemBuilder: (_, i) => children[i],
     );
   }
 }

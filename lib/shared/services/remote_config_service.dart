@@ -14,8 +14,10 @@ abstract interface class RemoteConfigFetcher {
 
 /// Supabase `app_config` key/value table (proposal 052b).
 final class SupabaseRemoteConfigFetcher implements RemoteConfigFetcher {
-  SupabaseRemoteConfigFetcher({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  /// Audit P1 (2026-09-19): the client is required — resolved at the
+  /// composition root, never pulled from the global.
+  SupabaseRemoteConfigFetcher({required SupabaseClient client})
+      : _client = client;
 
   final SupabaseClient _client;
 
@@ -35,11 +37,14 @@ final class SupabaseRemoteConfigFetcher implements RemoteConfigFetcher {
 /// (feature-batch §13). Every read degrades to the default when the
 /// backend is unreachable — the app must never boot-block on config.
 class RemoteConfigService {
+  /// Audit P1 (2026-09-19): [fetcher] is required — the composition root
+  /// injects the [SupabaseRemoteConfigFetcher]; a hidden default would
+  /// silently re-bind to the global Supabase client in tests.
   RemoteConfigService({
-    RemoteConfigFetcher? fetcher,
+    required RemoteConfigFetcher fetcher,
     Duration ttl = const Duration(minutes: 10),
     Future<String?> Function()? versionProvider,
-  })  : _fetcher = fetcher ?? SupabaseRemoteConfigFetcher(),
+  })  : _fetcher = fetcher,
         _ttl = ttl,
         _versionProvider = versionProvider ?? _defaultVersionProvider;
 

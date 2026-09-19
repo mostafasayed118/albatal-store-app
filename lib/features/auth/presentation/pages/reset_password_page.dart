@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
 
@@ -36,7 +37,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         listener: (context, state) {
           if (state.isAuthenticated) {
             showConfirmation(context, l.passwordUpdated);
-            context.go('/home');
+            context.go(Routes.home);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
             showFloatingError(context, state.errorMessage!);

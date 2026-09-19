@@ -5,18 +5,26 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/result.dart';
-import '../../../../features/auth/presentation/cubit/auth_cubit.dart';
-import '../../../../features/storefront/presentation/cubit/cart_cubit.dart';
-import '../../../../features/storefront/presentation/cubit/wishlist_cubit.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../domain/account_deletion_port.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
 final class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, required this.accountDeletion});
+
+  /// Cross-feature port for the UX-043 deletion flow (audit 2026-09):
+  /// the page must not import the auth or storefront *presentation*
+  /// layers, so auth state and the delete/clear calls arrive through
+  /// this domain abstraction. Composed at the composition root —
+  /// `app_router.dart` wires the shared `SettingsAccountAdapter`; tests
+  /// inject a tiny fake. (Directly `watch`ing the app-scoped cubits was
+  /// the alternative, but that still requires the type imports this
+  /// change removes.)
+  final AccountDeletionPort accountDeletion;
 
   @override
   Widget build(BuildContext context) =>
@@ -117,20 +125,14 @@ final class SettingsPage extends StatelessWidget {
                 onTap: () => context.push(Routes.support),
               ),
               // Account deletion (UX-043) is only meaningful to a signed-in
-              // user; guests see nothing here.
-              BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, auth) {
-                  if (auth.status != AuthStatus.authenticated) {
-                    return const SizedBox.shrink();
-                  }
-                  return const Column(children: [
-                    SizedBox(height: 32),
-                    Divider(),
-                    SizedBox(height: 8),
-                    _DeleteAccountTile(),
-                  ]);
-                },
-              ),
+              // user; guests see nothing here. Auth state arrives through
+              // the injected port — no cross-feature presentation imports.
+              if (accountDeletion.isAuthenticated) ...[
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 8),
+                const _DeleteAccountTile(),
+              ],
             ]),
           );
         },
@@ -145,11 +147,12 @@ final class _DeleteAccountTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final l10n = context.l10n;
+    final page = context.findAncestorWidgetOfExactType<SettingsPage>();
     return ListTile(
       leading: Icon(Icons.delete_outline, color: scheme.error),
       title: Text(l10n.deleteAccount,
           style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
-      onTap: () => _confirmDeleteAccount(context),
+      onTap: () => _confirmDeleteAccount(context, page!.accountDeletion),
     );
   }
 }
@@ -161,15 +164,13 @@ bool _deleteDialogOpen = false;
 
 /// Confirmation dialog: explains the scope and requires the user to type
 /// their account email (decision C — the server also verifies it).
-Future<void> _confirmDeleteAccount(BuildContext context) async {
+Future<void> _confirmDeleteAccount(
+    BuildContext context, AccountDeletionPort accountDeletion) async {
   if (_deleteDialogOpen) return;
   _deleteDialogOpen = true;
   try {
     final l10n = context.l10n;
     final messenger = ScaffoldMessenger.of(context);
-    final auth = context.read<AuthCubit>();
-    final cart = context.read<CartCubit>();
-    final wishlist = context.read<WishlistCubit>();
     final controller = TextEditingController();
     // Keyboard focus is deferred until the dialog's first frame is on
     // screen, so the IME attach never competes with the opening animation
@@ -246,13 +247,12 @@ Future<void> _confirmDeleteAccount(BuildContext context) async {
     focusNode.dispose();
     if (!confirmed || email.isEmpty) return;
 
-    final result = await auth.deleteAccount(email: email);
+    final result = await accountDeletion.deleteAccount(email: email);
     switch (result) {
       case Success():
         // Wipe locally persisted user data (cart/wishlist live on-device and
         // are guest-accessible, so they must not survive a deleted account).
-        cart.clear();
-        wishlist.clearAll();
+        accountDeletion.clearGuestData();
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(

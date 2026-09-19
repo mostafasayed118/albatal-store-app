@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
@@ -120,17 +121,10 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _minCutCtrl.text = product.minCutMeters?.toString() ?? '';
     _sellByLength = product.sellByLength;
     _priceCtrl.text =
-        product.basePrice == 0 ? '' : _trimTrailingZeros(product.basePrice);
+        product.basePrice == 0 ? '' : Money.wholeEgpLabel(product.basePrice);
     _isActive = product.isActive;
     _selectedCategoryId = product.categoryId;
     setState(() => _loadingProduct = false);
-  }
-
-  /// Prices render whole-EGP style across the admin surfaces (1890, not
-  /// 1890.0); keep the form consistent when prefilling from the row.
-  static String _trimTrailingZeros(double value) {
-    final s = value.toStringAsFixed(2);
-    return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
   }
 
   Future<void> _loadCategories() async {

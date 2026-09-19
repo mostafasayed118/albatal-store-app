@@ -58,53 +58,55 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ..checkAdmin(),
             );
           }
-          return ListView(
+          // Lazy build (audit): same children as before, inflated on demand.
+          final children = <Widget>[
+            _StatCard(
+              title: l.totalOrders,
+              value: '${state.orders.length}',
+              icon: Icons.receipt_long,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            _StatCard(
+              title: l.pendingOrders,
+              value:
+                  '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
+              icon: Icons.pending_actions,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+            const SizedBox(height: 12),
+            _StatCard(
+              title: l.lowStock,
+              value: '${state.lowStockProducts.length}',
+              icon: Icons.warning_amber,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 24),
+            Text(l.quickActions, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _ActionTile(
+              icon: Icons.receipt_long,
+              title: l.orderQueue,
+              subtitle: l.viewAllOrders,
+              onTap: () => context.push(Routes.adminOrders),
+            ),
+            _ActionTile(
+              icon: Icons.inventory_2_outlined,
+              title: l.inventory,
+              subtitle: l.manageStock,
+              onTap: () => context.push(Routes.adminInventory),
+            ),
+            _ActionTile(
+              icon: Icons.shopping_bag_outlined,
+              title: l.catalog,
+              subtitle: l.manageProducts,
+              onTap: () => context.push(Routes.adminCatalog),
+            ),
+          ];
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
-            children: [
-              _StatCard(
-                title: l.totalOrders,
-                value: '${state.orders.length}',
-                icon: Icons.receipt_long,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: l.pendingOrders,
-                value:
-                    '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
-                icon: Icons.pending_actions,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: l.lowStock,
-                value: '${state.lowStockProducts.length}',
-                icon: Icons.warning_amber,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 24),
-              Text(l.quickActions,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              _ActionTile(
-                icon: Icons.receipt_long,
-                title: l.orderQueue,
-                subtitle: l.viewAllOrders,
-                onTap: () => context.push(Routes.adminOrders),
-              ),
-              _ActionTile(
-                icon: Icons.inventory_2_outlined,
-                title: l.inventory,
-                subtitle: l.manageStock,
-                onTap: () => context.push(Routes.adminInventory),
-              ),
-              _ActionTile(
-                icon: Icons.shopping_bag_outlined,
-                title: l.catalog,
-                subtitle: l.manageProducts,
-                onTap: () => context.push(Routes.adminCatalog),
-              ),
-            ],
+            itemCount: children.length,
+            itemBuilder: (_, i) => children[i],
           );
         },
       ),

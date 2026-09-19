@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../storefront/presentation/cubit/cart_cubit.dart';
 import '../../domain/entities/payment.dart';
@@ -96,7 +97,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
             return;
           }
           _checkoutOpened = true;
-          context.push('/paymob-checkout', extra: checkoutUrl);
+          context.push(Routes.paymobCheckout, extra: checkoutUrl);
         } else if (state.status == PaymentStatus.awaitingProof &&
             !_instructionsOpened) {
           // InstaPay (041): hand the SAME cubit to the instructions
@@ -106,7 +107,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           // orderId rides along additively for the page's rehydration
           // path (route paths unchanged).
           _instructionsOpened = true;
-          context.push('/instapay-instructions', extra: {
+          context.push(Routes.instapayInstructions, extra: {
             'cubit': context.read<PaymentCubit>(),
             'orderId': orderId,
           });
@@ -124,7 +125,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           // lives on the server; order history is fetched
           // from there, not duplicated locally.
           context.read<CartCubit>().clear();
-          context.go('/order-success', extra: successOrderId);
+          context.go(Routes.orderSuccess, extra: successOrderId);
         } else if (state.status == PaymentStatus.failed ||
             state.status == PaymentStatus.cancelled ||
             state.status == PaymentStatus.expired ||

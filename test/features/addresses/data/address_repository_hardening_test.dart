@@ -19,7 +19,7 @@ import '../../../helpers/memory_secure_store.dart';
 void main() {
   group('avatar upload validation (fail-closed)', () {
     test('rejects svg extension', () {
-      final svc = StorageService();
+      final svc = StorageService(client: null);
       expect(
         svc.uploadAvatar(File('avatar.svg'), 'user-1'),
         throwsA(isA<ArgumentError>()),
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('rejects a filename with no extension', () {
-      final svc = StorageService();
+      final svc = StorageService(client: null);
       expect(
         svc.uploadAvatar(File('avatar'), 'user-1'),
         throwsA(isA<ArgumentError>()),
@@ -35,7 +35,7 @@ void main() {
     });
 
     test('rejects traversal in the user segment', () {
-      final svc = StorageService();
+      final svc = StorageService(client: null);
       expect(
         svc.uploadAvatar(File('ok.png'), '../../etc'),
         throwsA(isA<ArgumentError>()),
@@ -49,7 +49,7 @@ void main() {
         await file.writeAsBytes(
           List<int>.filled(StorageService.avatarMaxBytes + 1, 0),
         );
-        final svc = StorageService();
+        final svc = StorageService(client: null);
         await expectLater(
           svc.uploadAvatar(file, 'user-1'),
           throwsA(isA<ArgumentError>()),

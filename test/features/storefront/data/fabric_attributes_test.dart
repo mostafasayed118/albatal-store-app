@@ -50,7 +50,7 @@ void main() {
           'min_cut_meters': 1.5,
         },
         const [],
-        storageService: StorageService(),
+        storageService: StorageService(client: null),
       )!;
       expect(product.widthCm, 150);
       expect(product.gsm, 90);
@@ -68,7 +68,7 @@ void main() {
           'image_color': 0xFF064E3B,
         },
         const [],
-        storageService: StorageService(),
+        storageService: StorageService(client: null),
       )!;
       expect(product.widthCm, isNull);
       expect(product.gsm, isNull);

@@ -14,8 +14,8 @@ import 'review_mapper.dart';
 /// Before the migration is applied every call degrades to a
 /// `review_unavailable` failure and the details page hides the section.
 final class SupabaseReviewsRepository implements ReviewsRepository {
-  SupabaseReviewsRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseReviewsRepository({required SupabaseClient client})
+      : _client = client;
 
   final SupabaseClient _client;
 
@@ -61,7 +61,9 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
         // stores the storage path and moderation approval flips the row
         // to `approved`. No synchronous file re-read on submit
         // (audit 2026-09-13).
-        final storage = StorageService();
+        // Composition-root client (audit P1): reuse the injected client
+        // rather than a hidden global fallback.
+        final storage = StorageService(client: _client);
         final path = await storage.uploadProductImage(
           productId,
           photoBytes,

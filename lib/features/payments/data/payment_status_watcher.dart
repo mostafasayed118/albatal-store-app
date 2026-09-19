@@ -13,8 +13,7 @@ import '../domain/entities/payment.dart';
 /// machinery lives in one place. Same emissions, same timing, same
 /// payloads — the service delegates to this watcher.
 final class PaymentStatusWatcher {
-  PaymentStatusWatcher({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  PaymentStatusWatcher({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

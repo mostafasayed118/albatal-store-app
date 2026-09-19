@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/auth_cubit.dart';
 
 /// Minimum accepted password length for new accounts (audit S9).
@@ -83,14 +84,14 @@ class _SignUpPageState extends State<SignUpPage> {
         listener: (context, state) {
           if (state.isAuthenticated) {
             hapticSuccess();
-            context.go('/home');
+            context.go(Routes.home);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
             showFloatingError(context, state.errorMessage!);
           } else if (state.status == AuthStatus.unauthenticated) {
             // Email confirmation required
             showConfirmation(context, l.checkEmailToVerify);
-            context.go('/sign-in');
+            context.go(Routes.signIn);
           }
         },
         child: Padding(
@@ -175,7 +176,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   children: [
                     Text(l.alreadyHaveAccount),
                     TextButton(
-                      onPressed: () => context.push('/sign-in'),
+                      onPressed: () => context.push(Routes.signIn),
                       child: Text(l.signIn),
                     ),
                   ],

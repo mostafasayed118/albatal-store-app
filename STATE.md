@@ -1,5 +1,310 @@
 # Loop State — Al Batal Elite
 
+Last run: 2026-09-19 (review + commit + push of `fix/audit-findings-0919`; owner-approved; gates re-verified green).
+
+## New — 2026-09-19 (owner-approved review + commit + push; gates re-verified)
+
+- Owner: "review+committed + pushed".
+- **Review (read-only):** branch `fix/audit-findings-0919`, 62 tracked files
+  (lib/ + test/) + 3 new files. No forbidden paths: no `.env`, no top-level
+  `auth/`/`payments/`/`secrets/`/`credentials/`, no `supabase/` migrations,
+  no `pubspec.yaml`, no workflows. `lib/features/auth` + `lib/features/payments`
+  are in-scope lib/ code (false-positive on naive `auth/`/`payments/` match).
+  Spot-checked: `service_locator.dart` (single shared SupabaseClient),
+  `storage_service.dart` (required client, no hidden global),
+  `app_router.dart` (composition-root injection), new
+  `account_deletion_port.dart` + `settings_account_adapter.dart` + `noop_share_services.dart`.
+- **Excluded from commit (untracked, by design):** `.cluster/`, `delivery/`,
+  `analysis_before.txt` (stale artifact), `.flutter-plugins-dependencies`
+  (generated; restored via `git checkout --`).
+- **Gates re-run pre-commit:** `flutter analyze` — No issues found;
+  `flutter test` — All tests passed (898/898).
+- **Commit + push:** scoped `git add lib test STATE.md` (picks up the 3 new
+  files, leaves staging artifacts untracked); push `-u origin
+  fix/audit-findings-0919` (new remote branch). No merge; PR/merge stays
+  owner-gated.
+
+## New — 2026-09-19 (L2: closed remaining top-5 gaps; verifier: dart analyze)
+
+### Completed this run
+- **#1 service-locator leaks closed:** the last 2 widget-level `getIt<ImageCompressor>()`
+  calls removed — `reviews_section.dart` + `instapay_instructions_page.dart` now take a
+  constructor-injected `ImageCompressor?` resolved at the composition root
+  (`app_router.dart`), fall back to raw bytes when null (pre-DI tests; server guard
+  still bounds uploads). `details_page.dart` forwards it to `ReviewsSection`.
+  (Remaining getIt in `lib/features/**`: only the 3 admin pages' documented
+  `widget.repository ?? getIt<AdminRepository>()` test fallbacks — router already injects.)
+- **#2 hidden Supabase defaults closed:** made the client a required ctor param in
+  `StorageService`, `SupabaseOAuthService`, `SupabaseRemoteConfigFetcher`,
+  `SupabaseAnalyticsSink`; `AnalyticsService`/`RemoteConfigService` sink/fetcher now
+  required. `service_locator.dart` injects `getIt<SupabaseClient>()` everywhere;
+  `supabase_reviews_repository.dart` reuses its injected `_client`. No
+  `Supabase.instance.client` remains in the data/service layer.
+- **#3 route constants consolidated:** deleted the duplicate `route_paths.dart`;
+  `app_router.dart` now uses the canonical `Routes` class. Parametrized route
+  *declarations* use the factory methods with a `':id'` placeholder (encodeComponent
+  no-op); added the 2 missing pattern consts `Routes.adminProductEdit`/`adminImages`.
+- **#4 (client half)** and **#5** were already complete in the WIP (8-char floor +
+  bounded catalog page w/ truncation logging). Server halves (GoTrue min-length,
+  server-side search/RPC) remain owner-gated.
+
+### ⚠️ Blocking pre-existing damage (NOT this run's edits — needs owner decision)
+- `checkout_page.dart` + `home_page.dart` are **half-applied god-page refactors**:
+  reference `_CheckoutBody`/`_CheckoutCta`/`MultiSliver` that are never defined →
+  **14 analyzer errors, will fail `flutter test` compilation.** Broken before this run
+  (confirmed: my edits never touched them; the in-progress diff already had them).
+- 5 `details_*`/offline/stitch test files construct `DetailsPage` without the
+  (pre-existing) `required whatsappShareService`/`productShareService` — stale fakes.
+- `analysis_before.txt` ("No issues found") was a **stale artifact** — do not trust it.
+- **Git reflog is corrupt** (`fsck`: invalid HEAD reflog entry). Repo is usable but
+  reflog history is damaged; consider `git gc`/clone-fresh before pushing.
+
+### RESOLVED (this run) — tree is now fully green
+- `checkout_page.dart` + `home_page.dart` restored to HEAD via `git checkout` — the
+  half-applied god-page refactor was discarded (no audit fixes lived in those files).
+  The refactor remains a future backlog item, not a defect.
+- Stale `DetailsPage` test fakes fixed: new `test/helpers/noop_share_services.dart`
+  (`NoOpProductShareService`/`NoOpWhatsAppShareService`) injected into the 5 stale
+  harnesses; the whatsapp test keeps its recording launcher.
+
+### Test evidence (final, validated)
+- `dart analyze lib test`: **No issues found!** (was 31 → 21 → 0).
+- `flutter test`: **All tests passed! — 898 passed / 0 failed / 0 skipped.**
+- `dart format --set-exit-if-changed lib test`: **0 changed** (canonical).
+
+## Prior — 2026-09-19 (L1 read-only comprehensive audit, 5 parallel sub-agents; no code touched).
+
+## New — 2026-09-19 (L1 comprehensive audit; read-only)
+
+- 5-dimension audit via parallel sub-agents over lib/ (255 files, ~29.8k LOC):
+  Maintainability 8.0, Clean Architecture 8.5, Code Quality 9.0, Security 8.5,
+  Performance 8.5 → weighted overall 8.5/10.
+- Gates re-verified green: dart analyze 0 issues, dart format 0 changed,
+  0 print()/empty-catch/skipped tests in lib, 169 test files / ~823 cases.
+- Top findings (all P1–P3, no criticals): (1) getIt service-locator calls in
+  ~8 presentation widgets bypassing the app_router composition root;
+  (2) 9 Supabase*Repository ctors with `?? Supabase.instance.client` hidden
+  default; (3) magic route strings at ~10 call sites (no route constants);
+  (4) password floor 6 vs documented 8 (client + GoTrue); (5) storefront
+  catalog capped at 100 products with client-side search/sort — keyset paging
+  (063) not wired to catalog; (6) sample-line price enforcement still
+  client-side pending server RPC follow-up.
+- No source edits. All fixes are proposals awaiting owner approval.
+
+## New — 2026-09-19 (L1 review of part-15 close-out; no code touched)
+
+- **c04e386 verified:** `mockCustomerName` has zero refs in lib/test on the
+  PR #74 head; on master the key exists only in the two ARBs + generated
+  (no callers) — the dead-string claim holds. 5 files, 14 deletions.
+- **PR #74 CI ALL GREEN** on c04e386 (Flutter Tests 5m28s, Format & Analyze,
+  Edge, Secret Scan, Setup, Deployment Readiness, Android 8m32s; CodeSnif
+  skipping). 12 commits, still draft, head `feat/admin-customer-tier`.
+- **Ordering hazard confirmed real:** the PR-branch client emits
+  `phone_digits.ilike` for digit-only terms, so 065 must be live before any
+  client build from this branch ships. 063–065 exist only on the PR branch
+  (local master has 060–062; supabase/ untouched per constraints).
+- **PR #73** still draft open (`feat/orders-csv-export` @ 06f8e23).
+  `fix/audit-followup-0913` still at 889be8a (matches the recorded gate).
+- **Local master is 19 behind origin/master** (local 4cedc42; origin has the
+  part 10–13 STATE records and more) — owner pulls when convenient.
+- NEXT GATES (all owner-gated, unchanged): (1) review 063–065 → staging
+  `db push` → proof script → production; (2) staging probe needs
+  STAGING_SUPABASE_URL + STAGING_ANON_KEY; (3) un-draft/merge #74 + #73;
+  (4) `fix/audit-followup-0913` deploy gate (060 + 4 functions + GoTrue 8);
+  (5) six kept ARB keys, `--verify` in CI, master docs-only pushes.
+
+## New — 2026-09-19 (L1 review-only of 063–065; no DB touched, nothing applied)
+
+- **063 APPROVE (from review):** btree `(created_at DESC, id DESC)` matches
+  the client's ORDER BY + `customerKeysetFilter` predicate exactly (incl. the
+  `id` tie-break). Additive, rollback is one DROP. Plain build is fine at
+  current row counts; CONCURRENTLY correctly not used (can't run in a
+  migration txn). Performance-only, correctness unaffected either way.
+- **064 APPROVE (from review):** single pg_trgm GIN on `full_name`, precedent
+  055. Dropping the `phone` index is sound — 065 reroutes digit terms to
+  `phone_digits`, so it would be write amplification for a dead path. Stated
+  limits accepted: <3-char terms still seq-scan; letter-bearing pastes scan
+  `phone` unindexed (rare by construction).
+- **065 APPROVE (from review):** STORED generated `phone_digits`
+  (COALESCE-then-translate-then-strip; order load-bearing and documented).
+  Client/server symmetry verified: the Dart `_digitBlockBases` (75 blocks)
+  and the SQL `translate` tables both generate from
+  `gen_phone_digit_ranges.py` — one source of truth, two runtimes. Generated
+  column rejects writes (can't smuggle past RLS); `phone` never modified.
+  Two live-apply checks remain for the owner run: (a) the
+  `pg_get_expr` staleness query before push (IF NOT EXISTS won't fix an old
+  expression); (b) deploy order 063–065 BEFORE any client build from this
+  branch (unknown `phone_digits` = HTTP 400 on the whole directory request).
+- Apply path when approved: `supabase migration list` (expect only 063–065
+  unapplied) → staging `db push` → `run_keyset_paging_proof.mjs --mode
+  staging` → production. PRs stay draft; deploy gate untouched per owner.
+- Awaiting: staging secrets paste for the read-only probe.
+
+## New — 2026-09-19 (staging probe RUN with owner-pasted staging key; read-only)
+
+- **Key valid, target pinned:** `zvpjngdgbpnkkqrorkul` matches the script's
+  REQUIRED_STAGING_REF. Publishable key answers PostgREST. Key kept in env
+  only, never written to the repo.
+- **Script bug found (PR branch, NOT fixed in repo):**
+  `rest()` does `new URL(path, BASE)` with a leading-`/` path, which resets
+  to the host root (`/profiles` instead of `/rest/v1/profiles`) → readiness
+  404. Worked around TEMP-LOCAL-ONLY in the temp copy; the one-line fix
+  belongs on `feat/admin-customer-tier` with owner approval.
+- **Second script wart:** with 0 visible rows the walk checks pass vacuously
+  and "Bookmark fidelity" ABORTS (`could not read created_at for undefined`)
+  instead of skipping. Staging mode needs graceful-empty handling (and, for
+  a non-vacuous walk, an authenticated admin JWT — anon sees 0 rows).
+- **065 NOT on staging (proven live):** `phone_digits=ilike.*050*` →
+  **400 / 42703 `column profiles.phone_digits does not exist`**. Cursor +
+  search `or` trees both accepted (200, `[]`) — PostgREST parses them; anon
+  sees 0 rows per RLS (fail-closed, correct). The ordering warning is now
+  live-verified: a client build from this branch would 400 the directory
+  today — migrations first, app second.
+- **NOT done — "push" needs owner specifics:** the anon publishable key
+  cannot `db push` (needs DB password or access token + linked project),
+  and 063–065 live only on the PR branch (local tree has 060–062). Say which
+  push is meant and supply the credential, or approve a worktree that
+  prepares it.
+
+## New — 2026-09-19 (063–065 PUSHED to staging via Management API; verified)
+
+- Owner approved "push 063–065 to staging". Applied with the 061/062
+  precedent (`sb_sql.ps1` + Credential-Manager token), statements taken
+  verbatim from the reviewed PR-branch files; local `supabase/` untouched.
+- **Pre-state:** history held only 060 (061/062 objects live but unrecorded —
+  out-of-band applies don't write history); profiles carried only its pkey;
+  `phone_digits` proven absent (live 42703).
+- **063:** keyset btree live (verified in `pg_indexes`).
+- **064:** `pg_trgm` ensured + `idx_profiles_full_name_trgm` live.
+- **065:** `phone_digits` STORED column live, `has_translate=true` (staleness
+  check from the migration header passes — fresh expression, no legacy
+  column); `idx_profiles_phone_digits_trgm` live.
+- **Read-back:** 25/25 rows have `phone_digits`, 25/25 digits-only. No staging
+  row carries non-ASCII phones, so transliteration has no live row to prove
+  against — mechanism verified present; expression proved on PG 15.19 by the
+  migration's docker harness.
+- **PostgREST:** `phone_digits.ilike` now **200** (was 400/42703) — the
+  deploy-ordering coupling is closed on staging; a branch client build works
+  against staging today. Proof script re-run: readiness + cursor/search
+  acceptance green; walk vacuous for anon (0 rows, RLS-correct); bookmark
+  abort wart persists (empty-set handling still missing upstream).
+- **Known cosmetic gap (same as 061/062):** history has no 063–065 rows, so a
+  future CLI `migration list` will show them unapplied — objects are what
+  matter, and all four are verified live. Production untouched; PRs stay
+  draft; deploy gate untouched.
+
+## New — 2026-09-19 (063–065 PUSHED to production; verified end-to-end)
+
+- Owner: "need it to production". Same Management-API path as staging.
+- **Prod pre-state:** history held none of 060–065, but all baseline objects
+  live (`rate_limits`, `is_current_user_admin`, `products.color_name`);
+  profiles had only its pkey; `phone_digits` count 0 (fresh-expression path
+  clear); 13 rows (ALTER rewrite a blink).
+- **Applied 063 → 064 (extension + index) → 065 (ALTER + index),** statements
+  verbatim from the reviewed files; local `supabase/` untouched.
+- **Verified live:** all four indexes in `pg_indexes`; 13/13 `phone_digits`
+  populated, 13/13 digits-only; production PostgREST returns **200** on both
+  the `phone_digits.ilike` filter and the directory walk query (schema cache
+  already reloaded — no action needed). Staging ↔ production now at parity
+  for the customer directory (063–065 both sides).
+- **Backup note (honest gap):** no pg_dump taken — no DB password on hand.
+  Accepted because all three changes are additive with documented one-line
+  rollbacks (DROP INDEX ×3 / DROP COLUMN); no data column was modified.
+- Remaining owner items unchanged: un-draft/merge #74 + #73, the
+  `fix/audit-followup-0913` deploy gate, product calls (six ARB keys,
+  `--verify` in CI, docs pushes), script bugfix on the branch.
+
+## New — 2026-09-19 (INCIDENT: 065 applied with corrupted digit tables; REMEDIATED both DBs)
+
+- **What happened:** the 065 ALTER I pushed carried a `translate` FROM table
+  whose 750 non-ASCII chars had been replaced by `?` in transit (my shell
+  transport, not the branch file — the file is intact). With every FROM char
+  a `?`, `translate` mapped `?`→`0` (first-match). ASCII behavior stayed
+  correct (separators stripped; read-backs passed), but any native-digit
+  input would have silently produced zeros. Caught the same session by the
+  native-digit E2E (step 2 of the owner-approved plan) — before any client
+  build or real non-ASCII row depended on it (0 such rows on either DB).
+- **Proof of corruption:** live expr had 1130 `?`, `has_u0660=false`; a
+  throwaway staging signup with `٠١٠١٢٣٤٥٦٧٨` stored `3f`*11 (PS ASCII body
+  encoding — sender-side, separate lesson) and computed eleven `0`s.
+  Throwaway user + profile fully removed afterward (delete-account 200).
+- **Fix:** rebuilt the statement as pure-ASCII `chr()` concatenation (75
+  bases from the branch's own list, 750 terms, generated locally by Python).
+  Staging + production: DROP COLUMN → re-ADD → recreate trigram index.
+- **Verified:** 750/750 mappings correct on BOTH DBs (zero bad mappings via
+  generate_series cross-check); staging 25/25 + production 13/13 populated
+  digits-only; PostgREST 200 on `phone_digits` both sides. The `chr()` form
+  is transit-immune by construction — recommend it as the pattern for any
+  future non-ASCII SQL pushed this way.
+- Lesson recorded: value-level verification (native input) is mandatory for
+  generated columns — `has_translate`-style presence checks cannot catch
+  content corruption.
+
+## New — 2026-09-19 (owner-approved full-closeout plan, executing)
+
+- **Step 1 DONE — proof-script fix on the PR branch:** worktree
+  `.trees/proof-script-fix`, branch `fix/proof-script-url` (commit 2aeab31):
+  URL anchor fix + `reportAndExit()` + graceful empty-staging skip. Verified
+  live (`node --check` clean, staging run exit 0, 1/1). Merged into
+  `feat/admin-customer-tier` and pushed (remote was still at c04e386, clean
+  fast-forward; PR #74 head is now 2aeab31, CI re-running).
+- **Step 2 DONE — native-digit E2E:** throwaway staging signup with
+  `٠١٠١٢٣٤٥٦٧٨` is what EXPOSED the 065 corruption (see incident above);
+  after remediation, transliteration proven 750/750 on both DBs. Throwaway
+  user + profile fully removed (delete-account 200, leftovers 0). Two
+  sender-side lessons: PS `Invoke-WebRequest` JSON bodies go out ASCII
+  (use Node for non-ASCII test input); never transit non-ASCII SQL through
+  the shell (use the `chr()` pattern).
+- **Step 3 DONE — history recorded:** 061–065 inserted on staging (060 was
+  present), 060–065 on production. Statements are ASCII documentary notes
+  pointing at the reviewed files + live verifications. Future `migration
+  list` is now clean on both projects.
+- Steps 4–6 in flight: merge #74 (awaiting CI on 2aeab31) → #73 review+merge
+  → release build → deploy-gate verify.
+
+## New — 2026-09-19 (full close-out DONE: merges, release APK, gate verified)
+
+- **Step 4 DONE — both PRs on master:** pushed the STATE-union sync (b1942c6)
+  to `feat/admin-customer-tier`; owner merged **PR #74** (8fa709f, master now
+  f6eabb2 — migrations 063–065 files + DB in sync by construction). PR #73
+  needed no action: the parallel consolidation had already merged it (head
+  06f8e23 is an ancestor of master; PR state MERGED). My csv-rebase worktree
+  fast-forwarded with zero conflicts; `flutter analyze` clean after pub get
+  (first-run 471 noise was missing `.dart_tool` in the fresh worktree).
+- **Step 5 DONE — release APK:** built from master tip
+  (`--dart-define-from-file=config/env.production.local.json`):
+  `build/app/outputs/flutter-apk/app-release-master-f6eabb2.apk` (71.9MB).
+  Artifact-verified: publishable key + prod ref baked in libapp.so, zero
+  JWT-like fragments. Ready to install over the current device build.
+- **Step 6 DONE — deploy gate already closed, re-verified live on prod:**
+  `rate_limit_take` present, `password_min_length=8`, all four edge
+  functions 401-unauth (healthy). Nothing to deploy.
+- Housekeeping: my worktrees + scratch branches removed; remote PR branches
+  remain for the owner to delete. NOTE: a parallel session
+  (.kilo/worktrees/oasis-passionfruit, "part 16 consolidation") is active —
+  left untouched. Local master still behind origin (53); owner pulls when
+  convenient (uncommitted STATE.md + APK path noted here).
+
+## New — 2026-09-19 (owner device-tested; full suite re-run HERE: 980/980)
+
+- Owner tested the release build on-device, then asked for a local test run.
+  Fresh worktree at origin/master tip (0962085): `flutter pub get` +
+  `flutter analyze` **0 issues** + `flutter test` **980/980 PASS** (includes
+  the customer-directory, cubit, transliteration, and CSV suites).
+  Worktree removed after. Everything green on the merged tree.
+
+## New — 2026-09-19 (device-test seeding: 3 staging customers + staging APK)
+
+- Owner had no customers to test with → seeded 3 throwaways on STAGING via
+  Node signup (UTF-8 safe): "TEST Ahmed Sep" (+966 50 123 4567), "TEST Mona
+  Native" (٠١٠١٢٣٤٥٦٧٨, real Arabic-Indic), "TEST Karim Dash" (050-123-4567).
+- Read-back is the full E2E: 966501234567 / 01012345678 / 0501234567 —
+  separators stripped AND native digits transliterated on real rows.
+- Staging release APK built from master tip:
+  `build/app/outputs/flutter-apk/app-staging-master-0962085.apk` (71.9MB).
+- PENDING: owner device test (staging admin → Customers → terms below),
+  then delete the 3 throwaways (sign-in + delete-account each).
+
 Last run: 2026-09-16 (performance re-scored on the owner's physical
 device: 9.0 -> 10.0; AUDIT COMPLETE at 10.0).
 

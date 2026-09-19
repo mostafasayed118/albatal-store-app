@@ -22,10 +22,9 @@ import 'payment_status_watcher.dart';
 /// `/paymob-callback` webhook). DB row parsing lives here, not in
 /// the presentation layer.
 class PaymobPaymentService implements PaymentService {
-  PaymobPaymentService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client,
-        _watcher =
-            PaymentStatusWatcher(client: client ?? Supabase.instance.client);
+  PaymobPaymentService({required SupabaseClient client})
+      : _client = client,
+        _watcher = PaymentStatusWatcher(client: client);
 
   final SupabaseClient _client;
   final PaymentStatusWatcher _watcher;

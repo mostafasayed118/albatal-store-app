@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 
 Widget _harness(String productId) {
   final persistence = MemoryStorefrontPersistence();
@@ -20,7 +21,11 @@ Widget _harness(String productId) {
         BlocProvider(create: (_) => CartCubit(persistence)),
       ],
       child: DetailsPage(
-          id: productId, catalogRepository: LocalCatalogRepository()),
+        id: productId,
+        catalogRepository: LocalCatalogRepository(),
+        whatsappShareService: const NoOpWhatsAppShareService(),
+        productShareService: const NoOpProductShareService(),
+      ),
     ),
   );
 }

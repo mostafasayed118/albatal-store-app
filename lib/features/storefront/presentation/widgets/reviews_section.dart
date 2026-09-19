@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/image_compressor.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/product_review.dart';
 import '../../domain/repositories/reviews_repository.dart';
@@ -17,32 +16,41 @@ import '../cubit/reviews_cubit.dart';
 /// Approved customer reviews + submit affordance for the details page
 /// (feature-batch §9).
 ///
-/// The repository resolves from the locator when registered; when it is
-/// not (pre-DI widget tests) the section renders nothing so the details
-/// page never breaks.
+/// The repository is constructor-injected (audit P1) — the details page
+/// hands down what the router resolved at the composition root. When it
+/// is null (pre-DI widget tests) the section renders nothing so the
+/// details page never breaks.
 class ReviewsSection extends StatelessWidget {
-  const ReviewsSection({super.key, required this.productId, this.repository});
+  const ReviewsSection(
+      {super.key,
+      required this.productId,
+      this.repository,
+      this.imageCompressor});
 
   final String productId;
+
+  /// Reviews backend. Null renders the section as `unavailable` (hidden)
+  /// via [ReviewsCubit].
   final ReviewsRepository? repository;
+
+  /// §4 upload-image compression, resolved at the composition root. Null
+  /// (pre-DI widget tests) falls back to the uncompressed bytes — the
+  /// server-side guard still bounds the upload.
+  final ImageCompressor? imageCompressor;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<ReviewsCubit>(
-      create: (_) {
-        final repo = repository ??
-            (getIt.isRegistered<ReviewsRepository>()
-                ? getIt<ReviewsRepository>()
-                : null);
-        return ReviewsCubit(repository: repo)..load(productId);
-      },
-      child: const _ReviewsView(),
+      create: (_) => ReviewsCubit(repository: repository)..load(productId),
+      child: _ReviewsView(imageCompressor: imageCompressor),
     );
   }
 }
 
 final class _ReviewsView extends StatelessWidget {
-  const _ReviewsView();
+  const _ReviewsView({this.imageCompressor});
+
+  final ImageCompressor? imageCompressor;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +72,7 @@ final class _ReviewsView extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge),
                 ),
                 TextButton(
-                  onPressed: () => _showSubmitSheet(context),
+                  onPressed: () => _showSubmitSheet(context, imageCompressor),
                   child: Text(l.writeReview),
                 ),
               ],
@@ -93,13 +101,13 @@ final class _ReviewsView extends StatelessWidget {
     );
   }
 
-  void _showSubmitSheet(BuildContext context) {
+  void _showSubmitSheet(BuildContext context, ImageCompressor? compressor) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => BlocProvider<ReviewsCubit>.value(
         value: context.read<ReviewsCubit>(),
-        child: const _ReviewSubmitSheet(),
+        child: _ReviewSubmitSheet(imageCompressor: compressor),
       ),
     );
   }
@@ -208,11 +216,14 @@ final class _ReviewsInlineList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: visible.length,
-          itemBuilder: (_, i) => _ReviewTile(review: visible[i]),
+        // Audit fix (shrinkWrap): a shrinkWrap ListView.builder recycles
+        // nothing — it lays out every tile AND pays the nested-scrollable
+        // measurement pass inside the details page's ListView. The cap is
+        // 10 tiles, so a plain Column builds the same widgets cheaper and
+        // keeps long histories virtualized in the Show-all sheet below.
+        ...List.generate(
+          visible.length,
+          (i) => _ReviewTile(review: visible[i]),
         ),
         if (remaining > 0)
           Align(
@@ -248,7 +259,9 @@ final class _ReviewsInlineList extends StatelessWidget {
 }
 
 final class _ReviewSubmitSheet extends StatefulWidget {
-  const _ReviewSubmitSheet();
+  const _ReviewSubmitSheet({this.imageCompressor});
+
+  final ImageCompressor? imageCompressor;
 
   @override
   State<_ReviewSubmitSheet> createState() => _ReviewSubmitSheetState();
@@ -281,7 +294,12 @@ final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
       // made the repository re-read the original file synchronously
       // (audit 2026-09-13).
       final bytes = await xfile.readAsBytes();
-      final compressed = await getIt<ImageCompressor>().compress(bytes);
+      // Compressor is constructor-injected (composition root); a null
+      // (pre-DI test) falls back to the raw bytes — the server-side
+      // guard still bounds the upload.
+      final compressor = widget.imageCompressor;
+      final compressed =
+          compressor != null ? await compressor.compress(bytes) : bytes;
       setState(() => _photoBytes = compressed);
     } on Exception {
       // picker unavailable (web/tests) — text-only review still works

@@ -21,8 +21,7 @@ import 'admin_mappers.dart';
 /// every failure is returned as `Result.failure` — no exceptions cross
 /// the repository boundary.
 final class SupabaseAdminRepository implements AdminRepository {
-  SupabaseAdminRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseAdminRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

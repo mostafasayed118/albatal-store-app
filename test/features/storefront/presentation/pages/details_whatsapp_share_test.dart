@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 
 /// Recording [ExternalLinkLauncher] fake — the same interface-wrapping
 /// seam as DeepLinkService/PushService, so url_launcher is never mocked
@@ -42,6 +43,7 @@ Widget _harness(String productId, _RecordingLauncher launcher) {
         id: productId,
         catalogRepository: LocalCatalogRepository(),
         whatsappShareService: WaMeWhatsAppShareService(launcher),
+        productShareService: const NoOpProductShareService(),
       ),
     ),
   );

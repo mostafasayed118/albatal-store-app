@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
 
@@ -38,7 +39,10 @@ class PricingTierTable extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    l.pricingTierRow(tier.minMeters.toStringAsFixed(0),
+                    // Whole-meters label via Money's canonical whole-unit
+                    // formatter — one ruleset for every bare toStringAsFixed
+                    // (audit 2026-09 money/meters formatting sweep).
+                    l.pricingTierRow(Money.wholeEgpLabel(tier.minMeters),
                         tier.discountPercent),
                     style: theme.bodySmall?.copyWith(
                       color: tier.discountPercent == activePercent

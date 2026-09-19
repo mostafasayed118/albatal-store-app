@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_coupons_cubit.dart';
 
 /// Admin coupon management (feature-batch §8): list, create, activate.
 ///
-/// Reads the repository via the locator (admin routes are gated by
-/// profile.isAdmin in the router) with an optional injected cubit for
-/// widget tests.
+/// The repository is constructor-injected (audit P1); the router
+/// resolves it at the composition root, with an optional injected cubit
+/// for widget tests.
 class AdminCouponsPage extends StatelessWidget {
-  const AdminCouponsPage({super.key, this.cubit});
+  const AdminCouponsPage({super.key, this.cubit, required this.repository});
 
   final AdminCouponsCubit? cubit;
+
+  /// Coupon backend resolved at the composition root (the page never
+  /// service-locates). Ignored when [cubit] is provided.
+  final AdminRepository repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminCouponsCubit>(
       create: (_) =>
-          (cubit ?? AdminCouponsCubit(repository: getIt<AdminRepository>()))
-            ..load(),
+          (cubit ?? AdminCouponsCubit(repository: repository))..load(),
       child: const _AdminCouponsView(),
     );
   }
@@ -70,7 +73,7 @@ final class _AdminCouponsView extends StatelessWidget {
                 ),
                 child: SwitchListTile(
                   title: Text(coupon.code),
-                  subtitle: Text(safeMinorToEgpLabel(coupon.discountMinor)),
+                  subtitle: Text(Money(coupon.discountMinor).egpLabel()),
                   value: coupon.active,
                   onChanged: (active) => context
                       .read<AdminCouponsCubit>()
@@ -140,11 +143,4 @@ final class _AdminCouponsView extends StatelessWidget {
       discountController.dispose();
     }
   }
-}
-
-/// Minor-units → "EGP x.yy" display label (display-only; money math
-/// stays server-side).
-String safeMinorToEgpLabel(int minor) {
-  final egp = minor / 100;
-  return 'EGP ${egp.toStringAsFixed(2)}';
 }
