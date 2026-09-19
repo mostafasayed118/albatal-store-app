@@ -63,6 +63,24 @@ before declaring a consolidation complete.**
 
 Migration ordering hazard from part 11 is UNCHANGED and still applies.
 
+**Branch cleanup (2026-09-19, owner-approved).** `feat/orders-csv-export` and
+`feat/admin-customer-tier` are DELETED from origin; both PRs were already
+MERGED. The deletion is content-safe by construction: every commit on each
+branch is an ancestor of master — for `feat/admin-customer-tier` specifically,
+BOTH parents of its tip `b1942c6` (`2aeab31` and `84ca10a`) are already in
+master, so the branch held no unique content beyond one stale STATE.md line.
+
+⚠️ **CONCURRENT-SESSION HAZARD.** A second agent session
+(`opencode <opencode@local>`) was pushing to `feat/admin-customer-tier` WHILE
+this run was in flight — it authored `2aeab31` and, five minutes later,
+`b1942c6`, a merge of the **STALE** pre-consolidation master `84ca10a` back into
+the branch. That branch was therefore BEHIND master and its tree re-added
+`currency.dart` and `product_share_service.dart`, so merging it would have
+**reverted the consolidation**. It was deleted before that could happen.
+**Rule: before merging any long-lived branch, confirm its base is not a stale
+master** — the branch must contain current master, not merely share an ancestor.
+The session may still hold a local copy and could recreate the branch.
+
 Prior run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
 from the part-5 report is fixed. `mockCustomerName` ('Ahmed Mansour' /
 'أحمد منصور'), a dead demo value riding in the production ARBs since it landed,
