@@ -102,8 +102,10 @@ extension ProductCodec on Product {
     // Rendering is cached in the presentation layer — `ProductImageResolver`
     // / `AppImage` wrap `CachedNetworkImage` for every remote product image.
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
-    // TODO(audit-2026-09-14 P0-4, remaining half): set Cache-Control
-    // `immutable` on upload so a replaced image cannot be served stale.
+    // The uploaded objects carry a one-year cache lifetime
+    // (`StorageService.productImageCacheSeconds`), which is safe precisely
+    // because a replaced image lands on a fresh UUID path, never over the old
+    // one — so a long-lived cache entry can never go stale.
     final rawImages = row['product_images'];
     final imageRows = rawImages is List
         ? rawImages.whereType<Map<String, dynamic>>().toList()

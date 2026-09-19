@@ -43,7 +43,11 @@ class StorageService {
     await _client.storage.from(_bucket).uploadBinary(
           path,
           data,
-          fileOptions: FileOptions(contentType: contentType, upsert: false),
+          fileOptions: FileOptions(
+            contentType: contentType,
+            cacheControl: productImageCacheSeconds,
+            upsert: false,
+          ),
         );
     return path;
   }
@@ -59,6 +63,29 @@ class StorageService {
   /// Render-URL width budget for the detail gallery and the full-screen
   /// zoom view, which share one image list (audit 2026-09-14 P0-4).
   static const detailImageWidth = 720;
+
+  /// Cache lifetime stamped on an uploaded product image, in **seconds** — one
+  /// year (audit 2026-09-14 P0-4).
+  ///
+  /// This value is sent as the multipart `cacheControl` field, and Supabase
+  /// Storage WRAPS that field: its uploader does
+  /// `cacheControl = cacheTime ? `max-age=${cacheTime}` : 'no-cache'`
+  /// (supabase/storage, `src/storage/uploader.ts`). So this field can express
+  /// *only* a duration — a directive string like
+  /// `public, max-age=31536000, immutable` would be wrapped into the malformed
+  /// `max-age=public, max-age=31536000, immutable`. `immutable` is therefore
+  /// NOT expressible through the SDK, and the decision here is the duration.
+  ///
+  /// A year is safe because the object behind a URL can never change:
+  /// [buildProductImagePath] mints a fresh UUID per upload and uploads are
+  /// never upserted, so replacing an image writes a NEW path (the old one is
+  /// deleted, and any cached copy of it is dead by construction). The SDK
+  /// default is `3600` (one hour).
+  ///
+  /// Must stay digits-only — a directive would silently produce a broken
+  /// header, so `storage_service_cache_control_test.dart` pins both the shape
+  /// and the value actually put on the wire.
+  static const productImageCacheSeconds = '31536000';
 
   /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
   ///
@@ -137,6 +164,10 @@ class StorageService {
     // Never upsert: an avatar row is immutable-once-written; a repeat
     // upload surfaces as a storage error instead of silently replacing
     // the previous file (same fail-closed posture as product images).
+    // Deliberately keeps the SDK's one-hour default lifetime (unlike
+    // [uploadProductImage]): the avatar path is FIXED per user, so a delete
+    // followed by a re-upload reuses it, and a year-long cached copy would
+    // keep showing the customer's previous photo.
     await _client.storage.from('avatars').upload(
           storagePath,
           file,
