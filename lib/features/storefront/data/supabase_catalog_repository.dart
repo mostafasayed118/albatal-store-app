@@ -25,13 +25,12 @@ import 'product_mapper.dart';
 /// and a persistent SharedPreferences cache (for offline fallback when
 final class SupabaseCatalogRepository implements CatalogRepository {
   SupabaseCatalogRepository({
-    SupabaseClient? client,
+    required SupabaseClient client,
     SharedPreferences? preferences,
     StorageService? storageService,
-  })  : _client = client ?? Supabase.instance.client,
+  })  : _client = client,
         _preferences = preferences,
-        _storageService = storageService ??
-            StorageService(client: client ?? Supabase.instance.client);
+        _storageService = storageService ?? StorageService(client: client);
 
   final SupabaseClient _client;
   final SharedPreferences? _preferences;

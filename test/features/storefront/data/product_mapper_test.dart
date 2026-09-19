@@ -204,6 +204,8 @@ void main() {
 }
 
 final class _FakeStorageService extends StorageService {
+  // client:null — the override never touches the network client.
+  _FakeStorageService() : super(client: null);
   @override
   String getProductImageUrl(String storagePath) => 'cdn:$storagePath';
 }

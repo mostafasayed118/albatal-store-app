@@ -49,33 +49,35 @@ class CategoriesPage extends StatelessWidget {
           }
 
           // Stitch circular 56dp horizontal chips — reuses shared primitive.
-          return ListView(
+          return ListView.builder(
             padding: const EdgeInsetsDirectional.symmetric(vertical: 16),
-            children: [
-              StitchCategoryChips(
-                selected: state.filters.category,
-                categories: cats,
-                onSelect: openCategory,
-              ),
-              const SizedBox(height: 12),
-              LayoutBuilder(
-                builder: (context, constraints) => GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
-                  gridDelegate:
-                      productGridDelegateForWidth(constraints.maxWidth),
-                  itemCount: cats.length,
-                  itemBuilder: (_, i) => _CategoryCard(
-                    category: cats[i],
-                    // Product count per family, so the card tells the user
-                    // how much there is to browse before they tap.
-                    count: state.categoryProductCount[cats[i]] ?? 0,
-                    onTap: openCategory,
+            itemCount: 3,
+            itemBuilder: (context, i) => switch (i) {
+              0 => StitchCategoryChips(
+                  selected: state.filters.category,
+                  categories: cats,
+                  onSelect: openCategory,
+                ),
+              1 => const SizedBox(height: 12),
+              _ => LayoutBuilder(
+                  builder: (context, constraints) => GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 16),
+                    gridDelegate:
+                        productGridDelegateForWidth(constraints.maxWidth),
+                    itemCount: cats.length,
+                    itemBuilder: (_, i) => _CategoryCard(
+                      category: cats[i],
+                      // Product count per family, so the card tells the user
+                      // how much there is to browse before they tap.
+                      count: state.categoryProductCount[cats[i]] ?? 0,
+                      onTap: openCategory,
+                    ),
                   ),
                 ),
-              ),
-            ],
+            },
           );
         },
       ),

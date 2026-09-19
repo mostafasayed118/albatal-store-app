@@ -83,6 +83,23 @@ void main() {
       );
     });
 
+    test('rejects plain http:// web links even on the configured host', () {
+      expect(
+        parseDeepLink(
+          Uri.parse('http://albatal.app/product/fabric-42'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+      expect(
+        parseDeepLink(
+          Uri.parse('http://albatal.app/catalog?q=silk'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+    });
+
     test('accepts any host when webBase has an empty host', () {
       // Dev/test flexibility: parser still constrains the path shape.
       expect(

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../cubit/auth_cubit.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -33,7 +34,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         listener: (context, state) {
           if (state.status == AuthStatus.passwordRecovery) {
             showConfirmation(context, l.resetEmailSent);
-            context.go('/sign-in');
+            context.go(Routes.signIn);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
             showFloatingError(context, state.errorMessage!);

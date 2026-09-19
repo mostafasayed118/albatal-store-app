@@ -11,8 +11,8 @@ import '../domain/repositories/profile_repository.dart';
 /// [Result]. A missing profile row returns `Success(null)` (not a
 /// failure) — the caller decides how to handle that case.
 class SupabaseProfileRepository implements ProfileRepository {
-  SupabaseProfileRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseProfileRepository({required SupabaseClient client})
+      : _client = client;
 
   final SupabaseClient _client;
 

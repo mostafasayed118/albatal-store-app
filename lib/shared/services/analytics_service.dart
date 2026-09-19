@@ -28,8 +28,11 @@ abstract interface class AnalyticsSink {
 /// insert on 20 events, every 10s, or [flush] (app pause). Failures are
 /// swallowed — analytics must never break a user flow.
 class AnalyticsService {
-  AnalyticsService({AnalyticsSink? sink, bool enabled = true})
-      : _sink = sink ?? SupabaseAnalyticsSink(),
+  /// Audit P1 (2026-09-19): [sink] is required — the composition root
+  /// injects the [SupabaseAnalyticsSink]; a hidden default would have
+  /// silently re-bound to the global Supabase client in tests.
+  AnalyticsService({required AnalyticsSink sink, bool enabled = true})
+      : _sink = sink,
         _enabled = enabled;
 
   final AnalyticsSink _sink;
@@ -89,8 +92,9 @@ class AnalyticsService {
 /// created_at — verified via REST OpenAPI 2026-09-13): `event` +
 /// `properties`, user_id left null-able per the insert-own RLS.
 class SupabaseAnalyticsSink implements AnalyticsSink {
-  SupabaseAnalyticsSink({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  /// Audit P1 (2026-09-19): the client is required — resolved at the
+  /// composition root, never pulled from the global.
+  SupabaseAnalyticsSink({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

@@ -24,6 +24,8 @@ class AdminReviewsPage extends StatelessWidget {
       create: (_) => (cubit ??
           AdminReviewsCubit(repository: repository ?? getIt<AdminRepository>()))
         ..load(),
+      // service_locator stays only as the test-only fallback above; the
+      // router always injects [AdminReviewsPage.repository].
       child: const _AdminReviewsView(),
     );
   }

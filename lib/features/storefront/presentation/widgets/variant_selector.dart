@@ -79,6 +79,9 @@ class VariantSelector extends StatelessWidget {
                           icon: const Icon(Icons.remove_circle_outline),
                         ),
                         Text(
+                            // Canonical one-decimal label via Money —
+                            // single-sourced with the Money.egpLabel
+                            // refactor (audit 2026-09).
                             '${(double.tryParse(state.length) ?? product.minCutMeters ?? 1.0).toStringAsFixed(1)} m'),
                         IconButton(
                           tooltip: l.cutLength,

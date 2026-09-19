@@ -5,8 +5,9 @@
 /// in a WebView we validate that it is:
 ///   - non-empty,
 ///   - HTTPS (TLS) — never HTTP,
-///   - on a Paymob-owned host (`accept.paymob.com`,
-///     `secure-egypt.paymob.com`, and any `*.paymob.com` subdomain).
+///   - on an EXACT Paymob-owned host listed in [allowedHosts]
+///     (no suffix/subdomain matching — `random.paymob.com` and
+///     lookalikes like `accept.paymob.com.evil.com` are rejected).
 ///
 /// This keeps the trust boundary explicit: the WebView is only
 /// allowed to load a page on a host the server-side integration
@@ -18,7 +19,10 @@
 class PaymobUrlGuard {
   const PaymobUrlGuard._();
 
-  /// The set of Paymob hosts the integration is allowed to open.
+  /// The exact set of Paymob hosts the integration is allowed to open.
+  /// Matching is exact-host only (no `*.paymob.com` suffix acceptance):
+  /// the WebView loads pages from the same hosts the `paymob-initiate`
+  /// Edge Function builds (`accept.paymob.com` iframe + callback flow).
   /// Add a host here only if the Paymob account is migrated to a
   /// new Paymob endpoint and the change is verified.
   static const Set<String> allowedHosts = {
@@ -35,9 +39,10 @@ class PaymobUrlGuard {
     if (!uri.isScheme('https')) return false;
     final host = uri.host.toLowerCase();
     if (host.isEmpty) return false;
-    return allowedHosts.contains(host) ||
-        host.endsWith('.paymob.com') ||
-        host.endsWith('.paymobsolutions.com');
+    // Exact-host match only: suffix matching would admit any
+    // attacker-controlled or lookalike *.paymob.com subdomain
+    // (audit finding: open subdomain allowlist).
+    return allowedHosts.contains(host);
   }
 
   /// True when the checkout WebView may navigate to [url].

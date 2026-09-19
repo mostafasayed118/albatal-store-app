@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 
 /// Retired-product deep links must offer a way back to a REGISTERED route.
 ///
@@ -35,6 +36,8 @@ void main() {
               child: DetailsPage(
                 id: s.pathParameters['id']!,
                 catalogRepository: LocalCatalogRepository(),
+                whatsappShareService: const NoOpWhatsAppShareService(),
+                shareService: const NoOpShareService(),
               ),
             );
           },

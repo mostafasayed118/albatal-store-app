@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'env_config.dart';
+import 'logger.dart';
 import 'supabase_secure_storage.dart';
 
 /// Centralized Supabase configuration and initialization.
@@ -61,9 +61,9 @@ class SupabaseConfig {
       ),
     );
 
-    if (kDebugMode) {
-      debugPrint('✅ Supabase initialized: $url');
-    }
+    // Never log the project URL: route through the Log abstraction at
+    // debug level with a generic message (audit: debug URL logging).
+    Log.d('Supabase initialized', category: LogCategory.app);
   }
 
   /// Current authenticated user, or null if not signed in.
