@@ -7,15 +7,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Audit 2026-09-14 P0-4, cache half.
 ///
-/// Supabase Storage WRAPS the multipart `cacheControl` field as
-/// `Cache-Control: max-age=<value>` (supabase/storage,
-/// `src/storage/uploader.ts`: `cacheControl = cacheTime ? \`max-age=${cacheTime}\`
-/// : 'no-cache'`). Two consequences are pinned here, because both fail
-/// silently on the server — a wrong value is stored per object and cannot be
-/// edited afterwards without re-uploading:
+/// Supabase Storage interpolates the multipart `cacheControl` field into a
+/// `max-age=` prefix (supabase/storage, `src/storage/uploader.ts`:
+/// "cacheControl = cacheTime ? `max-age=${cacheTime}` : 'no-cache'"). Two
+/// consequences are pinned here, because both fail SILENTLY on the server — a
+/// wrong value is stored per object and cannot be edited afterwards without
+/// re-uploading:
 ///
-///  * the value must be a bare second count, so a directive string
-///    (`public, max-age=…, immutable`) can never be sent; and
+///  * the value must BEGIN with the duration, so a header-shaped value that
+///    opens with a directive would be stored malformed; and
 ///  * the real upload call must actually carry it (the SDK default is `3600`).
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
 
@@ -36,9 +36,10 @@ void main() {
       expect(
         RegExp(r'^\d+$').hasMatch(seconds),
         isTrue,
-        reason: 'Supabase Storage wraps this as `max-age=<value>`; a directive '
-            'string such as "public, max-age=31536000, immutable" would become '
-            'the malformed header '
+        reason: 'Supabase Storage interpolates this as `max-age=<value>`, so '
+            'it must BEGIN with the duration: a header-shaped value such as '
+            '"public, max-age=31536000, immutable" would be stored as the '
+            'malformed '
             '"Cache-Control: max-age=public, max-age=31536000, immutable"',
       );
       expect(

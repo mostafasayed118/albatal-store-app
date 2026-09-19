@@ -20,7 +20,7 @@
 **Modified:**
 - Modify: `supabase/config.toml:14` — document prod project ref comment (no secret)
 - Modify: `config/env.production.json` — fill from `REPLACE_WITH_*` to real `SUPABASE_URL`/`SUPABASE_ANON_KEY` for `alxw...` (values from 1Password, never committed with secrets in this repo’s history check)
-- Modify: `lib/shared/services/storage_service.dart:1-20` — add `uploadProductImage` with path prefix guard + `Cache-Control` note
+- Modify: `lib/shared/services/storage_service.dart:1-20` — add `uploadProductImage` with path prefix guard + a one-year `FileOptions.cacheControl` (must BEGIN with the duration: Storage interpolates the field as `max-age=<value>`, so a header-shaped value such as `public, max-age=31536000, immutable` is stored malformed)
 - Modify: `lib/shared/services/service_locator.dart:52-71` — register `StorageService` as `LazySingleton`
 - Modify: `lib/features/storefront/data/supabase_catalog_repository.dart:59-110` — embed `product_images` + map via `storage.getPublicUrl` + `getActiveFlashSales()` method
 - Modify: `lib/features/storefront/presentation/pages/home_page.dart:36-45` — bind flash sale countdown to `get_active_flash_sales()` RPC (poll 60s)

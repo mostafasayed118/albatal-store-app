@@ -67,14 +67,22 @@ class StorageService {
   /// Cache lifetime stamped on an uploaded product image, in **seconds** — one
   /// year (audit 2026-09-14 P0-4).
   ///
-  /// This value is sent as the multipart `cacheControl` field, and Supabase
-  /// Storage WRAPS that field: its uploader does
-  /// `cacheControl = cacheTime ? `max-age=${cacheTime}` : 'no-cache'`
-  /// (supabase/storage, `src/storage/uploader.ts`). So this field can express
-  /// *only* a duration — a directive string like
-  /// `public, max-age=31536000, immutable` would be wrapped into the malformed
-  /// `max-age=public, max-age=31536000, immutable`. `immutable` is therefore
-  /// NOT expressible through the SDK, and the decision here is the duration.
+  /// This value is sent as the multipart `cacheControl` field, which Supabase
+  /// Storage INTERPOLATES into a `max-age=` prefix — "cacheControl = cacheTime
+  /// ? `max-age=${cacheTime}` : 'no-cache'" in supabase/storage,
+  /// `src/storage/uploader.ts`. The field is documented as a number of seconds
+  /// and defaults to `'3600'`, so the value must BEGIN with a duration; a
+  /// header-shaped value that opens with a directive is stored MALFORMED
+  /// (`public, max-age=31536000, immutable` would become
+  /// `Cache-Control: max-age=public, max-age=31536000, immutable`).
+  ///
+  /// Directives appended AFTER the duration do survive that concatenation
+  /// (`'31536000, immutable'` → `Cache-Control: max-age=31536000, immutable`),
+  /// so `immutable` is reachable — but only by relying on the server echoing a
+  /// field it documents as a bare second count, for a directive with no effect
+  /// on this client (a mobile app caching to disk, not a browser doing
+  /// reload/back-forward revalidation). The decision is to stay on the
+  /// documented form and let the duration carry the caching.
   ///
   /// A year is safe because the object behind a URL can never change:
   /// [buildProductImagePath] mints a fresh UUID per upload and uploads are
@@ -82,9 +90,10 @@ class StorageService {
   /// deleted, and any cached copy of it is dead by construction). The SDK
   /// default is `3600` (one hour).
   ///
-  /// Must stay digits-only — a directive would silently produce a broken
-  /// header, so `storage_service_cache_control_test.dart` pins both the shape
-  /// and the value actually put on the wire.
+  /// Must stay digits-only (no leading directive, no appended directive) — the
+  /// wrap is silent, so a wrong shape produces a broken header rather than an
+  /// error; `storage_service_cache_control_test.dart` pins both the shape and
+  /// the value actually put on the wire.
   static const productImageCacheSeconds = '31536000';
 
   /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
