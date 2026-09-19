@@ -4,6 +4,7 @@ import '../../../core/entities/product.dart';
 import '../../components/feedback.dart';
 import '../../extensions/build_context_x.dart';
 import '../../theme/contrast.dart';
+import '../app_card.dart';
 import '../app_image.dart';
 
 /// Stitch 2-col product grid card — surface, outlineVariant border, square media.
@@ -37,12 +38,7 @@ class StitchProductGridCard extends StatelessWidget {
       button: true,
       label: '${product.name}, ${product.price.format()}',
       child: RepaintBoundary(
-        child: Card(
-          color: scheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: scheme.outlineVariant),
-          ),
+        child: AppCard(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,

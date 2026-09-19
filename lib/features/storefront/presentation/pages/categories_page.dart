@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -100,13 +101,8 @@ class _CategoryCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final l = context.l10n;
     final tint = CatalogConstants.accentFor(category);
-    return Card(
-      color: scheme.surface,
+    return AppCard(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
       child: InkWell(
         onTap: () => onTap(category),
         child: Column(

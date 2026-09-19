@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/entities/product.dart';
 import '../../extensions/build_context_x.dart';
 import '../../theme/contrast.dart';
+import '../app_card.dart';
 import '../app_image.dart';
 
 /// Stitch flash-sale row card — 120dp, image left, badge + CTA.
@@ -34,12 +35,7 @@ class StitchFlashSaleCard extends StatelessWidget {
     // fields do not promote).
     final remainingTime = remaining;
     return RepaintBoundary(
-      child: Card(
-        color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: scheme.outlineVariant),
-        ),
+      child: AppCard(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,

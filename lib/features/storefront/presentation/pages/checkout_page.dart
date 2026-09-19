@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../generated/l10n/app_localizations.dart';
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -296,13 +297,8 @@ final class _CouponCardState extends State<_CouponCard> {
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.surface,
+    return AppCard(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTheme.cardRadius,
-        side: BorderSide(color: scheme.outlineVariant, width: 1),
-      ),
       child: Padding(
         padding: const EdgeInsetsDirectional.all(16),
         child: BlocBuilder<CheckoutCubit, CheckoutState>(
@@ -380,13 +376,8 @@ final class _ShippingAddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: scheme.surface,
+    return AppCard(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTheme.cardRadius,
-        side: BorderSide(color: scheme.outlineVariant, width: 1),
-      ),
       child: Padding(
         padding: const EdgeInsetsDirectional.all(16),
         child: Column(
@@ -454,13 +445,8 @@ final class _ServerTotalsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: scheme.surface,
+    return AppCard(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTheme.cardRadius,
-        side: BorderSide(color: scheme.outlineVariant, width: 1),
-      ),
       child: Padding(
         padding: const EdgeInsetsDirectional.all(16),
         child: Column(
