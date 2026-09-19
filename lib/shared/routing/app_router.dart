@@ -4,6 +4,7 @@ import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
+import '../../features/admin/presentation/pages/admin_coupons_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
@@ -224,6 +225,12 @@ final _routes = <RouteBase>[
       path: Routes.adminCustomers,
       builder: (_, __) =>
           AdminCustomersPage(repository: getIt<AdminRepository>())),
+  GoRoute(
+      path: Routes.adminCoupons,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies, like every other admin destination.
+      builder: (_, __) =>
+          AdminCouponsPage(repository: getIt<AdminRepository>())),
   GoRoute(
     path: '/admin/orders/:id',
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
