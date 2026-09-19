@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/money.dart';
-import '../../../../core/utils/currency.dart';
 
 class PriceText extends StatelessWidget {
   const PriceText(
@@ -25,7 +24,7 @@ class PriceText extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          money(amount),
+          amount.format(),
           style: style ??
               textTheme.labelLarge?.copyWith(
                   color: scheme.primary, fontWeight: FontWeight.w700),
@@ -33,7 +32,7 @@ class PriceText extends StatelessWidget {
         if (showStrikeThrough && strikeThroughAmount != null) ...[
           const SizedBox(width: 8),
           Text(
-            money(strikeThroughAmount!),
+            strikeThroughAmount!.format(),
             style: textTheme.labelSmall?.copyWith(
               color: scheme.onSurface.withValues(alpha: .5),
               decoration: TextDecoration.lineThrough,

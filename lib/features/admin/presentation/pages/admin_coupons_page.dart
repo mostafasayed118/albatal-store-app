@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/service_locator.dart';
@@ -152,8 +153,7 @@ final class _AdminCouponsView extends StatelessWidget {
 }
 
 /// Minor-units → "EGP x.yy" display label (display-only; money math
-/// stays server-side).
-String safeMinorToEgpLabel(int minor) {
-  final egp = minor / 100;
-  return 'EGP ${egp.toStringAsFixed(2)}';
-}
+/// stays server-side). The digits come from [Money.formatExact] so every
+/// money string in the app is produced by one formatter.
+String safeMinorToEgpLabel(int minor) =>
+    'EGP ${Money(minor).formatExact(symbol: '')}';

@@ -20,6 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../fixtures/products_data.dart';
+import '../../../../helpers/app_fonts.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
 
 const _testAddress = Address(
@@ -110,6 +111,9 @@ void main() {
       'Checkout page renders stepper, review section and totals without '
       'overflow at a 360dp phone viewport with 1.4 system font scale',
       (tester) async {
+    // Real Inter/Montserrat: the scales and labels must be measured against
+    // the fonts the app ships, not the test font.
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -128,6 +132,7 @@ void main() {
   testWidgets(
       'OrderCard with the status timeline renders without overflow at '
       '1.4 scale in a 360dp-wide column', (tester) async {
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
