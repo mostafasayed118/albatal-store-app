@@ -1092,6 +1092,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'ستظهر الطلبات الجديدة هنا عندما يُتم العملاء الشراء.';
 
   @override
+  String get exportOrdersCsv => 'تصدير الطلبات بصيغة CSV';
+
+  @override
   String get processing => 'قيد المعالجة';
 
   @override

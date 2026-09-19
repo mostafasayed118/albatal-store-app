@@ -31,6 +31,7 @@ import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
 import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/share_service.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -264,6 +265,9 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<ConnectivityGate>()) {
       getIt.unregister<ConnectivityGate>();
     }
+    if (getIt.isRegistered<ShareService>()) {
+      getIt.unregister<ShareService>();
+    }
   });
   if (getIt.isRegistered<AdminRepository>()) {
     getIt.unregister<AdminRepository>();
@@ -276,6 +280,13 @@ Future<_RouterHarness> _pumpRouter(
     getIt.unregister<StorageService>();
   }
   getIt.registerSingleton<StorageService>(_ProbeStorageService());
+  // The /admin/orders builder resolves the share sink at the composition
+  // root now (audit P1), for the same reason as storage above: the probe
+  // needs the registration to exist even though it never taps export.
+  if (getIt.isRegistered<ShareService>()) {
+    getIt.unregister<ShareService>();
+  }
+  getIt.registerSingleton<ShareService>(const _NoOpShareService());
   // AppShell reads the offline gate from GetIt. Unstarted: current is true,
   // so the banner stays hidden and routing assertions are unaffected.
   if (getIt.isRegistered<ConnectivityGate>()) {
@@ -333,6 +344,22 @@ final class _RouterHarness {
 
   Map<String, String> get currentQueryParameters =>
       router.routerDelegate.currentConfiguration.uri.queryParameters;
+}
+
+/// The share sink the route probe registers but never uses: only the
+/// registration needs to exist for the /admin/orders builder to resolve.
+final class _NoOpShareService implements ShareService {
+  const _NoOpShareService();
+
+  @override
+  Future<void> shareText(String message) async {}
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async {}
 }
 
 final class _StubAuthRepository implements AuthRepository {

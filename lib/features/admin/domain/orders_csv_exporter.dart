@@ -23,6 +23,17 @@ String buildOrdersCsv(List<AdminOrder> orders) {
   return buffer.toString();
 }
 
+/// File name the export is shared under (§14).
+///
+/// Dated so an admin who exports daily gets distinguishable attachments
+/// instead of a stream of identically-named `orders.csv` files.
+String ordersCsvFileName(DateTime now) {
+  final year = now.year.toString().padLeft(4, '0');
+  final month = now.month.toString().padLeft(2, '0');
+  final day = now.day.toString().padLeft(2, '0');
+  return 'orders-$year-$month-$day.csv';
+}
+
 String _cell(String raw) {
   final safe = _formulaGuard(raw);
   if (safe.contains('"') || safe.contains(',') || safe.contains('\n')) {

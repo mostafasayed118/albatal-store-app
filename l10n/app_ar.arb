@@ -393,6 +393,7 @@
   "allOrders": "جميع الطلبات",
   "noOrdersFound": "لا توجد طلبات",
   "noOrdersFoundBody": "ستظهر الطلبات الجديدة هنا عندما يُتم العملاء الشراء.",
+  "exportOrdersCsv": "تصدير الطلبات بصيغة CSV",
   "processing": "قيد المعالجة",
   "allStockLevelsHealthy": "جميع مستويات المخزون سليمة",
   "stockUpdated": "تم تحديث المخزون",

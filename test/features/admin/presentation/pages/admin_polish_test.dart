@@ -20,6 +20,7 @@ import 'package:al_batal_elite/shared/components/app_image.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
 import 'package:al_batal_elite/shared/services/image_compressor.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/share_service.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,6 +61,24 @@ class _ShrinkCompressor implements ImageCompressor {
   @override
   Future<Uint8List> compress(Uint8List bytes) async =>
       Uint8List.sublistView(bytes, 0, 1024);
+}
+
+/// Captures what the CSV export actually hands the share sheet, so the
+/// assertions can read the real payload instead of trusting the call.
+class _RecordingShareService implements ShareService {
+  final List<String> shared = [];
+  final List<({String fileName, String content, String mimeType})> files = [];
+
+  @override
+  Future<void> shareText(String message) async => shared.add(message);
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async =>
+      files.add((fileName: fileName, content: content, mimeType: mimeType));
 }
 
 AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
@@ -241,6 +260,81 @@ void main() {
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('offline'), findsOneWidget);
       expect(find.text('No orders found'), findsNothing);
+    });
+    testWidgets('CSV export attaches the loaded queue as a real .csv file',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => Success([
+                _order('ORD-1', AdminOrderStatus.placed),
+                _order('ORD-2', AdminOrderStatus.shipped),
+              ]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Export orders as CSV'));
+      await tester.pump();
+
+      expect(share.files, hasLength(1),
+          reason: 'the export action must actually reach the share sheet');
+      expect(share.shared, isEmpty,
+          reason: 'a CSV is an attachment, not share-sheet body text');
+      final file = share.files.single;
+      expect(
+          file.content,
+          startsWith(
+              'order_id,placed_at,status,items,total_minor,customer_name'));
+      expect(file.content, contains('ORD-1'));
+      expect(file.content, contains('ORD-2'));
+      expect(file.fileName, endsWith('.csv'));
+      expect(file.mimeType, 'text/csv',
+          reason: 'spreadsheet apps pick the handler off the mime type');
+    });
+
+    testWidgets('CSV export follows the status filter, not the whole queue',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => Success([
+                _order('ORD-1', AdminOrderStatus.placed),
+                _order('ORD-2', AdminOrderStatus.shipped),
+              ]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Placed'));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Export orders as CSV'));
+      await tester.pump();
+
+      expect(share.files.single.content, contains('ORD-1'));
+      expect(share.files.single.content, isNot(contains('ORD-2')),
+          reason: 'the CSV must mirror the queue on screen');
+    });
+
+    testWidgets('CSV export is unavailable while the queue is empty',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => const Success([]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      final button = tester.widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.share_outlined));
+      expect(button.onPressed, isNull,
+          reason: 'a header-only CSV is not worth offering');
+      expect(share.files, isEmpty);
     });
   });
 
