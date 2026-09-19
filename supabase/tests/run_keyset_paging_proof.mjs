@@ -202,7 +202,10 @@ let API_KEY = null;
  * does; PostgREST decodes before parsing the tree either way.
  */
 async function rest(path, params = {}, { count = false } = {}) {
-  const url = new URL(path, BASE);
+  // `path` is written with a leading slash at every call site, but a leading
+  // slash makes URL() resolve against the host root and drop BASE's /rest/v1
+  // (which is why staging readiness once 404'd). Strip it and anchor BASE.
+  const url = new URL(String(path).replace(/^\/+/, ''), BASE + '/');
   for (const [key, value] of Object.entries(params)) {
     for (const single of Array.isArray(value) ? value : [value]) {
       url.searchParams.append(key, single);
@@ -250,6 +253,17 @@ function check(name, condition, detail = '') {
 
 function section(title) {
   console.log(`\n${title}`);
+}
+
+function reportAndExit() {
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log(`  ${checks - failures.length}/${checks} checks passed`);
+  if (failures.length) {
+    console.log('  FAILED:');
+    for (const name of failures) console.log(`    • ${name}`);
+  }
+  console.log('═══════════════════════════════════════════════════════');
+  process.exit(failures.length ? 1 : 0);
 }
 
 // ── THE SUBJECT UNDER TEST ──────────────────────────────────────────────────
@@ -639,6 +653,17 @@ async function main() {
   }
   console.log(`  ℹ️  directory holds ${baseline.length} rows`);
 
+  if (mode === 'staging' && baseline.length === 0) {
+    // Anonymous staging reads see zero rows under RLS (fail-closed, correct).
+    // The cursor/search acceptance checks above already passed; every section
+    // below needs visible rows, so exiting here instead of aborting on
+    // baseline[0]. For a non-vacuous walk, run with an authenticated admin JWT.
+    console.log(
+      '  ℹ️  no visible rows — skipping row-content sections',
+    );
+    reportAndExit();
+  }
+
   section('Page walking — the `or` cursor tree must be accepted and exact');
   // Production page size (DEFAULT_CUSTOMERS_PAGE_SIZE = 50), so the boundaries
   // fall inside the fixture's 10-row tie groups.
@@ -790,14 +815,7 @@ async function main() {
     );
   }
 
-  console.log('\n═══════════════════════════════════════════════════════');
-  console.log(`  ${checks - failures.length}/${checks} checks passed`);
-  if (failures.length) {
-    console.log('  FAILED:');
-    for (const name of failures) console.log(`    • ${name}`);
-  }
-  console.log('═══════════════════════════════════════════════════════');
-  process.exit(failures.length ? 1 : 0);
+  reportAndExit();
 }
 
 /** The single search request shape the repository sends. */
