@@ -4,35 +4,6 @@ import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 
-/// Returns the int value for [key], or null when missing or mistyped.
-///
-/// Ints pass through unchanged; other nums are truncated via [num.toInt];
-/// everything else (including bool/string) degrades to null instead of
-/// throwing [TypeError].
-int? _optInt(Map m, String k) {
-  final v = m[k];
-  if (v is int) return v;
-  if (v is num) return v.toInt();
-  return null;
-}
-
-double? _optDouble(Map m, String k) {
-  final v = m[k];
-  if (v is double) return v;
-  if (v is num) return v.toDouble();
-  return null;
-}
-
-/// Returns the string value for [key], or null when missing or mistyped.
-///
-/// Unlike [safeString] (which falls back to `''`), optional text fields
-/// degrade to null so callers keep the exact old `as String?` semantics for
-/// well-typed inputs while mistypes degrade instead of throwing [TypeError].
-String? _optStr(Map m, String k) {
-  final v = m[k];
-  return v is String ? v : null;
-}
-
 /// Placeholder tint used when a product row carries no image — the value the
 /// network path has always written.
 const _placeholderImageColor = 0xFF888888;
@@ -63,7 +34,7 @@ extension ProductCodec on Product {
     if (id.isEmpty || name.isEmpty) return null;
 
     final basePrice = safeInt(row, 'base_price');
-    final oldPrice = _optInt(row, 'old_price');
+    final oldPrice = optInt(row, 'old_price');
 
     // Derive sizes and colors from variants. Malformed variant rows are
     // skipped rather than throwing into the repository.
@@ -126,17 +97,17 @@ extension ProductCodec on Product {
       // imageColor is a placeholder fallback — only used when images empty.
       imageColor: _placeholderImageColor,
       images: imageUrls,
-      description: _optStr(row, 'description'),
-      composition: _optStr(row, 'composition'),
-      care: _optStr(row, 'care'),
-      widthCm: _optInt(row, 'width_cm'),
-      gsm: _optInt(row, 'gsm'),
+      description: optString(row, 'description'),
+      composition: optString(row, 'composition'),
+      care: optString(row, 'care'),
+      widthCm: optInt(row, 'width_cm'),
+      gsm: optInt(row, 'gsm'),
       sellByLength: (row['sell_by_length'] as bool?) ?? false,
-      minCutMeters: _optDouble(row, 'min_cut_meters'),
-      origin: _optStr(row, 'origin'),
+      minCutMeters: optDouble(row, 'min_cut_meters'),
+      origin: optString(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
       colors: colorSet.toList()..sort(),
-      colorName: _optStr(row, 'color_name'),
+      colorName: optString(row, 'color_name'),
       stock: stockMap,
       rating: rating,
       reviewCount: safeInt(row, 'review_count'),
@@ -185,9 +156,6 @@ extension ProductCodec on Product {
     if (id is! String || id.isEmpty) return null;
     // Total decode: mistyped cache values degrade instead of throwing
     // (one bad entry never fails the whole restore).
-    String? optStr(Object? v) => v is String ? v : null;
-    int? optInt(Object? v) => v is num ? v.toInt() : null;
-    double? optDouble(Object? v) => v is num ? v.toDouble() : null;
     List<String> optStrList(Object? v) =>
         v is List ? v.whereType<String>().toList() : const [];
     final priceRaw = raw['price'];
@@ -204,20 +172,20 @@ extension ProductCodec on Product {
         imageColor: imageColorRaw is num
             ? imageColorRaw.toInt()
             : _placeholderImageColor,
-        imageAsset: optStr(raw['imageAsset']),
+        imageAsset: optString(raw, 'imageAsset'),
         images: optStrList(raw['images']),
-        description: optStr(raw['description']),
-        composition: optStr(raw['composition']),
-        care: optStr(raw['care']),
-        widthCm: optInt(raw['widthCm']),
-        gsm: optInt(raw['gsm']),
+        description: optString(raw, 'description'),
+        composition: optString(raw, 'composition'),
+        care: optString(raw, 'care'),
+        widthCm: optInt(raw, 'widthCm'),
+        gsm: optInt(raw, 'gsm'),
         sellByLength:
             raw['sellByLength'] is bool ? raw['sellByLength'] as bool : false,
-        minCutMeters: optDouble(raw['minCutMeters']),
-        origin: optStr(raw['origin']),
+        minCutMeters: optDouble(raw, 'minCutMeters'),
+        origin: optString(raw, 'origin'),
         sizes: optStrList(raw['sizes']),
         colors: optStrList(raw['colors']),
-        colorName: optStr(raw['colorName']),
+        colorName: optString(raw, 'colorName'),
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),

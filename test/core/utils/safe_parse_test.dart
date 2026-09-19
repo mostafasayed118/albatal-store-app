@@ -41,6 +41,48 @@ void main() {
     });
   });
 
+  group('optInt (audit finding #5)', () {
+    test('returns ints and coerces other nums', () {
+      expect(optInt({'n': 3}, 'n'), 3);
+      expect(optInt({'n': 3.0}, 'n'), 3);
+    });
+
+    test('degrades to null on missing keys, null maps, and non-nums', () {
+      expect(optInt({}, 'n'), isNull);
+      expect(optInt(null, 'n'), isNull);
+      expect(optInt({'n': null}, 'n'), isNull);
+      expect(optInt({'n': '3'}, 'n'), isNull);
+      expect(optInt({'n': true}, 'n'), isNull);
+    });
+  });
+
+  group('optDouble (audit finding #5)', () {
+    test('returns doubles and widens other nums', () {
+      expect(optDouble({'x': 0.5}, 'x'), 0.5);
+      expect(optDouble({'x': 2}, 'x'), 2.0);
+    });
+
+    test('degrades to null on missing keys and non-nums', () {
+      expect(optDouble({}, 'x'), isNull);
+      expect(optDouble(null, 'x'), isNull);
+      expect(optDouble({'x': 'wide'}, 'x'), isNull);
+      expect(optDouble({'x': true}, 'x'), isNull);
+    });
+  });
+
+  group('optString (audit finding #5)', () {
+    test('passes strings through', () {
+      expect(optString({'s': 'silk'}, 's'), 'silk');
+    });
+
+    test('degrades to null on missing keys, null maps, and non-strings', () {
+      expect(optString({}, 's'), isNull);
+      expect(optString(null, 's'), isNull);
+      expect(optString({'s': null}, 's'), isNull);
+      expect(optString({'s': 42}, 's'), isNull);
+    });
+  });
+
   group('safeMap (audit P5)', () {
     test('passes typed maps through and normalizes key types', () {
       final typed = {'a': 1};
