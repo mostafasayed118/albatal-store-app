@@ -1,6 +1,54 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
+Last run: 2026-09-19 (part 16: **WORKTREE CONSOLIDATION** — the five unmerged
+worktree branches are now IN master, in dependency order, and the worktrees are
+gone. Order landed: `refactor/money-piasters` → `refactor/card-decoration` →
+`feat/admin-coupons-route` → `feat/orders-csv-export` →
+`feat/admin-customer-tier`. Money first because it is the foundation: it DELETED
+`lib/core/utils/currency.dart` and made `Money.format()` the one money API, so
+every later branch that renders a price depends on it. Card next (the `AppCard`
+single definition), then coupons/CSV/customer-tier on top of the router + ARBs.
+
+**Recon first, and it changed the plan.** `master`'s 10 pending commits were
+**`STATE.md`-only**, so each branch merged into master CLEANLY in isolation —
+`git merge-tree --write-tree` proved it before anything was touched. Every real
+conflict was therefore BRANCH-TO-BRANCH, which is only visible when you stack
+them. Three conflicts total:
+
+1. `admin_coupons_page.dart` imports — kept BOTH `core/entities/money.dart`
+   (money-piasters) and `shared/components/app_card.dart` (card-decoration).
+2. `cart_item_tile.dart` — the interesting one, a **semantic** conflict, not an
+   import clash: card-decoration adds `import '.../core/utils/currency.dart'`
+   while money-piasters **deleted that file**. Git saw a clean import union;
+   taking it would have left a dead import. Resolution keeps `AppCard` + the
+   money-piasters body (`item.effectiveLineTotal.format()`), drops the import.
+3. `admin_customers_page.dart` imports — resolved as the union of imports that
+   are actually used, dropping `shared/theme/app_theme.dart` after verifying it
+   has **0** references post-merge (card-decoration removed it because `AppCard`
+   owns the radius).
+
+**The l10n regenerated with ZERO drift** — `flutter gen-l10n` produced no diff,
+so the auto-merged ARBs and the auto-merged generated files agree. The
+`c04e386` dead-key removal and the CSV branch's new keys coexist.
+
+**Deliberately NOT merged: the SDK churn.** `flutter pub get` resolves 7 newer
+packages (`intl` 0.20.2 → 0.20.3 and friends) on this machine's Flutter; that is
+the still-unabsorbed Flutter 3.47.4 upgrade riding in as uncommitted lockfile
+churn, present in every worktree. `pubspec.lock` was restored to the committed
+resolution so the consolidation cannot silently bundle an unreviewed dependency
+bump. The upgrade remains its own future change.
+
+Evidence on the exact merged tree: `flutter analyze` **0** · `dart format`
+clean (**435** files) · `flutter test` **980/980** (899 pre-merge baseline + 81
+from the branches). The verified integration tree hash equals master's after a
+fast-forward, so what was tested is what was promoted. Worktrees removed and the
+five branches deleted; **only `master` remains**. Safety tag
+`backup/master-pre-consolidation` at `e097d56` is the pre-merge master.
+**NOT pushed** — push still needs owner approval, and draft PRs #73/#74 are
+therefore still open. Migration ordering hazard from part 11 is UNCHANGED and
+still applies.
+
+Prior run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
 from the part-5 report is fixed. `mockCustomerName` ('Ahmed Mansour' /
 'أحمد منصور'), a dead demo value riding in the production ARBs since it landed,
 removed from both ARBs and the generated l10n regenerated (5 files, 14
