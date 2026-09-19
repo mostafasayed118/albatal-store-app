@@ -31,6 +31,7 @@ import 'package:al_batal_elite/shared/routing/app_router.dart';
 import 'package:al_batal_elite/shared/routing/auth_refresh_notifier.dart';
 import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/share_service.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -121,8 +122,8 @@ void main() {
     // Regression: the catalog hub pushed /admin/products, /admin/categories,
     // /admin/images and /admin/variants for months without any of them being
     // registered — every tile dead-ended on "Page Not Found". This probe
-    // walks each admin path and fails when the router silently redirects
-    // (the GoRouter no-route behavior) instead of landing where it was told.
+    // walks each admin path and fails when either the router redirects away
+    // (double-guarded) or nothing matches at all (unregistered).
     const adminPaths = [
       '/admin',
       '/admin/orders',
@@ -135,13 +136,27 @@ void main() {
       '/admin/categories',
       '/admin/images/p-1',
       '/admin/variants/p-1',
+      // Added 2026-09-16 with the coupon route, together with the admin
+      // surfaces that were registered earlier but never listed here. Keep
+      // this list equal to the registered set: the loop only protects paths
+      // it actually walks.
+      '/admin/reviews',
+      '/admin/customers',
+      '/admin/sales',
+      '/admin/coupons',
     ];
     for (final path in adminPaths) {
       harness.router.go(path);
       await _settle(tester);
       expect(harness.currentPath, path,
           reason: 'admin route "$path" must resolve — a redirect away means '
-              'it is unregistered or double-guarded (Page Not Found dead end)');
+              'it is double-guarded');
+      // The path check above cannot catch an unregistered route on its own:
+      // GoRouter keeps the requested URI and swaps in its error page, so the
+      // assertion still passes. An empty match list is the real signal.
+      expect(harness.isMatched, isTrue,
+          reason: 'admin route "$path" rendered GoRouter\'s Page Not Found '
+              'page — the path is not registered');
     }
   });
 
@@ -250,6 +265,9 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<ConnectivityGate>()) {
       getIt.unregister<ConnectivityGate>();
     }
+    if (getIt.isRegistered<ShareService>()) {
+      getIt.unregister<ShareService>();
+    }
   });
   if (getIt.isRegistered<AdminRepository>()) {
     getIt.unregister<AdminRepository>();
@@ -262,6 +280,13 @@ Future<_RouterHarness> _pumpRouter(
     getIt.unregister<StorageService>();
   }
   getIt.registerSingleton<StorageService>(_ProbeStorageService());
+  // The /admin/orders builder resolves the share sink at the composition
+  // root now (audit P1), for the same reason as storage above: the probe
+  // needs the registration to exist even though it never taps export.
+  if (getIt.isRegistered<ShareService>()) {
+    getIt.unregister<ShareService>();
+  }
+  getIt.registerSingleton<ShareService>(const _NoOpShareService());
   // AppShell reads the offline gate from GetIt. Unstarted: current is true,
   // so the banner stays hidden and routing assertions are unaffected.
   if (getIt.isRegistered<ConnectivityGate>()) {
@@ -308,8 +333,33 @@ final class _RouterHarness {
 
   String get currentPath => router.routerDelegate.currentConfiguration.uri.path;
 
+  /// Whether the current location actually resolved to a route.
+  ///
+  /// [currentPath] cannot answer this: when no route matches, GoRouter keeps
+  /// the *requested* URI in `currentConfiguration.uri` and renders its
+  /// "Page Not Found" page instead, so an unregistered path still reports
+  /// itself as the current one. Only the match list reveals that.
+  bool get isMatched =>
+      router.routerDelegate.currentConfiguration.matches.isNotEmpty;
+
   Map<String, String> get currentQueryParameters =>
       router.routerDelegate.currentConfiguration.uri.queryParameters;
+}
+
+/// The share sink the route probe registers but never uses: only the
+/// registration needs to exist for the /admin/orders builder to resolve.
+final class _NoOpShareService implements ShareService {
+  const _NoOpShareService();
+
+  @override
+  Future<void> shareText(String message) async {}
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async {}
 }
 
 final class _StubAuthRepository implements AuthRepository {
@@ -432,8 +482,18 @@ final class _RouteProbeAdminRepository implements AdminRepository {
       const Success(null);
 
   @override
-  Future<Result<List<AdminCustomer>>> fetchCustomers() async =>
-      const Success(<AdminCustomer>[]);
+  Future<
+      Result<
+          ({
+            List<AdminCustomer> customers,
+            int? total,
+            CustomerCursor? nextCursor,
+          })>> fetchCustomers({
+    String? query,
+    CustomerCursor? cursor,
+    int limit = defaultCustomersPageSize,
+  }) async =>
+      const Success((customers: <AdminCustomer>[], total: 0, nextCursor: null));
 
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) async =>

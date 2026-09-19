@@ -5,10 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/app_image.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/image_compressor.dart';
-import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/product_review.dart';
 import '../../domain/repositories/reviews_repository.dart';
 import '../cubit/reviews_cubit.dart';
@@ -133,12 +133,7 @@ final class _ReviewTileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppTheme.cardRadius,
-        side: BorderSide(color: scheme.outlineVariant, width: 1),
-      ),
+    return AppCard(
       child: Padding(
         padding: const EdgeInsetsDirectional.all(12),
         child: Column(

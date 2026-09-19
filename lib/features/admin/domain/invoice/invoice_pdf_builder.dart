@@ -107,8 +107,8 @@ final class InvoicePdfBuilder {
                   item.size,
                   item.color,
                   item.quantity.toString(),
-                  item.unitPrice.majorLabel(),
-                  (item.unitPrice * item.quantity).majorLabel(),
+                  item.unitPrice.formatExact(symbol: ''),
+                  (item.unitPrice * item.quantity).formatExact(symbol: ''),
                 ])
             .toList(),
       );
@@ -116,7 +116,7 @@ final class InvoicePdfBuilder {
   static pw.Widget _totals(AdminOrder order) => pw.Container(
         alignment: pw.Alignment.centerRight,
         child: pw.Text(
-          'Total: ${order.total.majorLabel()} EGP',
+          'Total: ${order.total.formatExact()}',
           style: const pw.TextStyle(
               fontSize: 14, color: _emerald, fontWeight: pw.FontWeight.bold),
         ),

@@ -40,6 +40,8 @@ abstract final class Routes {
   static const adminCategories = '/admin/categories';
   static const adminOrders = '/admin/orders';
   static const adminInventory = '/admin/inventory';
+  // Promo codes (§8): create and activate the coupons checkout redeems.
+  static const adminCoupons = '/admin/coupons';
   // Feature-batch §9/§14 + §13 surfaces (merged locally with the batch).
   static const adminReviews = '/admin/reviews';
   static const adminCustomers = '/admin/customers';
@@ -47,12 +49,18 @@ abstract final class Routes {
   static const adminSales = '/admin/sales';
   static const maintenance = '/maintenance';
 
-  // ─── Router-declaration patterns (with `:id` placeholders). Only the
-  // router's `path:` arguments reference these — real destinations are
-  // always built via the factory methods above. The `/new` create route
-  // is declared BEFORE this pattern so GoRouter matches it first. ──────
+  // ─── Router-declaration patterns (literal `:id` placeholders). Only
+  // the router's `path:` arguments reference these — real destinations are
+  // always built via the factory methods below (which percent-encode the
+  // id; never feed a bare `':id'` through a factory — `Uri.encodeComponent`
+  // turns it into `%3Aid`, a static segment that matches nothing).
+  // The `/new` create route is declared BEFORE its sibling pattern so
+  // GoRouter matches it first. ─────────────────────────────────────────
   static const adminProductEdit = '/admin/products/:id';
   static const adminImages = '/admin/images/:id';
+  static const productDetail = '/product/:id';
+  static const adminOrderDetail = '/admin/orders/:id';
+  static const adminVariantEdit = '/admin/variants/:id';
 
   /// Product details for [id].
   ///

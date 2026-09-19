@@ -24,7 +24,7 @@ Widget _harness(String productId) {
         id: productId,
         catalogRepository: LocalCatalogRepository(),
         whatsappShareService: const NoOpWhatsAppShareService(),
-        productShareService: const NoOpProductShareService(),
+        shareService: const NoOpShareService(),
       ),
     ),
   );

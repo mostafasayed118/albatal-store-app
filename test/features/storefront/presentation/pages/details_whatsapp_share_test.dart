@@ -43,7 +43,7 @@ Widget _harness(String productId, _RecordingLauncher launcher) {
         id: productId,
         catalogRepository: LocalCatalogRepository(),
         whatsappShareService: WaMeWhatsAppShareService(launcher),
-        productShareService: const NoOpProductShareService(),
+        shareService: const NoOpShareService(),
       ),
     ),
   );

@@ -75,7 +75,6 @@
   "cashOnDelivery": "Cash on Delivery",
   "myOrders": "My Orders",
   "myProfile": "My Profile",
-  "mockCustomerName": "Ahmed Mansour",
   "premiumMember": "Premium Member",
   "customer": "Customer",
   "membershipTier": "Membership tier",
@@ -244,6 +243,20 @@
   "updateRequiredBody": "This version is no longer supported. Please update the app to continue shopping.",
   "adminCustomers": "Customers",
   "adminSearch": "Search",
+  "adminSearchCustomersHint": "Search name or phone",
+  "customersShownOf": "Showing {shown} of {total}",
+  "@customersShownOf": {
+    "description": "Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.",
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "loadMore": "Load more",
   "invoiceSave": "Save invoice",
   "signInWithGoogle": "Google",
   "signInWithApple": "Apple",
@@ -447,6 +460,7 @@
   "allOrders": "All Orders",
   "noOrdersFound": "No orders found",
   "noOrdersFoundBody": "New orders will appear here as customers check out.",
+  "exportOrdersCsv": "Export orders as CSV",
   "processing": "Processing",
   "allStockLevelsHealthy": "All stock levels are healthy",
   "stockUpdated": "Stock updated",
@@ -604,5 +618,8 @@
   },
   "@appLockUnavailable": {
     "description": "Shown when the device cannot authenticate (no biometrics and no passcode)."
+  },
+  "@exportOrdersCsv": {
+    "description": "Tooltip on the admin order queue's CSV export action, which shares the visible rows as a file (feature-batch §14)."
   }
 }

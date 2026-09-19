@@ -37,7 +37,7 @@ void main() {
                 id: s.pathParameters['id']!,
                 catalogRepository: LocalCatalogRepository(),
                 whatsappShareService: const NoOpWhatsAppShareService(),
-                productShareService: const NoOpProductShareService(),
+                shareService: const NoOpShareService(),
               ),
             );
           },

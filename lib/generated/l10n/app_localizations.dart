@@ -548,12 +548,6 @@ abstract class AppLocalizations {
   /// **'My Profile'**
   String get myProfile;
 
-  /// No description provided for @mockCustomerName.
-  ///
-  /// In en, this message translates to:
-  /// **'Ahmed Mansour'**
-  String get mockCustomerName;
-
   /// No description provided for @premiumMember.
   ///
   /// In en, this message translates to:
@@ -1141,6 +1135,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search'**
   String get adminSearch;
+
+  /// No description provided for @adminSearchCustomersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search name or phone'**
+  String get adminSearchCustomersHint;
+
+  /// Directory count line. {total} is how many rows match the ACTIVE SEARCH (the whole table when no search is active), not just the loaded page.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {shown} of {total}'**
+  String customersShownOf(int shown, int total);
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
 
   /// No description provided for @invoiceSave.
   ///
@@ -2071,6 +2083,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New orders will appear here as customers check out.'**
   String get noOrdersFoundBody;
+
+  /// Tooltip on the admin order queue's CSV export action, which shares the visible rows as a file (feature-batch §14).
+  ///
+  /// In en, this message translates to:
+  /// **'Export orders as CSV'**
+  String get exportOrdersCsv;
 
   /// No description provided for @processing.
   ///

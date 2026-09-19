@@ -4,6 +4,7 @@ import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
+import '../../features/admin/presentation/pages/admin_coupons_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
@@ -53,9 +54,9 @@ import '../services/image_compressor.dart';
 import '../services/navigation_observer.dart';
 import '../services/notification_service.dart';
 import '../services/oauth_service.dart';
-import '../services/product_share_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/service_locator.dart';
+import '../services/share_service.dart';
 import '../services/storage_service.dart';
 import '../services/whatsapp_share_service.dart';
 import '../settings_account_adapter.dart';
@@ -151,15 +152,16 @@ final _routes = <RouteBase>[
         GoRoute(path: Routes.profile, builder: (_, __) => const ProfilePage()),
       ]),
   GoRoute(
-    // Route-declaration pattern: the placeholder passes through
-    // `Uri.encodeComponent` unchanged (a no-op on a bare `:id`).
-    path: Routes.product(':id'),
+    // Literal `:id` pattern (NOT the factory — `Uri.encodeComponent`
+    // would turn `:id` into `%3Aid`, a static segment that matches
+    // nothing; caught by `every admin route resolves`).
+    path: Routes.productDetail,
     builder: (_, s) => DetailsPage(
       id: s.pathParameters['id']!,
       catalogRepository: getIt<CatalogRepository>(),
       gate: getIt<ConnectivityGate>(),
       whatsappShareService: getIt<WhatsAppShareService>(),
-      productShareService: getIt<ProductShareService>(),
+      shareService: getIt<ShareService>(),
       reviewsRepository: getIt.isRegistered<ReviewsRepository>()
           ? getIt<ReviewsRepository>()
           : null,
@@ -263,7 +265,11 @@ final _routes = <RouteBase>[
   ),
   GoRoute(path: Routes.admin, builder: (_, __) => const AdminDashboardPage()),
   GoRoute(
-      path: Routes.adminOrders, builder: (_, __) => const AdminOrdersPage()),
+      path: Routes.adminOrders,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies; the page's own `getIt` lookup is now only a
+      // test-only fallback.
+      builder: (_, __) => AdminOrdersPage(shareService: getIt<ShareService>())),
   GoRoute(
       path: Routes.adminReviews,
       // Composition root (audit P1): the only place that resolves
@@ -278,7 +284,13 @@ final _routes = <RouteBase>[
       builder: (_, __) =>
           AdminCustomersPage(repository: getIt<AdminRepository>())),
   GoRoute(
-    path: Routes.adminOrder(':id'), // declaration pattern (see Routes.product)
+      path: Routes.adminCoupons,
+      // Composition root (audit P1): the only place that resolves
+      // dependencies, like every other admin destination.
+      builder: (_, __) =>
+          AdminCouponsPage(repository: getIt<AdminRepository>())),
+  GoRoute(
+    path: Routes.adminOrderDetail, // literal pattern (see Routes.productDetail)
     builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
   ),
   GoRoute(
@@ -335,7 +347,7 @@ final _routes = <RouteBase>[
     ),
   ),
   GoRoute(
-    path: Routes.adminVariant(':id'), // declaration pattern
+    path: Routes.adminVariantEdit, // literal pattern
     builder: (_, s) => AdminVariantEditorPage(
       productId: s.pathParameters['id']!,
       repository: getIt<AdminRepository>(),

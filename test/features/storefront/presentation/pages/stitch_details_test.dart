@@ -107,7 +107,7 @@ void main() {
           id: productId,
           catalogRepository: repo,
           whatsappShareService: const NoOpWhatsAppShareService(),
-          productShareService: const NoOpProductShareService(),
+          shareService: const NoOpShareService(),
         ),
       );
     }

@@ -54,6 +54,15 @@ void main() {
       expect(meteredLineTotal(const Money(12000), 2, quantity: 3),
           const Money(72000));
     });
+
+    test('a fractional major-unit total renders with its piasters', () {
+      // 39950 minor/m (399.50 EGP/m) x 2.5 m = 99875, i.e. 998.75 EGP.
+      // Truncating this to whole pounds would display less than the
+      // line_total the checkout payload submits for the same line.
+      final total = meteredLineTotal(const Money(39950), 2.5);
+      expect(total, const Money(99875));
+      expect(total.format(), '998.75 EGY');
+    });
   });
 
   group('CartItemPricing extension', () {

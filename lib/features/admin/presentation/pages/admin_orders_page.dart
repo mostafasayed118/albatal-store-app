@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,12 +7,20 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/service_locator.dart';
+import '../../../../shared/services/share_service.dart';
 import '../../domain/entities/admin_order.dart';
+import '../../domain/orders_csv_exporter.dart';
 import '../cubit/admin_cubit.dart';
 
-/// Admin order queue — filter by status, view orders.
+/// Admin order queue — filter by status, export the view as CSV.
 class AdminOrdersPage extends StatefulWidget {
-  const AdminOrdersPage({super.key});
+  const AdminOrdersPage({super.key, this.shareService});
+
+  /// Share sink for the CSV export (feature-batch §14). The composition
+  /// root supplies the real one; the `getIt` lookup is a test-only
+  /// fallback, matching the other admin pages.
+  final ShareService? shareService;
 
   @override
   State<AdminOrdersPage> createState() => _AdminOrdersPageState();
@@ -23,6 +33,19 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
     context.read<AdminCubit>().loadOrders();
   }
 
+  /// Exports exactly the queue the admin is looking at — the filtered
+  /// rows, not every loaded order — so the CSV always matches what the
+  /// screen shows.
+  Future<void> _exportCsv() async {
+    final orders = context.read<AdminCubit>().state.filteredOrders;
+    if (orders.isEmpty) return;
+    await (widget.shareService ?? getIt<ShareService>()).shareFile(
+      fileName: ordersCsvFileName(DateTime.now()),
+      content: buildOrdersCsv(orders),
+      mimeType: 'text/csv',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -30,6 +53,20 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       appBar: AppBar(
         title: Text(l10n.orderQueue),
         actions: [
+          // Exporting is only meaningful with rows to export, so the
+          // action disables itself on an empty queue rather than sharing
+          // a header-only file.
+          BlocBuilder<AdminCubit, AdminState>(
+            buildWhen: (prev, next) =>
+                prev.filteredOrders.isEmpty != next.filteredOrders.isEmpty,
+            builder: (context, state) => IconButton(
+              tooltip: l10n.exportOrdersCsv,
+              onPressed: state.filteredOrders.isEmpty
+                  ? null
+                  : () => unawaited(_exportCsv()),
+              icon: const Icon(Icons.share_outlined),
+            ),
+          ),
           PopupMenuButton<AdminOrderStatus?>(
             icon: const Icon(Icons.filter_list),
             onSelected: (status) {
@@ -57,7 +94,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
             // A failed load must not read as an empty queue.

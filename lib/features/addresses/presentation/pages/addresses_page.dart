@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/address.dart';
 import '../cubit/addresses_cubit.dart';
@@ -17,26 +18,24 @@ final class AddressesPage extends StatelessWidget {
         body: BlocBuilder<AddressesCubit, AddressesState>(
           builder: (context, s) {
             if (s.status == AddressesStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
+              return const FeedbackView(type: FeedbackViewType.loading);
             }
             if (s.status == AddressesStatus.failure) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(s.errorMessage ?? l10n.errorTitle),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () =>
-                          context.read<AddressesCubit>().load(force: true),
-                      child: Text(l10n.retry),
-                    ),
-                  ],
-                ),
+              return FeedbackView(
+                type: FeedbackViewType.error,
+                body: s.errorMessage ?? l10n.errorTitle,
+                onAction: () =>
+                    context.read<AddressesCubit>().load(force: true),
               );
             }
             if (s.addresses.isEmpty) {
-              return Center(child: Text(l10n.noAddressesSaved));
+              // No CTA override: the add-address FAB already carries the
+              // addAddress label on this screen.
+              return FeedbackView(
+                type: FeedbackViewType.empty,
+                icon: Icons.location_on_outlined,
+                body: l10n.noAddressesSaved,
+              );
             }
             return ListView(
               padding: const EdgeInsets.all(16),

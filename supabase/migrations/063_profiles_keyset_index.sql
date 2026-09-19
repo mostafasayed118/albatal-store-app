@@ -1,0 +1,71 @@
+-- ============================================================================
+-- 063_profiles_keyset_index.sql — index for the admin directory's keyset walk
+-- ============================================================================
+-- Provenance: owner-requested follow-up to the customer-directory paging work
+-- (branch feat/admin-customer-tier). The directory stopped reading a silent
+-- `limit(500)` and started walking keyset pages; this makes that walk
+-- index-backed instead of sort-backed.
+--
+-- Problem
+-- -------
+-- SupabaseAdminRepository.fetchCustomers asks for profiles ordered
+-- newest-first by `(created_at DESC, id DESC)` and resumes each page with
+--     created_at < :ts OR (created_at = :ts AND id < :id)
+-- (see `customerKeysetFilter` in
+-- lib/features/admin/data/supabase_admin_repository.dart).
+--
+-- public.profiles currently carries ONLY its primary key
+-- (001_initial_schema.sql). Nothing serves that ordering, so Postgres sorts the
+-- matching rows on every page request. On an empty or 25-row table that is
+-- invisible; it is the shape of thing that stops being invisible at a few
+-- hundred thousand rows.
+--
+-- Correctness is NOT affected. Keyset paging is correct with or without this
+-- index — this is a performance change only, which is why it is a separate
+-- migration that can land, or be rejected, on its own.
+--
+-- Why `(created_at DESC, id DESC)` and not `created_at` alone
+-- ----------------------------------------------------------
+-- The sort key has to be TOTAL, because `created_at` is not unique: a seed, a
+-- bulk import, or two signups in the same clock tick all share an instant, and
+-- ordering by the instant alone leaves those ties unordered between queries.
+-- Both columns are listed in the same direction as the ORDER BY so the index
+-- satisfies the ordering directly; a single-column index would still have to
+-- sort the ties, and could not serve the `id < :id` tie-break predicate at all.
+--
+-- Directed DESC to match the client's ORDER BY. A plain ASC index would be
+-- usable by a backward scan, but matches the request as written, which is what
+-- an EXPLAIN can be read against.
+--
+-- Why no NULLS LAST
+-- -----------------
+-- profiles.created_at is `TIMESTAMPTZ NOT NULL DEFAULT now()`
+-- (001_initial_schema.sql, line 17), so null placement cannot arise and the
+-- client's `nullsFirst: false` is served by a plain DESC index. If that column
+-- is ever made nullable, revisit this — a keyset cursor and a NULL-bearing sort
+-- key do not mix (000/063 both assume a strict total order).
+--
+-- Why not CONCURRENTLY
+-- --------------------
+-- CREATE INDEX CONCURRENTLY cannot run inside a transaction block, and tooling
+-- applies each migration in one. At today's row counts a plain build is
+-- instant. A table large enough to need CONCURRENTLY would need this index
+-- built out-of-band instead, not by editing this statement.
+--
+-- Why no trigram/serving column for the search
+-- --------------------------------------------
+-- Deliberately out of scope here. fetchCustomers' `ilike '%term%'` search on
+-- full_name/phone cannot use a btree index; the analogous fix is a pg_trgm GIN
+-- index (there is precedent: idx_products_name_trgm, 055_search_suggestions).
+-- That is a separate decision about search cost, not about this walk, so it is
+-- left for the owner rather than smuggled into a keyset-paging change.
+--
+-- Rollback
+-- --------
+-- DROP INDEX IF EXISTS public.idx_profiles_created_at_id;
+-- (Rollback restores the pre-063 plan: one sort per page request. No data
+-- change either way.)
+-- ============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_profiles_created_at_id
+  ON public.profiles (created_at DESC, id DESC);

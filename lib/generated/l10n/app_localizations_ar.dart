@@ -238,9 +238,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myProfile => 'حسابي';
 
   @override
-  String get mockCustomerName => 'أحمد منصور';
-
-  @override
   String get premiumMember => 'عضو مميز';
 
   @override
@@ -577,6 +574,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adminSearch => 'بحث';
+
+  @override
+  String get adminSearchCustomersHint => 'ابحث بالاسم أو الهاتف';
+
+  @override
+  String customersShownOf(int shown, int total) {
+    return 'عرض $shown من $total';
+  }
+
+  @override
+  String get loadMore => 'تحميل المزيد';
 
   @override
   String get invoiceSave => 'حفظ الفاتورة';
@@ -1090,6 +1098,9 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get noOrdersFoundBody =>
       'ستظهر الطلبات الجديدة هنا عندما يُتم العملاء الشراء.';
+
+  @override
+  String get exportOrdersCsv => 'تصدير الطلبات بصيغة CSV';
 
   @override
   String get processing => 'قيد المعالجة';

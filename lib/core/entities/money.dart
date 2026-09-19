@@ -31,10 +31,33 @@ final class Money extends Equatable {
   /// Major units as a double — for display only, never for arithmetic.
   double get majorUnits => minorUnits / 100;
 
-  /// Formats as a currency string: `Money.egp(1290).format()` → `"1290 EGY"`.
-  /// Uses whole major units (no decimals) to match the existing UI convention.
-  /// Truncates (integer division) — fractional minor units never round up.
-  String format({String symbol = 'EGY'}) => '${minorUnits ~/ 100} $symbol';
+  /// Formats as a compact currency string for UI display:
+  /// `Money.egp(1290).format()` → `"1290 EGY"`.
+  ///
+  /// Whole amounts carry no decimals (the app's existing UI convention),
+  /// but fractional piasters are KEPT rather than truncated:
+  /// `Money(99875).format()` → `"998.75 EGY"`. This matters because
+  /// cut-length metered lines routinely land on a fractional major unit
+  /// ([meteredLineTotal] rounds to whole minor units, not whole pounds),
+  /// so truncating would show the customer a total that disagrees with
+  /// the amount recorded on the order.
+  String format({String symbol = 'EGY'}) {
+    final minor = minorUnits % 100;
+    if (minor == 0) return '${minorUnits ~/ 100} $symbol';
+    return '${minorUnits ~/ 100}.${minor.toString().padLeft(2, '0')} $symbol';
+  }
+
+  /// Formats with exactly two decimals, for documents (invoices, admin
+  /// tables) where the exact amount must always be legible:
+  /// `Money.egp(1290).formatExact()` → `"1290.00 EGP"`.
+  ///
+  /// Pass an empty [symbol] where a column header already names the
+  /// currency: `Money(99875).formatExact(symbol: '')` → `"998.75"`.
+  String formatExact({String symbol = 'EGP'}) {
+    final minor = (minorUnits % 100).toString().padLeft(2, '0');
+    final amount = '${minorUnits ~/ 100}.$minor';
+    return symbol.isEmpty ? amount : '$amount $symbol';
+  }
 
   // ─── Canonical display helpers (audit 2026-09: four screens had
   // hand-rolled minor-units→EGP formatting — now single-sourced here) ──

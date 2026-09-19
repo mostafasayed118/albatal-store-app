@@ -143,7 +143,7 @@ Widget _detailsHarness(CatalogRepository repo, String id) {
         catalogRepository: repo,
         gate: offlineGate,
         whatsappShareService: const NoOpWhatsAppShareService(),
-        productShareService: const NoOpProductShareService(),
+        shareService: const NoOpShareService(),
       ),
     ),
   );

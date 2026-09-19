@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
+import 'package:al_batal_elite/features/admin/presentation/pages/admin_coupons_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_image_manager_page.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_inventory_page.dart';
@@ -18,10 +20,12 @@ import 'package:al_batal_elite/shared/components/app_image.dart';
 import 'package:al_batal_elite/shared/components/feedback_view.dart';
 import 'package:al_batal_elite/shared/services/image_compressor.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/share_service.dart';
 import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -57,6 +61,24 @@ class _ShrinkCompressor implements ImageCompressor {
   @override
   Future<Uint8List> compress(Uint8List bytes) async =>
       Uint8List.sublistView(bytes, 0, 1024);
+}
+
+/// Captures what the CSV export actually hands the share sheet, so the
+/// assertions can read the real payload instead of trusting the call.
+class _RecordingShareService implements ShareService {
+  final List<String> shared = [];
+  final List<({String fileName, String content, String mimeType})> files = [];
+
+  @override
+  Future<void> shareText(String message) async => shared.add(message);
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async =>
+      files.add((fileName: fileName, content: content, mimeType: mimeType));
 }
 
 AdminOrder _order(String id, AdminOrderStatus status) => AdminOrder(
@@ -124,6 +146,62 @@ void main() {
           .called(1);
     });
 
+    testWidgets('the Coupons tile reaches the coupon manager', (tester) async {
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => const Success([]));
+      when(() => repo.getLowStockProducts(threshold: any(named: 'threshold')))
+          .thenAnswer((_) async => const Success([]));
+      when(() => repo.isCurrentUserAdmin()).thenAnswer((_) async => true);
+      when(() => repo.fetchCoupons())
+          .thenAnswer((_) async => const Success(<AdminCoupon>[]));
+
+      // Tall viewport: the tile sits below the stat cards and the other
+      // quick actions, so the default 800x600 window never lays it out.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      // The tile is the ONLY way an admin reaches coupon management: §8
+      // shipped the page, cubit and repository methods with no destination,
+      // so a coupon could be redeemed at checkout but never created.
+      final router = GoRouter(
+        initialLocation: '/admin',
+        routes: [
+          GoRoute(
+              path: '/admin', builder: (_, __) => const AdminDashboardPage()),
+          GoRoute(
+              path: '/admin/coupons',
+              builder: (_, __) => AdminCouponsPage(repository: repo)),
+        ],
+      );
+      addTearDown(router.dispose);
+      final adminCubit = AdminCubit(repo);
+      addTearDown(adminCubit.close);
+
+      // The cubit sits above the router, as it does in the app (the routed
+      // pages read it from the root providers).
+      await tester.pumpWidget(BlocProvider.value(
+        value: adminCubit,
+        child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Coupons'), findsOneWidget);
+
+      await tester.tap(find.text('Coupons'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(AdminCouponsPage), findsOneWidget,
+          reason: 'the tile must land on the coupon manager, not a 404');
+      verify(() => repo.fetchCoupons()).called(1);
+    });
+
     testWidgets('error state offers a retry that actually reloads',
         (tester) async {
       // Both loaders fail so the last emitted state is the error.
@@ -182,6 +260,81 @@ void main() {
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(find.text('offline'), findsOneWidget);
       expect(find.text('No orders found'), findsNothing);
+    });
+    testWidgets('CSV export attaches the loaded queue as a real .csv file',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => Success([
+                _order('ORD-1', AdminOrderStatus.placed),
+                _order('ORD-2', AdminOrderStatus.shipped),
+              ]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Export orders as CSV'));
+      await tester.pump();
+
+      expect(share.files, hasLength(1),
+          reason: 'the export action must actually reach the share sheet');
+      expect(share.shared, isEmpty,
+          reason: 'a CSV is an attachment, not share-sheet body text');
+      final file = share.files.single;
+      expect(
+          file.content,
+          startsWith(
+              'order_id,placed_at,status,items,total_minor,customer_name'));
+      expect(file.content, contains('ORD-1'));
+      expect(file.content, contains('ORD-2'));
+      expect(file.fileName, endsWith('.csv'));
+      expect(file.mimeType, 'text/csv',
+          reason: 'spreadsheet apps pick the handler off the mime type');
+    });
+
+    testWidgets('CSV export follows the status filter, not the whole queue',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => Success([
+                _order('ORD-1', AdminOrderStatus.placed),
+                _order('ORD-2', AdminOrderStatus.shipped),
+              ]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.filter_list));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Placed'));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byTooltip('Export orders as CSV'));
+      await tester.pump();
+
+      expect(share.files.single.content, contains('ORD-1'));
+      expect(share.files.single.content, isNot(contains('ORD-2')),
+          reason: 'the CSV must mirror the queue on screen');
+    });
+
+    testWidgets('CSV export is unavailable while the queue is empty',
+        (tester) async {
+      final share = _RecordingShareService();
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => const Success([]));
+
+      await tester.pumpWidget(harness(AdminOrdersPage(shareService: share)));
+      await tester.pump();
+      await tester.pump();
+
+      final button = tester.widget<IconButton>(
+          find.widgetWithIcon(IconButton, Icons.share_outlined));
+      expect(button.onPressed, isNull,
+          reason: 'a header-only CSV is not worth offering');
+      expect(share.files, isEmpty);
     });
   });
 
@@ -609,6 +762,35 @@ void main() {
             'Upload the first image so the product has a gallery on the store.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('load failure offers a retry that re-reads the gallery',
+        (tester) async {
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Failure(AppError('offline')));
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+            productId: 'pid', repository: repo, storage: storage),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(FeedbackView), findsOneWidget);
+      expect(find.text('offline'), findsOneWidget);
+
+      // The retry must go back to the repository, not merely clear the
+      // message: the second read has to land as a rendered tile.
+      when(() => repo.getProductImagePaths('pid'))
+          .thenAnswer((_) async => const Success(['product-images/pid/a.jpg']));
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      await tester.pump();
+
+      verify(() => repo.getProductImagePaths('pid')).called(2);
+      expect(find.byType(AppImage), findsOneWidget,
+          reason: 'the retry re-reads the gallery instead of only clearing it');
+      expect(find.text('offline'), findsNothing);
     });
 
     testWidgets('deleting an image confirms first, then confirms the outcome',

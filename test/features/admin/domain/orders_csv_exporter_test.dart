@@ -64,4 +64,21 @@ void main() {
       expect(csv.trim().split('\r\n').length, 1);
     });
   });
+
+  group('ordersCsvFileName (§14)', () {
+    test('dates the attachment so repeat exports stay distinguishable', () {
+      expect(
+        ordersCsvFileName(DateTime(2026, 9, 16)),
+        'orders-2026-09-16.csv',
+      );
+    });
+
+    test('zero-pads single-digit months and days', () {
+      expect(
+        ordersCsvFileName(DateTime(2026, 1, 5)),
+        'orders-2026-01-05.csv',
+        reason: 'an unpadded name sorts wrong and reads as a typo',
+      );
+    });
+  });
 }

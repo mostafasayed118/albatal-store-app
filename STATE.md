@@ -1,6 +1,38 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (PR #77 opened as draft for `fix/audit-findings-0919`; owner-approved; merge stays gated).
+Last run: 2026-09-19 (PR #77 merge: origin/master merged into `fix/audit-findings-0919`, 7 conflicts resolved, gates 985/985; owner said "merge").
+
+## New — 2026-09-19 (PR #77 merge prep: master merged in, conflicts resolved, 985/985)
+
+- Owner: "merge". PR #77 was draft + CONFLICTING (branch base 4cedc42 vs
+  origin/master 0962085 with the part-16 consolidation). Merged
+  origin/master into the branch per the house pattern; 7 conflicts:
+- **invoice_pdf_builder:** master's `formatExact` (pinned by master's
+  `invoice_pdf_money_test`); merged money.dart carries both formatters.
+- **admin_coupons_page:** master's file wholesale (AppCard/FeedbackView/
+  getIt-fallback + `safeMinorToEgpLabel`); our `required repository` is
+  superseded by master's optional+fallback that its own
+  `admin_coupons_page_test` pins.
+- **admin_dashboard_page:** union — our lazy `ListView.builder` kept +
+  master's coupons `_ActionTile` appended.
+- **details_page:** share seam migrated to master's `ShareService`
+  (`productShareService` class no longer exists on master): optional
+  `shareService` ctor param + `?? getIt<ShareService>()` fallback;
+  `NoOpProductShareService` → `NoOpShareService implements ShareService`
+  (6 harnesses updated); router passes `getIt<ShareService>()`.
+- **app_router:** union — master's `adminCoupons` route + our
+  `Routes.adminOrder` pattern; unused `product_share_service` import dropped.
+- **reviews_section:** both contested imports unused in merged body — dropped.
+- **STATE.md:** union — our PR-77/device-test top + master's part-16 block.
+- **Latent bug caught by master's test (fix attempt 1/3):** our
+  `Routes.adminOrder(':id')` declaration pattern produced
+  `/admin/orders/%3Aid` (`encodeComponent` DOES encode `:`) — a static
+  segment matching nothing. `every admin route resolves` failed on
+  `/admin/orders/o-1`. Fixed with literal pattern consts
+  (`productDetail`/`adminOrderDetail`/`adminVariantEdit`); zero `(':id')`
+  factory-declarations remain.
+- **Gates on merge head:** `flutter analyze` 0 issues; `flutter test`
+  **985/985 PASS** (984 + the fixed router test).
 
 ## New — 2026-09-19 (owner-approved review + commit + push; gates re-verified)
 
@@ -308,9 +340,1689 @@ Last run: 2026-09-19 (PR #77 opened as draft for `fix/audit-findings-0919`; owne
   `build/app/outputs/flutter-apk/app-staging-master-0962085.apk` (71.9MB).
 - PENDING: owner device test (staging admin → Customers → terms below),
   then delete the 3 throwaways (sign-in + delete-account each).
+Last run: 2026-09-19 (part 16: **WORKTREE CONSOLIDATION** — the five unmerged
+worktree branches are now IN master, in dependency order, and the worktrees are
+gone. Order landed: `refactor/money-piasters` → `refactor/card-decoration` →
+`feat/admin-coupons-route` → `feat/orders-csv-export` →
+`feat/admin-customer-tier`. Money first because it is the foundation: it DELETED
+`lib/core/utils/currency.dart` and made `Money.format()` the one money API, so
+every later branch that renders a price depends on it. Card next (the `AppCard`
+single definition), then coupons/CSV/customer-tier on top of the router + ARBs.
 
-Last run: 2026-09-16 (performance re-scored on the owner's physical
-device: 9.0 -> 10.0; AUDIT COMPLETE at 10.0).
+**Recon first, and it changed the plan.** `master`'s 10 pending commits were
+**`STATE.md`-only**, so each branch merged into master CLEANLY in isolation —
+`git merge-tree --write-tree` proved it before anything was touched. Every real
+conflict was therefore BRANCH-TO-BRANCH, which is only visible when you stack
+them. Three conflicts total:
+
+1. `admin_coupons_page.dart` imports — kept BOTH `core/entities/money.dart`
+   (money-piasters) and `shared/components/app_card.dart` (card-decoration).
+2. `cart_item_tile.dart` — the interesting one, a **semantic** conflict, not an
+   import clash: card-decoration adds `import '.../core/utils/currency.dart'`
+   while money-piasters **deleted that file**. Git saw a clean import union;
+   taking it would have left a dead import. Resolution keeps `AppCard` + the
+   money-piasters body (`item.effectiveLineTotal.format()`), drops the import.
+3. `admin_customers_page.dart` imports — resolved as the union of imports that
+   are actually used, dropping `shared/theme/app_theme.dart` after verifying it
+   has **0** references post-merge (card-decoration removed it because `AppCard`
+   owns the radius).
+
+**The l10n regenerated with ZERO drift** — `flutter gen-l10n` produced no diff,
+so the auto-merged ARBs and the auto-merged generated files agree. The
+`c04e386` dead-key removal and the CSV branch's new keys coexist.
+
+**Deliberately NOT merged: the SDK churn.** `flutter pub get` resolves 7 newer
+packages (`intl` 0.20.2 → 0.20.3 and friends) on this machine's Flutter; that is
+the still-unabsorbed Flutter 3.47.4 upgrade riding in as uncommitted lockfile
+churn, present in every worktree. `pubspec.lock` was restored to the committed
+resolution so the consolidation cannot silently bundle an unreviewed dependency
+bump. The upgrade remains its own future change.
+
+Evidence on the exact merged tree: `flutter analyze` **0** · `dart format`
+clean (**435** files) · `flutter test` **980/980** (899 pre-merge baseline + 81
+from the branches). The verified integration tree hash equals master's after a
+fast-forward, so what was tested is what was promoted. Worktrees removed and the
+five branches deleted; **only `master` remains**. Safety tag
+`backup/master-pre-consolidation` at `e097d56` is the pre-merge master.
+**Pushed** (owner-approved, 2026-09-19): `origin/master` moved `84ca10a` →
+`8fa709f`. The push auto-resolved BOTH draft PRs — GitHub marked #73 and #74
+**MERGED** the moment their head commits became ancestors of master, so no
+retargeting was needed (both already had `base: master`).
+
+**The push caught a real gap first, and it is the important lesson.**
+`origin/feat/admin-customer-tier` sat at `2aeab31` — one commit **AHEAD** of the
+local worktree tip `c04e386` — so the consolidation had MISSED it. It is a
+genuine bugfix: `rest()` built `new URL(path, BASE)` with a leading-slash path,
+which resolves against the **host root** and drops `/rest/v1` (the documented
+staging-readiness 404), plus a graceful skip instead of aborting on `baseline[0]`
+when staging shows zero visible rows. Merged as `8fa709f` after confirming it
+touches only `supabase/tests/run_keyset_paging_proof.mjs` (no Dart, so the
+980/980 result still holds). **A local worktree branch can be stale relative to
+origin — merge origin's tip, not the local one, and verify every remote head
+before declaring a consolidation complete.**
+
+Migration ordering hazard from part 11 is UNCHANGED and still applies.
+
+**Branch cleanup (2026-09-19, owner-approved).** `feat/orders-csv-export` and
+`feat/admin-customer-tier` are DELETED from origin; both PRs were already
+MERGED. The deletion is content-safe by construction: every commit on each
+branch is an ancestor of master — for `feat/admin-customer-tier` specifically,
+BOTH parents of its tip `b1942c6` (`2aeab31` and `84ca10a`) are already in
+master, so the branch held no unique content beyond one stale STATE.md line.
+
+⚠️ **CONCURRENT-SESSION HAZARD.** A second agent session
+(`opencode <opencode@local>`) was pushing to `feat/admin-customer-tier` WHILE
+this run was in flight — it authored `2aeab31` and, five minutes later,
+`b1942c6`, a merge of the **STALE** pre-consolidation master `84ca10a` back into
+the branch. That branch was therefore BEHIND master and its tree re-added
+`currency.dart` and `product_share_service.dart`, so merging it would have
+**reverted the consolidation**. It was deleted before that could happen.
+**Rule: before merging any long-lived branch, confirm its base is not a stale
+master** — the branch must contain current master, not merely share an ancestor.
+The session may still hold a local copy and could recreate the branch.
+
+Prior run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
+from the part-5 report is fixed. `mockCustomerName` ('Ahmed Mansour' /
+'أحمد منصور'), a dead demo value riding in the production ARBs since it landed,
+removed from both ARBs and the generated l10n regenerated (5 files, 14
+deletions). Branch `feat/admin-customer-tier`, commit `c04e386`, PUSHED onto
+draft PR #74. Removal is compile-proven: zero references in lib/ and test/
+(word-boundary sweep over lib/features, lib/shared, lib/core and the test
+trees), and `flutter analyze` stays 0 now that the getter is gone from the
+abstract class — any leftover caller would be a compile error. The six OTHER
+candidate dead keys (`membershipTier`, `advanceOrder`, `orderMarkedAsShipped`,
+`orderSummary`, `manageCoupons`, `couponActive`) were NOT deleted — each is a
+product decision (build the UI that uses it, or drop the string), and
+`advanceOrder`'s history (UX-001, removed for safety) makes its deletion
+contentious. Finding #2 (the untested cubit) verified CLOSED: the cubit test
+file pins load/loadMore/search/setMembershipTier. Evidence: analyze 0 · format
+clean (430) · `flutter test` **955/955**. Prior run: 2026-09-17 (part 14: **FULL-RANGE DIGIT TRANSLITERATION** — 065 now maps
+EVERY Unicode Nd block (75 non-ASCII, unicodedata 16.0.0), not just the two
+Arabic ranges, closing the Devanagari-class residual recorded in part 12.
+Branch `feat/admin-customer-tier`, commit `daaf7b8`, worktree
+`.trees/customer-tier`, PUSHED onto **draft PR #74**. The tables are GENERATED:
+`supabase/tests/gen_phone_digit_ranges.py` derives the migration's `translate`
+tables, the Dart block list and the probe fixtures from one Unicode enumeration
+and `--verify` fails when any shipped artifact drifts — a wrong table entry
+**corrupts** `phone_digits` rather than missing a match, so hand-writing 750
+codepoints was the risk being removed. **Second find: the probe's JS mirror did
+not transliterate the term** — a native-digit term failed its ASCII shape gate
+and matched via the literal `phone` fallback, so the native-direction checks
+introduced in part 12 had been green-checking a filter the real client never
+builds. The mirror now uses a generated `TRANSLIT_PAIRS` table (parity is
+asserted as a chain: filter → digit gate → transliterate → table), and the SQL
+mutation battery was re-baselined against the fixed mirror: translate removed →
+**225 checks fail (75×3)**, one base dropped → **exactly 3**, TO-table truncated
+→ **all but the first block's 3**. Dart mutations **4/4** (generated list, rune
+vs code-unit iteration, shape gate, positional mapping). Evidence: live probe
+**255/255** against PostgREST 12.2.3 / PG 15.19 (all 75 blocks in BOTH
+directions), `--verify` OK, `flutter analyze` 0, format clean (430 files),
+`flutter test` **955/955** (953 + the 2 extended-range pins the interrupted run
+had added but never re-ran the suite for). Generator layout matches `dart
+format`, so `--apply` output is byte-stable. Touches `supabase/` — OUTSIDE the
+`lib/`-only auto-fix scope; migrations **NOT applied**.
+
+Prior run: 2026-09-16 (part 13: the directory's phone filter pinned **END TO END**
+from a widget test, which required extracting the mock-PostgREST fakes into
+`test/helpers/supabase_admin_fakes.dart`). Branch `feat/admin-customer-tier`,
+commit `e856d7e`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
+The point: the filter string is built in the DATA layer, so the old widget
+harness could only prove the page *hands down* a term — "the directory sends a
+phone_digits filter" was two half-claims in different files with nothing pinning
+the join. Two new widget tests now drive the REAL `SupabaseAdminRepository` and
+read the `or` tree it built. Evidence: **5/5 mutations bite including one of the
+PAGE itself**, so the tests provably fail when the data layer or the page is
+wrong; `flutter analyze` 0, format clean (430 files), `flutter test` **953/953**.
+**No production code changed** — `test/` only. Prior run: 2026-09-16 (part 12: **NATIVE-DIGIT NORMALISATION** + dropping the now
+vestigial phone trigram index — two owner asks). Branch `feat/admin-customer-tier`,
+commit `e12bc67`, worktree `.trees/customer-tier`, PUSHED onto **draft PR #74**.
+The headline is a SECOND defect found in the same expression: `[^0-9]` is
+ASCII-only, so a number stored in Arabic-Indic digits had every digit DELETED
+and `phone_digits` came out EMPTY — those rows were unreachable by ANY digit
+search, ASCII ones included. Verified server-side: the old expression maps
+٠١٢٣٤٥٦٧٨٩ to `''`, the new one to `0123456789`. Evidence: live probe **36/36**
+(was 30/30) with the Arabic rows checked from both directions, 5/5 Dart and
+3/3 SQL mutations (each failing for the right reason), `flutter analyze` 0,
+format clean (429 files), `flutter test` **951/951**. Touches `supabase/` —
+OUTSIDE the `lib/`-only auto-fix scope; migrations **NOT applied**. Prior run: 2026-09-16 (part 11: **PHONE NORMALISATION** — closes the residual
+recorded in parts 9 and 10. `profiles.phone` stores whatever the customer typed
+(`+966 50 123 4567`), so a digit-only search matched nothing; the fix is a
+STORED generated `phone_digits` column (migration 065) PLUS term normalisation
+in the client, because normalising only one half cannot work. Branch
+`feat/admin-customer-tier`, commit `9a306d9`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74**. Evidence: `flutter analyze` 0 issues, format clean
+(429 files), `flutter test` **947/947** (940 baseline + 7), 9/9 Dart mutations
+bite, the SQL expression mutated to strip only spaces fails 7 live checks, the
+new index assertion is non-vacuous (exit 3 when dropped), and the HTTP probe is
+**30/30 against live PostgREST 12.2.3 / PostgreSQL 15.19** including the
+decisive pre-065 negative control. Touches `supabase/` — OUTSIDE the `lib/`-only
+auto-fix scope; migrations **NOT applied**, and they must ship BEFORE the
+matching client build (see the ordering hazard below). Prior run: 2026-09-16 (part 10: **pg_trgm SEARCH INDEXES** for the customer
+directory — the search's leading-wildcard ILIKE was a full sequential scan.
+Branch `feat/admin-customer-tier`, commit `2a152e8`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74**. Evidence: the new planner check ASSERTS the index
+is used and **fails when it is dropped** (exit 3), 249 → 37 shared buffers and
+10.8 ms → 0.24 ms at 20 124 rows, HTTP probe still **18/18**. No Dart changed —
+`lib/`+`test/` are byte-identical to the verified 940/940 state. Still OUTSIDE
+the `lib/`-only auto-fix scope; the migration is **NOT applied**. Prior run: 2026-09-16 (part 9: §14 customer directory **PHONE SEARCH** + the keyset
+**index migration** + a **REAL PostgREST proof** of both query strings). Branch
+`feat/admin-customer-tier`, commits `e67f05f` + `e454514` + `6db46a1`, worktree
+`.trees/customer-tier`, PUSHED onto **draft PR #74**. Evidence: `flutter analyze`
+0 issues, format clean (429 files), `flutter test` **940/940** (933 baseline + 7),
+5/5 mutation checks bite with byte-identical restore, and
+`run_keyset_paging_proof.mjs` **18/18 against a live PostgREST 12.2.3**. NOTE:
+touches `supabase/` (a migration + a probe) and `l10n/` — both OUTSIDE the loop's
+`lib/`-only auto-fix scope, so they need owner review; the migration is **NOT
+applied**. Prior run: 2026-09-16 (part 8: §14 customer directory switched from OFFSET paging
+to **KEYSET paging** — a row can no longer be duplicated or skipped when two
+profiles share a `created_at`, or when a customer signs up mid-scroll. Branch
+`feat/admin-customer-tier`, commit `f8004b8`, worktree `.trees/customer-tier`,
+PUSHED onto **draft PR #74** (the run also opened the PR and, on the owner's
+ask, added phone search to the open backlog). Evidence: `flutter analyze` 0
+issues, format clean (429 files), `flutter test` **933/933** (899 baseline + 34
+on this branch), 8/8 mutation checks bite. `lib/` scope only — no ARB, no
+`pubspec.*`. Prior run: 2026-09-16 (part 7: §14 **customer directory PAGED + searched server-side** —
+closes part 5's finding #1, the silent 500-row cap. Branch
+`feat/admin-customer-tier`, commit `d9ffb92`, worktree `.trees/customer-tier`,
+PUSHED onto draft PR #74; master untouched except the docs-only `e80e248`. Evidence:
+`flutter analyze` 0 issues, format clean (429 files), `flutter test` **926/926**
+(899 baseline + 27 on this branch), 8/8 mutation checks bite with
+byte-identical restore. Prior run: 2026-09-16 (§14 **membership control MOVED onto the customer directory**
+— closes the audit's finding #3. Branch `feat/admin-customer-tier`, commit
+`053ff16`, worktree `.trees/customer-tier`, **NOT pushed** (a new branch needs
+push approval); master untouched at `533c232`. Evidence: `flutter analyze` 0
+issues, format clean (429 files), `flutter test` **913/913** (899 baseline + 8
+cubit pins + 6 widget pins), 4/4 mutation checks bite with byte-identical
+restore. Prior run: 2026-09-16 (§14 orders CSV export WIRED → real .csv attachment → share
+sink split into `share_service.dart` → exporter test relocated; then a
+**report-only §14 admin-ops audit** that found three more spec'd-but-undelivered
+items. Branch `feat/orders-csv-export`, commits `d8e4791` + `4f74806` + `8c5ef62`
++ `06f8e23`, worktree `.trees/orders-csv-export`, PUSHED as **draft PR #73**
+(18 files / 4 commits); master untouched at `533c232`. Evidence: `flutter analyze`
+0 issues, format clean (427 files), `flutter test` **904/904** (899 baseline + 3
+wiring pins + 2 filename pins). Prior run: backlog #4 CLOSED — the Stitch card
+decoration now has
+ONE definition: new `AppCard` in `lib/shared/components/app_card.dart`,
+adopted by all 12 hand-rolled call sites across 10 files, with the four literal
+`circular(16)` radii replaced by the token — branch `refactor/card-decoration`,
+commit `e94c24e`, worktree `.trees/card-decoration`, **NOT pushed** (a new
+branch needs push approval); master untouched at `533c232`. Evidence:
+`flutter analyze` 0 issues, format clean (428 files), `flutter test`
+**903/903**. Prior run: the admin coupon surface WIRED (`feat/admin-coupons-route`,
+`5c08a4e`) plus the vacuous admin-path probe fix, PUSHED as **draft PR #72**,
+900/900. Before that: `refactor/money-piasters` (`643d39a`, `2aecd76`,
+`0c9e759`, `d342383`, `eb7feb9`) = money-formatting fix + invoice money pins +
+real-font retrofit of every 1.4-scale pin + the grid-card clipping fix,
+PUSHED as **draft PR #71**, 19 files / 5 commits, 914/914.)
+
+## New — 2026-09-16 (part 13: end-to-end filter pin + harness extraction — `e856d7e`)
+
+Owner: "add a widget test that types a digit-only query and asserts the
+directory sends the phone_digits filter". Owner chose the approach: extract the
+harness rather than pin a weaker seam.
+
+### Why the assertion was not possible before
+
+`customerSearchFilter` builds the filter string in the **data** layer, and the
+page tests drive a stubbed `AdminRepository` (mocktail). So a widget test there
+proves the page hands down a *term* — nothing about what the term becomes on the
+wire. "The directory sends a `phone_digits` filter" was really **two
+half-claims living in different files, with nothing pinning the join**: one test
+for "the page passes the term", another for "the repository turns a term into a
+filter", and no test asserting the composed behaviour.
+
+### The extraction
+
+The mock-PostgREST fakes (`MockSupabaseClient`, `FakeFilterBuilder`,
+`FakeTransformBuilder`, `FakeResponseBuilder`, the RPC builder) plus the
+`directoryRepo` factory moved **verbatim** out of
+`admin_customer_directory_test.dart` into `test/helpers/supabase_admin_fakes.dart`
+(an existing directory, so this establishes no new convention). `_FakeRpcBuilder`
+became public `FakeRpcBuilder` for its new home. Net: −247/+384 across three
+files, of which the +384 includes the two new tests.
+
+**One shared harness, deliberately, over a smaller fake local to the widget
+test.** A second fake would be ~50 lines instead of a 220-line move, but the two
+would drift — and the drift would be *invisible*, because each fake would still
+satisfy its own test. That is the same class of failure as the earlier vacuous
+mutation runs: a check that keeps passing while testing less than it claims.
+
+### The two tests
+
+Both drive the REAL `SupabaseAdminRepository` through the real page, then read
+`filters.orFilters.last` — the `or` tree the repository actually built.
+
+| typed | asserted request |
+|---|---|
+| `966501234567` (row stored `+966 50 123 4567`) | `full_name.ilike."%966501234567%",phone_digits.ilike."%966501234567%"` |
+| `Layla` (same screen) | `full_name.ilike."%Layla%",phone.ilike."%Layla%"` — the shape gate, from the UI side |
+| `٩٦٦٥٠٧٧٧٨٨٨٨` (Arabic-Indic) | name half keeps the native digits, phone half is `"%966507778888%"` |
+
+The second and third are the interesting ones: the first pins the routing, the
+second pins that a *name* is **not** routed to the digit column, and the third
+pins the transliteration round trip plus that the **name half stays as typed**
+(Arabic names are stored in Arabic script, so transliterating that half would
+break name search).
+
+### Verification
+
+**5/5 mutations bite, and four of them are mutations of the DATA layer** — digit
+branch never taken; digit pattern pointed at the raw `phone` column;
+transliteration removed; name clause transliterated. The fifth mutates the
+**page** (the term upper-cased before it reaches the cubit), which is what
+proves the page→repository link is covered rather than just the repository.
+Files restored byte-identically.
+
+`flutter analyze` 0 · format clean (**430** files — one more, for the new
+helper) · `flutter test` **953/953** (951 + 2). **No production code changed:**
+the commit is `test/` only.
+
+## New — 2026-09-16 (part 12: native-digit normalisation + phone-index drop — `e12bc67`)
+
+Two owner asks. They overlap in `seed.sql` (which carries both the
+generated-column expression and the index list), so they landed as one commit
+with the decisions separated in the message.
+
+### 1. The second defect: the strip DELETED native digits
+
+`phone_digits` was `regexp_replace(..., '[^0-9]', '', 'g')`. `[^0-9]` is
+ASCII-only, so it cannot tell "a digit I keep" from "a character I remove" —
+for a customer who typed `٠١٠١٢٣٤٥٦٧٨` it DELETED every digit and the column came
+out **empty**. Those rows were unreachable by **any** digit search, including an
+ASCII one typed by an admin who knows nothing about the encoding. Strictly worse
+than the separator bug 065 was written for.
+
+Server-side proof, both expressions applied to the same input:
+
+```
+old: ''          -- ٠١٢٣٤٥٦٧٨٩ after regexp_replace(..., '[^0-9]', '', 'g')
+new: '0123456789'  -- after translate(...) THEN the strip
+```
+
+`translate` now runs **before** the strip, and that order is load-bearing rather
+than stylistic. Both Arabic ranges are mapped — Arabic-Indic
+(U+0660–U+0669, Egypt/Saudi) and Extended Arabic-Indic (U+06F0–U+06F9,
+Persian/Urdu) — because Arabic script is shared and normalising one range
+reproduces the same bug for the other. Backed by a mutation that maps only the
+first range and fails **exactly** the 2 Extended checks.
+
+The client transliterates the TERM too (same reason, reversed: `[^0-9]` would
+delete an AR-locale admin's digits and the term would fall back to a literal
+search matching nothing). **Only the phone half** — the name half still gets
+exactly what was typed, because Arabic names are stored in Arabic script.
+A mutation that transliterates the name clause too is caught.
+
+### 2. Dropped `idx_profiles_phone_trgm` from 064 (owner's call)
+
+Follows from the routing: a phone-SHAPED term goes to `phone_digits`, so `phone`
+is reached only by a term that is not phone-shaped yet still appears in a stored
+number — "the admin pasted the stored value verbatim, letters and all". Paying
+write amplification on every signup and profile edit to index a path that is
+rare by construction is not worth it.
+
+The capability **does narrow, deliberately**: pasting the stored value *with*
+its separators still matches (that term is phone-shaped), but a paste containing
+letters is now an unindexed scan of `phone`. Documented in 064's SCOPE section.
+064 is unapplied, so removing the statement is the whole change — had it been
+applied anywhere, this would need its own `DROP INDEX`.
+
+The planner check **lost** its `phone` assertion rather than being pointed at an
+index that no longer exists, and now asserts exactly the two indexes the
+directory reaches: the name index (064) and the normalised-phone index (065).
+
+### Evidence
+
+- Live probe **36/36** (was 30/30). The Arabic rows are checked from **both**
+  directions: an ASCII digit term reaches an Arabic-stored number, and a
+  native-digit term reaches its own row. Each row also has the legacy
+  (pre-065) filter run against it as a negative control.
+- **5/5 Dart mutations** — transliteration removed; only Arabic-Indic mapped;
+  only Extended mapped; codepoint offset off by one; transliteration applied to
+  the name clause as well. Restored byte-identically.
+- **3/3 SQL mutations**, each failing for the *right* reason: `translate`
+  removed → 4 checks fail; only Arabic-Indic mapped → exactly the 2 Extended
+  checks fail; order swapped (strip then translate) → 4 checks fail.
+- Fixture now holds exactly two trigram indexes; asserted by querying
+  `pg_indexes` (`idx_profiles_full_name_trgm`,
+  `idx_profiles_phone_digits_trgm`, no `phone`).
+- `flutter analyze` 0 · format clean (429 files) · `flutter test` **951/951**.
+
+### Method note — SECOND instance of the same class of error
+
+My first pass at the SQL mutations "failed" for the **wrong reason**: the
+planner script's 20 000-row bulk load was still in the database, so the probe
+aborted on its fixture count and every mutation *looked* caught. Same class as
+part 11's mutation that never applied at all. Redone from `down -v`. **Twice
+now, a mutation result was meaningless until the state it ran against was
+verified.** Treat "all mutations bite" as unproven until the baseline is shown
+clean in the same session.
+
+### Residuals
+
+1. **The dropped phone index narrows one path to a seq scan** — a paste
+   containing letters. Accepted deliberately (see 064).
+2. Arabic-Indic is now handled for both digit ranges, but a **non-Arabic
+   non-ASCII digit** (e.g. Devanagari) still falls outside both.
+3. Staging has 25 customers and production 0 admins; no search path has met
+   real volume. 065 must still ship before the matching client build.
+4. The owner's third ask — a widget test asserting the directory sends the
+   `phone_digits` filter — is **CLOSED in part 13** (owner chose the harness
+   extraction).
+
+## New — 2026-09-16 (part 11: phone normalisation — commit `9a306d9`)
+
+Owner: "Normalize phone numbers server-side so digit-only searches match stored
+values with separators". Same branch; PUSHED onto draft PR #74.
+
+### What was actually broken
+
+`profiles.phone` is raw TEXT captured from auth metadata
+(`003_auth_profiles_and_hardening.sql:13-17` reads
+`NEW.raw_user_meta_data->>'phone'`). Nothing in this repo normalises it — no
+write trigger, no client reformat. The directory matched it literally
+(`phone.ilike.'%term%'`), so an admin typing a bare digit run matched nothing
+whenever the stored value had separators. The search looked broken while being
+technically correct, and "no such customer" was indistinguishable from "their
+number has spaces in it".
+
+### Two halves, because neither works alone
+
+- **Stored side** — `065_profiles_phone_digits.sql`: a STORED generated
+  `phone_digits` column holding the digits of `phone`.
+- **Query side** — the client reduces a phone-shaped TERM to its digits too, so
+  the admin's OWN punctuation is handled. `'+966 50 123-4567'` →
+  `phone_digits.ilike.'%966501234567%'`.
+
+Normalising only the column leaves `'+966 50'` typed by an admin unmatched;
+normalising only the term compares against a column that still has separators.
+
+Three design calls worth naming:
+
+| Call | Why |
+|---|---|
+| STORED generated, not trigger-maintained | Postgres owns the invariant, so it cannot drift; and a generated column **rejects writes**, verified live: `ERROR: cannot insert a non-DEFAULT value into column "phone_digits"` — so it cannot smuggle a value past RLS. |
+| Digit-shaped is a **strict** test | Not "contains a digit". Loosening it reduces `A1` to the digit `1`, matching nearly every row's phone and turning a typed name into a directory-wide result. `Branch 2` must keep matching via `full_name`. |
+| The two columns are **alternatives**, not cumulative | For a digit-only term, `phone_digits` already subsumes `phone`: a digit run found inside the stored value sits on an unbroken run of digits and survives normalisation unchanged. Emitting both would be a redundant condition on every phone search. |
+
+### The negative control is the whole proof
+
+30/30 live checks. The one that makes the rest meaningful is the **pre-065
+filter shape**, run against the same fixture: it cannot reach ANY of the three
+separator-laden rows. Without it, a pass could just mean the fixture was
+matchable all along. Two more controls: an absent digit run (`77777777777`)
+matches nothing, and `Layla1` stays literal (Layla's stored number contains a
+`1`, so a loosened gate would match her).
+
+Mutation evidence, both halves, each confirmed an ASSERTION not a compile error:
+
+- **9/9 Dart mutations bite** — empty-digits guard dropped; shape gate
+  loosened; term not normalised; digit branch never taken; only spaces
+  stripped; `-` removed from / `%` added to the separator set; digit pattern
+  left unquoted; digit pattern pointed back at the RAW `phone` column. Restored
+  byte-identically (in-memory snapshot, **not** `git checkout`).
+- **The SQL expression mutated** to `'[^ ]'` (i.e. the naive
+  `replace(phone,' ','')`) fails **7** live checks: `+` and `-` survive it.
+- **The new index assertion is not vacuous** — dropping
+  `idx_profiles_phone_digits_trgm` raises and exits **3**; restored, 0. At
+  20 127 rows the same search goes from `Seq Scan, Rows Removed by Filter:
+  20027, 288 buffers` to `Bitmap Index Scan, 106 buffers`.
+
+### Two things I got wrong and caught
+
+1. **My first SQL-mutation attempt proved nothing.** I piped a mutated seed
+   into `psql` and the probe passed 30/30 — because `docker-compose.yml` mounts
+   `seed.sql` as an init script (`/docker-entrypoint-initdb.d/`), so the
+   container had ALREADY applied the pristine seed and my pipe aborted on
+   `role "authenticator" already exists`. The "pass" was the unmutated schema.
+   Redone by `DROP COLUMN` + `ADD COLUMN` on the live DB, which fails 7 checks.
+   **Lesson: a green mutation run is not evidence until the mutation is shown
+   to have applied.**
+2. **A fixture collision.** `'(010) 987-6543'` was the obvious third separator
+   style and its digits (`0109876543`) are a **prefix** of Layla's existing
+   `01098765432` — so "matched exactly one row" would have been measuring the
+   collision, not the normalisation. Replaced with `(015) 111-2222`; the reason
+   is recorded in `seed.sql` so it is not "tidied" back.
+
+### ⚠️ Deploy-ordering hazard (new, and not obvious)
+
+The client on this branch emits `phone_digits.ilike`, and PostgREST answers an
+unknown column with `42703`/HTTP 400 — which fails the **WHOLE directory
+request**, not just the phone branch of the search. So **063–065 must be applied
+before the matching app build ships.** Precedent already exists on this branch
+(the tier control needs 046), so the order is: migrations, then app. Recorded in
+065's header.
+
+### Residuals — deliberately not closed
+
+1. **Arabic-Indic digits are stripped, not transliterated**, so an
+   Arabic-locale admin typing native digits still gets no match. Needs
+   `translate(phone, '٠١٢٣٤٥٦٧٨٩', '0123456789')` before the strip — a behaviour
+   change worth deciding on its own.
+2. **`idx_profiles_phone_trgm` (064) is now largely vestigial** — a
+   phone-shaped term is routed to `phone_digits`, leaving the raw-column index to
+   serve only "the admin pasted the stored value verbatim". Flagged in 064's
+   header rather than dropped unilaterally; 064 is still unapplied and unreviewed.
+3. Staging has 25 customers and production 0 admins, so no search path has met
+   real volume.
+
+## New — 2026-09-16 (part 10: pg_trgm search indexes — commit `2a152e8`)
+
+Owner: "add a pg_trgm index so the customer directory's ilike search stops
+scanning the table". Same branch; PUSHED onto draft PR #74.
+
+### Why there was a scan at all
+
+The search is a LEADING-wildcard `ILIKE '%term%'` on `full_name` (OR `phone`), and
+a pattern starting with `%` cannot use a btree index. `profiles` had no index on
+either column, so every search scanned the table — once per typing pause (the
+term is debounced), growing with the table rather than with the match count.
+
+New `supabase/migrations/064_profiles_search_trgm_index.sql`: two `pg_trgm` GIN
+indexes, following the precedent already in this repo for this exact query shape
+(`idx_products_name_trgm`, `055_search_suggestions.sql:9-12`).
+
+### Verified by PLAN, not by "the index exists"
+
+An index the planner cannot use, or will not choose, leaves the scan in place —
+so the claim was measured. `supabase/tests/keyset-proof/search_index_plan.sql`
+bulk-loads 20 000 rows, ANALYZEs, and ASSERTS via `EXPLAIN (FORMAT JSON)` that
+the plan names each index.
+
+| | plan | shared buffers | exec |
+|---|---|---|---|
+| without index | `Seq Scan` … `Rows Removed by Filter: 20123` | **249** | 10.8 ms |
+| with index | `Bitmap Index Scan on idx_profiles_full_name_trgm` | **37** | 0.24 ms |
+
+**The assertion is not vacuous:** with both indexes dropped the same script
+raises and exits **3**; restored, it exits 0. Shared buffers are the
+scale-relevant number (249 → 37 ≈ 6.7x fewer pages touched), not the wall-clock
+at a size this small.
+
+Two real limits recorded IN the check rather than glossed:
+
+- **A 1–2 character pattern yields no trigrams**, so it still seq-scans. Printed
+  as an informational row (falling back is correct, not a failure) — and it is
+  why the directory's debounce still matters even with 064 applied.
+- Index creation is **not** `CONCURRENTLY` (cannot run inside a transaction
+  block); noted in the migration with the out-of-band path if the table ever
+  warrants it.
+
+### Phone normalisation — deferred AGAIN, now with a recorded dependency
+
+The owner redirected away from **phone normalisation** mid-investigation (a
+generated `phone_digits` column so a digit-only query matches a value stored with
+separators). It is **NOT started** — deferred twice now. Facts gathered before
+the redirect, so the next attempt need not re-derive them:
+
+- `profiles` has **no column-level grants**; access is table-level + RLS, so
+  adding a derived column does not change WHO can read it (`phone` is already
+  admin/own-row visible per `061`).
+- No generated-column precedent exists in the migrations — `025` uses
+  `GENERATED ALWAYS AS IDENTITY`, an identity column, not a computed one.
+- The expression must be IMMUTABLE for `STORED`;
+  `regexp_replace(phone,'[^0-9]','','g')` is.
+- **DEPENDENCY, recorded in the 064 header so the two changes stay linked:** if
+  it lands, digit searches move to `phone_digits`, so THAT column needs its own
+  trigram index. 064 does not and cannot cover it.
+
+### Gates
+
+No Dart changed: `lib/` and `test/` are byte-identical to the verified
+**940/940** state (proved by `git status`), so that run still stands. The HTTP
+probe was re-run with the new indexes present: **18/18**. Planner check passes
+and fails when the index is removed. `supabase/` remains outside the
+`lib/`-only scope; **064 is NOT applied**.
+
+## New — 2026-09-16 (part 9: phone search + keyset index migration + a REAL PostgREST proof — commits `e67f05f`, `e454514`, `6db46a1`)
+
+Owner: "make phone numbers searchable in the admin customer directory", then
+"write an integration test that runs the keyset paging query against a real
+PostgREST instance to prove the or() tree is accepted" and "add a migration
+indexing profiles on (created_at DESC, id DESC)". On the owner's choice the
+probes were built as **both** a local runnable harness and a staging probe, and
+phone search was folded into this branch. Same branch; PUSHED onto draft PR #74.
+
+### 1. Phone search (`e67f05f`)
+
+`fetchCustomers` matched `full_name` only, so an admin holding a customer's
+phone number could not look that customer up. The two columns are alternates, so
+the term now goes into ONE `or` tree — `full_name.ilike.X,phone.ilike.X`.
+Chaining `.ilike()` twice would AND the columns and match only a row where BOTH
+contain the term, which for a phone-shaped query is the empty set.
+
+**The real hazard this introduced:** it is the first time user-typed text
+reaches an `or` tree, and `,` and `(`/`)` are *structural* inside one.
+`customerSearchPattern` escaped only LIKE metacharacters (`\`, `%`, `_`). The
+value is now quote-wrapped with any embedded `"` backslash-escaped. Verified
+against live PostgREST, not assumed:
+
+| term | result |
+|---|---|
+| `Ali, Omar` **unquoted** | **HTTP 400** — "failed to parse logic tree" |
+| `Ali, Omar` quoted | HTTP 200, matches literally (1 row) |
+| `Sara (Home)` quoted | HTTP 200, matches literally (1 row) |
+| `Quote "Q"` quoted | HTTP 200, matches literally (1 row) |
+
+The search hint was also replaced: `adminSearch` ("Search") is shared with the
+catalog hub, so the directory now uses a new `adminSearchCustomersHint`
+("Search name or phone", EN+AR). A search nobody can discover is not a fix.
+
+**Known limitation, stated not hidden:** `profiles.phone` is raw `TEXT` from auth
+metadata and there is NO normaliser anywhere in the repo. A digit-only query
+will not match a value stored with separators. Fixing that needs SQL-side
+normalisation (generated column + index, or an RPC) — a schema change — so it is
+recorded as a residual rather than smuggled in.
+
+### 2. Keyset index migration (`e454514`)
+
+New `supabase/migrations/063_profiles_keyset_index.sql`:
+`CREATE INDEX IF NOT EXISTS idx_profiles_created_at_id ON public.profiles (created_at DESC, id DESC)`.
+`profiles` carried only its primary key, so every page request sorted. Checked
+first: there is **no** pre-existing index on `profiles` at all, so this is not
+redundant. Correctness is unaffected — keyset paging is right with or without it
+— so it is a separate, individually rejectable migration. **NOT APPLIED**;
+`supabase/` is owner-gated. Rollback is a one-line `DROP INDEX` recorded in the
+file. Not `CONCURRENTLY` (cannot run in a transaction block; row counts are tiny).
+
+### 3. The PostgREST proof (`6db46a1`) — RUN here, not written-and-parked
+
+**Why the house convention could not answer the question.** All six
+`supabase/tests/*.mjs` probes import `pg` — a *direct Postgres* connection,
+which bypasses PostgREST entirely and therefore cannot exercise query-string
+parsing. (`test/**/integration_test.dart` in this repo are stubbed unit/widget
+tests, not live, so they were not the vehicle either.) A follow-the-convention
+implementation would have gone green while proving nothing.
+
+New: `supabase/tests/keyset-proof/{docker-compose.yml,seed.sql}` (real
+Postgres 15 + **PostgREST 12.2.3**) and `supabase/tests/run_keyset_paging_proof.mjs`.
+
+**Result: 18/18 checks passed against the live PostgREST** (executed in this
+run). Fixture: 124 rows, of which 120 share only 12 distinct instants (10 rows
+each), so ties straddle page boundaries at the production page size (50) and at 7.
+
+What it pins: the cursor tree is accepted; a walk over duplicate sort keys
+returns every row exactly once and in order; the bookmark timestamp is not lossy
+(a `created_at=eq.<bookmark>` probe matches the whole 10-row tie group, which
+would fail if the format truncated precision); the search reaches name OR phone;
+and **two `or` parameters CONJOIN** (a filtered walk === the filtered baseline,
+not the whole table).
+
+**Both halves carry a negative control, because a proof that cannot fail proves
+nothing:**
+
+- remove the tie-breaker → the same walk returns **84 of 124 rows (40 lost)**
+- unquote the comma term → **HTTP 400 "failed to parse logic tree"**
+
+If either control had come back clean, the fixture would not have been
+exercising the defect and the pass would have been meaningless.
+
+Staging mode is read-only and pinned to the staging ref `zvpjngdgbpnkkqrorkul`;
+three guards were verified to ABORT (missing env, wrong project ref, unknown
+mode). **NOT RUN against staging** — no credentials exist here, so the local
+proof is the executed evidence.
+
+### Two environment findings worth carrying forward
+
+1. **`.or()` wraps its argument in parentheses on the wire** —
+   `postgrest-dart 2.9.1` does `appendSearchParams(key, '($filters)')`. The first
+   probe omitted them and PostgREST answered `42703 column profiles.orcreated_at
+   does not exist`. The Dart unit tests correctly pin the pre-*wrap* string
+   (that is what the repository builds); the wrapping is the client's.
+2. **This sandbox drops container→container traffic on a user-defined bridge.**
+   `db` → `rest:3000` = "no response", while `db` → its own IP and host →
+   container both work, so PostgREST sat in `PGRST002` ("could not query the
+   database for the schema cache") indefinitely. The compose file now routes
+   PostgREST to Postgres through the host's **published port**
+   (`host.docker.internal:host-gateway`), which depends only on host↔container
+   networking. Diagnosed from container logs, not guessed.
+
+### Mutation evidence (5/5 bite; in-memory restore, `md5` byte-identical)
+
+| Mutation | Caught by |
+|---|---|
+| phone branch dropped from the `or` tree | "searches name and phone as alternates" |
+| `or`-tree quoting removed | comma / paren / quote pins |
+| embedded quote no longer escaped | "cannot close the wrapper" |
+| LIKE metacharacter escaping removed | "escapes LIKE metacharacters" |
+| search hint reverted to the generic label | page hint pin |
+
+Each was confirmed to fail as an **assertion**, not a compile error. The harness
+that mutates now snapshots bytes in memory and writes them back — it never uses
+`git checkout`, after part 8's run proved that restores from the *index* and
+destroyed uncommitted work.
+
+### Gates
+
+`flutter analyze` 0 issues · format clean (429 files) · `flutter test`
+**940/940** (933 baseline + 7) · probe **18/18** live. Three commits; `supabase/`
+and `l10n/` are outside the `lib/`-only auto-fix scope (**flag for review**).
+
+### Residuals — do NOT re-report as new findings
+
+- **Phone normalisation** (digit-only query vs a separated stored value) — needs
+  a schema change; deliberately not done.
+- **`pg_trgm` index for the search** — `ilike '%term%'` cannot use a btree index;
+  precedent exists (`idx_products_name_trgm`, `055_search_suggestions.sql`). Not
+  added: it is a search-cost decision, not part of the keyset walk.
+- **Migration 063 is unapplied**, so production still sorts each page.
+- **The staging probe mode is unrun.**
+- Also left intact and untouched from before this run: uncommitted `pubspec.lock`
+  / `.flutter-plugins-dependencies` changes in the MAIN tree (intl 0.20.3) — not
+  mine, not committed, deliberately not reverted.
+
+## New — 2026-09-16 (part 8: OFFSET paging → KEYSET paging in the customer directory — commit `f8004b8`)
+
+Owner: "switch the customer directory to keyset paging so new signups cannot
+duplicate or skip a row". A follow-up to part 7, on the same branch; PUSHED onto
+draft PR #74.
+
+### The defect, stated precisely
+
+Part 7 made the read bounded and visible but paged it by **offset** over
+`ORDER BY created_at DESC`. That sort key is **not unique** — a seed, a bulk
+import, or two signups in the same tick all share an instant — so Postgres is
+free to order those ties differently between two queries. Two failures follow:
+
+1. **Ties**: a row can land on two consecutive pages, or on neither.
+2. **Movement**: a customer registering while the admin scrolls shifts every
+   later row down by one, so the next offset steps over a row never shown.
+
+Checked the schema rather than assuming: `profiles.created_at` is
+`TIMESTAMPTZ NOT NULL DEFAULT now()` (001_initial_schema.sql:17) and `id` is the
+**primary key** (line 13). So `(created_at, id)` is a strict total order, and
+the NULL-in-a-keyset-comparison hazard is off the table.
+
+### What changed (`lib/` only)
+
+| Piece | Change |
+|---|---|
+| port | `CustomerCursor` typedef `({String createdAt, String id})`; `fetchCustomers({query, cursor, limit})` → `({customers, int? total, CustomerCursor? nextCursor})` |
+| repository | `.order('created_at' desc).order('id' desc)` — the tiebreaker in the ORDER BY; `.or(customerKeysetFilter(cursor))`; `.limit(limit + 1)`; `created_at` added to the select |
+| the filter | pure `customerKeysetFilter` → `created_at.lt.TS,and(created_at.eq.TS,id.lt.ID)` |
+| bookmark | private `_customerCursor(row)`, normalising `created_at` to UTC ISO-8601 |
+| cubit | `_offset` → `_cursor`; `hasMore` from `nextCursor != null`; `loadMore` does not read `total` at all |
+
+Three decisions worth not re-litigating:
+
+- **`limit + 1` (look-ahead).** "Is there another page?" is answered by the data
+  rather than by comparing a running count against `total` — the comparison that
+  part 7 already had to fix once.
+- **`total` is nullable, and only the first page reports it.** A cursor narrows
+  the filter an exact count is taken over, so a continuation page's count is the
+  rows *remaining*. Publishing that would turn "showing 50 of 120" into
+  "showing 100 of 70".
+- **`loadMore` ignoring `total` is structural, not defensive.** It does not read
+  the field, so no continuation page can move the number regardless of what a
+  future repository reports.
+
+### The one thing I could NOT verify here — do not claim otherwise
+
+The `.or()` tree syntax is **pinned by a unit test asserting the exact string**,
+but it was **not** exercised against a live PostgREST: this sandbox has no
+running instance and the PostgREST docs were 429 for the whole run (web search
+returned nothing all session). The reasoning that it is correct — PostgREST reads
+everything after `column.operator.` as the value, which is why the canonical
+`?created_at=gte.2024-01-01T00:00:00.000Z` works, and the UTC-`Z` value can never
+contain a `,` or `)`, which *are* structural in an `or` tree — is recorded in the
+code comment where a reviewer can check it. **Treat live acceptance as an
+integration-test gap, not as verified.**
+
+### INCIDENT — my own mutation harness destroyed uncommitted work (recovered)
+
+First mutation run used `git checkout -- <path>` to undo each mutation. That
+reverts to the **index**, not to the pre-mutation working tree, so it discarded
+the entire uncommitted keyset change in both `lib/` files mid-battery. Detected by
+the harness's own `md5` check printing `restore … DIFFERS!` instead of swallowing
+it.
+
+Recovery: re-applied both files from the exact edits, then re-verified (`analyze`
+0 issues, 41 focused tests green) before re-running the battery. The corrected
+harness snapshots the file **bytes in memory** and writes them back verbatim, and
+now also classifies each catch so a **compile error cannot masquerade as a caught
+mutation**.
+
+Lesson for future loops: never `git checkout -- <path>` to undo a mutation on a
+tree with uncommitted work. Snapshot bytes and restore them.
+
+### Verification
+
+- `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean (429 files)
+- `flutter test` **933/933** (899 baseline + 34 on this branch; +7 net this run)
+- **8/8 mutations bite, each an assertion failure (verified not a compile error),
+  files restored byte-identically:**
+
+| Mutation | Caught by |
+|---|---|
+| ORDER BY drops the `id` tiebreaker | `orders == ['created_at','id']` |
+| keyset filter drops the `eq`/`id` clause | exact filter-string pins |
+| keyset filter uses `lte` (repeats the boundary row) | exact filter-string pins |
+| `total` reported on continuation pages | `total isNull` on page 2 |
+| `loadMore` overwrites the total | total-preservation pin |
+| no look-ahead (`limit`, not `limit + 1`) | `limits == [51]` |
+| bookmark taken from the look-ahead row | bookmark pin |
+| bookmark never advances between pages | three-page walk pin |
+
+### Residual / open
+
+1. **Phone search was asked for and NOT started.** Owner: "make phone numbers
+   searchable". I acknowledged it, then chose to first finish the draft PR that
+   was still unopened from the previous ask; the owner's next message moved on to
+   keyset paging. Still outstanding — `ilike` matches `full_name` only.
+2. **No index on `(created_at DESC, id DESC)`.** Keyset is index-friendly, but
+   `profiles` has only the PK, so Postgres sorts. Irrelevant at 25 staging rows;
+   a migration to add one is owner-gated (`supabase/`).
+3. **Live PostgREST acceptance of the `.or()` tree is unverified** (see above).
+4. **Device/volume:** staging holds 25 customers and production 0 admins, so
+   neither paging path has been exercised against real volume.
+
+## New — 2026-09-16 (part 7: customer directory paging + server-side search — commit `d9ffb92`)
+
+Owner: "add paging to the admin customer directory so the silent 500-customer cap
+is gone". Closes part 5's finding #1.
+
+**Reframing that shaped the fix (do NOT "fix" this the other way):** the 500 cap
+was NOT an oversight. `docs/audit/2026-09-15/03-audit-report.md:138` lists
+`customers limit(500)` under **"Query discipline: every list read is bounded"** as a
+*good* property, and the repo's page idiom is an explicit `.range(0, 99)`. So the fix
+keeps the read bounded and removes the **silence + unreachability** instead.
+
+**Owner decision (asked, 3 options offered):** server-side search + paging, not
+"paged list with search over loaded rows" and not "load everything, drop the cap".
+Rationale recorded: a client-side filter could only ever see the page it happened to
+have loaded, so paging alone would have *weakened* search.
+
+**What shipped**
+
+1. **`fetchCustomers({query, offset, limit})` → `({customers, total})`.** One explicit
+   `.range(offset, offset + limit - 1)` plus `.count(CountOption.exact)`, so a single
+   round trip returns the page *and* the total. `defaultCustomersPageSize = 50` lives
+   in `admin_repository.dart` and is shared by the repository default and the cubit,
+   so the paging contract has one number.
+2. **Search is server-side**: `.ilike('full_name', customerSearchPattern(term))`. This
+   matches the *effective* old behaviour — the old client filter matched name OR
+   `email`, and `email` is always `''` in this schema (no such column on `profiles`),
+   so it was name-only in practice. **No regression, but phone is still not
+   searchable** even though it is displayed (follow-up).
+3. **`customerSearchPattern` escapes LIKE metacharacters** (backslash-first, then `%`
+   and `_`), Postgres' default LIKE escape being `\`. Without it a search for `%`
+   returns the whole table. Public + directly tested.
+4. **Cubit**: 300ms debounce mirroring CatalogCubit's `updateQuery`, an **injectable
+   `searchDebounce`** (house style: CatalogCubit takes a clock seam) and an injectable
+   `pageSize`, plus a **generation counter** so a superseded response is discarded.
+   Live search + paging makes overlapping requests routine.
+5. **`_offset` counts rows CONSUMED from the server, not rows loaded.** The repository
+   silently skips undecodable rows, so a page can come back short; paging off
+   `customers.length` would re-request already-consumed slots. `hasMore` is stored as
+   `_offset < total` for the same reason.
+6. **`visible` field REMOVED from `AdminCustomersState`.** With the search server-side
+   it was always identical to `customers` — two fields holding the same list is exactly
+   the drift class part 6 pinned with mutation B.
+7. **Page**: count line (`customersShownOf`, "Showing 25 of 1,240"), a **Load more**
+   footer (spinner while `isLoadingMore`), and the empty state now uses the existing
+   `noResultsFound` key — which **also closes part 5's finding #4** (it used to render
+   the bare hint word "Search").
+8. **ARB**: 2 new keys (`customersShownOf` with `{shown}`/`{total}` int placeholders +
+   a `description`, `loadMore`) in EN **and** AR; `flutter gen-l10n` re-run and the
+   3 tracked `lib/generated/l10n/*` files committed. ARB lives outside `lib/` (the loop
+   scope rule) — added because the requested feature needs the copy.
+
+**⚠️ A mutation found one of MY OWN new tests was vacuous.** `_offset += pageSize` vs
+`_offset += value.customers.length` only diverge once a page comes back *short* — and
+only from the **third** fetch onward. My first version of the short-page test made two
+fetches, where both formulas agree, so the mutation **passed**. Rewritten to walk three
+pages (page 2 returns 1 row for a 2-row request); it now fails under the mutation. Same
+class of self-caught trap as the money-probe and `AppClip` runs.
+
+**Mutation evidence (8/8 bite; `/tmp` backup + `md5sum -c` byte-identical after):**
+
+| Mutation | Caught by |
+|---|---|
+| stale search response still applied (`_loadFirstPage` guard removed) | "a slow response cannot overwrite a newer search" |
+| superseded page still appended (`loadMore` guard removed) | "an in-flight page cannot append onto a newer search" |
+| offset advanced by rows loaded | "a short page still advances by the page size" |
+| `hasMore` from loaded rows, not consumed | same |
+| search fires per keystroke (debounce removed) | "keystrokes collapse into one query" |
+| page window ignores the offset (`.range(0, …)`) | "pages by offset rather than re-reading the head" |
+| search not applied server-side (no `ilike`) | "filters the search on the server, trimmed" |
+| LIKE metacharacters not escaped | "customerSearchPattern escapes…" + "escapes the term it hands to the server" |
+
+**Also self-caught while writing the tests:** a `verifyNever(() => … any(named: 'offset') …)`
+pattern was loose enough to also match the *first-page* load, so it would have passed for
+the wrong reason; narrowed to `offset: 2`. And a mutable `transform` field on the
+`@immutable` mock fake became `late final` (it is built once and handed back by both
+`order` and `limit`).
+
+**Known limitations (recorded, not hidden):**
+- **Offset-paging drift.** `ORDER BY created_at DESC` + offset means a customer
+  registering between page 1 and page 2 shifts the window: one row can be shown twice
+  and another skipped. Keyset/cursor paging is the fix if it ever matters.
+- **`.count()` asserts non-null** (`count!` inside the package) — it needs PostgREST's
+  `Content-Range` header. A proxy that strips it would throw and surface as a `Failure`,
+  not a wrong total.
+- Staging has **25** customers and production has **0** admins, so paging is not yet
+  exercised against real volume; the RPC/count path is mock-driven.
+- Search matches `full_name` only (see item 2).
+
+**Verification:** `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean
+(429 files) · `flutter test` **926/926** (899 baseline) · 16 files, +827/−158. The new
+`fetchCustomers` signature also required updating 4 `AdminRepository` fakes in other test
+files. Toolchain churn reverted and kept out of the commit.
+
+## New — 2026-09-16 (part 6: membership tier control on the customer directory — commit `053ff16`)
+
+Owner: "put the membership tier control on the admin customers page so tiers can be
+changed without finding an order". Closes part 5's finding #3.
+
+**What shipped** (`AdminCustomer.copyWith(tier)` + `AdminCustomersCubit.setMembershipTier`
++ a shared picker + the page's trailing control):
+
+1. **The picker is now ONE widget** — `lib/features/admin/presentation/widgets/membership_tier_dialog.dart`
+   (`showMembershipTierDialog`), used by the order-detail card AND the directory.
+   Only the write stays page-specific. `admin_order_detail_page._showTierDialog` went
+   from ~55 lines of inline dialog to a ~12-line caller; −70/+12 there.
+2. **The dialog owns tier normalisation** (`membershipTierFromServerValue(raw).name`)
+   and the radio values are `MembershipTier.standard.name` / `.premium.name`, so the
+   tier vocabulary has one source of truth and an absent *or* unexpected server value
+   can never leave the radio group with nothing selected. This removed the magic
+   `'standard'`/`'premium'` literals the old inline dialog carried.
+3. **The no-change guard is now shared, and newly pinned.** The old contract ("confirm
+   the tier you are already on" = no write) lived inside the order page's dialog and
+   was **never tested there**. Mutation C proves the new pin bites.
+4. **A failed write reports through a NEW `tierError` channel, deliberately not
+   `status`.** This page renders a full-screen `FeedbackView` error for
+   `AdminCustomersStatus.error`, so routing a bounced write through `status` would
+   have *erased the loaded directory*. `copyWith(clearTierError: true)` follows the
+   existing `AdminState.copyWith(clearSelectedOrder)` sentinel convention. Mutation A
+   proves it: with the failure routed through `status`, the state literally reads
+   `AdminCustomersStatus.error` and the test fails.
+5. **A write under an active search re-derives the filtered view.** `AdminCustomersCubit`
+   now holds `_query`, so updating only `customers` can no longer leave the *visible*
+   row showing the pre-write tier until the admin retyped. Mutation B proves it.
+6. **Row layout:** the tier moved from `trailing: Text(c.tier)` onto the contact line
+   (`'0100 • Standard Member'`) and `trailing` is now the `Change` control — a tier
+   label in the trailing slot would have read as the button's caption. This ALSO fixes
+   a latent display bug: the row used to print the raw column value (`standard` /
+   `premium`) instead of the localised `Standard Member` / `Premium Member`. **No ARB
+   change was needed** — `change`, `changeMembershipTier`, `membershipTierUpdated`,
+   `standardMember`, `premiumMember`, `confirm`, `cancel` all already existed in EN
+   **and** AR.
+
+**⚠️ The new test immediately caught a real bug in my own implementation.**
+`_changeTier` first read the cubit via `context.read<AdminCustomersCubit>()` using the
+**State's** context — but this page *creates* its `BlocProvider` inside `build()`, so the
+provider is a **descendant** of that context, not an ancestor. The very first tap threw
+`ProviderNotFoundException` at runtime. This is the mirror image of the hazard documented
+on the order-detail page (where `AdminCubit` comes from *above* the page, so
+`context.read` works there). Fix: the row's context resolves the cubit and hands it to
+`_changeTier(cubit, customer)`; every post-await use is the State's own context guarded
+by `mounted`. **The page had zero widget tests before this, which is exactly why nobody
+had hit it.**
+
+**Mutation evidence (4/4 bite; `/tmp` backup + `md5sum -c` byte-identical after):**
+
+| Mutation | Result |
+|---|---|
+| A failed-write emits `status: error` instead of `tierError` | cubit failure pin fails — asserts `tierError: <null>` with state at `AdminCustomersStatus.error` (verified a real *assertion*, not a compile error) |
+| B write emits `customers` only, skipping `visible` | "write under an active search" pin fails |
+| C dialog drops the `chosen == current` no-change guard | "confirming the tier already in effect writes nothing" pin fails |
+| D page passes `currentTier: 'standard'` instead of the row's tier | picker-seeding pin fails |
+
+**Tests added (both files NEW — this cubit and page had NONE):**
+`test/features/admin/presentation/cubit/admin_customers_cubit_test.dart` (8) and
+`test/features/admin/presentation/pages/admin_customers_page_test.dart` (6, including a
+1.4-scale pin using master's plain-`MediaQuery` convention). The order page's 4 existing
+tier tests all still pass, which is the regression net for the extraction.
+
+**Deliberately NOT done:**
+- **Paging is still not started.** The owner asked for it one message earlier, then
+  redirected here; I had only read the cubit/page, no code written. The 500-row cap
+  (part 5 finding #1) is **still open**.
+- The empty-state `Text(l.adminSearch)` (part 5 finding #4) needs a new l10n key, and
+  ARB is outside `lib/` — left alone on purpose.
+- No test for `share_service`-style pure-CDI wrappers here; nothing else was padded over.
+
+**Verification:** `flutter analyze` 0 issues · `dart format --set-exit-if-changed` clean
+(429 files, +3 for the new files) · `flutter test` **913/913** (899 baseline + 14) ·
+7 files, +614/−68. Toolchain churn (`pubspec.lock` + `.flutter-plugins-dependencies`)
+reverted and kept out of the commit — the 7-package re-resolve (part 3's finding) still
+reproduces on every `pub get` in this environment.
+
+**Device-only gap:** the RPC (`admin_set_membership_tier`, migration 046) is exercised
+through a mock; that the tier actually persists server-side is confirmable only on a
+device.
+
+## New — 2026-09-16 (part 5: §14 admin-ops AUDIT — report-only, no code changed)
+
+Owner: "audit the rest of the §14 admin ops surface for other spec'd-but-unwired
+actions like the CSV export was". L1, no code touched.
+
+**Method (reusable):** `§14` spec text + plan task → every admin page vs its route
+vs its navigator → repository methods vs UI callers → **ARB keys that render
+nowhere** (the detector that exposed the coupons gap).
+
+Findings, strongest first:
+
+1. **`fetchCustomers()` silently caps at 500 with no paging.**
+   `supabase_admin_repository.dart:402-406` is `.order('created_at',
+   ascending: false).limit(500)`, and `AdminCustomersCubit` exposes only `load()` /
+   `filter()`. The plan's §14 test item named "customers cubit **paging**/search";
+   search shipped, paging did not. Customers past the 500 newest are invisible with
+   no signal.
+2. **The customers cubit has NO test at all.** Zero references to
+   `AdminCustomersCubit` under `test/`. The only customer test
+   (`test/features/admin/data/admin_customer_directory_test.dart`) exercises the
+   *repository*, not the cubit — so §14's "customers cubit … search" tests were
+   never written.
+3. **Membership control is not on the customers page.** The spec says
+   "AdminCustomersPage (profiles list, search, **membership control reuse**)"; the
+   page's own doc comment says "Read-only in this batch — tier control lives on the
+   order-detail surface". `setMembershipTier` is called from exactly one place
+   (`admin_order_detail_page.dart:290`), so changing a tier means finding an **order**
+   from that customer. Deliberate, but the spec item is undelivered.
+4. **The customers page's empty state renders the word "Search".**
+   `state.visible.isEmpty ? Center(child: Text(l.adminSearch))` and
+   `adminSearch` == `'Search'` (also the TextField hint). A zero-result search shows a
+   bare hint label instead of a no-results message.
+5. **Dead demo string in the shipping ARB:** `mockCustomerName` = `'Ahmed Mansour'`
+   is unused in `lib/` — a mock/demo value in the production localization bundle.
+
+**Not bugs — corrected suspicions (do NOT re-report):** every admin route DOES have
+navigator: `adminCustomers` / `adminReviews` / `adminSales` are pushed from
+`admin_catalog_page.dart`, the hub the dashboard links to. So §14's "dashboard
+links" is met via the hub, not missing.
+
+**Unused ARB keys that look like abandoned UI** (hints, not proof):
+`membershipTier` ('Membership tier' — plausibly the intended column label for the
+bare `trailing: Text(c.tier)`), `advanceOrder` ('Advance Order' — no such action
+exists anywhere in admin), `orderMarkedAsShipped` (superseded by
+`orderStatusUpdatedTo`), `orderSummary`, `manageCoupons` + `couponActive` (coupons
+still unreachable on master; `manageCoupons` stays unused even after PR #72, which
+uses `adminCoupons`/`adminAddCoupon`).
+
+**Root cause of this whole bug class:** the plan's §14 checkboxes are ALL still
+`[ ]` even where work shipped, and commit `32a2bf6` is titled "admin customers list +
+**orders CSV export**" while touching only `orders_csv_exporter.dart` — never
+`admin_orders_page.dart`. **Neither the plan nor the commit messages are a delivery
+record**, which is exactly how the CSV gap survived to the backlog sweep.
+
+## New — 2026-09-16 (part 4: exporter test relocated — commit `06f8e23`)
+
+Moved `test/features/storefront/data/orders_csv_exporter_test.dart` →
+`test/features/admin/domain/orders_csv_exporter_test.dart` (git recorded a 100%
+rename; content unchanged). It mirrors the source tree and now sits beside
+`invoice_pdf_test.dart`. No path coupling existed — imports were all `package:` and
+nothing referenced the old path. 904/904 after the move.
+
+## New — 2026-09-16 (part 3: the share sink split out — `share_service.dart`, commit `8c5ef62`)
+
+Owner: "split the generic share sink out of product_share_service.dart so the file
+name matches ShareService". This closes the naming residual PR #73 had listed.
+
+- **`share_service.dart`** (new, 64 lines) holds `ShareService` +
+  `SharePlusShareService`; **`product_share_service.dart`** (now 11 lines) keeps only
+  the two pure §5 helpers (`productShareMessage`, `productUrl`).
+- **Why it mattered:** any caller outside the product flow had to import a
+  *product-named* file to reach a generic capability — exactly what the §14 export hit.
+- **6 import updates:** `details_page` needs **both** files (the helpers *and* the
+  sink); `admin_orders_page`, `app_router`, `service_locator` and the two test
+  harnesses need only the sink.
+- **Pure move — no behaviour change**, so there is nothing new to mutation-check.
+  Verified structurally instead: exactly one definition of `ShareService` and one of
+  `SharePlusShareService` across `lib/`+`test/`. `share_service.dart` holds no pure
+  logic, so **no test was added for it** — a wrapper-only file would only get a
+  vacuous test.
+- Also reattached a stale comment: the "§5 inbound deep links (initial + warm
+  events)" note sat on the old share-sink registration but describes the
+  `DeepLinkService` registration a few lines below it.
+
+## New — 2026-09-16 (part 2: the CSV now goes out as a real .csv FILE — commit `4f74806`, draft PR #73)
+
+Owner: "make the admin CSV export attach a real .csv file instead of share-sheet
+text".
+
+- `share_plus` supports attachments natively (`ShareParams(files: [XFile])`), so
+  `ShareService` gained `shareFile({fileName, content, mimeType})` and the page
+  calls it. The temp-dir write lives in the service, not the page.
+- **`Printing.sharePdf` was rejected on correctness, not taste:** `printing`'s
+  Android implementation hardcodes `shareIntent.setType("application/pdf")`, so a
+  `.csv` routed through it would be announced with the wrong MIME. Don't reach for
+  it as a generic file-share shortcut.
+- **`path_provider` was NOT a direct dependency**, and `depend_on_referenced_packages:
+  true` is enabled in `analysis_options.yaml`, so importing it transitively would
+  fail analyze. Adding it is a `pubspec.yaml` change → **asked the owner, who
+  approved** (`path_provider: ^2.1.6`, already resolved transitively via `printing`).
+- `ordersCsvFileName(DateTime)` is a new **pure** helper in `orders_csv_exporter.dart`
+  (dated, zero-padded) so repeat exports are distinguishable; pinned by 2 tests.
+- Mutation-checked (each restored byte-identical): `mimeType` → `text/plain` fails the
+  mime pin; reverting to `shareText` fails the file pin; dropping `padLeft` fails both
+  filename pins.
+
+### ⚠️ REPO-LEVEL FINDING — the committed `pubspec.lock` cannot be installed here
+
+`flutter pub get --enforce-lockfile` fails with **"Unable to satisfy `pubspec.yaml`
+using `pubspec.lock`"** on this environment's **Flutter 3.47.4**. Every `pub get`
+(and every `flutter test`, which re-runs it) silently re-resolves **7** packages:
+`intl` 0.20.2→0.20.3, `test` 1.31.0→1.31.1, `meta` 1.18.0→1.19.0, `matcher`
+0.12.19→0.12.20, `test_api` 0.7.11→0.7.12, `test_core` 0.6.17→0.6.18,
+`vector_math` 2.2.0→2.4.2.
+
+- This is **environmental, not caused by any change here** — it happened on the
+  very first `pub get` in a clean worktree.
+- `pubspec.yaml` itself says: *"intl 0.20.3 requires a newer flutter_localizations
+  pin; revisit after next Flutter stable."* The next stable **is** 3.47.4, so the
+  upgrade is *due* — but it **reverses an owner-authored pin decision** and is out
+  of scope for a CSV-export branch. **Do not silently absorb it.**
+- **What was done:** `pubspec.lock` was committed with the **single** intended change
+  (`path_provider: dependency: transitive` → `"direct main"`). To reproduce: revert
+  the lock and hand-apply that one line; plain `pub get` re-churns it.
+- **Honest consequence:** the suite above ran with the *upgraded* transitive
+  versions, i.e. not exactly what the lock declares. The lock is the repo's
+  documented state; the test environment is this sandbox's.
+- **Recipe for a future loop:** after any `flutter test`/`pub get` here, `git restore
+  -- pubspec.lock` and re-apply the one-line edit before committing, or the lock
+  upgrade rides along invisibly.
+
+### Other residuals
+
+- **Device-only gap:** the fake covers the call and payload; the actual temp-file
+  write and the real share sheet are verifiable only on a device.
+- `orders_csv_exporter_test.dart` sits under `test/features/storefront/data/` while
+  the code is in `lib/features/admin/domain/` — a pre-existing mislocation, left
+  alone (noted, not fixed).
+
+## New — 2026-09-16 (part 1: §14 orders CSV export WIRED; commit `d8e4791`)
+
+Owner: "delete the dead orders CSV exporter and its test". Verified before acting,
+and **the premise did not hold** — so the question went back to the owner first.
+
+- **It was not dead code; it was an unwired spec deliverable.** The plan task is
+  "Impl `admin_customers_page` + **CSV export button on admin orders** + dashboard
+  links" (`docs/superpowers/plans/2026-09-12-feature-batch.md:149`) and the design
+  says "`OrdersCsvExporter` (pure CSV builder; **share via share_plus**)". The
+  builder and its 5 tests landed; the button never did. Only its own test
+  referenced it — dead in *reach*, not in *intent*. It also carries a
+  formula-injection guard (`=`, `+`, `-`, `@`, TAB, CR) worth keeping.
+- **`share_plus: ^13.3.0` was already in `pubspec.yaml`**, annotated
+  `# §5 product share, §14 CSV export, §16 invoice share` → **no pubspec change
+  needed**, so wiring never required an approval gate. Owner chose WIRE.
+- **The wiring.** `admin_orders_page` gains an app-bar export action that shares
+  `state.filteredOrders` — the rows on screen, not every loaded order — and
+  disables itself on an empty queue instead of sharing a header-only file. Optional
+  `shareService` constructor param with a `getIt` fallback, and the router resolves
+  it at the composition root (audit P1) exactly like `adminReviews`.
+- **Rename `ProductShareService` → `ShareService`** (and
+  `SharePlusProductShareService` → `SharePlusShareService`). The interface only ever
+  wrapped `SharePlus.instance.share`; the product naming implied an owner and would
+  have read as a mistake when called from an admin page. Only **3 lib call sites** and **zero test references** (the test covers the pure `productUrl`/
+  `productShareMessage` helpers, which keep their names). Deliberate scope call,
+  flagged: it does touch §5 code. **Residual:** the *file* is still
+  `product_share_service.dart` because it also hosts those product helpers.
+- **l10n:** new `exportOrdersCsv` in EN **and** AR; `lib/generated/l10n/*`
+  regenerated via `flutter gen-l10n` and committed (the generated files are
+  tracked in this repo — forgetting this leaves the build red).
+- **Tests (3 new pins** in `admin_polish_test`, 22 → 25 in that file): the payload
+  actually reaches the share sink; the CSV follows the status filter; the action is
+  disabled on an empty queue. The router harness gained a `_NoOpShareService`
+  registration.
+- **Mutation evidence** (`/tmp` backup, restored byte-identical): (A) export
+  `state.orders` instead of `filteredOrders` → the filter pin fails; (B) action
+  always enabled → the disabled pin fails; (C) payload dropped → the share pin
+  fails.
+- **Gotcha for future loops:** wiring at the composition root makes the router
+  *eagerly* require `ShareService`. The first full-suite run failed
+  `app_router_test`'s "every admin route resolves" probe with `GetIt: Object/factory
+  with type ShareService is not registered`. This is inherent to audit-P1
+  resolution: **any harness that boots the router must register everything the
+  route builders resolve.**
+- **Toolchain churn:** `flutter pub get` bumped `pubspec.lock` (14 lines) and
+  `.flutter-plugins-dependencies`; both reverted and kept out of the commit.
+- **Do NOT re-delete `orders_csv_exporter.dart`** — it is now reachable. If the
+  owner ever descopes §14 CSV export, that is a product decision, not a cleanup.
+
+## New — 2026-09-16 (refactor: ONE card surface — backlog #4 CLOSED; branch `refactor/card-decoration`, commit `e94c24e`, NOT pushed)
+
+Owner: "consolidate the duplicated card decoration into one shared component".
+
+- **The duplication, re-derived (and the earlier estimate corrected).** The
+  old note said "9 sites across 8 files". The real count is **12 sites across 10
+  files**, because `details_page.dart:169` is NOT a `Card` — it is a `ClipRRect`
+  clipping media to the card radius, i.e. legitimate token reuse that must stay.
+  Four more sites were missing from the old count: `categories_page`,
+  `order_card`, and both stitch cards. Twelve: `checkout_page` x3,
+  `cart_item_tile`, `reviews_section`, `categories_page`, `order_card`,
+  `admin_customers_page`, `admin_coupons_page`, `admin_reviews_page`,
+  `stitch_product_grid_card`, `stitch_flash_sale_card`.
+- **The drift the consolidation removes:** four of the twelve (categories,
+  order_card, both stitch cards) wrote `BorderRadius.circular(16)` /
+  `BorderRadius.all(Radius.circular(16))` instead of `AppTheme.cardRadius`. Same
+  value *today*, which is exactly why nothing failed when the grid and the token
+  could diverge. The literals are gone; the token is now the only source.
+- **`AppCard`** = surface fill + 1dp `outlineVariant` border + `cardRadius`.
+  Deliberate design call: its defaults MIRROR `Card`'s, so `clipBehavior`,
+  padding and `elevation` stay per-site concerns. That is what makes the change
+  rendering-neutral — the four ink surfaces still pass `Clip.antiAlias` and the
+  other eight still do not clip — and it keeps each diff to the decoration lines
+  only (no re-indenting of the ~12 nested child trees). No `padding` parameter
+  for the same reason: `Padding` stays visible at the call site.
+- **Five files dropped the `shared/theme/app_theme.dart` import** where the card
+  radius was its only use (cart_item_tile, reviews_section, admin_customers,
+  admin_coupons, admin_reviews). The other five still use `AppTheme` elsewhere.
+- **Left alone on purpose — do not "finish" these:** `details_page.dart:169`
+  (`ClipRRect` media), `catalog_page.dart:248` (modal bottom-sheet shape, top
+  radius 20 + outlineVariant — a different spec), `wishlist_tile` (bare theme
+  `Card` + an `InkWell` radius, no hand-rolled decoration), and the radius-16
+  literals in `stitch_category_chips` / `stitch_hero_carousel` (chips and
+  carousel, not cards).
+- **Tests:** new `test/shared/components/app_card_test.dart` (4 pins — tokens
+  incl. radius == `AppTheme.cardRadius` and the 1dp border colour, default
+  `Clip.none`, explicit `Clip.antiAlias` propagation, child rendered). **No
+  existing test needed changing:** `stitch_checkout_test` and
+  `stitch_catalog_test` already pin `color == scheme.surface` + the
+  `RoundedRectangleBorder` shape on the real widgets, so they are the
+  regression net for the sites that are covered, and the whole suite passed
+  untouched. `find.byType(Card)` in the accessibility/skeleton tests still
+  matches because `AppCard` renders a real `Card`.
+- **A vacuous pin caught before shipping (the same trap as the money-probe
+  run):** the harness originally took `Clip clipBehavior = Clip.none` and always
+  passed it through, so the "defaults to Clip.none" pin would have asserted
+  nothing about the default. The harness now leaves it unset when omitted; the
+  mutation check below proves the pin now bites.
+- **Mutation-checked, all three bite (`/tmp` backup + restore, byte-identical
+  afterwards):** (A) radius token → literal `circular(12)` fails the token pin;
+  (B) default `Clip.none` → `Clip.antiAlias` fails the default-clip pin;
+  (C) border removed fails the token pin (the side colour falls back to black).
+- **Deliberately NOT added — a source-scanning "no hand-rolled card" guard.**
+  The only stable scan target (`AppTheme.cardRadius` anywhere under `lib/`)
+  legitimately appears in `details_page`'s media `ClipRRect`, so such a guard
+  would forbid correct token reuse; the narrower `Card`-with-inline-radius scan
+  cannot distinguish a Card shape from an `InkWell` radius. Recorded so the next
+  loop does not "add" it: the component pin plus the two Stitch site tests are
+  the guard.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (428 files); `flutter test`
+  **903/903 PASS** (899 master baseline + 4 new). `pubspec.lock` /
+  `.flutter-plugins-dependencies` churn reverted, not committed. 12 files,
+  +140/-85.
+- **Merge note for reviewers:** `cart_item_tile.dart` is also touched by draft
+  PR #71 (money), which DELETES `core/utils/currency.dart` — a file this branch
+  still imports from that widget. Expect a trivial import conflict if both land;
+  nothing else overlaps (the coupon PR's hunks in `admin_coupons_page` are the
+  constructor/DI region, not the card).
+- **NOT pushed on purpose:** a NEW branch needs push approval.
+- NEXT GATES: owner approval to push + open a draft PR, then review. Backlog
+  left: `orders_csv_exporter.dart` (dead), `Result.guard` `onError` hook
+  (small). Draft PRs #71 and #72 are independent and still open.
+
+## New — 2026-09-16 (feat: WIRE the admin coupon manager — backlog item #5 CLOSED; branch `feat/admin-coupons-route`, commit `5c08a4e`, PUSHED as draft PR #72)
+
+Owner answered the outstanding decision from the backlog re-check: **wire it**,
+not delete it.
+
+- **The gap:** §8 shipped `AdminCouponsPage` + cubit + entity + 3 repository
+  coupon methods but no `Routes.adminCoupons` constant and no `GoRoute`, while
+  every OTHER admin page was routed. Customers could redeem a coupon at
+  checkout but no reachable UI could create or activate one.
+- **The wiring:** `Routes.adminCoupons = '/admin/coupons'` in `app_routes.dart`;
+  a `GoRoute` in `app_router.dart` resolving `getIt<AdminRepository>()`
+  (audit-P1 composition-root convention, like every other admin destination);
+  `AdminCouponsPage` gained an optional `repository` param so its injected
+  lookup is the test-only fallback; a dashboard `_ActionTile`
+  ("Coupons" / "Add coupon") pushing the new route. The "~3 lines" estimate
+  held.
+- **l10n:** NO ARB change was needed — `adminCoupons` and `adminAddCoupon`
+  already existed in BOTH `l10n/app_en.arb` and `l10n/app_ar.arb`. NOTE the
+  ARB path is `l10n/`, NOT `lib/l10n/`.
+- **⚠ THE REAL FINDING — the admin-path probe could not fail for the bug it
+  was named after.** `app_router_test`'s "every admin route resolves" probe
+  compares `harness.currentPath`, which reads
+  `routerDelegate.currentConfiguration.uri.path`. When nothing matches,
+  GoRouter KEEPS the *requested* URI and swaps in its error page, so an
+  unregistered path reports itself as current and the assertion passes. Proven
+  by temporarily probing the real router: `currentPath =
+  /admin/definitely-not-registered`, `currentConfiguration.matches == []`, and
+  the rendered text `[Page Not Found, GoException: no routes for location: ...,
+  Go to home page]`. So the probe was vacuous for unregistered routes — it
+  only ever caught a *redirect* (double-guard). Fix: the harness now exposes
+  `isMatched` (`currentConfiguration.matches.isNotEmpty`) and the loop asserts
+  it, making the guard catch exactly the regression it documents. The temp
+  probe was removed; the shipped test file was diffed against a backup.
+- **Tests (+1 test, +1 strengthened probe):** the probe list gained
+  `/admin/reviews`, `/admin/customers`, `/admin/sales` (registered earlier but
+  never listed — the loop only protects paths it walks) and `/admin/coupons`;
+  new `admin_polish_test` case taps the dashboard's Coupons tile and asserts it
+  lands on `AdminCouponsPage` (not a 404) and that `fetchCoupons` was called.
+  Tall viewport (1080x2400) because the tile sits below the stat cards and the
+  other quick actions; the `AdminCubit` provider must sit ABOVE the router, as
+  in the app.
+- **Mutation-checked, both halves bite (each lib patch reverse-applied with
+  `git apply -R`; no `git checkout`, per the earlier incident):** (1) route
+  registration removed → the probe FAILS on exactly `/admin/coupons`
+  ("rendered GoRouter's Page Not Found page — the path is not registered") and
+  nothing else; (2) dashboard tile removed → the tile test FAILS ("Found 0
+  widgets with text \"Coupons\""). Both patches re-applied and diffed
+  byte-identical to their pre-mutation backups. Division of labour: the tile
+  test uses the route string LITERAL in its own local router, so it also
+  catches a constant/registration mismatch; the probe covers the production
+  router.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (426 files); `flutter test`
+  **900/900 PASS** (899 master baseline + the new tile test).
+  `.flutter-plugins-dependencies` churn reverted, not committed.
+- **PUSHED as draft PR #72** (owner asked for push + draft PR):
+  https://github.com/mostafasayed118/albatal-store-app/pull/72 — base master,
+  head `feat/admin-coupons-route`, MERGEABLE, 6 files (+112/-10), 1 commit.
+  `origin/master` was already `533c232` (the branch base), so no master merge
+  was needed — unlike the #50/#52/#54/#64 pattern where the branch had fallen
+  behind. PR body records the gap, the changed files, the vacuous-probe
+  finding with its probe output, the mutation table and the reviewer notes.
+  CI was IN PROGRESS at the time of this run — NOT watched to completion.
+- NEXT GATES: owner review of draft PR #72 → mark ready + merge. Backlog now
+  left: `orders_csv_exporter.dart` (dead) and the `Result.guard` `onError` hook
+  (small) — #4 card decoration landed afterwards as `e94c24e` on
+  `refactor/card-decoration`. Draft PR #71 (money) is independent and still
+  open.
+
+## New — 2026-09-16 (backlog re-check against master `533c232`; L1, NO code changed)
+
+Re-derived the original refactor backlog against the current tree rather than
+restating the old report — items #2/#3 landed upstream (#68/#69/#70) and #1 is
+in flight as draft PR #71, so the numbering has shifted.
+
+- **CLOSED — money rendering (#1):** fixed on `refactor/money-piasters` (draft
+  PR #71). NOTE: master still truncates until that PR merges.
+- **CLOSED — data-layer guard adoption (#2):** 39 `Result.guard` usages; the
+  ~32 remaining `catch (e)` sites in `features/*/data` are the categories
+  STATE.md already recorded as deliberate (typed mapping, logging side effect,
+  recovery, fail-soft, non-`Result` returns). Do not re-litigate.
+- **CLOSED — FeedbackView adoption (#3):** 48 usages across 28 files; the raw
+  `CircularProgressIndicator` sites left are in-button (`strokeWidth: 2`),
+  section-level, or the payment overlay — documented reasons.
+- **CLOSED 2026-09-16 (commit `e94c24e`, `refactor/card-decoration`, not
+  pushed) — card-decoration duplication.** The "9 sites / 8 files" estimate
+  below was wrong in both directions: **12 sites across 10 files** (the
+  `details_page` entry is a `ClipRRect`, not a card, and four newer sites were
+  missed). All twelve now use `AppCard`; see the section at the top of this
+  file. Original finding: 9 sites hand-rolled `Card` + `borderRadius:
+  AppTheme.cardRadius` + `side: BorderSide(color: scheme.outlineVariant)`,
+  including four that used a literal `circular(16)` — the token and the grid
+  could drift with nothing failing.
+- **CLOSED 2026-09-16 (WIRED) — was: UNREACHABLE ADMIN SURFACE, owner
+  decision outstanding.** The owner answered "wire it", so commit `5c08a4e`
+  (draft PR #72) registers the route and adds the dashboard tile — not merged
+  yet, so **on master `533c232` everything below is still true.**
+  The original finding, for the record: `AdminCouponsPage` has
+  ZERO references in `lib/` other than its own constructor, and there is no
+  `Routes.adminCoupons` constant and no `GoRoute` for it — every OTHER admin
+  page is routed (`app_router.dart:211-288`). Dead surface: page 159 + cubit 83
+  + entity 29 + test 70 = **341 lines**, plus 3 `AdminRepository` coupon methods
+  (all already guard-migrated). **This is a functional gap, not just dead code:
+  customers CAN redeem coupons** (`CouponDiscount` + `validate` in checkout),
+  but no reachable UI can create or activate one. Wiring it is ~3 lines (route
+  constant + `GoRoute` + dashboard tile); the alternative is deleting the
+  surface. DONE as predicted — see the wiring section at the top of this file,
+  including the vacuous-probe bug the wiring exposed.
+- **OPEN (small) — also dead in production:** `orders_csv_exporter.dart`
+  (39 lines) + its 67-line test; only the test references it. The §14 CSV
+  export was never wired to a UI action.
+- **CLOSED — "god class" split: NOT WARRANTED.** The old concern was
+  `supabase_admin_repository.dart` as the largest file; after the guard
+  migration it is 21 `Future<Result>` methods all via `Result.guard` (479 lines
+  of one-liners), i.e. a thin facade. The largest file is now `checkout_page`
+  (503 lines) and it composes 5 private section widgets (`_CouponCard`,
+  `_ShippingAddressCard`, `_ServerTotalsCard`, `_ServerTotalRow`) — splitting it
+  would be churn.
+- **OPEN (small) — `Result.guard` has no `onError` hook** (`result.dart:22` is
+  the only signature). Verified candidates: `orders readOrders` is clean
+  (single `on Exception catch`: logs, then returns one fixed message).
+  `reviews fetchReviews` is only a PARTIAL candidate — it has two catches
+  (`PostgrestException` logs `e.code` as network; the generic `Exception` catch
+  does not log at all), so a hook would need the error object and the generic
+  path would GAIN logging. Behaviour delta to note if it is ever done.
+- NEXT GATES: money PR #71 merge review. **Owner decision needed on the
+  coupons surface (wire vs delete)** — the single largest open item.
+
+## New — 2026-09-16 (fix: money truncation, formatter consolidation + invoice money pins + 1.4-scale fit pins + real-font retrofit of every scale pin + the grid-card price-clipping fix it exposed; branch `refactor/money-piasters`, commits `643d39a` + `2aecd76` + `0c9e759` + `d342383` + `eb7feb9`, PUSHED as draft PR #71)
+
+Owner decisions this run: keep the `EGY` symbol and print decimals only when
+non-zero; scope = the truncation fix plus formatter consolidation.
+
+- **The bug (was live on master `533c232`):** `Money.format()` used
+  `minorUnits ~/ 100`, truncating piasters. `meteredLineTotal` produces
+  whole *minor* units, not whole pounds — 399.50 EGP/m × 2.5 m = 99875
+  (998.75 EGP) — so the Add-to-Cart CTA showed "998 EGY" while
+  `checkout_service.dart:84` submitted `line_total` 99875 for the same
+  line: the customer saw less than the amount recorded on the order.
+- **`Money.format({symbol = 'EGY'})`** now prints decimals only when the
+  piasters are non-zero. Every pre-existing pin is a whole amount, so all
+  23 `EGY` assertions across 9 test files stayed green untouched.
+- **`Money.formatExact({symbol = 'EGP'})`** added: fixed two decimals, and
+  an empty symbol yields digits only with no trailing space. This absorbed
+  the other two dialects so the document style is preserved exactly:
+  `invoice_pdf_builder`'s unit/line/total cells now call it instead of
+  inline `toStringAsFixed(2)` (output identical), and `safeMinorToEgpLabel`
+  in the admin coupons page keeps its "EGP x.yy" look while delegating the
+  digits.
+- **`core/utils/currency.dart` deleted:** the one-line `money()` wrapper is
+  folded into `Money.format()`; its 3 importers (cart_summary, price_text,
+  cart_item_tile) call `.format()` directly. No test referenced it.
+- **Doc correction:** `cut_length_pricing.dart` claimed rounding was "exact
+  for the tier grid" — it is exact in minor units, not whole pounds; the
+  note now says so and points at the display requirement.
+- **Tests (+8):** new `test/core/entities/money_format_test.dart` (6 pins
+  across both styles — whole amounts, piasters, single-digit padding,
+  symbol override, two decimals, empty symbol); a metered-total render pin
+  in cut_length_pricing_test; `safeMinorToEgpLabel` delegation pins in
+  admin_coupons_page_test plus a rendered "EGP 10.00" assertion.
+- **Mutation-checked, both bites verified:** restoring the truncation fails
+  the metered pin ("998.75 EGY" → "998 EGY") and only that test; dropping
+  formatExact's decimals fails the formatter pins and the coupon-label pin.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (428 files); `flutter test`
+  **914/914 PASS** (`643d39a` reached 907 = 899 baseline + 8; `2aecd76`
+  added 4 invoice pins = 911; `0c9e759` added 3 scale pins = 914).
+  Generated-file churn
+  (`pubspec.lock`, `.flutter-plugins-dependencies`) reverted in both the
+  worktree and the main tree so the branch diff carries only refactor
+  content.
+- **Swept for stragglers after the change:** no manual money display
+  formatting remains in `lib/`. The surviving `toStringAsFixed` sites are
+  not money renderers — meters/quantity display in pricing_tier_table,
+  variant_selector and product_details_cubit, and
+  `admin_product_edit_page._trimTrailingZeros`, which prefills an editable
+  price *text field* from a double (input formatting, not display).
+  `cut_length_pricing.dart:41`'s integer `~/ 100` is intentional
+  minor-unit tier math.
+- **The residual is now CLOSED — follow-up commit `2aecd76`.** The invoice
+  PDF's *text* is pinned: `invoice_pdf_test` asserted only PDF shape
+  (bytes/header/isolate path), so a cell or grand-total regression would have
+  shipped silently. New
+  `test/features/admin/domain/invoice_pdf_money_test.dart` inflates the Flate
+  content streams with `dart:io`'s `ZLibCodec` — no new dependency, and no
+  `lib/` reshaping for testability — then asserts the REAL rendered runs:
+  unit cell `499.50`, line cell `999.00` (price × qty), grand total
+  `3600.00`, the currency-run count (EGP exactly once, on the total; never
+  EGY), and that whole-pound amounts keep their trailing decimals.
+- **The document pins were mutation-checked too:** switching the three invoice
+  call sites back to compact `Money.format()` fails 3 of the 4 new pins while
+  the older `invoice_pdf_test` still passes 4/4 — i.e. the new file carries
+  coverage the suite lacked. One assertion was found VACUOUS during that
+  check (a `contains`-`isNot` that passed in both the correct and the mutated
+  state) and was replaced with a rendered-run count that does bite.
+- **Incident, recorded:** while mutation-checking I ran `git checkout --
+  lib/core/entities/money.dart` to undo a mutation, which discarded the
+  uncommitted fix itself. Caught immediately, re-applied from the same
+  edit, and re-verified; the second mutation round used a `/tmp` backup
+  instead. The committed file was diffed against that backup and is
+  byte-identical.
+- **PUSHED + DRAFT PR #71 opened** (owner asked for push + draft PR):
+  https://github.com/mostafasayed118/albatal-store-app/pull/71 — base master,
+  head `refactor/money-piasters`, MERGEABLE, 11 files. `origin/master` was
+  already `533c232` (the branch base), so no master merge was needed. PR body
+  records the bug table, the behaviour deltas, the verification and the
+  invoice-text residual.
+- **1.4-scale fit pins — commit `0c9e759`, and a TEST-HARNESS FINDING
+  FUTURE LOOPS SHOULD KNOW ABOUT.** The existing 1.4-scale pins only asserted
+  "no overflow exception", and they ran with the **default test font**, whose
+  uniform glyph advances are much wider than Inter. Measured: under that font
+  EVERY CTA label — including the whole-pound `Add to Cart - 1290 EGY` the app
+  already ships — reports a `TextOverflow` ellipsis at a clamped 263.6dp,
+  while in Inter the same labels render at 220.6-253.8dp with room to spare.
+  So a naive "did it ellipsize?" assertion on those pins reports a failure for
+  code that is fine (it produced exactly that false alarm first). New
+  `test/helpers/app_fonts.dart` loads the pubspec fonts (Inter + Montserrat)
+  via `FontLoader`; any future test that reasons about whether copy FITS must
+  call it first, or it is measuring the test font.
+- **Pins added:** the CTA with a fractional metered total (`998.75 EGY`,
+  qty 1) renders in full — present, NOT ellipsized, inside the 360dp viewport
+  — and a headroom pin at qty 9 (`8988.75 EGY`, the widest label still inside
+  the CTA's 263.6dp of text room in Inter). Cart pins cover `998.75 EGY` in
+  the tile and `1073.75 EGY` in the totals row (subtotal + 75.00 shipping), so
+  fractional piasters are pinned through the whole cart path.
+- **Boundary measured and recorded, not hidden:** qty 99 (the cubit's clamp
+  ceiling → 5-digit `98876.25 EGY`) does ellipsize — the `Flexible` guard's
+  designed soft fallback, never an overflow, and the full string stays in the
+  widget tree for assistive tech. Left as-is: shortening the icon or shrinking
+  type would be a design call, not a bug fix. The piasters themselves cost
+  ~20dp (220.6 → 241.1dp at qty 1).
+- **Mutation-checked, third layer too:** widening the CTA lead-in gap from 8dp
+  to 40dp fails BOTH new CTA fit pins while the two pre-existing scale pins
+  still pass — i.e. the new pins carry coverage the suite did not have.
+- **Real-font retrofit of every scale pin — commit `d342383`.** Five files
+  carried 1.4-scale pins: `details_`, `cart_`, `home_`, `checkout_text_scale_test`
+  and `stitch_product_grid_card_test`. All now call the shared
+  `loadAppFonts()`. **Two conditions are required, and the second is the easy
+  one to miss:** (a) load Inter/Montserrat, AND (b) the harness must apply
+  `AppTheme.light()`. A bare `MaterialApp` leaves `fontFamily` null, so text
+  falls back to the test font *no matter what was loaded* — the loader is then
+  decorative. Three harnesses were unthemed (home, grid card, details page +
+  RelatedCard) and now apply the app theme, which also makes their layout
+  representative. Measured on the same string in the same 158dp cell: test font
+  112.8dp @1.0x / 157.6dp @1.4x vs Inter 66.9dp / 93.2dp.
+- **Pins upgraded where ellipsis can hide content:** the details-page CTA label
+  is now asserted to render IN FULL at 1.4x (the old `find.text` could never
+  see a clipped amount), and the cart amounts likewise. Mutation re-check
+  (CTA lead-in 8dp → 40dp) still fails the two CTA fit pins.
+- **DEFECT SURFACED BY THE RETROFIT, THEN FIXED — commit `eb7feb9`.** The
+  product grid card's price row was a `Row`, so it split the cell's inner width
+  evenly between the price and the struck-through old price. With a discount
+  present the amount was **silently ellipsized**: needed 66.9dp against a
+  66.0dp slot at the default scale, and 93.2dp at 1.4x (real Inter, 158dp cell)
+  — 0.9dp short and ~27dp short respectively. Pre-existing (whole-pound
+  amounts; the card was untouched by this branch) and accessibility-visible at
+  large text scale. The old pins could not see it because they only asserted
+  "no RenderFlex overflow", and a clipped amount raises no exception.
+- **The fix:** the row is a `Wrap` now. Each amount takes the width it needs,
+  and the old price drops to a second line only when it no longer fits beside
+  the price — at the default scale both still share one line
+  (66.9 + 6 + ~44 = 117 within 138dp), so the shipped look is unchanged; at
+  1.4x the old price wraps instead of the price being clipped. The media above
+  is `Expanded`, so the extra line shrinks the image rather than overflowing
+  the cell. One widget-level layout change; no BLoC/state/router/schema touch.
+- **Pins that had to be withheld are now asserted:** the card pins require the
+  amounts to render IN FULL at both scales, and the home pin checks EVERY
+  mounted card at 1.4x rather than the first — a card without a discount has
+  the whole row to itself and would pass even with the old layout, so pinning
+  only the first card would have missed this. **Mutation-checked by
+  reverse-applying the commit's lib patch**: all three card pins fail on
+  "must not be clipped" AND the home grid pin fails ("1290 EGY must not be
+  clipped in the home grid at 1.4x"); patch re-applied, all green.
+- **PR #71 refreshed after each commit:** the body was rewritten via
+  `gh pr edit` so the previously-declared residual reads as closed and the
+  scale-pin section records the test-font finding and the measured table; 15
+  files / 3 commits, still draft. CI was live at the time of this run (one
+  run in progress, one pending) — NOT watched to completion.
+- NEXT GATES: owner review of draft PR #71 → mark ready + merge. Master
+  untouched at `533c232`; no merge performed. The grid-card defect found in
+  this branch is fixed rather than deferred, so no owner decision is
+  outstanding on it — a visual eyeball of a discounted card at large text
+  scale on device would still be worth one look.
+
+## New — 2026-09-16 (refactor-analysis follow-up: #2/#3 verified merged, #1 money truncation still OPEN — L1, no code changed)
+
+- **The earlier session's worktrees are gone** — this box is a fresh clone
+  (`git reflog` is just clone + fast-forward), so the local `.trees/*`
+  refactor worktrees and local `refactor/*` branches did not survive.
+  **Nothing was lost:** #68/#69/#70 are all merged into master `533c232`,
+  so that work landed upstream before the re-clone.
+- **Merged state re-verified on master `533c232`:** `flutter analyze`
+  0 issues; `flutter test` **899/899 PASS**. Both refactors hold
+  (`Result.guard` in the admin/profile repository boundaries; page-level
+  raw spinners down from 15 to 4).
+- **#1 (money rendering) remains the only open item from the analysis, and
+  it is a live correctness bug**, still present on `533c232`:
+  - `core/entities/money.dart:37` — `'${minorUnits ~/ 100} $symbol'`
+    truncates piasters; the default symbol is `EGY`.
+  - `storefront/domain/pricing/cut_length_pricing.dart:48` —
+    `meteredLineTotal` = `(perMeter.minorUnits * meters).round() * quantity`
+    gives integral minor units, but NOT a whole major unit (399.50 EGP/m
+    × 2.5 m = 99875 minor = 998.75 EGP).
+  - `storefront/presentation/widgets/add_to_cart_button.dart:37` renders
+    that value in the CTA → "Add to Cart - 998 EGY", while
+    `storefront/data/checkout_service.dart:84` submits
+    `'line_total': item.effectiveLineTotal.minorUnits` (99875). One source
+    value, two representations: the displayed estimate sits 0.75 EGP under
+    the line total recorded on the order.
+  - Doc inaccuracy at `cut_length_pricing.dart:46-47`: the "plain rounding
+    is exact for the tier grid" note is wrong for display — rounding makes
+    minor units integral, not whole major units.
+  - Blast radius of the SYMBOL/locale half only: 23 `EGY` occurrences across
+    9 test files; 24 `.format()` call sites in `lib/`; `core/utils/currency.dart`
+    is a 1-line wrapper with 3 importers.
+- **Blast radius of the TRUNCATION half: zero** — every currently pinned
+  amount is a whole major unit, so showing piasters only when non-zero
+  leaves all 23 pins green. The two halves are separable.
+- **NOT changed:** `lib/` untouched this run (L1 report-only per LOOP.md).
+  Proposed split: land the non-breaking truncation fix first, decide the
+  symbol/locale question separately.
+- NEXT GATES: owner decision on money display (symbol `EGY` vs `EGP`;
+  decimals only when non-zero vs always 2dp); then L2 + a worktree for the
+  fix. Separate optional owner call: delete the stale unmerged branches
+  listed above as unknown state.
+
+## New — 2026-09-16 (refactor: the last 4 data-layer guard migrations; branch `refactor/data-layer-guard-2`)
+
+Follow-up to draft PR #68 (`refactor/data-layer-guard`, which moved the admin
+and profile repositories onto `Result.guard`). Branched from master `4cedc42`
+on purpose so this is an independent review unit: the two files touched here
+are untouched by #68 (verified - `git diff master refactor/data-layer-guard --
+<both files>` is empty).
+
+- **Surveyed every `catch` in `lib/**/data/**`: 44 sites across 11 files.**
+  Migrated the 4 that satisfy the guard contract (a single fixed message, no
+  logging, no typed mapping, no recovery branch):
+  `supabase_auth_repository.checkSession`, `.signOut`,
+  `supabase_catalog_repository.fetchCategories`, `.getActiveFlashSales`.
+- **The other 40 sites stay hand-written**, by reason:
+  typed mapping (20) - auth `signUp`/`signIn`/`resetPassword`/`updatePassword`
+  plus `deleteAccount`'s `FunctionException` parse (10), coupons `validate`
+  (2), reviews `fetchReviews`/`submit` (4), checkout `createOrder` (2),
+  catalog `getProductById` (2);
+  logging side effect (8) - orders `readOrders`, paymob x5, the
+  payment-watcher poll, catalog `fetchProducts` (this bucket overlaps the
+  recovery and non-`Result` buckets below, which is how it got over-counted
+  as 9 on first pass). CORRECTION from a later review of the same sites:
+  only 2 of them are `Result` boundaries that a `Result.guard(onError:)` hook
+  could actually unlock - `orders readOrders` and `reviews fetchReviews`
+  (both log and then return a single fixed message). Paymob returns its own
+  `PaymentResult` sealed type (5 catches), the payment-watcher catch guards a
+  stream poll, and catalog `fetchProducts` needs the recovery hook as well;
+  recovery/fallback (3) - catalog cache-degrade paths;
+  fail-soft returning data rather than a `Result` (6) -
+  storefront_persistence x5, local_address_repository;
+  non-`Result` returns - catalog `_persistCache`/`_restorePersistentCache`,
+  paymob's `PaymentResult`, the watcher;
+  admin repo (2) - `isCurrentUserAdmin` (bool, fails closed + logs),
+  `fetchCustomers` (logs the cause).
+- **Behaviour delta to review:** `fetchCategories` moved from `on Exception`
+  to the guard's catch-all, so an `Error` (a TypeError from a malformed
+  payload) is now mapped to a `Failure` instead of escaping the boundary.
+  Consistent with the boundary contract, but it is a widening.
+- **Evidence:** `flutter analyze` 0 issues; `dart format
+  --set-exit-if-changed lib test` clean (424 files); `flutter test`
+  **893/893 PASS** (master baseline - no test changes were needed, the
+  existing auth and storefront data suites already pin all four methods).
+- **Churn:** pubspec.lock / .flutter-plugins-dependencies reverted (the
+  toolchain on this box rewrites them on pub get).
+- NEXT GATES: owner review of this draft PR -> mark ready + merge. Related
+  but independent: draft PR #68 (admin/profile guard migration).
+
+## New — 2026-09-16 (refactor: FeedbackView adoption completed; branch `refactor/feedback-view-adoption`)
+
+Continues the previous session's in-flight refactor in worktree
+`.trees/feedback-view` (branch `refactor/feedback-view-adoption` from master
+`4cedc42`). Uncommitted and NOT pushed; master untouched.
+
+- **Finished the adoption.** The last full-page status states that still
+  hand-rolled their own UI now use the shared `FeedbackView`
+  (lib/shared/components/feedback_view.dart): `addresses_page` (error with
+  a real retry + empty — no CTA override, the add-address FAB already
+  carries that label), `admin_coupons_page` (loading + error with retry +
+  empty), `admin_sales_dashboard_page` (error now carries the message and a
+  Retry that reloads), `admin_image_manager_page` (image-load failure with
+  Retry).
+- **Deliberately left alone, with reasons:** in-button progress spinners
+  (`strokeWidth: 2` on the auth / payments / admin submit buttons and the
+  app-lock unlock button); admin_product_edit_page's inline
+  category-loading and submit spinners; reviews_section's section-level
+  spinner (FeedbackView is a full-height Center, wrong inside a section);
+  paymob_checkout_page's overlay spinner on the payment WebView; the
+  payments/auth error copy that flows through paymentMessageForCode and
+  floating snackbars; and checkout's inline error card.
+- **Admin-console copy convention respected (AUD-012):** the sales
+  dashboard and image manager pass explicit English overrides; the
+  l10n-driven pages use the widget defaults.
+- **Harness fix + new coverage:** admin_sales_dashboard_page_test.dart
+  pumped the page WITHOUT AppLocalizations delegates, so every FeedbackView
+  state threw in tests — the previous session's loading swap had already
+  broken 2 tests on this uncommitted branch. Both harnesses now install the
+  delegates, and a new test pins the error Retry actually reloading
+  (getSalesOverview called twice).
+- **Retry coverage added in the follow-up test commit:**
+  new `admin_coupons_page_test.dart` (error -> Retry re-reads
+  `fetchCoupons` and renders the returned rows; empty type renders with no
+  duplicate CTA) and `addresses_retry_test.dart` (scripted repository counts
+  reads, so the error Retry must fetch a second time and render the
+  recipient; the empty book keeps the FAB as the only add control). Both
+  tests were mutation-checked: replacing the two `onAction` wirings with
+  no-ops failed exactly those two retry tests and nothing else.
+- **Image-manager retry coverage added:**
+  admin_polish_test.dart now asserts the image-load failure renders the
+  shared error view and that its Retry re-reads `getProductImagePaths`
+  (called twice) and renders a tile; mutation-checked the same way. The
+  sales-dashboard retry from 0c392cc was mutation-checked in the same pass
+  (its `onAction` disabled) and bites too. No page/lib code changed - the
+  only diff is the test file.
+- **Evidence (this worktree, post-edit):** `flutter analyze` 0 issues;
+  `dart format --set-exit-if-changed lib test` clean (426 files);
+  `flutter test` **899/899 PASS** (893 baseline + 6 retry/adoption tests).
+- **Churn reverted:** pubspec.lock / .flutter-plugins-dependencies
+  (regenerated by running the toolchain here; revert again before commit).
+- **Tooling note for the next run:** the session's file-edit tools resolve
+  paths against the data-layer-guard worktree (the reported project root),
+  so edits to THIS worktree must be made from it (a verified patch script
+  was used here, then reverted where it landed in the wrong tree).
+- NEXT GATES: owner review of draft PR #69 -> mark ready + merge. The
+  sibling branch refactor/data-layer-guard is pushed as draft PR #68.
+
+## New — 2026-09-16 (refactor: data-layer guard migration; branch `refactor/data-layer-guard`)
+
+Continues the previous session's in-flight refactor in worktree
+`.trees/data-layer-guard` (branch `refactor/data-layer-guard` from master
+`4cedc42`). The refactor is committed on that branch and NOT pushed; master
+untouched. This run finished the migration and recorded the evidence.
+
+- **Migrated the two Supabase repository boundaries to the shared
+  `Result.guard` helper** (lib/core/error/result.dart):
+  `supabase_admin_repository.dart` (20 of its 21 Result-returning methods;
+  2 `catch` sites left) + `supabase_profile_repository.dart` (2 of 2).
+  Failure message text is byte-identical at every call site; the mapped
+  `AppError` now also carries the stack trace.
+- **Two boundaries deliberately stay hand-written**, each with an in-code
+  reason: `isCurrentUserAdmin` (answers with a bool and fails closed +
+  logs, so there is no `Result` to guard) and `fetchCustomers` (logs the
+  cause via `Log.w` before mapping; `Result.guard` has no logging hook).
+  `updateOrderStatus` keeps its pre-flight domain validation outside the
+  guard so the boundary cannot relabel it.
+- **The two upsert RPCs** (`adminUpsertProduct`, `adminUpsertVariant`) are
+  now guarded; their empty-id protocol violation is thrown so the guard
+  maps it to the same message, with the empty payload as the cause.
+- **Churn reverted:** `pubspec.lock` + `.flutter-plugins-dependencies`
+  (pub get on this box's Flutter 3.47.4 had bumped meta, test,
+  vector_math, ...) were reverted in BOTH worktrees so each branch diff
+  carries only refactor content. Lock changes need owner approval per
+  loop-constraints.md.
+- **Evidence (post-edit, in this worktree):** `flutter analyze` 0 issues;
+  `dart format --set-exit-if-changed lib test` clean (424 files);
+  `flutter test` **893/893 PASS** (exit 0; master baseline parity).
+  Existing tests already pin both migrated paths —
+  admin_catalog_repository_test.dart asserts throw -> `Failure` and
+  non-string payload -> `Failure` — so no new tests were needed.
+- **Sibling workstream left untouched by owner scope call:**
+  `refactor/feedback-view-adoption` (worktree `.trees/feedback-view`) has
+  11 pages adopting the shared `FeedbackView` widget, still uncommitted
+  and unverified.
+- NEXT GATES: owner review of the branch -> push + PR approval;
+  optional follow-up round on the feedback-view branch.
 
 ## New — 2026-09-16 (performance re-score on device; AUDIT AT 10.0)
 

@@ -14,10 +14,13 @@ import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
+import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../../helpers/app_fonts.dart';
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
 import '../../../../helpers/recently_viewed_store_stub.dart';
@@ -93,6 +96,11 @@ class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
 Widget _harness() {
   final store = MemoryStorefrontPersistence();
   return MaterialApp(
+    // The APP theme, not the Material default: `loadAppFonts` only takes
+    // effect through a font family the theme declares (Inter/Montserrat).
+    // Unthemed, every label measures ~2x its real width and this pin becomes
+    // a much stricter — and misleading — test than the app itself.
+    theme: AppTheme.light(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: MultiBlocProvider(
@@ -127,6 +135,8 @@ void main() {
       'Home renders search bar, category chips and grid cards without '
       'overflow at a 360dp phone viewport with 1.4 system font scale',
       (tester) async {
+    // Real Inter/Montserrat: a 360dp viewport at 1.4x is the device case.
+    await loadAppFonts();
     tester.view.physicalSize = const Size(360, 740);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -153,6 +163,31 @@ void main() {
       scrolls++;
     }
     expect(find.byType(StitchProductGridCard), findsWidgets);
-    expect(tester.takeException(), isNull);
+    expect(tester.takeException(),
+        isNull); // ...and every mounted card's amounts must be READABLE at 1.4x, not
+    // clipped. This is the end-to-end half of the grid-card price fix: the
+    // card's own pin covers the 158dp cell in isolation, this one covers the
+    // real grid cell at the real scale under the app theme. It checks every
+    // mounted card, not just the first — a card WITHOUT a discount has the
+    // whole row to itself and would pass even with the old layout.
+    for (final element in find.byType(StitchProductGridCard).evaluate()) {
+      final product = (element.widget as StitchProductGridCard).product;
+      for (final amount in <String>[
+        product.price.format(),
+        if (product.oldPrice != null) product.oldPrice!.format(),
+      ]) {
+        final matches = find
+            .descendant(
+                of: find.byType(StitchProductGridCard),
+                matching: find.text(amount))
+            .evaluate();
+        expect(matches, isNotEmpty, reason: '$amount is mounted');
+        for (final match in matches) {
+          expect((match.renderObject! as RenderParagraph).didExceedMaxLines,
+              isFalse,
+              reason: '$amount must not be clipped in the home grid at 1.4x');
+        }
+      }
+    }
   });
 }

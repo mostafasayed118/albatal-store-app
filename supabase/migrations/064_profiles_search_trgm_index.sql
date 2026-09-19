@@ -1,0 +1,100 @@
+-- ============================================================================
+-- 064_profiles_search_trgm_index.sql — REVIEW-GATED PROPOSAL
+-- ============================================================================
+-- Owner review required before applying (AGENTS.md migration gate).
+-- Provenance: owner-requested follow-up on branch feat/admin-customer-tier,
+-- after the customer directory's search moved server-side (d9ffb92) and started
+-- running on every debounced keystroke.
+--
+-- Problem
+-- -------
+-- SupabaseAdminRepository.fetchCustomers searches with a LEADING wildcard:
+--     full_name.ilike.'%term%'   (OR  phone.ilike.'%term%')
+-- (see `customerSearchFilter` in
+-- lib/features/admin/data/supabase_admin_repository.dart).
+--
+-- A pattern that begins with `%` cannot use a btree index, and public.profiles
+-- has no index on either column, so every search is a sequential scan of the
+-- whole table. Search is debounced (300ms), so this is not one scan per
+-- keystroke, but it is still one scan per typing pause — and it grows with the
+-- table rather than with the number of matches.
+--
+-- Fix
+-- ---
+-- A trigram GIN index on `full_name`, matching the precedent in
+-- 055_search_suggestions.sql (idx_products_name_trgm, created for exactly this
+-- shape of query). Between those two migrations the pattern is already
+-- established in this repo.
+--
+-- SCOPE — why only `full_name`, and not `phone`
+-- -------------------------------------------
+-- An earlier revision of this migration also indexed `phone`. That index has
+-- been DROPPED from it as vestigial, on the owner's call, because 065 changed
+-- which column a phone search reads. The routing is:
+--
+--   phone-SHAPED term  (digits and phone punctuation only) -> phone_digits
+--   anything else      (contains a letter or symbol)       -> phone, literal
+--
+-- So `phone` is now reached only by a term that is NOT phone-shaped yet still
+-- appears in a stored number — in practice "the admin pasted the stored value
+-- verbatim, letters and all". Digits, which is how a number is actually read
+-- back, never land there. Indexing a column that routine queries no longer
+-- touch costs write amplification on every signup and profile edit for a path
+-- that is rare by construction.
+--
+-- The capability does narrow, deliberately: a paste of the STORED VALUE with
+-- its separators is still matched (that term is phone-shaped, so it goes to
+-- `phone_digits`, which is indexed), but a paste containing letters is matched
+-- by an unindexed scan of `phone`. Accepting a seq scan on a rare path is the
+-- trade being made.
+--
+-- `phone_digits` carries its own trigram index — see 065, which cannot be
+-- folded in here because the column does not exist until that migration runs.
+--
+-- Be precise about what `gin_trgm_ops` does and does not give:
+--   * It DOES accelerate `ILIKE '%x%'` — leading wildcards are the case a
+--     trigram index exists for. (Measured: see the planner check in
+--     supabase/tests/keyset-proof/, which shows the plan switching to a bitmap
+--     index scan once the table is large enough for the planner to care.)
+--   * It DOES NOT help patterns with fewer than 3 extractable characters.
+--     `'%ab%'` yields no trigrams, so a 1- or 2-character search still scans.
+--     That is a real limit of the technique, not a misconfiguration, and it is
+--     why the directory's own debounce still matters.
+--   * It adds write cost to profiles. That trade is cheap here: profiles are
+--     written on signup and on profile edit, and searched on every typing
+--     pause.
+--   * It has no NULL to be silent about here: `full_name` is
+--     NOT NULL DEFAULT '' (001_initial_schema.sql), so every row is indexed.
+--     The equivalent hazard in 065 is avoided by COALESCE-ing `phone` to ''
+--     rather than leaving the generated column NULL.
+--
+-- The companion migration — 065
+-- ----------------------------
+-- 065_profiles_phone_digits.sql adds a generated `phone_digits` column so a
+-- digit-only search can match a stored value containing separators, AND
+-- transliterates Arabic-Indic digits so a customer who typed ٠١٢… is reachable
+-- at all. It ships that column's own trigram index. Which columns a search
+-- actually reads, and why `phone` is no longer one of them for digit terms, is
+-- in SCOPE above.
+--
+-- Why not CONCURRENTLY
+-- --------------------
+-- CREATE INDEX CONCURRENTLY cannot run inside a transaction block, and tooling
+-- applies each migration in one. At today's row counts a plain build is
+-- instant. A table large enough to need CONCURRENTLY would need these built
+-- out-of-band instead, not by editing these statements.
+--
+-- Rollback
+-- --------
+-- DROP INDEX IF EXISTS public.idx_profiles_full_name_trgm;
+-- (The pg_trgm extension is left in place — 055 depends on it.)
+-- Rollback restores the pre-064 plan for the NAME search only. The digit search
+-- is unaffected either way: its index belongs to 065. No data change.
+-- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Case-insensitive substring search on the customer's name. This is the only
+-- index this migration creates — see SCOPE for why `phone` was dropped.
+CREATE INDEX IF NOT EXISTS idx_profiles_full_name_trgm
+  ON public.profiles USING gin (full_name gin_trgm_ops);

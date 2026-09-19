@@ -2,30 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/app_card.dart';
+import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_coupons_cubit.dart';
 
 /// Admin coupon management (feature-batch §8): list, create, activate.
 ///
-/// The repository is constructor-injected (audit P1); the router
-/// resolves it at the composition root, with an optional injected cubit
-/// for widget tests.
+/// The router resolves [repository] at the composition root (audit P1) and
+/// the `getIt` lookup below stays as the test-only fallback, matching the
+/// other admin pages; [cubit] can be injected outright by widget tests.
 class AdminCouponsPage extends StatelessWidget {
-  const AdminCouponsPage({super.key, this.cubit, required this.repository});
+  const AdminCouponsPage({super.key, this.cubit, this.repository});
 
   final AdminCouponsCubit? cubit;
-
-  /// Coupon backend resolved at the composition root (the page never
-  /// service-locates). Ignored when [cubit] is provided.
-  final AdminRepository repository;
+  final AdminRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminCouponsCubit>(
-      create: (_) =>
-          (cubit ?? AdminCouponsCubit(repository: repository))..load(),
+      create: (_) => (cubit ??
+          AdminCouponsCubit(repository: repository ?? getIt<AdminRepository>()))
+        ..load(),
       child: const _AdminCouponsView(),
     );
   }
@@ -47,15 +47,23 @@ final class _AdminCouponsView extends StatelessWidget {
       body: BlocBuilder<AdminCouponsCubit, AdminCouponsState>(
         builder: (context, state) {
           if (state.status == AdminCouponsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminCouponsStatus.error) {
-            return Center(
-              child: Text(state.errorMessage ?? l.couponInvalid),
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              body: state.errorMessage ?? l.couponInvalid,
+              onAction: () => context.read<AdminCouponsCubit>().load(),
             );
           }
           if (state.coupons.isEmpty) {
-            return Center(child: Text(l.adminAddCoupon));
+            // Bare empty state: the create-coupon FAB carries the action, so
+            // no CTA renders here.
+            return FeedbackView(
+              type: FeedbackViewType.empty,
+              icon: Icons.local_offer_outlined,
+              body: l.adminAddCoupon,
+            );
           }
           return ListView.separated(
             padding: const EdgeInsetsDirectional.all(16),
@@ -63,17 +71,10 @@ final class _AdminCouponsView extends StatelessWidget {
             separatorBuilder: (context, i) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final coupon = state.coupons[i];
-              return Card(
-                color: Theme.of(context).colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppTheme.cardRadius,
-                  side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      width: 1),
-                ),
+              return AppCard(
                 child: SwitchListTile(
                   title: Text(coupon.code),
-                  subtitle: Text(Money(coupon.discountMinor).egpLabel()),
+                  subtitle: Text(safeMinorToEgpLabel(coupon.discountMinor)),
                   value: coupon.active,
                   onChanged: (active) => context
                       .read<AdminCouponsCubit>()
@@ -144,3 +145,9 @@ final class _AdminCouponsView extends StatelessWidget {
     }
   }
 }
+
+/// Minor-units → "EGP x.yy" display label (display-only; money math
+/// stays server-side). The digits come from [Money.formatExact] so every
+/// money string in the app is produced by one formatter.
+String safeMinorToEgpLabel(int minor) =>
+    'EGP ${Money(minor).formatExact(symbol: '')}';

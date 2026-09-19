@@ -43,7 +43,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
           if (state.status == AdminStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
             return FeedbackView(
@@ -101,6 +101,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               title: l.catalog,
               subtitle: l.manageProducts,
               onTap: () => context.push(Routes.adminCatalog),
+            ),
+            // Promo codes (§8): the page, cubit and repository methods
+            // shipped with no destination, so a coupon could be redeemed
+            // at checkout but never created. Both labels already exist in
+            // EN + AR, so no ARB change was needed.
+            _ActionTile(
+              icon: Icons.local_offer_outlined,
+              title: l.adminCoupons,
+              subtitle: l.adminAddCoupon,
+              onTap: () => context.push(Routes.adminCoupons),
             ),
           ];
           return ListView.builder(

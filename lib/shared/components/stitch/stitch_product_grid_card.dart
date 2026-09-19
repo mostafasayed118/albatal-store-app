@@ -4,6 +4,7 @@ import '../../../core/entities/product.dart';
 import '../../components/feedback.dart';
 import '../../extensions/build_context_x.dart';
 import '../../theme/contrast.dart';
+import '../app_card.dart';
 import '../app_image.dart';
 
 /// Stitch 2-col product grid card — surface, outlineVariant border, square media.
@@ -37,12 +38,7 @@ class StitchProductGridCard extends StatelessWidget {
       button: true,
       label: '${product.name}, ${product.price.format()}',
       child: RepaintBoundary(
-        child: Card(
-          color: scheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: scheme.outlineVariant),
-          ),
+        child: AppCard(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
@@ -133,33 +129,42 @@ class StitchProductGridCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Row(
+                      // Wrap, not Row. A Row splits the cell's inner
+                      // width evenly between the two amounts, so the price
+                      // was silently clipped as soon as a discount was
+                      // present and the amount got wide: measured 66.9dp of
+                      // text in a 66.0dp slot at the default scale and
+                      // 93.2dp at 1.4x (real Inter, 158dp cell). Each amount
+                      // now takes the width it needs, and the struck-through
+                      // old price drops to a second line only when it no
+                      // longer fits beside the price — identical at the
+                      // default scale, nothing clipped at large scales. The
+                      // media above is Expanded, so an extra line shrinks
+                      // the image instead of overflowing the cell.
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Flexible(
-                            child: Text(
-                              product.price.format(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: textTheme.labelLarge?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          Text(
+                            product.price.format(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelLarge?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          if (product.oldPrice != null) ...[
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                product.oldPrice!.format(),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
+                          if (product.oldPrice != null)
+                            Text(
+                              product.oldPrice!.format(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                decoration: TextDecoration.lineThrough,
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],

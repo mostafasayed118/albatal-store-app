@@ -9,6 +9,7 @@ import '../../domain/entities/admin_order.dart';
 import '../../domain/invoice/invoice_pdf_builder.dart';
 import '../cubit/admin_cubit.dart';
 import '../widgets/dialog_controllers.dart';
+import '../widgets/membership_tier_dialog.dart';
 import '../widgets/order_detail_cards.dart';
 
 /// Admin order detail — view items, update status, add tracking.
@@ -121,7 +122,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
         child: BlocBuilder<AdminCubit, AdminState>(
           builder: (context, state) {
             if (state.status == AdminStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
+              return const FeedbackView(type: FeedbackViewType.loading);
             }
             final order = state.selectedOrder;
             if (order == null) {
@@ -238,62 +239,29 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
   /// Opens the membership-tier dialog for [order]. Lifecycle belongs to
   /// the page State for the same reason as the tracking dialog: this is a
   /// separate route and must not be disposed mid-animation.
+  ///
+  /// The picker itself lives in [showMembershipTierDialog] so the order
+  /// card and the customer directory cannot drift apart; only the write is
+  /// page-specific.
   Future<void> _showTierDialog(AdminOrder order) async {
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    final l = context.l10n;
+    final profileId = order.customerId;
+    if (profileId == null) return;
     // Captured from the page State's context BEFORE the dialog route is
-    // pushed: the dialog builds above the BlocProvider, so closures inside
-    // it must not resolve the cubit through their own context.
+    // pushed: the dialog builds above the BlocProvider, so the write below
+    // must not resolve the cubit through the dialog's own context.
     final cubit = context.read<AdminCubit>();
-    final currentTier = order.customerTier ?? 'standard';
-    String selection = currentTier;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(l.changeMembershipTier),
-          content: RadioGroup<String>(
-            groupValue: selection,
-            onChanged: (value) {
-              if (value != null) setDialogState(() => selection = value);
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<String>(
-                  value: 'standard',
-                  title: Text(l.standardMember),
-                ),
-                RadioListTile<String>(
-                  value: 'premium',
-                  title: Text(l.premiumMember),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(l.cancel),
-            ),
-            FilledButton(
-              onPressed: () {
-                final profileId = order.customerId;
-                if (profileId == null) return;
-                Navigator.pop(dialogContext);
-                if (selection == currentTier) return;
-                // Optimistic nothing; the ack below is earned by the
-                // repository result (see the listener in build).
-                hapticWarning();
-                _awaitedTier = selection;
-                cubit.setMembershipTier(profileId, selection);
-              },
-              child: Text(l.confirm),
-            ),
-          ],
-        ),
-      ),
+    final selection = await showMembershipTierDialog(
+      context,
+      currentTier: order.customerTier,
     );
+    // Null means cancelled or unchanged — never write, never ack.
+    if (selection == null) return;
+    // Optimistic nothing; the ack below is earned by the repository
+    // result (see the listener in build).
+    hapticWarning();
+    _awaitedTier = selection;
+    await cubit.setMembershipTier(profileId, selection);
   }
 }
