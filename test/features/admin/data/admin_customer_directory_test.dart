@@ -1,13 +1,14 @@
-﻿import 'dart:async';
-
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../helpers/supabase_admin_fakes.dart';
 
 /// Regression guards for the admin data layer.
 ///
@@ -22,172 +23,426 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// `profiles(...)` join is subject to the viewer's RLS, so it now goes through
 /// the admin-checked `get_order_details` RPC instead.
 
-class MockSupabaseClient extends Mock implements SupabaseClient {}
-
-class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
-
-/// Awaitable terminal builder (the repository `await`s the chain).
-class FakeTransformBuilder<T> extends Fake
-    implements PostgrestTransformBuilder<T> {
-  FakeTransformBuilder(this._value);
-
-  final T _value;
-
-  @override
-  PostgrestTransformBuilder<T> order(
-    String column, {
-    bool ascending = false,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) =>
-      this;
-
-  @override
-  PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
-      this;
-
-  @override
-  Future<R> then<R>(FutureOr<R> Function(T value) onValue,
-          {Function? onError}) =>
-      Future.value(_value).then(onValue, onError: onError);
-
-  @override
-  Future<T> catchError(Function onError, {bool Function(Object error)? test}) =>
-      Future.value(_value).catchError(onError, test: test);
-
-  @override
-  Future<T> whenComplete(FutureOr<void> Function() action) =>
-      Future.value(_value).whenComplete(action);
-
-  @override
-  Stream<T> asStream() => Future.value(_value).asStream();
-
-  @override
-  Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) =>
-      Future.value(_value).timeout(timeLimit, onTimeout: onTimeout);
-}
-
-/// `select()` returns a `PostgrestFilterBuilder`, which is NOT a subtype of
-/// the transform builder, so it needs its own fake that hands back one.
-class FakeFilterBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
-  FakeFilterBuilder(this._rows);
-
-  /// `dynamic` element type on purpose: the total-decode regression tests
-  /// deliberately plant mistyped rows (e.g. a bare String) to prove they
-  /// degrade to skips instead of throwing.
-  final List<dynamic> _rows;
-
-  /// Tolerantly reified row list: PostgREST row lists decode as JSON
-  /// objects, so anything that is not a map is dropped here (mirroring the
-  /// client) while mistyped FIELD values still reach the repository to
-  /// prove its total-decode guards. Produces an honest
-  /// `List<Map<String, dynamic>>` at runtime so `as T` (PostgrestList)
-  /// succeeds.
-  T get _typed => _rows.whereType<Map<String, dynamic>>().toList() as T;
-
-  @override
-  PostgrestFilterBuilder<T> eq(String column, Object? value) => this;
-
-  @override
-  PostgrestTransformBuilder<T> order(
-    String column, {
-    bool ascending = false,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) =>
-      FakeTransformBuilder<T>(_typed);
-
-  @override
-  PostgrestTransformBuilder<T> limit(int count, {String? referencedTable}) =>
-      FakeTransformBuilder<T>(_typed);
-
-  @override
-  Future<R> then<R>(FutureOr<R> Function(T value) onValue,
-          {Function? onError}) =>
-      Future.value(_typed).then(onValue, onError: onError);
-
-  @override
-  Future<T> catchError(Function onError, {bool Function(Object error)? test}) =>
-      Future.value(_typed).catchError(onError, test: test);
-
-  @override
-  Future<T> whenComplete(FutureOr<void> Function() action) =>
-      Future.value(_typed).whenComplete(action);
-
-  @override
-  Stream<T> asStream() => Future.value(_typed).asStream();
-
-  @override
-  Future<T> timeout(Duration timeLimit, {FutureOr<T> Function()? onTimeout}) =>
-      Future.value(_typed).timeout(timeLimit, onTimeout: onTimeout);
-}
-
-/// `rpc()` hands back a `PostgrestFilterBuilder` carrying a single decoded
-/// JSON payload (not a row list), so the customer-directory fakes above need
-/// an Object?-shaped sibling for the `get_order_details` tests.
-class _FakeRpcBuilder extends Fake implements PostgrestFilterBuilder<Object?> {
-  _FakeRpcBuilder(this._payload);
-
-  final Object? _payload;
-
-  @override
-  Future<R> then<R>(FutureOr<R> Function(Object? value) onValue,
-          {Function? onError}) =>
-      Future.value(_payload).then(onValue, onError: onError);
-
-  @override
-  Future<Object?> catchError(Function onError,
-          {bool Function(Object error)? test}) =>
-      Future.value(_payload).catchError(onError, test: test);
-
-  @override
-  Future<Object?> whenComplete(FutureOr<void> Function() action) =>
-      Future.value(_payload).whenComplete(action);
-
-  @override
-  Stream<Object?> asStream() => Future.value(_payload).asStream();
-}
-
 void main() {
   // ─── fetchCustomers ─────────────────────────────────────
   //
   // Regression guard (doc comment above): the directory once requested the
   // nonexistent `profiles.email` column; PostgREST answered 42703 and the
-  // whole screen degraded to a permanent error. The stub below matches the
-  // exact column list the repository MUST request — any drift (including
-  // re-adding `email`) misses the stub and fails the test.
-  test('fetchCustomers selects only real profiles columns and maps rows',
+  // whole screen degraded to a permanent error. `directoryRepo` in
+  // test/helpers/supabase_admin_fakes.dart stubs the exact column list the
+  // repository MUST request — any drift (including re-adding `email`) misses
+  // the stub and fails the test.
+
+  test('fetchCustomers asks for one page, newest first, and reports the total',
       () async {
-    final client = MockSupabaseClient();
-    final builder = MockSupabaseQueryBuilder();
-    when(() => client.from('profiles')).thenAnswer((_) => builder);
-    when(() => builder.select('id, full_name, phone, membership_tier'))
-        .thenAnswer((_) => FakeFilterBuilder<PostgrestList>([
-              {
-                'id': 'c1',
-                'full_name': 'Layla',
-                'phone': '01000000000',
-                'membership_tier': 'premium',
-              },
-              {'id': 'c2', 'full_name': 'Omar'},
-            ]));
-    final repo = SupabaseAdminRepository(client: client);
+    final (repo, filters) = directoryRepo(
+      rows: [
+        {
+          'id': 'c1',
+          'full_name': 'Layla',
+          'phone': '01000000000',
+          'membership_tier': 'premium',
+          'created_at': '2026-09-16T10:00:00.000300Z',
+        },
+        {
+          'id': 'c2',
+          'full_name': 'Omar',
+          'created_at': '2026-09-16T10:00:00.000200Z',
+        },
+      ],
+      // The server holds far more rows than this page carries; that gap is
+      // what the directory has to be able to state out loud.
+      total: 120,
+    );
 
     final result = await repo.fetchCustomers();
 
-    verify(() => builder.select('id, full_name, phone, membership_tier'))
-        .called(1);
-    final customers = result.when(success: (v) => v, failure: (_) => null);
-    expect(customers, isNotNull);
-    expect(customers!.length, 2);
-    expect(customers[0].id, 'c1');
-    expect(customers[0].name, 'Layla');
-    expect(customers[0].phone, '01000000000');
-    expect(customers[0].contact, '01000000000'); // no email column → phone
-    expect(customers[0].tier, 'premium');
-    expect(customers[0].isBlocked, isFalse); // §14 read-only directory
-    expect(customers[1].tier, 'standard'); // tolerant default
-    expect(customers[1].phone, '');
+    // One page plus a look-ahead row, so "is there another page?" is answered
+    // by the data itself. The old `.limit(500)` truncated the directory
+    // silently and offered no way past it.
+    expect(filters.transform.limits, [defaultCustomersPageSize + 1]);
+    // The sort key has to be TOTAL. `created_at` alone is not unique — a seed,
+    // a bulk import or two signups in the same tick share it — and a
+    // non-unique key is exactly what lets a row land on two consecutive pages,
+    // or on neither, once paging stops being offset-based.
+    expect(filters.transform.orders, ['created_at', 'id']);
+    final page = result.when(success: (v) => v, failure: (_) => null);
+    expect(page, isNotNull,
+        reason: 'the exact column list is the 42703 regression guard: any '
+            'drift misses the stub and lands here as a Failure');
+    expect(page!.total, 120, reason: 'total comes from the exact count');
+    expect(page.customers.length, 2);
+    expect(page.customers[0].id, 'c1');
+    expect(page.customers[0].name, 'Layla');
+    expect(page.customers[0].phone, '01000000000');
+    expect(page.customers[0].contact, '01000000000'); // no email column → phone
+    expect(page.customers[0].tier, 'premium');
+    expect(page.customers[0].isBlocked, isFalse); // §14 read-only directory
+    expect(page.customers[1].tier, 'standard'); // tolerant default
+    expect(page.customers[1].phone, '');
+    // A page that came back short IS the last page, and says so rather than
+    // making the UI spend a request to discover the same thing.
+    expect(page.nextCursor, isNull);
+    // No search term means no server-side filter at all…
+    expect(filters.filters, isEmpty);
+    // …and no bookmark either: the first page starts at the newest row.
+    expect(filters.orFilters, isEmpty);
+  });
+
+  test('fetchCustomers bookmarks the last row it actually returned', () async {
+    final (repo, filters) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T10:00:00.000300Z'},
+      {'id': 'c2', 'created_at': '2026-09-16T10:00:00.000200Z'},
+      // One row past the page: evidence that there is more, never a result.
+      {'id': 'c3', 'created_at': '2026-09-16T10:00:00.000100Z'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.customers.map((c) => c.id), ['c1', 'c2']);
+    expect(
+      page.nextCursor,
+      (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2'),
+      reason: 'the bookmark is the last RETURNED row, so the next page can '
+          'neither repeat c2 nor skip it',
+    );
+    expect(filters.orFilters, isEmpty);
+  });
+
+  test('fetchCustomers resumes from the bookmark with a keyset filter',
+      () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(
+      cursor: (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2'),
+      limit: 2,
+    );
+
+    // The `id` clause is what makes the walk total. Drop it and two customers
+    // created in the same tick can be ordered either way between two queries:
+    // one of them then shows up twice, or not at all.
+    expect(filters.orFilters, [
+      'created_at.lt.2026-09-16T10:00:00.000200Z,'
+          'and(created_at.eq.2026-09-16T10:00:00.000200Z,id.lt.c2)',
+    ]);
+    expect(filters.transform.limits, [3],
+        reason: 'a continuation page is still a page plus one');
+  });
+
+  test('customerKeysetFilter covers ties on the sort key', () {
+    expect(
+      customerKeysetFilter(
+          (createdAt: '2026-09-16T10:00:00.000200Z', id: 'c2')),
+      'created_at.lt.2026-09-16T10:00:00.000200Z,'
+      'and(created_at.eq.2026-09-16T10:00:00.000200Z,id.lt.c2)',
+      reason: 'three clauses in two forms: strictly older, or the same '
+          'instant and a lower id',
+    );
+  });
+
+  test('fetchCustomers reports no total on a continuation page', () async {
+    // A cursor narrows the filter the exact count is taken over, so the server
+    // would be counting the rows REMAINING. Publishing that would make
+    // "showing 50 of 120" turn into "showing 100 of 70" as the admin scrolled.
+    final (repo, _) = directoryRepo(rows: [], total: 70);
+
+    final page = (await repo.fetchCustomers(
+            cursor: (createdAt: '2026-09-16T10:00:00Z', id: 'c2')))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.total, isNull,
+        reason: 'the cubit keeps the first page\'s total instead');
+  });
+
+  test('fetchCustomers normalises the bookmark timestamp to UTC', () async {
+    // Newest first, as the server returns them, with a non-UTC offset.
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T14:00:00.000500+02:00'},
+      {'id': 'c2', 'created_at': '2026-09-16T13:00:00.000100+02:00'},
+      {'id': 'c3', 'created_at': '2026-09-16T12:00:00.000100+02:00'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    // 13:00+02:00 is 11:00Z — and the microseconds survive the round trip. A
+    // lost digit would move the boundary and repeat or drop the row it names.
+    expect(
+      page.nextCursor,
+      (createdAt: '2026-09-16T11:00:00.000100Z', id: 'c2'),
+    );
+  });
+
+  test('fetchCustomers stops paging when a row cannot anchor a bookmark',
+      () async {
+    // `profiles.created_at` is NOT NULL, so this is a defensive path. Resuming
+    // from an invented position could repeat or skip rows, so ending the walk
+    // is the safe answer.
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1'},
+      {'id': 'c2'},
+      {'id': 'c3'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    expect(page.customers.length, 2);
+    expect(page.nextCursor, isNull);
+  });
+
+  test('fetchCustomers drops unnavigable rows before cutting the page',
+      () async {
+    final (repo, _) = directoryRepo(rows: [
+      {'id': 'c1', 'created_at': '2026-09-16T10:00:00.000300Z'},
+      {'id': 42, 'created_at': '2026-09-16T10:00:00.000200Z'}, // not a String
+      {'id': '', 'created_at': '2026-09-16T10:00:00.000150Z'}, // empty
+      {'id': 'c2', 'created_at': '2026-09-16T10:00:00.000100Z'},
+      {'id': 'c3', 'created_at': '2026-09-16T10:00:00.000050Z'},
+    ]);
+
+    final page = (await repo.fetchCustomers(limit: 2))
+        .when(success: (v) => v, failure: (_) => null)!;
+
+    // A row nobody can navigate to must not occupy a slot, or the bookmark
+    // would name a row that was never returned and the page would come up
+    // short at the boundary.
+    expect(page.customers.map((c) => c.id), ['c1', 'c2']);
+    expect(
+        page.nextCursor, (createdAt: '2026-09-16T10:00:00.000100Z', id: 'c2'));
+  });
+
+  test('fetchCustomers keeps the search filter on a continuation page',
+      () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(
+      query: 'Layla',
+      cursor: (createdAt: '2026-09-16T10:00:00Z', id: 'c2'),
+    );
+
+    // Paging must not quietly drop the search: the second page of a filtered
+    // directory is a filtered directory, not the whole table. Both `or` params
+    // ride along — the search tree, then the cursor.
+    expect(filters.orFilters, [
+      'full_name.ilike."%Layla%",phone.ilike."%Layla%"',
+      'created_at.lt.2026-09-16T10:00:00Z,'
+          'and(created_at.eq.2026-09-16T10:00:00Z,id.lt.c2)',
+    ]);
+  });
+
+  test('fetchCustomers filters the search on the server, trimmed', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '  Layla  ');
+
+    expect(
+        filters.orFilters, ['full_name.ilike."%Layla%",phone.ilike."%Layla%"'],
+        reason: 'a search must narrow the query, not the loaded page');
+  });
+
+  test('fetchCustomers sends no filter for a blank search', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '   ');
+
+    expect(filters.filters, isEmpty);
+    expect(filters.orFilters, isEmpty,
+        reason: 'a blank search must not add an or tree of its own');
+  });
+
+  test('customerSearchPattern escapes LIKE metacharacters', () {
+    expect(customerSearchPattern('sara'), '%sara%');
+    // Unescaped, a bare `%` stands in for "any run of characters", so typing
+    // it would return the whole table instead of narrowing it.
+    expect(customerSearchPattern('%'), r'%\%%');
+    expect(customerSearchPattern('a_b'), r'%a\_b%');
+    expect(customerSearchPattern(r'a\b'), r'%a\\b%');
+  });
+
+  test('fetchCustomers escapes the term it hands to the server', () async {
+    final (repo, filters) = directoryRepo(rows: []);
+
+    await repo.fetchCustomers(query: '%');
+
+    expect(
+        filters.orFilters.single, r'full_name.ilike."%\%%",phone.ilike."%\%%"');
+  });
+
+  group('customerSearchFilter', () {
+    test('searches name and phone as alternates', () {
+      // Chained `.ilike()` calls would AND the columns, matching only a row
+      // whose name *and* phone both contain the term — for a phone-shaped
+      // query, the empty set.
+      expect(customerSearchFilter('Layla'),
+          'full_name.ilike."%Layla%",phone.ilike."%Layla%"');
+    });
+
+    test('routes a digit-only term to the normalised phone column', () {
+      // `phone` stores whatever the customer typed, separators included, so a
+      // digit-only search can only match the generated `phone_digits` column
+      // (migration 065). The literal `phone` branch is not also emitted: for a
+      // digit-only term it cannot match anything `phone_digits` does not.
+      expect(
+          customerSearchFilter('01012345678'),
+          'full_name.ilike."%01012345678%",'
+          'phone_digits.ilike."%01012345678%"');
+    });
+
+    test('normalises a term typed WITH separators down to its digits', () {
+      // The admin reading a number back off a screen types the digits; the
+      // customer typed the number with punctuation. Normalising only the
+      // column would leave this case broken.
+      expect(
+          customerSearchFilter('+966 50 123-4567'),
+          'full_name.ilike."%+966 50 123-4567%",'
+          'phone_digits.ilike."%966501234567%"');
+    });
+
+    test('keeps a mixed alphanumeric term literal', () {
+      // The shape gate is strict on purpose. Loosening it to "contains a
+      // digit" would reduce `A1` to the digit `1`, matching almost every
+      // row's phone and turning a typed name into a directory-wide result.
+      expect(customerSearchFilter('A1'),
+          'full_name.ilike."%A1%",phone.ilike."%A1%"');
+      expect(customerSearchFilter('Branch 2'),
+          'full_name.ilike."%Branch 2%",phone.ilike."%Branch 2%"');
+    });
+
+    test('quotes the value so a comma cannot split the or tree', () {
+      // Unquoted, the comma would end the first condition and start a bogus
+      // second one instead of narrowing the search.
+      expect(customerSearchFilter('Smith, John'),
+          'full_name.ilike."%Smith, John%",phone.ilike."%Smith, John%"');
+    });
+
+    test('quotes the value so parentheses cannot regroup the or tree', () {
+      expect(customerSearchFilter('a(b)'),
+          'full_name.ilike."%a(b)%",phone.ilike."%a(b)%"');
+    });
+
+    test('escapes a quote in the term so it cannot close the wrapper', () {
+      expect(customerSearchFilter('a"b'),
+          r'full_name.ilike."%a\"b%",phone.ilike."%a\"b%"');
+    });
+
+    test('applies LIKE escaping and or-tree quoting together', () {
+      expect(customerSearchFilter('50% off, now'),
+          r'full_name.ilike."%50\% off, now%",phone.ilike."%50\% off, now%"');
+    });
+  });
+
+  group('customerPhoneDigitPattern', () {
+    test('reduces a separator-laden number to its digits', () {
+      expect(customerPhoneDigitPattern('+966 50 123 4567'), '%966501234567%');
+      expect(customerPhoneDigitPattern('050-123-4567'), '%0501234567%');
+      expect(customerPhoneDigitPattern('(010) 987/6543'), '%0109876543%');
+    });
+
+    test('passes a bare digit run through unchanged', () {
+      expect(customerPhoneDigitPattern('01012345678'), '%01012345678%');
+    });
+
+    test('returns null for anything that is not digit-shaped', () {
+      // null means "search the phone column literally instead".
+      expect(customerPhoneDigitPattern(''), isNull);
+      expect(customerPhoneDigitPattern('Layla'), isNull); // letters
+      expect(customerPhoneDigitPattern('A1'), isNull); // contains a digit
+      expect(customerPhoneDigitPattern('Branch 2'), isNull);
+      expect(customerPhoneDigitPattern('50% off'), isNull); // LIKE metachar
+      expect(customerPhoneDigitPattern('---'), isNull); // no digits at all
+      expect(customerPhoneDigitPattern('()+'), isNull);
+    });
+
+    test('transliterates Arabic-Indic digits an AR-locale admin typed', () {
+      // Without transliteration these reduce to NOTHING — `[^0-9]` is
+      // ASCII-only, so it deletes them rather than keeping them — and the
+      // term would fall back to a literal search that matches nothing.
+      expect(customerPhoneDigitPattern('٠١٠١٢٣٤٥٦٧٨'), '%01012345678%');
+      expect(customerPhoneDigitPattern('٠٥٠-١٢٣-٤٥٦٧'), '%0501234567%');
+      // Mixed encodings in one term, e.g. a pasted number plus a typed digit.
+      expect(customerPhoneDigitPattern('٠٥٠1234567'), '%0501234567%');
+    });
+
+    test('transliterates EVERY Unicode Nd block, not only the Arabic ones', () {
+      // Devanagari (U+0966–), the range this generalisation exists for.
+      expect(customerPhoneDigitPattern('०९०१२३४५'), '%09012345%');
+      // Thai (U+0E50–).
+      expect(customerPhoneDigitPattern('๐๑๒๓๔๕๖๗๘๙'), '%0123456789%');
+      // Fullwidth (U+FF10–) — an IME frequently produces these.
+      expect(customerPhoneDigitPattern('０９０１２３'), '%090123%');
+      // Mathematical bold (U+1D7CE–) — astral plane, i.e. surrogate PAIRS in
+      // UTF-16, which is why _asciiDigits iterates runes rather than code units.
+      expect(customerPhoneDigitPattern('𝟎𝟗𝟏𝟐'), '%0912%');
+      // Segmented display (U+1FBF0–) — seven-segment LCD style.
+      expect(customerPhoneDigitPattern('🯰🯹'), '%09%');
+      // Native digits mixed with ASCII separators still stay digit-shaped.
+      expect(customerPhoneDigitPattern('०९-०८/०७'), '%090807%');
+      // Two different scripts in one term — a pasted value plus a typed digit.
+      expect(customerPhoneDigitPattern('٠५०६०'), '%05060%');
+    });
+
+    test('transliterates Extended Arabic-Indic (Persian/Urdu) digits too', () {
+      // A different range entirely (U+06F0–U+06F9). Arabic script is shared,
+      // so normalising only one of the two ranges reproduces the bug for the
+      // other.
+      expect(customerPhoneDigitPattern('۰۱۲۳۴۵۶۷۸۹۰'), '%01234567890%');
+    });
+
+    test('numeric-looking characters that are NOT Nd stay literal', () {
+      // Unicode is full of characters that LOOK numeric but are category No
+      // (Other Number), not Nd (Decimal Digit): ½ is 'one half' with no
+      // positional digit value, ⑦ is a circled seven. Mapping them by eye is
+      // exactly how a corrupting table entry happens, so they are excluded
+      // wholesale — the term stays a literal search instead.
+      expect(customerPhoneDigitPattern('½'), isNull);
+      expect(customerPhoneDigitPattern('⑦'), isNull);
+      expect(customerPhoneDigitPattern('¼½¾'), isNull);
+      expect(customerPhoneDigitPattern('١½'), isNull,
+          reason: 'one non-Nd character in the term keeps it a literal search');
+    });
+
+    test('a lone Arabic-Indic digit is still phone-shaped', () {
+      expect(customerPhoneDigitPattern('٥'), '%5%');
+    });
+
+    test('transliterates the PHONE half but never the name half', () {
+      // Arabic names live in Arabic script in the database, so the name
+      // branch must be handed exactly what was typed.
+      expect(customerSearchFilter('محمد'),
+          'full_name.ilike."%محمد%",phone.ilike."%محمد%"');
+      expect(
+        customerSearchFilter('٠١٠١٢٣٤٥٦٧٨'),
+        'full_name.ilike."%٠١٠١٢٣٤٥٦٧٨%",'
+        'phone_digits.ilike."%01012345678%"',
+      );
+    });
+
+    test('a LIKE metacharacter makes the term literal, not digit-shaped', () {
+      // Which is exactly why the digit pattern needs no escaping of its own:
+      // no metacharacter can get as far as being a phone-shaped term.
+      expect(customerPhoneDigitPattern('50%'), isNull);
+      expect(customerPhoneDigitPattern('a_b'), isNull);
+      expect(customerPhoneDigitPattern(r'a\b'), isNull);
+      expect(customerPhoneDigitPattern('+966%50'), isNull);
+    });
+
+    test('the middle of a returned pattern is nothing but digits', () {
+      for (final term in [
+        '+966 50 123 4567',
+        '050-123-4567',
+        '(010) 987/6543',
+        '01012345678',
+      ]) {
+        final pattern = customerPhoneDigitPattern(term)!;
+        expect(pattern, startsWith('%'));
+        expect(pattern, endsWith('%'));
+        expect(pattern.substring(1, pattern.length - 1),
+            matches(RegExp(r'^[0-9]+$')),
+            reason: '$term should reduce to digits only');
+      }
+    });
   });
 
   test('fetchCustomers maps a PostgREST failure to Failure (never throws)',
@@ -195,13 +450,23 @@ void main() {
     final client = MockSupabaseClient();
     final builder = MockSupabaseQueryBuilder();
     when(() => client.from('profiles')).thenAnswer((_) => builder);
-    when(() => builder.select('id, full_name, phone, membership_tier'))
+    when(() =>
+            builder.select('id, full_name, phone, membership_tier, created_at'))
         .thenThrow(Exception('42703 column profiles.email does not exist'));
     final repo = SupabaseAdminRepository(client: client);
 
     final result = await repo.fetchCustomers();
 
-    expect(result, isA<Failure<List<AdminCustomer>>>());
+    expect(
+      result,
+      isA<
+          Failure<
+              ({
+                List<AdminCustomer> customers,
+                int? total,
+                CustomerCursor? nextCursor,
+              })>>(),
+    );
   });
 
   // ─── getOrderDetails ────────────────────────────────────
@@ -214,7 +479,7 @@ void main() {
     final client = MockSupabaseClient();
     when(() => client.rpc('get_order_details', params: {'p_order_id': 'o1'}))
         .thenAnswer(
-      (_) => _FakeRpcBuilder({
+      (_) => FakeRpcBuilder({
         'order': {
           'id': 'o1',
           'status': 'placed',
@@ -261,7 +526,7 @@ void main() {
     final client = MockSupabaseClient();
     when(() =>
             client.rpc('get_order_details', params: {'p_order_id': 'missing'}))
-        .thenAnswer((_) => _FakeRpcBuilder(<String, dynamic>{}));
+        .thenAnswer((_) => FakeRpcBuilder(<String, dynamic>{}));
     final repo = SupabaseAdminRepository(client: client);
 
     final result = await repo.getOrderDetails('missing');

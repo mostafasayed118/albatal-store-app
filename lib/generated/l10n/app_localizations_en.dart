@@ -239,9 +239,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myProfile => 'My Profile';
 
   @override
-  String get mockCustomerName => 'Ahmed Mansour';
-
-  @override
   String get premiumMember => 'Premium Member';
 
   @override
@@ -572,6 +569,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminSearch => 'Search';
+
+  @override
+  String get adminSearchCustomersHint => 'Search name or phone';
+
+  @override
+  String customersShownOf(int shown, int total) {
+    return 'Showing $shown of $total';
+  }
+
+  @override
+  String get loadMore => 'Load more';
 
   @override
   String get invoiceSave => 'Save invoice';

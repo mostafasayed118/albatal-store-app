@@ -1,0 +1,71 @@
+# Local PostgREST harness for the admin customer directory's keyset walk.
+#
+# WHY THIS EXISTS
+# ---------------
+# Every other probe in supabase/tests/ connects with `pg` — straight to
+# Postgres, bypassing PostgREST. That is right for what they test (policies,
+# triggers, RPCs) but it cannot say anything about how **PostgREST parses a
+# query string**, because PostgREST is the component that turns
+# `or=(created_at.lt.TS,and(created_at.eq.TS,id.lt.ID))` into SQL. The customer
+# directory's filters are strings PostgREST has to parse, so proving them needs
+# a real PostgREST in the loop.
+#
+# WHAT IT IS NOT
+# --------------
+# Throwaway and local: no volumes, no persistent state. RLS is deliberately OFF
+# (see seed.sql) because row-level access is already covered by
+# run_rls_adversarial.mjs against the real policies — this harness isolates
+# query parsing and row ordering, nothing else.
+#
+# Usage (see run_keyset_paging_proof.mjs for the assertions):
+#   docker compose -f supabase/tests/keyset-proof/docker-compose.yml up -d --wait
+#   node supabase/tests/run_keyset_paging_proof.mjs --mode local
+#   docker compose -f supabase/tests/keyset-proof/docker-compose.yml down -v
+# `down -v` matters: the seed script runs only against a first, empty data
+# directory, so leaving the volume behind would reuse a previous fixture.
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
+      interval: 1s
+      timeout: 5s
+      retries: 30
+    ports:
+      # Published for PostgREST to reach through the host — see below. Expects
+      # host port 5432 to be free.
+      - '5432:5432'
+    volumes:
+      - ./seed.sql:/docker-entrypoint-initdb.d/10-seed.sql:ro
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    depends_on:
+      db:
+        condition: service_healthy
+    # WHY THE HOST GATEWAY, NOT `PGRST_DB_URI: ...@db:5432`
+    # ----------------------------------------------------
+    # `@db:5432` over the compose bridge is the obvious form and is what this
+    # harness used first. It does not work everywhere: in the sandbox this was
+    # built in, container-to-container traffic on a user-defined bridge is
+    # dropped — `db` to `rest:3000` answered "no response" while `db` to its own
+    # IP and host to container both worked — so PostgREST sat in PGRST002
+    # ("Could not query the database for the schema cache") indefinitely.
+    #
+    # Going through the host's published port depends only on host <-> container
+    # networking, which is the most universally available path, and behaves the
+    # same on Docker Desktop (where host.docker.internal already resolves) and
+    # on Linux (via host-gateway).
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      PGRST_DB_URI: postgres://authenticator:authpass@host.docker.internal:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+      # Required by PostgREST >= 10 even when no JWT is ever presented.
+      PGRST_JWT_SECRET: local-proof-secret-not-used-for-anything-0123456789
+    ports:
+      - '3001:3000'
