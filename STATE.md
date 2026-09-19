@@ -44,9 +44,24 @@ from the branches). The verified integration tree hash equals master's after a
 fast-forward, so what was tested is what was promoted. Worktrees removed and the
 five branches deleted; **only `master` remains**. Safety tag
 `backup/master-pre-consolidation` at `e097d56` is the pre-merge master.
-**NOT pushed** — push still needs owner approval, and draft PRs #73/#74 are
-therefore still open. Migration ordering hazard from part 11 is UNCHANGED and
-still applies.
+**Pushed** (owner-approved, 2026-09-19): `origin/master` moved `84ca10a` →
+`8fa709f`. The push auto-resolved BOTH draft PRs — GitHub marked #73 and #74
+**MERGED** the moment their head commits became ancestors of master, so no
+retargeting was needed (both already had `base: master`).
+
+**The push caught a real gap first, and it is the important lesson.**
+`origin/feat/admin-customer-tier` sat at `2aeab31` — one commit **AHEAD** of the
+local worktree tip `c04e386` — so the consolidation had MISSED it. It is a
+genuine bugfix: `rest()` built `new URL(path, BASE)` with a leading-slash path,
+which resolves against the **host root** and drops `/rest/v1` (the documented
+staging-readiness 404), plus a graceful skip instead of aborting on `baseline[0]`
+when staging shows zero visible rows. Merged as `8fa709f` after confirming it
+touches only `supabase/tests/run_keyset_paging_proof.mjs` (no Dart, so the
+980/980 result still holds). **A local worktree branch can be stale relative to
+origin — merge origin's tip, not the local one, and verify every remote head
+before declaring a consolidation complete.**
+
+Migration ordering hazard from part 11 is UNCHANGED and still applies.
 
 Prior run: 2026-09-17 (part 15: §14 audit **CLOSED OUT** — the last open finding
 from the part-5 report is fixed. `mockCustomerName` ('Ahmed Mansour' /
