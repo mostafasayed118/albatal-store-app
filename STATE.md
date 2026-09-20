@@ -1,6 +1,15 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 42: **#40 FOLDED INTO #76 — SEED SCRIPT FIXED, PUSHED, CI GREEN (L2)**. Owner ask: "Fold #40's
+Last run: 2026-09-20 (part 43: **STAGING DRY-PROBE VIA MANAGEMENT API — GO, PLUS AN INFRA FINDING (L1, read-only)**. Owner supplied a
+Supabase access token (`sbp_…`, transited chat — rotation recommended). **Finding 1: staging has legacy API keys disabled**
+(since 2026-09-15) — the seed script's `createClient` calls would fail with "Legacy API keys are disabled"; and the new-style
+`sb_secret_` key is rejected by the data plane (401 "Invalid API key") while `sb_publishable_` works. Real seed run is blocked
+until keys are fixed (dashboard re-enable or key investigation). **Finding 2 (the DRY verdict): GO** — via the management API's
+SQL endpoint (token-auth, no data-plane key needed): all 3 showcase products exist, all 3 have `product_images` rows
+(`product-images/<id>/hero.jpg`), nothing would be skipped. `scripts/.env` created (gitignored), all credential-bearing temp
+files purged. Detail in part 43 below.)
+
+Prior run: 2026-09-20 (part 42: **#40 FOLDED INTO #76 — SEED SCRIPT FIXED, PUSHED, CI GREEN (L2)**. Owner ask: "Fold #40's
 service-role tier fix into PR #76's seed script and re-verify." Ported #40's complete diff (all 7
 hunks) into `chore/demo-seed-images`'s `seed_demo_staging.mjs` — direct `membership_tier` write +
 readback assertion replacing the 046-denied service-role RPC, loud errors on every previously
@@ -95,6 +104,28 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 43: staging dry-probe — DRY verdict GO; legacy keys disabled = real-run blocker)
+
+- Owner provided a Supabase personal access token for this task; it grants management-API access
+  to staging (`zvpjngdgbpnkkqrorkul`). **Hygiene: the token transited chat — recommend rotating it
+  after this work** (it was also never written to any tracked file).
+- **DRY-run execution was impossible as scripted:** the seed script uses legacy JWT keys
+  (`anon`/`service_role`), and staging has **legacy API keys disabled project-wide since
+  2026-09-15** (verified by 401 with that exact message). The management-API-issued `sb_secret_`
+  key is also rejected by the data plane (401 "Invalid API key") while `sb_publishable_` returns
+  200 with data — an infra inconsistency the owner needs to resolve (re-enable legacy keys in the
+  dashboard, or fix the secret key) **before the real seed run can work**.
+- **DRY-path equivalent achieved read-only** via the management API's SQL endpoint
+  (`/v1/projects/{ref}/database/query`), mirroring the DRY branch's exact two SELECTs and the
+  `planHeroUploads` filter: **3/3 showcase products found; 3/3 have registered `product_images`
+  rows (`product-images/<id>/hero.jpg`); nothing would be skipped → the DRY verdict is GO.**
+- `scripts/.env` created in the demo-seed-images worktree (gitignored there; values never
+  echoed). All credential-bearing temp files (`keys.json`, fetched key file, probe script)
+  destroyed after use; `git status` clean of any secret material.
+- **Blocked, owner gate:** the real (writing) seed run needs working data-plane keys first.
+  Once resolved: `set -a; . scripts/.env; set +a; node scripts/seed_demo_staging.mjs` (DRY first,
+  then real) — both remain owner-approved actions since they write to staging.
 
 ## New — 2026-09-20 (part 42: #40's fix folded into #76, re-verified, pushed)
 
