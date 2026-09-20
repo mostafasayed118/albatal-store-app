@@ -124,16 +124,21 @@ void main() {
       mockClient = MockSupabaseClient();
       mockStorage = MockStorageService();
 
-      // Default storage mapping: return a deterministic public URL per path.
-      when(() => mockStorage.getProductImageUrl(any())).thenAnswer((inv) {
+      // Default storage mapping: a deterministic RENDER URL per (path, width).
+      // The width is echoed into the URL so the assertions below pin the budget
+      // each surface asked for, not just the mapping.
+      when(() => mockStorage.getProductImageUrlForWidth(any(), any()))
+          .thenAnswer((inv) {
         final path = inv.positionalArguments[0] as String;
-        return 'https://mock.supabase.co/storage/v1/object/public/product-images/$path';
+        final width = inv.positionalArguments[1] as int;
+        return 'https://mock.supabase.co/storage/v1/render/image/public/'
+            'product-images/$path?width=$width';
       });
     });
 
     test(
-        'fetchProducts maps product_images to imageUrls via storage.getPublicUrl sorted by sort_order',
-        () async {
+        'fetchProducts maps product_images to width-bounded render URLs sorted '
+        'by sort_order (420 primary, 720 detail)', () async {
       // Arrange: one product row with two images out of order to verify sorting.
       final rows = <Map<String, dynamic>>[
         {
@@ -187,20 +192,35 @@ void main() {
       final product = typed.first;
       expect(product.id, 'p1');
 
-      // Verify storage translation was invoked for each storage_path.
-      verify(() => mockStorage.getProductImageUrl('product-images/p1/a.jpg'))
-          .called(1);
-      verify(() => mockStorage.getProductImageUrl('product-images/p1/b.jpg'))
-          .called(1);
+      // Verify storage translation was invoked at the DETAIL budget for every
+      // storage_path, and at the GRID budget for the primary only.
+      verify(() => mockStorage.getProductImageUrlForWidth(
+            'product-images/p1/a.jpg',
+            StorageService.detailImageWidth,
+          )).called(1);
+      verify(() => mockStorage.getProductImageUrlForWidth(
+            'product-images/p1/b.jpg',
+            StorageService.detailImageWidth,
+          )).called(1);
+      verify(() => mockStorage.getProductImageUrlForWidth(
+            'product-images/p1/a.jpg',
+            StorageService.gridImageWidth,
+          )).called(1);
 
-      // Image URLs must be sorted by sort_order ascending (a.jpg before b.jpg),
-      // and passed through getProductImageUrl.
+      // Image URLs must be sorted by sort_order ascending (a.jpg before b.jpg)
+      // at the detail budget...
       expect(
         product.images,
         equals([
-          'https://mock.supabase.co/storage/v1/object/public/product-images/product-images/p1/a.jpg',
-          'https://mock.supabase.co/storage/v1/object/public/product-images/product-images/p1/b.jpg',
+          'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/a.jpg?width=720',
+          'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/b.jpg?width=720',
         ]),
+      );
+      // ...and the card/thumbnail surface gets the primary at the grid budget,
+      // which is what bounds the bandwidth of a full grid.
+      expect(
+        product.imageAsset,
+        'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/a.jpg?width=420',
       );
 
       // Placeholder fallback not misapplied — images not empty,
@@ -245,7 +265,9 @@ void main() {
       final product = (result as Success<List<Product>>).value.first;
       expect(product.images, isEmpty);
       expect(product.imageColor, 0xFF888888);
-      verifyNever(() => mockStorage.getProductImageUrl(any()));
+      // No usable image -> no card source and no render-URL round trip.
+      expect(product.imageAsset, isNull);
+      verifyNever(() => mockStorage.getProductImageUrlForWidth(any(), any()));
     });
 
     test('fetchProducts handles missing product_images key as empty', () async {

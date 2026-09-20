@@ -303,9 +303,18 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                               itemCount: _paths.length,
                               itemBuilder: (ctx, i) {
                                 final path = _paths[i];
+                                // Ask for the budget the tile decodes at (see
+                                // the AppImage below): this page was the last
+                                // surface still pulling the full upload
+                                // (audit P0-4). Falls back to the stored path
+                                // when the client is not available.
                                 String url;
                                 try {
-                                  url = widget.storage.getProductImageUrl(path);
+                                  url =
+                                      widget.storage.getProductImageUrlForWidth(
+                                    path,
+                                    StorageService.gridImageWidth,
+                                  );
                                 } catch (_) {
                                   url = path;
                                 }
@@ -314,11 +323,11 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                                   child: Stack(
                                     fit: StackFit.expand,
                                     children: [
-                                      // Real network image once CDN cache
-                                      // headers land; url kept for tooltip.
-                                      // Bounded decode: a grid cell never
-                                      // needs the full-resolution bitmap
-                                      // (audit 2026-09-13 perf).
+                                      // Bounded at BOTH ends: the url above
+                                      // requests a 420 render and this decodes
+                                      // at 420, so a grid cell never touches
+                                      // the full-resolution bitmap (audit
+                                      // 2026-09-13 perf, P0-4).
                                       AppImage(
                                         source: url,
                                         fit: BoxFit.cover,

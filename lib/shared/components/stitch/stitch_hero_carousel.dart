@@ -62,9 +62,16 @@ class StitchHeroSlide {
 
   /// Builds a product slide from a [Product] (category eyebrow, name,
   /// formatted price, swatch-backed image, tap → details).
+  ///
+  /// The hero is the largest surface in the app (full-bleed at an 840px
+  /// decode budget), so it takes the DETAIL render from [Product.images]
+  /// rather than the grid-width budget [Product.imageAsset] carries. Local
+  /// products (asset paths, no image list) keep using their primary asset.
   factory StitchHeroSlide.fromProduct(Product product, {VoidCallback? onTap}) =>
       StitchHeroSlide(
-        imageAsset: product.imageAsset,
+        imageAsset: product.images.isNotEmpty
+            ? product.images.first
+            : product.imageAsset,
         swatchColor: Color(product.imageColor),
         eyebrow: product.category,
         title: product.name,

@@ -24,6 +24,10 @@ extension ProductCodec on Product {
   /// instead of throwing, so one malformed row can never crash the whole
   /// catalog load. Rows without a usable `id` or `name` return null —
   /// callers skip them (same contract as [FlashSaleCodec.fromRow]).
+  ///
+  /// Product images resolve to width-bounded render URLs (audit P0-4):
+  /// [Product.imageAsset] carries the primary at the grid budget and
+  /// [Product.images] the whole list at the detail budget.
   static Product? fromRow(
     Map<String, dynamic> row,
     List<Map<String, dynamic>> variants, {
@@ -54,13 +58,25 @@ extension ProductCodec on Product {
     // Category name via the join.
     final category = safeString(safeMap(row['categories']), 'name');
 
-    // TODO(audit-2026-09-14 P0-4): route Storage URLs through
-    // StorageService.getProductImageUrlForWidth (grid 420 / detail 720 /
-    // zoom 1080) + Cache-Control immutable on upload; bare getPublicUrl
-    // kept as the fail-open fallback until the render-URL cutover lands.
+    // Width-bounded render URLs (audit 2026-09-14 P0-4). Storage serves the
+    // downsized variant instead of the full upload, with one budget per
+    // surface class because a single image feeds two very different
+    // consumers:
+    //   • cards + thumbnails  → [Product.imageAsset], the primary image at
+    //     `StorageService.gridImageWidth` (420) — grid card, flash-sale row,
+    //     hero, related/cart/wishlist thumbnails.
+    //   • detail gallery/zoom → [Product.images], every image at
+    //     `StorageService.detailImageWidth` (720). Zoom shares this list, so a
+    //     product's photos are fetched once and never at original resolution.
+    // The bare public URL survives only as the fail-open fallback INSIDE the
+    // width helper: a path with no renderable extension still renders.
+    // Rendering is cached in the presentation layer — `ProductImageResolver`
+    // / `AppImage` wrap `CachedNetworkImage` for every remote product image.
     // Map product_images → imageUrls via StorageService, ordered by sort_order.
-    // (Rendering is cached in the presentation layer: `ProductImageResolver`
-    // / `AppImage` wrap `CachedNetworkImage` for every remote product image.)
+    // The uploaded objects carry a one-year cache lifetime
+    // (`StorageService.productImageCacheSeconds`), which is safe precisely
+    // because a replaced image lands on a fresh UUID path, never over the old
+    // one — so a long-lived cache entry can never go stale.
     final rawImages = row['product_images'];
     final imageRows = rawImages is List
         ? rawImages.whereType<Map<String, dynamic>>().toList()
@@ -74,16 +90,27 @@ extension ProductCodec on Product {
       return safeString(a, 'storage_path')
           .compareTo(safeString(b, 'storage_path'));
     });
-    final imageUrls = imageRows
-        .map((m) {
-          final p = m['storage_path'];
-          return p is String ? p : null;
-        })
+    final imagePaths = imageRows
+        .map((m) => m['storage_path'])
         .whereType<String>()
         .where((p) => p.isNotEmpty)
-        .map((p) => storageService.getProductImageUrl(p))
+        .toList();
+    final imageUrls = imagePaths
+        .map((p) => storageService.getProductImageUrlForWidth(
+              p,
+              StorageService.detailImageWidth,
+            ))
         .where((u) => u.isNotEmpty)
         .toList();
+    // The list/card media source: the primary (lowest `sort_order`) image at
+    // the grid budget. Null when no usable image exists, so every card keeps
+    // its swatch-only fallback.
+    final primaryImage = imagePaths.isEmpty
+        ? null
+        : storageService.getProductImageUrlForWidth(
+            imagePaths.first,
+            StorageService.gridImageWidth,
+          );
 
     final ratingRaw = row['rating'];
     final rating = ratingRaw is num ? ratingRaw.toDouble() : 0.0;
@@ -96,6 +123,7 @@ extension ProductCodec on Product {
       oldPrice: oldPrice == null ? null : Money(oldPrice),
       // imageColor is a placeholder fallback — only used when images empty.
       imageColor: _placeholderImageColor,
+      imageAsset: primaryImage,
       images: imageUrls,
       description: optString(row, 'description'),
       composition: optString(row, 'composition'),

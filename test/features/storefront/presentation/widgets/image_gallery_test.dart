@@ -31,7 +31,74 @@ Future<void> _openViewer(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Product _widthProduct({String? primary, List<String> images = const []}) =>
+    Product(
+      id: 'widths',
+      name: 'Widths',
+      category: 'Silk',
+      price: const Money.egp(100),
+      imageColor: 0xFF176B57,
+      imageAsset: primary,
+      images: images,
+    );
+
 void main() {
+  // Audit 2026-09-14 P0-4: the mapper hands the primary over at the GRID budget
+  // (420) while the gallery list carries the DETAIL render (720), so the same
+  // photo reaches this widget under two different URLs. Comparing the URLs
+  // literally read that as two photos and showed the first one twice.
+  group('ImageGallery.resolveImages — same photo, two width budgets', () {
+    const grid =
+        'https://cdn.test/render/image/public/product-images/p/a.jpg?width=420';
+    const detailA =
+        'https://cdn.test/render/image/public/product-images/p/a.jpg?width=720';
+    const detailB =
+        'https://cdn.test/render/image/public/product-images/p/b.jpg?width=720';
+
+    test('a width-bounded primary is not duplicated as slide one', () {
+      final images = ImageGallery.resolveImages(
+        _widthProduct(primary: grid, images: const [detailA, detailB]),
+      );
+
+      expect(images, const [detailA, detailB],
+          reason: 'the gallery should serve the 720 renders, not the 420 card '
+              'copy, and must not add a third slide');
+    });
+
+    test('an asset primary already in the list is still deduped', () {
+      final images = ImageGallery.resolveImages(
+        _widthProduct(
+          primary: 'assets/images/1.svg',
+          images: const ['assets/images/1.svg', 'assets/images/2.svg'],
+        ),
+      );
+
+      expect(images, const ['assets/images/1.svg', 'assets/images/2.svg']);
+    });
+
+    test('an asset primary absent from the list is still prepended', () {
+      final images = ImageGallery.resolveImages(
+        _widthProduct(
+          primary: 'assets/images/1.svg',
+          images: const ['assets/images/2.svg'],
+        ),
+      );
+
+      expect(images, const ['assets/images/1.svg', 'assets/images/2.svg']);
+    });
+
+    test('a product with only a primary keeps exactly one slide', () {
+      expect(
+        ImageGallery.resolveImages(_widthProduct(primary: grid)),
+        const [grid],
+      );
+    });
+
+    test('no media at all still yields the one empty fallback slot', () {
+      expect(ImageGallery.resolveImages(_widthProduct()), const ['']);
+    });
+  });
+
   testWidgets('tapping the hero image pushes the fullscreen zoom viewer',
       (tester) async {
     await _openViewer(tester);
