@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 40: **STALE-PR GATE-CHECK — #40 LIVE, #49/#62 CONFLICTED, #36 INERT (L1)**. Owner
+Last run: 2026-09-20 (part 41: **#78 + #79 MERGED; #80 REBASED CLEAN AND RE-GATED (L2-adjacent, owner-approved)**. Owner ask:
+"Merge #78 then #79, then rebase #80 onto the new master and re-run its gates." Both merged as
+merge commits (`5aa90d9`, `b148219`) after `gh pr ready`; #80's rebase onto `b148219` replayed
+4/4 with **zero conflicts**, verified semantically (gen-l10n on merged ARBs = no diff). Local
+gates: analyze 0 · format clean (446) · **1015/1015** (+11 inherited from #78/#79) · mutation
+bites. Force-pushed with `--force-with-lease` (new hashes `9619cd6`/`297382e`/`56317cb`/`783df22`);
+PR #80 MERGEABLE, CI green on Flutter Tests / Format & Analyze / Edge Functions / Secret Scan /
+Deployment Readiness, Android Release Build pending at record time. Still draft pending Arabic
+review. Detail in part 41 below.)
+
+Prior run: 2026-09-20 (part 40: **STALE-PR GATE-CHECK — #40 LIVE, #49/#62 CONFLICTED, #36 INERT (L1)**. Owner
 ask: "do it" (gate-check the four stale PRs). Findings: **#40 is a live fix, not superseded** —
 #76's seed script still makes the exact `admin_set_membership_tier` service-role call #40 proves
 fails (046: `REVOKE FROM PUBLIC, anon; GRANT TO authenticated`), and the two PRs conflict on the
@@ -76,6 +86,29 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 41: #78 and #79 merged; #80 rebased clean, re-gated, force-pushed)
+
+- Owner ask: "Merge #78 then #79, then rebase #80 onto the new master and re-run its gates."
+  This is the human merge approval the loop gates require.
+- **Merged:** `gh pr ready` then `gh pr merge --merge` for both. The `ready` output is silent
+  about the merge step, so states were verified via the API before proceeding: #78 MERGED
+  (`5aa90d9`), #79 MERGED (`b148219`).
+- **#80 rebase:** onto `b148219` — replayed **4/4 with zero conflicts**. Trust was not assumed:
+  #79 and #80 both regenerate `lib/generated/l10n/*` from overlapping ARB regions, so the
+  ground-truth check was `flutter gen-l10n` on the merged ARBs → **no diff** against the
+  committed generated files. Key-presence spot-checks passed (`showAllReviews` in both ARBs).
+- **Local gates on the rebased branch:** analyze 0 · format clean (446) · **1015/1015** (+11
+  tests inherited from #78/#79's added pins) · a mapper-entry mutation bites.
+- **Push:** `--force-with-lease` (history rewrite of a pushed branch, pre-approved in the ask).
+  New hashes: `9619cd6`, `297382e`, `56317cb`, `783df22` (was `5476bdd…`). PR #80 went
+  MERGEABLE/UNKNOWN → MERGEABLE with CI running.
+- **CI on #80 (ci.yml):** Flutter Tests **pass** (6m24s) · Format & Analyze **pass** · Edge
+  Function Tests pass · Secret Scan pass · Deployment Readiness pass · Android Release Build
+  still pending at record time · CodeSnif skipping (external). **Still draft:** native Arabic
+  review remains the owner gate before marking ready.
+- Board after this part: merged #78/#79; #80 waits only on Arabic review; #76+#40 need the fold;
+  #49/#36 owner calls; #62 recommended close.
 
 ## New — 2026-09-20 (part 40: stale-PR gate-check — verdicts with evidence)
 
