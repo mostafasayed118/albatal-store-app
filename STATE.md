@@ -1,6 +1,12 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 50: **BOARD CLEARED — #62/#49 CLOSED AS SUPERSEDED, #36 MERGED; ONLY #80 REMAINS OPEN (owner-approved)**. #62 closed with the
+Last run: 2026-09-20 (part 51: **WORKTREE/BRANCH CLEANUP DONE — 5 WORKTREES REMOVED, 4 STALE BRANCHES DELETED, PR #80's BRANCH PRESERVED (owner-approved)**.
+Pre-deletion safety: all four deleted branches verified ancestors of origin/master; every worktree had only gitignored build noise + the
+redundant demo-seed `scripts/.env` (service key preserved in root gitignored `.env.staging`). Remaining: main checkout + `fix/failure-copy-l10n`
+(local = remote = `783df22`, open PR #80's head — kept deliberately). Loop tooling note: the gates/mutation scripts lived in worktrees and /tmp;
+the batteries are documented in STATE.md parts and re-derivable. Detail in part 51 below.)
+
+Prior run: 2026-09-20 (part 50: **BOARD CLEARED — #62/#49 CLOSED AS SUPERSEDED, #36 MERGED; ONLY #80 REMAINS OPEN (owner-approved)**. #62 closed with the
 supersession map (error l10n → #80, Result.guard code: vs its divergent onError, money/validators → later batches); #49 closed with the
 carry-over note (its checkout_service_hardening_test.dart is the part worth re-authoring); #36 merged per owner's explicit choice (800d222).
 **The open-PR board is now exactly one PR: #80, green + MERGEABLE, draft pending native Arabic review.** Detail in part 50 below.)
@@ -135,6 +141,28 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 51: worktree and branch cleanup)
+
+- Owner ask: "Delete the five worktrees and stale local branches now that the board is clear."
+- **Safety checks before deleting anything:** each of the four candidate branches verified
+  `merge-base --is-ancestor origin/master` (all merged: demo-seed-images `176e13a`,
+  l10n-show-all `2d72f85`, render-urls `6dd6b90`, safe-parse `556c2e0`); each worktree's status
+  filtered for anything beyond gitignored build noise (none). `fix/failure-copy-l10n` is **not
+  stale** — it is open PR #80's head (`783df22`, local = remote) — so it was kept while its
+  worktree was removed.
+- **Removed:** `.trees/{demo-seed-images, error-copy, l10n-show-all, render-urls, safe-parse}`;
+  deleted branches: `chore/demo-seed-images`, `fix/reviews-show-all-l10n`,
+  `perf/render-url-widths`, `refactor/safe-parse-consolidation`. The demo-seed worktree's
+  `scripts/.env` went with it — redundant, since the service key lives in the root gitignored
+  `.env.staging`.
+- **End state:** one worktree (main checkout), two local branches (`master`,
+  `fix/failure-copy-l10n`). PR #80 unaffected (remote head verified `783df22` after cleanup).
+- **Tooling note for future runs:** the mutation-battery scripts lived in `/tmp` and the
+  worktrees; the Tier 1/3a batteries are documented step-by-step in parts 33/35 and trivially
+  re-derivable; Tier 3b's script text is in the part-36 record.
+- Still pending: push local master's loop-doc commits (docs-only), `sbp_` token rotation,
+  Arabic review → merge #80.
 
 ## New — 2026-09-20 (part 50: board cleared — one PR remains)
 
