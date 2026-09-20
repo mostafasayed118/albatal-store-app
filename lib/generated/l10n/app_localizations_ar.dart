@@ -478,6 +478,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerReviews => 'تقييمات العملاء';
 
   @override
+  String showAllReviews(int count) {
+    return 'عرض الكل ($count)';
+  }
+
+  @override
   String get writeReview => 'اكتب تقييمًا';
 
   @override

@@ -473,6 +473,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customerReviews => 'Customer reviews';
 
   @override
+  String showAllReviews(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
   String get writeReview => 'Write a review';
 
   @override

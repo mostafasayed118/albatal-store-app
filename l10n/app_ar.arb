@@ -176,6 +176,7 @@
   "couponActive": "نشط",
   "adminAddCoupon": "إضافة كود",
   "customerReviews": "تقييمات العملاء",
+  "showAllReviews": "عرض الكل ({count})",
   "writeReview": "اكتب تقييمًا",
   "noReviewsYet": "لا توجد تقييمات بعد — كن الأول.",
   "reviewPlaceholder": "كيف كان القماش؟",

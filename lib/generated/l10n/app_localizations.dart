@@ -962,6 +962,12 @@ abstract class AppLocalizations {
   /// **'Customer reviews'**
   String get customerReviews;
 
+  /// Inline review list: opens the sheet holding every review, showing how many are not listed inline
+  ///
+  /// In en, this message translates to:
+  /// **'Show all ({count})'**
+  String showAllReviews(int count);
+
   /// No description provided for @writeReview.
   ///
   /// In en, this message translates to:
