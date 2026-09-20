@@ -140,16 +140,18 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           _checkoutOpened = false;
           _instructionsOpened = false;
           if (checkoutWasOpen && context.canPop()) context.pop();
+          // The fallback is localized copy, never the raw message: a codeless
+          // failure carries app- or server-authored English, and this snackbar
+          // is a shopper-facing surface (audit 2026-09-19, sweep part 32).
           final message = paymentMessageForCode(
             l,
             state.errorMessage,
-            state.errorMessage ??
-                switch (state.status) {
-                  PaymentStatus.cancelled => l.paymentCancelledRetry,
-                  PaymentStatus.expired => l.paymentExpiredRetry,
-                  PaymentStatus.timedOut => l.paymentTimedOutRetry,
-                  _ => l.paymentFailedRetry,
-                },
+            switch (state.status) {
+              PaymentStatus.cancelled => l.paymentCancelledRetry,
+              PaymentStatus.expired => l.paymentExpiredRetry,
+              PaymentStatus.timedOut => l.paymentTimedOutRetry,
+              _ => l.paymentFailedRetry,
+            },
           );
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(message)));

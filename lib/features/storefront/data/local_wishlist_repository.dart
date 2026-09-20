@@ -1,3 +1,4 @@
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/wishlist_repository.dart';
 import 'storefront_persistence.dart';
@@ -10,12 +11,14 @@ final class LocalWishlistRepository implements WishlistRepository {
   final LocalStorefrontPersistence _persistence;
 
   @override
-  Future<Result<Set<String>>> readWishlist() => Result.guard(
-      () => _persistence.readWishlist(), 'Failed to load wishlist');
+  Future<Result<Set<String>>> readWishlist() =>
+      Result.guard(() => _persistence.readWishlist(), 'Failed to load wishlist',
+          code: kFailureLoad);
 
   @override
   Future<Result<void>> writeWishlist(Set<String> ids) => Result.guard<void>(
         () => _persistence.writeWishlist(ids),
         'Failed to save wishlist',
+        code: kFailureSave,
       );
 }

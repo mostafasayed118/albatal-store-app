@@ -115,6 +115,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorTitle => 'Something went wrong';
 
   @override
+  String get failureLoad => 'Couldn\'t load. Please try again.';
+
+  @override
+  String get failureSave => 'Couldn\'t save. Please try again.';
+
+  @override
+  String get failureNetwork => 'Connection problem. Please try again.';
+
+  @override
+  String get failureNotAuthenticated => 'Please sign in again.';
+
+  @override
+  String get failureSessionExpired =>
+      'Your session expired. Please sign in again.';
+
+  @override
+  String get failureSignInFailed => 'Sign-in failed. Please try again.';
+
+  @override
+  String get failureSignUpFailed => 'Sign-up failed. Please try again.';
+
+  @override
+  String get failureNotFound => 'We couldn\'t find that.';
+
+  @override
+  String get failureUnexpected => 'Something went wrong. Please try again.';
+
+  @override
+  String get authInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get authEmailUnconfirmed => 'Please verify your email address first';
+
+  @override
+  String get authEmailInUse => 'An account with this email already exists';
+
+  @override
+  String get authWeakPassword => 'Password must be at least 8 characters';
+
+  @override
+  String get deleteEmailMismatch => 'The email does not match this account';
+
+  @override
+  String get deleteAdminBlocked =>
+      'Admin accounts cannot be deleted in the app';
+
+  @override
+  String get deleteNotOwner => 'You can only delete your own account';
+
+  @override
+  String get deleteFailedRetry => 'Account deletion failed. Please try again.';
+
+  @override
   String get errorBody => 'Please check your connection and try again.';
 
   @override
@@ -1429,4 +1482,348 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appLockUnavailable => 'App lock isn\'t available on this device';
+
+  @override
+  String get salesDashboard => 'Sales Dashboard';
+
+  @override
+  String get salesDashboardSubtitle => 'Revenue, best sellers, low stock';
+
+  @override
+  String get adminAccessCheckFailed =>
+      'Unable to verify admin access. Please try again.';
+
+  @override
+  String get adminNoCategories => 'No categories yet';
+
+  @override
+  String get adminNoCategoriesBody =>
+      'Categories are created in the database; the storefront needs at least one.';
+
+  @override
+  String get inactive => 'Inactive';
+
+  @override
+  String get adminImagesUpdated => 'Images updated';
+
+  @override
+  String get adminImageFileEmpty => 'Selected file is empty.';
+
+  @override
+  String get adminImageUnsupportedFormat =>
+      'Unsupported format. Use JPG, PNG, or WebP.';
+
+  @override
+  String get adminImageTooLarge => 'Image is too large after compression.';
+
+  @override
+  String get adminImageUploaded => 'Image uploaded';
+
+  @override
+  String get adminImageUploadFailed => 'Upload failed. Please try again.';
+
+  @override
+  String get adminDeleteImageTitle => 'Delete image?';
+
+  @override
+  String get adminDeleteImageBody =>
+      'This removes the image from the product gallery on the store.';
+
+  @override
+  String get adminImagesLoadFailed => 'Could not load images';
+
+  @override
+  String get adminUploadImage => 'Upload Image';
+
+  @override
+  String get adminNoImages => 'No images yet';
+
+  @override
+  String get adminNoImagesBody =>
+      'Upload the first image so the product has a gallery on the store.';
+
+  @override
+  String get adminProductNotFound => 'Product not found';
+
+  @override
+  String get adminSelectCategory => 'Please select a category';
+
+  @override
+  String get adminInvalidPrice => 'Invalid price';
+
+  @override
+  String get adminPriceNegative => 'Price cannot be negative';
+
+  @override
+  String get adminProductCreated => 'Product created';
+
+  @override
+  String get adminProductUpdated => 'Product updated';
+
+  @override
+  String get adminNewProduct => 'New Product';
+
+  @override
+  String get adminEditProduct => 'Edit Product';
+
+  @override
+  String get adminNameField => 'Name';
+
+  @override
+  String get adminSlugField => 'Slug';
+
+  @override
+  String get adminRequiredField => 'Required';
+
+  @override
+  String get adminBasePrice => 'Base Price (EGP)';
+
+  @override
+  String get adminInvalidNumber => 'Invalid number';
+
+  @override
+  String get adminWidthCm => 'Width (cm)';
+
+  @override
+  String get adminWeightGsm => 'Weight (GSM)';
+
+  @override
+  String get adminSellByLength => 'Sell by length (per meter)';
+
+  @override
+  String get adminSellByLengthHint =>
+      'Shoppers pick a custom cut length in 0.5 m steps';
+
+  @override
+  String get adminMinCutMeters => 'Minimum cut (meters)';
+
+  @override
+  String get adminCreateProduct => 'Create Product';
+
+  @override
+  String get adminUpdateProduct => 'Update Product';
+
+  @override
+  String get adminNoProducts => 'No products yet';
+
+  @override
+  String get adminNoProductsBody =>
+      'Create the first product so the storefront has something to sell.';
+
+  @override
+  String get adminImagesTooltip => 'Images';
+
+  @override
+  String get adminReload => 'Reload';
+
+  @override
+  String get adminSalesLoadFailed => 'Could not load sales';
+
+  @override
+  String get adminSalesLoadFailedBody => 'Failed to load sales data.';
+
+  @override
+  String get adminNoSalesData => 'No sales data available.';
+
+  @override
+  String get adminAddVariant => 'Add Variant';
+
+  @override
+  String get adminEditVariant => 'Edit Variant';
+
+  @override
+  String get adminSizeField => 'Size';
+
+  @override
+  String get adminStockField => 'Stock';
+
+  @override
+  String get adminPriceOverrideOptional => 'Price Override (optional)';
+
+  @override
+  String get adminSizeColorRequired => 'Size and color are required';
+
+  @override
+  String get adminInvalidStock => 'Invalid stock';
+
+  @override
+  String get adminInvalidPriceOverride => 'Invalid price override';
+
+  @override
+  String get adminPriceOverrideNegative => 'Price override cannot be negative';
+
+  @override
+  String get adminVariantSaved => 'Variant saved';
+
+  @override
+  String get adminNoVariants => 'No variants yet';
+
+  @override
+  String adminVariantStock(int count) {
+    return 'Stock: $count';
+  }
+
+  @override
+  String adminVariantOverride(String price) {
+    return 'Override: $price';
+  }
+
+  @override
+  String adminLowStockTitle(int threshold) {
+    return 'Low stock (≤ $threshold)';
+  }
+
+  @override
+  String get adminLowStockEmpty => 'Nothing below the threshold';
+
+  @override
+  String adminStockLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count left',
+      one: '1 left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adminRevenueLastDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Revenue — last $days days',
+      one: 'Revenue — last day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adminNoRevenueData => 'No revenue data';
+
+  @override
+  String get adminOrdersByStatus => 'Orders by status';
+
+  @override
+  String get adminNoOrdersInWindow => 'No orders in this window';
+
+  @override
+  String get adminBestSellers => 'Best sellers — units sold';
+
+  @override
+  String get adminNoSalesInWindow => 'No sales in this window';
+
+  @override
+  String adminUnitsShort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count u',
+      one: '1 u',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get refunded => 'Refunded';
+
+  @override
+  String get adminFailureAccessDenied => 'Access denied: admin only';
+
+  @override
+  String get adminFailureOrdersLoad =>
+      'Couldn\'t load orders. Please try again.';
+
+  @override
+  String get adminFailureOrderLoad =>
+      'Couldn\'t load this order. Please try again.';
+
+  @override
+  String get adminFailureOrderNotFound => 'Order not found';
+
+  @override
+  String get adminFailureStatusInvalid =>
+      'That order status isn\'t recognized.';
+
+  @override
+  String get adminFailureStatusUpdate =>
+      'Couldn\'t update the order status. Please try again.';
+
+  @override
+  String get adminFailureLowStockLoad =>
+      'Couldn\'t load low-stock products. Please try again.';
+
+  @override
+  String get adminFailureSalesLoad =>
+      'Couldn\'t load sales data. Please try again.';
+
+  @override
+  String get adminFailureStockUpdate =>
+      'Couldn\'t update the stock. Please try again.';
+
+  @override
+  String get adminFailureProductsLoad =>
+      'Couldn\'t load products. Please try again.';
+
+  @override
+  String get adminFailureProductLoad =>
+      'Couldn\'t load this product. Please try again.';
+
+  @override
+  String get adminFailureCategoriesLoad =>
+      'Couldn\'t load categories. Please try again.';
+
+  @override
+  String get adminFailureProductSave =>
+      'Couldn\'t save the product. Please try again.';
+
+  @override
+  String get adminFailureVariantSave =>
+      'Couldn\'t save the variant. Please try again.';
+
+  @override
+  String get adminFailureImagesSave =>
+      'Couldn\'t save the images. Please try again.';
+
+  @override
+  String get adminFailureVariantsLoad =>
+      'Couldn\'t load variants. Please try again.';
+
+  @override
+  String get adminFailureImagesLoad =>
+      'Couldn\'t load images. Please try again.';
+
+  @override
+  String get adminFailureMembershipUpdate =>
+      'Couldn\'t update the membership tier. Please try again.';
+
+  @override
+  String get adminFailureCouponsLoad =>
+      'Couldn\'t load coupons. Please try again.';
+
+  @override
+  String get adminFailureCouponCreate =>
+      'Couldn\'t create the coupon. Please try again.';
+
+  @override
+  String get adminFailureCouponUpdate =>
+      'Couldn\'t update the coupon. Please try again.';
+
+  @override
+  String get adminFailureCustomersLoad =>
+      'Couldn\'t load customers. Please try again.';
+
+  @override
+  String get adminFailureReviewsLoad =>
+      'Couldn\'t load the review queue. Please try again.';
+
+  @override
+  String get adminFailureReviewUpdate =>
+      'Couldn\'t update the review. Please try again.';
 }

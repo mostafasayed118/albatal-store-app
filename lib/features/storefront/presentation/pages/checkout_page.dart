@@ -10,6 +10,7 @@ import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
@@ -83,16 +84,16 @@ class CheckoutPage extends StatelessWidget {
           // localized retry copy so Arabic users never see English (audit
           // code-quality finding).
           final raw = s.errorMessage!;
-          // Code-based localization (audit 2026-09-13): generic failures
-          // carry [kCheckoutFailedCode]; the English-literal fallback
-          // keeps older call shapes (tests inject bare messages)
-          // localizing too. Server-authored messages pass through
-          // verbatim (P1 ruling).
-          final localized = (s.errorCode == kCheckoutFailedCode ||
-                  raw == 'Checkout failed' ||
-                  raw == 'Failed to create order. Please try again.')
+          // Code-based localization (audit 2026-09-13), with the English-literal
+          // matching removed (audit 2026-09-19, sweep part 32): comparing
+          // `raw == 'Checkout failed'` meant any copy edit silently reverted this
+          // screen to English. Coded failures localize; uncoded ones are
+          // server-authored and pass through verbatim (P1 ruling); the last
+          // resort is localized rather than the raw string.
+          final localized = s.errorCode == kCheckoutFailedCode
               ? l10n.checkoutFailedRetry
-              : raw;
+              : failureText(l10n,
+                  code: s.errorCode, message: raw, fallback: l10n.errorTitle);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating, content: Text(localized)));
         }

@@ -14,6 +14,7 @@ final class AdminSalesDashboardState extends Equatable {
     this.overview,
     this.lowStock = const [],
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminSalesDashboardStatus status;
@@ -26,8 +27,12 @@ final class AdminSalesDashboardState extends Equatable {
 
   final String? errorMessage;
 
+  /// App-authored failure code; drives localization at the render site.
+  final String? errorCode;
+
   @override
-  List<Object?> get props => [status, overview, lowStock, errorMessage];
+  List<Object?> get props =>
+      [status, overview, lowStock, errorMessage, errorCode];
 }
 
 /// Loads the read-only sales overview (#12) and the low-stock list for
@@ -70,6 +75,7 @@ class AdminSalesDashboardCubit extends Cubit<AdminSalesDashboardState> {
         emit(AdminSalesDashboardState(
           status: AdminSalesDashboardStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

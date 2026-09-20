@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/share_service.dart';
@@ -100,7 +101,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
             // A failed load must not read as an empty queue.
             return FeedbackView(
               type: FeedbackViewType.error,
-              body: state.errorMessage,
+              body: failureText(context.l10n,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: context.l10n.errorTitle),
               onAction: () => context.read<AdminCubit>().loadOrders(),
             );
           }
@@ -135,8 +139,7 @@ final class _OrderTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final status = order.status;
     final total = order.total.format();
-    // Admin-only, intentionally unlocalized.
-    final customerName = order.customerName ?? 'Unknown';
+    final customerName = order.customerName ?? l10n.unknown;
     final itemCount = order.itemCount ?? order.items.length;
 
     return Card(

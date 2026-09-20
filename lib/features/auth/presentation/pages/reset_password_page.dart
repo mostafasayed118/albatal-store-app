@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
@@ -40,7 +41,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             context.go(Routes.home);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            showFloatingError(context, state.errorMessage!);
+            // Code-first copy — see sign_in_page.dart (sweep part 32).
+            showFloatingError(
+              context,
+              failureText(context.l10n,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: context.l10n.failureUnexpected),
+            );
           }
         },
         child: SingleChildScrollView(

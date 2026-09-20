@@ -452,7 +452,8 @@ void main() {
     await _popAndWait(tester, AdminProductsPage);
 
     // Edit icon opens the form prefilled from the row.
-    await tester.tap(find.byTooltip('Edit product'));
+    // Tooltip and page title now share the `adminEditProduct` copy.
+    await tester.tap(find.byTooltip('Edit Product'));
     await _waitFor(tester, AdminProductEditPage);
     expect(find.text('Edit Product'), findsOneWidget);
     // Field prefill lives in controllers, not Text widgets.

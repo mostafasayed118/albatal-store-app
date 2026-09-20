@@ -19,14 +19,22 @@ sealed class Result<T> {
   /// Local repositories delegate their try/catch boundaries here so the
   /// fail-soft message text stays byte-identical in one place per call
   /// site instead of hand-written in every method.
+  ///
+  /// [code] is the machine-readable class of the failure (see
+  /// `failure_codes.dart`). Supply it whenever the APP authored
+  /// [failureMessage]: the UI then shows localized copy and [failureMessage]
+  /// becomes diagnosis only. Omit it when the message carries server wording
+  /// that must be shown verbatim (audit 2026-09-19, sweep part 32).
   static Future<Result<T>> guard<T>(
     Future<T> Function() action,
-    String failureMessage,
-  ) async {
+    String failureMessage, {
+    String? code,
+  }) async {
     try {
       return Success(await action());
     } catch (e, st) {
-      return Failure(AppError(failureMessage, cause: e, stackTrace: st));
+      return Failure(
+          AppError(failureMessage, cause: e, stackTrace: st, code: code));
     }
   }
 }

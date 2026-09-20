@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_sales.dart';
 
 /// Revenue-per-day bar chart for the admin sales dashboard (#12).
@@ -25,15 +26,15 @@ class SalesRevenueChartCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Revenue — last ${points.length} days',
+            Text(context.l10n.adminRevenueLastDays(points.length),
                 style: textTheme.titleMedium),
             const SizedBox(height: 16),
             SizedBox(
               height: 220,
               child: points.isEmpty
                   ? Center(
-                      child:
-                          Text('No revenue data', style: textTheme.bodySmall))
+                      child: Text(context.l10n.adminNoRevenueData,
+                          style: textTheme.bodySmall))
                   : BarChart(
                       BarChartData(
                         alignment: BarChartAlignment.spaceAround,

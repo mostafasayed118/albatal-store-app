@@ -302,6 +302,108 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorTitle;
 
+  /// No description provided for @failureLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load. Please try again.'**
+  String get failureLoad;
+
+  /// No description provided for @failureSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save. Please try again.'**
+  String get failureSave;
+
+  /// No description provided for @failureNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection problem. Please try again.'**
+  String get failureNetwork;
+
+  /// No description provided for @failureNotAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again.'**
+  String get failureNotAuthenticated;
+
+  /// No description provided for @failureSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Please sign in again.'**
+  String get failureSessionExpired;
+
+  /// No description provided for @failureSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Please try again.'**
+  String get failureSignInFailed;
+
+  /// No description provided for @failureSignUpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-up failed. Please try again.'**
+  String get failureSignUpFailed;
+
+  /// No description provided for @failureNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find that.'**
+  String get failureNotFound;
+
+  /// No description provided for @failureUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get failureUnexpected;
+
+  /// No description provided for @authInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get authInvalidCredentials;
+
+  /// No description provided for @authEmailUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email address first'**
+  String get authEmailUnconfirmed;
+
+  /// No description provided for @authEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists'**
+  String get authEmailInUse;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get authWeakPassword;
+
+  /// No description provided for @deleteEmailMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The email does not match this account'**
+  String get deleteEmailMismatch;
+
+  /// No description provided for @deleteAdminBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts cannot be deleted in the app'**
+  String get deleteAdminBlocked;
+
+  /// No description provided for @deleteNotOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only delete your own account'**
+  String get deleteNotOwner;
+
+  /// No description provided for @deleteFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion failed. Please try again.'**
+  String get deleteFailedRetry;
+
   /// No description provided for @errorBody.
   ///
   /// In en, this message translates to:
@@ -2683,6 +2785,576 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'App lock isn\'t available on this device'**
   String get appLockUnavailable;
+
+  /// No description provided for @salesDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales Dashboard'**
+  String get salesDashboard;
+
+  /// No description provided for @salesDashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue, best sellers, low stock'**
+  String get salesDashboardSubtitle;
+
+  /// No description provided for @adminAccessCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to verify admin access. Please try again.'**
+  String get adminAccessCheckFailed;
+
+  /// No description provided for @adminNoCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'No categories yet'**
+  String get adminNoCategories;
+
+  /// No description provided for @adminNoCategoriesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories are created in the database; the storefront needs at least one.'**
+  String get adminNoCategoriesBody;
+
+  /// No description provided for @inactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get inactive;
+
+  /// No description provided for @adminImagesUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Images updated'**
+  String get adminImagesUpdated;
+
+  /// No description provided for @adminImageFileEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected file is empty.'**
+  String get adminImageFileEmpty;
+
+  /// No description provided for @adminImageUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported format. Use JPG, PNG, or WebP.'**
+  String get adminImageUnsupportedFormat;
+
+  /// No description provided for @adminImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image is too large after compression.'**
+  String get adminImageTooLarge;
+
+  /// No description provided for @adminImageUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Image uploaded'**
+  String get adminImageUploaded;
+
+  /// No description provided for @adminImageUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed. Please try again.'**
+  String get adminImageUploadFailed;
+
+  /// No description provided for @adminDeleteImageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete image?'**
+  String get adminDeleteImageTitle;
+
+  /// No description provided for @adminDeleteImageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the image from the product gallery on the store.'**
+  String get adminDeleteImageBody;
+
+  /// No description provided for @adminImagesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load images'**
+  String get adminImagesLoadFailed;
+
+  /// No description provided for @adminUploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Image'**
+  String get adminUploadImage;
+
+  /// No description provided for @adminNoImages.
+  ///
+  /// In en, this message translates to:
+  /// **'No images yet'**
+  String get adminNoImages;
+
+  /// No description provided for @adminNoImagesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload the first image so the product has a gallery on the store.'**
+  String get adminNoImagesBody;
+
+  /// No description provided for @adminProductNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found'**
+  String get adminProductNotFound;
+
+  /// No description provided for @adminSelectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a category'**
+  String get adminSelectCategory;
+
+  /// No description provided for @adminInvalidPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid price'**
+  String get adminInvalidPrice;
+
+  /// No description provided for @adminPriceNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Price cannot be negative'**
+  String get adminPriceNegative;
+
+  /// No description provided for @adminProductCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Product created'**
+  String get adminProductCreated;
+
+  /// No description provided for @adminProductUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated'**
+  String get adminProductUpdated;
+
+  /// No description provided for @adminNewProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'New Product'**
+  String get adminNewProduct;
+
+  /// No description provided for @adminEditProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Product'**
+  String get adminEditProduct;
+
+  /// No description provided for @adminNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get adminNameField;
+
+  /// No description provided for @adminSlugField.
+  ///
+  /// In en, this message translates to:
+  /// **'Slug'**
+  String get adminSlugField;
+
+  /// No description provided for @adminRequiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get adminRequiredField;
+
+  /// No description provided for @adminBasePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Base Price (EGP)'**
+  String get adminBasePrice;
+
+  /// No description provided for @adminInvalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid number'**
+  String get adminInvalidNumber;
+
+  /// No description provided for @adminWidthCm.
+  ///
+  /// In en, this message translates to:
+  /// **'Width (cm)'**
+  String get adminWidthCm;
+
+  /// No description provided for @adminWeightGsm.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight (GSM)'**
+  String get adminWeightGsm;
+
+  /// No description provided for @adminSellByLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell by length (per meter)'**
+  String get adminSellByLength;
+
+  /// No description provided for @adminSellByLengthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoppers pick a custom cut length in 0.5 m steps'**
+  String get adminSellByLengthHint;
+
+  /// No description provided for @adminMinCutMeters.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum cut (meters)'**
+  String get adminMinCutMeters;
+
+  /// No description provided for @adminCreateProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Product'**
+  String get adminCreateProduct;
+
+  /// No description provided for @adminUpdateProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Product'**
+  String get adminUpdateProduct;
+
+  /// No description provided for @adminNoProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet'**
+  String get adminNoProducts;
+
+  /// No description provided for @adminNoProductsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the first product so the storefront has something to sell.'**
+  String get adminNoProductsBody;
+
+  /// No description provided for @adminImagesTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get adminImagesTooltip;
+
+  /// No description provided for @adminReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get adminReload;
+
+  /// No description provided for @adminSalesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load sales'**
+  String get adminSalesLoadFailed;
+
+  /// No description provided for @adminSalesLoadFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sales data.'**
+  String get adminSalesLoadFailedBody;
+
+  /// No description provided for @adminNoSalesData.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales data available.'**
+  String get adminNoSalesData;
+
+  /// No description provided for @adminAddVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Variant'**
+  String get adminAddVariant;
+
+  /// No description provided for @adminEditVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Variant'**
+  String get adminEditVariant;
+
+  /// No description provided for @adminSizeField.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get adminSizeField;
+
+  /// No description provided for @adminStockField.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock'**
+  String get adminStockField;
+
+  /// No description provided for @adminPriceOverrideOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Price Override (optional)'**
+  String get adminPriceOverrideOptional;
+
+  /// No description provided for @adminSizeColorRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Size and color are required'**
+  String get adminSizeColorRequired;
+
+  /// No description provided for @adminInvalidStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid stock'**
+  String get adminInvalidStock;
+
+  /// No description provided for @adminInvalidPriceOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid price override'**
+  String get adminInvalidPriceOverride;
+
+  /// No description provided for @adminPriceOverrideNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Price override cannot be negative'**
+  String get adminPriceOverrideNegative;
+
+  /// No description provided for @adminVariantSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant saved'**
+  String get adminVariantSaved;
+
+  /// No description provided for @adminNoVariants.
+  ///
+  /// In en, this message translates to:
+  /// **'No variants yet'**
+  String get adminNoVariants;
+
+  /// No description provided for @adminVariantStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock: {count}'**
+  String adminVariantStock(int count);
+
+  /// No description provided for @adminVariantOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Override: {price}'**
+  String adminVariantOverride(String price);
+
+  /// No description provided for @adminLowStockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock (≤ {threshold})'**
+  String adminLowStockTitle(int threshold);
+
+  /// No description provided for @adminLowStockEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing below the threshold'**
+  String get adminLowStockEmpty;
+
+  /// No description provided for @adminStockLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 left} other{{count} left}}'**
+  String adminStockLeft(int count);
+
+  /// No description provided for @adminRevenueLastDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{Revenue — last day} other{Revenue — last {days} days}}'**
+  String adminRevenueLastDays(int days);
+
+  /// No description provided for @adminNoRevenueData.
+  ///
+  /// In en, this message translates to:
+  /// **'No revenue data'**
+  String get adminNoRevenueData;
+
+  /// No description provided for @adminOrdersByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders by status'**
+  String get adminOrdersByStatus;
+
+  /// No description provided for @adminNoOrdersInWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders in this window'**
+  String get adminNoOrdersInWindow;
+
+  /// No description provided for @adminBestSellers.
+  ///
+  /// In en, this message translates to:
+  /// **'Best sellers — units sold'**
+  String get adminBestSellers;
+
+  /// No description provided for @adminNoSalesInWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales in this window'**
+  String get adminNoSalesInWindow;
+
+  /// No description provided for @adminUnitsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 u} other{{count} u}}'**
+  String adminUnitsShort(int count);
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknown;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// No description provided for @refunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get refunded;
+
+  /// No description provided for @adminFailureAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied: admin only'**
+  String get adminFailureAccessDenied;
+
+  /// No description provided for @adminFailureOrdersLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load orders. Please try again.'**
+  String get adminFailureOrdersLoad;
+
+  /// No description provided for @adminFailureOrderLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this order. Please try again.'**
+  String get adminFailureOrderLoad;
+
+  /// No description provided for @adminFailureOrderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Order not found'**
+  String get adminFailureOrderNotFound;
+
+  /// No description provided for @adminFailureStatusInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That order status isn\'t recognized.'**
+  String get adminFailureStatusInvalid;
+
+  /// No description provided for @adminFailureStatusUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the order status. Please try again.'**
+  String get adminFailureStatusUpdate;
+
+  /// No description provided for @adminFailureLowStockLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load low-stock products. Please try again.'**
+  String get adminFailureLowStockLoad;
+
+  /// No description provided for @adminFailureSalesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load sales data. Please try again.'**
+  String get adminFailureSalesLoad;
+
+  /// No description provided for @adminFailureStockUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the stock. Please try again.'**
+  String get adminFailureStockUpdate;
+
+  /// No description provided for @adminFailureProductsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products. Please try again.'**
+  String get adminFailureProductsLoad;
+
+  /// No description provided for @adminFailureProductLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this product. Please try again.'**
+  String get adminFailureProductLoad;
+
+  /// No description provided for @adminFailureCategoriesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load categories. Please try again.'**
+  String get adminFailureCategoriesLoad;
+
+  /// No description provided for @adminFailureProductSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the product. Please try again.'**
+  String get adminFailureProductSave;
+
+  /// No description provided for @adminFailureVariantSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the variant. Please try again.'**
+  String get adminFailureVariantSave;
+
+  /// No description provided for @adminFailureImagesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the images. Please try again.'**
+  String get adminFailureImagesSave;
+
+  /// No description provided for @adminFailureVariantsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load variants. Please try again.'**
+  String get adminFailureVariantsLoad;
+
+  /// No description provided for @adminFailureImagesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load images. Please try again.'**
+  String get adminFailureImagesLoad;
+
+  /// No description provided for @adminFailureMembershipUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the membership tier. Please try again.'**
+  String get adminFailureMembershipUpdate;
+
+  /// No description provided for @adminFailureCouponsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load coupons. Please try again.'**
+  String get adminFailureCouponsLoad;
+
+  /// No description provided for @adminFailureCouponCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the coupon. Please try again.'**
+  String get adminFailureCouponCreate;
+
+  /// No description provided for @adminFailureCouponUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the coupon. Please try again.'**
+  String get adminFailureCouponUpdate;
+
+  /// No description provided for @adminFailureCustomersLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load customers. Please try again.'**
+  String get adminFailureCustomersLoad;
+
+  /// No description provided for @adminFailureReviewsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the review queue. Please try again.'**
+  String get adminFailureReviewsLoad;
+
+  /// No description provided for @adminFailureReviewUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the review. Please try again.'**
+  String get adminFailureReviewUpdate;
 }
 
 class _AppLocalizationsDelegate

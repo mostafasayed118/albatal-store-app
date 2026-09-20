@@ -10,12 +10,17 @@ final class AddressesState extends Equatable {
   const AddressesState(
       {this.status = AddressesStatus.loading,
       this.addresses = const [],
-      this.errorMessage});
+      this.errorMessage,
+      this.errorCode});
   final AddressesStatus status;
   final List<Address> addresses;
   final String? errorMessage;
+
+  /// Machine-readable class of [errorMessage]; the page localizes on this
+  /// (audit 2026-09-19, sweep part 32).
+  final String? errorCode;
   @override
-  List<Object?> get props => [status, addresses, errorMessage];
+  List<Object?> get props => [status, addresses, errorMessage, errorCode];
 }
 
 final class AddressesCubit extends Cubit<AddressesState> {
@@ -49,7 +54,9 @@ final class AddressesCubit extends Cubit<AddressesState> {
           }
         },
         failure: (e) => emit(AddressesState(
-            status: AddressesStatus.failure, errorMessage: e.message)));
+            status: AddressesStatus.failure,
+            errorMessage: e.message,
+            errorCode: e.code)));
   }
 
   Future<void> upsert(Address a) async =>
@@ -72,6 +79,7 @@ final class AddressesCubit extends Cubit<AddressesState> {
         failure: (e) => emit(AddressesState(
             status: AddressesStatus.failure,
             addresses: state.addresses,
-            errorMessage: e.message)));
+            errorMessage: e.message,
+            errorCode: e.code)));
   }
 }

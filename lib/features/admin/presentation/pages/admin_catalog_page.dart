@@ -35,9 +35,7 @@ class AdminCatalogPage extends StatelessWidget {
       if (!context.mounted) return;
       // Generic user message — raw exception stays in logs only.
       Log.e('Admin access check failed', error: e);
-      // Admin-only, intentionally unlocalized.
-      showFloatingError(
-          context, 'Unable to verify admin access. Please try again.');
+      showFloatingError(context, context.l10n.adminAccessCheckFailed);
     }
   }
 
@@ -90,12 +88,10 @@ class AdminCatalogPage extends StatelessWidget {
             subtitle: l10n.adminSearch,
             onTap: () => _guardedPush(context, Routes.adminCustomers),
           ),
-          // Sales dashboard (#12): admin-only, intentionally English
-          // in-code — no ARB keys for admin-only copy.
           _ManagementTile(
             icon: Icons.insights_outlined,
-            title: 'Sales Dashboard',
-            subtitle: 'Revenue, best sellers, low stock',
+            title: l10n.salesDashboard,
+            subtitle: l10n.salesDashboardSubtitle,
             onTap: () => _guardedPush(context, Routes.adminSales),
           ),
         ],

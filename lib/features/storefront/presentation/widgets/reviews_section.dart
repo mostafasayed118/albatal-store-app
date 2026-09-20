@@ -324,6 +324,14 @@ final class _ReviewSubmitSheetState extends State<_ReviewSubmitSheet> {
               behavior: SnackBarBehavior.floating,
               content: Text(l.reviewUnavailable),
             ));
+          } else {
+            // Audit 2026-09-19 (sweep part 32): every other failure used to fall
+            // through here with NO feedback at all. Show localized retry copy
+            // instead of the repository's English message.
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(l.failureSave),
+            ));
           }
         },
         builder: (context, state) => Column(

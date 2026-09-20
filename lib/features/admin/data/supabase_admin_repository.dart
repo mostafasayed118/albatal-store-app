@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
+import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
@@ -348,7 +349,7 @@ final class SupabaseAdminRepository implements AdminRepository {
             .where((r) => r['id'] is String)
             .map(AdminMappers.orderFromRow)
             .toList();
-      }, 'Failed to load orders');
+      }, 'Failed to load orders', code: kAdminOrdersLoadFailed);
 
   @override
   Future<Result<AdminOrder?>> getOrderDetails(String orderId) =>
@@ -367,7 +368,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         final row = _orderRowFromRpc(payload);
         if (row == null) return null;
         return AdminMappers.orderDetailFromRow(row);
-      }, 'Failed to load order');
+      }, 'Failed to load order', code: kAdminOrderLoadFailed);
 
   /// Reshapes the `get_order_details` payload
   /// (`{order: {...}, items: [...], customer: {...}}`) into the single row
@@ -399,7 +400,8 @@ final class SupabaseAdminRepository implements AdminRepository {
     // Pre-flight validation stays OUTSIDE the guard: it is a domain check with
     // its own message, not something the boundary should swallow and relabel.
     if (status == AdminOrderStatus.unknown) {
-      return const Failure(AppError('Unknown order status'));
+      return const Failure(
+          AppError('Unknown order status', code: kAdminOrderStatusInvalid));
     }
     return Result.guard<void>(() async {
       await _client.rpc('update_order_status', params: {
@@ -407,7 +409,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         'p_new_status': status.dbValue,
         'p_tracking_number': trackingNumber,
       });
-    }, 'Failed to update order status');
+    }, 'Failed to update order status', code: kAdminOrderStatusUpdateFailed);
   }
 
   @override
@@ -418,7 +420,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         final response = await _client
             .rpc('get_low_stock_products', params: {'p_threshold': threshold});
         return AdminMappers.lowStockVariantsFromRows(response as List<dynamic>);
-      }, 'Failed to load low stock products');
+      }, 'Failed to load low stock products', code: kAdminLowStockLoadFailed);
 
   @override
   Future<Result<AdminSalesOverview>> getSalesOverview({int days = 14}) =>
@@ -445,7 +447,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           days: days,
           now: now,
         );
-      }, 'Failed to load sales overview');
+      }, 'Failed to load sales overview', code: kAdminSalesLoadFailed);
 
   // ─── Variant Management ─────────────────────────────────
 
@@ -455,7 +457,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         await _client
             .from('product_variants')
             .update({'stock': newStock}).eq('id', variantId);
-      }, 'Failed to update stock');
+      }, 'Failed to update stock', code: kAdminStockUpdateFailed);
 
   // ─── Catalog Management (T1) ─────────────────────────────
 
@@ -472,7 +474,7 @@ final class SupabaseAdminRepository implements AdminRepository {
             .limit(100)
             .range(0, 99);
         return AdminMappers.productsFromRows(rows as List<dynamic>);
-      }, 'Failed to load products');
+      }, 'Failed to load products', code: kAdminProductsLoadFailed);
 
   @override
   Future<Result<AdminProduct?>> getProductById(String productId) =>
@@ -486,7 +488,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         final list = rows as List<dynamic>;
         if (list.isEmpty) return null;
         return AdminMappers.productsFromRows(list).first;
-      }, 'Failed to load product');
+      }, 'Failed to load product', code: kAdminProductLoadFailed);
 
   @override
   Future<Result<List<AdminCategory>>> getAllCategories() =>
@@ -496,7 +498,7 @@ final class SupabaseAdminRepository implements AdminRepository {
             .select('id, name, is_active')
             .order('sort_order');
         return AdminMappers.categoriesFromRows(rows as List<dynamic>);
-      }, 'Failed to load categories');
+      }, 'Failed to load categories', code: kAdminCategoriesLoadFailed);
 
   @override
   Future<Result<String>> adminUpsertProduct({
@@ -542,7 +544,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           throw StateError('admin_upsert_product returned no product id');
         }
         return res;
-      }, 'Failed to save product');
+      }, 'Failed to save product', code: kAdminProductSaveFailed);
 
   @override
   Future<Result<String>> adminUpsertVariant({
@@ -566,7 +568,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           throw StateError('admin_upsert_variant returned no variant id');
         }
         return res;
-      }, 'Failed to save variant');
+      }, 'Failed to save variant', code: kAdminVariantSaveFailed);
 
   @override
   Future<Result<void>> adminSetProductImages(
@@ -576,7 +578,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           'p_product_id': productId,
           'p_paths': storagePaths,
         });
-      }, 'Failed to save images');
+      }, 'Failed to save images', code: kAdminImagesSaveFailed);
 
   @override
   Future<Result<List<AdminVariant>>> getVariants(String productId) =>
@@ -587,7 +589,7 @@ final class SupabaseAdminRepository implements AdminRepository {
             .eq('product_id', productId)
             .order('size');
         return AdminMappers.variantsFromRows(res as List);
-      }, 'Failed to load variants');
+      }, 'Failed to load variants', code: kAdminVariantsLoadFailed);
 
   @override
   Future<Result<List<String>>> getProductImagePaths(String productId) =>
@@ -598,7 +600,7 @@ final class SupabaseAdminRepository implements AdminRepository {
             .eq('product_id', productId)
             .order('sort_order');
         return AdminMappers.imagePathsFromRows(res as List);
-      }, 'Failed to load images');
+      }, 'Failed to load images', code: kAdminImagesLoadFailed);
 
   @override
   Future<Result<void>> setMembershipTier(String profileId, String tier) =>
@@ -607,7 +609,8 @@ final class SupabaseAdminRepository implements AdminRepository {
           'p_profile_id': profileId,
           'p_tier': tier,
         });
-      }, 'Failed to update membership tier');
+      }, 'Failed to update membership tier',
+          code: kAdminMembershipUpdateFailed);
 
   // ─── Coupons (feature-batch §8) ─────────────────────────
 
@@ -621,7 +624,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         return list
             .map((row) => _couponFromRow(row as Map<String, dynamic>))
             .toList();
-      }, 'Failed to fetch coupons');
+      }, 'Failed to fetch coupons', code: kAdminCouponsLoadFailed);
 
   @override
   Future<Result<AdminCoupon>> createCoupon({
@@ -641,13 +644,13 @@ final class SupabaseAdminRepository implements AdminRepository {
             .select('id, code, discount_minor, description, active')
             .single();
         return _couponFromRow(row);
-      }, 'Failed to create coupon');
+      }, 'Failed to create coupon', code: kAdminCouponCreateFailed);
 
   @override
   Future<Result<void>> setCouponActive(String id, bool active) =>
       Result.guard<void>(() async {
         await _client.from('coupons').update({'active': active}).eq('id', id);
-      }, 'Failed to update coupon');
+      }, 'Failed to update coupon', code: kAdminCouponUpdateFailed);
 
   // ─── Customers (feature-batch §14) ─────────────────────
 
@@ -757,7 +760,8 @@ final class SupabaseAdminRepository implements AdminRepository {
       // Without it RLS limits the result to the caller's own row; the call
       // still succeeds, so the directory is simply short.
       Log.w('fetchCustomers failed', category: LogCategory.network, error: e);
-      return Failure(AppError('Failed to fetch customers', cause: e));
+      return Failure(AppError('Failed to fetch customers',
+          cause: e, code: kAdminCustomersLoadFailed));
     }
   }
 
@@ -788,7 +792,7 @@ final class SupabaseAdminRepository implements AdminRepository {
                     ))
                 .toList();
             return list;
-          }, 'Failed to fetch pending reviews');
+          }, 'Failed to fetch pending reviews', code: kAdminReviewsLoadFailed);
 
   @override
   Future<Result<void>> setReviewStatus(String id, String status) =>
@@ -796,7 +800,7 @@ final class SupabaseAdminRepository implements AdminRepository {
         await _client
             .from('product_reviews')
             .update({'status': status}).eq('id', id);
-      }, 'Failed to update review status');
+      }, 'Failed to update review status', code: kAdminReviewUpdateFailed);
 }
 
 AdminCoupon _couponFromRow(Map<String, dynamic> row) => AdminCoupon(

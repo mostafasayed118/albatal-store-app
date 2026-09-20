@@ -6,6 +6,7 @@ import '../../../core/entities/money.dart';
 import '../../../core/entities/order.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
@@ -35,7 +36,8 @@ final class SupabaseOrdersRepository implements OrdersRepository {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) {
-        return const Failure(AppError('Not authenticated'));
+        return const Failure(
+            AppError('Not authenticated', code: kFailureNotAuthenticated));
       }
 
       // Fetch orders with embedded items via a join. Supabase PostgREST
@@ -63,7 +65,8 @@ final class SupabaseOrdersRepository implements OrdersRepository {
       return Success(orders);
     } on Exception catch (e) {
       Log.e('readOrders failed', error: e);
-      return Failure(AppError('Failed to load orders', cause: e));
+      return Failure(
+          AppError('Failed to load orders', cause: e, code: kFailureLoad));
     }
   }
 

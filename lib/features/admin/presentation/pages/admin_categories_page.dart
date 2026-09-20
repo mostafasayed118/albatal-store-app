@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
@@ -30,6 +31,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
   List<AdminCategory> _categories = [];
   bool _loading = true;
   String? _error;
+  String? _errorCode;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
       failure: (error) => setState(() {
         _loading = false;
         _error = error.message;
+        _errorCode = error.code;
       }),
     );
   }
@@ -66,17 +69,17 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
           : _error != null
               ? FeedbackView(
                   type: FeedbackViewType.error,
-                  body: _error,
+                  body: failureText(context.l10n,
+                      code: _errorCode,
+                      message: _error,
+                      fallback: context.l10n.errorTitle),
                   onAction: _loadCategories,
                 )
               : _categories.isEmpty
-                  // Admin-only, intentionally unlocalized (no ARB keys;
-                  // the storefront stays localized).
-                  ? const FeedbackView(
+                  ? FeedbackView(
                       type: FeedbackViewType.empty,
-                      title: 'No categories yet',
-                      body:
-                          'Categories are created in the database; the storefront needs at least one.',
+                      title: l10n.adminNoCategories,
+                      body: l10n.adminNoCategoriesBody,
                     )
                   : RefreshIndicator(
                       onRefresh: _loadCategories,
@@ -122,8 +125,7 @@ final class _CategoryChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        // Admin-only, intentionally unlocalized.
-        isActive ? 'Active' : 'Inactive',
+        isActive ? context.l10n.active : context.l10n.inactive,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,

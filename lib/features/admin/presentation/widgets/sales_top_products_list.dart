@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_sales.dart';
 
 /// Best-sellers panel for the admin sales dashboard (#12): top products
@@ -18,14 +19,14 @@ class SalesTopProductsCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child:
-                Text('Best sellers — units sold', style: textTheme.titleMedium),
+            child: Text(context.l10n.adminBestSellers,
+                style: textTheme.titleMedium),
           ),
           if (products.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child:
-                  Text('No sales in this window', style: textTheme.bodySmall),
+              child: Text(context.l10n.adminNoSalesInWindow,
+                  style: textTheme.bodySmall),
             )
           else
             for (var i = 0; i < products.length; i++)
@@ -34,7 +35,8 @@ class SalesTopProductsCard extends StatelessWidget {
                   child: Text('${i + 1}'),
                 ),
                 title: Text(products[i].productName),
-                trailing: Text('${products[i].unitsSold} u'),
+                trailing:
+                    Text(context.l10n.adminUnitsShort(products[i].unitsSold)),
               ),
         ],
       ),

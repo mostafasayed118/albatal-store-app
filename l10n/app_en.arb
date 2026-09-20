@@ -34,6 +34,23 @@
   "emptyTitle": "Nothing here yet",
   "emptyBody": "When content is available, it will appear here.",
   "errorTitle": "Something went wrong",
+  "failureLoad": "Couldn't load. Please try again.",
+  "failureSave": "Couldn't save. Please try again.",
+  "failureNetwork": "Connection problem. Please try again.",
+  "failureNotAuthenticated": "Please sign in again.",
+  "failureSessionExpired": "Your session expired. Please sign in again.",
+  "failureSignInFailed": "Sign-in failed. Please try again.",
+  "failureSignUpFailed": "Sign-up failed. Please try again.",
+  "failureNotFound": "We couldn't find that.",
+  "failureUnexpected": "Something went wrong. Please try again.",
+  "authInvalidCredentials": "Invalid email or password",
+  "authEmailUnconfirmed": "Please verify your email address first",
+  "authEmailInUse": "An account with this email already exists",
+  "authWeakPassword": "Password must be at least 8 characters",
+  "deleteEmailMismatch": "The email does not match this account",
+  "deleteAdminBlocked": "Admin accounts cannot be deleted in the app",
+  "deleteNotOwner": "You can only delete your own account",
+  "deleteFailedRetry": "Account deletion failed. Please try again.",
   "errorBody": "Please check your connection and try again.",
   "offlineBannerMessage": "No internet connection",
   "couldNotOpenLink": "Couldn't open that. Please try again.",
@@ -630,5 +647,142 @@
   },
   "@exportOrdersCsv": {
     "description": "Tooltip on the admin order queue's CSV export action, which shares the visible rows as a file (feature-batch §14)."
-  }
+  },
+  "salesDashboard": "Sales Dashboard",
+  "salesDashboardSubtitle": "Revenue, best sellers, low stock",
+  "adminAccessCheckFailed": "Unable to verify admin access. Please try again.",
+  "adminNoCategories": "No categories yet",
+  "adminNoCategoriesBody": "Categories are created in the database; the storefront needs at least one.",
+  "inactive": "Inactive",
+  "adminImagesUpdated": "Images updated",
+  "adminImageFileEmpty": "Selected file is empty.",
+  "adminImageUnsupportedFormat": "Unsupported format. Use JPG, PNG, or WebP.",
+  "adminImageTooLarge": "Image is too large after compression.",
+  "adminImageUploaded": "Image uploaded",
+  "adminImageUploadFailed": "Upload failed. Please try again.",
+  "adminDeleteImageTitle": "Delete image?",
+  "adminDeleteImageBody": "This removes the image from the product gallery on the store.",
+  "adminImagesLoadFailed": "Could not load images",
+  "adminUploadImage": "Upload Image",
+  "adminNoImages": "No images yet",
+  "adminNoImagesBody": "Upload the first image so the product has a gallery on the store.",
+  "adminProductNotFound": "Product not found",
+  "adminSelectCategory": "Please select a category",
+  "adminInvalidPrice": "Invalid price",
+  "adminPriceNegative": "Price cannot be negative",
+  "adminProductCreated": "Product created",
+  "adminProductUpdated": "Product updated",
+  "adminNewProduct": "New Product",
+  "adminEditProduct": "Edit Product",
+  "adminNameField": "Name",
+  "adminSlugField": "Slug",
+  "adminRequiredField": "Required",
+  "adminBasePrice": "Base Price (EGP)",
+  "adminInvalidNumber": "Invalid number",
+  "adminWidthCm": "Width (cm)",
+  "adminWeightGsm": "Weight (GSM)",
+  "adminSellByLength": "Sell by length (per meter)",
+  "adminSellByLengthHint": "Shoppers pick a custom cut length in 0.5 m steps",
+  "adminMinCutMeters": "Minimum cut (meters)",
+  "adminCreateProduct": "Create Product",
+  "adminUpdateProduct": "Update Product",
+  "adminNoProducts": "No products yet",
+  "adminNoProductsBody": "Create the first product so the storefront has something to sell.",
+  "adminImagesTooltip": "Images",
+  "adminReload": "Reload",
+  "adminSalesLoadFailed": "Could not load sales",
+  "adminSalesLoadFailedBody": "Failed to load sales data.",
+  "adminNoSalesData": "No sales data available.",
+  "adminAddVariant": "Add Variant",
+  "adminEditVariant": "Edit Variant",
+  "adminSizeField": "Size",
+  "adminStockField": "Stock",
+  "adminPriceOverrideOptional": "Price Override (optional)",
+  "adminSizeColorRequired": "Size and color are required",
+  "adminInvalidStock": "Invalid stock",
+  "adminInvalidPriceOverride": "Invalid price override",
+  "adminPriceOverrideNegative": "Price override cannot be negative",
+  "adminVariantSaved": "Variant saved",
+  "adminNoVariants": "No variants yet",
+  "adminVariantStock": "Stock: {count}",
+  "@adminVariantStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVariantOverride": "Override: {price}",
+  "@adminVariantOverride": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "adminLowStockTitle": "Low stock (≤ {threshold})",
+  "@adminLowStockTitle": {
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
+  },
+  "adminLowStockEmpty": "Nothing below the threshold",
+  "adminStockLeft": "{count, plural, =1{1 left} other{{count} left}}",
+  "@adminStockLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminRevenueLastDays": "{days, plural, =1{Revenue — last day} other{Revenue — last {days} days}}",
+  "@adminRevenueLastDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "adminNoRevenueData": "No revenue data",
+  "adminOrdersByStatus": "Orders by status",
+  "adminNoOrdersInWindow": "No orders in this window",
+  "adminBestSellers": "Best sellers — units sold",
+  "adminNoSalesInWindow": "No sales in this window",
+  "adminUnitsShort": "{count, plural, =1{1 u} other{{count} u}}",
+  "@adminUnitsShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unknown": "Unknown",
+  "pending": "Pending",
+  "refunded": "Refunded",
+  "adminFailureAccessDenied": "Access denied: admin only",
+  "adminFailureOrdersLoad": "Couldn't load orders. Please try again.",
+  "adminFailureOrderLoad": "Couldn't load this order. Please try again.",
+  "adminFailureOrderNotFound": "Order not found",
+  "adminFailureStatusInvalid": "That order status isn't recognized.",
+  "adminFailureStatusUpdate": "Couldn't update the order status. Please try again.",
+  "adminFailureLowStockLoad": "Couldn't load low-stock products. Please try again.",
+  "adminFailureSalesLoad": "Couldn't load sales data. Please try again.",
+  "adminFailureStockUpdate": "Couldn't update the stock. Please try again.",
+  "adminFailureProductsLoad": "Couldn't load products. Please try again.",
+  "adminFailureProductLoad": "Couldn't load this product. Please try again.",
+  "adminFailureCategoriesLoad": "Couldn't load categories. Please try again.",
+  "adminFailureProductSave": "Couldn't save the product. Please try again.",
+  "adminFailureVariantSave": "Couldn't save the variant. Please try again.",
+  "adminFailureImagesSave": "Couldn't save the images. Please try again.",
+  "adminFailureVariantsLoad": "Couldn't load variants. Please try again.",
+  "adminFailureImagesLoad": "Couldn't load images. Please try again.",
+  "adminFailureMembershipUpdate": "Couldn't update the membership tier. Please try again.",
+  "adminFailureCouponsLoad": "Couldn't load coupons. Please try again.",
+  "adminFailureCouponCreate": "Couldn't create the coupon. Please try again.",
+  "adminFailureCouponUpdate": "Couldn't update the coupon. Please try again.",
+  "adminFailureCustomersLoad": "Couldn't load customers. Please try again.",
+  "adminFailureReviewsLoad": "Couldn't load the review queue. Please try again.",
+  "adminFailureReviewUpdate": "Couldn't update the review. Please try again."
 }

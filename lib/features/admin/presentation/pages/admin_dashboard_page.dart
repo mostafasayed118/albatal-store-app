@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
@@ -48,7 +49,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           if (state.status == AdminStatus.error) {
             return FeedbackView(
               type: FeedbackViewType.error,
-              body: state.errorMessage,
+              body: failureText(context.l10n,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: context.l10n.errorTitle),
               // Reload the data; the old handler only cleared the error
               // flag, leaving the dashboard empty on the "retry".
               onAction: () => context.read<AdminCubit>()

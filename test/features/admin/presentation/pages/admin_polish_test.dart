@@ -392,7 +392,9 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('PAID'), findsOneWidget);
+      // Was 'PAID' — the raw enum name shouted. The chip now renders the
+      // localized label (admin_order_status_label.dart, owner decision part 34).
+      expect(find.text('Paid'), findsOneWidget);
 
       await tester.tap(find.text('Confirm Order'));
       await tester.pump();
@@ -400,7 +402,7 @@ void main() {
 
       expect(find.text('Order status updated to processing'), findsOneWidget,
           reason: 'the ack is earned by the repository result');
-      expect(find.text('PROCESSING'), findsOneWidget,
+      expect(find.text('Processing'), findsOneWidget,
           reason: 'the status card reflects the transition immediately');
     });
 

@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
@@ -57,10 +58,11 @@ void main() {
     );
 
     blocTest<AdminCubit, AdminState>(
-      'emits error with repository message on Failure',
+      'emits error with repository message and code on Failure',
       build: () {
         when(() => repo.getAllOrders(status: any(named: 'status'))).thenAnswer(
-            (_) async => const Failure(AppError('Failed to load orders')));
+            (_) async => const Failure(AppError('Failed to load orders',
+                code: kAdminOrdersLoadFailed)));
         return AdminCubit(repo);
       },
       act: (cubit) => cubit.loadOrders(),
@@ -70,7 +72,10 @@ void main() {
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.error)
             .having(
-                (s) => s.errorMessage, 'errorMessage', 'Failed to load orders'),
+                (s) => s.errorMessage, 'errorMessage', 'Failed to load orders')
+            // The code is what the page localizes from; dropping it would
+            // silently revert the admin console to English failure prose.
+            .having((s) => s.errorCode, 'errorCode', kAdminOrdersLoadFailed),
       ],
     );
 
@@ -94,6 +99,22 @@ void main() {
                 (s) => s.statusFilter, 'statusFilter', AdminOrderStatus.shipped)
             .having((s) => s.filteredOrders.map((o) => o.id).toList(),
                 'filteredOrders', ['o2']),
+      ],
+    );
+  });
+
+  group('AdminCubit.checkAdmin', () {
+    blocTest<AdminCubit, AdminState>(
+      'emits the access-denied code so the page can localize it',
+      build: () {
+        when(() => repo.isCurrentUserAdmin()).thenAnswer((_) async => false);
+        return AdminCubit(repo);
+      },
+      act: (cubit) => cubit.checkAdmin(),
+      expect: () => [
+        isA<AdminState>()
+            .having((s) => s.status, 'status', AdminStatus.error)
+            .having((s) => s.errorCode, 'errorCode', kAdminAccessDenied),
       ],
     );
   });

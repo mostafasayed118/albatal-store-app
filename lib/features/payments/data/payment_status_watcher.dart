@@ -43,6 +43,7 @@ final class PaymentStatusWatcher {
     if (status == 'failed') {
       return const PaymentFailed(
         message: 'Payment was declined by the gateway',
+        code: 'payment_declined',
       );
     }
     if (status == 'cancelled' || status == 'canceled' || status == 'expired') {

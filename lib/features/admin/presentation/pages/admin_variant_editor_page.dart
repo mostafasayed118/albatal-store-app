@@ -4,6 +4,7 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../widgets/dialog_controllers.dart';
@@ -34,6 +35,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
   List<AdminVariant> _variants = [];
   bool _loading = true;
   String? _error;
+  String? _errorCode;
 
   @override
   void dispose() {
@@ -62,6 +64,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
       failure: (error) => setState(() {
         _loading = false;
         _error = error.message;
+        _errorCode = error.code;
       }),
     );
   }
@@ -69,8 +72,6 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
   Future<void> _showVariantDialog({AdminVariant? existing}) async {
     // Let the tapped row's frame finish rendering before pushing the dialog;
     // a slow device can otherwise starve the route's opening frame.
-    // All copy in this dialog is admin-only, intentionally unlocalized
-    // (no ARB keys; the storefront stays localized).
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
     final sizeCtrl = newDialogController(existing?.size ?? '');
@@ -85,31 +86,35 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
-          title: Text(existing == null ? 'Add Variant' : 'Edit Variant'),
+          title: Text(existing == null
+              ? ctx.l10n.adminAddVariant
+              : ctx.l10n.adminEditVariant),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: sizeCtrl,
-                  decoration: const InputDecoration(labelText: 'Size'),
+                  decoration:
+                      InputDecoration(labelText: ctx.l10n.adminSizeField),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: colorCtrl,
-                  decoration: const InputDecoration(labelText: 'Color'),
+                  decoration: InputDecoration(labelText: ctx.l10n.color),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: stockCtrl,
-                  decoration: const InputDecoration(labelText: 'Stock'),
+                  decoration:
+                      InputDecoration(labelText: ctx.l10n.adminStockField),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceCtrl,
-                  decoration: const InputDecoration(
-                      labelText: 'Price Override (optional)'),
+                  decoration: InputDecoration(
+                      labelText: ctx.l10n.adminPriceOverrideOptional),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                 ),
@@ -119,7 +124,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(ctx.l10n.cancel),
             ),
             saving
                 ? const Padding(
@@ -130,23 +135,23 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 : AppButton(
-                    label: 'Save',
+                    label: ctx.l10n.save,
                     onPressed: () async {
                       if (sizeCtrl.text.trim().isEmpty ||
                           colorCtrl.text.trim().isEmpty) {
-                        showFloatingError(ctx, 'Size and color are required');
+                        showFloatingError(ctx, ctx.l10n.adminSizeColorRequired);
                         return;
                       }
                       final stock = int.tryParse(stockCtrl.text.trim());
                       if (stock == null) {
-                        showFloatingError(ctx, 'Invalid stock');
+                        showFloatingError(ctx, ctx.l10n.adminInvalidStock);
                         return;
                       }
                       if (stock < 0) {
                         // The DB enforces this too (001: stock >= 0), but
                         // failing here gives an inline message instead of a
                         // generic save failure.
-                        showFloatingError(ctx, 'Stock cannot be negative');
+                        showFloatingError(ctx, ctx.l10n.stockCannotBeNegative);
                         return;
                       }
                       final priceOverride = priceCtrl.text.trim().isEmpty
@@ -154,7 +159,8 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                           : double.tryParse(priceCtrl.text.trim());
                       if (priceCtrl.text.trim().isNotEmpty &&
                           priceOverride == null) {
-                        showFloatingError(ctx, 'Invalid price override');
+                        showFloatingError(
+                            ctx, ctx.l10n.adminInvalidPriceOverride);
                         return;
                       }
                       if (priceOverride != null && priceOverride <= 0) {
@@ -162,7 +168,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         // migration 044 — this is the first line of defense;
                         // the CHECK is the last.
                         showFloatingError(
-                            ctx, 'Price override cannot be negative');
+                            ctx, ctx.l10n.adminPriceOverrideNegative);
                         return;
                       }
                       setDlgState(() => saving = true);
@@ -178,14 +184,20 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         success: (_) {
                           Navigator.pop(ctx);
                           if (!mounted) return;
-                          // Admin-only, intentionally unlocalized.
-                          showConfirmation(context, 'Variant saved');
+                          showConfirmation(
+                              context, context.l10n.adminVariantSaved);
                           _loadVariants();
                         },
                         failure: (error) {
                           // Repository messages are fixed, user-facing
                           // strings — safe to render verbatim.
-                          showFloatingError(ctx, error.message);
+                          showFloatingError(
+                            ctx,
+                            failureText(ctx.l10n,
+                                code: error.code,
+                                message: error.message,
+                                fallback: ctx.l10n.errorTitle),
+                          );
                           setDlgState(() => saving = false);
                         },
                       );
@@ -213,10 +225,15 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_error!, textAlign: TextAlign.center),
+                        Text(
+                          failureText(l10n,
+                              code: _errorCode,
+                              message: _error,
+                              fallback: l10n.errorTitle),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 12),
-                        // Admin-only, intentionally unlocalized.
-                        AppButton(label: 'Retry', onPressed: _loadVariants),
+                        AppButton(label: l10n.retry, onPressed: _loadVariants),
                       ],
                     ),
                   ),
@@ -230,12 +247,10 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                           children: [
                             const Icon(Icons.inventory_2_outlined, size: 48),
                             const SizedBox(height: 12),
-                            // Admin-only, intentionally unlocalized.
-                            const Text('No variants yet'),
+                            Text(l10n.adminNoVariants),
                             const SizedBox(height: 12),
                             AppButton(
-                                // Admin-only, intentionally unlocalized.
-                                label: 'Add Variant',
+                                label: l10n.adminAddVariant,
                                 onPressed: () => _showVariantDialog()),
                           ],
                         ),
@@ -251,11 +266,9 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                           final override = v.priceOverride;
                           return Card(
                             child: ListTile(
-                              // Admin-only, intentionally unlocalized: the
-                              // 'Stock:' / 'Override:' row labels below.
                               title: Text('${v.size} / ${v.color}'),
                               subtitle: Text(
-                                  'Stock: ${v.stock}${override != null ? ' • Override: $override' : ''}'),
+                                  '${l10n.adminVariantStock(v.stock)}${override != null ? ' • ${l10n.adminVariantOverride('$override')}' : ''}'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.edit),
                                 onPressed: () =>

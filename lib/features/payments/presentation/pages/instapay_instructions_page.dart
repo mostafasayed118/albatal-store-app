@@ -264,8 +264,10 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
               appBar: AppBar(title: Text(l.instapayInstructionsTitle)),
               body: Center(
                 child: Text(
-                  paymentMessageForCode(l, state.errorMessage,
-                      state.errorMessage ?? l.paymentFailedRetry),
+                  // Localized fallback, not the raw message: see the sibling
+                  // fix in payment_method_page.dart.
+                  paymentMessageForCode(
+                      l, state.errorMessage, l.paymentFailedRetry),
                   textAlign: TextAlign.center,
                 ),
               ),

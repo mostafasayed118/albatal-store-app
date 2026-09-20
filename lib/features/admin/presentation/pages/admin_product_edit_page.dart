@@ -6,14 +6,15 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
 
 /// Admin product create/edit — calls [AdminRepository.adminUpsertProduct].
 ///
-/// All copy on this form is admin-only, intentionally unlocalized (no ARB
-/// keys; the storefront stays localized).
+/// Copy on this form is localized like the storefront (owner decision, part 34).
 ///
 /// The repository is constructor-injected (audit P1); the router resolves
 /// it at the composition root.
@@ -97,16 +98,24 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     final result = await widget.repository.getProductById(widget.productId!);
     if (!mounted) return;
     String? failureMessage;
+    String? failureCode;
     AdminProduct? product;
     switch (result) {
       case Success(:final value):
         product = value;
       case Failure(:final error):
         failureMessage = error.message;
+        failureCode = error.code;
     }
     if (!mounted) return;
     if (product == null) {
-      showFloatingError(context, failureMessage ?? 'Product not found');
+      showFloatingError(
+        context,
+        failureText(context.l10n,
+            code: failureCode,
+            message: failureMessage,
+            fallback: context.l10n.adminProductNotFound),
+      );
       setState(() => _loadingProduct = false);
       return;
     }
@@ -198,18 +207,18 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   Future<void> _submit() async {
     if (_loadingProduct || !_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
-      showFloatingError(context, 'Please select a category');
+      showFloatingError(context, context.l10n.adminSelectCategory);
       return;
     }
     final price = double.tryParse(_priceCtrl.text.trim());
     if (price == null) {
-      showFloatingError(context, 'Invalid price');
+      showFloatingError(context, context.l10n.adminInvalidPrice);
       return;
     }
     if (price <= 0) {
       // The DB enforces this too (001: base_price > 0), but failing here
       // gives an inline message instead of a generic save failure.
-      showFloatingError(context, 'Price cannot be negative');
+      showFloatingError(context, context.l10n.adminPriceNegative);
       return;
     }
     setState(() => _submitting = true);
@@ -239,7 +248,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       success: (_) {
         showConfirmation(
           context,
-          widget.productId == null ? 'Product created' : 'Product updated',
+          widget.productId == null
+              ? context.l10n.adminProductCreated
+              : context.l10n.adminProductUpdated,
         );
         context.pop(true);
       },
@@ -247,7 +258,13 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         // Repository messages are fixed, user-facing strings — the raw
         // exception never reaches the UI (leak scrubbed with the Result
         // migration).
-        showFloatingError(context, error.message);
+        showFloatingError(
+          context,
+          failureText(context.l10n,
+              code: error.code,
+              message: error.message,
+              fallback: context.l10n.errorTitle),
+        );
       },
     );
   }
@@ -258,7 +275,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       appBar: AppBar(
         // The form was previously titled "Products" in both modes —
         // indistinguishable from the list page in the back stack.
-        title: Text(widget.productId == null ? 'New Product' : 'Edit Product'),
+        title: Text(widget.productId == null
+            ? context.l10n.adminNewProduct
+            : context.l10n.adminEditProduct),
       ),
       body: Form(
         key: _formKey,
@@ -267,27 +286,31 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
           children: [
             TextFormField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null,
+              decoration:
+                  InputDecoration(labelText: context.l10n.adminNameField),
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? context.l10n.adminRequiredField
+                  : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _slugCtrl,
-              decoration: const InputDecoration(labelText: 'Slug'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null,
+              decoration:
+                  InputDecoration(labelText: context.l10n.adminSlugField),
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? context.l10n.adminRequiredField
+                  : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionCtrl,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: InputDecoration(labelText: context.l10n.description),
               maxLines: 3,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _compositionCtrl,
-              decoration: const InputDecoration(labelText: 'Composition'),
+              decoration: InputDecoration(labelText: context.l10n.composition),
             ),
             _loadingCategories
                 ? const Center(
@@ -298,24 +321,31 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                     // Values are category UUIDs (the RPC contract); the
                     // display label is the human-readable name.
                     initialValue: _selectedCategoryId,
-                    decoration: const InputDecoration(labelText: 'Category'),
+                    decoration:
+                        InputDecoration(labelText: context.l10n.category),
                     items: _categories
                         .map((c) =>
                             DropdownMenuItem(value: c.id, child: Text(c.name)))
                         .toList(),
                     onChanged: (v) => setState(() => _selectedCategoryId = v),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Required' : null,
+                    validator: (v) => v == null || v.isEmpty
+                        ? context.l10n.adminRequiredField
+                        : null,
                   ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _priceCtrl,
-              decoration: const InputDecoration(labelText: 'Base Price (EGP)'),
+              decoration:
+                  InputDecoration(labelText: context.l10n.adminBasePrice),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Required';
-                if (double.tryParse(v.trim()) == null) return 'Invalid number';
+                if (v == null || v.trim().isEmpty) {
+                  return context.l10n.adminRequiredField;
+                }
+                if (double.tryParse(v.trim()) == null) {
+                  return context.l10n.adminInvalidNumber;
+                }
                 return null;
               },
             ),
@@ -323,12 +353,12 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _careCtrl,
-              decoration: const InputDecoration(labelText: 'Care'),
+              decoration: InputDecoration(labelText: context.l10n.care),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _originCtrl,
-              decoration: const InputDecoration(labelText: 'Origin'),
+              decoration: InputDecoration(labelText: context.l10n.origin),
             ),
             const SizedBox(height: 16),
             Row(
@@ -337,7 +367,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                   child: TextFormField(
                     controller: _widthCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Width (cm)'),
+                    decoration:
+                        InputDecoration(labelText: context.l10n.adminWidthCm),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -346,7 +377,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                     controller: _gsmCtrl,
                     keyboardType: TextInputType.number,
                     decoration:
-                        const InputDecoration(labelText: 'Weight (GSM)'),
+                        InputDecoration(labelText: context.l10n.adminWeightGsm),
                   ),
                 ),
               ],
@@ -354,9 +385,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
             const SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Sell by length (per meter)'),
-              subtitle: const Text(
-                  'Shoppers pick a custom cut length in 0.5 m steps'),
+              title: Text(context.l10n.adminSellByLength),
+              subtitle: Text(context.l10n.adminSellByLengthHint),
               value: _sellByLength,
               onChanged: (v) => setState(() => _sellByLength = v),
             ),
@@ -366,12 +396,12 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 decoration:
-                    const InputDecoration(labelText: 'Minimum cut (meters)'),
+                    InputDecoration(labelText: context.l10n.adminMinCutMeters),
               ),
               const SizedBox(height: 16),
             ],
             SwitchListTile(
-              title: const Text('Active'),
+              title: Text(context.l10n.active),
               value: _isActive,
               onChanged: (v) => setState(() => _isActive = v),
             ),
@@ -380,8 +410,8 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : AppButton(
                     label: widget.productId == null
-                        ? 'Create Product'
-                        : 'Update Product',
+                        ? context.l10n.adminCreateProduct
+                        : context.l10n.adminUpdateProduct,
                     onPressed: _submit,
                   ),
           ],

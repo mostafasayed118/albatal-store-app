@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
@@ -15,9 +17,8 @@ import '../widgets/sales_top_products_list.dart';
 /// the low-stock list.
 ///
 /// The repository is constructor-injected via the router composition
-/// root (audit P1), with an optional [cubit] seam for tests. Admin-only
-/// copy is intentionally English in-code (no ARB keys), matching the
-/// documented admin-surface convention.
+/// root (audit P1), with an optional [cubit] seam for tests. Admin copy is
+/// localized like the storefront (owner decision, part 34).
 class AdminSalesDashboardPage extends StatefulWidget {
   const AdminSalesDashboardPage({super.key, this.cubit, this.repository});
 
@@ -51,10 +52,10 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
         builder: (context, state) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Sales Dashboard'),
+              title: Text(context.l10n.salesDashboard),
               actions: [
                 IconButton(
-                  tooltip: 'Reload',
+                  tooltip: context.l10n.adminReload,
                   icon: const Icon(Icons.refresh),
                   onPressed: () =>
                       context.read<AdminSalesDashboardCubit>().load(),
@@ -66,11 +67,12 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
                 const FeedbackView(type: FeedbackViewType.loading),
               AdminSalesDashboardStatus.error => FeedbackView(
                   type: FeedbackViewType.error,
-                  // Admin-only copy stays English in-code (no ARB keys),
-                  // matching this screen's documented convention.
-                  title: 'Could not load sales',
-                  body: state.errorMessage ?? 'Failed to load sales data.',
-                  actionLabel: 'Retry',
+                  title: context.l10n.adminSalesLoadFailed,
+                  body: failureText(context.l10n,
+                      code: state.errorCode,
+                      message: state.errorMessage,
+                      fallback: context.l10n.adminSalesLoadFailedBody),
+                  actionLabel: context.l10n.retry,
                   onAction: () =>
                       context.read<AdminSalesDashboardCubit>().load(),
                 ),
@@ -95,7 +97,7 @@ final class _SalesDashboardBody extends StatelessWidget {
     // The loaded status always carries an overview; this only keeps a
     // state-constructor misuse from crashing the widget tree.
     if (overview == null) {
-      return const Center(child: Text('No sales data available.'));
+      return Center(child: Text(context.l10n.adminNoSalesData));
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),

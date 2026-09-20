@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/product.dart';
 import '../../../core/error/app_error.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
@@ -169,7 +170,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       }
       final stale = _cache;
       if (stale != null) return Success(stale);
-      return Failure(AppError('Failed to load products', cause: e));
+      return Failure(
+          AppError('Failed to load products', cause: e, code: kFailureLoad));
     }
   }
 
@@ -209,12 +211,14 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // A row that came back without a usable id/name is unusable — fail
       // closed rather than handing the UI a hollow product.
       if (product == null) {
-        return const Failure(AppError('Failed to load product'));
+        return const Failure(
+            AppError('Failed to load product', code: kFailureLoad));
       }
       return Success(product);
     } on PostgrestException catch (e) {
       // single() throws PostgrestException (PGRST116) when no row matches.
-      return Failure(AppError('Product not found', cause: e));
+      return Failure(
+          AppError('Product not found', cause: e, code: kFailureNotFound));
     } on Exception catch (e) {
       // Offline cold start (Task #8): the in-memory index missed and the
       // network is gone. Restore the persistent cache once — a deep link
@@ -225,7 +229,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         final hit = _productsById[id];
         if (hit != null) return Success(hit);
       }
-      return Failure(AppError('Failed to load product', cause: e));
+      return Failure(
+          AppError('Failed to load product', cause: e, code: kFailureLoad));
     }
   }
 
@@ -291,7 +296,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
             .take(limit)
             .toList());
       }
-      return Failure(AppError('Failed to load related products', cause: e));
+      return Failure(AppError('Failed to load related products',
+          cause: e, code: kFailureLoad));
     }
   }
 
