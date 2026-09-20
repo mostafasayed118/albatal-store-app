@@ -1,6 +1,62 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 29: **REPO SYNCED WITH LAST WORK** — owner ask: "sync
+Last run: 2026-09-19 (part 30: **THE SYNC WAS ACTED ON** — owner picked three of the
+four offered follow-ups: the loop state was committed + pushed (so it no longer lives
+only in this checkout), **PR #75's conflict is cleared** (master merged in, gates
+1000/1000, `6dd6b90`), and **`refactor/safe-parse-consolidation` was pushed with an
+upstream and opened as draft PR #78** (gates 991/991, `556c2e0`). The fourth option —
+restoring the lockfile drift — was not chosen, so that drift is left as found. No PR
+was merged by this run.)
+
+## New — 2026-09-19 (part 30: #75 unblocked, safe-parse pushed as draft PR #78, loop state now on origin)
+
+- Owner selected three of the four follow-ups offered in part 29; the
+  `pubspec.lock` / `.flutter-plugins-dependencies` restore was **not** selected, so
+  that drift is deliberately left exactly as found (unchanged, not overlooked).
+  **This part supersedes part 29's closing "nothing was pushed" lines** — the sync
+  itself is unchanged, only acted on.
+- **Loop state now lives on origin.** `STATE.md` only (640 insertions, the two
+  generated files excluded) as `d9f132a`, pushed to `master`; `master` ==
+  `origin/master` == `d9f132a`. The 580-line parts 26→28 block that had been sitting
+  uncommitted in this checkout is finally durable rather than one `git checkout` from
+  oblivion.
+- **PR #75's conflict is cleared — merge commit `6dd6b90`, pushed; GitHub now reports
+  `MERGEABLE`.** Exactly **one** conflict: `lib/shared/services/storage_service.dart`,
+  where PR #77's required-client refactor renamed `_client` → `_requiredClient` on the
+  same lines the cache-lifetime commit had annotated. Resolution kept the annotation
+  and took the new field.
+  - **The real breakage was invisible to `git merge-tree`:** master made the client a
+    *required* constructor parameter, so the branch's two `StorageService` doubles in
+    `product_image_widths_test.dart` lost their implicit `super()`. `flutter analyze`
+    caught both (`no_default_super_constructor`) and they now pass `super(client:
+    null)` — correct for doubles that only exercise the pure URL builders. **A clean
+    merge-tree is not evidence the merged tree compiles; the analyzer is.**
+  - Gates on the merged head: `flutter analyze` 0 issues, `dart format` clean (440
+    files), `flutter test` **1000/1000**.
+- **`refactor/safe-parse-consolidation` is no longer an orphan — draft PR #78,
+  head `556c2e0`.** The branch had **no upstream at all**, so this run created one
+  (`git push -u`). `origin/master` was merged in first (clean auto-merge, zero
+  conflicts, committed with git's default merge message) so the PR is reviewed
+  against current master rather than the `0962085` base it was cut from.
+  - Gates on that head: analyze 0, format clean (438 files), `flutter test`
+    **991/991**, plus a focused mapper/safe-parse run 66/66.
+  - Body follows `.github/PULL_REQUEST_TEMPLATE/default.md`, is **draft**, and is
+    graded **L1 — Standard** with the reasoning stated (lib/-scoped, in-memory
+    decoding, no trust boundary) — flagged because the *breadth* is every catalog and
+    admin row decode.
+  - Verified against the **remote**, not the local file: 4 files, +126/−92, base
+    `master`, head == `556c2e0`, and 13/13 body assertions via `gh pr view 78`.
+- **Consolidation completeness re-derived on the merged head** (not quoted from
+  part 18): `grep -rn "int _toInt\|String _asString\|_optInt\|_optDouble\|_optString" lib`
+  → **no matches**; the two mappers now make **67** shared-layer calls (36 in
+  `admin_mappers.dart`, 31 in `product_mapper.dart`).
+- **CI on both new heads was still pending when this run ended** (Setup & Cache,
+  Format & Analyze, Edge Function Tests, Secret Scan) — nothing is claimed about it.
+- **Not done, deliberately:** no PR was merged (all four open PRs remain draft), no
+  code was changed beyond the two merges, nothing was probed against staging, and the
+  lockfile drift stands.
+
+Prior run: 2026-09-19 (part 29: **REPO SYNCED WITH LAST WORK** — owner ask: "sync
 this repo with last work". Local `master` fast-forwarded `0962085` → `024dedd`
 (the PR #77 merge, which this checkout had not pulled); the two-session STATE.md
 collision at the top of the file resolved; all three worktrees re-checked against
