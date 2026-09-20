@@ -1,6 +1,14 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 45: **DRY PASS SUCCEEDED — 3 HERO UPLOADS PLANNED, ZERO WRITES; REAL RUN STILL KEY-BLOCKED (L1)**. Owner provided
+Last run: 2026-09-20 (part 47: **REAL SEED RUN SUCCEEDED — STAGING RENDERS REAL PRODUCT PHOTOS (L1→executed on owner-provided credential)**. Owner added a working
+privileged key to `.env.staging`; `seed_demo_staging.mjs` ran **exit 0**: 3/3 heroes uploaded (0.92/1.02/0.53 MB PNG, upsert), 2 demo
+users seeded (**premium tier readback passed — #40's fix verified live**), 2 orders via the real checkout RPC (fresh, idempotent=false),
+wishlist=6, cart=2. Post-checks: app-shaped public URLs **HTTP 200** (the doubled `product-images/product-images/` prefix is the app's
+own convention — data and code agree), and the **transform render endpoint returns 200** — **image transformations are enabled on
+staging**, settling PR #75's long-open staging question with real objects in place. Merge on #76 is now fully evidence-backed. Detail
+in part 47 below.)
+
+Prior run: 2026-09-20 (part 45: **DRY PASS SUCCEEDED — 3 HERO UPLOADS PLANNED, ZERO WRITES; REAL RUN STILL KEY-BLOCKED (L1)**. Owner provided
 `.env.staging` (publishable key; gitignored-verified — it also carries Paymob/Sentry secrets). The real script's DRY branch ran
 **exit 0 under anon-level auth** (stricter than service-role, so the plan is identical or a subset): 3/3 showcase products,
 3 hero.jpg PNGs would upload (0.92 MB / 1.02 MB / 0.53 MB, upsert=true), nothing skipped — matches part 43's SQL-probe verdict.
@@ -111,6 +119,29 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 47: the real seed run executed — staging has real product photos)
+
+- Owner added a working privileged key to `.env.staging` (gitignored re-verified before use;
+  key validated with a 200 on a privileged read; value never echoed).
+- **`seed_demo_staging.mjs` ran to completion, exit 0:** 3/3 heroes uploaded
+  (`product-images/cccc000{1,2,3}-…/hero.jpg`, 922,921 / 1,022,006 / 531,857 bytes, upsert);
+  2 demo users seeded with **tier readback assertions passing** — the folded #40 fix worked
+  live: the premium user is `premium`, verified by reading the row back after the direct
+  column write (the RPC route would have silently failed); 2 orders created through the real
+  `create_checkout_order` RPC (fresh — `idempotent=false`, first successful run);
+  wishlist=6, cart=2.
+- **Post-run verification (what staging now does):** the app-shaped public URL
+  (`…/storage/v1/object/public/product-images/product-images/<id>/hero.jpg`) returns **200 with
+  the exact uploaded bytes** — the doubled prefix is the app's own `getPublicUrl(storage_path)`
+  convention, so data and code agree. The **transform render endpoint**
+  (`…/storage/v1/render/image/public/…?width=420`) also returns **200**: **image transformations
+  are enabled on staging** — PR #75's open staging question is now settled empirically, with
+  real objects present.
+- Board effect: #76's last execution risk is gone — its seed script is the one that just ran
+  (with the #40 fold). Merge-ready on evidence; #40 close remains the owner's click.
+- **Standing owner actions:** rotate the `sbp_` access token (exposed in chat); the service-role
+  key now lives in gitignored `.env.staging` only.
 
 ## New — 2026-09-20 (part 45: the real script's DRY branch executed — GO; real run still key-blocked)
 
