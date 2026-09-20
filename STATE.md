@@ -1,6 +1,20 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 33: **TIER 1 — FAILURE COPY LOCALIZED (L2, COMMITTED, NOT PUSHED)** — owner ask:
+Last run: 2026-09-19 (part 34: **TIER 2 DONE; TIER 3 STOPPED — ITS PREMISE WAS WRONG (L2 + BLOCKED)**.
+Tier 2 (a11y copy) is fixed and committed as `6035aed` on `fix/error-copy-localization`
+(2 files, +82/−2): the quantity stepper's `CustomSemanticsAction` labels now follow the
+locale, pinned off the semantics tree (3 tests, analyze 0, **994/994**, mutation bites with
+`Actual: ['Increase', 'Decrease']` under `ar`).
+**Tier 3 was NOT executed, deliberately.** Its premise came from part 32 — "admin IS
+localized today, so its literals are inconsistencies rather than a design choice" — and
+that premise is **false**: the English admin copy is a documented convention, repeated in
+**22 "Admin-only, intentionally unlocalized (no ARB keys; the storefront stays localized)"
+comments across 7 files**, on exactly the surfaces the sweep flagged (`admin_product_edit
+_page`, `admin_image_manager_page`, `admin_products_page`, `admin_variant_editor_page`,
+`admin_catalog_page` hub copy, `admin_orders_page`). ~55 new keys would have reversed an
+owner decision, so it is referred back rather than assumed. Detail below.)
+
+Prior run: 2026-09-19 (part 33: **TIER 1 — FAILURE COPY LOCALIZED (L2, COMMITTED, NOT PUSHED)** — owner ask:
 "Tier 1: failure copy, Tier 2: a11y copy, Tier 3: admin", in that order. Tier 1 of 3 done.
 Commit `b0934aa` on `fix/error-copy-localization` (`.trees/error-copy`), **34 files,
 +734/−78**; `lib/` + `l10n/` + generated l10n + 2 test files. New `failure_codes.dart`
@@ -16,7 +30,76 @@ context; the dominant class is not widgets but **failure copy**: 42 `AppError` s
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
 
-## New — 2026-09-19 (part 33: Tier 1 — app-authored failure copy is now localized at one place)
+## New — 2026-09-19 (part 34: Tier 2 fixed; Tier 3 stopped — the sweep misread a documented convention as an inconsistency)
+
+- Owner ask: "Tier 1: failure copy, Tier 2: a11y copy, Tier 3: admin", then, on landing:
+  fold Tiers 2 and 3 into the same branch before opening one PR.
+- **Tier 2 — done, `6035aed`** (2 files, +82/−2). `quantity_stepper.dart` hardcoded
+  `CustomSemanticsAction(label: 'Increase'/'Decrease')` while the same widget's visible
+  tooltips used `l.increaseQuantity`/`l.decreaseQuantity`, so TalkBack/VoiceOver announced
+  English in an Arabic session. Both labels now come from l10n; the `const` on the action keys
+  goes away with them.
+  - **Scope verified, not assumed:** `grep` for `CustomSemanticsAction(` across `lib/` returns
+    exactly those 2 sites, and a slot scan for `label:`/`hint:`/`tooltip:`/`semanticsLabel:`/
+    `increasedValue:`/`decreasedValue:` literals finds no other a11y copy. The other hits are
+    data interpolations (`'$label: '`, `'${product.name}, ${product.price.format()}'`) or
+    dead data (`local_support_repository.dart` labels are never rendered).
+  - **The pin reads the semantics tree, not the source:** `tester.getSemantics(...)
+    .getSemanticsData().customSemanticsActionIds` → `CustomSemanticsAction.getAction(id)!.label`,
+    because that is the copy assistive tech speaks. 3 tests: EN labels; AR labels **and not EN**
+    (asserted as difference); and the bound edges (min==max exposes no actions at all, lower
+    bound exposes only "increase").
+  - **Mutation bites with the defect verbatim:** restoring the literals prints
+    `Expected: contains all of ['زيادة الكمية', 'تقليل الكمية'] / Actual: ['Increase', 'Decrease']`.
+    Restore verified by `git diff --stat` (5 insertions, 2 deletions — the intended change only).
+  - Gates: `flutter analyze` 0 · `dart format` clean · **994/994** (991 + 3).
+- **Tier 3 — stopped before writing a single key.** The ask was "Tier 3: admin", sourced from
+  part 32's Tier 3: *"admin is localized today, so its 42 literals are inconsistencies rather
+  than a design choice."* **That is wrong, and it is my error from part 32.**
+  - The English admin copy is an explicit, documented convention: **22 occurrences of
+    "Admin-only, intentionally unlocalized (no ARB keys; the storefront stays localized)"**
+    across 7 files (`admin_product_edit_page.dart:15` states it as a class-level rule; `
+    admin_products_page.dart:92-93,109,139,146,161`; `admin_image_manager_page.dart:101,191,
+    201,226,263,277,287`; `admin_catalog_page.dart:38,93-94`; `admin_orders_page.dart:138`;
+    `admin_categories_page.dart`; `admin_variant_editor_page.dart`).
+  - Those comments sit on **exactly the literals the sweep flagged** — the product form, the
+    image manager, the products hub, the variant editor, the sales-dashboard widgets, the
+    catalog hub copy. The hub/tooltip strings (`'Sales Dashboard'`, `'No products yet'`,
+    `'Upload Image'`) are inside that convention, not oversights.
+  - The inconsistency is real but cuts the other way from the sweep's reading: **older admin
+    screens DO localize** (`admin_order_detail_page` 14 refs, `admin_orders_page` 13,
+    `admin_inventory_page` 12, `order_detail_cards` 5, `admin_customers_page` 4, `
+    admin_coupons_page` 4) while the newer hubs are deliberately English. So changing the
+    literals is a **product decision** (should the admin console be Arabic?), not a bug fix —
+    and it would have to delete 22 documented convention comments to be coherent.
+  - **Inventory was built before stopping, so the decision is priced, not guessed:** a
+    slot-aware scan plus a second pass for copy held in variables found **~70 user-facing
+    English literals across 15 files** in `lib/features/admin/presentation` (the sweep's "42"
+    was low — it missed `InputDecoration.labelText:`, `showFloatingError`/`showConfirmation`
+    arguments, validator messages, and ternary copy). **16 already have an ARB key carrying
+    that exact copy** (`Delete`→`delete`, `Retry`→`retry`, `Save`→`save`, `Cancel`→`cancel`,
+    `Color`→`color`, `Description`→`description`, `Composition`→`composition`,
+    `Category`→`category`, `Care`→`care`, `Origin`→`origin`,
+    `Stock cannot be negative`→`stockCannotBeNegative`, `Active`→`active`, `Unknown`→
+    `paymentMethodUnknown`) — i.e. the sweep's "~10 reuse existing keys" figure roughly holds,
+    but the new-key count is ~50–55, not ~30. Excluded correctly: `Log.*` arguments (6),
+    `'approved'/'rejected'` in `admin_reviews_cubit.dart:64` (**wire values** sent to the
+    repository, not copy), and data interpolations.
+  - **Also found, parked with Tier 3 because it has the same blocker:** admin renders
+    `error.message`/`state.errorMessage` in 13 places (`admin_customers_page.dart:118`,
+    `admin_dashboard_page.dart:51`, `admin_inventory_page.dart:83`, `admin_order_detail_page
+    .dart:105`, `admin_image_manager_page.dart:106,184,266`, `admin_categories_page.dart:54,69`,
+    …) from 14 prose messages in `supabase_admin_repository.dart` and ~28 state-carrying sites
+    in 8 admin cubits. Part 33's own Tier-1 pass did **not** cover admin (its cubit table listed
+    only storefront paths), so this is the same defect class as Tier 1 on admin surfaces — and
+    it is equally blocked on the convention question.
+- **Status:** Tier 1 `b0934aa` + Tier 2 `6035aed` committed on `fix/error-copy-localization`;
+  nothing pushed, no PR. Tier 3 is referred back to the owner rather than assumed.
+- **Not verified:** the a11y pin proves the announced labels follow the locale; it does not
+  exercise a real screen reader, and the bound-edge test asserts the actions map is empty,
+  which is a widget-contract claim rather than an assistive-tech behaviour claim.
+
+## Prior — 2026-09-19 (part 33: Tier 1 — app-authored failure copy is now localized at one place)
 
 - Owner ask: implement Tier 1 of the part-32 sweep (Tier 2 a11y, Tier 3 admin to follow).
   **L2** — new worktree `.trees/error-copy` on `fix/error-copy-localization`. One commit
