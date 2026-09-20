@@ -14,8 +14,8 @@ import 'coupon_mapper.dart';
 /// error is mapped to a `coupon_unavailable` failure so the checkout
 /// proceeds normally without a coupon.
 final class SupabaseCouponsRepository implements CouponsRepository {
-  SupabaseCouponsRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseCouponsRepository({required SupabaseClient client})
+      : _client = client;
 
   final SupabaseClient _client;
 

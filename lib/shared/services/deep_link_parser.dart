@@ -43,7 +43,9 @@ AppDeepLink? parseDeepLink(
   required Uri webBase,
   String scheme = 'albatal',
 }) {
-  final isWebHost = uri.scheme == 'https' || uri.scheme == 'http';
+  // Web links must be TLS: plain http:// is rejected outright so a
+  // MITM-downgraded universal link can never steer navigation.
+  final isWebHost = uri.scheme == 'https';
   final isAppScheme = uri.scheme.toLowerCase() == scheme.toLowerCase();
   if (!isWebHost && !isAppScheme) return null;
   if (isWebHost) {

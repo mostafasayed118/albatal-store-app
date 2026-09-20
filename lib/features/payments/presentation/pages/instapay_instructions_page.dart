@@ -11,7 +11,6 @@ import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
@@ -43,7 +42,11 @@ import '../payment_error_mapper.dart';
 /// same status stream used for Paymob.
 class InstapayInstructionsPage extends StatefulWidget {
   const InstapayInstructionsPage(
-      {super.key, this.cubit, this.orderId, this.paymentService});
+      {super.key,
+      this.cubit,
+      this.orderId,
+      this.paymentService,
+      this.imageCompressor});
 
   /// The cubit owned by [PaymentMethodPage] (production) or injected
   /// by tests. Null (e.g. bad deep link) renders an error body unless
@@ -60,6 +63,11 @@ class InstapayInstructionsPage extends StatefulWidget {
   /// (deep link without a session) renders the error body. Ignored
   /// when [cubit] is provided.
   final PaymentService? paymentService;
+
+  /// §4 proof-screenshot compression, resolved at the composition root.
+  /// Null (pre-DI widget tests) falls back to the raw picker bytes — the
+  /// server-side guard still bounds the upload size.
+  final ImageCompressor? imageCompressor;
 
   @override
   State<InstapayInstructionsPage> createState() =>
@@ -137,8 +145,12 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
         return;
       }
       // §4: picker imageQuality is only a hint on some platforms; this
-      // is the enforcement pass before the size check and upload.
-      bytes = await getIt<ImageCompressor>().compress(bytes);
+      // is the enforcement pass before the size check and upload. The
+      // compressor is constructor-injected (composition root) — a null
+      // (pre-DI test) falls back to the raw bytes; the server guard
+      // still bounds the upload.
+      final compressor = widget.imageCompressor;
+      if (compressor != null) bytes = await compressor.compress(bytes);
       if (bytes.length > _maxProofBytes) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

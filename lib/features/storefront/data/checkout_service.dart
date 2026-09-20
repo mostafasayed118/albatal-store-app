@@ -23,8 +23,7 @@ import '../domain/repositories/checkout_repository.dart';
 /// product/variant identifiers, quantities, the address snapshot,
 /// and an idempotency key. All money is computed server-side.
 class CheckoutService implements CheckoutRepository {
-  CheckoutService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  CheckoutService({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

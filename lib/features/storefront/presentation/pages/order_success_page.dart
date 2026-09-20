@@ -6,11 +6,15 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/notification_service.dart';
-import '../../../../shared/services/service_locator.dart';
 
 class OrderSuccessPage extends StatefulWidget {
-  const OrderSuccessPage({super.key, required this.orderId});
+  const OrderSuccessPage(
+      {super.key, required this.orderId, this.notificationService});
   final String orderId;
+
+  /// §12: local order confirmation, resolved at the composition root.
+  /// Null (pre-DI widget tests) degrades to [NoOpNotificationService].
+  final NotificationService? notificationService;
 
   @override
   State<OrderSuccessPage> createState() => _OrderSuccessPageState();
@@ -22,9 +26,8 @@ final class _OrderSuccessPageState extends State<OrderSuccessPage> {
     super.initState();
     // §12: local order confirmation. The service itself is gated by the
     // user's notification opt-in and fails silently when unavailable.
-    final notifications = getIt.isRegistered<NotificationService>()
-        ? getIt<NotificationService>()
-        : const NoOpNotificationService();
+    final notifications =
+        widget.notificationService ?? const NoOpNotificationService();
     notifications.showOrderNotification(
       title: 'Al Batal Elite',
       body: 'Order #${widget.orderId} confirmed',

@@ -9,8 +9,7 @@ import '../../storefront/domain/repositories/auth_session_port.dart';
 /// checkout page resolves the customer email without importing
 /// Supabase into the presentation layer.
 final class SupabaseAuthSessionPort implements AuthSessionPort {
-  SupabaseAuthSessionPort({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseAuthSessionPort({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

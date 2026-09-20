@@ -7,6 +7,7 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/oauth_service.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
@@ -46,7 +47,7 @@ class _SignInPageState extends State<SignInPage> {
   String _redirectTarget(BuildContext context) {
     final raw = GoRouterState.of(context).uri.queryParameters['redirect'];
     if (raw == null || !raw.startsWith('/') || raw.startsWith('//')) {
-      return '/home';
+      return Routes.home;
     }
     return raw;
   }
@@ -123,7 +124,7 @@ class _SignInPageState extends State<SignInPage> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () => context.push('/forgot-password'),
+                    onPressed: () => context.push(Routes.forgotPassword),
                     child: Text(l.forgotPassword),
                   ),
                 ),
@@ -173,14 +174,14 @@ class _SignInPageState extends State<SignInPage> {
                   children: [
                     Text(l.dontHaveAccount),
                     TextButton(
-                      onPressed: () => context.push('/sign-up'),
+                      onPressed: () => context.push(Routes.signUp),
                       child: Text(l.signUp),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: () => context.go(Routes.home),
                   child: Text(l.continueAsGuest),
                 ),
               ],

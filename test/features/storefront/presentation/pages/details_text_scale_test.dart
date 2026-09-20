@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/app_fonts.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 
 /// Same provider set as the details page harness (details_page_test.dart),
 /// with the page subtree pinned to a fixed 1.4x system text scale.
@@ -37,7 +38,11 @@ Widget _harness(String productId) {
       child: MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(1.4)),
         child: DetailsPage(
-            id: productId, catalogRepository: LocalCatalogRepository()),
+          id: productId,
+          catalogRepository: LocalCatalogRepository(),
+          whatsappShareService: const NoOpWhatsAppShareService(),
+          shareService: const NoOpShareService(),
+        ),
       ),
     ),
   );

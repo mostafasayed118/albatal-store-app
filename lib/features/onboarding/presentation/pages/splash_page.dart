@@ -9,13 +9,16 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/remote_config_service.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
 
 class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+  const SplashPage({super.key, this.remoteConfig});
+
+  /// §13: remote config gate, resolved at the composition root. Null
+  /// (tests without the bean registered) skips the gate entirely.
+  final RemoteConfigService? remoteConfig;
 
   @override
   State<SplashPage> createState() => _SplashPageState();
@@ -57,11 +60,10 @@ class _SplashPageState extends State<SplashPage>
 
   Future<void> _openDestination(OnboardingDestination destination) async {
     if (!mounted) return;
-    // §13: remote config gate. Failures degrade to defaults — the app
-    // never boot-blocks on config availability.
-    final config = getIt.isRegistered<RemoteConfigService>()
-        ? getIt<RemoteConfigService>()
-        : null;
+    // §13: remote config gate (injected at the composition root).
+    // Failures degrade to defaults — the app never boot-blocks on
+    // config availability.
+    final config = widget.remoteConfig;
     if (config != null) {
       // Bounded wait: a slow/unreachable config endpoint must not hold
       // the user on splash — defaults apply and the gate is advisory.
@@ -73,12 +75,12 @@ class _SplashPageState extends State<SplashPage>
       if (!mounted) return;
       if (config.maintenanceMode) {
         if (!mounted) return;
-        context.go('/maintenance');
+        context.go(Routes.maintenance);
         return;
       }
       if (await config.updateRequired()) {
         if (!mounted) return;
-        context.go('/maintenance');
+        context.go(Routes.maintenance);
         return;
       }
     }

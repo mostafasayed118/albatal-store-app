@@ -24,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../fixtures/local_catalog_repository.dart';
 import '../../../../helpers/fetch_related_stub.dart';
 import '../../../../helpers/memory_storefront_persistence.dart';
+import '../../../../helpers/noop_share_services.dart';
 import '../../../../helpers/recently_viewed_store_stub.dart';
 import '../../../../helpers/stub_auth_repositories.dart';
 
@@ -102,7 +103,12 @@ void main() {
     Widget detailsHarness(String productId) {
       final repo = LocalCatalogRepository();
       return _app(
-        builder: (_) => DetailsPage(id: productId, catalogRepository: repo),
+        builder: (_) => DetailsPage(
+          id: productId,
+          catalogRepository: repo,
+          whatsappShareService: const NoOpWhatsAppShareService(),
+          shareService: const NoOpShareService(),
+        ),
       );
     }
 

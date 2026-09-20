@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
@@ -58,6 +59,7 @@ import 'remote_config_service.dart';
 import 'secure_store.dart';
 import 'share_service.dart';
 import 'storage_service.dart';
+import 'supabase_config.dart';
 import 'whatsapp_share_service.dart';
 
 final getIt = GetIt.instance;
@@ -74,6 +76,10 @@ Future<void> configureDependencies() async {
   final preferences = await SharedPreferences.getInstance();
   getIt
     ..registerSingleton<SharedPreferences>(preferences)
+    // One shared Supabase client for every data-layer repository —
+    // constructors take it as a required parameter (no hidden
+    // `Supabase.instance.client` fallback).
+    ..registerSingleton<SupabaseClient>(SupabaseConfig.client)
     // Encrypted at-rest store for PII (address book, order snapshots)
     // and the Supabase session — one shared instance so the auth wipe
     // and the repos observe the same on-device store.
@@ -89,12 +95,16 @@ Future<void> configureDependencies() async {
     // the address book must observe the same on-device store.
     ..registerLazySingleton<AddressRepository>(
         () => getIt<LocalAddressRepository>())
-    ..registerLazySingleton<AdminRepository>(() => SupabaseAdminRepository())
-    ..registerLazySingleton<AuthRepository>(() => SupabaseAuthRepository())
+    ..registerLazySingleton<AdminRepository>(
+        () => SupabaseAdminRepository(client: getIt<SupabaseClient>()))
+    ..registerLazySingleton<AuthRepository>(
+        () => SupabaseAuthRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ProfileRepository>(
-        () => SupabaseProfileRepository())
-    ..registerLazySingleton<PaymentService>(() => PaymobPaymentService())
-    ..registerLazySingleton<CheckoutRepository>(() => CheckoutService())
+        () => SupabaseProfileRepository(client: getIt<SupabaseClient>()))
+    ..registerLazySingleton<PaymentService>(
+        () => PaymobPaymentService(client: getIt<SupabaseClient>()))
+    ..registerLazySingleton<CheckoutRepository>(
+        () => CheckoutService(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<SupportRepository>(
         () => const LocalSupportRepository())
     ..registerLazySingleton<LocalStorefrontPersistence>(() =>
@@ -115,7 +125,8 @@ Future<void> configureDependencies() async {
             ))
     // Customer email for the payment handoff without Supabase imports
     // in the presentation layer.
-    ..registerLazySingleton<AuthSessionPort>(() => SupabaseAuthSessionPort())
+    ..registerLazySingleton<AuthSessionPort>(
+        () => SupabaseAuthSessionPort(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<CartRepository>(
         () => LocalCartRepository(getIt<LocalStorefrontPersistence>()))
     ..registerLazySingleton<WishlistRepository>(
@@ -126,10 +137,15 @@ Future<void> configureDependencies() async {
     // read from the server too. A local fallback here made debug
     // builds show a permanently empty orders screen (live-found
     // 2026-09-03).
-    ..registerLazySingleton<OrdersRepository>(() => SupabaseOrdersRepository())
-    ..registerLazySingleton<CatalogRepository>(() =>
-        SupabaseCatalogRepository(preferences: getIt<SharedPreferences>()))
-    ..registerLazySingleton<StorageService>(() => StorageService())
+    ..registerLazySingleton<OrdersRepository>(
+        () => SupabaseOrdersRepository(client: getIt<SupabaseClient>()))
+    ..registerLazySingleton<CatalogRepository>(() => SupabaseCatalogRepository(
+        client: getIt<SupabaseClient>(),
+        preferences: getIt<SharedPreferences>()))
+    // Composition root (audit P1): the Supabase client is injected —
+    // never resolved via the global inside the data/service layer.
+    ..registerLazySingleton<StorageService>(
+        () => StorageService(client: getIt<SupabaseClient>()))
     // Two-layer offline signal (B1+B2): interface flap + reachability truth.
     // App-scoped and stateless — widgets observe via their own cubits.
     ..registerLazySingleton<ConnectivityGate>(() => ConnectivityGate())
@@ -162,11 +178,12 @@ Future<void> configureDependencies() async {
         () => PrefsRecentlyViewedStore(getIt<SharedPreferences>()))
     // §8/§9: coupon validation + customer reviews.
     ..registerLazySingleton<CouponsRepository>(
-        () => SupabaseCouponsRepository())
+        () => SupabaseCouponsRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ReviewsRepository>(
-        () => SupabaseReviewsRepository())
+        () => SupabaseReviewsRepository(client: getIt<SupabaseClient>()))
     // §11: first-party funnel analytics (fail-silent).
-    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService())
+    ..registerLazySingleton<AnalyticsService>(() => AnalyticsService(
+        sink: SupabaseAnalyticsSink(client: getIt<SupabaseClient>())))
     // §12: local order-status notifications + push scaffold (both
     // fail-silent; push stays a no-op without ONESIGNAL_APP_ID).
     ..registerLazySingleton<NotificationPrefsStore>(
@@ -178,10 +195,12 @@ Future<void> configureDependencies() async {
         () => PrefsBackInStockAlertStore(getIt<SharedPreferences>()))
     ..registerLazySingleton<PushService>(() => const OneSignalPushService())
     // §15: OAuth sign-in + biometric app lock (both fail-soft).
-    ..registerLazySingleton<OAuthService>(() => SupabaseOAuthService())
+    ..registerLazySingleton<OAuthService>(
+        () => SupabaseOAuthService(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<BiometricService>(() => LocalBiometricService())
     ..registerLazySingleton<AppLockPrefsStore>(
         () => PrefsAppLockStore(getIt<SharedPreferences>()))
     // §13: remote config (defaults + TTL cache; advisory only).
-    ..registerLazySingleton<RemoteConfigService>(() => RemoteConfigService());
+    ..registerLazySingleton<RemoteConfigService>(() => RemoteConfigService(
+        fetcher: SupabaseRemoteConfigFetcher(client: getIt<SupabaseClient>())));
 }

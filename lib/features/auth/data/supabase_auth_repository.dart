@@ -14,8 +14,7 @@ import '../domain/repositories/auth_repository.dart';
 /// `_mapAuthError` table lives here per Clean Architecture C.1
 /// ("mapping logic belongs in the data layer").
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseAuthRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 
@@ -159,8 +158,12 @@ class SupabaseAuthRepository implements AuthRepository {
         return 'Please verify your email address first';
       case 'User already registered':
         return 'An account with this email already exists';
+      // GoTrue's floor is 8 (verified live 2026-09-13); keep matching the
+      // legacy 6-char provider string so older server responses still map
+      // to the current user-safe copy instead of the generic fallback.
       case 'Password should be at least 6 characters':
-        return 'Password must be at least 6 characters';
+      case 'Password should be at least 8 characters':
+        return 'Password must be at least 8 characters';
       default:
         // Never surface unknown provider strings — callers already attach
         // the original exception as AppError.cause for diagnostics.

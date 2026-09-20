@@ -58,63 +58,65 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ..checkAdmin(),
             );
           }
-          return ListView(
+          // Lazy build (audit): same children as before, inflated on demand.
+          final children = <Widget>[
+            _StatCard(
+              title: l.totalOrders,
+              value: '${state.orders.length}',
+              icon: Icons.receipt_long,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            _StatCard(
+              title: l.pendingOrders,
+              value:
+                  '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
+              icon: Icons.pending_actions,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+            const SizedBox(height: 12),
+            _StatCard(
+              title: l.lowStock,
+              value: '${state.lowStockProducts.length}',
+              icon: Icons.warning_amber,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 24),
+            Text(l.quickActions, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _ActionTile(
+              icon: Icons.receipt_long,
+              title: l.orderQueue,
+              subtitle: l.viewAllOrders,
+              onTap: () => context.push(Routes.adminOrders),
+            ),
+            _ActionTile(
+              icon: Icons.inventory_2_outlined,
+              title: l.inventory,
+              subtitle: l.manageStock,
+              onTap: () => context.push(Routes.adminInventory),
+            ),
+            _ActionTile(
+              icon: Icons.shopping_bag_outlined,
+              title: l.catalog,
+              subtitle: l.manageProducts,
+              onTap: () => context.push(Routes.adminCatalog),
+            ),
+            // Promo codes (§8): the page, cubit and repository methods
+            // shipped with no destination, so a coupon could be redeemed
+            // at checkout but never created. Both labels already exist in
+            // EN + AR, so no ARB change was needed.
+            _ActionTile(
+              icon: Icons.local_offer_outlined,
+              title: l.adminCoupons,
+              subtitle: l.adminAddCoupon,
+              onTap: () => context.push(Routes.adminCoupons),
+            ),
+          ];
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
-            children: [
-              _StatCard(
-                title: l.totalOrders,
-                value: '${state.orders.length}',
-                icon: Icons.receipt_long,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: l.pendingOrders,
-                value:
-                    '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
-                icon: Icons.pending_actions,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: l.lowStock,
-                value: '${state.lowStockProducts.length}',
-                icon: Icons.warning_amber,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 24),
-              Text(l.quickActions,
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              _ActionTile(
-                icon: Icons.receipt_long,
-                title: l.orderQueue,
-                subtitle: l.viewAllOrders,
-                onTap: () => context.push(Routes.adminOrders),
-              ),
-              _ActionTile(
-                icon: Icons.inventory_2_outlined,
-                title: l.inventory,
-                subtitle: l.manageStock,
-                onTap: () => context.push(Routes.adminInventory),
-              ),
-              _ActionTile(
-                icon: Icons.shopping_bag_outlined,
-                title: l.catalog,
-                subtitle: l.manageProducts,
-                onTap: () => context.push(Routes.adminCatalog),
-              ),
-              // Promo codes (§8): the page, cubit and repository methods
-              // shipped with no destination, so a coupon could be redeemed
-              // at checkout but never created. Both labels already exist in
-              // EN + AR, so no ARB change was needed.
-              _ActionTile(
-                icon: Icons.local_offer_outlined,
-                title: l.adminCoupons,
-                subtitle: l.adminAddCoupon,
-                onTap: () => context.push(Routes.adminCoupons),
-              ),
-            ],
+            itemCount: children.length,
+            itemBuilder: (_, i) => children[i],
           );
         },
       ),
