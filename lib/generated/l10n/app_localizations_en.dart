@@ -474,7 +474,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String showAllReviews(int count) {
-    return 'Show all ($count)';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show all ($count)',
+      one: 'Show all',
+    );
+    return '$_temp0';
   }
 
   @override

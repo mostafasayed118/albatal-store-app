@@ -87,6 +87,31 @@ void main() {
       expect(find.textContaining('Show all'), findsNothing);
     });
 
+    testWidgets('a single hidden review drops the redundant count',
+        (tester) async {
+      // 11 reviews against the inline cap of 10 leaves exactly one behind, so
+      // the plural's `=1` branch is the one on screen.
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ReviewsSection(
+                productId: 'p1',
+                repository: _FixedReviewsRepository(_reviews(11)),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Show all'), findsOneWidget);
+      expect(find.textContaining('Show all ('), findsNothing);
+    });
+
     testWidgets('the button only appears when reviews are actually hidden',
         (tester) async {
       // Negative control: with exactly the inline cap of reviews there is

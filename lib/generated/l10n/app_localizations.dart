@@ -962,10 +962,10 @@ abstract class AppLocalizations {
   /// **'Customer reviews'**
   String get customerReviews;
 
-  /// Inline review list: opens the sheet holding every review, showing how many are not listed inline
+  /// Inline review list: opens the sheet holding every review, showing how many are not listed inline. The count is dropped when exactly one review is hidden, where it would be redundant
   ///
   /// In en, this message translates to:
-  /// **'Show all ({count})'**
+  /// **'{count, plural, =1{Show all} other{Show all ({count})}}'**
   String showAllReviews(int count);
 
   /// No description provided for @writeReview.

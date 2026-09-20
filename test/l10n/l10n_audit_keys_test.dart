@@ -107,6 +107,7 @@ void main() {
     test('inline review list Show-all label (audit 2026-09-19 #4)', () {
       final en = AppLocalizationsEn();
       final ar = AppLocalizationsAr();
+      expect(en.showAllReviews(1), 'Show all');
       expect(en.showAllReviews(3), 'Show all (3)');
       expect(ar.showAllReviews(3), isNotEmpty);
       // The defect this key closes was an Arabic shopper reading English, so

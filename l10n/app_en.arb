@@ -191,9 +191,9 @@
   "couponActive": "Active",
   "adminAddCoupon": "Add coupon",
   "customerReviews": "Customer reviews",
-  "showAllReviews": "Show all ({count})",
+  "showAllReviews": "{count, plural, =1{Show all} other{Show all ({count})}}",
   "@showAllReviews": {
-    "description": "Inline review list: opens the sheet holding every review, showing how many are not listed inline",
+    "description": "Inline review list: opens the sheet holding every review, showing how many are not listed inline. The count is dropped when exactly one review is hidden, where it would be redundant",
     "placeholders": {
       "count": {
         "type": "int"
