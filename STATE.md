@@ -1,6 +1,12 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 48: **#76 MERGED; #40 CLOSED AS SUPERSEDED (owner-approved)**. `gh pr ready 76` + merge → merge commit `22dcb3b`
+Last run: 2026-09-20 (part 49: **#75 MERGED — WIDTH-BOUNDED RENDER URLS + 1-YEAR IMAGE CACHE ARE ON MASTER (owner-approved)**. Merge commit `a3c9b96`
+(origin/master `22dcb3b..a3c9b96`), verified via API. The staging question that gated it was settled live in part 47 (render endpoint 200
+with real objects). Worktree check: branch fully merged, no local-only files, no env files — safe to delete. **Audit finding #1 (the top
+top-5 item) is now closed on master.** Open board: #80 (Arabic review), #62 (rec close), #49 (rec re-author or close), #36 (owner preference).
+Detail in part 49 below.)
+
+Prior run: 2026-09-20 (part 48: **#76 MERGED; #40 CLOSED AS SUPERSEDED (owner-approved)**. `gh pr ready 76` + merge → merge commit `22dcb3b`
 on origin/master (verified via API). #40 closed with a comment documenting the fold (176e13a, byte-identical) and the live staging
 evidence (premium readback passed, 3/3 heroes served). Open PRs now: #80 (green, Arabic review pending), #75 (transformations now
 confirmed on staging — merge-ready), #62 (rec: close), #49 (rec: re-author or close), #36 (owner preference). Detail in part 48 below.)
@@ -124,6 +130,26 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 49: #75 merged — audit finding #1 closed on master)
+
+- Owner ask: "Mark PR #75 ready and merge it — transformations are confirmed on staging."
+- **Merged:** ready → merge commit **`a3c9b96`** on origin/master (verified via API).
+- **Why it was merge-ready:** its only open question was whether staging had image
+  transformations enabled — answered empirically in part 47 (`/render/image/public/…?width=420`
+  → 200, with real uploaded objects present). The width-aware helper is no longer dead code:
+  `ProductCodec.fromRow` now emits width-bounded render URLs per surface (420 grid / 720
+  detail), with the original as fail-open fallback, and storage objects carry the one-year
+  immutable cache lifetime.
+- **Worktree check before cleanup:** `perf/render-url-widths` fully merged into origin/master,
+  zero local-only files, no env files — the `.trees/render-urls` worktree can be deleted safely.
+- **Milestone:** audit finding #1 (grid thumbnails downloading full-resolution originals — the
+  top item of the original audit's top-5) is now closed on master. Findings #4 (Show-all) and
+  #5 (safe-parse) closed earlier today via #79/#78; #3 (Result.guard) landed inside Tier 1
+  (#80, pending merge); #2 (view-layer service location) is the only top-5 finding not yet
+  started.
+- Open board: #80 (green, Arabic review), #62 (rec: close), #49 (rec: re-author or close),
+  #36 (owner preference).
 
 ## New — 2026-09-20 (part 48: #76 merged, #40 closed — the staging-photo arc completes)
 
