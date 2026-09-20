@@ -1,6 +1,11 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 49: **#75 MERGED — WIDTH-BOUNDED RENDER URLS + 1-YEAR IMAGE CACHE ARE ON MASTER (owner-approved)**. Merge commit `a3c9b96`
+Last run: 2026-09-20 (part 50: **BOARD CLEARED — #62/#49 CLOSED AS SUPERSEDED, #36 MERGED; ONLY #80 REMAINS OPEN (owner-approved)**. #62 closed with the
+supersession map (error l10n → #80, Result.guard code: vs its divergent onError, money/validators → later batches); #49 closed with the
+carry-over note (its checkout_service_hardening_test.dart is the part worth re-authoring); #36 merged per owner's explicit choice (800d222).
+**The open-PR board is now exactly one PR: #80, green + MERGEABLE, draft pending native Arabic review.** Detail in part 50 below.)
+
+Prior run: 2026-09-20 (part 49: **#75 MERGED — WIDTH-BOUNDED RENDER URLS + 1-YEAR IMAGE CACHE ARE ON MASTER (owner-approved)**. Merge commit `a3c9b96`
 (origin/master `22dcb3b..a3c9b96`), verified via API. The staging question that gated it was settled live in part 47 (render endpoint 200
 with real objects). Worktree check: branch fully merged, no local-only files, no env files — safe to delete. **Audit finding #1 (the top
 top-5 item) is now closed on master.** Open board: #80 (Arabic review), #62 (rec close), #49 (rec re-author or close), #36 (owner preference).
@@ -130,6 +135,27 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 50: board cleared — one PR remains)
+
+- Owner ask: close #62 and #49 as superseded, and resolve #36 per owner preference → owner
+  chose **merge** for #36 when asked directly (a merge lands on master, so the choice was not
+  assumed).
+- **#62 closed** with the supersession map in the comment: error l10n → #80's codes+mapper
+  design (41-entry pinned table) vs this batch's never-adopted `onError` evolution;
+  money-pipeline/validators → later verified batches; 25-file conflicts on a 51-file diff make
+  salvage costlier than re-authoring anything missed.
+- **#49 closed** with the carry-over note: behind 146 commits, conflicted in
+  `checkout_service.dart`; if hardening is still wanted, re-author on current master — and the
+  branch's `checkout_service_hardening_test.dart` is the piece worth carrying over.
+- **#36 merged** (`800d222`, docs-only) for the record, per owner choice.
+- **End state: exactly one open PR — #80** (all CI green, MERGEABLE, draft pending native
+  Arabic review). Once Arabic review lands and #80 merges, the 2026-09-19 sweep's defect class
+  is fully closed and the audit's top-5 is 4/5 done (only #2, view-layer service location,
+  unstarted).
+- Pending housekeeping: worktree/branch cleanup (5 worktrees; demo-seed-images holds a local
+  gitignored `scripts/.env`), pushing local master's loop-doc commits, and the `sbp_` token
+  rotation.
 
 ## New — 2026-09-20 (part 49: #75 merged — audit finding #1 closed on master)
 
