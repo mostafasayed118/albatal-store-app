@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 36: **TIER 3B — ADMIN FAILURE COPY LOCALIZED (L2, COMMITTED)**. Commit
+Last run: 2026-09-20 (part 38: **REBASE REQUESTED — NO-OP; GATES RE-VERIFIED (L1+GATES)**. Owner ask:
+"Rebase fix/failure-copy-l10n onto current master and re-run the full gates." `origin/master` is
+**still `b3c1437`** = the branch's merge-base, so the rebase had nothing to do — the branch
+already sits directly on it (HEAD unchanged `5476bdd`). Gates re-run on the tree: analyze 0 ·
+format clean (445) · **1004/1004**. Mutation evidence re-established: Tier 3b battery re-run
+(5/6 + the documented M2 script defect; corrected M2 bites); Tier 1/3a scripts died with the
+session, two anchor-exact spot mutations stand in and both bite. **PR #80 already current**
+(headOid `5476bdd` = local HEAD, base = `origin/master`) — nothing to force-push. Detail in
+part 38 below.)
+
+Prior run: 2026-09-20 (part 36: **TIER 3B — ADMIN FAILURE COPY LOCALIZED (L2, COMMITTED)**. Commit
 `5476bdd` on `fix/failure-copy-l10n` (renamed from `fix/error-copy-localization`; **30 files,
 +756/−62**): 24 admin codes + ARB copy + mapper entries, 20 repository sites marked, `errorCode`
 threaded through all 5 admin cubit states, ~18 render sites via `failureText`, and
@@ -50,6 +60,31 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 38: rebase requested — no-op; gates re-verified)
+
+- Owner ask: "Rebase `fix/failure-copy-l10n` onto current master and re-run the full gates."
+- **The rebase was a no-op, and that is the finding:** after `git fetch`, `origin/master` is
+  still `b3c1437` — exactly the branch's merge-base — so there is nothing to replay onto. A
+  first attempt errored only on unstaged build noise (`.flutter-plugins-dependencies`, stashed
+  and popped); the retry reported "Current branch is up to date" with HEAD unchanged
+  (`5476bdd`). No conflicts, no l10n regen needed.
+- **Gates on the tree:** `flutter pub get` ✓ · `flutter analyze` 0 · `dart format` clean (445
+  files) · `flutter test` **1004/1004**.
+- **Mutation evidence re-established.** The Tier 3b script survived in `/tmp`: 5/6 bite + M2
+  "did not bite", which is the **documented script defect from part 36** (it removes the first
+  of two identical `errorCode:` sites while the pin drives the second); the corrected M2 bites.
+  The Tier 1/3a scripts died with the session restart, so two spot mutations stand in: dropping
+  the `kFailureLoad` mapper entry → the Tier 1 table pin bites; altering the generated
+  `adminFailureCustomersLoad` English → the Tier 3b table pin bites.
+- **Two of my spot mutations first failed on their own anchors** — a guessed getter name
+  (`failureLoadRetry` vs `failureLoad`) and a wrong pin file (`admin_l10n_keys_test` is the UI
+  table; failure-copy keys pin in `failure_copy_test`). Both assertions fired loudly, nothing
+  was mutated in those runs, and the redone mutations used real anchors. An anchor that
+  doesn't match proves nothing; it must fail loudly or not claim to.
+- **PR #80 is already current:** API reports `headRefOid` `5476bdd…` = local HEAD and base
+  `master` = `origin/master`. Nothing to push, no force-push needed.
+- **Changed:** nothing (branch, commits, and PR all untouched). Build noise stashed/popped.
 
 ## New — 2026-09-20 (part 36: Tier 3b — the admin failure copy localizes through `errorCode` threading)
 
