@@ -1,6 +1,15 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 41: **#78 + #79 MERGED; #80 REBASED CLEAN AND RE-GATED (L2-adjacent, owner-approved)**. Owner ask:
+Last run: 2026-09-20 (part 42: **#40 FOLDED INTO #76 — SEED SCRIPT FIXED, PUSHED, CI GREEN (L2)**. Owner ask: "Fold #40's
+service-role tier fix into PR #76's seed script and re-verify." Ported #40's complete diff (all 7
+hunks) into `chore/demo-seed-images`'s `seed_demo_staging.mjs` — direct `membership_tier` write +
+readback assertion replacing the 046-denied service-role RPC, loud errors on every previously
+silent call, rerun-safe `confirm_cod_payment`. Verified byte-identical to #40's proven branch
+(functional sections), `node --check` OK; committed `176e13a`, pushed; #76 MERGEABLE with CI green
+on all code checks. **Not executed against staging** — no service-role credential here; the DRY +
+real runs remain owner steps. #40's close recommended, left to owner. Detail in part 42 below.)
+
+Prior run: 2026-09-20 (part 41: **#78 + #79 MERGED; #80 REBASED CLEAN AND RE-GATED (L2-adjacent, owner-approved)**. Owner ask:
 "Merge #78 then #79, then rebase #80 onto the new master and re-run its gates." Both merged as
 merge commits (`5aa90d9`, `b148219`) after `gh pr ready`; #80's rebase onto `b148219` replayed
 4/4 with **zero conflicts**, verified semantically (gen-l10n on merged ARBs = no diff). Local
@@ -86,6 +95,30 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 42: #40's fix folded into #76, re-verified, pushed)
+
+- Owner ask: "Fold #40's service-role tier fix into PR #76's seed script and re-verify."
+- **The fix, now in #76** (`176e13a`, 1 file +38/−12): the seed's premium-tier step called
+  `admin.rpc('admin_set_membership_tier')` from a service-role client — permission-denied since
+  046 — so the premium demo user always seeded as `standard`. Replaced with the direct column
+  write + readback assertion, and #40's loud-error checks on products lookup, profile upsert,
+  address insert, variant lookup, both demo sign-ins, and the rerun-safe `confirm_cod_payment`
+  handling.
+- **Verification:** `node --check` passes; a section diff against `origin/fix/demo-seed-tier-rpc`
+  proves the functional lines are **byte-identical** to #40's proven branch (orders section
+  identical; user-seed core differs only by the `(Fix from #40.)` attribution comment).
+- **Honest limit:** the script was **not executed against staging** — this environment has no
+  service-role credential (`env.staging.json` carries URL+anon only; no Supabase CLI/token).
+  The DRY run and real run remain owner-run steps (usage line in the script). Static parity +
+  syntax + CI is what can be claimed here, no more.
+- **PR state:** #76 head `176e13a`, MERGEABLE, CI green on Flutter Tests (5m52s) / Format &
+  Analyze / Edge Functions / Secret Scan / Deployment Readiness (Android Release Build pending
+  at record time — slow build job, same pattern as #80).
+- **PR comments:** #40 — fold proven by section diff, close recommended, left to owner. #76 —
+  fold note with the not-yet-executed caveat stated for reviewers.
+- Board effect: #76+#40 sequencing conflict is **resolved** — one merge decision remains (#76),
+  and #40 becomes a close on the owner's confirmation.
 
 ## New — 2026-09-20 (part 41: #78 and #79 merged; #80 rebased clean, re-gated, force-pushed)
 
