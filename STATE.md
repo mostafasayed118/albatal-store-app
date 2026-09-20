@@ -7,8 +7,9 @@ threaded through all 5 admin cubit states, ~18 render sites via `failureText`, a
 `checkAdmin`'s hardcoded 'Access denied: admin only' now carries `kAdminAccessDenied`. Pins: the
 failure-copy table grew 17 → **41 codes**, plus 6 cubit pins incl. a new `checkAdmin` group.
 `flutter analyze` 0 · `dart format` clean (445) · **1004/1004** on the committed tree ·
-**6/6 mutations bite**, restore clean. Tier 3 is complete; one draft PR for all tiers is the
-remaining step, pending owner go. Detail in part 36 below.)
+**6/6 mutations bite**, restore clean. Tier 3 is complete; **draft PR #80 opened** with all
+four tier commits (base `master`, 69 files), draft pending native Arabic review + owner
+sign-off. Detail in part 36 below.)
 
 Prior run: 2026-09-19 (part 35: **TIER 3 AUTHORIZED — ADMIN LOCALIZED (L2, COMMITTED)**. The owner
 reversed the convention: *"Localize admin fully — it's a product decision I'm making now."*
@@ -89,8 +90,14 @@ verbatim, so English failure prose reaches Arabic users. Detail in part 32 below
 - **Same caveats as Tier 1:** the 20 repository `code:` sites are not end-to-end pinned (the
   cubit tests use fake repositories) — they're held by the analyzer plus the 41-entry table;
   and all Arabic copy is machine-authored, needing a native review.
-- **Not done:** nothing pushed, no PR. Tier 3a + 3b complete the tier plan; opening one draft
-  PR for all tiers (`b0934aa`, `6035aed`, `5c41a89`, `5476bdd`) awaits owner go.
+- **Push + draft PR #80** (`mostafasayed118/albatal-store-app#80`, base `master`): the owner
+  asked for exactly this, which is the human approval the push gate requires. Branch pushed
+  with upstream set; GitHub confirmed **all four tier commits** and a 69-file diff. PR body
+  states the mechanism, the payments fallback bug, the deliberate copy changes, and the two
+  open caveats (data-layer codes not end-to-end pinned; machine-authored Arabic needs native
+  review). **Draft until native Arabic review + owner sign-off; nothing merged, master
+  untouched.**
+- **Not done:** merge (owner gate), native Arabic review (owner gate).
 
 ## Prior — 2026-09-19 (part 35: Tier 3 — the admin console is localized, and the convention comments are gone)
 
