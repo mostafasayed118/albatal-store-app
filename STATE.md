@@ -1,6 +1,149 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 31: **THE REVIEWS SHOW-ALL LABEL IS LOCALIZED** — owner ask:
+Last run: 2026-09-19 (part 33: **TIER 1 — FAILURE COPY LOCALIZED (L2, COMMITTED, NOT PUSHED)** — owner ask:
+"Tier 1: failure copy, Tier 2: a11y copy, Tier 3: admin", in that order. Tier 1 of 3 done.
+Commit `b0934aa` on `fix/error-copy-localization` (`.trees/error-copy`), **34 files,
++734/−78**; `lib/` + `l10n/` + generated l10n + 2 test files. New `failure_codes.dart`
+(17 codes) + `shared/l10n/failure_copy.dart` (one mapper) + `Result.guard(code:)`, and
+17 new keys in **each** ARB (verified as identical key sets). `flutter analyze` 0 ·
+`dart format` clean (441) · **991/991** · **6/6 mutations bite**, restore byte-identical.
+No push, no PR; Tiers 2 and 3 not started. Detail in part 33 below.)
+
+Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** — owner ask:
+"sweep the rest of lib/ for hardcoded English strings shown in localized surfaces".
+**No code touched.** 82 candidate literals across ~300 lib files, each checked in
+context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
+carry exactly **1** machine-readable code, and the storefront renders `error.message`
+verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-19 (part 33: Tier 1 — app-authored failure copy is now localized at one place)
+
+- Owner ask: implement Tier 1 of the part-32 sweep (Tier 2 a11y, Tier 3 admin to follow).
+  **L2** — new worktree `.trees/error-copy` on `fix/error-copy-localization`. One commit
+  `b0934aa`, **34 files, +734/−78** (27 hand-written `lib/` files + 3 generated l10n +
+  2 ARBs + 1 reworked test + 1 new test).
+- **The mechanism, not the strings.** Before this, the defect was structural: cubits put
+  `error.message` into state and pages rendered it, so English prose reached Arabic
+  shoppers on every failure surface, and `checkout_page.dart` decided *whether* to
+  localize by string-matching English wording. The change adds the missing vocabulary and
+  a single mapper, rather than editing ~60 strings in place:
+  - **`lib/core/error/failure_codes.dart` (new, 17 codes)** — the app-authored vocabulary,
+    with the rule written down: *app-authored message + code* → copy comes from the code and
+    the English message becomes diagnosis only; *no code* → the message is server-authored
+    and is shown **verbatim** (the P1 ruling already recorded in `checkout_page.dart`). Which
+    of the two applies is answered by `code != null`, never by guessing from the string.
+  - **`lib/shared/l10n/failure_copy.dart` (new)** — `failureCopyForCode(l10n, code)` (the
+    switch, returns `null` for codes this mapper does not own) and `failureText(l10n, code:,
+    message:, fallback:)` enforcing the documented precedence: localized copy → server prose
+    verbatim → caller fallback, with a blank message counting as absent.
+  - **`Result.guard(..., {String? code})`** — the existing documented helper now carries the
+    code, so a repository records intent at its own throw boundary.
+  - **17 new keys in `l10n/app_en.arb` + `l10n/app_ar.arb`** (sets verified identical by diff),
+    plus the tracked regenerated output (`flutter gen-l10n`).
+- **Coded at the data layer:** ~60 `code:` arguments across 27 files — auth (incl. the
+  provider failures and all three delete-account refusals), catalog, orders, cart, wishlist,
+  settings, onboarding, checkout, reviews; the 10 most common are `kFailureLoad` (10),
+  `kFailureUnexpected` (6), `kFailureSave` (6).
+- **The payments bug this closes:** `payment_method_page.dart` / `instapay_instructions_page
+  .dart` passed the raw service message as the *fallback* (`state.errorMessage ?? l
+  .paymentFailedRetry`), and the service always sets a message — so the **Arabic fallback was
+  shadowed on every real failure**. The watcher now sets `code: 'payment_declined'` and the
+  pages prefer the mapped code (`payment_error_mapper.dart`), leaving the localized
+  fallback reachable.
+- **One existing test changed, deliberately:** `instapay_watch_poll_fallback_test.dart`
+  asserted the cubit stored English prose; it now pins the **code** (`Expected:
+  'payment_declined'`), which is the new contract.
+- **New pins — `test/l10n/failure_copy_test.dart` (6 tests):** all 17 codes resolve to exact
+  English copy; all 17 are **not English in Arabic** (asserted as *difference*, so adding a
+  code without Arabic copy fails even though it would be "non-empty"); an unknown code
+  returns `null` (the pass-through discipline); a known code beats an English message;
+  server prose passes through verbatim; null/blank message falls back rather than rendering
+  an empty snackbar.
+- **Mutation battery: 6/6 bite as assertions, restore byte-identical** (`git status` 0 files,
+  HEAD `b0934aa`): drop one code from the mapper → the English and Arabic completeness pins;
+  Arabic ARB holds the English string → `code load_failed is still English in Arabic`;
+  invert precedence → "a known code beats the English message"; weaken the blank guard →
+  "never rendering empty"; unknown-code catch-all → the `null` pass-through pin; remove
+  `code: 'payment_declined'` from the watcher → the payments wiring pin. Committed **before**
+  mutating, so `git checkout -- .` restores the implementation (the part-31 harness lesson).
+- **Harness bug, caught:** M1's expected-output grep used the *constant name*
+  (`code kFailureLoad`) where the test's `reason:` renders the constant's **value**
+  (`code load_failed`), so a correct bite looked "unexpected". Re-ran M1 alone to confirm the
+  reason line, rather than counting it as a pass or waving it through.
+- **Honest limit on the pins:** no test drives the real `SupabaseAuthRepository` (the auth
+  repository test uses a fake), so the non-payments data-site codes are enforced by the
+  analyzer plus the mapper tests, not by a repository-level test asserting *this* failure
+  yields *that* code. Payments is pinned end-to-end; the others are not. Building Supabase
+  client doubles for each codable site was judged out of proportion for this slice — stated
+  rather than implied.
+- **Not done:** no push, no PR, no branch upstream; Tier 2 (a11y `CustomSemanticsAction`
+  labels) and Tier 3 (42 admin literals) not started. **Arabic copy for all 17 keys is mine
+  and needs a native review** — the mapper pins prove it is Arabic and not English, not that
+  it reads well.
+- **Scope note:** this touched `l10n/` and generated output, outside the loop's `lib/`-only
+  auto-fix scope, on the owner's explicit instruction (same as parts 21, 26, 31).
+
+## Prior — 2026-09-19 (part 32: hardcoded-English sweep — the class that matters is failure copy, not widgets)
+
+- Owner ask: "sweep the rest of lib/ for hardcoded English strings shown in localized
+  surfaces". **L1 report-only — no file was edited, no worktree, no commit, no push.**
+- **Method, so the numbers are reproducible:** three passes over every `.dart` under
+  `lib/` except `lib/generated/` — (1) slot-aware scan (`Text(`, `label:`, `tooltip:`,
+  `semanticsLabel:`, `Tab(`, `hintText:`, `CustomSemanticsAction(`, …), (2) a generic
+  "reads as copy" literal scan for values held in variables/defaults rather than a
+  slot, (3) per-file l10n ratio. **Every surviving candidate was then read in context**
+  — which is what removed 9 of them (below), so the counts are post-verification.
+- **Tier 1 — failure copy reaches users in English (the big one, storefront-facing).**
+  Cubits copy `error.message` straight into UI state (`cart_cubit.dart:108`,
+  `orders_cubit.dart:113`, `wishlist_cubit.dart:98` and `:190`, `checkout_cubit.dart:173`
+  and `:251`, `reviews_cubit.dart:107`) and pages render it verbatim
+  (`checkout_page.dart:80-95` shows a SnackBar). The design *has* a localizable path —
+  `AppError.code` — but **42 `AppError(` sites carry exactly 1 `code:`**, 19 are
+  prose-only, plus 14 `Result.guard` prose messages, across 19 files.
+  - The sharpest evidence is that checkout localizes by **string-matching the English
+    wording**: `raw == 'Checkout failed' || raw == 'Failed to create order. Please try
+    again.'` (`checkout_page.dart:88-93`). Any message text edited anywhere silently
+    reverts that screen to English.
+  - **Payments is the worst instance:** 13 English messages in
+    `paymob_payment_service.dart` + `payment_status_watcher.dart`. The Arabic fallbacks
+    already exist (`l.paymentFailedRetry` etc., used for status mapping at
+    `payment_method_page.dart:148-151`), but `instapay_instructions_page.dart:268`
+    renders `state.errorMessage ?? l.paymentFailedRetry` — and since the service always
+    sets a message, **the Arabic fallback is shadowed on every real failure**.
+- **Tier 2 — screen-reader copy in an otherwise localized widget:**
+  `quantity_stepper.dart:34,37` hardcodes `CustomSemanticsAction(label: 'Increase' /
+  'Decrease')` while its visible tooltips use `l.decreaseQuantity`. TalkBack/VoiceOver
+  announce English to Arabic users.
+- **Tier 3 — admin (42 literals).** Admin *is* localized today (`l10n` follows the app
+  locale), so these are inconsistencies, not a design choice: 8 files localize in one
+  place and hardcode in another (`admin_variant_editor_page.dart` 8 literals vs 1 call,
+  `admin_image_manager_page.dart` 6 vs 3, `admin_products_page.dart` 4 vs 1), and 4 files
+  use no l10n at all (`admin_product_edit_page.dart` 9, `admin_sales_dashboard_page.dart`
+  4, the three `sales_*` widgets 8). **~10 of them duplicate copy that already exists in
+  `app_en.arb`** ('Delete', 'Active', 'Color', 'Cancel', 'Save', 'Retry', 'Description',
+  'Composition', 'Category', 'Care', 'Origin') — the key exists and the literal bypasses it.
+- **Tier 4 — customer-facing invoice PDF** (`admin/domain/invoice/invoice_pdf_builder.dart`)
+  is English with `INVOICE`/`Order:`/`Date:`/`Customer:` and Helvetica. The file itself
+  documents the constraint: the built-in font has **no Arabic glyphs**, so localizing it
+  is a font-embedding job, not a string swap.
+- **Verified NOT findings — read in context and rejected (9), so they are not chased:**
+  `app_lock_gate.dart:70` is *documented* as deliberately unlocalized (the gate sits
+  above `MaterialApp`, so no `AppLocalizations` is reachable); `connectivity_gate.dart:72`
+  is a `Log.i`; `email_validator.dart:28` and `stitch_search_bar.dart:72` are defensive
+  defaults whose **every** caller passes localized copy; `local_support_repository.dart`
+  'WhatsApp'/'Email'/'FAQ' is **dead data** (`SupportChannel.label` is never rendered —
+  the page uses `l.whatsappSupport`); `catalogColorName`'s tint map ('Amber', 'Teal',
+  'Other') is **not rendered anywhere** either; `notification_service.dart:104-133` copy
+  is Android channel metadata the OS renders; `smoke_harness.dart:192` is a dev harness;
+  `bootstrap.dart`/`sentry_*`/`supabase_*` are logs and startup diagnostics; 'Al Batal
+  Elite'/'AL BATAL ELITE' are brand wordmarks; the rest are data interpolations
+  (`${a.line}, ${a.city}, ${a.country}`).
+- **Limits of the sweep, stated rather than implied:** it finds literals in recognizable
+  slots/assignments — copy built by concatenation, held in the database or remote config,
+  or produced by a `toString()`, is out of reach; and no runtime tooling was used, so this
+  is a static reading of the code, not a screen-by-screen walk of the app.
+
+Prior run: 2026-09-19 (part 31: **THE REVIEWS SHOW-ALL LABEL IS LOCALIZED** — owner ask:
 "localize the hardcoded 'Show all (N)' label in the reviews section". Audit 2026-09-19
 finding **#4**, the last of the top five still open. Branch `fix/reviews-show-all-l10n`
 (worktree `.trees/l10n-show-all`, commits `5d1f3e9` + `2d72f85`), **pushed and opened as
