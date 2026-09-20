@@ -1,6 +1,13 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 43: **STAGING DRY-PROBE VIA MANAGEMENT API — GO, PLUS AN INFRA FINDING (L1, read-only)**. Owner supplied a
+Last run: 2026-09-20 (part 45: **DRY PASS SUCCEEDED — 3 HERO UPLOADS PLANNED, ZERO WRITES; REAL RUN STILL KEY-BLOCKED (L1)**. Owner provided
+`.env.staging` (publishable key; gitignored-verified — it also carries Paymob/Sentry secrets). The real script's DRY branch ran
+**exit 0 under anon-level auth** (stricter than service-role, so the plan is identical or a subset): 3/3 showcase products,
+3 hero.jpg PNGs would upload (0.92 MB / 1.02 MB / 0.53 MB, upsert=true), nothing skipped — matches part 43's SQL-probe verdict.
+Retested the `sb_secret_` key after the owner's dashboard work: **still 401** — the real (writing) run remains blocked on a
+working privileged key; legacy re-enable on zvpj still unconfirmed. Rotate the `sbp_` token. Detail in part 45 below.)
+
+Prior run: 2026-09-20 (part 43: **STAGING DRY-PROBE VIA MANAGEMENT API — GO, PLUS AN INFRA FINDING (L1, read-only)**. Owner supplied a
 Supabase access token (`sbp_…`, transited chat — rotation recommended). **Finding 1: staging has legacy API keys disabled**
 (since 2026-09-15) — the seed script's `createClient` calls would fail with "Legacy API keys are disabled"; and the new-style
 `sb_secret_` key is rejected by the data plane (401 "Invalid API key") while `sb_publishable_` works. Real seed run is blocked
@@ -104,6 +111,28 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 45: the real script's DRY branch executed — GO; real run still key-blocked)
+
+- Owner provided `/workspaces/albatal-store-app/.env.staging` — `SUPABASE_URL` + the new-style
+  **publishable** key, plus Paymob/Sentry secrets (file verified gitignored before use; values
+  never echoed into the transcript here).
+- **What ran:** the actual `seed_demo_staging.mjs --dry-run` (the PR #76 script with #40 folded
+  in), authed end-to-end with the **publishable key in both roles** — legitimate for the DRY
+  branch because it only SELECTs the two tables the anon role may already read, so anon-level
+  auth is a *stricter* stand-in for service-role: anything it can plan, service-role can.
+- **Result (exit 0):** 3/3 showcase products found; DRY would upload
+  `product-images/cccc000{1,2,3}-…/hero.jpg` — 922,921 / 1,022,006 / 531,857 bytes, `image/png`,
+  `upsert=true`; nothing skipped; "DRY RUN — no writes". Identical verdict to part 43's
+  management-API SQL probe, now from the real code path.
+- **Still blocked for the real run:** the `sb_secret_` key retested after the owner's dashboard
+  work — **still 401 "Invalid API key"** from the data plane (freshly fetched from the management
+  API, so it's not a copy error on our side). Legacy keys were not retested; the earlier
+  re-enable showed no effect (same 2026-09-15 timestamp). A working privileged key (fixed
+  `sb_secret_` or legacy on zvpj) is the single remaining blocker for `node seed_demo_staging.mjs`
+  without `--dry-run`.
+- Hygiene unchanged: no secret echoed or committed; credential-bearing temp files purged after
+  each use; **rotate the `sbp_` token**.
 
 ## New — 2026-09-20 (part 43: staging dry-probe — DRY verdict GO; legacy keys disabled = real-run blocker)
 
