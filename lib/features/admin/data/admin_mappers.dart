@@ -1,4 +1,5 @@
 import '../../../../core/entities/money.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_sales.dart';
@@ -9,7 +10,7 @@ import '../domain/entities/low_stock_variant.dart';
 ///
 /// Every cast lives here — the repository, cubit, and pages never touch
 /// `Map<String, dynamic>`. Mapping is defensive: payload fields are read
-/// with `is` type tests and helpers ([_asString], [_toInt]), never bare
+/// with `is` type tests and helpers ([optString], [optInt]), never bare
 /// `as` casts — a wrong runtime type (e.g. a string in a numeric column)
 /// must degrade to a safe default, not throw inside the widget tree.
 class AdminMappers {
@@ -29,17 +30,17 @@ class AdminMappers {
     return AdminOrder(
       id: row['id'] as String,
       status: AdminOrderStatus.fromName(row['status']),
-      total: Money(_toInt(row['total'])),
+      total: Money(optInt(row, 'total') ?? 0),
       placedAt: placedAt ?? DateTime.now(),
       customerName: _nonBlank(_customerName(row)),
       customerId: _customerId(row),
       customerTier: _customerTier(row),
-      paymentMethod: _asString(row['payment_method']),
+      paymentMethod: optString(row, 'payment_method'),
       itemCount: row['order_items'] is List
           ? (row['order_items'] as List).length
           : items.length,
       items: items,
-      trackingNumber: _asString(row['tracking_number']),
+      trackingNumber: optString(row, 'tracking_number'),
       address: row['address_snapshot'] is Map
           ? addressFromSnapshot(
               (row['address_snapshot'] as Map).cast<String, dynamic>())
@@ -64,11 +65,11 @@ class AdminMappers {
   /// Maps one `order_items(*)` row into an [AdminOrderItem].
   static AdminOrderItem orderItemFromRow(Map<String, dynamic> row) {
     return AdminOrderItem(
-      productName: _asString(row['product_name']) ?? 'Unknown',
-      size: _asString(row['size']) ?? '',
-      color: _asString(row['color']) ?? '',
-      quantity: _toInt(row['quantity']),
-      unitPrice: Money(_toInt(row['unit_price'])),
+      productName: optString(row, 'product_name') ?? 'Unknown',
+      size: optString(row, 'size') ?? '',
+      color: optString(row, 'color') ?? '',
+      quantity: optInt(row, 'quantity') ?? 0,
+      unitPrice: Money(optInt(row, 'unit_price') ?? 0),
     );
   }
 
@@ -77,15 +78,15 @@ class AdminMappers {
     Map<String, dynamic>? snapshot,
   ) {
     if (snapshot == null) return null;
-    final recipient = _asString(snapshot['recipient']) ?? '';
-    final line = _asString(snapshot['line']) ?? '';
-    final city = _asString(snapshot['city']) ?? '';
+    final recipient = optString(snapshot, 'recipient') ?? '';
+    final line = optString(snapshot, 'line') ?? '';
+    final city = optString(snapshot, 'city') ?? '';
     if (recipient.isEmpty && line.isEmpty && city.isEmpty) return null;
     return AdminOrderAddress(
       recipient: recipient,
       line: line,
       city: city,
-      country: _asString(snapshot['country']) ?? '',
+      country: optString(snapshot, 'country') ?? '',
     );
   }
 
@@ -96,10 +97,10 @@ class AdminMappers {
     if (id is! String || id.isEmpty) return null;
     return LowStockVariant(
       variantId: id,
-      productName: _asString(row['product_name']) ?? 'Unknown',
-      size: _asString(row['variant_size']) ?? '',
-      color: _asString(row['variant_color']) ?? '',
-      stock: _toInt(row['current_stock']),
+      productName: optString(row, 'product_name') ?? 'Unknown',
+      size: optString(row, 'variant_size') ?? '',
+      color: optString(row, 'variant_color') ?? '',
+      stock: optInt(row, 'current_stock') ?? 0,
     );
   }
 
@@ -121,9 +122,9 @@ class AdminMappers {
     final overrideRaw = row['price_override'];
     return AdminVariant(
       variantId: id,
-      size: _asString(row['size']) ?? '',
-      color: _asString(row['color']) ?? '',
-      stock: _toInt(row['stock']),
+      size: optString(row, 'size') ?? '',
+      color: optString(row, 'color') ?? '',
+      stock: optInt(row, 'stock') ?? 0,
       priceOverride: overrideRaw is num ? overrideRaw.toDouble() : null,
     );
   }
@@ -139,7 +140,7 @@ class AdminMappers {
   /// Blank or mistyped paths are skipped — they render nothing useful.
   static List<String> imagePathsFromRows(List<dynamic> rows) => rows
       .whereType<Map<String, dynamic>>()
-      .map((row) => _asString(row['storage_path']))
+      .map((row) => optString(row, 'storage_path'))
       .whereType<String>()
       .where((path) => path.trim().isNotEmpty)
       .toList();
@@ -157,16 +158,16 @@ class AdminMappers {
     final basePriceRaw = row['base_price'];
     return AdminProduct(
       id: row['id'] as String,
-      name: _asString(row['name']) ?? '',
-      slug: _asString(row['slug']) ?? '',
-      categoryId: _asString(row['category_id']) ?? '',
-      categoryName: category is Map ? _asString(category['name']) ?? '' : '',
+      name: optString(row, 'name') ?? '',
+      slug: optString(row, 'slug') ?? '',
+      categoryId: optString(row, 'category_id') ?? '',
+      categoryName: category is Map ? optString(category, 'name') ?? '' : '',
       basePrice: basePriceRaw is num ? basePriceRaw.toDouble() : 0,
       isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
-      description: _asString(row['description']),
-      composition: _asString(row['composition']),
-      care: _asString(row['care']),
-      origin: _asString(row['origin']),
+      description: optString(row, 'description'),
+      composition: optString(row, 'composition'),
+      care: optString(row, 'care'),
+      origin: optString(row, 'origin'),
       widthCm: row['width_cm'] is int ? row['width_cm'] as int : null,
       gsm: row['gsm'] is int ? row['gsm'] as int : null,
       sellByLength:
@@ -190,7 +191,7 @@ class AdminMappers {
   static AdminCategory categoryFromRow(Map<String, dynamic> row) {
     return AdminCategory(
       id: row['id'] as String,
-      name: _asString(row['name']) ?? '',
+      name: optString(row, 'name') ?? '',
       isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
     );
   }
@@ -210,7 +211,7 @@ class AdminMappers {
   /// select and no schema/RPC is added. Defensive by contract: non-map
   /// rows and rows without a parseable `placed_at` are skipped entirely,
   /// non-map line items are ignored, and numeric fields degrade via
-  /// [_toInt]. [now] is injected so the day window is deterministic in
+  /// [optInt]. [now] is injected so the day window is deterministic in
   /// tests.
   static AdminSalesOverview salesOverviewFromRows(
     List<dynamic> rows, {
@@ -247,16 +248,16 @@ class AdminMappers {
       // the DB) so a day always means a calendar day on the chart.
       final day = DateTime.utc(placedAt.year, placedAt.month, placedAt.day);
       if (revenueByDay.containsKey(day)) {
-        revenueByDay[day] = revenueByDay[day]! + _toInt(row['total']);
+        revenueByDay[day] = revenueByDay[day]! + (optInt(row, 'total') ?? 0);
       }
 
       final items = row['order_items'];
       if (items is! List) continue;
       for (final item in items) {
         if (item is! Map) continue;
-        final quantity = _toInt(item['quantity']);
+        final quantity = optInt(item, 'quantity') ?? 0;
         if (quantity <= 0) continue;
-        final name = _asString(item['product_name']) ?? 'Unknown';
+        final name = optString(item, 'product_name') ?? 'Unknown';
         unitsByProduct[name] = (unitsByProduct[name] ?? 0) + quantity;
       }
     }
@@ -283,8 +284,8 @@ class AdminMappers {
   /// a denormalized `customer_name` column; mistyped values are ignored.
   static String? _customerName(Map<String, dynamic> row) {
     final profiles = row['profiles'];
-    final fromJoin = profiles is Map ? _asString(profiles['full_name']) : null;
-    return fromJoin ?? _asString(row['customer_name']);
+    final fromJoin = profiles is Map ? optString(profiles, 'full_name') : null;
+    return fromJoin ?? optString(row, 'customer_name');
   }
 
   /// Customer profile id from the joined `profiles` row. The queue query
@@ -292,7 +293,7 @@ class AdminMappers {
   /// it to address the admin RPC.
   static String? _customerId(Map<String, dynamic> row) {
     final profiles = row['profiles'];
-    final id = profiles is Map ? _asString(profiles['id']) : null;
+    final id = profiles is Map ? optString(profiles, 'id') : null;
     return (id == null || id.isEmpty) ? null : id;
   }
 
@@ -301,13 +302,9 @@ class AdminMappers {
   /// standard, matching [Profile]'s tolerant decoding.
   static String _customerTier(Map<String, dynamic> row) {
     final profiles = row['profiles'];
-    final raw = profiles is Map ? _asString(profiles['membership_tier']) : null;
+    final raw = profiles is Map ? optString(profiles, 'membership_tier') : null;
     return raw == 'premium' ? 'premium' : 'standard';
   }
-
-  static String? _asString(Object? value) => value is String ? value : null;
-
-  static int _toInt(Object? value) => value is num ? value.toInt() : 0;
 
   static String? _nonBlank(String? value) =>
       (value == null || value.trim().isEmpty) ? null : value;

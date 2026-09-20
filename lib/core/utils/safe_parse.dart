@@ -17,6 +17,33 @@ int safeInt(Map? map, String key, {int fallback = 0}) {
   return value is int ? value : (value is num ? value.toInt() : fallback);
 }
 
+/// Nullable twin of [safeInt]: correct ints pass through, other [num]s are
+/// coerced via [num.toInt], and anything else (missing key, null, mistyped)
+/// degrades to null so callers keep `as int?` semantics for well-typed
+/// inputs while mistypes never throw [TypeError].
+int? optInt(Map? map, String key) {
+  final value = map?[key];
+  if (value is int) return value;
+  return value is num ? value.toInt() : null;
+}
+
+/// Nullable [double] twin of [optInt]: correct doubles pass through,
+/// other [num]s are widened via [num.toDouble], anything else degrades to
+/// null (see [optInt]).
+double? optDouble(Map? map, String key) {
+  final value = map?[key];
+  if (value is double) return value;
+  return value is num ? value.toDouble() : null;
+}
+
+/// Nullable twin of [safeString]: correct strings pass through, anything
+/// else degrades to null — for optional text fields where the fallback
+/// should stay "absent" rather than `''` (see [optInt]).
+String? optString(Map? map, String key) {
+  final value = map?[key];
+  return value is String ? value : null;
+}
+
 /// Returns a [bool] for [key]; any non-bool degrades to [fallback].
 bool safeBool(Map? map, String key, {bool fallback = false}) {
   final value = map?[key];
