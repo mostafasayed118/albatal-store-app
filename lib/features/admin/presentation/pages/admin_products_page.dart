@@ -89,14 +89,11 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                   onAction: _loadProducts,
                 )
               : _products.isEmpty
-                  // Admin hub copy below is admin-only, intentionally
-                  // unlocalized (no ARB keys; the storefront stays localized).
                   ? FeedbackView(
                       type: FeedbackViewType.empty,
-                      title: 'No products yet',
-                      body:
-                          'Create the first product so the storefront has something to sell.',
-                      actionLabel: 'New Product',
+                      title: l10n.adminNoProducts,
+                      body: l10n.adminNoProductsBody,
+                      actionLabel: l10n.adminNewProduct,
                       onAction: _newProduct,
                     )
                   : RefreshIndicator(
@@ -106,15 +103,13 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                         itemCount: _products.length,
                         itemBuilder: (ctx, i) {
                           final p = _products[i];
-                          // Admin-only, intentionally unlocalized: the em dash
-                          // fallback and the 'Inactive' suffix below.
                           final category =
                               p.categoryName.isNotEmpty ? p.categoryName : '—';
                           // Inactive rows say so in words — the dimmed icon
                           // alone reads as a rendering glitch.
                           final subtitle = p.isActive
                               ? '$category • ${p.slug}'
-                              : '$category • ${p.slug} • Inactive';
+                              : '$category • ${p.slug} • ${l10n.inactive}';
                           return Card(
                             child: ListTile(
                               leading: Icon(
@@ -136,15 +131,13 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    // Admin-only, intentionally unlocalized.
-                                    tooltip: 'Images',
+                                    tooltip: l10n.adminImagesTooltip,
                                     icon: const Icon(Icons.image_outlined),
                                     onPressed: () =>
                                         context.push(Routes.adminImage(p.id)),
                                   ),
                                   IconButton(
-                                    // Admin-only, intentionally unlocalized.
-                                    tooltip: 'Edit product',
+                                    tooltip: l10n.adminEditProduct,
                                     icon: const Icon(Icons.edit_outlined),
                                     onPressed: () => _editProduct(p),
                                   ),
@@ -158,8 +151,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _newProduct,
         icon: const Icon(Icons.add),
-        // Admin-only, intentionally unlocalized.
-        label: const Text('New Product'),
+        label: Text(l10n.adminNewProduct),
       ),
     );
   }

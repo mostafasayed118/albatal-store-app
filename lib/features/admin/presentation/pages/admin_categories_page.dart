@@ -70,13 +70,10 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
                   onAction: _loadCategories,
                 )
               : _categories.isEmpty
-                  // Admin-only, intentionally unlocalized (no ARB keys;
-                  // the storefront stays localized).
-                  ? const FeedbackView(
+                  ? FeedbackView(
                       type: FeedbackViewType.empty,
-                      title: 'No categories yet',
-                      body:
-                          'Categories are created in the database; the storefront needs at least one.',
+                      title: l10n.adminNoCategories,
+                      body: l10n.adminNoCategoriesBody,
                     )
                   : RefreshIndicator(
                       onRefresh: _loadCategories,
@@ -122,8 +119,7 @@ final class _CategoryChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        // Admin-only, intentionally unlocalized.
-        isActive ? 'Active' : 'Inactive',
+        isActive ? context.l10n.active : context.l10n.inactive,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,

@@ -1482,4 +1482,254 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appLockUnavailable => 'App lock isn\'t available on this device';
+
+  @override
+  String get salesDashboard => 'Sales Dashboard';
+
+  @override
+  String get salesDashboardSubtitle => 'Revenue, best sellers, low stock';
+
+  @override
+  String get adminAccessCheckFailed =>
+      'Unable to verify admin access. Please try again.';
+
+  @override
+  String get adminNoCategories => 'No categories yet';
+
+  @override
+  String get adminNoCategoriesBody =>
+      'Categories are created in the database; the storefront needs at least one.';
+
+  @override
+  String get inactive => 'Inactive';
+
+  @override
+  String get adminImagesUpdated => 'Images updated';
+
+  @override
+  String get adminImageFileEmpty => 'Selected file is empty.';
+
+  @override
+  String get adminImageUnsupportedFormat =>
+      'Unsupported format. Use JPG, PNG, or WebP.';
+
+  @override
+  String get adminImageTooLarge => 'Image is too large after compression.';
+
+  @override
+  String get adminImageUploaded => 'Image uploaded';
+
+  @override
+  String get adminImageUploadFailed => 'Upload failed. Please try again.';
+
+  @override
+  String get adminDeleteImageTitle => 'Delete image?';
+
+  @override
+  String get adminDeleteImageBody =>
+      'This removes the image from the product gallery on the store.';
+
+  @override
+  String get adminImagesLoadFailed => 'Could not load images';
+
+  @override
+  String get adminUploadImage => 'Upload Image';
+
+  @override
+  String get adminNoImages => 'No images yet';
+
+  @override
+  String get adminNoImagesBody =>
+      'Upload the first image so the product has a gallery on the store.';
+
+  @override
+  String get adminProductNotFound => 'Product not found';
+
+  @override
+  String get adminSelectCategory => 'Please select a category';
+
+  @override
+  String get adminInvalidPrice => 'Invalid price';
+
+  @override
+  String get adminPriceNegative => 'Price cannot be negative';
+
+  @override
+  String get adminProductCreated => 'Product created';
+
+  @override
+  String get adminProductUpdated => 'Product updated';
+
+  @override
+  String get adminNewProduct => 'New Product';
+
+  @override
+  String get adminEditProduct => 'Edit Product';
+
+  @override
+  String get adminNameField => 'Name';
+
+  @override
+  String get adminSlugField => 'Slug';
+
+  @override
+  String get adminRequiredField => 'Required';
+
+  @override
+  String get adminBasePrice => 'Base Price (EGP)';
+
+  @override
+  String get adminInvalidNumber => 'Invalid number';
+
+  @override
+  String get adminWidthCm => 'Width (cm)';
+
+  @override
+  String get adminWeightGsm => 'Weight (GSM)';
+
+  @override
+  String get adminSellByLength => 'Sell by length (per meter)';
+
+  @override
+  String get adminSellByLengthHint =>
+      'Shoppers pick a custom cut length in 0.5 m steps';
+
+  @override
+  String get adminMinCutMeters => 'Minimum cut (meters)';
+
+  @override
+  String get adminCreateProduct => 'Create Product';
+
+  @override
+  String get adminUpdateProduct => 'Update Product';
+
+  @override
+  String get adminNoProducts => 'No products yet';
+
+  @override
+  String get adminNoProductsBody =>
+      'Create the first product so the storefront has something to sell.';
+
+  @override
+  String get adminImagesTooltip => 'Images';
+
+  @override
+  String get adminReload => 'Reload';
+
+  @override
+  String get adminSalesLoadFailed => 'Could not load sales';
+
+  @override
+  String get adminSalesLoadFailedBody => 'Failed to load sales data.';
+
+  @override
+  String get adminNoSalesData => 'No sales data available.';
+
+  @override
+  String get adminAddVariant => 'Add Variant';
+
+  @override
+  String get adminEditVariant => 'Edit Variant';
+
+  @override
+  String get adminSizeField => 'Size';
+
+  @override
+  String get adminStockField => 'Stock';
+
+  @override
+  String get adminPriceOverrideOptional => 'Price Override (optional)';
+
+  @override
+  String get adminSizeColorRequired => 'Size and color are required';
+
+  @override
+  String get adminInvalidStock => 'Invalid stock';
+
+  @override
+  String get adminInvalidPriceOverride => 'Invalid price override';
+
+  @override
+  String get adminPriceOverrideNegative => 'Price override cannot be negative';
+
+  @override
+  String get adminVariantSaved => 'Variant saved';
+
+  @override
+  String get adminNoVariants => 'No variants yet';
+
+  @override
+  String adminVariantStock(int count) {
+    return 'Stock: $count';
+  }
+
+  @override
+  String adminVariantOverride(String price) {
+    return 'Override: $price';
+  }
+
+  @override
+  String adminLowStockTitle(int threshold) {
+    return 'Low stock (≤ $threshold)';
+  }
+
+  @override
+  String get adminLowStockEmpty => 'Nothing below the threshold';
+
+  @override
+  String adminStockLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count left',
+      one: '1 left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adminRevenueLastDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Revenue — last $days days',
+      one: 'Revenue — last day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adminNoRevenueData => 'No revenue data';
+
+  @override
+  String get adminOrdersByStatus => 'Orders by status';
+
+  @override
+  String get adminNoOrdersInWindow => 'No orders in this window';
+
+  @override
+  String get adminBestSellers => 'Best sellers — units sold';
+
+  @override
+  String get adminNoSalesInWindow => 'No sales in this window';
+
+  @override
+  String adminUnitsShort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count u',
+      one: '1 u',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get refunded => 'Refunded';
 }

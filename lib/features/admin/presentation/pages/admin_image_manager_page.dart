@@ -98,8 +98,8 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         setState(() => _paths = List.of(paths));
         // Confirm only what the repository saved — and say what happened
         // (an "Images updated" after a delete reads wrong).
-        // Admin-only, intentionally unlocalized.
-        showConfirmation(context, confirmation ?? 'Images updated');
+        showConfirmation(
+            context, confirmation ?? context.l10n.adminImagesUpdated);
       },
       failure: (error) {
         Log.e('Admin image save failed', error: error);
@@ -136,7 +136,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       if (!mounted) return;
       if (bytes.isEmpty) {
         setState(() => _uploading = false);
-        showFloatingError(context, 'Selected file is empty.');
+        showFloatingError(context, context.l10n.adminImageFileEmpty);
         return;
       }
       // §4 enforcement pass: the picker's imageQuality is only a hint
@@ -150,14 +150,13 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       if (!_allowedExtensions.contains(ext)) {
         if (!mounted) return;
         setState(() => _uploading = false);
-        showFloatingError(
-            context, 'Unsupported format. Use JPG, PNG, or WebP.');
+        showFloatingError(context, context.l10n.adminImageUnsupportedFormat);
         return;
       }
       if (bytes.length > _maxImageBytes) {
         if (!mounted) return;
         setState(() => _uploading = false);
-        showFloatingError(context, 'Image is too large after compression.');
+        showFloatingError(context, context.l10n.adminImageTooLarge);
         return;
       }
       final fileName = 'upload_${DateTime.now().millisecondsSinceEpoch}.$ext';
@@ -188,8 +187,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         _paths = next;
         _uploading = false;
       });
-      // Admin-only, intentionally unlocalized.
-      showConfirmation(context, 'Image uploaded');
+      showConfirmation(context, context.l10n.adminImageUploaded);
     } on AppError catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
@@ -198,8 +196,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       if (!mounted) return;
       setState(() => _uploading = false);
       Log.e('Admin image upload failed', error: e);
-      // Admin-only, intentionally unlocalized.
-      showFloatingError(context, 'Upload failed. Please try again.');
+      showFloatingError(context, context.l10n.adminImageUploadFailed);
     }
   }
 
@@ -223,12 +220,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      // Admin-only, intentionally unlocalized: the delete-confirm copy below
-      // (no ARB keys; the storefront stays localized).
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete image?'),
-        content: const Text(
-            'This removes the image from the product gallery on the store.'),
+        title: Text(context.l10n.adminDeleteImageTitle),
+        content: Text(context.l10n.adminDeleteImageBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -240,7 +234,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -260,11 +254,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
           : _error != null
               ? FeedbackView(
                   type: FeedbackViewType.error,
-                  // Admin-only, intentionally unlocalized (same convention as
-                  // this screen's empty gallery state).
-                  title: 'Could not load images',
+                  title: l10n.adminImagesLoadFailed,
                   body: _error,
-                  actionLabel: 'Retry',
+                  actionLabel: l10n.retry,
                   onAction: _loadImages,
                 )
               : Column(
@@ -274,8 +266,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                       child: _uploading
                           ? const Center(child: CircularProgressIndicator())
                           : AppButton(
-                              // Admin-only, intentionally unlocalized.
-                              label: 'Upload Image',
+                              label: l10n.adminUploadImage,
                               icon: Icons.upload,
                               onPressed: _uploadImage,
                             ),
@@ -284,11 +275,10 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                       child: _paths.isEmpty
                           ? FeedbackView(
                               type: FeedbackViewType.empty,
-                              // Admin-only, intentionally unlocalized.
-                              title: 'No images yet',
+                              title: l10n.adminNoImages,
                               body:
                                   'Upload the first image so the product has a gallery on the store.',
-                              actionLabel: 'Upload Image',
+                              actionLabel: l10n.adminUploadImage,
                               onAction: _uploadImage,
                             )
                           : GridView.builder(

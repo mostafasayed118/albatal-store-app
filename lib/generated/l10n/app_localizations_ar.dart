@@ -1480,4 +1480,256 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get appLockUnavailable => 'قفل التطبيق غير متاح على هذا الجهاز';
+
+  @override
+  String get salesDashboard => 'لوحة المبيعات';
+
+  @override
+  String get salesDashboardSubtitle =>
+      'الإيرادات، الأكثر مبيعًا، المخزون المنخفض';
+
+  @override
+  String get adminAccessCheckFailed =>
+      'تعذّر التحقق من صلاحيات المسؤول. حاول مرة أخرى.';
+
+  @override
+  String get adminNoCategories => 'لا توجد فئات بعد';
+
+  @override
+  String get adminNoCategoriesBody =>
+      'تُنشأ الفئات في قاعدة البيانات؛ ويحتاج المتجر إلى فئة واحدة على الأقل.';
+
+  @override
+  String get inactive => 'غير نشط';
+
+  @override
+  String get adminImagesUpdated => 'تم تحديث الصور';
+
+  @override
+  String get adminImageFileEmpty => 'الملف المحدد فارغ.';
+
+  @override
+  String get adminImageUnsupportedFormat =>
+      'صيغة غير مدعومة. استخدم JPG أو PNG أو WebP.';
+
+  @override
+  String get adminImageTooLarge => 'حجم الصورة كبير جدًا بعد الضغط.';
+
+  @override
+  String get adminImageUploaded => 'تم رفع الصورة';
+
+  @override
+  String get adminImageUploadFailed => 'فشل الرفع. حاول مرة أخرى.';
+
+  @override
+  String get adminDeleteImageTitle => 'حذف الصورة؟';
+
+  @override
+  String get adminDeleteImageBody =>
+      'سيؤدي هذا إلى إزالة الصورة من معرض المنتج في المتجر.';
+
+  @override
+  String get adminImagesLoadFailed => 'تعذّر تحميل الصور';
+
+  @override
+  String get adminUploadImage => 'رفع صورة';
+
+  @override
+  String get adminNoImages => 'لا توجد صور بعد';
+
+  @override
+  String get adminNoImagesBody =>
+      'ارفع الصورة الأولى ليكون للمنتج معرض في المتجر.';
+
+  @override
+  String get adminProductNotFound => 'المنتج غير موجود';
+
+  @override
+  String get adminSelectCategory => 'يرجى اختيار فئة';
+
+  @override
+  String get adminInvalidPrice => 'سعر غير صالح';
+
+  @override
+  String get adminPriceNegative => 'لا يمكن أن يكون السعر سالبًا';
+
+  @override
+  String get adminProductCreated => 'تم إنشاء المنتج';
+
+  @override
+  String get adminProductUpdated => 'تم تحديث المنتج';
+
+  @override
+  String get adminNewProduct => 'منتج جديد';
+
+  @override
+  String get adminEditProduct => 'تعديل المنتج';
+
+  @override
+  String get adminNameField => 'الاسم';
+
+  @override
+  String get adminSlugField => 'المعرّف (Slug)';
+
+  @override
+  String get adminRequiredField => 'مطلوب';
+
+  @override
+  String get adminBasePrice => 'السعر الأساسي (جنيه)';
+
+  @override
+  String get adminInvalidNumber => 'رقم غير صالح';
+
+  @override
+  String get adminWidthCm => 'العرض (سم)';
+
+  @override
+  String get adminWeightGsm => 'الوزن (جرام/م²)';
+
+  @override
+  String get adminSellByLength => 'البيع بالمتر';
+
+  @override
+  String get adminSellByLengthHint =>
+      'يختار المتسوقون طول القصّة بخطوات 0.5 متر';
+
+  @override
+  String get adminMinCutMeters => 'أقل طول للقص (بالمتر)';
+
+  @override
+  String get adminCreateProduct => 'إنشاء منتج';
+
+  @override
+  String get adminUpdateProduct => 'تحديث المنتج';
+
+  @override
+  String get adminNoProducts => 'لا توجد منتجات بعد';
+
+  @override
+  String get adminNoProductsBody =>
+      'أنشئ أول منتج ليكون هناك ما يُعرض في المتجر.';
+
+  @override
+  String get adminImagesTooltip => 'الصور';
+
+  @override
+  String get adminReload => 'إعادة التحميل';
+
+  @override
+  String get adminSalesLoadFailed => 'تعذّر تحميل المبيعات';
+
+  @override
+  String get adminSalesLoadFailedBody => 'فشل تحميل بيانات المبيعات.';
+
+  @override
+  String get adminNoSalesData => 'لا توجد بيانات مبيعات متاحة.';
+
+  @override
+  String get adminAddVariant => 'إضافة خيار';
+
+  @override
+  String get adminEditVariant => 'تعديل الخيار';
+
+  @override
+  String get adminSizeField => 'المقاس';
+
+  @override
+  String get adminStockField => 'المخزون';
+
+  @override
+  String get adminPriceOverrideOptional => 'تجاوز السعر (اختياري)';
+
+  @override
+  String get adminSizeColorRequired => 'المقاس واللون مطلوبان';
+
+  @override
+  String get adminInvalidStock => 'مخزون غير صالح';
+
+  @override
+  String get adminInvalidPriceOverride => 'تجاوز سعر غير صالح';
+
+  @override
+  String get adminPriceOverrideNegative => 'لا يمكن أن يكون تجاوز السعر سالبًا';
+
+  @override
+  String get adminVariantSaved => 'تم حفظ الخيار';
+
+  @override
+  String get adminNoVariants => 'لا توجد خيارات بعد';
+
+  @override
+  String adminVariantStock(int count) {
+    return 'المخزون: $count';
+  }
+
+  @override
+  String adminVariantOverride(String price) {
+    return 'التجاوز: $price';
+  }
+
+  @override
+  String adminLowStockTitle(int threshold) {
+    return 'مخزون منخفض (≤ $threshold)';
+  }
+
+  @override
+  String get adminLowStockEmpty => 'لا شيء تحت الحد';
+
+  @override
+  String adminStockLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يتبقّى $count',
+      one: 'متبقٍ واحد',
+      zero: 'لا شيء متبقٍ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adminRevenueLastDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'الإيرادات — آخر $days يومًا',
+      one: 'الإيرادات — اليوم الأخير',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adminNoRevenueData => 'لا توجد بيانات إيرادات';
+
+  @override
+  String get adminOrdersByStatus => 'الطلبات حسب الحالة';
+
+  @override
+  String get adminNoOrdersInWindow => 'لا توجد طلبات في هذه الفترة';
+
+  @override
+  String get adminBestSellers => 'الأكثر مبيعًا — الوحدات المبيعة';
+
+  @override
+  String get adminNoSalesInWindow => 'لا توجد مبيعات في هذه الفترة';
+
+  @override
+  String adminUnitsShort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count وحدة',
+      one: 'وحدة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get unknown => 'غير معروف';
+
+  @override
+  String get pending => 'قيد الانتظار';
+
+  @override
+  String get refunded => 'مُسترد';
 }

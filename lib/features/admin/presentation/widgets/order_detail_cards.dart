@@ -8,6 +8,7 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../domain/entities/admin_order.dart';
+import '../admin_order_status_label.dart';
 import '../cubit/admin_cubit.dart';
 
 /// Order summary header for the admin detail view.
@@ -43,7 +44,7 @@ class OrderStatusCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(order.status.name.toUpperCase(),
+                  child: Text(adminOrderStatusLabel(l, order.status),
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.primary)),

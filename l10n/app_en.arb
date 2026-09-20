@@ -647,5 +647,118 @@
   },
   "@exportOrdersCsv": {
     "description": "Tooltip on the admin order queue's CSV export action, which shares the visible rows as a file (feature-batch §14)."
-  }
+  },
+  "salesDashboard": "Sales Dashboard",
+  "salesDashboardSubtitle": "Revenue, best sellers, low stock",
+  "adminAccessCheckFailed": "Unable to verify admin access. Please try again.",
+  "adminNoCategories": "No categories yet",
+  "adminNoCategoriesBody": "Categories are created in the database; the storefront needs at least one.",
+  "inactive": "Inactive",
+  "adminImagesUpdated": "Images updated",
+  "adminImageFileEmpty": "Selected file is empty.",
+  "adminImageUnsupportedFormat": "Unsupported format. Use JPG, PNG, or WebP.",
+  "adminImageTooLarge": "Image is too large after compression.",
+  "adminImageUploaded": "Image uploaded",
+  "adminImageUploadFailed": "Upload failed. Please try again.",
+  "adminDeleteImageTitle": "Delete image?",
+  "adminDeleteImageBody": "This removes the image from the product gallery on the store.",
+  "adminImagesLoadFailed": "Could not load images",
+  "adminUploadImage": "Upload Image",
+  "adminNoImages": "No images yet",
+  "adminNoImagesBody": "Upload the first image so the product has a gallery on the store.",
+  "adminProductNotFound": "Product not found",
+  "adminSelectCategory": "Please select a category",
+  "adminInvalidPrice": "Invalid price",
+  "adminPriceNegative": "Price cannot be negative",
+  "adminProductCreated": "Product created",
+  "adminProductUpdated": "Product updated",
+  "adminNewProduct": "New Product",
+  "adminEditProduct": "Edit Product",
+  "adminNameField": "Name",
+  "adminSlugField": "Slug",
+  "adminRequiredField": "Required",
+  "adminBasePrice": "Base Price (EGP)",
+  "adminInvalidNumber": "Invalid number",
+  "adminWidthCm": "Width (cm)",
+  "adminWeightGsm": "Weight (GSM)",
+  "adminSellByLength": "Sell by length (per meter)",
+  "adminSellByLengthHint": "Shoppers pick a custom cut length in 0.5 m steps",
+  "adminMinCutMeters": "Minimum cut (meters)",
+  "adminCreateProduct": "Create Product",
+  "adminUpdateProduct": "Update Product",
+  "adminNoProducts": "No products yet",
+  "adminNoProductsBody": "Create the first product so the storefront has something to sell.",
+  "adminImagesTooltip": "Images",
+  "adminReload": "Reload",
+  "adminSalesLoadFailed": "Could not load sales",
+  "adminSalesLoadFailedBody": "Failed to load sales data.",
+  "adminNoSalesData": "No sales data available.",
+  "adminAddVariant": "Add Variant",
+  "adminEditVariant": "Edit Variant",
+  "adminSizeField": "Size",
+  "adminStockField": "Stock",
+  "adminPriceOverrideOptional": "Price Override (optional)",
+  "adminSizeColorRequired": "Size and color are required",
+  "adminInvalidStock": "Invalid stock",
+  "adminInvalidPriceOverride": "Invalid price override",
+  "adminPriceOverrideNegative": "Price override cannot be negative",
+  "adminVariantSaved": "Variant saved",
+  "adminNoVariants": "No variants yet",
+  "adminVariantStock": "Stock: {count}",
+  "@adminVariantStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminVariantOverride": "Override: {price}",
+  "@adminVariantOverride": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "adminLowStockTitle": "Low stock (≤ {threshold})",
+  "@adminLowStockTitle": {
+    "placeholders": {
+      "threshold": {
+        "type": "int"
+      }
+    }
+  },
+  "adminLowStockEmpty": "Nothing below the threshold",
+  "adminStockLeft": "{count, plural, =1{1 left} other{{count} left}}",
+  "@adminStockLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminRevenueLastDays": "{days, plural, =1{Revenue — last day} other{Revenue — last {days} days}}",
+  "@adminRevenueLastDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "adminNoRevenueData": "No revenue data",
+  "adminOrdersByStatus": "Orders by status",
+  "adminNoOrdersInWindow": "No orders in this window",
+  "adminBestSellers": "Best sellers — units sold",
+  "adminNoSalesInWindow": "No sales in this window",
+  "adminUnitsShort": "{count, plural, =1{1 u} other{{count} u}}",
+  "@adminUnitsShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unknown": "Unknown",
+  "pending": "Pending",
+  "refunded": "Refunded"
 }

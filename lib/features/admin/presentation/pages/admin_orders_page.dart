@@ -135,8 +135,7 @@ final class _OrderTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final status = order.status;
     final total = order.total.format();
-    // Admin-only, intentionally unlocalized.
-    final customerName = order.customerName ?? 'Unknown';
+    final customerName = order.customerName ?? l10n.unknown;
     final itemCount = order.itemCount ?? order.items.length;
 
     return Card(
