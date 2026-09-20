@@ -29,12 +29,15 @@ class QuantityStepper extends StatelessWidget {
       value: '$quantity',
       increasedValue: '${quantity < max ? quantity + 1 : quantity}',
       decreasedValue: '${quantity > min ? quantity - 1 : quantity}',
+      // The action labels are what TalkBack/VoiceOver *speak*, so they follow the
+      // locale like the visible tooltips below — hardcoded English here announced
+      // "Increase"/"Decrease" to an Arabic shopper (audit 2026-09-19, sweep part 32).
       customSemanticsActions: {
         if (quantity < max)
-          const CustomSemanticsAction(label: 'Increase'): () =>
+          CustomSemanticsAction(label: l.increaseQuantity): () =>
               onChanged(quantity + 1),
         if (quantity > min)
-          const CustomSemanticsAction(label: 'Decrease'): () =>
+          CustomSemanticsAction(label: l.decreaseQuantity): () =>
               onChanged(quantity - 1),
       },
       child: Row(
