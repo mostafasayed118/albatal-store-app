@@ -1,6 +1,64 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (PR #77 merge: origin/master merged into `fix/audit-findings-0919`, 7 conflicts resolved, gates 985/985; owner said "merge").
+Last run: 2026-09-19 (part 29: **REPO SYNCED WITH LAST WORK** — owner ask: "sync
+this repo with last work". Local `master` fast-forwarded `0962085` → `024dedd`
+(the PR #77 merge, which this checkout had not pulled); the two-session STATE.md
+collision at the top of the file resolved; all three worktrees re-checked against
+the new master. **No code was changed and nothing was pushed.**)
+
+## New — 2026-09-19 (part 29: master fast-forwarded onto the PR #77 merge + in-flight-branch sync audit)
+
+- Owner: "sync this repo with last work". Read-only recon first (`git fetch --all
+  --prune`, `worktree list`, `ls-remote`, `gh pr list`, `git merge-tree`), then a
+  single write: `master` `0962085` → **`024dedd`** — now 0/0 against `origin/master`.
+- **The sync gap was one merge:** `origin/master` had advanced to `024dedd`
+  (`fix(audit): close remaining top-5 gaps — DI client, route constants, share/test
+  fakes (#77)`, merged 18:34Z) while local `master` sat on `0962085`. That PR had
+  already closed two of my own audit follow-ups — the `getIt<>()` view-layer sites
+  (#2) and the raw-literal route patterns (#3) — by rewriting `service_locator.dart`,
+  `app_routes.dart` and `app_router.dart`. 64 files, +1196/−474. **Its own gates are
+  the ones of record for this tree (985/985); this session ran no `flutter`
+  command**, so nothing further is claimed green here.
+- **STATE.md collision — third instance of this hazard, resolved by hand:** both
+  sessions wrote the file's top block (mine = parts 28→16, uncommitted 580 lines;
+  theirs = the PR #77 pair of `## New` sections, 341 lines). Preserved with
+  `git stash push -- STATE.md` → `git merge --ff-only origin/master` → `git stash
+  pop`, which conflicted across the shared top region (markers at `:3`/`:345`/`:926`).
+  Kept **both**, newest-first per the file's own convention: part 29 → origin's
+  PR #77 sections → parts 28→16. **Edits are token-level only, all prose verbatim:**
+  the two displaced `Last run:` lines demoted to `Prior run:`, and the one base line
+  both sides had preserved (part 16's paragraph lead-in, continued below the
+  conflict) kept exactly once. Verified as a multiset against the union of both
+  parents — no line dropped, duplicated or invented.
+- **Branch sync audited with `git merge-tree --write-tree` against the new master,
+  not read off GitHub's `UNKNOWN` mergeable field:**
+  - `perf/render-url-widths` (**PR #75**, draft) — **ONE CONFLICT:**
+    `lib/shared/services/storage_service.dart`. PR #77 rewrote that file (required
+    `SupabaseClient`, no hidden global) and the cache-lifetime commit edited the same
+    region, so #75 is genuinely CONFLICTING, not merely stale. The render-URL commits
+    are unaffected; merging master into the branch is what clears it.
+  - `chore/demo-seed-images` (**PR #76**, draft) — **clean**, zero conflicts; its 5
+    files are all under `scripts/`, disjoint from master's `lib/`+`test/` churn.
+  - `refactor/safe-parse-consolidation` — **clean, and the actual sync gap: it has no
+    upstream at all.** Never pushed (absent from `git ls-remote`), so no PR exists and
+    it cannot be reviewed or merged. Confirmed still needed rather than superseded:
+    master's `safe_parse.dart` is 46 lines with **zero** `optInt`/`optDouble`/
+    `optString`; the branch's is 73 with all three. Pushing and opening its PR is an
+    owner decision — `loop-constraints.md` requires a go-ahead before a push, so this
+    session did neither.
+- **Worktrees all clean**, each at its tip: `.trees/render-urls` `4d8ecac`,
+  `.trees/demo-seed-images` `db13adf`, `.trees/safe-parse` `c0f2d3e`.
+- **Environment drift left alone, deliberately** — not part of this work, and none of
+  it is touched by `024dedd`, so the fast-forward did not need it restored: the
+  `pubspec.lock` diff is a *real* `pub get` bump (`intl` 0.20.2→0.20.3, `matcher`
+  0.12.19→0.12.20), `.flutter-plugins-dependencies` is regenerated, and
+  `devtools_options.yaml` is untracked (an empty `extensions:` node). Keeping the bump
+  vs `git checkout --`-ing the pair is an owner call, flagged not decided.
+- **Not done, stated plainly:** no branch was rebased or pushed, PRs #75/#76 are
+  untouched and still draft, and no test or analyzer run was made on the merged tree
+  by this session.
+
+Prior run: 2026-09-19 (**PR #77 MERGED** — origin/master merged into `fix/audit-findings-0919`, 7 conflicts resolved, gates 985/985; owner said "merge").
 
 ## New — 2026-09-19 (PR #77 merge prep: master merged in, conflicts resolved, 985/985)
 
@@ -340,7 +398,587 @@ Last run: 2026-09-19 (PR #77 merge: origin/master merged into `fix/audit-finding
   `build/app/outputs/flutter-apk/app-staging-master-0962085.apk` (71.9MB).
 - PENDING: owner device test (staging admin → Customers → terms below),
   then delete the 3 throwaways (sign-in + delete-account each).
-Last run: 2026-09-19 (part 16: **WORKTREE CONSOLIDATION** — the five unmerged
+
+Prior run: 2026-09-19 (part 28: **DRAFT PR #76 OPENED** — owner ask: "open a PR for
+the demo seed branch with both commits". Branch `chore/demo-seed-images` pushed to
+origin (head `db13adf`, unchanged); PR is **DRAFT**, base `master`, 2 commits,
+5 files, +426/−5. NO merge, NO code change, production untouched.
+
+**Two constraints shaped this, both from `loop-constraints.md`:** "Always create a
+draft PR first; let me review before marking ready" → `--draft`, not ready-for-
+review; and "Don't push before telling me" → the push was stated before it ran.
+The branch had no upstream, so this also created it.
+
+**Body follows `.github/PULL_REQUEST_TEMPLATE/default.md`** rather than a free-form
+write-up, marked **L2 — Elevated**: a *service-role* code path now performs bucket
+writes that did not exist before and runs unattended inside the seed — with the
+caveat stated in the PR that no `lib/` file is in the diff, so judged purely on
+runtime surface it would be L1.
+
+**Facts re-derived from the tree rather than quoted from parts 26/27:**
+`node scripts/demo_seed_images_check.mjs` → "all checks passed (3 images, 3
+registered paths)"; fresh generation 531,857 / 922,921 / 1,022,006 bytes at the
+exact 052 paths; `file` → PNG 1280×1280 8-bit RGB non-interlaced; md5s
+425d3a33… / 08833896… / bf04b162…; `node --check scripts/seed_demo_staging.mjs`
+clean; diff vs master is 5 files, all under `scripts/`, no `pubspec.lock` churn.
+
+**Verified against the remote, not the local file:** 12/12 assertions on the
+published body via `gh pr view 76` (template headings present, L2 box checked, the
+"nothing has been uploaded to staging" disclaimer intact, the false-PASS harness
+bug disclosed, the `.jpg`-serving-PNG decision surfaced as the #1 review focus),
+`isDraft: true`, head == `db13adf` == `git ls-remote`.
+
+**Stated in the PR as not verified, because it is the weak point:** nothing has
+been uploaded anywhere (no credentials, no `node_modules` here, so the seed
+cannot run); the `storage.from().upload()` call is the single unexercised line;
+and the Docker SQL fixture validates the *query*, not Supabase's real storage
+DDL. The PR does not claim the demo images render — it claims the objects can now
+be created and their existence is checked.
+
+**CI on the pushed head:** Setup & Cache **pass** (39s), Edge Function Tests
+**pass** (10s), Secret Scan **pass** (6s); Flutter Tests and Format & Analyze were
+still pending when the run ended, and CodeSnif skips. CI is not a merge gate here
+— the PR stays draft on the owner's review regardless of these results.
+
+Prior run: 2026-09-19 (part 27: **SEED VERIFICATION NOW PROVES THE OBJECTS EXIST** —
+owner ask: "extend verify_demo_seed.sql to check the image objects exist, not just
+the product_images rows". Commit `db13adf` on `chore/demo-seed-images` (same
+branch as part 26, now 2 commits), 2 files, NOT pushed.
+
+**Why this mattered:** the seed rendered placeholders *because nothing watched the
+binaries*. `verify_demo_seed.sql` counted `product_images` rows, and a row whose
+object was never uploaded looks perfectly seeded until the app requests it —
+which is exactly the state part 24 found on staging.
+
+**Two checks added:**
+- **#7 `image_objects_ok`** — zero demo image rows may be missing a storage
+  object. Joins `storage.objects` on **`bucket_id` AND `name`**: `storage_path`
+  already carries the bucket prefix, so it equals the object name verbatim.
+  That is confirmed in-repo rather than assumed — 032's insert guard is written
+  as `(storage.foldername(name))[1] = 'product-images'`, which is only true if
+  `name` starts with the bucket segment. Written as "zero missing" rather than
+  "count = 3" so it stays honest if the seed registers more images.
+- **#8 `image_content_type_ok`** — those objects carry a renderable content type.
+  Deliberately the renderable SET `(jpeg, png, webp)`, not `image/png`: the seed
+  writes PNG bytes to the 052-registered `.jpg` paths (part 26), but an admin
+  replacement uploads through the app and repoints `storage_path` — that is the
+  DESIRED end state and must not fail this check. The `COALESCE(...)` is
+  load-bearing: `NULL NOT IN (…)` evaluates to NULL, not true, so an object with
+  no mimetype at all would silently pass without it.
+  The metadata key is `mimetype` (lowercase), confirmed from source —
+  `supabase/storage` `src/storage/uploader.ts` builds
+  `metadata: { mimetype: file.mimeType, contentLength: … }`.
+
+**Verified by actually executing the file**, not by reading it: Postgres 16.15 in
+a throwaway `docker` container (Docker is available here even though `psql` is
+not) with a fixture schema carrying the real Supabase column names, across five
+states —
+
+| state | checks failing |
+|---|---|
+| S0 fully seeded | **none** (all 8 pass) |
+| S1 one object deleted | exactly `image_objects_ok` |
+| S2 object content type `image/gif` | exactly `image_content_type_ok` |
+| S3 object has no `mimetype` key | exactly `image_content_type_ok` (proves the COALESCE) |
+| S4 pre-seed, no demo rows | `showcase_active, variants_ok, images_ok, flash_ok` |
+
+Plus two mutations of the SQL itself, both caught by that matrix (dropping the
+`name` join so it matches on bucket alone; weakening #7 to `count(*) >= 0`), with
+the file restored byte-identically. Container removed; nothing left running.
+
+**Two of my own errors caught and fixed in-run, both worth recording:**
+(1) my first harness version passed the *label* to a stdin redirect, so psql read
+nothing and **S0 reported a false PASS on empty input** — fixed, and I added a
+guard that the run must yield exactly 8 check rows so an empty/garbled run can
+never masquerade as success again; (2) **disclosed nuance, not fixed by design:**
+in the pre-seed state #7 is *vacuously* true (0 rows, 0 missing) — harmless
+because the aggregate gate still fails via #1/#2/#3/#5, but it means #7 alone is
+not a "the seed ran" proof.
+
+**Extra beyond the ask, flagged:** 2 lines in `scripts/README_seed_demo.md`
+noting that the verification cannot pass before the seed's upload step — my
+change made that ordering subtle, so leaving the runbook silent would mislead.
+Drop the lines if unwanted.
+
+**Not verified:** nothing was run against staging (still no credentials here),
+and the Docker fixture validates *this query* — its joins, dialect and logic —
+not Supabase's own storage schema, which was stood up from the real column
+names rather than the real DDL.
+
+Prior run: 2026-09-19 (part 26: **DEMO SEED NOW UPLOADS ITS IMAGES** — owner ask:
+"make the demo seed actually upload the showcase hero images so staging renders
+product photos instead of placeholders". Commit `7883903` on branch
+`chore/demo-seed-images` (worktree `.trees/demo-seed-images`), 3 files, NOT
+pushed.
+
+**The defect:** 052 registers the `product_images` ROWS and says the binaries are
+"uploaded separately as admin" — and nothing in the repo ever did it. Part 24's
+probe proved the consequence on staging: no object at any of the three
+registered paths, so every demo image 404s and the app paints its placeholder.
+`seed_demo_staging.mjs` had no storage calls at all, and
+`verify_demo_seed.sql` only counts rows ("Every showcase product has its hero
+image row"), so nothing was watching the objects.
+
+**What landed (3 files):**
+- NEW `scripts/demo_seed_images.mjs` — deterministic, dependency-free generator
+  (hand-rolled CRC32 + `node:zlib`) for the three 1280×1280 woven swatches, in
+  the brand palette (emerald / gold / burgundy from DESIGN.md), plus
+  `showcaseHeroPath`, `showcaseHeroImages` and `planHeroUploads`. Zero network
+  and zero credentials at generation time. Also carries an offline CLI
+  (`--out <dir>`) so a reviewer can inspect output without Supabase.
+- `scripts/seed_demo_staging.mjs` — uploads the generated bytes to the exact
+  paths 052 registered, `upsert: true`, behind the script's EXISTING prod-ref
+  guard (same client) and `--dry-run` (which now reports the plan
+  `path, bytes, content-type, upsert=true`). Only paths whose `product_images`
+  row exists are eligible, so a 052 path drift surfaces as a skip, never as an
+  orphan object.
+- NEW `scripts/demo_seed_images_check.mjs` — offline assertion suite (this is
+  the only automated cover this change can have: the seed imports
+  `@supabase/supabase-js`, and the Flutter suite cannot reach Node code).
+
+**Decision recorded in code, with the alternative rejected on evidence:** PNG is
+the only raster format a dependency-free Node runtime can emit (no PIL, no
+ImageMagick/ffmpeg/cwebp anywhere in this environment), yet the registered paths
+end in `.jpg`. Uploading PNG bytes to the existing path keeps the change purely
+additive — **zero DB writes** — and 052's own idempotency guard only stays a
+no-op while those exact strings exist: repointing them to `.png` would make a
+re-run of 052 insert a SECOND, object-less row per product, i.e. re-introduce
+the broken image. The upload declares `image/png` and the object is served as
+PNG; nothing in the app keys off the suffix beyond `StorageService`'s renderable
+allowlist, which contains `.jpg` (checked: `storage_service.dart:69`). Swapping
+to honest `.png` paths later is a small seed-script edit plus the row repoint —
+offered, not taken.
+
+Evidence: generation 3 images / 531,857 + 922,921 + 1,022,006 bytes const;
+`file` → "PNG image data, 1280 x 1280, 8-bit/color RGB, non-interlaced"; an
+independent Python parser verified every chunk CRC32 and IDAT inflating to
+exactly `h*(1+w*3)` = 4,916,480 B with filter 0; byte-identical md5 across
+separate processes; **Skia (`dart:ui instantiateImageCodec`, the app's own
+engine) decoded all three at 1280×1280 with distinct and correctly-hued
+palettes**; generated paths diffed against the literals in 052 → exact match;
+**5/5 mutations bite as assertions with md5 byte-identical restore** (key format
+drift, plan-everything-uploads-orphans, file-name drift, palette ignored,
+upsert=false); `node scripts/demo_seed_images_check.mjs` passes; `flutter analyze`
+**0**; `flutter test` **980/980** (the `0962085` worktree baseline, unchanged —
+the change is Node-only).
+
+**NOT verified, and it is the whole point of the ask:** nothing has been
+uploaded to staging. This sandbox has no `SUPABASE_URL` / service-role key and no
+`node_modules` to resolve `@supabase/supabase-js`, so the seed cannot be run here
+at all — the images exist only as verified bytes. **The owner must run**
+`SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ANON_KEY=… node scripts/seed_demo_staging.mjs`
+against staging to make the photos appear. Part 24's residual gate is now
+one step from closing: once one of these objects exists, the render-endpoint
+probe can finally separate "feature off" from "object missing".
+
+**Scope flags:** `scripts/` is outside the loop's `lib/`-only auto-fix scope, so
+this landed on explicit owner ask (same posture as the part 21 docs edits). NO
+migration, RLS, CI, `pubspec` or ARB file was touched — deliberately, to avoid
+human-review-gated paths. `supabase/config.toml`'s production `project_id` and
+the other part-24 identity/doc hazards are still open.
+
+Prior run: 2026-09-19 (part 25: **PR #75 BODY CORRECTED** — owner ask: replace the
+deploy-gate framing with the part-24 probe results and the no-regression finding.
+GitHub docs-only write: no code touched, no commit, no push, still draft.
+
+The gate bullet was rewritten from "DEPLOY GATE / not verified / I have not
+touched staging" into a settled-vs-unsettled split: the route is live and
+storage-served (the edge 403 never fired, the transform querystring schema is
+registered, real `NoSuchBucket`/`NoSuchKey` lookups run), while the entitlement
+stays UNVERIFIED **with the structural reason stated** — `renderPublicImage.ts`
+awaits `findBucket`+`findObject` before `renderer('image')`/`getTenantConfig`, so
+a missing object masks the gate. The blast-radius paragraph is the real
+correction: staging's `product-images` bucket has no objects at the seeded demo
+paths, so showcase images **already fail to load on staging today** and there is
+no working-image baseline for this branch to regress. Also carried in: the
+residual upload-then-probe test (object URL must be 200 first or the test is
+void), the doubled-bucket-segment trap that produced part 24's self-inflicted
+`NoSuchKey`, the benign HTTP 400-not-404 missing-object response with the
+`AppImage` line that makes it harmless, and the `config.toml`
+production-ref trap that made choosing the probe target a real decision.
+
+Evidence: 10/10 remote-body assertions pass (`gh pr view 75`, not the local
+file) — gate section present, stale claims absent ("No staging probe was run",
+"I have **not** touched staging"), the old "strictly worse than today's working
+full-resolution object URLs" wording gone, the seeded-paths bullet upgraded from
+speculation to verified fact, and sections 1/3/6 + Risk notes + Review focus
+intact. PR #75 unchanged in every other respect: **draft**, 4 commits,
+`perf/render-url-widths` → `master`.
+
+Prior run: 2026-09-19 (part 24: **STAGING RENDER PROBE — PARTIALLY SETTLED, AND
+THE DEPLOY-GATE FRAMING WAS WRONG** — owner ask: probe the staging render
+endpoint read-only. L1/diagnostics: no code touched, no worktree, no push.
+
+**Verdict: the route is live; the image-transformation entitlement stays
+UNPROVEN, and now provably so rather than for want of trying.**
+
+Probed staging **`zvpjngdgbpnkkqrorkul`** anonymously (`config/env.staging.json`),
+never production — see the identity hazard below. Zero credentials exist in this
+environment (no `SUPABASE_ACCESS_TOKEN`, no service-role key, no `supabase/.temp`,
+CLI not installed), so anonymous GETs were the only channel, which is what a
+read-only probe should be.
+
+**What IS settled:**
+- `/storage/v1/render/image/…` is routed into the storage service, not rejected at
+the edge — a disabled feature answers `403 Feature not enabled in tenant` there.
+- The route's transformation querystring schema is registered and validated:
+  `?width=abc` → `{"message":"querystring/width must be integer","code":"InvalidRequest"}`,
+  i.e. Fastify `preValidation`, which runs BEFORE the handler.
+- The handler really executes storage lookups: nonexistent bucket → `NoSuchBucket`,
+existing-but-empty path → `NoSuchKey`. Bucket existence is genuinely checked.
+
+**Why it CANNOT be settled without an object (structural, not a guess):**
+`src/http/routes/render/renderPublicImage.ts` awaits
+`Promise.all([findBucket, findObject])` and only THEN calls
+`request.storage.renderer('image')` / `getTenantConfig(...).features.imageTransformation`;
+`src/storage/storage.ts`'s `renderer('image')` is a bare
+`new ImageRenderer(this.backend)` with no feature check (the only
+`FeatureNotEnabled` uses in that file are for `icebergCatalog`). So the
+entitlement gate sits **after** the object lookup — a missing object
+short-circuits with `NoSuchKey` and masks the gate. Every probe I ran failed at
+that lookup, which is exactly the ambiguity part 23 predicted, now proven
+instead of asserted.
+
+**Could not work around it read-only:** staging's only public bucket is
+`product-images` (005/032); `avatars` and `instapay-proofs` are private and the
+route filters `{isPublic: true}`. All 3 seeded demo paths × 8 filename variants
+= no object. Listing needs an apikey I do not have. Uploading one is not
+read-only and is not mine to do.
+
+**NEW — the deploy-gate risk was FRAMED WRONG (this is the run's real value):**
+staging's `product-images` bucket has **no objects at the seeded demo paths**, so
+the showcase catalog's images already 404 on staging TODAY, on the plain
+`/object/public/` URL that part 23 called "working today". Root cause is
+consistent in-repo: `052_seed_demo_showcase.sql` inserts `product_images`
+**rows** only, `scripts/seed_demo_staging.mjs` has no storage upload calls, and
+`scripts/verify_demo_seed.sql` verifies rows ("Every showcase product has its
+hero image row") — never the objects. *(Filename corrected in part 27: there is
+no `supabase/verify_demo_seed.sql`; the file lives in `scripts/`.)* So on staging there is no working-image
+baseline for this branch to regress.
+
+**NEW — missing object returns HTTP 400, not 404** (body carries
+`"statusCode":"404"`, `code:"NoSuchKey"`, so body and HTTP code disagree).
+Checked harmless for the app: `AppImage` sends every non-200 through
+`errorWidget` → `_fallback()` without inspecting the code
+(`lib/shared/components/app_image.dart:50-62`), so 400 and 404 behave identically.
+
+**NEW — environment-identity hazard, live:** `supabase/config.toml:14` sets
+`project_id = "alxwvyflasewslinufqe"` which is **production**
+(`docs/superpowers/plans/2026-08-23-e2e-gates-execution-plan.md:15`: "never
+connect, probe, deploy, or run any runner against it"), while
+`config/env.staging.json:2` points at staging. Trusting `config.toml` would have
+put this probe on production. This is the still-open audit finding F-14
+(`docs/audit/AlBatalElite_AUDIT_2026-09-02.md:219`). Related doc conflict: TC-OPS-04
+(`docs/staging-acceptance-test-plan.md:200`) and
+`docs/evidence/eebcc4d/RELEASE_APK_PROOF.md:7` still call `alxwvyflasewslinufqe`
+"staging", contradicting `RELEASE_GATE.md:7`.
+
+**The one remaining action that settles it** (needs an upload, so owner-side):
+upload one image on staging (admin image manager, or `uploadProductImage`), then
+probe the **returned** `storage_path` on both endpoints — the object URL must be
+`200` first or the test is void again:
+`curl -sS -o /dev/null -w '%{http_code}\n' "$B/storage/v1/render/image/public/product-images/<storage_path>?width=420&quality=70&resize=contain"`.
+`200` + `image/*` + smaller `content-length` than the object URL ⇒ enabled;
+`403`/`409` `Feature not enabled`/`NotSupported` ⇒ disabled. **Trap:** the stored
+path already contains the bucket prefix, so the URL doubles the segment
+(`…/public/product-images/product-images/<id>/<file>`) — my first probe got this
+wrong and produced a self-inflicted `NoSuchKey`.
+
+PR #75's body still says "No staging probe was run" and frames the risk as
+"worse than today's working object URLs"; both need correcting. Not edited this
+run — offered, not taken.
+
+Prior run: 2026-09-19 (part 23: **ADMIN PREVIEWS BOUNDED + PR #75 UPDATED** — the
+last full-resolution image surface is gone. Owner ask, landed as a 4th commit
+`4d8ecac` on `perf/render-urls` / branch `perf/render-url-widths` (pushed; PR #75
+now 4 commits / 14 files, still draft). 3 files: the admin image manager page and
+the two admin test fakes.
+
+**The defect:** `admin_image_manager_page.dart` decoded its tiles at 420
+(`cacheWidth: 420`) but fetched the BARE public original
+(`getProductImageUrl`) — every tile downloaded the full upload and discarded
+most of it. It was the residual part 19 flagged. The tile now asks for
+`StorageService.gridImageWidth`, so download budget == decode budget, with the
+existing try/catch fallback to the stored path kept.
+
+**Two stale comments went with it:** "url kept for tooltip" described a tooltip
+that does not exist in the tile, and "Real network image once CDN cache headers
+land" was made stale by part 20. Both replaced by the budget rule.
+
+**Both ends pinned, on purpose.** The new test records the requested width AND
+asserts no bare URL was requested at all, then reads the rendered `AppImage` to
+check the source carries the grid render and that `cacheWidth` agrees — a fix
+that bounded only the decode would look like a pass otherwise. The two admin
+test fakes also gained a `getProductImageUrlForWidth` override: without it they
+fell through to the REAL helper with a fake base and produced a
+garbage-but-non-empty URL, i.e. the harness would have been passing for the
+wrong reason.
+
+Evidence: `flutter analyze` **0**, format clean (437 files), `flutter test`
+**995/995** (994 + 1), and **3/3 mutations bite as assertions with md5
+byte-identical restore** — back to the bare full-resolution url (recorded widths
+then come back EMPTY: the pre-fix state), the tile asking for the detail budget
+it never decodes at, and the decode budget drifting from the requested render.
+
+⚠️ **NEW DEPLOY GATE, and it is the biggest risk in the whole change set (not
+verified — cannot be, from here):** every width-bounded URL hits
+`/storage/v1/render/image/…`, a **plan-gated** Supabase feature, and nothing in
+this repo's `config/` or docs states whether it is enabled on staging or
+production. This branch turns that path from a dead helper into the live route
+for **every** product image, so if transformations are OFF the images fall back
+to the swatch placeholder — strictly worse than the full-resolution object URLs
+that work today. It fails SOFT (no crash), which is exactly why it must be
+checked before merge. It is recorded as a DEPLOY GATE in PR #75's body along
+with the two ways to settle it (upload one image and load it; or a read-only
+render-endpoint probe). **No staging probe was run** — no permission, and
+without one real uploaded object a probe cannot fully separate "feature off"
+from "object missing".
+
+Prior run: 2026-09-19 (part 22: **DRAFT PR #75 OPENED** — owner asked for the
+branch to be opened as a draft PR. Pushed `perf/render-url-widths` (3 commits,
+tip `7625b1b`) and created **https://github.com/mostafasayed118/albatal-store-app/pull/75**,
+draft, `perf/render-url-widths` → `master`, 11 files / 537 insertions.
+
+**The stale-base check from part 16 was run before opening, not assumed:**
+`gh pr view 75` reports `baseRefOid` = `0962085`, which equals both local
+`master` AND `origin/master` — so the branch sits on the CURRENT tip, unlike the
+`feat/admin-customer-tier` case that merged a stale pre-consolidation master
+back into a branch. No migration, `pubspec`, ARB or CI file is in the diff, so
+nothing rides in unreviewed.
+
+The PR body follows the repo's actual PR convention (the narrative
+"## N. … (`sha`)" form used by #74, not `.github/PULL_REQUEST_TEMPLATE/default.md`,
+which none of the recent PRs use). It leads with the probe that reframed
+finding #1, keeps the hero deviation and the deliberate `immutable` drop as
+explicit reviewer callouts, carries the two mutation-result tables, and states
+what was NOT verified (no live `Cache-Control` header probe; no device/visual
+confirmation, because seeded `product_images` rows are paths whose binaries are
+uploaded separately).
+
+CI (`Setup & Cache`, `Secret Scan`, `Edge Function Tests`) started on the push
+and is **unwatched per the standing call**. Nothing merged; the PR stays draft
+until the owner reviews. `STATE.md`/`loop-ledger.json` remain uncommitted on
+`master`, as in every prior run.
+
+Prior run: 2026-09-19 (part 21: **CACHE RULE CORRECTED + STALE DOC LITERAL FIXED** —
+owner asked for the two stale docs. Same branch `perf/render-url-widths`,
+commit `7625b1b`, worktree `.trees/render-urls`, **NOT pushed**. 4 files: the
+two docs, plus the constant's dartdoc and the pin's reason text.
+
+**Re-reading the source before writing the correction caught my own
+overstatement.** Part 20 said the field is "wrapped" and that `immutable` was
+"not expressible through the SDK at all". The server INTERPOLATES
+(`max-age=${cacheTime}`), so it only prefixes `max-age=` — nothing after the
+duration is stripped. Verified consequence: `'31536000, immutable'` lands as
+`Cache-Control: max-age=31536000, immutable`, which is VALID and does carry
+`immutable`. What is genuinely unsendable is a value that BEGINS with a
+directive, i.e. the spec literal (`public, max-age=31536000, immutable` →
+`max-age=public, max-age=31536000, immutable`). The rule is "must begin with
+the duration", not "duration only".
+
+**The shipped value did not change** (bare `31536000`). Reaching `immutable`
+means relying on the server echoing a field it documents as a bare second count
+(`FileOptions.cacheControl`: "the number of seconds the asset is cached"), for a
+directive whose effect is nil on a mobile client that does its own disk
+caching. That is now stated as the reason instead of the false impossibility.
+
+Docs corrected (owner-approved, outside the `lib/`-only auto-fix scope):
+`docs/superpowers/specs/2026-08-24-backend-platform-design.md:275` now describes
+the real mechanism, keeps the old literal only as "was not sendable", and
+records the deliberate `immutable` drop; `docs/superpowers/plans/…-plan.md:23`
+says "must BEGIN with the duration" instead of "`Cache-Control` note". The
+archived audit patch under `docs/audit/2026-09-15/patches/` was deliberately
+NOT touched — it is a historical artifact, not a live reference.
+
+Evidence: comment- and doc-only, `lib/` behaviour byte-identical (same value),
+`flutter analyze` **0**, `dart format` clean (437 files), `flutter test`
+**994/994** re-run on the final tree, and the 4/4 cache mutations re-run and
+still biting as assertions (M2's failure text now quotes the corrected rule).
+
+Prior run: 2026-09-19 (part 20: **IMAGE CACHE LIFETIME** — the cache half of the
+P0-4 note is decided and landed. Same branch `perf/render-url-widths`,
+commit `bb3f449`, worktree `.trees/render-urls`, **NOT pushed**. 3 files
+(`storage_service.dart`, the mapper's TODO, one new test file). It closes the
+"remaining half" part 19 left open in the mapper.
+
+**The decision had to be made against the server, not the spec.**
+`FileOptions.cacheControl` is sent as a multipart *field* (`fetch.dart:170`),
+and Supabase Storage WRAPS it — read from source, not inferred:
+`src/storage/uploader.ts` in `supabase/storage` does
+`cacheControl = cacheTime ? `max-age=${cacheTime}` : 'no-cache'`, and the S3/file
+backend stores that string verbatim (`cacheControl: cacheControl || 'no-cache'`).
+So the design spec's literal
+(`docs/superpowers/specs/2026-08-24-backend-platform-design.md:275`:
+`Cache-Control: public, max-age=31536000, immutable`) **cannot be sent** — it
+would wrap into the malformed header
+`max-age=public, max-age=31536000, immutable`. The field expresses only a
+duration, `immutable` is not expressible through the SDK at all, and the value
+is sticky per object (upstream: it cannot be changed without re-uploading).
+**Decision: the duration only — `31536000`, one year.** (Part 21 corrects one
+clause below: the rule is "must BEGIN with the duration" — appended directives
+do survive the interpolation, so `immutable` was reachable and was dropped
+deliberately, not because it is impossible.)
+
+The real gap was that uploads silently inherited the SDK default `3600` (one
+hour) while the spec asked for a year. A year is safe because the object behind
+a URL can never change: `buildProductImagePath` mints a fresh UUID per upload
+and the upload never upserts, so replacing an image writes a NEW path and the
+old one is deleted. Avatars deliberately keep the one-hour default — their path
+is FIXED per user, so a delete + re-upload reuses it and a year-long cached copy
+would keep serving the previous photo; that reasoning is now in the code so it
+is not "tidied" into consistency.
+
+**Boundary, recorded so this is not overread:** this governs the OBJECT url.
+The render endpoint the storefront actually uses proxies imgproxy and passes
+through only `content-length`/`content-type`/`last-modified`
+(`src/storage/renderer/image.ts`), so transformed responses take their cache
+headers from that image service — not from this metadata. What is fixed here is
+that a product image object is no longer served with an hour-long lifetime it
+was never meant to have.
+
+Evidence: `flutter analyze` **0**, `dart format` clean (437 files),
+`flutter test` **994/994** (991 + 3 pins: digits-only/one-year constant, the
+real `uploadProductImage` call carrying the value with its content type,
+and `.from('product-images')` + `upsert: false` — the property that makes the
+long lifetime safe), and **4/4 mutations bite as ASSERTIONS with md5
+byte-identical restore**: `cacheControl` dropped (the pin then shows the SDK's
+`3600` winning — the exact pre-fix behaviour), the spec's directive string, the
+old `3600` value, and `upsert` flipped to `true`. The wire-level pin drives the
+REAL `StorageService` through a mocked storage API, so it pins the options that
+leave the client rather than a constant.
+
+**Residual for the owner:** the two docs still state the un-sendable literal —
+`docs/superpowers/specs/2026-08-24-backend-platform-design.md:275` and
+`docs/superpowers/plans/2026-08-24-backend-platform-plan.md:23` ("`Cache-Control`
+note"). Docs are outside the loop's `lib/` auto-fix scope, so they are flagged,
+not edited; the correctness rule now lives in the constant's dartdoc and the
+pins.
+
+Prior run: 2026-09-19 (part 19: **RENDER-URL WIDTH CUTOVER** — audit finding #1
+fixed in L2, owner scoped it. Branch `perf/render-url-widths`, commit `5d8ec0c`,
+worktree `.trees/render-urls`, **NOT pushed** (owner approval required; draft PR
+on approval). 8 files: `lib/` mapper + gallery + hero + storage constants,
+`test/` pins.
+
+**The finding was half right, and the wrong half changed the fix.** `fromRow`
+indeed called bare `getProductImageUrl` (`:113`) — but the map's output feeds
+`Product.images`, which ONLY the detail gallery and the zoom viewer read
+(`image_gallery.dart`, `zoom_gallery.dart`). Every card surface (grid card,
+flash-sale row, hero carousel, related/cart/wishlist thumbnails) reads
+`product.imageAsset`, which `fromRow` **never set for a network row** — proved,
+not inferred, with a throwaway probe in the worktree printing `imageAsset =
+null` and the bare public URL in `images` for a real row. So the audit's "a
+100-item grid fetches 100 full-resolution originals" was mechanically false:
+the grid fetched **nothing** and painted the texture placeholder; the full-res
+cost sat on the detail path (1–5 images per view). `AppImage` already accepts
+http(s) and `ProductImagePlaceholder` documents a "remote product photo", so
+the card surface was wired but never fed.
+
+**Owner chose (A) + "zoom reuses 720"** from three options, so the change wires
+BOTH surfaces rather than only bounding the gallery: `fromRow` now resolves each
+stored path through `StorageService.getProductImageUrlForWidth` — the primary
+image at the grid budget (420) into `imageAsset`, the sorted list at the detail
+budget (720) into `images` (shared by the zoom viewer). Budgets are named
+constants on `StorageService` (`gridImageWidth`/`detailImageWidth`) so mapper
+and helper cannot drift; the bare public URL survives only as the helper's
+fail-open fallback, so a path with no renderable extension still renders.
+
+**One trap that forced a second file.** `ImageGallery._resolveImages` deduped
+the primary against `images` by URL equality — with the primary now at 420 and
+the gallery at 720 the SAME photo becomes two different strings, which showed
+the first image twice. It now dedupes on the object the URL points at (strip the
+render query); the resolver moved onto the widget as `@visibleForTesting` so the
+pins exercise it without decoding network images in a widget test.
+
+**Flagged deviation from the approved option:** the owner's option text listed
+the hero among the "420 card surfaces". I gave the hero the DETAIL render
+instead (`StitchHeroSlide.fromProduct` prefers `images.first`), because it is
+full-bleed with an **840px** decode budget — a 420 source would be visibly soft.
+Revert is one line; the pin states the reason.
+
+Evidence: worktree baseline `flutter analyze` 0 + `flutter test` **980/980**;
+after: analyze 0, `dart format` clean (436 files), `flutter test` **991/991**
+(980 + 11 pins: 5 mapper width pins, 5 gallery dedupe pins, 1 hero pin), focused
+net rerun at **28/28** on the committed pubspec resolution, and **7/7 mutations
+bite as ASSERTIONS with md5 byte-identical restore** (card surface served the
+detail budget; `images` moved to the grid budget; primary = sorted-last; card
+surface left unwired — i.e. the pre-fix state; gallery dedupe back to URL
+equality; primary prepended unconditionally; hero back on the 420 copy). The M5
+bite was inspected in full, not just counted: the mutated list came back with
+three entries, the 420 copy first — exactly the bug.
+
+Deliberates: `pubspec.lock`/`.flutter-plugins-dependencies` churn from
+`flutter pub get` (the unabsorbed SDK bump, part 16) restored before commit, so
+the commit carries only the 8 intended files; `git checkout --` used ONLY on
+those two committed-clean files. **Open, deliberately:** the admin image manager
+still renders `storage.getProductImageUrl` (full-res) for its own previews —
+admin-only, low traffic, not part of this finding; and the P0-4 note's other half
+(`Cache-Control: immutable` on upload) is still an open TODO in the mapper. The
+ARB-scoped finding #4 remains owner-gated.
+
+**Merge note:** both this branch and the unmerged
+`refactor/safe-parse-consolidation` (part 18) edit `product_mapper.dart` in
+different regions — land them in either order, but re-run the mapper pins after
+the second one.
+
+Prior run: 2026-09-19 (part 18: **SAFE-PARSE CONSOLIDATION** — audit finding #5
+fixed in L2. Branch `refactor/safe-parse-consolidation`, commit `c0f2d3e`,
+worktree `.trees/safe-parse`, **NOT pushed** (owner approval required; draft PR
+on approval). The three drifting safe-parse copies are gone: canonical nullable
+`optInt`/`optDouble`/`optString` added to `core/utils/safe_parse.dart`,
+`product_mapper.dart`'s `_optInt/_optDouble/_optStr` AND the same-named local
+closures in `ProductCodec.decode` deleted, `AdminMappers._asString` deleted and
+`_toInt` reduced to `optInt(...) ?? 0` at call sites. Behavior unchanged by
+construction (same `is`-tests and num coercion). Evidence: worktree baseline
+`flutter test` **980/980**, analyze 0; after: analyze 0, format clean,
+`flutter test` **986/986** (980 + 6 new variant tests), focused net (63) re-run
+on the committed pubspec resolution, **4/4 mutations bite** (num-coercion
+dropped ×2, coerce-instead-of-degrade, nullability lost), each confirmed an
+ASSERTION failure (`Expected: <3> / Actual: <null>`) with md5 byte-identical
+restore. Deliberates: the `pubspec.lock`/`.flutter-plugins-dependencies` churn
+from `flutter pub get` (the known unabsorbed SDK bump, part 16) was restored
+before commit so the commit carries only the 4 intended files — and the
+`git checkout --` was used ONLY on those two committed-clean files, never on
+work-in-progress (part 8's lesson). Scope: `lib/` + `test/` only. Remaining
+audit items: #1 render URLs (next candidate), #2 getIt→constructor injection,
+#4 needs ARB scope approval.
+
+Prior run: 2026-09-19 (part 17: **EXTERNAL AUDIT REVIEW** — the pasted
+five-dimension audit (claiming HEAD `4cedc42`, weighted 8.5/10) was
+spot-verified against the real tree. `flutter analyze` 0 confirmed live. Four
+of its five Top findings hold; one is STALE, and two of its framing claims are
+out of date. No code touched (L1), no worktree needed.
+
+**Verified accurate (report's numbering):**
+1. #1 Thumbnail render URLs — real. `product_mapper.dart:113` still calls bare
+   `getProductImageUrl` behind the P0-4 TODO; the width-aware
+   `getProductImageUrlForWidth` (`storage_service.dart:63`) is still dead.
+   Biggest perf item; candidate next run.
+2. #2 View-layer service location — real, slightly UNDERcounted: **14** `getIt<`
+   sites across **11** presentation files (report said 13/10), including
+   `details_page.dart:84-85` and `reviews_section.dart:34-35` as claimed. All
+   are `isRegistered`-guarded probes, but still service location in widgets.
+3. #4 Hardcoded `'Show all ($remaining)'` — real, `reviews_section.dart:224`,
+   admitting comment above it, no `showAll` ARB key. Fix needs ARB scope
+   (owner-gated, outside `lib/`).
+4. #5 Safe-parse triplication — real: `_optInt/_optDouble/_optStr`
+   (`product_mapper.dart:12-34`), local closures again at `:189-190`, and
+   `_asString/_toInt` (`admin_mappers.dart:309-310`). Lib/-scoped, low-risk,
+   `test/core/utils/safe_parse_test.dart` exists as the net.
+
+**Stale / corrected:**
+- **#3 (`Result.guard` bypassed) is OUT OF DATE.** Guard adoption was CLOSED in
+  an earlier run: 39 usages repo-wide, **21 in `supabase_admin_repository.dart`
+  alone vs 3 hand-written catch blocks** (one deliberately documented as
+  hand-written at `:684`). Do NOT re-plan this item from the audit.
+- Report pinned HEAD `4cedc42` — master is now `0962085` after the part-16
+  consolidation; `4cedc42` is an ancestor, so the audit ran on an older tree.
+- Its `mockCustomerName` residual is CLOSED, not "pending PR #74": the string
+  is gone from lib/ and l10n/ on master (part 15; PR #74 was merged in part 16).
+
+**Next-run candidates (all L2 — need owner go-ahead + worktree):** render-URL
+cutover (P0-4), getIt → constructor injection, safe-parse consolidation.
+Prior run: 2026-09-19 (part 16: **WORKTREE CONSOLIDATION** — the five unmerged
 worktree branches are now IN master, in dependency order, and the worktrees are
 gone. Order landed: `refactor/money-piasters` → `refactor/card-decoration` →
 `feat/admin-coupons-route` → `feat/orders-csv-export` →
