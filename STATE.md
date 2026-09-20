@@ -1,6 +1,12 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 51: **WORKTREE/BRANCH CLEANUP DONE — 5 WORKTREES REMOVED, 4 STALE BRANCHES DELETED, PR #80's BRANCH PRESERVED (owner-approved)**.
+Last run: 2026-09-20 (part 53: **#80 MERGED — THE HARDCODED-ENGLISH DEFECT CLASS IS CLOSED (owner approved on Arabic review)**. Merge commit `1fe051c`
+(origin/master `f585fb1..1fe051c`, verified via API); local master synced, `fix/failure-copy-l10n` deleted, **closing gates on merged master:
+analyze 0 · 1030/1030**. Open-PR board: **empty**. The 2026-09-19 sweep's entire defect class (English failure copy reaching Arabic users;
+string-matched localization; a11y copy; admin convention) is fixed, pinned, and merged. Audit top-5: 4/5 closed — only #2 (view-layer service
+location, 13 getIt sites) unstarted. Standing owner item: `sbp_` token rotation. Detail in part 53 below.)
+
+Prior run: 2026-09-20 (part 51: **WORKTREE/BRANCH CLEANUP DONE — 5 WORKTREES REMOVED, 4 STALE BRANCHES DELETED, PR #80's BRANCH PRESERVED (owner-approved)**.
 Pre-deletion safety: all four deleted branches verified ancestors of origin/master; every worktree had only gitignored build noise + the
 redundant demo-seed `scripts/.env` (service key preserved in root gitignored `.env.staging`). Remaining: main checkout + `fix/failure-copy-l10n`
 (local = remote = `783df22`, open PR #80's head — kept deliberately). Loop tooling note: the gates/mutation scripts lived in worktrees and /tmp;
@@ -141,6 +147,25 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 53: #80 merged — the l10n arc is complete)
+
+- Owner: "Mark #80 ready and merge — I've had the Arabic copy reviewed / accept the pins as-is."
+  That is the human approval the loop gates require; the Arabic-review condition the PR body
+  stated is discharged by the owner's statement.
+- **Merged:** ready → merge commit **`1fe051c`** on origin/master (verified via API),
+  `f585fb1..1fe051c`.
+- **Post-merge state:** local master synced `--ff-only`; `fix/failure-copy-l10n` deleted (was
+  `783df22`); **closing gates run on merged master: `flutter analyze` 0 · `flutter test`
+  1030/1030** — evidence on the exact tree that is now master, not on the PR branch.
+- **What #80 closes:** the entire defect class from the 2026-09-19 sweep (part 32) —
+  app-authored English failure copy reaching Arabic users (Tier 1 + 3b, code→copy with the
+  P1 server-prose rule), screen-reader copy (Tier 2), and the admin console's English-only
+  convention (Tier 3a, owner decision). Pinned by a 41-code failure-copy table, the 71-key
+  admin table, Arabic widget renders, and cubit `errorCode` contracts.
+- **Open-PR board: empty.** Audit top-5: #1 ✅ #3 ✅ #4 ✅ #5 ✅ — **#2 (13 view-layer getIt
+  sites → constructor injection) is the only remaining finding**, recommended next work.
+- **Standing owner item:** rotate the `sbp_` access token (exposed in chat on 09-20).
 
 ## New — 2026-09-20 (part 51: worktree and branch cleanup)
 
