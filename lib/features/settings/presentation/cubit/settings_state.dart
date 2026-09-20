@@ -9,6 +9,7 @@ final class SettingsState extends Equatable {
     this.themeMode = ThemeMode.system,
     this.locale = const Locale('en'),
     this.errorMessage,
+    this.errorCode,
     this.orderNotifications,
     this.appLockEnabled,
   });
@@ -17,6 +18,10 @@ final class SettingsState extends Equatable {
   final ThemeMode themeMode;
   final Locale locale;
   final String? errorMessage;
+
+  /// Machine-readable class of [errorMessage]; the page localizes on this
+  /// (audit 2026-09-19, sweep part 32).
+  final String? errorCode;
 
   /// §12 order-notification opt-in. Null = no notification prefs store
   /// was registered at the composition root (tests / unsupported
@@ -33,6 +38,7 @@ final class SettingsState extends Equatable {
     ThemeMode? themeMode,
     Locale? locale,
     String? errorMessage,
+    String? errorCode,
     bool clearError = false,
     bool? orderNotifications,
     bool clearOrderNotifications = false,
@@ -44,6 +50,7 @@ final class SettingsState extends Equatable {
         themeMode: themeMode ?? this.themeMode,
         locale: locale ?? this.locale,
         errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+        errorCode: clearError ? null : errorCode ?? this.errorCode,
         orderNotifications: clearOrderNotifications
             ? null
             : orderNotifications ?? this.orderNotifications,
@@ -57,6 +64,7 @@ final class SettingsState extends Equatable {
         themeMode,
         locale,
         errorMessage,
+        errorCode,
         orderNotifications,
         appLockEnabled,
       ];

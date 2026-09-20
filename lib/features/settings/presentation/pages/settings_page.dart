@@ -8,6 +8,7 @@ import '../../../../core/error/result.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/account_deletion_port.dart';
 import '../cubit/settings_cubit.dart';
@@ -112,7 +113,12 @@ final class SettingsPage extends StatelessWidget {
               ),
               if (state.status == SettingsStatus.failure) ...[
                 const SizedBox(height: 16),
-                Text(state.errorMessage ?? context.l10n.errorTitle,
+                // Code-first copy (audit 2026-09-19, sweep part 32).
+                Text(
+                    failureText(context.l10n,
+                        code: state.errorCode,
+                        message: state.errorMessage,
+                        fallback: context.l10n.errorTitle),
                     style:
                         TextStyle(color: Theme.of(context).colorScheme.error)),
               ],

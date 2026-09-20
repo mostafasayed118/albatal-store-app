@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/error/app_error.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/onboarding_repository.dart';
 
@@ -15,6 +16,7 @@ final class LocalOnboardingRepository implements OnboardingRepository {
   Future<Result<bool>> hasCompleted() => Result.guard(
         () async => _preferences.getBool(_completedKey) ?? false,
         'Unable to read onboarding state.',
+        code: kFailureLoad,
       );
 
   @override
@@ -22,11 +24,13 @@ final class LocalOnboardingRepository implements OnboardingRepository {
     final result = await Result.guard(
       () => _preferences.setBool(_completedKey, true),
       'Unable to save onboarding state.',
+      code: kFailureSave,
     );
     return result.when(
       success: (didPersist) => didPersist
           ? const Success(null)
-          : const Failure(AppError('Unable to save onboarding state.')),
+          : const Failure(
+              AppError('Unable to save onboarding state.', code: kFailureSave)),
       failure: (error) => Failure(error),
     );
   }

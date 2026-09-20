@@ -56,6 +56,7 @@ final class SettingsCubit extends Cubit<SettingsState> {
       failure: (error) => emit(state.copyWith(
         status: SettingsStatus.failure,
         errorMessage: error.message,
+        errorCode: error.code,
       )),
     );
   }
@@ -140,6 +141,7 @@ final class SettingsCubit extends Cubit<SettingsState> {
       failure: (error) => emit(state.copyWith(
         status: SettingsStatus.failure,
         errorMessage: error.message,
+        errorCode: error.code,
       )),
     );
   }

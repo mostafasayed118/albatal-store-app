@@ -1,4 +1,5 @@
 import '../../../core/entities/product.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/cart_repository.dart';
 import 'storefront_persistence.dart';
@@ -16,11 +17,13 @@ final class LocalCartRepository implements CartRepository {
   @override
   Future<Result<List<CartItem>>> readCart(ProductLookup productForId) =>
       Result.guard(
-          () => _persistence.readCart(productForId), 'Failed to load cart');
+          () => _persistence.readCart(productForId), 'Failed to load cart',
+          code: kFailureLoad);
 
   @override
   Future<Result<void>> writeCart(List<CartItem> items) => Result.guard<void>(
         () => _persistence.writeCart(items),
         'Failed to save cart',
+        code: kFailureSave,
       );
 }

@@ -67,6 +67,10 @@ class PaymobPaymentService implements PaymentService {
       if (checkoutUrl.trim().isEmpty) {
         return const PaymentFailed(
           message: 'Payment provider returned an invalid checkout session.',
+          // App-authored text must carry a code so the UI can localize it
+          // (audit 2026-09-19, sweep part 32). 'payment_session_invalid' maps to
+          // the generic payment copy in payment_error_mapper.dart.
+          code: 'payment_session_invalid',
         );
       }
 
@@ -78,6 +82,7 @@ class PaymobPaymentService implements PaymentService {
       Log.e('Paymob initiate failed', error: e, category: LogCategory.payment);
       return const PaymentFailed(
         message: 'Payment could not be started. Please try again.',
+        code: 'payment_start_failed',
       );
     }
   }
@@ -245,6 +250,7 @@ class PaymobPaymentService implements PaymentService {
       if (paymentId.isEmpty || address.isEmpty || amountCents <= 0) {
         return const InstapayUnavailable(
           message: 'InstaPay returned an invalid transfer session.',
+          code: 'instapay_session_invalid',
         );
       }
 

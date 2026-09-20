@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/address.dart';
 import '../cubit/addresses_cubit.dart';
 
@@ -23,7 +24,11 @@ final class AddressesPage extends StatelessWidget {
             if (s.status == AddressesStatus.failure) {
               return FeedbackView(
                 type: FeedbackViewType.error,
-                body: s.errorMessage ?? l10n.errorTitle,
+                // Code-first copy (audit 2026-09-19, sweep part 32).
+                body: failureText(l10n,
+                    code: s.errorCode,
+                    message: s.errorMessage,
+                    fallback: l10n.errorTitle),
                 onAction: () =>
                     context.read<AddressesCubit>().load(force: true),
               );

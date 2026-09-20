@@ -7,6 +7,7 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/oauth_service.dart';
 import '../cubit/auth_cubit.dart';
@@ -66,7 +67,15 @@ class _SignInPageState extends State<SignInPage> {
             context.go(redirectTarget);
           } else if (state.status == AuthStatus.failure &&
               state.errorMessage != null) {
-            showFloatingError(context, state.errorMessage!);
+            // Code-first copy (audit 2026-09-19, sweep part 32): the message is
+            // English diagnosis, the code is what the shopper must read.
+            showFloatingError(
+              context,
+              failureText(context.l10n,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: context.l10n.failureUnexpected),
+            );
           }
         },
         child: SingleChildScrollView(

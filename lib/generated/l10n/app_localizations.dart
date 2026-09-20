@@ -302,6 +302,108 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorTitle;
 
+  /// No description provided for @failureLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load. Please try again.'**
+  String get failureLoad;
+
+  /// No description provided for @failureSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save. Please try again.'**
+  String get failureSave;
+
+  /// No description provided for @failureNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection problem. Please try again.'**
+  String get failureNetwork;
+
+  /// No description provided for @failureNotAuthenticated.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again.'**
+  String get failureNotAuthenticated;
+
+  /// No description provided for @failureSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Please sign in again.'**
+  String get failureSessionExpired;
+
+  /// No description provided for @failureSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Please try again.'**
+  String get failureSignInFailed;
+
+  /// No description provided for @failureSignUpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-up failed. Please try again.'**
+  String get failureSignUpFailed;
+
+  /// No description provided for @failureNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find that.'**
+  String get failureNotFound;
+
+  /// No description provided for @failureUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get failureUnexpected;
+
+  /// No description provided for @authInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get authInvalidCredentials;
+
+  /// No description provided for @authEmailUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Please verify your email address first'**
+  String get authEmailUnconfirmed;
+
+  /// No description provided for @authEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists'**
+  String get authEmailInUse;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters'**
+  String get authWeakPassword;
+
+  /// No description provided for @deleteEmailMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The email does not match this account'**
+  String get deleteEmailMismatch;
+
+  /// No description provided for @deleteAdminBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin accounts cannot be deleted in the app'**
+  String get deleteAdminBlocked;
+
+  /// No description provided for @deleteNotOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only delete your own account'**
+  String get deleteNotOwner;
+
+  /// No description provided for @deleteFailedRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion failed. Please try again.'**
+  String get deleteFailedRetry;
+
   /// No description provided for @errorBody.
   ///
   /// In en, this message translates to:

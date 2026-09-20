@@ -115,6 +115,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorTitle => 'Something went wrong';
 
   @override
+  String get failureLoad => 'Couldn\'t load. Please try again.';
+
+  @override
+  String get failureSave => 'Couldn\'t save. Please try again.';
+
+  @override
+  String get failureNetwork => 'Connection problem. Please try again.';
+
+  @override
+  String get failureNotAuthenticated => 'Please sign in again.';
+
+  @override
+  String get failureSessionExpired =>
+      'Your session expired. Please sign in again.';
+
+  @override
+  String get failureSignInFailed => 'Sign-in failed. Please try again.';
+
+  @override
+  String get failureSignUpFailed => 'Sign-up failed. Please try again.';
+
+  @override
+  String get failureNotFound => 'We couldn\'t find that.';
+
+  @override
+  String get failureUnexpected => 'Something went wrong. Please try again.';
+
+  @override
+  String get authInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get authEmailUnconfirmed => 'Please verify your email address first';
+
+  @override
+  String get authEmailInUse => 'An account with this email already exists';
+
+  @override
+  String get authWeakPassword => 'Password must be at least 8 characters';
+
+  @override
+  String get deleteEmailMismatch => 'The email does not match this account';
+
+  @override
+  String get deleteAdminBlocked =>
+      'Admin accounts cannot be deleted in the app';
+
+  @override
+  String get deleteNotOwner => 'You can only delete your own account';
+
+  @override
+  String get deleteFailedRetry => 'Account deletion failed. Please try again.';
+
+  @override
   String get errorBody => 'Please check your connection and try again.';
 
   @override

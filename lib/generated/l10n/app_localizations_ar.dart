@@ -115,6 +115,60 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errorTitle => 'حدث خطأ ما';
 
   @override
+  String get failureLoad => 'تعذّر التحميل. حاول مرة أخرى.';
+
+  @override
+  String get failureSave => 'تعذّر الحفظ. حاول مرة أخرى.';
+
+  @override
+  String get failureNetwork => 'هناك مشكلة في الاتصال. حاول مرة أخرى.';
+
+  @override
+  String get failureNotAuthenticated => 'يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get failureSessionExpired =>
+      'انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.';
+
+  @override
+  String get failureSignInFailed => 'تعذّر تسجيل الدخول. حاول مرة أخرى.';
+
+  @override
+  String get failureSignUpFailed => 'تعذّر إنشاء الحساب. حاول مرة أخرى.';
+
+  @override
+  String get failureNotFound => 'لم نتمكن من العثور على ذلك.';
+
+  @override
+  String get failureUnexpected => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get authInvalidCredentials =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+
+  @override
+  String get authEmailUnconfirmed => 'يرجى تأكيد بريدك الإلكتروني أولاً';
+
+  @override
+  String get authEmailInUse => 'يوجد حساب بهذا البريد الإلكتروني بالفعل';
+
+  @override
+  String get authWeakPassword => 'يجب ألا تقل كلمة المرور عن 8 أحرف';
+
+  @override
+  String get deleteEmailMismatch => 'البريد الإلكتروني لا يطابق هذا الحساب';
+
+  @override
+  String get deleteAdminBlocked =>
+      'لا يمكن حذف حسابات المسؤولين من داخل التطبيق';
+
+  @override
+  String get deleteNotOwner => 'يمكنك حذف حسابك فقط';
+
+  @override
+  String get deleteFailedRetry => 'تعذّر حذف الحساب. حاول مرة أخرى.';
+
+  @override
   String get errorBody => 'يُرجى التحقق من اتصالك والمحاولة مرة أخرى.';
 
   @override

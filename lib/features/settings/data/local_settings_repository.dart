@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/error/app_error.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../domain/repositories/settings_repository.dart';
 
@@ -27,7 +28,7 @@ final class LocalSettingsRepository implements SettingsRepository {
             AppThemeMode.system;
         final locale = AppLocale.fromLanguageCode(savedLanguage);
         return AppSettings(themeMode: themeMode, locale: locale);
-      }, 'Unable to read app preferences.');
+      }, 'Unable to read app preferences.', code: kFailureLoad);
 
   @override
   Future<Result<void>> saveThemeMode(AppThemeMode themeMode) => _write(
@@ -40,12 +41,14 @@ final class LocalSettingsRepository implements SettingsRepository {
       );
 
   Future<Result<void>> _write(Future<bool> Function() operation) async {
-    final result =
-        await Result.guard(operation, 'Unable to save app preferences.');
+    final result = await Result.guard(
+        operation, 'Unable to save app preferences.',
+        code: kFailureSave);
     return result.when(
       success: (didPersist) => didPersist
           ? const Success(null)
-          : const Failure(AppError('Unable to save app preferences.')),
+          : const Failure(
+              AppError('Unable to save app preferences.', code: kFailureSave)),
       failure: (error) => Failure(error),
     );
   }

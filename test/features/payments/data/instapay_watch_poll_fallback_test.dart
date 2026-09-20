@@ -321,7 +321,12 @@ void main() {
         fake.flushMicrotasks();
 
         expect(cubit.state.status, PaymentStatus.failed);
-        expect(cubit.state.errorMessage, 'Payment was declined by the gateway');
+        // The state now carries the CODE, not English copy (audit 2026-09-19,
+        // sweep part 32): the page maps it through paymentMessageForCode, so the
+        // shopper reads localized text. Asserting the code here is what keeps
+        // that path honest — asserting the wording would let a raw English
+        // string back into the UI unnoticed.
+        expect(cubit.state.errorMessage, 'payment_declined');
 
         // Poll stopped after the terminal emission.
         final pollsAtTerminal = pollRow.queryCount;
