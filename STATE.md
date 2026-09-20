@@ -1,6 +1,15 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 39: **PRs #78 + #79 FRESHNESS-CHECKED — BOTH MERGE CLEAN, GATES GREEN (L1+GATES)**. GitHub
+Last run: 2026-09-20 (part 40: **STALE-PR GATE-CHECK — #40 LIVE, #49/#62 CONFLICTED, #36 INERT (L1)**. Owner
+ask: "do it" (gate-check the four stale PRs). Findings: **#40 is a live fix, not superseded** —
+#76's seed script still makes the exact `admin_set_membership_tier` service-role call #40 proves
+fails (046: `REVOKE FROM PUBLIC, anon; GRANT TO authenticated`), and the two PRs conflict on the
+same script. **#49 conflicts** with master's 146-commit drift in `checkout_service.dart`; **#62
+conflicts in 25 files** and carries its own divergent `Result.guard(onError)` evolution master
+never took — recommend close-and-salvage. **#36 is docs-only** (0 code files). No merges, no
+pushes; gate worktrees removed. Detail in part 40 below.)
+
+Prior run: 2026-09-20 (part 39: **PRs #78 + #79 FRESHNESS-CHECKED — BOTH MERGE CLEAN, GATES GREEN (L1+GATES)**. GitHub
 reports MERGEABLE/CLEAN for both; each branch is behind origin/master only by loop-doc commits.
 Semantic test-merges onto origin/master in their worktrees: no conflicts; gates on both merged
 states — analyze 0 · format clean · **#78 991/991**, **#79 990/990**. **#79 overlaps #80 in 6
@@ -67,6 +76,38 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 40: stale-PR gate-check — verdicts with evidence)
+
+- Owner ask: "do it" — gate-check the four stale PRs (#36, #40, #49, #62) so the board's
+  verdicts are evidence, not age.
+- **#40 (`fix/demo-seed-tier-rpc`) — LIVE FIX, DO NOT CLOSE.** Not superseded by #76: #76's
+  `seed_demo_staging.mjs` still calls `admin.rpc('admin_set_membership_tier', …)` at line 88 —
+  the exact call #40 removes, with the reason documented in the branch: migration 046 does
+  `REVOKE EXECUTE … FROM PUBLIC, anon; GRANT … TO authenticated`, so the service-role client
+  gets permission-denied (verified in `supabase/migrations/046_membership_tier.sql:83-84`).
+  `node --check` passes on #40's script. **But #40 and #76 conflict** (both edit the same
+  script). Rec: rebase #40 onto `chore/demo-seed-images` (or fold its fix into #76) before
+  either merges.
+- **#49 (`fix/checkout-rpc-hardening`) — CONFLICTED, needs re-author decision.** Behind 146
+  commits; a real merge (not merge-tree) conflicts in `checkout_service.dart`. Master has
+  evolved that file extensively since. Rec: check whether the hardening still lacks coverage on
+  current master; if wanted, re-author the (1-commit) change onto current master and re-gate.
+- **#62 (`fix/audit-batch-3`) — SUPERSEDED, recommend close-and-salvage.** Behind 98 commits;
+  real merge conflicts in **25 files** across auth/admin/settings/storefront. It contains its
+  own divergent evolution of `Result.guard` (an `onError` parameter) that master never took —
+  master instead grew the `code:` parameter in Tier 1 (#80), a different design that is already
+  pinned and verified. Also touches `config/env.staging.json` and `.gitignore`. The batch's
+  individual goals (money pipeline, error l10n, result.guard, validators) have landed through
+  newer, verified batches. Rec: close; salvage only if a diff-read finds a piece nothing else
+  implemented.
+- **#36 (`docs/instapay-plan`) — INERT.** Single docs file, zero code files, no conflicts.
+  Merge is harmless; content is a review-gated plan for surfaces that partially exist in `lib/`
+  already. Owner preference: merge for the record, or close as overtaken.
+- **Method note:** `git merge-tree` had reported all four "clean" — the real merges proved #49
+  and #62 conflicted. merge-tree is a hint; a real merge is ground truth. Both gate worktrees
+  (`gate-49`, `gate-62`) were created detached, used, and removed; PR branches untouched,
+  nothing pushed.
 
 ## New — 2026-09-20 (part 39: PRs #78 and #79 — still merge-clean, gates re-verified)
 
