@@ -1,6 +1,13 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 38: **REBASE REQUESTED — NO-OP; GATES RE-VERIFIED (L1+GATES)**. Owner ask:
+Last run: 2026-09-20 (part 39: **PRs #78 + #79 FRESHNESS-CHECKED — BOTH MERGE CLEAN, GATES GREEN (L1+GATES)**. GitHub
+reports MERGEABLE/CLEAN for both; each branch is behind origin/master only by loop-doc commits.
+Semantic test-merges onto origin/master in their worktrees: no conflicts; gates on both merged
+states — analyze 0 · format clean · **#78 991/991**, **#79 990/990**. **#79 overlaps #80 in 6
+files** (both ARBs, generated l10n, `reviews_section.dart`) — merge-order matters: whoever lands
+second needs a rebase. Nothing pushed; PR branches untouched. Detail in part 39 below.)
+
+Prior run: 2026-09-20 (part 38: **REBASE REQUESTED — NO-OP; GATES RE-VERIFIED (L1+GATES)**. Owner ask:
 "Rebase fix/failure-copy-l10n onto current master and re-run the full gates." `origin/master` is
 **still `b3c1437`** = the branch's merge-base, so the rebase had nothing to do — the branch
 already sits directly on it (HEAD unchanged `5476bdd`). Gates re-run on the tree: analyze 0 ·
@@ -60,6 +67,27 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 39: PRs #78 and #79 — still merge-clean, gates re-verified)
+
+- Owner ask: "Check whether PRs #78 and #79 still merge cleanly into current master and re-run
+  their gates."
+- **GitHub state:** both MERGEABLE / CLEAN. Behind origin/master only by docs commits (#78: 2,
+  #79: 1 — the same loop-doc commits local master carries). No code drift underneath either.
+- **Semantic test-merge** (the GitHub flag can miss semantic conflicts): each worktree checked
+  out a temp branch at `origin/master` + merged the PR head — no textual conflicts. #78's merge
+  diff: 4 files +126/−92; #79's: 8 files +192/−3.
+- **Gates on the merged states:** #78 — analyze 0, format clean (438), **991/991**. #79 —
+  analyze 0, format clean (439), **990/990**.
+- **#79 × #80 overlap (merge-order finding):** #79 and #80 touch the same 6 files (both ARBs,
+  the three generated l10n files, `reviews_section.dart`). Both are clean today *because neither
+  is merged*; once #80 lands, #79 needs a rebase (its `showAllReviews` key sits in the same ARB
+  region). If #79 lands first, #80 needs it instead. Either way: **land one, immediately
+  rebase the other, re-run gates, push.**
+- **Nothing pushed** — PR heads are unchanged and GitHub already reports them clean; a push is
+  only warranted if the owner wants the branches to *contain* the docs commits, which is noise
+  for docs-only drift.
+- Worktrees restored to their PR branches; temp branches deleted.
 
 ## New — 2026-09-20 (part 38: rebase requested — no-op; gates re-verified)
 
