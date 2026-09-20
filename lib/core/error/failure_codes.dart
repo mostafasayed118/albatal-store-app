@@ -72,3 +72,78 @@ const kDeleteNotOwner = 'delete_not_owner';
 
 /// Account deletion failed for a reason the app cannot classify further.
 const kDeleteFailed = 'delete_failed';
+
+// ─── Admin console (owner decision, part 34-35: the admin surface is localized
+// like the storefront, so its own wordings carry codes too). ───
+
+/// The admin gate refused the action.
+const kAdminAccessDenied = 'admin_access_denied';
+
+/// The order queue did not load.
+const kAdminOrdersLoadFailed = 'admin_orders_load_failed';
+
+/// One order did not load.
+const kAdminOrderLoadFailed = 'admin_order_load_failed';
+
+/// The requested order does not exist.
+const kAdminOrderNotFound = 'admin_order_not_found';
+
+/// The status value is not one the app knows.
+const kAdminOrderStatusInvalid = 'admin_order_status_invalid';
+
+/// An order-status write failed.
+const kAdminOrderStatusUpdateFailed = 'admin_order_status_update_failed';
+
+/// The low-stock list did not load.
+const kAdminLowStockLoadFailed = 'admin_low_stock_load_failed';
+
+/// The sales overview did not load.
+const kAdminSalesLoadFailed = 'admin_sales_load_failed';
+
+/// A stock write failed.
+const kAdminStockUpdateFailed = 'admin_stock_update_failed';
+
+/// The product list did not load.
+const kAdminProductsLoadFailed = 'admin_products_load_failed';
+
+/// One product did not load.
+const kAdminProductLoadFailed = 'admin_product_load_failed';
+
+/// The category list did not load.
+const kAdminCategoriesLoadFailed = 'admin_categories_load_failed';
+
+/// A product upsert failed.
+const kAdminProductSaveFailed = 'admin_product_save_failed';
+
+/// A variant upsert failed.
+const kAdminVariantSaveFailed = 'admin_variant_save_failed';
+
+/// An image-list write failed.
+const kAdminImagesSaveFailed = 'admin_images_save_failed';
+
+/// A product's variants did not load.
+const kAdminVariantsLoadFailed = 'admin_variants_load_failed';
+
+/// A product's images did not load.
+const kAdminImagesLoadFailed = 'admin_images_load_failed';
+
+/// A membership-tier write failed.
+const kAdminMembershipUpdateFailed = 'admin_membership_update_failed';
+
+/// The coupon list did not load.
+const kAdminCouponsLoadFailed = 'admin_coupons_load_failed';
+
+/// A coupon insert failed.
+const kAdminCouponCreateFailed = 'admin_coupon_create_failed';
+
+/// A coupon update failed.
+const kAdminCouponUpdateFailed = 'admin_coupon_update_failed';
+
+/// The customer directory did not load.
+const kAdminCustomersLoadFailed = 'admin_customers_load_failed';
+
+/// The pending-review queue did not load.
+const kAdminReviewsLoadFailed = 'admin_reviews_load_failed';
+
+/// A review-status write failed.
+const kAdminReviewUpdateFailed = 'admin_review_update_failed';

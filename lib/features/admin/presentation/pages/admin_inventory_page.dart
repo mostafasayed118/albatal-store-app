@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
 import '../widgets/dialog_controllers.dart';
@@ -61,7 +62,12 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
           if (state.status == AdminStatus.error) {
             if (_awaitingStockUpdate) {
               showFloatingError(
-                  context, state.errorMessage ?? context.l10n.errorTitle);
+                context,
+                failureText(context.l10n,
+                    code: state.errorCode,
+                    message: state.errorMessage,
+                    fallback: context.l10n.errorTitle),
+              );
             }
             _awaitingStockUpdate = false;
           } else if (_awaitingStockUpdate &&
@@ -80,7 +86,10 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
               // that lies to the person managing inventory.
               return FeedbackView(
                 type: FeedbackViewType.error,
-                body: state.errorMessage,
+                body: failureText(context.l10n,
+                    code: state.errorCode,
+                    message: state.errorMessage,
+                    fallback: context.l10n.errorTitle),
                 onAction: () =>
                     context.read<AdminCubit>().loadLowStockProducts(),
               );

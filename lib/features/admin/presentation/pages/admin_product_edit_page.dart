@@ -7,6 +7,7 @@ import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -97,17 +98,24 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     final result = await widget.repository.getProductById(widget.productId!);
     if (!mounted) return;
     String? failureMessage;
+    String? failureCode;
     AdminProduct? product;
     switch (result) {
       case Success(:final value):
         product = value;
       case Failure(:final error):
         failureMessage = error.message;
+        failureCode = error.code;
     }
     if (!mounted) return;
     if (product == null) {
       showFloatingError(
-          context, failureMessage ?? context.l10n.adminProductNotFound);
+        context,
+        failureText(context.l10n,
+            code: failureCode,
+            message: failureMessage,
+            fallback: context.l10n.adminProductNotFound),
+      );
       setState(() => _loadingProduct = false);
       return;
     }
@@ -250,7 +258,13 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         // Repository messages are fixed, user-facing strings — the raw
         // exception never reaches the UI (leak scrubbed with the Result
         // migration).
-        showFloatingError(context, error.message);
+        showFloatingError(
+          context,
+          failureText(context.l10n,
+              code: error.code,
+              message: error.message,
+              fallback: context.l10n.errorTitle),
+        );
       },
     );
   }

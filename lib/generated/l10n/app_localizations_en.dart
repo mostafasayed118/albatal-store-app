@@ -1732,4 +1732,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refunded => 'Refunded';
+
+  @override
+  String get adminFailureAccessDenied => 'Access denied: admin only';
+
+  @override
+  String get adminFailureOrdersLoad =>
+      'Couldn\'t load orders. Please try again.';
+
+  @override
+  String get adminFailureOrderLoad =>
+      'Couldn\'t load this order. Please try again.';
+
+  @override
+  String get adminFailureOrderNotFound => 'Order not found';
+
+  @override
+  String get adminFailureStatusInvalid =>
+      'That order status isn\'t recognized.';
+
+  @override
+  String get adminFailureStatusUpdate =>
+      'Couldn\'t update the order status. Please try again.';
+
+  @override
+  String get adminFailureLowStockLoad =>
+      'Couldn\'t load low-stock products. Please try again.';
+
+  @override
+  String get adminFailureSalesLoad =>
+      'Couldn\'t load sales data. Please try again.';
+
+  @override
+  String get adminFailureStockUpdate =>
+      'Couldn\'t update the stock. Please try again.';
+
+  @override
+  String get adminFailureProductsLoad =>
+      'Couldn\'t load products. Please try again.';
+
+  @override
+  String get adminFailureProductLoad =>
+      'Couldn\'t load this product. Please try again.';
+
+  @override
+  String get adminFailureCategoriesLoad =>
+      'Couldn\'t load categories. Please try again.';
+
+  @override
+  String get adminFailureProductSave =>
+      'Couldn\'t save the product. Please try again.';
+
+  @override
+  String get adminFailureVariantSave =>
+      'Couldn\'t save the variant. Please try again.';
+
+  @override
+  String get adminFailureImagesSave =>
+      'Couldn\'t save the images. Please try again.';
+
+  @override
+  String get adminFailureVariantsLoad =>
+      'Couldn\'t load variants. Please try again.';
+
+  @override
+  String get adminFailureImagesLoad =>
+      'Couldn\'t load images. Please try again.';
+
+  @override
+  String get adminFailureMembershipUpdate =>
+      'Couldn\'t update the membership tier. Please try again.';
+
+  @override
+  String get adminFailureCouponsLoad =>
+      'Couldn\'t load coupons. Please try again.';
+
+  @override
+  String get adminFailureCouponCreate =>
+      'Couldn\'t create the coupon. Please try again.';
+
+  @override
+  String get adminFailureCouponUpdate =>
+      'Couldn\'t update the coupon. Please try again.';
+
+  @override
+  String get adminFailureCustomersLoad =>
+      'Couldn\'t load customers. Please try again.';
+
+  @override
+  String get adminFailureReviewsLoad =>
+      'Couldn\'t load the review queue. Please try again.';
+
+  @override
+  String get adminFailureReviewUpdate =>
+      'Couldn\'t update the review. Please try again.';
 }

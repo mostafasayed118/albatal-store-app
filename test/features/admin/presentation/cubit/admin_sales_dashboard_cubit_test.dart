@@ -1,4 +1,5 @@
 import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
@@ -199,11 +200,12 @@ void main() {
     );
 
     blocTest<AdminSalesDashboardCubit, AdminSalesDashboardState>(
-      'emits error with repository message on overview Failure',
+      'emits error with repository message and code on overview Failure',
       build: () {
         final repo = _FakeAdminRepository()
-          ..overviewResult =
-              const Failure(AppError('Failed to load sales overview'))
+          ..overviewResult = const Failure(AppError(
+              'Failed to load sales overview',
+              code: kAdminSalesLoadFailed))
           ..lowStockResult = const Success([]);
         return AdminSalesDashboardCubit(repository: repo);
       },
@@ -214,7 +216,8 @@ void main() {
         isA<AdminSalesDashboardState>()
             .having((s) => s.status, 'status', AdminSalesDashboardStatus.error)
             .having((s) => s.errorMessage, 'errorMessage',
-                'Failed to load sales overview'),
+                'Failed to load sales overview')
+            .having((s) => s.errorCode, 'errorCode', kAdminSalesLoadFailed),
       ],
     );
 

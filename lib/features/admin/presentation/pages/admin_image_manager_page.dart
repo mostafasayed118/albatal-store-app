@@ -8,6 +8,7 @@ import '../../../../shared/components/app_image.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
@@ -58,6 +59,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   List<String> _paths = [];
   bool _loading = true;
   String? _error;
+  String? _errorCode;
   bool _uploading = false;
 
   @override
@@ -84,6 +86,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         setState(() {
           _loading = false;
           _error = error.message;
+          _errorCode = error.code;
         });
       },
     );
@@ -103,7 +106,13 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       },
       failure: (error) {
         Log.e('Admin image save failed', error: error);
-        showFloatingError(context, error.message);
+        showFloatingError(
+          context,
+          failureText(context.l10n,
+              code: error.code,
+              message: error.message,
+              fallback: context.l10n.errorTitle),
+        );
       },
     );
   }
@@ -180,7 +189,13 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         }
         if (!mounted) return;
         setState(() => _uploading = false);
-        showFloatingError(context, error.message);
+        showFloatingError(
+          context,
+          failureText(context.l10n,
+              code: error.code,
+              message: error.message,
+              fallback: context.l10n.errorTitle),
+        );
         return;
       }
       setState(() {
@@ -255,7 +270,10 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
               ? FeedbackView(
                   type: FeedbackViewType.error,
                   title: l10n.adminImagesLoadFailed,
-                  body: _error,
+                  body: failureText(l10n,
+                      code: _errorCode,
+                      message: _error,
+                      fallback: l10n.errorTitle),
                   actionLabel: l10n.retry,
                   onAction: _loadImages,
                 )

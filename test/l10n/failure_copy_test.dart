@@ -28,6 +28,36 @@ const _expectedEn = {
   kDeleteAdminBlocked: 'Admin accounts cannot be deleted in the app',
   kDeleteNotOwner: 'You can only delete your own account',
   kDeleteFailed: 'Account deletion failed. Please try again.',
+  // Admin codes (Tier 3b): the admin console is fully localized by owner
+  // decision (part 34), so its failures must resolve here like every other
+  // app-authored code.
+  kAdminAccessDenied: 'Access denied: admin only',
+  kAdminOrdersLoadFailed: "Couldn't load orders. Please try again.",
+  kAdminOrderLoadFailed: "Couldn't load this order. Please try again.",
+  kAdminOrderNotFound: 'Order not found',
+  kAdminOrderStatusInvalid: "That order status isn't recognized.",
+  kAdminOrderStatusUpdateFailed:
+      "Couldn't update the order status. Please try again.",
+  kAdminLowStockLoadFailed:
+      "Couldn't load low-stock products. Please try again.",
+  kAdminSalesLoadFailed: "Couldn't load sales data. Please try again.",
+  kAdminStockUpdateFailed: "Couldn't update the stock. Please try again.",
+  kAdminProductsLoadFailed: "Couldn't load products. Please try again.",
+  kAdminProductLoadFailed: "Couldn't load this product. Please try again.",
+  kAdminCategoriesLoadFailed: "Couldn't load categories. Please try again.",
+  kAdminProductSaveFailed: "Couldn't save the product. Please try again.",
+  kAdminVariantSaveFailed: "Couldn't save the variant. Please try again.",
+  kAdminImagesSaveFailed: "Couldn't save the images. Please try again.",
+  kAdminVariantsLoadFailed: "Couldn't load variants. Please try again.",
+  kAdminImagesLoadFailed: "Couldn't load images. Please try again.",
+  kAdminMembershipUpdateFailed:
+      "Couldn't update the membership tier. Please try again.",
+  kAdminCouponsLoadFailed: "Couldn't load coupons. Please try again.",
+  kAdminCouponCreateFailed: "Couldn't create the coupon. Please try again.",
+  kAdminCouponUpdateFailed: "Couldn't update the coupon. Please try again.",
+  kAdminCustomersLoadFailed: "Couldn't load customers. Please try again.",
+  kAdminReviewsLoadFailed: "Couldn't load the review queue. Please try again.",
+  kAdminReviewUpdateFailed: "Couldn't update the review. Please try again.",
 };
 
 void main() {

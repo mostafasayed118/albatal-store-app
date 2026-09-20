@@ -5,6 +5,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_coupons_cubit.dart';
@@ -52,7 +53,10 @@ final class _AdminCouponsView extends StatelessWidget {
           if (state.status == AdminCouponsStatus.error) {
             return FeedbackView(
               type: FeedbackViewType.error,
-              body: state.errorMessage ?? l.couponInvalid,
+              body: failureText(l,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: l.couponInvalid),
               onAction: () => context.read<AdminCouponsCubit>().load(),
             );
           }

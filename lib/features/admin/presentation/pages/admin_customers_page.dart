@@ -6,6 +6,7 @@ import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_customer.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -72,7 +73,13 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     if (!mounted) return;
     final error = cubit.state.tierError;
     if (error != null) {
-      showFloatingError(context, error);
+      showFloatingError(
+        context,
+        failureText(context.l10n,
+            code: cubit.state.tierErrorCode,
+            message: error,
+            fallback: context.l10n.errorTitle),
+      );
       cubit.clearTierError();
       return;
     }
@@ -115,7 +122,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               appBar: AppBar(title: Text(l.adminCustomers)),
               body: FeedbackView(
                 type: FeedbackViewType.error,
-                body: state.errorMessage,
+                body: failureText(context.l10n,
+                    code: state.errorCode,
+                    message: state.errorMessage,
+                    fallback: context.l10n.errorTitle),
                 onAction: () => context.read<AdminCustomersCubit>().load(),
               ),
             );

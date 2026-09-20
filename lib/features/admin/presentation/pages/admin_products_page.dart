@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -34,6 +35,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
   List<AdminProduct> _products = [];
   bool _loading = true;
   String? _error;
+  String? _errorCode;
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       failure: (error) => setState(() {
         _loading = false;
         _error = error.message;
+        _errorCode = error.code;
       }),
     );
   }
@@ -85,7 +88,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
           : _error != null
               ? FeedbackView(
                   type: FeedbackViewType.error,
-                  body: _error,
+                  body: failureText(context.l10n,
+                      code: _errorCode,
+                      message: _error,
+                      fallback: context.l10n.errorTitle),
                   onAction: _loadProducts,
                 )
               : _products.isEmpty

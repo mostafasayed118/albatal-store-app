@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
@@ -67,8 +68,10 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
               AdminSalesDashboardStatus.error => FeedbackView(
                   type: FeedbackViewType.error,
                   title: context.l10n.adminSalesLoadFailed,
-                  body: state.errorMessage ??
-                      context.l10n.adminSalesLoadFailedBody,
+                  body: failureText(context.l10n,
+                      code: state.errorCode,
+                      message: state.errorMessage,
+                      fallback: context.l10n.adminSalesLoadFailedBody),
                   actionLabel: context.l10n.retry,
                   onAction: () =>
                       context.read<AdminSalesDashboardCubit>().load(),

@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/invoice/invoice_pdf_builder.dart';
 import '../cubit/admin_cubit.dart';
@@ -102,7 +103,12 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
           if (state.status == AdminStatus.error) {
             if (_awaitedStatus != null || _awaitedTier != null) {
               showFloatingError(
-                  context, state.errorMessage ?? context.l10n.errorTitle);
+                context,
+                failureText(context.l10n,
+                    code: state.errorCode,
+                    message: state.errorMessage,
+                    fallback: context.l10n.errorTitle),
+              );
             }
             _awaitedStatus = null;
             _awaitedTier = null;

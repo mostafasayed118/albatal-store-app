@@ -1732,4 +1732,85 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get refunded => 'مُسترد';
+
+  @override
+  String get adminFailureAccessDenied => 'الوصول مرفوض: للمسؤولين فقط';
+
+  @override
+  String get adminFailureOrdersLoad => 'تعذّر تحميل الطلبات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureOrderLoad => 'تعذّر تحميل هذا الطلب. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureOrderNotFound => 'الطلب غير موجود';
+
+  @override
+  String get adminFailureStatusInvalid => 'حالة الطلب غير معروفة.';
+
+  @override
+  String get adminFailureStatusUpdate =>
+      'تعذّر تحديث حالة الطلب. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureLowStockLoad =>
+      'تعذّر تحميل المنتجات منخفضة المخزون. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureSalesLoad =>
+      'تعذّر تحميل بيانات المبيعات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureStockUpdate => 'تعذّر تحديث المخزون. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureProductsLoad => 'تعذّر تحميل المنتجات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureProductLoad =>
+      'تعذّر تحميل هذا المنتج. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureCategoriesLoad => 'تعذّر تحميل الفئات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureProductSave => 'تعذّر حفظ المنتج. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureVariantSave => 'تعذّر حفظ الخيار. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureImagesSave => 'تعذّر حفظ الصور. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureVariantsLoad => 'تعذّر تحميل الخيارات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureImagesLoad => 'تعذّر تحميل الصور. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureMembershipUpdate =>
+      'تعذّر تحديث درجة العضوية. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureCouponsLoad =>
+      'تعذّر تحميل أكواد الخصم. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureCouponCreate =>
+      'تعذّر إنشاء كود الخصم. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureCouponUpdate =>
+      'تعذّر تحديث كود الخصم. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureCustomersLoad => 'تعذّر تحميل العملاء. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureReviewsLoad =>
+      'تعذّر تحميل قائمة المراجعات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureReviewUpdate => 'تعذّر تحديث المراجعة. حاول مرة أخرى.';
 }

@@ -17,7 +17,9 @@ final class AdminCustomersState extends Equatable {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.errorMessage,
+    this.errorCode,
     this.tierError,
+    this.tierErrorCode,
   });
 
   final AdminCustomersStatus status;
@@ -46,11 +48,17 @@ final class AdminCustomersState extends Equatable {
   /// search.
   final String? errorMessage;
 
+  /// App-authored failure code for [errorMessage].
+  final String? errorCode;
+
   /// Failure from a tier *write*, kept off [status] deliberately: this page
   /// renders a whole-screen error view for [AdminCustomersStatus.error], so
   /// reusing it would erase the loaded directory whenever a write bounced.
   /// The page surfaces this as a floating message and clears it.
   final String? tierError;
+
+  /// App-authored failure code for [tierError].
+  final String? tierErrorCode;
 
   AdminCustomersState copyWith({
     AdminCustomersStatus? status,
@@ -59,7 +67,9 @@ final class AdminCustomersState extends Equatable {
     bool? hasMore,
     bool? isLoadingMore,
     String? errorMessage,
+    String? errorCode,
     String? tierError,
+    String? tierErrorCode,
     bool clearTierError = false,
   }) =>
       AdminCustomersState(
@@ -69,8 +79,11 @@ final class AdminCustomersState extends Equatable {
         hasMore: hasMore ?? this.hasMore,
         isLoadingMore: isLoadingMore ?? this.isLoadingMore,
         errorMessage: errorMessage,
+        errorCode: errorCode,
         // Same sentinel convention as AdminState.copyWith(clearSelectedOrder).
         tierError: clearTierError ? null : (tierError ?? this.tierError),
+        tierErrorCode:
+            clearTierError ? null : (tierErrorCode ?? this.tierErrorCode),
       );
 
   @override
@@ -81,7 +94,9 @@ final class AdminCustomersState extends Equatable {
         hasMore,
         isLoadingMore,
         errorMessage,
+        errorCode,
         tierError,
+        tierErrorCode,
       ];
 }
 
@@ -192,6 +207,7 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
         emit(state.copyWith(
           status: AdminCustomersStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
           isLoadingMore: false,
         ));
     }
@@ -226,6 +242,7 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
         emit(state.copyWith(
           status: AdminCustomersStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
           isLoadingMore: false,
         ));
     }
@@ -248,7 +265,10 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
             .toList();
         emit(state.copyWith(customers: updated));
       case Failure(:final error):
-        emit(state.copyWith(tierError: error.message));
+        emit(state.copyWith(
+          tierError: error.message,
+          tierErrorCode: error.code,
+        ));
     }
   }
 

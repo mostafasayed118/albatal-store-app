@@ -4,6 +4,7 @@ import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_variant.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../widgets/dialog_controllers.dart';
@@ -34,6 +35,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
   List<AdminVariant> _variants = [];
   bool _loading = true;
   String? _error;
+  String? _errorCode;
 
   @override
   void dispose() {
@@ -62,6 +64,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
       failure: (error) => setState(() {
         _loading = false;
         _error = error.message;
+        _errorCode = error.code;
       }),
     );
   }
@@ -188,7 +191,13 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         failure: (error) {
                           // Repository messages are fixed, user-facing
                           // strings — safe to render verbatim.
-                          showFloatingError(ctx, error.message);
+                          showFloatingError(
+                            ctx,
+                            failureText(ctx.l10n,
+                                code: error.code,
+                                message: error.message,
+                                fallback: ctx.l10n.errorTitle),
+                          );
                           setDlgState(() => saving = false);
                         },
                       );
@@ -216,7 +225,13 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(_error!, textAlign: TextAlign.center),
+                        Text(
+                          failureText(l10n,
+                              code: _errorCode,
+                              message: _error,
+                              fallback: l10n.errorTitle),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 12),
                         AppButton(label: l10n.retry, onPressed: _loadVariants),
                       ],

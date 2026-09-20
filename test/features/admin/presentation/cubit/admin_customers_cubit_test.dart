@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
@@ -97,10 +98,11 @@ void main() {
     );
 
     blocTest<AdminCustomersCubit, AdminCustomersState>(
-      'emits error with the repository message on Failure',
+      'emits error with the repository message and code on Failure',
       build: () {
         when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
-            (_) async => const Failure(AppError('Failed to load customers')));
+            (_) async => const Failure(AppError('Failed to load customers',
+                code: kAdminCustomersLoadFailed)));
         return buildCubit();
       },
       act: (cubit) => cubit.load(),
@@ -110,7 +112,8 @@ void main() {
         isA<AdminCustomersState>()
             .having((s) => s.status, 'status', AdminCustomersStatus.error)
             .having((s) => s.errorMessage, 'errorMessage',
-                'Failed to load customers'),
+                'Failed to load customers')
+            .having((s) => s.errorCode, 'errorCode', kAdminCustomersLoadFailed),
       ],
     );
   });
@@ -423,13 +426,16 @@ void main() {
       ),
       build: () {
         when(() => repo.setMembershipTier('profile-9', 'premium')).thenAnswer(
-            (_) async => const Failure(AppError('tier change rejected')));
+            (_) async => const Failure(AppError('tier change rejected',
+                code: kAdminMembershipUpdateFailed)));
         return buildCubit();
       },
       act: (cubit) => cubit.setMembershipTier('profile-9', 'premium'),
       expect: () => [
         isA<AdminCustomersState>()
-            .having((s) => s.tierError, 'tierError', 'tier change rejected'),
+            .having((s) => s.tierError, 'tierError', 'tier change rejected')
+            .having((s) => s.tierErrorCode, 'tierErrorCode',
+                kAdminMembershipUpdateFailed),
       ],
       verify: (cubit) {
         // The whole point of a separate channel: this page renders a

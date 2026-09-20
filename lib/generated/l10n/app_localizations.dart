@@ -3211,6 +3211,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refunded'**
   String get refunded;
+
+  /// No description provided for @adminFailureAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied: admin only'**
+  String get adminFailureAccessDenied;
+
+  /// No description provided for @adminFailureOrdersLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load orders. Please try again.'**
+  String get adminFailureOrdersLoad;
+
+  /// No description provided for @adminFailureOrderLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this order. Please try again.'**
+  String get adminFailureOrderLoad;
+
+  /// No description provided for @adminFailureOrderNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Order not found'**
+  String get adminFailureOrderNotFound;
+
+  /// No description provided for @adminFailureStatusInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That order status isn\'t recognized.'**
+  String get adminFailureStatusInvalid;
+
+  /// No description provided for @adminFailureStatusUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the order status. Please try again.'**
+  String get adminFailureStatusUpdate;
+
+  /// No description provided for @adminFailureLowStockLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load low-stock products. Please try again.'**
+  String get adminFailureLowStockLoad;
+
+  /// No description provided for @adminFailureSalesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load sales data. Please try again.'**
+  String get adminFailureSalesLoad;
+
+  /// No description provided for @adminFailureStockUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the stock. Please try again.'**
+  String get adminFailureStockUpdate;
+
+  /// No description provided for @adminFailureProductsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products. Please try again.'**
+  String get adminFailureProductsLoad;
+
+  /// No description provided for @adminFailureProductLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this product. Please try again.'**
+  String get adminFailureProductLoad;
+
+  /// No description provided for @adminFailureCategoriesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load categories. Please try again.'**
+  String get adminFailureCategoriesLoad;
+
+  /// No description provided for @adminFailureProductSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the product. Please try again.'**
+  String get adminFailureProductSave;
+
+  /// No description provided for @adminFailureVariantSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the variant. Please try again.'**
+  String get adminFailureVariantSave;
+
+  /// No description provided for @adminFailureImagesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the images. Please try again.'**
+  String get adminFailureImagesSave;
+
+  /// No description provided for @adminFailureVariantsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load variants. Please try again.'**
+  String get adminFailureVariantsLoad;
+
+  /// No description provided for @adminFailureImagesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load images. Please try again.'**
+  String get adminFailureImagesLoad;
+
+  /// No description provided for @adminFailureMembershipUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the membership tier. Please try again.'**
+  String get adminFailureMembershipUpdate;
+
+  /// No description provided for @adminFailureCouponsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load coupons. Please try again.'**
+  String get adminFailureCouponsLoad;
+
+  /// No description provided for @adminFailureCouponCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the coupon. Please try again.'**
+  String get adminFailureCouponCreate;
+
+  /// No description provided for @adminFailureCouponUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the coupon. Please try again.'**
+  String get adminFailureCouponUpdate;
+
+  /// No description provided for @adminFailureCustomersLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load customers. Please try again.'**
+  String get adminFailureCustomersLoad;
+
+  /// No description provided for @adminFailureReviewsLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the review queue. Please try again.'**
+  String get adminFailureReviewsLoad;
+
+  /// No description provided for @adminFailureReviewUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the review. Please try again.'**
+  String get adminFailureReviewUpdate;
 }
 
 class _AppLocalizationsDelegate

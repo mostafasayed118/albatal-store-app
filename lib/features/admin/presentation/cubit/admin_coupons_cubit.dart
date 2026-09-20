@@ -12,25 +12,31 @@ final class AdminCouponsState extends Equatable {
     this.status = AdminCouponsStatus.initial,
     this.coupons = const [],
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminCouponsStatus status;
   final List<AdminCoupon> coupons;
   final String? errorMessage;
 
+  /// App-authored failure code; drives localization at the render site.
+  final String? errorCode;
+
   AdminCouponsState copyWith({
     AdminCouponsStatus? status,
     List<AdminCoupon>? coupons,
     String? errorMessage,
+    String? errorCode,
   }) =>
       AdminCouponsState(
         status: status ?? this.status,
         coupons: coupons ?? this.coupons,
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [status, coupons, errorMessage];
+  List<Object?> get props => [status, coupons, errorMessage, errorCode];
 }
 
 /// Coupon management for the admin hub (feature-batch §8).
@@ -49,7 +55,9 @@ class AdminCouponsCubit extends Cubit<AdminCouponsState> {
         emit(state.copyWith(status: AdminCouponsStatus.ready, coupons: value));
       case Failure(:final error):
         emit(state.copyWith(
-            status: AdminCouponsStatus.error, errorMessage: error.message));
+            status: AdminCouponsStatus.error,
+            errorMessage: error.message,
+            errorCode: error.code));
     }
   }
 

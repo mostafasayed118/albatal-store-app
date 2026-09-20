@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/entities/low_stock_variant.dart';
@@ -18,6 +19,7 @@ final class AdminState extends Equatable {
     this.selectedOrder,
     this.statusFilter,
     this.errorMessage,
+    this.errorCode,
   });
 
   final AdminStatus status;
@@ -29,6 +31,9 @@ final class AdminState extends Equatable {
   /// never assigned a filter (see [loadOrders]).
   final AdminOrderStatus? statusFilter;
   final String? errorMessage;
+
+  /// App-authored failure code; drives localization at the render site.
+  final String? errorCode;
 
   List<AdminOrder> get filteredOrders {
     final filter = statusFilter;
@@ -43,6 +48,7 @@ final class AdminState extends Equatable {
     AdminOrder? selectedOrder,
     AdminOrderStatus? statusFilter,
     String? errorMessage,
+    String? errorCode,
     bool clearSelectedOrder = false,
     bool clearStatusFilter = false,
   }) =>
@@ -55,6 +61,7 @@ final class AdminState extends Equatable {
         statusFilter:
             clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
         errorMessage: errorMessage,
+        errorCode: errorCode,
       );
 
   @override
@@ -65,6 +72,7 @@ final class AdminState extends Equatable {
         selectedOrder,
         statusFilter,
         errorMessage,
+        errorCode,
       ];
 }
 
@@ -89,6 +97,7 @@ class AdminCubit extends Cubit<AdminState> {
       emit(state.copyWith(
         status: AdminStatus.error,
         errorMessage: 'Access denied: admin only',
+        errorCode: kAdminAccessDenied,
       ));
     }
   }
@@ -109,6 +118,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -124,6 +134,7 @@ class AdminCubit extends Cubit<AdminState> {
           emit(state.copyWith(
             status: AdminStatus.error,
             errorMessage: 'Order not found',
+            errorCode: kAdminOrderNotFound,
           ));
         } else {
           emit(state.copyWith(
@@ -135,6 +146,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -170,6 +182,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -189,6 +202,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -228,6 +242,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../domain/repositories/admin_repository.dart';
 import '../cubit/admin_reviews_cubit.dart';
@@ -47,7 +48,10 @@ final class _AdminReviewsView extends StatelessWidget {
           if (state.status == AdminReviewsStatus.error) {
             return FeedbackView(
               type: FeedbackViewType.error,
-              body: state.errorMessage,
+              body: failureText(context.l10n,
+                  code: state.errorCode,
+                  message: state.errorMessage,
+                  fallback: context.l10n.errorTitle),
               onAction: () => context.read<AdminReviewsCubit>().load(),
             );
           }
