@@ -1,6 +1,17 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 34: **TIER 2 DONE; TIER 3 STOPPED — ITS PREMISE WAS WRONG (L2 + BLOCKED)**.
+Last run: 2026-09-19 (part 35: **TIER 3 AUTHORIZED — ADMIN LOCALIZED (L2, COMMITTED)**. The owner
+reversed the convention: *"Localize admin fully — it's a product decision I'm making now."*
+Commit `5c41a89` on `fix/error-copy-localization` (**23 files, +1813/−155**): ~70 admin strings
+moved to the ARB (**71 new keys** in both locales, placeholders + CLDR plurals), 13 literals
+reuse keys that already carried that copy, one `adminOrderStatusLabel` helper replaces the
+shouted `status.name.toUpperCase()` and the hand-capitalised enum name, and the **31 now-false
+"Admin-only, intentionally unlocalized" comments are retired**. `flutter analyze` 0 ·
+`dart format` clean · **1003/1003** · **6/6 mutations bite**, restore byte-identical.
+Tier 3b (admin *failure* copy — the Tier-1 class on admin surfaces) is the remaining piece.
+Detail in part 35 below.)
+
+Prior run: 2026-09-19 (part 34: **TIER 2 DONE; TIER 3 STOPPED — ITS PREMISE WAS WRONG (L2 + BLOCKED)**.
 Tier 2 (a11y copy) is fixed and committed as `6035aed` on `fix/error-copy-localization`
 (2 files, +82/−2): the quantity stepper's `CustomSemanticsAction` labels now follow the
 locale, pinned off the semantics tree (3 tests, analyze 0, **994/994**, mutation bites with
@@ -30,7 +41,64 @@ context; the dominant class is not widgets but **failure copy**: 42 `AppError` s
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
 
-## New — 2026-09-19 (part 34: Tier 2 fixed; Tier 3 stopped — the sweep misread a documented convention as an inconsistency)
+## New — 2026-09-19 (part 35: Tier 3 — the admin console is localized, and the convention comments are gone)
+
+- Owner decision on the part-34 escalation: **localize admin fully**. That reverses a
+  documented convention, so the change had to retire the comments that asserted it, not just
+  edit strings.
+- **Commit `5c41a89` — 23 files, +1813/−155** on `fix/error-copy-localization`.
+- **Inventory, corrected against part 32.** The sweep said "42 literals"; a slot-aware scan
+  plus a second pass for copy held in variables found **~70 user-facing strings across 15
+  files**. What part 32 missed: `InputDecoration.labelText:`, `showFloatingError` /
+  `showConfirmation` arguments, validator messages, and ternary copy. Excluded correctly:
+  `Log.*` arguments (dev-only), `'approved'/'rejected'` in `admin_reviews_cubit.dart:64`
+  (**wire values** sent to the repository, not copy), and pure data interpolations.
+- **71 new keys in both ARBs**, verified as identical key sets, with `int`/`String`
+  placeholders and CLDR plurals where the copy counts (`adminStockLeft`, `adminRevenueLastDays`,
+  `adminUnitsShort`). **13 literals reuse keys that already carried the same copy**
+  (`delete`, `retry`, `save`, `cancel`, `color`, `description`, `composition`, `category`,
+  `care`, `origin`, `active`, `stockCannotBeNegative`, `adminAccessRequired`) rather than
+  duplicating them.
+- **`admin_order_status_label.dart` (new) is now the single status→copy mapping.** Three
+  surfaces each spelled it differently: the queue used ARB keys, the detail card printed
+  `order.status.name.toUpperCase()` ("PAID"), and the sales panel hand-capitalised the enum
+  name. All three now share one function; the sales panel's local `_statusLabel` was deleted.
+- **The convention comments are retired (31 lines across 7 files)**, with two class docs
+  rewritten to state the new convention: admin copy is localized like the storefront. Leaving
+  them would have left the code asserting the opposite of what it does.
+- **`sales_low_stock_list` publishes the threshold it prints** (`static const
+  lowStockThreshold = 5`, documented as mirroring `AdminRepository.getLowStock`'s default)
+  instead of burying the `5` inside a display string.
+- **Three deliberate behaviour/copy changes, each asserted:** the products-hub tooltip is now
+  `Edit Product` (was `Edit product`, so tooltip and page title share one key); status chips
+  read `Paid`/`Processing` rather than `PAID`/`PROCESSING`; and the EN `adminStockLeft` plural
+  has no `=0` branch **on purpose**, because the existing pin asserts `0 left` — the sweep is
+  not a licence to change copy.
+- **Existing pins were updated, not deleted:** `admin_polish_test.dart` (two status-label
+  assertions) and `admin_catalog_navigation_test.dart` (the tooltip). Each carries a comment
+  naming the change; that is the audit trail for the copy edits.
+- **New pins:** `test/l10n/admin_l10n_keys_test.dart` — a 71-case table (exact English copy,
+  plus **Arabic is not English**, asserted as difference so an untranslated key cannot pass as
+  "non-empty"), generated as a separate artifact from the ARB so a future copy edit must move
+  both. And `admin_status_and_sales_l10n_test.dart` — 6 widget tests rendering the sales cards
+  under `ar`, including the Arabic plural branches (`لا شيء متبقٍ` / `يتبقّى 2`).
+- **Mutation battery: 6/6 bite, restore byte-identical** (`status` clean, HEAD `5c41a89`): an
+  Arabic value reverted to English → the key-table pin; a status mapped to the wrong label →
+  the mapper pin; the raw enum name restored → "the raw enum name is never what the admin
+  reads"; the counts panel printing the enum name again → the widget pin; the low-stock heading
+  back to a literal → the threshold pin; the Arabic count plural reverted to the English
+  pattern → the plural pin. **My first battery run mis-grepped its expected strings** and
+  reported 3 "unexpected" results that had actually bitten; I re-ran with the correct
+  expectations rather than counting a mis-read as a pass.
+- **Harness bug caught (mine):** the edit script's first version anchored on line numbers, and
+  its own import insertions shifted them, so a later edit matched the wrong line. Fixed by
+  anchoring on unique content with an exact-count assertion — a line number is not an anchor.
+- **Not done — this commit is Tier 3a only:** the admin *failure* copy (below) is untouched.
+- **Not verified:** Arabic copy for all 71 keys is machine-authored and needs a native review;
+  the pins prove it is Arabic and not English, not that it reads well. Nothing was exercised on
+  a real device in RTL.
+
+## Prior — 2026-09-19 (part 34: Tier 2 fixed; Tier 3 stopped — the sweep misread a documented convention as an inconsistency)
 
 - Owner ask: "Tier 1: failure copy, Tier 2: a11y copy, Tier 3: admin", then, on landing:
   fold Tiers 2 and 3 into the same branch before opening one PR.
