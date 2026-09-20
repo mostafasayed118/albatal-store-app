@@ -1,6 +1,11 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 47: **REAL SEED RUN SUCCEEDED — STAGING RENDERS REAL PRODUCT PHOTOS (L1→executed on owner-provided credential)**. Owner added a working
+Last run: 2026-09-20 (part 48: **#76 MERGED; #40 CLOSED AS SUPERSEDED (owner-approved)**. `gh pr ready 76` + merge → merge commit `22dcb3b`
+on origin/master (verified via API). #40 closed with a comment documenting the fold (176e13a, byte-identical) and the live staging
+evidence (premium readback passed, 3/3 heroes served). Open PRs now: #80 (green, Arabic review pending), #75 (transformations now
+confirmed on staging — merge-ready), #62 (rec: close), #49 (rec: re-author or close), #36 (owner preference). Detail in part 48 below.)
+
+Prior run: 2026-09-20 (part 47: **REAL SEED RUN SUCCEEDED — STAGING RENDERS REAL PRODUCT PHOTOS (L1→executed on owner-provided credential)**. Owner added a working
 privileged key to `.env.staging`; `seed_demo_staging.mjs` ran **exit 0**: 3/3 heroes uploaded (0.92/1.02/0.53 MB PNG, upsert), 2 demo
 users seeded (**premium tier readback passed — #40's fix verified live**), 2 orders via the real checkout RPC (fresh, idempotent=false),
 wishlist=6, cart=2. Post-checks: app-shaped public URLs **HTTP 200** (the doubled `product-images/product-images/` prefix is the app's
@@ -119,6 +124,22 @@ Prior run: 2026-09-19 (part 32: **HARDCODED-ENGLISH SWEEP (L1, REPORT ONLY)** �
 context; the dominant class is not widgets but **failure copy**: 42 `AppError` sites
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
+
+## New — 2026-09-20 (part 48: #76 merged, #40 closed — the staging-photo arc completes)
+
+- Owner ask: "Mark PR #76 ready and merge it, then close #40."
+- **#76 merged:** ready → merge commit → `22dcb3b` on origin/master (state verified via API;
+  the `ready` command's output doesn't confirm the merge by itself).
+- **#40 closed** (not merged) with a closing comment stating the supersession chain: fix folded
+  into #76 at `176e13a` (byte-identical, section-diff-verified) → #76 merged → the real seed run
+  executed with the fix live (premium readback passed, 3/3 heroes publicly served).
+- **Open-PR board after this part:** #80 (all CI green, draft pending native Arabic review),
+  #75 (now merge-ready — staging transformations confirmed live in part 47), #62 (rec:
+  close-and-salvage), #49 (rec: re-author the 1-commit hardening on current master, or close),
+  #36 (docs-only, owner preference).
+- Not done: worktree cleanup (`.trees/demo-seed-images` branch is now merged; the worktree holds
+  a local `scripts/.env` with the service key — deleting it is safe since the key lives in the
+  gitignored `.env.staging`), and the standing `sbp_` token rotation.
 
 ## New — 2026-09-20 (part 47: the real seed run executed — staging has real product photos)
 
