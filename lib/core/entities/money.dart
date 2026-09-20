@@ -59,6 +59,25 @@ final class Money extends Equatable {
     return symbol.isEmpty ? amount : '$amount $symbol';
   }
 
+  // ─── Canonical display helpers (audit 2026-09: four screens had
+  // hand-rolled minor-units→EGP formatting — now single-sourced here) ──
+
+  /// Two-decimal major-units string: `const Money(189000).majorLabel()` →
+  /// `"1890.00"`. Display only — money math stays in integer minor units.
+  String majorLabel() => (minorUnits / 100).toStringAsFixed(2);
+
+  /// Canonical minor-units → EGP display label:
+  /// `const Money(189000).egpLabel()` → `"EGP 1890.00"`.
+  String egpLabel() => 'EGP ${majorLabel()}';
+
+  /// Whole-major-units label without decimals (the admin surfaces render
+  /// 1890, not 1890.0); keeps two decimals when the value is fractional
+  /// (`12.5` → `"12.50"`).
+  static String wholeEgpLabel(double majorUnits) {
+    final s = majorUnits.toStringAsFixed(2);
+    return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
+  }
+
   // ─── Arithmetic ────────────────────────────────────────────
 
   Money operator +(Money other) => Money(minorUnits + other.minorUnits);

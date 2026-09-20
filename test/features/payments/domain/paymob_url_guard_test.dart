@@ -60,6 +60,42 @@ void main() {
         isTrue,
       );
     });
+
+    test('rejects a lookalike subdomain that only ends with a Paymob host', () {
+      expect(
+        PaymobUrlGuard.isSafePaymobCheckoutUrl(
+          'https://accept.paymob.com.evil.com/api/acceptance/iframes/85679?payment_token=x',
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects an unknown paymob.com subdomain', () {
+      expect(
+        PaymobUrlGuard.isSafePaymobCheckoutUrl(
+          'https://random.paymob.com/api/acceptance/iframes/85679?payment_token=x',
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects an unknown paymobsolutions.com subdomain', () {
+      expect(
+        PaymobUrlGuard.isSafePaymobCheckoutUrl(
+          'https://random.paymobsolutions.com/checkout?payment_token=x',
+        ),
+        isFalse,
+      );
+    });
+
+    test('rejects the bare paymob.com apex domain', () {
+      expect(
+        PaymobUrlGuard.isSafePaymobCheckoutUrl(
+          'https://paymob.com/api/acceptance/iframes/85679?payment_token=x',
+        ),
+        isFalse,
+      );
+    });
   });
 
   group('PaymobUrlGuard.isSafeWebViewNavigationTarget', () {

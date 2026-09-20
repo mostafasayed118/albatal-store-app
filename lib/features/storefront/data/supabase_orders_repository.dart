@@ -21,8 +21,7 @@ import '../domain/repositories/orders_repository.dart';
 /// once made debug builds show an empty orders screen; see the locator
 /// comment).
 final class SupabaseOrdersRepository implements OrdersRepository {
-  SupabaseOrdersRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  SupabaseOrdersRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 

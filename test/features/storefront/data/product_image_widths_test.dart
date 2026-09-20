@@ -11,6 +11,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// [StorageService.detailImageWidth]. Both halves are pinned — a fix that
 /// bounded only one of them would look like a pass against the other.
 final class _WidthRecordingStorage extends StorageService {
+  /// Master's constructor requires the client explicitly (no global fallback),
+  /// and these doubles exist to exercise the pure URL builders — which never
+  /// touch it — so they pass `null`.
+  _WidthRecordingStorage() : super(client: null);
+
   /// Every (path, width) the mapper asked for, in call order, as
   /// `'<path>@<width>'` so a swapped budget cannot hide.
   final requested = <String>[];
@@ -28,6 +33,8 @@ final class _WidthRecordingStorage extends StorageService {
 /// Overrides ONLY the bare public URL, so the REAL width helper runs — the
 /// fail-open path (extension gate + base derivation) is exercised, not stubbed.
 final class _BareStorage extends StorageService {
+  _BareStorage() : super(client: null);
+
   @override
   String getProductImageUrl(String storagePath) => 'cdn:$storagePath';
 }

@@ -23,6 +23,7 @@ class ProductImageResolver extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.iconSize = 32,
     this.gaplessPlayback = true,
+    this.cacheWidth = 1080,
   });
 
   final int imageColor;
@@ -37,6 +38,12 @@ class ProductImageResolver extends StatelessWidget {
   /// Keep the old image visible while the asset path changes.
   final bool gaplessPlayback;
 
+  /// Memory decode budget for the http branch. Defaults to the detail/
+  /// hero 1080px budget; small/card consumers (grid cards, thumbnails)
+  /// pass their own footprint (e.g. 420) instead of paying a 1080px
+  /// decode for a 200px slot.
+  final int cacheWidth;
+
   Widget _fallback() => ColoredBox(
         color: Color(imageColor),
         child: Center(
@@ -49,15 +56,15 @@ class ProductImageResolver extends StatelessWidget {
     final url = asset;
     if (url == null || url.isEmpty) return _fallback();
     if (url.startsWith('http')) {
-      // Detail/hero path: full-bleed 1080px decode + disk cache with a
-      // short fade so high-res images pop in without a flash. The grid
-      // card path stays at its own 420px budget (stitch_product_grid_card).
+      // Detail/hero path defaults to a full-bleed 1080px decode + disk
+      // cache with a short fade; card/thumbnail consumers override via
+      // [cacheWidth] (grid cards use AppImage's 420px budget directly).
       return CachedNetworkImage(
         imageUrl: url,
         fit: fit,
-        memCacheWidth: 1080,
-        memCacheHeight: 1080,
-        maxWidthDiskCache: 1080,
+        memCacheWidth: cacheWidth,
+        memCacheHeight: cacheWidth,
+        maxWidthDiskCache: cacheWidth,
         fadeInDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => _fallback(),
         errorWidget: (context, url, error) => _fallback(),

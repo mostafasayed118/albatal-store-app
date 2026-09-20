@@ -11,6 +11,7 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/connectivity_gate.dart';
+import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/share_service.dart';
@@ -18,6 +19,7 @@ import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../domain/repositories/recently_viewed_store.dart';
+import '../../domain/repositories/reviews_repository.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
@@ -34,38 +36,61 @@ import '../widgets/size_guide_sheet.dart';
 import '../widgets/variant_selector.dart';
 import '../widgets/wishlist_toggle_icon.dart';
 
-/// Product details. The catalog repository is constructor-injected
-/// (audit P1); the router resolves it at the composition root, widget
-/// tests pass a fake directly. The optional [gate] (Task #8) lets the
-/// cubit tag offline loads so a network-miss while offline shows the
+/// Product details. All dependencies are constructor-injected (audit
+/// P1): the router resolves them at the composition root, widget tests
+/// pass fakes directly. The optional [gate] (Task #8) lets the cubit
+/// tag offline loads so a network-miss while offline shows the
 /// friendly notice instead of a hard error.
 class DetailsPage extends StatelessWidget {
-  const DetailsPage(
-      {super.key,
-      required this.id,
-      required CatalogRepository catalogRepository,
-      this.whatsappShareService,
-      ConnectivityGate? gate})
-      : _catalogRepository = catalogRepository,
+  const DetailsPage({
+    super.key,
+    required this.id,
+    required CatalogRepository catalogRepository,
+    required this.whatsappShareService,
+    this.shareService,
+    this.reviewsRepository,
+    this.recentlyViewed,
+    this.imageCompressor,
+    ConnectivityGate? gate,
+  })  : _catalogRepository = catalogRepository,
         _gate = gate;
 
   final String id;
   final CatalogRepository _catalogRepository;
   final ConnectivityGate? _gate;
 
-  /// #13: optional seam for widget tests; defaults to the getIt-registered
-  /// wa.me service (same injection pattern as [_catalogRepository]).
-  final WhatsAppShareService? whatsappShareService;
+  /// #13: WhatsApp-first share service (wa.me universal link), resolved
+  /// at the composition root — the page never service-locates.
+  final WhatsAppShareService whatsappShareService;
+
+  /// §5: generic platform share sheet, the fallback next to the
+  /// WhatsApp-first option. Resolved at the composition root; null in
+  /// widget tests that never trigger a share falls back to the
+  /// getIt-registered service (same test-only fallback pattern as the
+  /// other composition-root resolutions).
+  final ShareService? shareService;
+
+  /// §9: approved customer reviews. Null (pre-DI widget tests, or the
+  /// 050 migration not yet registered) hides the reviews section —
+  /// the page never breaks.
+  final ReviewsRepository? reviewsRepository;
+
+  /// §4 review-photo compression, resolved at the composition root.
+  /// Null (pre-DI widget tests) falls back to the uncompressed bytes.
+  final ImageCompressor? imageCompressor;
+
+  /// #3: app-scoped recently-viewed store. Null in widget tests that
+  /// pump the page pre-DI (fail-soft).
+  final RecentlyViewedStore? recentlyViewed;
 
   /// #13: WhatsApp-first share — localized prefill (name + price + deep
   /// link) handed to the wa.me universal link. A launch that no external
   /// app takes must still acknowledge the tap: the shared floating-error
   /// helper (never a raw snackbar), mirroring the Support page pattern.
   Future<void> _shareOnWhatsApp(BuildContext context, Product p) async {
-    final launched =
-        await (whatsappShareService ?? getIt<WhatsAppShareService>()).share(
-            context.l10n.whatsappShareProductMessage(
-                p.name, p.price.format(), productUrl(p.id)));
+    final launched = await whatsappShareService.share(context.l10n
+        .whatsappShareProductMessage(
+            p.name, p.price.format(), productUrl(p.id)));
     if (!launched && context.mounted) {
       showFloatingError(context, context.l10n.couldNotOpenLink);
     }
@@ -77,14 +102,12 @@ class DetailsPage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return BlocProvider(
-      // #3: record the view into the app-scoped store. Composition-root
-      // probe so widget tests can pump the page pre-DI.
+      // #3: record the view into the app-scoped store injected at the
+      // composition root; null in widget tests that pump pre-DI.
       create: (_) => ProductDetailsCubit(
         _catalogRepository,
         gate: _gate,
-        recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
-            ? getIt<RecentlyViewedStore>()
-            : null,
+        recentlyViewed: recentlyViewed,
       )..loadProduct(id),
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
@@ -154,8 +177,9 @@ class DetailsPage extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => unawaited(getIt<ShareService>().shareText(
-                      l.shareProductMessage(p.name, productUrl(p.id)))),
+                  onPressed: () => unawaited(
+                      (shareService ?? getIt<ShareService>()).shareText(
+                          l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],
@@ -177,7 +201,11 @@ class DetailsPage extends StatelessWidget {
                 ],
                 // §9: approved customer reviews + submit affordance.
                 const SizedBox(height: 8),
-                ReviewsSection(productId: p.id),
+                ReviewsSection(
+                  productId: p.id,
+                  repository: reviewsRepository,
+                  imageCompressor: imageCompressor,
+                ),
                 const SizedBox(height: 20),
                 // Selection-only rebuild: variant/quantity ticks must not
                 // replay the gallery or related builders above.

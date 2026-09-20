@@ -9,14 +9,17 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/notification_service.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/wishlist_tile.dart';
 
 class WishlistPage extends StatefulWidget {
-  const WishlistPage({super.key});
+  const WishlistPage({super.key, this.notificationService});
+
+  /// §5: back-in-stock notifications, resolved at the composition root.
+  /// Null (pre-DI widget tests) degrades to [NoOpNotificationService].
+  final NotificationService? notificationService;
 
   @override
   State<WishlistPage> createState() => _WishlistPageState();
@@ -39,9 +42,8 @@ class _WishlistPageState extends State<WishlistPage> {
   void _onRestock(Product product) {
     if (!mounted) return;
     final l = context.l10n;
-    final notifications = getIt.isRegistered<NotificationService>()
-        ? getIt<NotificationService>()
-        : const NoOpNotificationService();
+    final notifications =
+        widget.notificationService ?? const NoOpNotificationService();
     unawaited(notifications.showBackInStockNotification(
       title: l.backInStockTitle,
       body: l.backInStockBody(product.name),

@@ -100,6 +100,8 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           AdminCustomersCubit(
               repository: widget.repository ?? getIt<AdminRepository>()))
         ..load(),
+      // service_locator stays only as the test-only fallback above; the
+      // router always injects [AdminCustomersPage.repository].
       child: BlocBuilder<AdminCustomersCubit, AdminCustomersState>(
         builder: (context, state) {
           if (state.status == AdminCustomersStatus.loading) {
