@@ -1,6 +1,75 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 30: **THE SYNC WAS ACTED ON** — owner picked three of the
+Last run: 2026-09-19 (part 31: **THE REVIEWS SHOW-ALL LABEL IS LOCALIZED** — owner ask:
+"localize the hardcoded 'Show all (N)' label in the reviews section". Audit 2026-09-19
+finding **#4**, the last of the top five still open. Branch `fix/reviews-show-all-l10n`
+(worktree `.trees/l10n-show-all`, commits `5d1f3e9` + `2d72f85`), **pushed and opened as
+draft PR #79**; changes are `lib/` + `l10n/` + tests only.)
+
+## New — 2026-09-19 (part 31: the Show-all label is localized in both locales, pinned at both ends)
+
+- This closes audit 2026-09-19 **finding #4**, the last open top-five item: #2/#3
+  landed in PR #77, #1 and the P0-4 cache half in PR #75, #5 in PR #78.
+- **The defect was a literal.** `reviews_section.dart:230` built the button from
+  `Text('Show all ($remaining)')` — the only English string literal in the file —
+  behind a comment admitting "Localized copy lands with the next l10n regen (lib-only
+  scope — no .arb edits in this slice)". An Arabic shopper read English mid-screen.
+- **Change (`5d1f3e9`, 8 files, +154/−3):** `showAllReviews` added to
+  `l10n/app_en.arb` (with `@` placeholder metadata) and `l10n/app_ar.arb`; the tracked
+  generated output regenerated (`flutter gen-l10n` → `lib/generated/l10n/*`); the call
+  site now reads `context.l10n.showAllReviews(remaining)` (the `context.l10n` extension
+  was already imported) and the admitting comment went with it.
+- **The plural question, decided by the owner rather than by me.** I first shipped an
+  `int` placeholder and flagged the deviation from the audit's own suggested fix
+  ("add a *plural* `showAllReviews(int)`") on the grounds that the copy is
+  count-independent and the guard already ensures `remaining > 0`, so no CLDR category
+  can differ. **The owner chose the plural**, so `2d72f85` makes it
+  `{count, plural, =1{Show all} other{Show all ({count})}}` / ar
+  `{count, plural, one{عرض الكل} other{عرض الكل ({count})}}` — the same generated
+  signature, `String showAllReviews(int count)`.
+  - **Given the plural, it was given work to do rather than six identical Arabic
+    branches:** the count is dropped at exactly one hidden review, where "(1)" is
+    redundant, so the `=1`/`one` branch is reachable and pinned. That copy choice is
+    the one thing in this diff worth a reviewer's veto, and it is raised as review
+    focus #1 in the PR rather than buried.
+- **The pin is at both ends on purpose** — a key-only test would pass even if the
+  widget forgot to call the key:
+  - `test/l10n/l10n_audit_keys_test.dart`: English exact (`'Show all (3)'`), Arabic
+    non-empty, **and** `isNot(en)` — the assertion that actually encodes the defect —
+    plus the count surviving translation.
+  - NEW `test/features/storefront/presentation/widgets/reviews_show_all_l10n_test.dart`
+    (3 tests): renders the real `ReviewsSection` under the real delegate at locale
+    `ar`/`en` and asserts the rendered `TextButton` copy, with 12 reviews so the inline
+    cap of 10 leaves exactly 2 behind, plus a **negative control** (exactly 10 reviews ⇒
+    no button, since nothing is hidden).
+- **Evidence:** `flutter analyze` 0 issues · `dart format` clean (439 files) ·
+  `flutter test` **990/990** (985 master + 4 widget + 1 key). Five mutations, each
+  biting for the right reason, tree restored byte-identically (md5 `9f72cc17…`):
+
+  | mutation | pin that fails |
+  |---|---|
+  | hardcoded literal returns | Arabic widget test — 0 `TextButton`s matching the Arabic copy |
+  | Arabic ARB carries the English copy | key test — `Expected: not 'Show all (3)' / Actual: 'Show all (3)'` |
+  | label counts all reviews, not the remainder | English widget test — no `Show all (2)` |
+  | `if (remaining > 0)` removed | negative control — found the button with 10 reviews |
+  | plural's `=1` branch dropped | the single-hidden-review test — `Show all (1)` is back |
+
+- **Self-correction worth recording:** the first mutation run used `git checkout --` as
+  its *restore*, which discarded my own uncommitted implementation (both ARBs, the
+  regenerated output, the call site, the key pin) — a harness bug, not a code bug. Redone
+  by committing first and mutating after, so `git checkout --` restores the
+  implementation. **Lesson: with uncommitted work, `git checkout --` restores the commit,
+  not "the state before the mutation".**
+- **Landed on owner ask, three ways:** the owner chose all three offered follow-ups,
+  so this part also pushed the branch (`git push -u`, creating the upstream) and opened
+  **draft PR #79** — 8 files, +192/−3, base `master`, head `2d72f85`, `MERGEABLE`,
+  graded **L0 — Routine** with the ARB/scope caveat stated. Body verified against the
+  remote (12/12 assertions via `gh pr view 79`), not the local file.
+- **Not done:** nothing merged, and CI on the new head was not yet started when this ran.
+  `.trees/l10n-show-all` is clean at `2d72f85`. ARB edits sit outside the loop's
+  `lib/`-only auto-fix scope and landed on explicit owner ask, as in parts 21/26.
+
+Prior run: 2026-09-19 (part 30: **THE SYNC WAS ACTED ON** — owner picked three of the
 four offered follow-ups: the loop state was committed + pushed (so it no longer lives
 only in this checkout), **PR #75's conflict is cleared** (master merged in, gates
 1000/1000, `6dd6b90`), and **`refactor/safe-parse-consolidation` was pushed with an
