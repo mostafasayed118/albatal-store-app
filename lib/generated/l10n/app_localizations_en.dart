@@ -473,6 +473,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customerReviews => 'Customer reviews';
 
   @override
+  String showAllReviews(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show all ($count)',
+      one: 'Show all',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get writeReview => 'Write a review';
 
   @override

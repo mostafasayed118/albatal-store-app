@@ -224,10 +224,8 @@ final class _ReviewsInlineList extends StatelessWidget {
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
-              // Localized copy lands with the next l10n regen (lib-only
-              // scope — no .arb edits in this slice); count stays visible.
               onPressed: () => _showAllSheet(context),
-              child: Text('Show all ($remaining)'),
+              child: Text(context.l10n.showAllReviews(remaining)),
             ),
           ),
       ],

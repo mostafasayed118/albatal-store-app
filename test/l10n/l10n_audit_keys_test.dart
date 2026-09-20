@@ -104,6 +104,20 @@ void main() {
         expect(value.isNotEmpty, isTrue);
       }
     });
+    test('inline review list Show-all label (audit 2026-09-19 #4)', () {
+      final en = AppLocalizationsEn();
+      final ar = AppLocalizationsAr();
+      expect(en.showAllReviews(1), 'Show all');
+      expect(en.showAllReviews(3), 'Show all (3)');
+      expect(ar.showAllReviews(3), isNotEmpty);
+      // The defect this key closes was an Arabic shopper reading English, so
+      // the assertion that matters is difference, not non-emptiness.
+      expect(ar.showAllReviews(3), isNot(en.showAllReviews(3)));
+      // ...and the count the button promises must survive translation.
+      expect(ar.showAllReviews(3), contains('3'));
+      expect(ar.showAllReviews(11), contains('11'));
+    });
+
     test('offline banner copy', () {
       expect(
           AppLocalizationsEn().offlineBannerMessage, 'No internet connection');

@@ -191,6 +191,15 @@
   "couponActive": "Active",
   "adminAddCoupon": "Add coupon",
   "customerReviews": "Customer reviews",
+  "showAllReviews": "{count, plural, =1{Show all} other{Show all ({count})}}",
+  "@showAllReviews": {
+    "description": "Inline review list: opens the sheet holding every review, showing how many are not listed inline. The count is dropped when exactly one review is hidden, where it would be redundant",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "writeReview": "Write a review",
   "noReviewsYet": "No reviews yet — be the first.",
   "reviewPlaceholder": "How is the fabric?",

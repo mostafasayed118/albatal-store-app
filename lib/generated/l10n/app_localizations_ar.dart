@@ -478,6 +478,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerReviews => 'تقييمات العملاء';
 
   @override
+  String showAllReviews(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'عرض الكل ($count)',
+      one: 'عرض الكل',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get writeReview => 'اكتب تقييمًا';
 
   @override
