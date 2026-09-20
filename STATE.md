@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-19 (part 35: **TIER 3 AUTHORIZED — ADMIN LOCALIZED (L2, COMMITTED)**. The owner
+Last run: 2026-09-20 (part 36: **TIER 3B — ADMIN FAILURE COPY LOCALIZED (L2, COMMITTED)**. Commit
+`5476bdd` on `fix/failure-copy-l10n` (renamed from `fix/error-copy-localization`; **30 files,
++756/−62**): 24 admin codes + ARB copy + mapper entries, 20 repository sites marked, `errorCode`
+threaded through all 5 admin cubit states, ~18 render sites via `failureText`, and
+`checkAdmin`'s hardcoded 'Access denied: admin only' now carries `kAdminAccessDenied`. Pins: the
+failure-copy table grew 17 → **41 codes**, plus 6 cubit pins incl. a new `checkAdmin` group.
+`flutter analyze` 0 · `dart format` clean (445) · **1004/1004** on the committed tree ·
+**6/6 mutations bite**, restore clean. Tier 3 is complete; one draft PR for all tiers is the
+remaining step, pending owner go. Detail in part 36 below.)
+
+Prior run: 2026-09-19 (part 35: **TIER 3 AUTHORIZED — ADMIN LOCALIZED (L2, COMMITTED)**. The owner
 reversed the convention: *"Localize admin fully — it's a product decision I'm making now."*
 Commit `5c41a89` on `fix/error-copy-localization` (**23 files, +1813/−155**): ~70 admin strings
 moved to the ARB (**71 new keys** in both locales, placeholders + CLDR plurals), 13 literals
@@ -8,7 +18,6 @@ reuse keys that already carried that copy, one `adminOrderStatusLabel` helper re
 shouted `status.name.toUpperCase()` and the hand-capitalised enum name, and the **31 now-false
 "Admin-only, intentionally unlocalized" comments are retired**. `flutter analyze` 0 ·
 `dart format` clean · **1003/1003** · **6/6 mutations bite**, restore byte-identical.
-Tier 3b (admin *failure* copy — the Tier-1 class on admin surfaces) is the remaining piece.
 Detail in part 35 below.)
 
 Prior run: 2026-09-19 (part 34: **TIER 2 DONE; TIER 3 STOPPED — ITS PREMISE WAS WRONG (L2 + BLOCKED)**.
@@ -41,7 +50,49 @@ context; the dominant class is not widgets but **failure copy**: 42 `AppError` s
 carry exactly **1** machine-readable code, and the storefront renders `error.message`
 verbatim, so English failure prose reaches Arabic users. Detail in part 32 below.)
 
-## New — 2026-09-19 (part 35: Tier 3 — the admin console is localized, and the convention comments are gone)
+## New — 2026-09-20 (part 36: Tier 3b — the admin failure copy localizes through `errorCode` threading)
+
+- Continuation of part 35's declared remainder: the Tier-1 defect class (English failure prose
+  reaching the user) existed on admin surfaces too — `supabase_admin_repository.dart` authored
+  ~20 prose messages, 5 admin cubits copied `error.message` into state, ~18 render sites showed
+  it verbatim.
+- **Branch renamed** `fix/error-copy-localization` → `fix/failure-copy-l10n` (mirrors master's
+  HEAD exactly; no upstream ever existed, so the rename is safe).
+- **Commit `5476bdd` — 30 files, +756/−62** (amended twice: once to add the pins described
+  below, once for formatting).
+- **Data half:** 24 `kAdmin*` codes in `failure_codes.dart`, 24 `adminFailure*` keys in **both**
+  ARBs, 24 mapper entries in `failure_copy.dart`, and the 20 authoring sites in
+  `supabase_admin_repository.dart` marked with `code:`.
+- **UI half:** `errorCode` (and `tierErrorCode` for the customers write channel) threaded
+  through all 5 admin cubit states — field, constructor, `copyWith`, `props` — and every render
+  site switched to `failureText(l10n, code:, message:, fallback:)`, matching the Tier-1 idiom.
+  `AdminCubit.checkAdmin`'s hardcoded `'Access denied: admin only'` now emits
+  `kAdminAccessDenied` (the code + copy already existed; the site just didn't use them).
+- **Pins:** `failure_copy_test.dart`'s table grew from 17 to **41 codes** (exact English copy per
+  code, plus the Arabic-is-not-English difference assertion), and three cubit test files pin the
+  `errorCode` contract — including a **new `checkAdmin` group**, which had no coverage before.
+- **Crash recovery, recorded honestly:** the session died mid-script last run, leaving the
+  branch with four states whose constructors lacked `this.errorCode` (compile errors), one
+  misplaced import, and `checkAdmin` un-coded. My first import-repair pass made two files
+  *worse* (it moved imports to line 1, ahead of the `dart:`/`package:` blocks) — caught by
+  reading the diffs, then fixed properly. The code-flow emit sites themselves had all applied
+  correctly before the crash.
+- **False claim caught and corrected:** the first Tier 3b commit message said "Includes 9
+  pins" while the commit contained **no test files**. Fixed by writing the pins and amending
+  with a truthful message rather than letting the claim stand.
+- **Mutation battery: 6/6 bite** (mapper completeness; customers read-code; orders code;
+  checkAdmin code; tier-write code; an Arabic value reverted to English). **M2's first run did
+  not bite**: the mutation removed the *first* of two identical `errorCode: error.code,` sites
+  while the pin drives the second — retargeted, it bites. Restore clean at `5476bdd`.
+- **Gates on the committed tree:** `flutter analyze` 0 · `dart format` clean (445 files) ·
+  **1004/1004**.
+- **Same caveats as Tier 1:** the 20 repository `code:` sites are not end-to-end pinned (the
+  cubit tests use fake repositories) — they're held by the analyzer plus the 41-entry table;
+  and all Arabic copy is machine-authored, needing a native review.
+- **Not done:** nothing pushed, no PR. Tier 3a + 3b complete the tier plan; opening one draft
+  PR for all tiers (`b0934aa`, `6035aed`, `5c41a89`, `5476bdd`) awaits owner go.
+
+## Prior — 2026-09-19 (part 35: Tier 3 — the admin console is localized, and the convention comments are gone)
 
 - Owner decision on the part-34 escalation: **localize admin fully**. That reverses a
   documented convention, so the change had to retire the comments that asserted it, not just
