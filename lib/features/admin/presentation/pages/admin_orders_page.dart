@@ -8,7 +8,6 @@ import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/share_service.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/orders_csv_exporter.dart';
@@ -16,12 +15,12 @@ import '../cubit/admin_cubit.dart';
 
 /// Admin order queue — filter by status, export the view as CSV.
 class AdminOrdersPage extends StatefulWidget {
-  const AdminOrdersPage({super.key, this.shareService});
+  const AdminOrdersPage({super.key, required this.shareService});
 
-  /// Share sink for the CSV export (feature-batch §14). The composition
-  /// root supplies the real one; the `getIt` lookup is a test-only
-  /// fallback, matching the other admin pages.
-  final ShareService? shareService;
+  /// Share sink for the CSV export (feature-batch §14). Required,
+  /// resolved at the composition root — the view never service-locates
+  /// (audit DIP: no getIt in views); widget tests pass a recording fake.
+  final ShareService shareService;
 
   @override
   State<AdminOrdersPage> createState() => _AdminOrdersPageState();
@@ -40,7 +39,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   Future<void> _exportCsv() async {
     final orders = context.read<AdminCubit>().state.filteredOrders;
     if (orders.isEmpty) return;
-    await (widget.shareService ?? getIt<ShareService>()).shareFile(
+    await widget.shareService.shareFile(
       fileName: ordersCsvFileName(DateTime.now()),
       content: buildOrdersCsv(orders),
       mimeType: 'text/csv',

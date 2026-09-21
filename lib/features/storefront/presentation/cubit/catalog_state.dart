@@ -161,6 +161,11 @@ final class CatalogState extends Equatable {
   /// Filtered + sorted product list. Memoized per [CatalogFilters] value —
   /// the filters object is immutable with value equality, so a changed
   /// filter key invalidates the cache and identical filters reuse it.
+  ///
+  /// Bounded by the repository page ceiling (audit P4): the client only
+  /// ever holds one page (`kCatalogPageSize`, 100 rows), so the linear
+  /// filter and the O(n log n) sort above run over at most 100 products —
+  /// searching or re-sorting can never walk an unbounded table.
   List<Product> get visible {
     final current = filters;
     if (_m.visible == null || _m.visibleKey != current) {

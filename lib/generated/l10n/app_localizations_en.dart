@@ -393,6 +393,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortProducts => 'Sort products';
 
   @override
+  String get sortFeatured => 'Featured';
+
+  @override
+  String get sortPriceLowToHigh => 'Price: low to high';
+
+  @override
+  String get sortPriceHighToLow => 'Price: high to low';
+
+  @override
+  String get sortNameAZ => 'Name: A to Z';
+
+  @override
+  String get sortNewest => 'Newest';
+
+  @override
   String fabricsFound(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

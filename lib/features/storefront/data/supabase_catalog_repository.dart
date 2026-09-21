@@ -186,7 +186,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
             .map((r) => safeString(r, 'name'))
             .where((n) => n.isNotEmpty)
             .toList();
-      }, 'Failed to load categories');
+      }, 'Failed to load categories', code: kFailureLoad);
 
   @override
   Future<Result<Product>> fetchProductById(String id) async {
@@ -323,7 +323,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         final value = await _client.rpc('get_active_flash_sales');
         final rows = (value as List).whereType<Map<String, dynamic>>();
         return rows.map(FlashSaleCodec.fromRow).whereType<FlashSale>().toList();
-      }, 'Failed to load flash sales');
+      }, 'Failed to load flash sales', code: kFailureLoad);
 
   @override
   List<String> get defaultCategories => defaultCatalogCategories;

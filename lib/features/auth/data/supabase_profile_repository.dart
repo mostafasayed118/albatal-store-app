@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/profile.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 
 import '../domain/repositories/profile_repository.dart';
@@ -29,6 +30,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           return Profile.fromRow(response);
         },
         'Failed to load profile',
+        code: kFailureLoad,
       );
 
   @override
@@ -40,5 +42,6 @@ class SupabaseProfileRepository implements ProfileRepository {
           await _client.from('profiles').upsert(profile.toProfileRow());
         },
         'Failed to save profile',
+        code: kFailureSave,
       );
 }

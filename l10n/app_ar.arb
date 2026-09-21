@@ -125,6 +125,11 @@
   "clearSearch": "مسح البحث",
   "popularProducts": "المنتجات الشائعة",
   "sortProducts": "ترتيب المنتجات",
+  "sortFeatured": "مميز",
+  "sortPriceLowToHigh": "السعر: من الأقل إلى الأعلى",
+  "sortPriceHighToLow": "السعر: من الأعلى إلى الأقل",
+  "sortNameAZ": "الاسم: من أ إلى ي",
+  "sortNewest": "الأحدث",
   "fabricsFound": "{count, plural, zero{لا توجد أقمشة} one{قماش واحد} two{قماشان} few{{count} أقمشة} many{{count} قماشًا} other{{count} قماشًا}}",
   "@fabricsFound": {
     "description": "عدد الأقمشة الموجودة",

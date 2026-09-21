@@ -111,7 +111,7 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<Result<void>> signOut() => Result.guard<void>(() async {
         await _client.auth.signOut();
-      }, 'Failed to sign out');
+      }, 'Failed to sign out', code: kFailureUnexpected);
 
   @override
   Future<Result<void>> deleteAccount({required String email}) async {

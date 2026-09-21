@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/result.dart';
 import '../../domain/entities/admin_coupon.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_coupons_port.dart';
 
 enum AdminCouponsStatus { initial, loading, ready, error }
 
@@ -41,11 +41,11 @@ final class AdminCouponsState extends Equatable {
 
 /// Coupon management for the admin hub (feature-batch §8).
 class AdminCouponsCubit extends Cubit<AdminCouponsState> {
-  AdminCouponsCubit({required AdminRepository repository})
+  AdminCouponsCubit({required AdminCouponsPort repository})
       : _repository = repository,
         super(const AdminCouponsState());
 
-  final AdminRepository _repository;
+  final AdminCouponsPort _repository;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminCouponsStatus.loading));

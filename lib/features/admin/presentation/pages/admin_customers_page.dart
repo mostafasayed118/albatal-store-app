@@ -7,9 +7,8 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../domain/entities/admin_customer.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_customers_port.dart';
 import '../cubit/admin_customers_cubit.dart';
 import '../widgets/membership_tier_dialog.dart';
 
@@ -20,10 +19,12 @@ import '../widgets/membership_tier_dialog.dart';
 /// Rendered via [AdminCustomersCubit] (audit 2026-09-13); the State
 /// owns only the search field's text controller.
 class AdminCustomersPage extends StatefulWidget {
-  const AdminCustomersPage({super.key, this.cubit, this.repository});
+  const AdminCustomersPage({super.key, this.cubit, this.repository})
+      : assert(cubit != null || repository != null,
+            'Provide either cubit or repository.');
 
   final AdminCustomersCubit? cubit;
-  final AdminRepository? repository;
+  final AdminCustomersPort? repository;
 
   @override
   State<AdminCustomersPage> createState() => _AdminCustomersPageState();
@@ -104,11 +105,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider<AdminCustomersCubit>(
       create: (_) => (widget.cubit ??
-          AdminCustomersCubit(
-              repository: widget.repository ?? getIt<AdminRepository>()))
+          AdminCustomersCubit(repository: widget.repository!))
         ..load(),
-      // service_locator stays only as the test-only fallback above; the
-      // router always injects [AdminCustomersPage.repository].
+      // The router always injects [repository] (or a [cubit] in tests) —
+      // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminCustomersCubit, AdminCustomersState>(
         builder: (context, state) {
           if (state.status == AdminCustomersStatus.loading) {

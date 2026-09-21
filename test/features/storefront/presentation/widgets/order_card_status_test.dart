@@ -74,6 +74,26 @@ void main() {
       expect(find.textContaining('Delivered'), findsNWidgets(2));
     });
 
+    group('active status labels (audit: processing read Placed)', () {
+      // Regression pin: OrderCard._statusLabel mapped processing → placed
+      // while StatusProgress mapped processing → processing, so the same
+      // order read two states. Both must agree now, in both locales.
+      testWidgets('processing order reads Processing, not Placed',
+          (tester) async {
+        await pumpCard(tester, OrderStatus.processing, false);
+        expect(find.text('Processing'), findsWidgets);
+        expect(find.text('Placed'), findsNothing);
+      });
+
+      testWidgets('processing order reads Arabic copy under ar',
+          (tester) async {
+        await pumpCard(tester, OrderStatus.processing, false,
+            locale: const Locale('ar'));
+        expect(find.text('قيد المعالجة'), findsWidgets);
+        expect(find.text('Processing'), findsNothing);
+      });
+    });
+
     group('closed date locale', () {
       // Closed orders render "outcome · date" — the month must follow the
       // UI locale, never hardcoded English (AR history read "Jan…Dec").

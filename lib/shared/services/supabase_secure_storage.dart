@@ -79,7 +79,17 @@ final class SecureSessionStorage extends LocalStorage {
 
   @override
   Future<void> persistSession(String persistSessionString) async {
-    await _store.write(persistSessionKey, persistSessionString);
+    try {
+      await _store.write(persistSessionKey, persistSessionString);
+    } catch (e) {
+      // Fail-safe like every other method here (audit P5 — this was the
+      // only unwrapped write): a broken keystore at sign-in time surfaces
+      // as signed-out on next launch instead of throwing into the
+      // Supabase auth flow. The value is never logged (session material);
+      // keystore errors carry op codes, so the message is safe to log.
+      Log.w('Secure session persist failed; continuing unsigned: $e',
+          category: LogCategory.auth);
+    }
   }
 }
 

@@ -46,7 +46,11 @@ class AppImage extends StatelessWidget {
     final path = source;
     if (path == null || path.isEmpty) return _fallback(context);
 
-    if (path.startsWith('http://') || path.startsWith('https://')) {
+    // HTTPS-only (audit P5): a cleartext `http://` image URL never
+    // reaches the network stack — it renders the fallback instead, so a
+    // misconfigured CMS row or a downgrade cannot pull pixels over
+    // cleartext. All Supabase storage URLs are https.
+    if (path.startsWith('https://')) {
       // Default downsampling (audit): explicit cacheWidth/cacheHeight win;
       // otherwise decode at the layout size * devicePixelRatio, capped at
       // 1080px, so callers that size the widget never decode full-res.
@@ -63,6 +67,11 @@ class AppImage extends StatelessWidget {
         placeholder: (_, __) => _fallback(context),
         errorWidget: (_, __, ___) => _fallback(context),
       );
+    }
+
+    if (path.startsWith('http://')) {
+      assert(false, 'Cleartext image URL rejected (use https): $path');
+      return _fallback(context);
     }
 
     if (!path.toLowerCase().endsWith('.svg')) {

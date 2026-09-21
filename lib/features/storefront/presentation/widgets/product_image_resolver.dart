@@ -55,7 +55,7 @@ class ProductImageResolver extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = asset;
     if (url == null || url.isEmpty) return _fallback();
-    if (url.startsWith('http')) {
+    if (url.startsWith('https://')) {
       // Detail/hero path defaults to a full-bleed 1080px decode + disk
       // cache with a short fade; card/thumbnail consumers override via
       // [cacheWidth] (grid cards use AppImage's 420px budget directly).
@@ -69,6 +69,12 @@ class ProductImageResolver extends StatelessWidget {
         placeholder: (context, url) => _fallback(),
         errorWidget: (context, url, error) => _fallback(),
       );
+    }
+    // HTTPS-only (audit P5, same rule as AppImage): cleartext falls
+    // back instead of hitting the network.
+    if (url.startsWith('http://')) {
+      assert(false, 'Cleartext image URL rejected (use https): $url');
+      return _fallback();
     }
     return Stack(
       fit: StackFit.expand,

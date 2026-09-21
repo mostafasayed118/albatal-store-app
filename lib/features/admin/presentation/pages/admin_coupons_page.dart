@@ -6,27 +6,28 @@ import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/services/service_locator.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_coupons_port.dart';
 import '../cubit/admin_coupons_cubit.dart';
 
 /// Admin coupon management (feature-batch §8): list, create, activate.
 ///
-/// The router resolves [repository] at the composition root (audit P1) and
-/// the `getIt` lookup below stays as the test-only fallback, matching the
-/// other admin pages; [cubit] can be injected outright by widget tests.
+/// The router resolves [repository] at the composition root (audit P1);
+/// [cubit] can be injected outright by widget tests.
 class AdminCouponsPage extends StatelessWidget {
-  const AdminCouponsPage({super.key, this.cubit, this.repository});
+  const AdminCouponsPage({super.key, this.cubit, this.repository})
+      : assert(cubit != null || repository != null,
+            'Provide either cubit or repository.');
 
   final AdminCouponsCubit? cubit;
-  final AdminRepository? repository;
+  final AdminCouponsPort? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminCouponsCubit>(
-      create: (_) => (cubit ??
-          AdminCouponsCubit(repository: repository ?? getIt<AdminRepository>()))
-        ..load(),
+      // The router always injects [repository] (or a [cubit] in tests) —
+      // the view never service-locates (audit DIP: no getIt in views).
+      create: (_) =>
+          (cubit ?? AdminCouponsCubit(repository: repository!))..load(),
       child: const _AdminCouponsView(),
     );
   }

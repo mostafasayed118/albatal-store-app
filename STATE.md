@@ -1,9 +1,29 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-21 (part 54: **L2 VERIFY DONE — P0-4 RENDER-URL CUTOVER ALREADY CLOSED ON MASTER, NOTHING TO IMPLEMENT (owner: "do all you recommend")**.
+Last run: 2026-09-21 (part 56: **L2 FULL-REFACTOR COMPLETE — P4+P5 DONE, VERIFIER FINDINGS FIXED, FINAL GATES analyze 0 · 1034/1034 (worktree `fix/audit-top5-full`)**.
+P4: explicit decode budgets (related 280, wishlist 360, gallery 720) + catalog-ceiling doc. P5: last two view getIt fallbacks removed (DetailsPage + AdminOrdersPage shareService now required), checkout default documented-kept, https-only images, oauth log redaction, persistSession fail-safe. Verifier REJECT→fixed (orders-page getIt + 7 tool-dirtied registrants reverted). **No commit, no push** (owner-gated). Fix attempts used: 1/3. Detail in part 56 below.)
+
+Prior run: 2026-09-21 (part 54: **L2 VERIFY DONE — P0-4 RENDER-URL CUTOVER ALREADY CLOSED ON MASTER, NOTHING TO IMPLEMENT (owner: "do all you recommend")**.
 All four recommendations executed: (1) this STATE.md record committed on master (not the dead `fix/audit-findings-0919` branch); (2) `loop-ledger.json` created as a local-only log (repo `.gitignore:80` deliberately excludes it — respected, not force-added); (3) server-proposal backlog sequenced below — scope only, no `supabase/` writes, no DB touches;
 (4) housekeeping: local `fix/audit-findings-0919` deleted (all 4 local commits verified present on `origin/fix/audit-findings-0919` first — lossless),
 local master fast-forwarded `4cedc42→b6afecd`. **No push** (owner-gated). Fix attempts used: 0/3. Detail in part 54 below.)
+
+## New — 2026-09-21 (part 56: L2 full-refactor complete — P4+P5, verifier pass, final gates)
+
+- **P4 DONE:** `related_card` (cacheExtent 280 ≈ 2x the 140px slot), `wishlist_tile` (360 ≈ 2x the ~180px tile), `image_gallery` (resolver `cacheWidth: 720` detail budget instead of the 1080 default); `catalog_state.visible` documents the 100-row page ceiling bounding filter+sort. Pre-existing budgets left as-is (grid 420, hero 840, cart 144, flash 180, reviews 240, zoom 1080).
+- **P5 DONE:** `DetailsPage.shareService` and `AdminOrdersPage.shareService` now required constructor deps (router already passed both; 2 polish-test sites updated to pass the recording fake); zero `getIt<` remains in admin + storefront views (router composition root only). `CheckoutCubit`'s use-case default documented as kept — it builds a domain use case from the injected repo, no hidden dependency. Hardening: `AppImage` + `ProductImageResolver` https-only (http → debug assert + fallback; no test/lib caller uses http images); `oauth_service` passes the exception via `error:` (release-redacted) instead of interpolating the redirect URL; `persistSession` wrapped fail-safe like every other store method.
+- **Verifier (read-only subagent): first verdict REJECT on two lows** — the orders-page getIt (fixed above) + 7 flutter-dirtied plugin registrants (reverted; they re-dirty on any tool run, so the revert is the last step after the final gate). Re-gated after fixes.
+- **Final evidence (worktree, uncommitted):** `flutter analyze --no-pub` — **No issues found**; `flutter test` full suite — **1034/1034 pass** (the `[SMOKE] FAIL admin_dashboard_data` line is the harness's intentional negative fixture — the suite passes). `git status`: modified = `lib/` + `l10n/` + generated l10n + 1 polish test + `STATE.md`; untracked = 6 ports + sort helper + its test. **No commit, no push.**
+- Audit top-5 + #2 view-layer location (incl. the 13-site follow-up) are now closed in the worktree. Recommended next: owner review of the worktree diff, then commit/push/PR on explicit approval.
+
+## New — 2026-09-21 (part 55: L2 full-refactor — P3 admin ISP segregated, verified in worktree)
+
+- Owner enabled L2 full-refactor ("fix all") with execution "Worktree + verify, no commit". All work in `.trees/fix-audit-full`, branch `fix/audit-top5-full` (@ `00f0553`); lib-only + approved ARB/generated-l10n; **nothing committed, nothing pushed**.
+- **P1 DONE (earlier):** `order_card.dart:133` processing→`l.placed` mislabel → `l.processing`; regression pins EN+AR in `order_card_status_test.dart` (8/8).
+- **P2 DONE (earlier):** coupon constants to domain (`coupon_discount.dart`, re-exported from `coupon_mapper.dart`); `errorCode` on `OrdersState`; `code:` on 8 guards (catalog/auth/profile/address repos); 5 sort keys in both ARBs (543→548, `gen-l10n` regenerated) + `catalog_sort_label.dart` helper with deprecation on the data-only enum label; admin `statusLabel` documented data-only. `flutter analyze` clean after each step.
+- **P3 DONE (this session):** 6 narrow ports (`admin_orders/coupons/customers/reviews/sales/catalog_port.dart`); `admin_repository.dart` facade now *extends* all six + re-exports the paging contract; 4 single-concern cubits (coupons/reviews/customers/sales) depend on their narrow port; the 4 pages take narrow-typed `repository` with a `cubit ?? repository` assert and **no `getIt` fallback** (audit DIP); `_orderListSelect` lists explicit queue columns, dropping the `address_snapshot` JSONB from list reads (`AdminMappers.orderFromRow` already tolerates its absence).
+- **Evidence (worktree):** `flutter analyze --no-pub` — **No issues found**; `flutter test test/features/admin` — **189/189 pass**. One self-caught slip: a duplicated export line in the facade (fixed, re-gated).
+- **Remaining:** P4 (thumbnail decode budgets + catalog ceiling docs) and P5 (remaining 2 view-layer getIt sites + security hardening: `app_image.dart` https-only, secure-storage, oauth), then full `flutter test` + verifier subagent + report. Audit #2's storefront getIt sites partially overlap P3's page work — reconciled at final report.
 
 ## New — 2026-09-21 (part 54: L2 verification — the L1 "actionable TODO" was stale-branch noise; P0-4 closed on master b6afecd)
 

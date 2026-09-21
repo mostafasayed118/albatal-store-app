@@ -128,8 +128,11 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     // Production injects [placeOrder] from the composition root (the
     // router resolves the persisted IdempotencyStore via the use case);
     // the domain-located in-memory default keeps widget tests
-    // construction-only. The cubit depends on domain ports only — no
-    // data-layer imports (audit P1, re-closed after the feature batch).
+    // construction-only. Either branch depends on domain ports only —
+    // no service location, no data-layer imports (audit P1, re-closed
+    // after the feature batch; audit P5 reviewed and kept: the default
+    // builds a domain use case out of the already-injected repository,
+    // so there is no hidden dependency to inject).
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
     CouponsRepository? coupons,
@@ -155,7 +158,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
   Future<void> applyCoupon(String code) async {
     final repo = _coupons;
     if (repo == null) {
-      emit(state.copyWith(couponMessage: 'coupon_unavailable'));
+      emit(state.copyWith(couponMessage: kCouponUnavailable));
       return;
     }
     final result = await repo.validate(code);
