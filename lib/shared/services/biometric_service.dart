@@ -31,7 +31,7 @@ final class LocalBiometricService implements BiometricService {
     try {
       return await _auth.isDeviceSupported();
     } on Exception catch (e) {
-      Log.w('biometric capability probe failed: $e');
+      Log.w('biometric capability probe failed.', error: e);
       return false;
     }
   }
@@ -49,7 +49,7 @@ final class LocalBiometricService implements BiometricService {
         biometricOnly: false,
       );
     } on Exception catch (e) {
-      Log.w('biometric auth failed: $e');
+      Log.w('biometric auth failed.', error: e);
       return false;
     }
   }

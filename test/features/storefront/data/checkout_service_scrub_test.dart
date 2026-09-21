@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,6 +46,9 @@ void main() {
       expect(message, isNot(contains('https://')));
       expect(message, isNot(contains('SECRET_VALUE')));
       expect(message, 'Checkout failed');
+      // Code-not-message (audit): the scrubbed failure always carries the
+      // machine code so the page localizes without matching the literal.
+      expect((result as Failure).error.code, kCheckoutFailedCode);
     });
   });
 }

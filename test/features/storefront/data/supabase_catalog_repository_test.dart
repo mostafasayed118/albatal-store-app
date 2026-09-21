@@ -142,7 +142,7 @@ void main() {
       expect(raw, contains('22222222-2222-2222-2222-222222222222'));
 
       // Restore via repository helper (same logic as fetchProducts failure fallback)
-      final restored = repo.restorePersistentCacheForTest();
+      final restored = await repo.restorePersistentCacheForTest();
       expect(restored, isNotNull);
       expect(restored!.length, 2);
 
@@ -178,7 +178,7 @@ void main() {
     });
 
     test('restore returns null when prefs empty (cold start)', () async {
-      final restored = repo.restorePersistentCacheForTest();
+      final restored = await repo.restorePersistentCacheForTest();
       expect(restored, isNull);
     });
 

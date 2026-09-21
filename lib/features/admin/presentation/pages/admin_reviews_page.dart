@@ -5,8 +5,7 @@ import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/services/service_locator.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_reviews_port.dart';
 import '../cubit/admin_reviews_cubit.dart';
 
 /// Admin review moderation (feature-batch §9): approve/reject pending
@@ -14,19 +13,20 @@ import '../cubit/admin_reviews_cubit.dart';
 /// [AdminReviewsCubit] (audit 2026-09-13) — the page no longer calls
 /// the repository from its State.
 class AdminReviewsPage extends StatelessWidget {
-  const AdminReviewsPage({super.key, this.cubit, this.repository});
+  const AdminReviewsPage({super.key, this.cubit, this.repository})
+      : assert(cubit != null || repository != null,
+            'Provide either cubit or repository.');
 
   final AdminReviewsCubit? cubit;
-  final AdminRepository? repository;
+  final AdminReviewsPort? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminReviewsCubit>(
-      create: (_) => (cubit ??
-          AdminReviewsCubit(repository: repository ?? getIt<AdminRepository>()))
-        ..load(),
-      // service_locator stays only as the test-only fallback above; the
-      // router always injects [AdminReviewsPage.repository].
+      // The router always injects [repository] (or a [cubit] in tests) —
+      // the view never service-locates (audit DIP: no getIt in views).
+      create: (_) =>
+          (cubit ?? AdminReviewsCubit(repository: repository!))..load(),
       child: const _AdminReviewsView(),
     );
   }

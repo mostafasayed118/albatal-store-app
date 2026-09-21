@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/profile.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 
 import '../domain/repositories/profile_repository.dart';
@@ -21,7 +22,10 @@ class SupabaseProfileRepository implements ProfileRepository {
         () async {
           final response = await _client
               .from('profiles')
-              .select()
+              // Explicit columns (audit P6): only what [Profile.fromRow]
+              // reads — never `*`.
+              .select('id, full_name, phone, avatar_url, is_admin, '
+                  'membership_tier')
               .eq('id', userId)
               .maybeSingle();
 
@@ -29,6 +33,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           return Profile.fromRow(response);
         },
         'Failed to load profile',
+        code: kFailureLoad,
       );
 
   @override
@@ -40,5 +45,6 @@ class SupabaseProfileRepository implements ProfileRepository {
           await _client.from('profiles').upsert(profile.toProfileRow());
         },
         'Failed to save profile',
+        code: kFailureSave,
       );
 }

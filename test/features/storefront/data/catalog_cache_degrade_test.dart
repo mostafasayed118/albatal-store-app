@@ -75,7 +75,7 @@ void main() {
       ];
       await prefs.setString('catalog_products_cache_v1', jsonEncode(payload));
 
-      final restored = _repo(prefs).restorePersistentCacheForTest();
+      final restored = await _repo(prefs).restorePersistentCacheForTest();
       expect(restored, isNotNull);
       expect(restored!.map((p) => p.id), [
         '11111111-1111-1111-1111-111111111111',
@@ -94,7 +94,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('catalog_products_cache_v1', 'not-json{{{');
-      expect(_repo(prefs).restorePersistentCacheForTest(), isNull);
+      expect(await _repo(prefs).restorePersistentCacheForTest(), isNull);
     });
 
     test('awaited persist round-trips the full product', () async {
@@ -104,7 +104,7 @@ void main() {
 
       await repo.persistCacheForTest([_good]);
 
-      final restored = repo.restorePersistentCacheForTest();
+      final restored = await repo.restorePersistentCacheForTest();
       expect(restored, hasLength(1));
       final product = restored!.single;
       expect(product.id, _good.id);

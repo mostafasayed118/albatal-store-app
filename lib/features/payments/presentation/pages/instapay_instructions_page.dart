@@ -175,7 +175,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
         _attachedFileName = xfile.name;
       });
     } catch (e) {
-      Log.w('InstaPay screenshot pick failed: $e');
+      Log.w('InstaPay screenshot pick failed.', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l.instapayPickScreenshotError)),

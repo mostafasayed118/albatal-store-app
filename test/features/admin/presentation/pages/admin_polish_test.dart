@@ -265,7 +265,8 @@ void main() {
       when(() => repo.getAllOrders(status: any(named: 'status')))
           .thenAnswer((_) async => const Success([]));
 
-      await tester.pumpWidget(harness(const AdminOrdersPage()));
+      await tester.pumpWidget(
+          harness(AdminOrdersPage(shareService: _RecordingShareService())));
       await tester.pump();
       await tester.pump();
 
@@ -280,7 +281,8 @@ void main() {
       when(() => repo.getAllOrders(status: any(named: 'status')))
           .thenAnswer((_) async => const Failure(AppError('offline')));
 
-      await tester.pumpWidget(harness(const AdminOrdersPage()));
+      await tester.pumpWidget(
+          harness(AdminOrdersPage(shareService: _RecordingShareService())));
       await tester.pump();
       await tester.pump();
 

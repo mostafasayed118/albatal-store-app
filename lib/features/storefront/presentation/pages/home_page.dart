@@ -19,6 +19,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../catalog_sort_label.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -411,11 +412,12 @@ final class _PopularHeader extends StatelessWidget {
           initialValue: sort,
           onSelected: onSortSelected,
           itemBuilder: (_) => CatalogSort.values
-              .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
+              .map((s) => PopupMenuItem(
+                  value: s, child: Text(catalogSortLabel(l, s))))
               .toList(),
           child: Chip(
             avatar: const Icon(Icons.sort, size: 18),
-            label: Text(sort.label),
+            label: Text(catalogSortLabel(l, sort)),
           ),
         ),
       ],

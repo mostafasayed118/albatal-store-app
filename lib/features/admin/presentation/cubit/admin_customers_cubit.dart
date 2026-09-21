@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/result.dart';
 import '../../domain/entities/admin_customer.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_customers_port.dart';
 
 enum AdminCustomersStatus { initial, loading, ready, error }
 
@@ -116,13 +116,13 @@ final class AdminCustomersState extends Equatable {
 /// repeat a row or step over one (see [_cursor]).
 class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   AdminCustomersCubit({
-    required AdminRepository repository,
+    required AdminCustomersPort repository,
     this.pageSize = defaultCustomersPageSize,
     this.searchDebounce = const Duration(milliseconds: 300),
   })  : _repository = repository,
         super(const AdminCustomersState());
 
-  final AdminRepository _repository;
+  final AdminCustomersPort _repository;
 
   /// Rows requested per page. Injectable so tests can drive paging with a
   /// handful of fixtures instead of fifty.

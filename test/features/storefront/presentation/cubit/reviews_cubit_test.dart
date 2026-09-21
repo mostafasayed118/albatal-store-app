@@ -73,8 +73,7 @@ void main() {
       await cubit.close();
     });
 
-    test('submit surfaces buy-to-review requirement as a message', () async {
-      final repo = _MockReviewsRepo();
+    test('submit surfaces buy-to-review requirement as a message', () async {      final repo = _MockReviewsRepo();
       when(() => repo.fetchForProduct('p1'))
           .thenAnswer((_) async => const Success(<ProductReview>[]));
       when(() => repo.submit(
@@ -90,6 +89,49 @@ void main() {
       await cubit.submit(rating: 5, text: 'great');
       expect(cubit.state.submitMessage, kReviewBuyRequired);
       expect(cubit.state.submitting, isFalse);
+      await cubit.close();
+    });
+
+    test('load classifies on error.code, not the message (audit)', () async {
+      final repo = _MockReviewsRepo();
+      // A coded failure with unrelated prose still degrades to unavailable.
+      when(() => repo.fetchForProduct('p1')).thenAnswer(
+          (_) async => const Failure(AppError('boom', code: kReviewUnavailable)));
+      final cubit = ReviewsCubit(repository: repo);
+
+      await cubit.load('p1');
+      expect(cubit.state.status, ReviewsStatus.unavailable);
+      await cubit.close();
+    });
+
+    test('load treats an uncoded failure as a generic error (audit)',
+        () async {
+      final repo = _MockReviewsRepo();
+      when(() => repo.fetchForProduct('p1'))
+          .thenAnswer((_) async => const Failure(AppError('boom')));
+      final cubit = ReviewsCubit(repository: repo);
+
+      await cubit.load('p1');
+      expect(cubit.state.status, ReviewsStatus.error);
+      await cubit.close();
+    });
+
+    test('submit carries the failure code, not prose (audit)', () async {
+      final repo = _MockReviewsRepo();
+      when(() => repo.fetchForProduct('p1'))
+          .thenAnswer((_) async => const Success(<ProductReview>[]));
+      when(() => repo.submit(
+                productId: 'p1',
+                rating: any(named: 'rating'),
+                text: any(named: 'text'),
+                photoBytes: any(named: 'photoBytes'),
+              )).thenAnswer((_) async =>
+              const Failure(AppError('boom', code: kReviewBuyRequired)));
+      final cubit = ReviewsCubit(repository: repo);
+      await cubit.load('p1');
+
+      await cubit.submit(rating: 5, text: 'great');
+      expect(cubit.state.submitMessage, kReviewBuyRequired);
       await cubit.close();
     });
   });

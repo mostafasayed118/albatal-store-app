@@ -48,6 +48,13 @@ final class AdminProduct {
   final double? minCutMeters;
 
   /// Compact status chip for list rows.
+  ///
+  /// Data-layer convenience only — never rendered directly. Shopper-visible
+  /// surfaces use the localized `active` / `inactive` ARB keys (see
+  /// `admin_products_page.dart`, `admin_categories_page.dart`), mirroring
+  /// the `adminOrderStatusLabel` rule that the domain layer must not own
+  /// presentation copy (audit). Kept in English for logs/diagnostics and
+  /// pinned by `admin_mappers_test.dart`.
   String get statusLabel => isActive ? 'Active' : 'Inactive';
 }
 

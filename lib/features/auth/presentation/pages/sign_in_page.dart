@@ -218,7 +218,7 @@ class _SignInPageState extends State<SignInPage> {
       case Failure(:final error):
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text(error.message == kOAuthCancelled
+          content: Text((error.code ?? error.message) == kOAuthCancelled
               ? context.l10n.oauthCancelled
               : context.l10n.oauthUnavailable),
         ));

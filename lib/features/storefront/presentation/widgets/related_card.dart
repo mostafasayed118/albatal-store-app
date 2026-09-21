@@ -26,10 +26,14 @@ class RelatedCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
+                  // Decode budget (audit P4): the image slot is 140px
+                  // wide — 280px ≈ 2x covers high-dpr phones without
+                  // paying the 720px card default for a thumbnail strip.
                   child: ProductImagePlaceholder(
                     imageColor: product.imageColor,
                     imageAsset: product.imageAsset,
                     constraints: const BoxConstraints.expand(),
+                    cacheExtent: 280,
                     size: 36,
                   ),
                 ),

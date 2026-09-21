@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/result.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_reviews_port.dart';
 
 enum AdminReviewsStatus { initial, loading, ready, error }
 
@@ -45,11 +45,11 @@ final class AdminReviewsState extends Equatable {
 /// longer drives the repository directly (audit 2026-09-13) — it
 /// renders this cubit, exactly like the coupons surface.
 class AdminReviewsCubit extends Cubit<AdminReviewsState> {
-  AdminReviewsCubit({required AdminRepository repository})
+  AdminReviewsCubit({required AdminReviewsPort repository})
       : _repository = repository,
         super(const AdminReviewsState());
 
-  final AdminRepository _repository;
+  final AdminReviewsPort _repository;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminReviewsStatus.loading));

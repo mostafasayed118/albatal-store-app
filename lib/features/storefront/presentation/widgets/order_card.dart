@@ -130,7 +130,7 @@ class _OrderCardState extends State<OrderCard> {
         OrderStatus.pending => l.placed,
         OrderStatus.placed => l.placed,
         OrderStatus.paid => l.paid,
-        OrderStatus.processing => l.placed,
+        OrderStatus.processing => l.processing,
         OrderStatus.shipped => l.shipped,
         OrderStatus.delivered => l.delivered,
         OrderStatus.cancelled => l.cancelled,

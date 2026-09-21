@@ -99,7 +99,7 @@ final class LocalStorefrontPersistence
     try {
       decoded = jsonDecode(raw);
     } on FormatException catch (e) {
-      Log.w('Wishlist cache is corrupt; ignoring: $e');
+      Log.w('Wishlist cache is corrupt; ignoring.', error: e);
       return <String>{};
     }
     if (decoded is! List) {
@@ -138,7 +138,7 @@ final class LocalStorefrontPersistence
     try {
       decoded = jsonDecode(raw);
     } on FormatException catch (e) {
-      Log.w('Order snapshot cache is corrupt; ignoring: $e');
+      Log.w('Order snapshot cache is corrupt; ignoring.', error: e);
       return const [];
     }
     if (decoded is! List) {
@@ -262,7 +262,7 @@ extension OrderCodec on Order {
                 sample: safeBool(line, 'sample'),
               );
             } catch (e) {
-              Log.w('Order snapshot line is corrupt; skipping: $e');
+              Log.w('Order snapshot line is corrupt; skipping.', error: e);
               return null;
             }
           })
@@ -298,7 +298,7 @@ extension OrderCodec on Order {
             addressMap.isEmpty ? null : AddressCodec.fromOrderJson(addressMap),
       );
     } catch (e) {
-      Log.w('Order snapshot entry is corrupt; skipping: $e');
+      Log.w('Order snapshot entry is corrupt; skipping.', error: e);
       return null;
     }
   }

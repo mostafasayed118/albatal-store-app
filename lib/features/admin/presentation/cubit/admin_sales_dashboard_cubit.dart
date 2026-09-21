@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/admin_sales.dart';
 import '../../domain/entities/low_stock_variant.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_sales_port.dart';
 
 enum AdminSalesDashboardStatus { loading, loaded, error }
 
@@ -40,11 +40,11 @@ final class AdminSalesDashboardState extends Equatable {
 /// this boundary; every await is followed by an [isClosed] guard so a
 /// disposed cubit never emits after close.
 class AdminSalesDashboardCubit extends Cubit<AdminSalesDashboardState> {
-  AdminSalesDashboardCubit({required AdminRepository repository})
+  AdminSalesDashboardCubit({required AdminSalesPort repository})
       : _repository = repository,
         super(const AdminSalesDashboardState());
 
-  final AdminRepository _repository;
+  final AdminSalesPort _repository;
 
   Future<void> load() async {
     emit(const AdminSalesDashboardState(

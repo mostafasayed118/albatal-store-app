@@ -4,8 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/services/service_locator.dart';
-import '../../domain/repositories/admin_repository.dart';
+import '../../domain/repositories/admin_sales_port.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
 import '../widgets/sales_low_stock_list.dart';
 import '../widgets/sales_revenue_chart.dart';
@@ -20,10 +19,12 @@ import '../widgets/sales_top_products_list.dart';
 /// root (audit P1), with an optional [cubit] seam for tests. Admin copy is
 /// localized like the storefront (owner decision, part 34).
 class AdminSalesDashboardPage extends StatefulWidget {
-  const AdminSalesDashboardPage({super.key, this.cubit, this.repository});
+  const AdminSalesDashboardPage({super.key, this.cubit, this.repository})
+      : assert(cubit != null || repository != null,
+            'Provide either cubit or repository.');
 
   final AdminSalesDashboardCubit? cubit;
-  final AdminRepository? repository;
+  final AdminSalesPort? repository;
 
   @override
   State<AdminSalesDashboardPage> createState() =>
@@ -35,11 +36,10 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
   Widget build(BuildContext context) {
     return BlocProvider<AdminSalesDashboardCubit>(
       create: (_) => (widget.cubit ??
-          AdminSalesDashboardCubit(
-              repository: widget.repository ?? getIt<AdminRepository>()))
+          AdminSalesDashboardCubit(repository: widget.repository!))
         ..load(),
-      // service_locator stays only as the test-only fallback above; the
-      // router always injects [AdminSalesDashboardPage.repository].
+      // The router always injects [repository] (or a [cubit] in tests) —
+      // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminSalesDashboardCubit, AdminSalesDashboardState>(
         // Audit (buildWhen): only the fields the cards render below gate
         // a rebuild — any future state field that no card reads stays

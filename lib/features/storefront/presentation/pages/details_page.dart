@@ -13,7 +13,6 @@ import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/product_share_service.dart';
-import '../../../../shared/services/service_locator.dart';
 import '../../../../shared/services/share_service.dart';
 import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -47,7 +46,7 @@ class DetailsPage extends StatelessWidget {
     required this.id,
     required CatalogRepository catalogRepository,
     required this.whatsappShareService,
-    this.shareService,
+    required this.shareService,
     this.reviewsRepository,
     this.recentlyViewed,
     this.imageCompressor,
@@ -64,11 +63,10 @@ class DetailsPage extends StatelessWidget {
   final WhatsAppShareService whatsappShareService;
 
   /// §5: generic platform share sheet, the fallback next to the
-  /// WhatsApp-first option. Resolved at the composition root; null in
-  /// widget tests that never trigger a share falls back to the
-  /// getIt-registered service (same test-only fallback pattern as the
-  /// other composition-root resolutions).
-  final ShareService? shareService;
+  /// WhatsApp-first option. Required, resolved at the composition root —
+  /// the view never service-locates (audit DIP: no getIt in views);
+  /// widget tests pass a no-op fake.
+  final ShareService shareService;
 
   /// §9: approved customer reviews. Null (pre-DI widget tests, or the
   /// 050 migration not yet registered) hides the reviews section —
@@ -177,9 +175,8 @@ class DetailsPage extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => unawaited(
-                      (shareService ?? getIt<ShareService>()).shareText(
-                          l.shareProductMessage(p.name, productUrl(p.id)))),
+                  onPressed: () => unawaited(shareService.shareText(
+                      l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../shared/services/secure_store.dart';
 import '../../../core/data/address_codec.dart';
+import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
@@ -57,7 +58,7 @@ final class LocalAddressRepository implements ClearableAddressRepository {
           addresses.add(address);
         }
         return addresses;
-      }, 'Unable to read saved addresses.');
+      }, 'Unable to read saved addresses.', code: kFailureLoad);
 
   @override
   Future<Result<void>> save(List<Address> addresses) async {
@@ -67,6 +68,7 @@ final class LocalAddressRepository implements ClearableAddressRepository {
         return _secureStore.write(_key, encoded);
       },
       'Unable to save saved addresses.',
+      code: kFailureSave,
     );
     return result.when(
       success: (_) => const Success(null),
@@ -95,6 +97,7 @@ final class LocalAddressRepository implements ClearableAddressRepository {
           await _preferences.remove(_key);
         },
         'Unable to clear saved addresses.',
+        code: kFailureSave,
       );
 
   /// Reads the encrypted address book, migrating a cleartext legacy

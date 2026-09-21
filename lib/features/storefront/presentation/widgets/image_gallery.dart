@@ -81,10 +81,13 @@ class _ImageGalleryState extends State<ImageGallery> {
             itemBuilder: (_, i) => GestureDetector(
               onTap: () => _showZoomed(context, i),
               // Shared resolver: handles http URLs and load failures
-              // that a bare asset render would crash on.
+              // that a bare asset render would crash on. Decode budget
+              // (audit P4): the gallery renders at detail width, so pin
+              // the 720px detail budget instead of the 1080px default.
               child: ProductImageResolver(
                 imageColor: widget.product.imageColor,
                 asset: _allImages[i].isEmpty ? null : _allImages[i],
+                cacheWidth: 720,
               ),
             ),
           ),

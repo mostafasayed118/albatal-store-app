@@ -137,8 +137,8 @@ final class PaymentStatusWatcher {
           if (result != null) emitTerminal(result);
           // Other statuses (e.g. 'pending') keep the poll running.
         } catch (e) {
-          Log.w('Payment status fallback poll failed: $e',
-              category: LogCategory.payment);
+          Log.w('Payment status fallback poll failed.',
+              error: e, category: LogCategory.payment);
         } finally {
           pollInFlight = false;
         }

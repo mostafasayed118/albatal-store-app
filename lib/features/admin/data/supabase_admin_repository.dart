@@ -332,13 +332,23 @@ final class SupabaseAdminRepository implements AdminRepository {
   /// customer identity is required. The mapper degrades the missing profile
   /// to an empty name rather than throwing, which is why this shows up as a
   /// blank label instead of an error.
+  /// The list query selects only the columns the queue cards render —
+  /// never `*`. In particular `address_snapshot` (a heavy JSONB blob) is
+  /// excluded: the queue never shows an address, and the detail view
+  /// refetches via [getOrderDetails] (audit: perf — `select('*')` pulled
+  /// the snapshot ×50 per load). [AdminMappers.orderFromRow] tolerates
+  /// the absent key and yields `address: null` for queue rows.
+  static const _orderListSelect =
+      'id,status,total,placed_at,payment_method,tracking_number,'
+      'profiles(full_name),order_items(id)';
+
   @override
   Future<Result<List<AdminOrder>>> getAllOrders({
     AdminOrderStatus? status,
     int limit = 50,
   }) =>
       Result.guard(() async {
-        final query = _client.from('orders').select('*, profiles(full_name)');
+        final query = _client.from('orders').select(_orderListSelect);
         final filtered =
             status != null ? query.eq('status', status.dbValue) : query;
         final rows =
@@ -585,7 +595,9 @@ final class SupabaseAdminRepository implements AdminRepository {
       Result.guard(() async {
         final res = await _client
             .from('product_variants')
-            .select()
+            // Explicit columns (audit P6): only what
+            // [AdminMappers.variantFromRow] reads — never `*`.
+            .select('id, size, color, stock, price_override')
             .eq('product_id', productId)
             .order('size');
         return AdminMappers.variantsFromRows(res as List);

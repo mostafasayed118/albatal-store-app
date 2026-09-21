@@ -14,6 +14,7 @@ import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/presentation/cubit/addresses_cubit.dart';
+import '../../domain/entities/coupon_discount.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/repositories/coupons_repository.dart';
@@ -285,9 +286,9 @@ final class _CouponCardState extends State<_CouponCard> {
 
   String _messageText(AppLocalizations l10n, String? code) {
     switch (code) {
-      case 'coupon_invalid':
+      case kCouponInvalid:
         return l10n.couponInvalid;
-      case 'coupon_unavailable':
+      case kCouponUnavailable:
         return l10n.couponUnavailable;
       default:
         return l10n.couponApplied;

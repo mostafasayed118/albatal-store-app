@@ -848,6 +848,36 @@ abstract class AppLocalizations {
   /// **'Sort products'**
   String get sortProducts;
 
+  /// No description provided for @sortFeatured.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get sortFeatured;
+
+  /// No description provided for @sortPriceLowToHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Price: low to high'**
+  String get sortPriceLowToHigh;
+
+  /// No description provided for @sortPriceHighToLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Price: high to low'**
+  String get sortPriceHighToLow;
+
+  /// No description provided for @sortNameAZ.
+  ///
+  /// In en, this message translates to:
+  /// **'Name: A to Z'**
+  String get sortNameAZ;
+
+  /// No description provided for @sortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get sortNewest;
+
   /// Number of fabrics found
   ///
   /// In en, this message translates to:

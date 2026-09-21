@@ -7,6 +7,12 @@ import '../../../../core/entities/product.dart';
 enum CatalogSort { featured, priceLowToHigh, priceHighToLow, name, newest }
 
 extension CatalogSortLabel on CatalogSort {
+  /// English fallback for diagnostics only — never rendered.
+  ///
+  /// Shopper-visible surfaces must use `catalogSortLabel(l10n, sort)`
+  /// (`presentation/catalog_sort_label.dart`) so the copy follows the UI
+  /// locale (audit: this getter used to be rendered verbatim, leaking
+  /// English into Arabic sessions).
   String get label => switch (this) {
         CatalogSort.featured => 'Featured',
         CatalogSort.priceLowToHigh => 'Price: low to high',

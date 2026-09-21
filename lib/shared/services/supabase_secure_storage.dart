@@ -36,11 +36,11 @@ final class SecureSessionStorage extends LocalStorage {
       await prefs.remove(persistSessionKey);
     } catch (e) {
       // Fail-safe: a broken keystore or prefs only means the session
-      // is not restored — auth proceeds as signed-out. Keystore errors
-      // carry op codes, never session values, so the message is safe
-      // to log (release breadcrumbs pass Log.redact).
-      Log.w('Secure session migration failed; continuing signed-out: $e',
-          category: LogCategory.auth);
+      // is not restored — auth proceeds as signed-out. The error travels
+      // via `error:` so release breadcrumbs only carry the safe summary
+      // (audit P5: never interpolate the raw exception at the call site).
+      Log.w('Secure session migration failed; continuing signed-out.',
+          error: e, category: LogCategory.auth);
     }
   }
 
@@ -49,8 +49,8 @@ final class SecureSessionStorage extends LocalStorage {
     try {
       return await _store.read(persistSessionKey) != null;
     } catch (e) {
-      Log.w('Secure session check failed; assuming signed-out: $e',
-          category: LogCategory.auth);
+      Log.w('Secure session check failed; assuming signed-out.',
+          error: e, category: LogCategory.auth);
       return false;
     }
   }
@@ -60,8 +60,8 @@ final class SecureSessionStorage extends LocalStorage {
     try {
       return await _store.read(persistSessionKey);
     } catch (e) {
-      Log.w('Secure session read failed; treating as signed-out: $e',
-          category: LogCategory.auth);
+      Log.w('Secure session read failed; treating as signed-out.',
+          error: e, category: LogCategory.auth);
       return null;
     }
   }
@@ -72,14 +72,24 @@ final class SecureSessionStorage extends LocalStorage {
       await _store.delete(persistSessionKey);
     } catch (e) {
       // Sign-out must never fail on a keystore error.
-      Log.w('Secure session delete failed during sign-out: $e',
-          category: LogCategory.auth);
+      Log.w('Secure session delete failed during sign-out.',
+          error: e, category: LogCategory.auth);
     }
   }
 
   @override
   Future<void> persistSession(String persistSessionString) async {
-    await _store.write(persistSessionKey, persistSessionString);
+    try {
+      await _store.write(persistSessionKey, persistSessionString);
+    } catch (e) {
+      // Fail-safe like every other method here (audit P5 — this was the
+      // only unwrapped write): a broken keystore at sign-in time surfaces
+      // as signed-out on next launch instead of throwing into the
+      // Supabase auth flow. The value is never logged (session material);
+      // the error travels via `error:` for the release-safe summary.
+      Log.w('Secure session persist failed; continuing unsigned.',
+          error: e, category: LogCategory.auth);
+    }
   }
 }
 
@@ -101,7 +111,7 @@ final class SecureGotrueStorage extends GotrueAsyncStorage {
     try {
       return await _store.read(key);
     } catch (e) {
-      Log.w('PKCE verifier read failed: $e', category: LogCategory.auth);
+      Log.w('PKCE verifier read failed.', error: e, category: LogCategory.auth);
       return null;
     }
   }
@@ -116,7 +126,8 @@ final class SecureGotrueStorage extends GotrueAsyncStorage {
       await _store.delete(key);
     } catch (e) {
       // Removing a stale verifier must never throw into the auth flow.
-      Log.w('PKCE verifier cleanup failed: $e', category: LogCategory.auth);
+      Log.w('PKCE verifier cleanup failed.',
+          error: e, category: LogCategory.auth);
     }
   }
 }

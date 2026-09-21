@@ -28,9 +28,12 @@ class WishlistTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Decode budget (audit P4): ~180px tile — 360px ≈ 2x
+              // covers high-dpr phones without the 720px card default.
               ProductImagePlaceholder(
                   imageColor: product.imageColor,
-                  imageAsset: product.imageAsset),
+                  imageAsset: product.imageAsset,
+                  cacheExtent: 360),
               const SizedBox(height: 8),
               Text(product.name,
                   maxLines: 1,

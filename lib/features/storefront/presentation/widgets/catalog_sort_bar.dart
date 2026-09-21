@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../catalog_sort_label.dart';
 import '../cubit/catalog_cubit.dart';
 
 /// Sort dropdown and product count.
@@ -26,11 +27,12 @@ class CatalogSortBar extends StatelessWidget {
             initialValue: state.filters.sort,
             onSelected: catalog.selectSort,
             itemBuilder: (_) => CatalogSort.values
-                .map((s) => PopupMenuItem(value: s, child: Text(s.label)))
+                .map((s) =>
+                    PopupMenuItem(value: s, child: Text(catalogSortLabel(l, s))))
                 .toList(),
             child: Chip(
               avatar: const Icon(Icons.sort, size: 18),
-              label: Text(state.filters.sort.label),
+              label: Text(catalogSortLabel(l, state.filters.sort)),
             ),
           ),
         ],
