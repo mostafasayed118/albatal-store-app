@@ -1,6 +1,39 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-20 (part 53: **#80 MERGED — THE HARDCODED-ENGLISH DEFECT CLASS IS CLOSED (owner approved on Arabic review)**. Merge commit `1fe051c`
+Last run: 2026-09-21 (part 54: **L2 VERIFY DONE — P0-4 RENDER-URL CUTOVER ALREADY CLOSED ON MASTER, NOTHING TO IMPLEMENT (owner: "do all you recommend")**.
+All four recommendations executed: (1) this STATE.md record committed on master (not the dead `fix/audit-findings-0919` branch); (2) `loop-ledger.json` created as a local-only log (repo `.gitignore:80` deliberately excludes it — respected, not force-added); (3) server-proposal backlog sequenced below — scope only, no `supabase/` writes, no DB touches;
+(4) housekeeping: local `fix/audit-findings-0919` deleted (all 4 local commits verified present on `origin/fix/audit-findings-0919` first — lossless),
+local master fast-forwarded `4cedc42→b6afecd`. **No push** (owner-gated). Fix attempts used: 0/3. Detail in part 54 below.)
+
+## New — 2026-09-21 (part 54: L2 verification — the L1 "actionable TODO" was stale-branch noise; P0-4 closed on master b6afecd)
+
+- L1 ran its census on `fix/audit-findings-0919` (4cedc42-era) while `origin/master` had moved to `b6afecd` (part 53) — the exact stale-base hazard in the
+  part-16 notes. Owner enabled L2 ("fix all lib items"); before writing code, diffed the three P0-4 files across bases (103+/166-) and re-ran the census
+  in a detached worktree @ b6afecd (`.trees/l1-verify`, discarded after): **0 TODO/FIXME/HACK/XXX/TBD hits in lib/**.
+- **P0-4 status on master: CLOSED, end-to-end, test-pinned.** `StorageService` carries `gridImageWidth=420` / `detailImageWidth=720` /
+  `productImageCacheSeconds='31536000'`; `uploadProductImage` stamps the cache lifetime; `ProductCodec.fromRow` emits `images` at detail-720 +
+  `imageAsset` primary at grid-420; grid/flash/related/cart/wishlist/gallery consume `imageAsset`, detail/zoom consume `images`;
+  `admin_image_manager_page.dart:322` uses the width helper; bare URL survives only as fail-open fallback. Pinned by
+  `storage_service_cache_control_test.dart` + `supabase_catalog_repository_images_test.dart` ("420 primary, 720 detail").
+- **Design correction recorded (would-have-been-wrong):** the planned `'public, max-age=31536000, immutable'` header string is MALFORMED on this stack —
+  Supabase Storage interpolates multipart `cacheControl` as `` `max-age=${cacheTime}` `` (`src/storage/uploader.ts`), so a header-shaped value becomes
+  `max-age=public, ...`. Master's bare-seconds `'31536000'` is the documented form; avatar keeps the 1h default (fixed path + delete/re-upload reuse).
+- Remaining "not implemented" strings are intentional graceful-degradation docs for server-gated proposals (049 coupons, 050 reviews, `search_suggestions`
+  RPC, `get_instapay_instructions`, voice mic, push edge-function, sample/metered enforcement, `AdminCustomer.email`) — client-complete with
+  fail-open/fail-closed fallbacks; all need supabase//product human review, out of lib auto-fix scope. `share_service.dart:57 on UnimplementedError`
+  is the deliberate Linux guard.
+- **Evidence (worktree @ b6afecd):** `flutter pub get` clean; `flutter analyze --no-pub` — **No issues found**; targeted `flutter test`
+  (cache-control 3 + prefix 2 + mapper 8 + total-decode 6 + catalog-images 7) — **26/26 pass**. Full suite not re-run (master CI green per parts record).
+- **Server-proposal backlog — SEQUENCED, scope only, nothing started:** Tier 1: 051 sample-price/metered server enforcement (needs product pricing-semantics
+  decision first). Tier 2: 050 reviews → 049 coupons (highest user-visible value after 051). Tier 3 batch: `AdminCustomer.email` view/RPC,
+  `search_suggestions` RPC, `get_instapay_instructions` endpoint. Tier 4 deferred: `push-order-status` fn + OneSignal-key decision, voice search (needs
+  product decision). Per-item gates (unchanged): supabase/ human review → `pg_dump` backup → staging `db push` → client follow-up. Blocked on product
+  prioritization + DB credentials; the standing `sbp_` rotation item still applies.
+- Housekeeping: untracked `.cluster/`/`delivery/`/`analysis_before.txt` left untouched (unknown provenance — suspicious-file rule; owner to confirm
+  delete vs `.gitignore`). Open-PR board: empty (part 53); remote `origin/fix/audit-findings-0919` still exists — owner to delete.
+- Standing items carried over: audit #2 view-layer service location (13 getIt sites) unstarted; `sbp_` token rotation.
+
+Prior run: 2026-09-20 (part 53: **#80 MERGED — THE HARDCODED-ENGLISH DEFECT CLASS IS CLOSED (owner approved on Arabic review)**. Merge commit `1fe051c`
 (origin/master `f585fb1..1fe051c`, verified via API); local master synced, `fix/failure-copy-l10n` deleted, **closing gates on merged master:
 analyze 0 · 1030/1030**. Open-PR board: **empty**. The 2026-09-19 sweep's entire defect class (English failure copy reaching Arabic users;
 string-matched localization; a11y copy; admin convention) is fixed, pinned, and merged. Audit top-5: 4/5 closed — only #2 (view-layer service
