@@ -82,7 +82,7 @@ class RemoteConfigService {
       _maintenanceMode = null; // invalidate typed reads
       _updateRequired = null;
     } on Exception catch (e, st) {
-      Log.w('remote config fetch failed: $e');
+      Log.w('remote config fetch failed.', error: e);
       Log.d(st.toString());
     }
   }

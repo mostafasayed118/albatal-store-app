@@ -70,8 +70,11 @@ class ReviewsCubit extends Cubit<ReviewsState> {
       case Success(:final value):
         emit(state.copyWith(status: ReviewsStatus.ready, reviews: value));
       case Failure(:final error):
+        // Code-not-message (audit): the repository carries the machine
+        // string in `code` since the top-up; the `message` fallback covers
+        // legacy/test doubles that still carry it as the message.
         emit(state.copyWith(
-          status: error.message == kReviewUnavailableCode
+          status: (error.code ?? error.message) == kReviewUnavailableCode
               ? ReviewsStatus.unavailable
               : ReviewsStatus.error,
         ));
@@ -104,7 +107,11 @@ class ReviewsCubit extends Cubit<ReviewsState> {
         emit(state.copyWith(submitting: false, submitMessage: null));
         await load(_productId);
       case Failure(:final error):
-        emit(state.copyWith(submitting: false, submitMessage: error.message));
+        // `submitMessage` carries a machine code (never prose): the sheet
+        // compares it against the `kReview*Code` constants. Prefer `code`,
+        // fall back to `message` for legacy doubles (same rule as [load]).
+        emit(state.copyWith(
+            submitting: false, submitMessage: error.code ?? error.message));
     }
   }
 }

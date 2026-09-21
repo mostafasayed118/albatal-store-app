@@ -163,7 +163,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     } on Exception catch (e) {
       // On network failure, try persistent cache first (survives app restart),
       // then fall back to in-memory cache (same session only).
-      final persistentCache = _restorePersistentCache();
+      final persistentCache = await _restorePersistentCache();
       if (persistentCache != null) {
         _setCache(persistentCache);
         return Success(persistentCache);
@@ -223,7 +223,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // Offline cold start (Task #8): the in-memory index missed and the
       // network is gone. Restore the persistent cache once — a deep link
       // to a previously synced product still resolves from disk.
-      final restored = _restorePersistentCache();
+      final restored = await _restorePersistentCache();
       if (restored != null) {
         _setCache(restored);
         final hit = _productsById[id];
@@ -284,7 +284,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // in-memory cache, restoring the persistent cache on a cold start.
       var pool = _cache;
       if (pool == null) {
-        final restored = _restorePersistentCache();
+        final restored = await _restorePersistentCache();
         if (restored != null) {
           _setCache(restored);
           pool = restored;
@@ -333,13 +333,32 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// Awaitable cache write so callers can sequence on it in tests and
   /// the fire-and-forget production path marks the future [unawaited]
   /// instead of tripping `discarded_futures`.
+  /// Payloads at or below this size parse inline: spawning an isolate
+  /// costs more (milliseconds + cold-start latency on the offline
+  /// fallback path) than parsing tens of KB itself. Only larger
+  /// payloads go through [compute] (audit P6).
+  static const _isolateJsonChars = 64 * 1024;
+
+  /// Item-count twin of [_isolateJsonChars] for the encode direction,
+  /// where the string length is unknown before encoding. A full
+  /// 100-row catalog page serializes to tens of KB, so above this
+  /// count the encode moves off the UI thread.
+  static const _isolateItemBudget = 40;
+
   Future<void> _persistCache(List<Product> products) async {
     final prefs = _preferences;
     if (prefs == null) return;
     try {
       final encoded = products.map(ProductCodec.encode).toList();
+      // Large catalogs encode off the UI thread (audit P6); small ones
+      // inline — see [_isolateItemBudget]. `jsonEncode` is a top-level
+      // function, so it can go straight into `compute` (maps of
+      // primitives cross the isolate).
       // Best-effort cache write — never crash the app over persistence.
-      await prefs.setString(_persistentCacheKey, jsonEncode(encoded));
+      final json = products.length > _isolateItemBudget
+          ? await compute(jsonEncode, encoded)
+          : jsonEncode(encoded);
+      await prefs.setString(_persistentCacheKey, json);
     } catch (e) {
       // Best-effort cache write — never crash the app over persistence.
       // Logged without the raw error text; audit 2026-09-14 P0-5.
@@ -347,13 +366,19 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     }
   }
 
-  List<Product>? _restorePersistentCache() {
+  Future<List<Product>?> _restorePersistentCache() async {
     final prefs = _preferences;
     if (prefs == null) return null;
     try {
       final raw = prefs.getString(_persistentCacheKey);
       if (raw == null) return null;
-      final decoded = jsonDecode(raw);
+      // Decode off the UI thread for large payloads only (audit P6,
+      // gated by [_isolateJsonChars]): this restore sits on the offline
+      // cold-start path, where isolate spawn latency would delay first
+      // paint for the common small-cache case.
+      final decoded = raw.length > _isolateJsonChars
+          ? await compute(jsonDecode, raw)
+          : jsonDecode(raw);
       if (decoded is! List) return null;
       // Per-item fail-soft: a corrupt/tampered entry is skipped, never
       // fatal to its neighbours (previously one throwing entry discarded
@@ -384,7 +409,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       _persistCache(products);
 
   @visibleForTesting
-  List<Product>? restorePersistentCacheForTest() => _restorePersistentCache();
+  Future<List<Product>?> restorePersistentCacheForTest() =>
+      _restorePersistentCache();
 
   @visibleForTesting
   void setCacheForTest(List<Product> products) => _setCache(products);

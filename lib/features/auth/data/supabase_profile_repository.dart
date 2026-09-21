@@ -22,7 +22,10 @@ class SupabaseProfileRepository implements ProfileRepository {
         () async {
           final response = await _client
               .from('profiles')
-              .select()
+              // Explicit columns (audit P6): only what [Profile.fromRow]
+              // reads — never `*`.
+              .select('id, full_name, phone, avatar_url, is_admin, '
+                  'membership_tier')
               .eq('id', userId)
               .maybeSingle();
 

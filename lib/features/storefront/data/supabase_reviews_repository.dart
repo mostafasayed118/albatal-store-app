@@ -37,9 +37,14 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
       return Success(reviews);
     } on PostgrestException catch (e, st) {
       Log.w('reviews fetch failed: ${e.code}', category: LogCategory.network);
-      return Failure(AppError(kReviewUnavailable, cause: e, stackTrace: st));
+      // Code-not-message (audit): the cubit classifies on `code`, so the
+      // machine string must travel in `code` — `message` stays identical
+      // for legacy readers that still match on it.
+      return Failure(AppError(kReviewUnavailable,
+          cause: e, stackTrace: st, code: kReviewUnavailable));
     } on Exception catch (e, st) {
-      return Failure(AppError(kReviewUnavailable, cause: e, stackTrace: st));
+      return Failure(AppError(kReviewUnavailable,
+          cause: e, stackTrace: st, code: kReviewUnavailable));
     }
   }
 
@@ -51,7 +56,19 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
     List<int>? photoBytes,
   }) async {
     if (rating < 1 || rating > 5) {
-      return const Failure(AppError(kReviewInvalid));
+      return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
+    }
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      // Empty reviews carry no signal and previously stored a blank row;
+      // fail fast with the invalid code the sheet already localizes.
+      return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
+    }
+    if (trimmed.length > maxReviewTextLength) {
+      // Client-side upper bound so one submission cannot stage megabytes
+      // of text for the insert (the server text column is unbounded;
+      // confirm the contract before raising this).
+      return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
     }
     try {
       String? photoUrl;
@@ -77,7 +94,7 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
           .insert({
             'product_id': productId,
             'rating': rating,
-            'text': text.trim(),
+            'text': trimmed,
             if (photoUrl != null) 'photo_url': photoUrl,
           })
           .select(
@@ -85,7 +102,7 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
           .single();
       final review = reviewFromRow(row);
       if (review == null) {
-        return const Failure(AppError(kReviewInvalid));
+        return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
       }
       return Success(review);
     } on PostgrestException catch (e, st) {
@@ -93,13 +110,22 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
       final buyRequired =
           e.code == '42501' || e.code == '403' || e.message.contains('policy');
       Log.w('review submit failed: ${e.code}', category: LogCategory.network);
+      final outcome = buyRequired ? kReviewBuyRequired : kReviewUnavailable;
       return Failure(AppError(
-        buyRequired ? kReviewBuyRequired : kReviewUnavailable,
+        outcome,
         cause: e,
         stackTrace: st,
+        code: outcome,
       ));
     } on Exception catch (e, st) {
-      return Failure(AppError(kReviewUnavailable, cause: e, stackTrace: st));
+      return Failure(AppError(kReviewUnavailable,
+          cause: e, stackTrace: st, code: kReviewUnavailable));
     }
   }
 }
+
+/// Client-side upper bound for review text (see [submit]): the server text
+/// column is unbounded, so one submission could otherwise stage megabytes
+/// for the insert. Generous on purpose — confirm the server contract
+/// before lowering it.
+const maxReviewTextLength = 2000;

@@ -128,11 +128,9 @@ class CheckoutService implements CheckoutRepository {
       // the generic message (Paymob-service pattern). Detail stays in
       // logs with cause/stack.
       Log.e('Checkout RPC failed', error: e, stackTrace: st);
-      final message = _userMessageForPostgrest(e);
-      return Failure(AppError(message,
-          cause: e,
-          stackTrace: st,
-          code: message == 'Checkout failed' ? kCheckoutFailedCode : null));
+      final outcome = _userMessageForPostgrest(e);
+      return Failure(AppError(outcome.message,
+          cause: e, stackTrace: st, code: outcome.code));
     } catch (e, st) {
       // Never interpolate the raw exception: transport failures can carry
       // internal URLs and secrets that must not reach the UI (audit P1).
@@ -147,22 +145,34 @@ class CheckoutService implements CheckoutRepository {
   /// The RPC raises server-side; only explicitly recognized signals get
   /// specific copy — unknown codes/messages collapse to generic
   /// 'Checkout failed' so SQL/URL internals never reach the UI.
-  String _userMessageForPostgrest(PostgrestException e) {
+  ///
+  /// Every outcome carries [kCheckoutFailedCode]: all three messages are
+  /// app-authored English, so the page can localize via the code instead
+  /// of matching the literal (audit: `message == 'Checkout failed'`
+  /// silently reverted the screen to English on any copy edit).
+  ({String message, String code}) _userMessageForPostgrest(
+      PostgrestException e) {
     final code = (e.code ?? '').toUpperCase();
     final msg = e.message.toLowerCase();
     // Known safe signals (keep tiny; expand only with server contract).
     if (code == '23505' ||
         msg.contains('duplicate') ||
         msg.contains('already')) {
-      return 'Checkout failed';
+      return (message: 'Checkout failed', code: kCheckoutFailedCode);
     }
     if (msg.contains('insufficient stock') || msg.contains('out of stock')) {
-      return 'Some items are out of stock.';
+      return (
+        message: 'Some items are out of stock.',
+        code: kCheckoutFailedCode
+      );
     }
     if (msg.contains('invalid payment method') ||
         msg.contains('unsupported payment')) {
-      return 'Unsupported payment method.';
+      return (
+        message: 'Unsupported payment method.',
+        code: kCheckoutFailedCode
+      );
     }
-    return 'Checkout failed';
+    return (message: 'Checkout failed', code: kCheckoutFailedCode);
   }
 }

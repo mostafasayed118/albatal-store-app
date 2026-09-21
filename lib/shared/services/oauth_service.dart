@@ -40,7 +40,8 @@ class SupabaseOAuthService implements OAuthService {
     try {
       final res = await _client.auth.signInWithOAuth(native);
       if (!res) {
-        return const Failure(AppError(kOAuthCancelled));
+        // Code-not-message (audit): the page classifies on `code`.
+        return const Failure(AppError(kOAuthCancelled, code: kOAuthCancelled));
       }
       return const Success('ok');
     } on Exception catch (e, st) {
@@ -51,7 +52,7 @@ class SupabaseOAuthService implements OAuthService {
       Log.w('oauth sign-in failed',
           error: e, category: LogCategory.auth);
       Log.d(st.toString(), category: LogCategory.auth);
-      return const Failure(AppError(kOAuthUnavailable));
+      return const Failure(AppError(kOAuthUnavailable, code: kOAuthUnavailable));
     }
   }
 }

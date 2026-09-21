@@ -265,11 +265,18 @@ Future<void> _confirmDeleteAccount(
               behavior: SnackBarBehavior.floating,
               content: Text(l10n.deleteAccountSuccess)));
       case Failure(:final error):
+        // Code-not-message (audit): `deleteAccount` classifies its own
+        // refusals with the `kDelete*` codes (localized via `failureText`);
+        // anything uncoded is server prose and passes through verbatim per
+        // the P1 ruling — never a blank snackbar (fallback is localized).
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating,
-              content: Text(error.message)));
+              content: Text(failureText(l10n,
+                  code: error.code,
+                  message: error.message,
+                  fallback: l10n.deleteFailedRetry))));
     }
   } finally {
     _deleteDialogOpen = false;

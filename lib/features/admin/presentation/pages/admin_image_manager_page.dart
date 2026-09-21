@@ -185,7 +185,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         try {
           await widget.storage.deleteProductImage(storagePath);
         } on Exception catch (e) {
-          Log.w('orphaned product image after failed save: $e');
+          Log.w('orphaned product image after failed save.', error: e);
         }
         if (!mounted) return;
         setState(() => _uploading = false);

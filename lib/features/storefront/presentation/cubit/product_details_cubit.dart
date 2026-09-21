@@ -126,7 +126,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
             failure: (_) => <Product>[],
           );
         } catch (e) {
-          Log.w('Product details related fetch failed: $e');
+          Log.w('Product details related fetch failed.', error: e);
           related = <Product>[];
         }
         if (generation != _generation) return;
@@ -160,7 +160,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
       );
     } catch (e) {
       if (generation != _generation) return;
-      Log.w('Product details load failed: $e');
+      Log.w('Product details load failed.', error: e);
       emit(DetailsState(
         status: DetailsStatus.error,
         errorMessage: 'Unable to load product details.',

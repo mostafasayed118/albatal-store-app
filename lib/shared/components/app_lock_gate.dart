@@ -92,7 +92,7 @@ class _AppLockGateState extends State<AppLockGate> {
       try {
         usable = await biometrics.canAuthenticate();
       } on Exception catch (e) {
-        Log.w('app lock: capability probe failed: $e');
+        Log.w('app lock: capability probe failed.', error: e);
       }
     }
     if (!mounted) return;
@@ -123,7 +123,7 @@ class _AppLockGateState extends State<AppLockGate> {
     } on Exception catch (e) {
       // `LocalBiometricService` already converts plugin errors to `false`;
       // this guards any other implementation.
-      Log.w('app lock: authentication threw: $e');
+      Log.w('app lock: authentication threw.', error: e);
     }
     if (!mounted) return;
     setState(() {
@@ -148,7 +148,7 @@ class _AppLockGateState extends State<AppLockGate> {
       // Error — must keep the lock. Letting it propagate would crash the
       // lock screen and defeat the fail-closed contract this escape exists
       // to preserve (verified by the no-bypass test).
-      Log.w('app lock: sign-out escape failed: $e');
+        Log.w('app lock: sign-out escape failed.', error: e);
       return;
     }
     if (!mounted) return;

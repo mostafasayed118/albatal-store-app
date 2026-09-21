@@ -595,7 +595,9 @@ final class SupabaseAdminRepository implements AdminRepository {
       Result.guard(() async {
         final res = await _client
             .from('product_variants')
-            .select()
+            // Explicit columns (audit P6): only what
+            // [AdminMappers.variantFromRow] reads — never `*`.
+            .select('id, size, color, stock, price_override')
             .eq('product_id', productId)
             .order('size');
         return AdminMappers.variantsFromRows(res as List);

@@ -184,7 +184,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         },
       );
     } catch (e) {
-      Log.w('Admin categories load failed: $e');
+      Log.w('Admin categories load failed.', error: e);
       if (mounted) setState(() => _loadingCategories = false);
     }
   }

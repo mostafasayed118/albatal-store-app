@@ -63,6 +63,13 @@ class StorageService {
   }
 
   String getProductImageUrl(String storagePath) {
+    // Debug-only shape check (audit P5): `getPublicUrl` only builds a URL
+    // string — it never touches the filesystem, so `..` cannot traverse
+    // anything client-side; the storage server is the authoritative gate.
+    // The assert keeps a malformed DB row loud in tests instead of
+    // silently minting a nonsense URL.
+    assert(!storagePath.contains('..'),
+        'Suspicious product image path: $storagePath');
     return _requiredClient.storage.from(_bucket).getPublicUrl(storagePath);
   }
 
@@ -143,6 +150,15 @@ class StorageService {
   }
 
   String getAvatarUrl(String userId, String fileName) {
+    // Same fail-closed shape check as [uploadAvatar] (audit P5): the only
+    // production caller passes the already-sanitized segment, so this
+    // assert documents the contract for future callers rather than
+    // changing release behavior.
+    assert(
+        userId.isNotEmpty &&
+            !userId.contains('..') &&
+            !fileName.contains('..'),
+        'Suspicious avatar path components');
     return _requiredClient.storage
         .from('avatars')
         .getPublicUrl('$userId/$fileName');

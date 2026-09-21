@@ -36,7 +36,7 @@ final class OneSignalPushService implements PushService {
       // at startup — a cold permission prompt on first launch reads as
       // hostile in a shopping app.
     } on Exception catch (e, st) {
-      Log.w('push init failed: $e');
+      Log.w('push init failed.', error: e);
       Log.d(st.toString());
     }
   }

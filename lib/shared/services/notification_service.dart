@@ -80,7 +80,7 @@ final class LocalNotificationService implements NotificationService {
       );
       _initialized = true;
     } on Exception catch (e, st) {
-      Log.w('notifications init failed: $e');
+      Log.w('notifications init failed.', error: e);
       Log.d(st.toString());
     }
   }
@@ -109,7 +109,7 @@ final class LocalNotificationService implements NotificationService {
         ),
       );
     } on Exception catch (e, st) {
-      Log.w('notification show failed: $e');
+      Log.w('notification show failed.', error: e);
       Log.d(st.toString());
     }
   }
@@ -137,7 +137,7 @@ final class LocalNotificationService implements NotificationService {
         ),
       );
     } on Exception catch (e, st) {
-      Log.w('back-in-stock notification failed: $e');
+      Log.w('back-in-stock notification failed.', error: e);
       Log.d(st.toString());
     }
   }

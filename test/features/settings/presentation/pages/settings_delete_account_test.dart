@@ -1,3 +1,5 @@
+import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/settings/data/local_settings_repository.dart';
 import 'package:al_batal_elite/features/settings/domain/account_deletion_port.dart';
@@ -104,6 +106,48 @@ void main() {
     expect(accountDeletion.guestDataCleared, isTrue);
     expect(find.text('Account deleted'), findsOneWidget);
   });
+
+  testWidgets(
+      'coded deletion failure shows localized retry copy, not the code',
+      (tester) async {
+    accountDeletion.nextResult =
+        const Failure(AppError(kDeleteFailed, code: kDeleteFailed));
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'ux043@example.com');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete permanently'));
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text('Account deletion failed. Please try again.'),
+        findsOneWidget,
+        reason: 'kDeleteFailed must localize via failureText, not verbatim');
+  });
+
+  testWidgets('uncoded server prose passes through verbatim (P1 ruling)',
+      (tester) async {
+    accountDeletion.nextResult =
+        const Failure(AppError('server says no (verbatim)'));
+    await tester.pumpWidget(harness());
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'ux043@example.com');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete permanently'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('server says no (verbatim)'), findsOneWidget);
+  });
 }
 
 /// Authenticated fake port that records every deleteAccount call.
@@ -111,13 +155,16 @@ final class _FakeAccountDeletionPort implements AccountDeletionPort {
   final deletedEmails = <String>[];
   bool guestDataCleared = false;
 
+  /// Injected failure for the next call (defaults to success).
+  Result<void> nextResult = const Success(null);
+
   @override
   bool get isAuthenticated => true;
 
   @override
   Future<Result<void>> deleteAccount({required String email}) async {
     deletedEmails.add(email);
-    return const Success(null);
+    return nextResult;
   }
 
   @override
