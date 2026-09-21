@@ -1,6 +1,12 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-21 (part 57: **L2 CORE CLEANUP PUSHED as 3d78b0c on origin/fix/core-cleanup (owner-approved)** — verifier APPROVE, analyze 0, full suite re-run 1032/1032 on exact content. Detail in part 57 below.)
+Last run: 2026-09-21 (part 58: **SYNCED TO MASTER — both branches merged, master 59d62ce pushed (owner-approved, ls-remote confirmed)**. Merged-master gates: analyze 0, full suite 1044/1044. STATE.md conflict resolved preserving both records. Detail in part 58 below.)
+
+## New — 2026-09-21 (part 58: both branches merged to master, pushed)
+
+- `d630816` docs(parts 55-57) → merge `3784520` (`fix/audit-top5-full`, 74 files) → merge `59d62ce` (`fix/core-cleanup`, 5 files) → pushed; `origin/master = 59d62ce` confirmed via `ls-remote`. Branches were 0-behind with zero file overlap — no code conflicts.
+- One real conflict: `STATE.md` (inherited `c7039f3` carried its own parts 56/55). Resolved preserving both: current parts 57/56/55 kept on top, inherited `c7039f3` session records kept below with a merge note; superseded duplicate headers dropped.
+- **Evidence on merged master:** `flutter analyze --no-pub` — **No issues found**; full `flutter test` — **1044/1044** (1030 base + 8 top-up + 2 core + 4 inherited-branch tests).
 
 ## New — 2026-09-21 (part 57: L2 core cleanup, verifier APPROVE, uncommitted on fix/core-cleanup)
 
