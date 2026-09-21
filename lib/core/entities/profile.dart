@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../utils/safe_parse.dart';
+
 /// Customer membership tier. Server-managed: only admins can change it
 /// (migration 046 — `admin_set_membership_tier`), so the client treats it
 /// as display data and never writes it through profile upserts.
@@ -47,18 +49,25 @@ final class Profile extends Equatable {
         tier: tier ?? this.tier,
       );
 
-  /// Maps a `profiles` row to a [Profile]. Tolerant of older deployments
-  /// whose rows predate `membership_tier` (falls back to standard) and of
-  /// unexpected values (standard, never a crash).
+  /// Maps a `profiles` row to a [Profile]. Total except for the identity:
+  /// mistyped columns degrade to `''`/`null`/`false` via [safe_parse]
+  /// (tolerant of older deployments whose rows predate `membership_tier`
+  /// and of unexpected values — standard, never a crash), but a missing
+  /// or mistyped `id` throws [FormatException] — an identity-less profile
+  /// must fail closed at the repository boundary (`Result.guard` turns it
+  /// into a `Failure`), never surface as a hollow `Success`.
   factory Profile.fromRow(Map<String, dynamic> row) {
-    final raw = row['membership_tier'] as String?;
+    final id = safeString(row, 'id');
+    if (id.isEmpty) {
+      throw const FormatException('Profile row has no usable id');
+    }
     return Profile(
-      id: row['id'] as String,
-      fullName: row['full_name'] as String? ?? '',
-      phone: row['phone'] as String?,
-      avatarUrl: row['avatar_url'] as String?,
-      isAdmin: row['is_admin'] as bool? ?? false,
-      tier: membershipTierFromServerValue(raw),
+      id: id,
+      fullName: safeString(row, 'full_name'),
+      phone: optString(row, 'phone'),
+      avatarUrl: optString(row, 'avatar_url'),
+      isAdmin: safeBool(row, 'is_admin'),
+      tier: membershipTierFromServerValue(optString(row, 'membership_tier')),
     );
   }
 

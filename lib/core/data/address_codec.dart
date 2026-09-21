@@ -8,9 +8,9 @@ import '../utils/safe_parse.dart';
 /// exposes one method per legacy builder, copied verbatim:
 /// - [toJson]/[fromJson]: the 6-key address-book shape
 ///   (`local_address_repository`).
-/// - [fromOrderJson]: the order-snapshot decode, which degrades a
-///   missing/mistyped `country` to `''` via [safeString] instead of
-///   throwing (legacy `OrderCodec._decodeAddress` behavior).
+/// - [fromOrderJson]: the order-snapshot decode — same keys and same
+///   tolerant fallbacks as the address-book shape, so it delegates to
+///   [fromJson] (legacy `OrderCodec._decodeAddress` behavior).
 /// - [toSnapshotJson]: the 5-key server snapshot sent as `p_address`
 ///   by `checkout_cubit` (encode-only; the server never sends one back).
 abstract final class AddressCodec {
@@ -36,14 +36,10 @@ abstract final class AddressCodec {
         isDefault: safeBool(json, 'isDefault'),
       );
 
-  static Address fromOrderJson(Map<String, dynamic> json) => Address(
-        id: safeString(json, 'id'),
-        recipient: safeString(json, 'recipient'),
-        line: safeString(json, 'line'),
-        city: safeString(json, 'city'),
-        country: safeString(json, 'country'),
-        isDefault: safeBool(json, 'isDefault'),
-      );
+  /// Decodes the order-snapshot shape. The snapshot carries the same keys
+  /// as the address-book shape (tolerant `country` fallback included), so
+  /// this delegates to [fromJson] — one decode, one set of fallbacks.
+  static Address fromOrderJson(Map<String, dynamic> json) => fromJson(json);
 
   static Map<String, dynamic> toSnapshotJson(Address address) => {
         'id': address.id,

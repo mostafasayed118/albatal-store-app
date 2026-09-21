@@ -43,5 +43,24 @@ void main() {
       expect(renamed.tier, MembershipTier.premium);
       expect(renamed, isNot(premium.copyWith(tier: MembershipTier.standard)));
     });
+
+    test('mistyped columns degrade instead of throwing TypeError', () {
+      final p = Profile.fromRow({
+        'id': 'u1',
+        'full_name': 123,
+        'phone': 456,
+        'is_admin': 'yes',
+      });
+      expect(p.fullName, '');
+      expect(p.phone, isNull);
+      expect(p.isAdmin, isFalse);
+    });
+
+    test('missing or mistyped id fails closed with FormatException', () {
+      expect(() => Profile.fromRow({'full_name': 'Ahmed'}),
+          throwsA(isA<FormatException>()));
+      expect(() => Profile.fromRow({'id': 123, 'full_name': 'Ahmed'}),
+          throwsA(isA<FormatException>()));
+    });
   });
 }
