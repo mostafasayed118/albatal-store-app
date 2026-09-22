@@ -299,7 +299,15 @@ class AuthCubit extends Cubit<AuthState> {
       if (outcome != null) {
         await _loadProfile(outcome.userId);
       } else {
-        // signedOut — clear local state.
+        // signedOut — clear local state. This event also covers
+        // SERVER-driven sign-outs (refresh-token failure/revocation), so
+        // the same PII wipe as explicit [signOut] applies (audit
+        // 2026-09-21): without it the on-device address book and order
+        // snapshots survived a revoked session. Double-wiping when the
+        // user also tapped sign out is harmless — the clears are
+        // idempotent and never abort on failure.
+        await _clearLocalSnapshots();
+        if (isClosed) return;
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,

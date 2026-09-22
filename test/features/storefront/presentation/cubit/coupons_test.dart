@@ -46,6 +46,37 @@ void main() {
     });
   });
 
+  group('couponFromRpcPayload (audit 2026-09-21)', () {
+    test('maps a well-formed row list', () {
+      final coupon = couponFromRpcPayload([
+        {'code': 'silk10', 'discount_minor': 10000},
+      ]);
+      expect(coupon, isNotNull);
+      expect(coupon!.code, 'SILK10');
+      expect(coupon.discountMinor, 10000);
+    });
+
+    test('never throws on hostile shapes — degrades to null', () {
+      // These shapes used to escape the repository as an uncaught
+      // TypeError: an `as List` / `as Map` cast inside an `on Exception`
+      // boundary cannot catch an Error.
+      expect(couponFromRpcPayload(null), isNull);
+      expect(couponFromRpcPayload(42), isNull);
+      expect(couponFromRpcPayload('nope'), isNull);
+      expect(couponFromRpcPayload(const []), isNull);
+      expect(couponFromRpcPayload([1, 2, 3]), isNull);
+      expect(couponFromRpcPayload([['nested']]), isNull);
+      expect(couponFromRpcPayload([null]), isNull);
+    });
+
+    test('stringifies non-String map keys instead of throwing', () {
+      final coupon = couponFromRpcPayload([
+        {0: 'silk10', 'discount_minor': 10000},
+      ]);
+      expect(coupon, isNull, reason: 'no usable code under a String key');
+    });
+  });
+
   group('CheckoutCubit.applyCoupon (§8)', () {
     test('attaches a validated coupon', () async {
       final repo = _MockCouponsRepo();

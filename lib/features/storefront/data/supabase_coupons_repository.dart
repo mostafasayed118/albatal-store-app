@@ -30,12 +30,11 @@ final class SupabaseCouponsRepository implements CouponsRepository {
         'validate_coupon',
         params: {'p_code': trimmed},
       );
-      final list = rows as List<dynamic>? ?? const [];
-      if (list.isEmpty) {
-        return const Failure(AppError(kCouponInvalid));
-      }
-      final row = list.first as Map<String, dynamic>;
-      final coupon = couponFromRow(row);
+      // Total payload handling (audit 2026-09-21): a mistyped RPC row must
+      // fail soft into "invalid coupon", not throw — raw `as` casts throw
+      // [TypeError], an [Error] the old `on Exception` clause structurally
+      // could not catch, which escaped to checkout as an unhandled error.
+      final coupon = couponFromRpcPayload(rows);
       if (coupon == null) {
         return const Failure(AppError(kCouponInvalid));
       }
@@ -53,7 +52,9 @@ final class SupabaseCouponsRepository implements CouponsRepository {
         cause: e,
         stackTrace: st,
       ));
-    } on Exception catch (e, st) {
+    } catch (e, st) {
+      // Bare catch (Result.guard convention): must also catch [Error]s,
+      // e.g. the [TypeError] a malformed payload used to escape with.
       Log.e('validate_coupon unexpected error', error: e, stackTrace: st);
       return Failure(AppError(kCouponInvalid, cause: e, stackTrace: st));
     }

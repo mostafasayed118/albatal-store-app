@@ -590,6 +590,7 @@
   "paymentTimeout": "Payment timed out. Please check your orders before retrying.",
   "orderRefRequired": "Unable to continue: the order reference is missing.",
   "checkoutFailedRetry": "Checkout failed. Please try again.",
+  "checkoutCartEmpty": "Your cart is empty. Add something exquisite first.",
   "paymentMethodUnknown": "Unknown",
   "adminAccessRequired": "Admin access required",
   "orderNotifications": "Order notifications",

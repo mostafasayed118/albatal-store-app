@@ -214,7 +214,10 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     if (cartItems.isEmpty) {
       emit(state.copyWith(
         status: CheckoutStatus.error,
+        // App-authored copy must carry a code (failure_codes.dart rule) —
+        // uncoded messages are shown verbatim and leaked English here.
         errorMessage: 'Your cart is empty.',
+        errorCode: kCheckoutCartEmpty,
         idempotencyKey: state.idempotencyKey,
       ));
       return;

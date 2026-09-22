@@ -2684,6 +2684,12 @@ abstract class AppLocalizations {
   /// **'Checkout failed. Please try again.'**
   String get checkoutFailedRetry;
 
+  /// No description provided for @checkoutCartEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cart is empty. Add something exquisite first.'**
+  String get checkoutCartEmpty;
+
   /// No description provided for @paymentMethodUnknown.
   ///
   /// In en, this message translates to:
