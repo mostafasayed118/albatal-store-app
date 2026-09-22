@@ -84,11 +84,15 @@ class CheckoutPage extends StatelessWidget {
           // `raw == 'Checkout failed'` meant any copy edit silently reverted this
           // screen to English. Coded failures localize; uncoded ones are
           // server-authored and pass through verbatim (P1 ruling); the last
-          // resort is localized rather than the raw string.
-          final localized = s.errorCode == kCheckoutFailedCode
-              ? l10n.checkoutFailedRetry
-              : failureText(l10n,
-                  code: s.errorCode, message: raw, fallback: l10n.errorTitle);
+          // resort is localized rather than the raw string. The empty-cart
+          // guard is app-authored (audit 2026-09-21), so it localizes here
+          // like `checkout_failed` instead of leaking its English diagnosis.
+          final localized = switch (s.errorCode) {
+            kCheckoutFailedCode => l10n.checkoutFailedRetry,
+            kCheckoutCartEmpty => l10n.checkoutCartEmpty,
+            _ => failureText(l10n,
+                code: s.errorCode, message: raw, fallback: l10n.errorTitle),
+          };
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               behavior: SnackBarBehavior.floating, content: Text(localized)));
         }

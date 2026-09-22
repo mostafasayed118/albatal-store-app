@@ -24,3 +24,17 @@ CouponDiscount? couponFromRow(Map<String, dynamic> row) {
     description: safeString(row, 'description'),
   );
 }
+
+/// Maps the raw `validate_coupon` RPC payload to [CouponDiscount].
+///
+/// Total by design (audit 2026-09-21): the payload arrives as `dynamic` from
+/// PostgREST, so a scalar, a list of non-maps, or any other hostile shape
+/// degrades to null ("invalid coupon") instead of throwing a [TypeError]
+/// past the caller's error boundary.
+CouponDiscount? couponFromRpcPayload(Object? rows) {
+  final list = rows is List ? rows : const <Object?>[];
+  if (list.isEmpty) {
+    return null;
+  }
+  return couponFromRow(safeMap(list.first));
+}

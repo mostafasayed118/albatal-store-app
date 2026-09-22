@@ -69,6 +69,18 @@ class _WishlistPageState extends State<WishlistPage> {
                   context.read<CatalogCubit>().state.allProducts);
             });
           }
+          // A failed load must not read as "nothing saved yet" (audit
+          // 2026-09-21): the cubit emits [WishlistStatus.error] on a failed
+          // read, so consume it before the empty branch and offer a retry.
+          // Persist failures keep the resolved products, so the list stays
+          // visible and only the empty-load path lands here.
+          if (ws.status == WishlistStatus.error && ws.products.isEmpty) {
+            return FeedbackView(
+              type: FeedbackViewType.error,
+              onAction: () =>
+                  context.read<WishlistCubit>().restore(force: true),
+            );
+          }
           if (ws.products.isEmpty) {
             return FeedbackView(
               type: FeedbackViewType.empty,
