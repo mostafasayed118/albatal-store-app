@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/repositories/admin_sales_port.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/sales_dashboard_body.dart';
 
 /// Admin sales dashboard (#12): read-only view over the last 14 days of
@@ -62,15 +62,13 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
             body: switch (state.status) {
               AdminSalesDashboardStatus.loading =>
                 const FeedbackView(type: FeedbackViewType.loading),
-              AdminSalesDashboardStatus.error => FeedbackView(
-                  type: FeedbackViewType.error,
+              AdminSalesDashboardStatus.error => AdminErrorFeedback(
+                  errorCode: state.errorCode,
+                  errorMessage: state.errorMessage,
                   title: context.l10n.adminSalesLoadFailed,
-                  body: failureText(context.l10n,
-                      code: state.errorCode,
-                      message: state.errorMessage,
-                      fallback: context.l10n.adminSalesLoadFailedBody),
+                  fallback: context.l10n.adminSalesLoadFailedBody,
                   actionLabel: context.l10n.retry,
-                  onAction: () =>
+                  onRetry: () =>
                       context.read<AdminSalesDashboardCubit>().load(),
                 ),
               AdminSalesDashboardStatus.loaded =>

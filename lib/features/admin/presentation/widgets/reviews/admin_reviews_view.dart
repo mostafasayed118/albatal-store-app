@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../shared/components/app_card.dart';
 import '../../../../../shared/components/feedback_view.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
-import '../../../../../shared/l10n/failure_copy.dart';
+import '../../admin_error_feedback.dart';
 import '../../cubit/admin_reviews_cubit.dart';
 
 /// Pending-review moderation list — extracted from
@@ -23,13 +23,10 @@ final class AdminReviewsView extends StatelessWidget {
             return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminReviewsStatus.error) {
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.errorTitle),
-              onAction: () => context.read<AdminReviewsCubit>().load(),
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              onRetry: () => context.read<AdminReviewsCubit>().load(),
             );
           }
           return RefreshIndicator(

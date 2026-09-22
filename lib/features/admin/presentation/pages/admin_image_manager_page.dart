@@ -11,6 +11,7 @@ import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/dashboard/admin_image_grid.dart';
 import 'admin_image_upload_flow.dart';
 
@@ -216,15 +217,12 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
-              ? FeedbackView(
-                  type: FeedbackViewType.error,
+              ? AdminErrorFeedback(
+                  errorCode: _errorCode,
+                  errorMessage: _error,
                   title: l10n.adminImagesLoadFailed,
-                  body: failureText(l10n,
-                      code: _errorCode,
-                      message: _error,
-                      fallback: l10n.errorTitle),
                   actionLabel: l10n.retry,
-                  onAction: _loadImages,
+                  onRetry: _loadImages,
                 )
               : Column(
                   children: [

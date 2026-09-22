@@ -5,11 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/share_service.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/orders_csv_exporter.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/dashboard/admin_order_tile.dart';
 
 /// Admin order queue — filter by status, export the view as CSV.
@@ -97,13 +97,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           }
           if (state.status == AdminStatus.error) {
             // A failed load must not read as an empty queue.
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.errorTitle),
-              onAction: () => context.read<AdminCubit>().loadOrders(),
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              onRetry: () => context.read<AdminCubit>().loadOrders(),
             );
           }
           final orders = state.filteredOrders;
