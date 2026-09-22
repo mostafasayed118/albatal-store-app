@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
+import '../widgets/dashboard/admin_action_tile.dart';
+import '../widgets/dashboard/admin_stat_card.dart';
 
 /// Admin dashboard home — shows order stats and quick actions.
 class AdminDashboardPage extends StatefulWidget {
@@ -47,15 +49,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.errorTitle),
-              // Reload the data; the old handler only cleared the error
-              // flag, leaving the dashboard empty on the "retry".
-              onAction: () => context.read<AdminCubit>()
+            // Reload the data; the old handler only cleared the error
+            // flag, leaving the dashboard empty on the "retry".
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              onRetry: () => context.read<AdminCubit>()
                 ..clearError()
                 ..loadOrders()
                 ..loadLowStockProducts()
@@ -64,14 +63,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           }
           // Lazy build (audit): same children as before, inflated on demand.
           final children = <Widget>[
-            _StatCard(
+            AdminStatCard(
               title: l.totalOrders,
               value: '${state.orders.length}',
               icon: Icons.receipt_long,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 12),
-            _StatCard(
+            AdminStatCard(
               title: l.pendingOrders,
               value:
                   '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
@@ -79,7 +78,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               color: Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(height: 12),
-            _StatCard(
+            AdminStatCard(
               title: l.lowStock,
               value: '${state.lowStockProducts.length}',
               icon: Icons.warning_amber,
@@ -88,19 +87,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             const SizedBox(height: 24),
             Text(l.quickActions, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            _ActionTile(
+            AdminActionTile(
               icon: Icons.receipt_long,
               title: l.orderQueue,
               subtitle: l.viewAllOrders,
               onTap: () => context.push(Routes.adminOrders),
             ),
-            _ActionTile(
+            AdminActionTile(
               icon: Icons.inventory_2_outlined,
               title: l.inventory,
               subtitle: l.manageStock,
               onTap: () => context.push(Routes.adminInventory),
             ),
-            _ActionTile(
+            AdminActionTile(
               icon: Icons.shopping_bag_outlined,
               title: l.catalog,
               subtitle: l.manageProducts,
@@ -110,7 +109,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             // shipped with no destination, so a coupon could be redeemed
             // at checkout but never created. Both labels already exist in
             // EN + AR, so no ARB change was needed.
-            _ActionTile(
+            AdminActionTile(
               icon: Icons.local_offer_outlined,
               title: l.adminCoupons,
               subtitle: l.adminAddCoupon,
@@ -123,74 +122,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             itemBuilder: (_, i) => children[i],
           );
         },
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-  final String title, value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: TextStyle(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant)),
-                  Text(value,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(color: color)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String title, subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Icon(context.directionalTrailingIcon),
-        onTap: onTap,
       ),
     );
   }

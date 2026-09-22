@@ -2,16 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/share_service.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/orders_csv_exporter.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
+import '../widgets/dashboard/admin_order_tile.dart';
 
 /// Admin order queue — filter by status, export the view as CSV.
 class AdminOrdersPage extends StatefulWidget {
@@ -98,13 +97,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           }
           if (state.status == AdminStatus.error) {
             // A failed load must not read as an empty queue.
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.errorTitle),
-              onAction: () => context.read<AdminCubit>().loadOrders(),
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              onRetry: () => context.read<AdminCubit>().loadOrders(),
             );
           }
           final orders = state.filteredOrders;
@@ -119,92 +115,10 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: orders.length,
-            itemBuilder: (_, i) => _OrderTile(order: orders[i]),
+            itemBuilder: (_, i) => AdminOrderTile(order: orders[i]),
           );
         },
       ),
     );
-  }
-}
-
-final class _OrderTile extends StatelessWidget {
-  const _OrderTile({required this.order});
-
-  final AdminOrder order;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
-    final status = order.status;
-    final total = order.total.format();
-    final customerName = order.customerName ?? l10n.unknown;
-    final itemCount = order.itemCount ?? order.items.length;
-
-    return Card(
-      child: ListTile(
-        onTap: () => context.push(Routes.adminOrder(order.id)),
-        leading: CircleAvatar(
-          backgroundColor: _statusColor(status, scheme).withValues(alpha: .12),
-          child: Icon(_statusIcon(status),
-              color: _statusColor(status, scheme), size: 20),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text('#${order.shortId}...',
-                  style: Theme.of(context).textTheme.titleSmall),
-            ),
-            Text(total,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700, color: scheme.primary)),
-          ],
-        ),
-        subtitle: Text('$customerName · $itemCount ${l10n.items}'),
-        trailing: Icon(context.directionalTrailingIcon),
-      ),
-    );
-  }
-
-  Color _statusColor(AdminOrderStatus status, ColorScheme scheme) {
-    switch (status) {
-      case AdminOrderStatus.placed:
-        return scheme.secondary;
-      case AdminOrderStatus.pending:
-      case AdminOrderStatus.paid:
-      case AdminOrderStatus.processing:
-        return scheme.tertiary;
-      case AdminOrderStatus.shipped:
-        return scheme.primary;
-      case AdminOrderStatus.delivered:
-        // Success tone from the token palette — never a raw Material
-        // color (dark-mode + contrast safe, single-accent rule).
-        return scheme.tertiary;
-      case AdminOrderStatus.cancelled:
-      case AdminOrderStatus.refunded:
-        return scheme.error;
-      case AdminOrderStatus.unknown:
-        return scheme.outline;
-    }
-  }
-
-  IconData _statusIcon(AdminOrderStatus status) {
-    switch (status) {
-      case AdminOrderStatus.placed:
-        return Icons.receipt_long;
-      case AdminOrderStatus.pending:
-      case AdminOrderStatus.paid:
-      case AdminOrderStatus.processing:
-        return Icons.autorenew;
-      case AdminOrderStatus.shipped:
-        return Icons.local_shipping;
-      case AdminOrderStatus.delivered:
-        return Icons.check_circle;
-      case AdminOrderStatus.cancelled:
-      case AdminOrderStatus.refunded:
-        return Icons.cancel;
-      case AdminOrderStatus.unknown:
-        return Icons.help_outline;
-    }
   }
 }

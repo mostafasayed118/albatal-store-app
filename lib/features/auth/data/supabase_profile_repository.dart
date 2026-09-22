@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/data/profile_codec.dart';
 import '../../../core/entities/profile.dart';
 import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
@@ -22,7 +23,7 @@ class SupabaseProfileRepository implements ProfileRepository {
         () async {
           final response = await _client
               .from('profiles')
-              // Explicit columns (audit P6): only what [Profile.fromRow]
+              // Explicit columns (audit P6): only what [ProfileCodec.fromRow]
               // reads — never `*`.
               .select('id, full_name, phone, avatar_url, is_admin, '
                   'membership_tier')
@@ -30,7 +31,7 @@ class SupabaseProfileRepository implements ProfileRepository {
               .maybeSingle();
 
           if (response == null) return null;
-          return Profile.fromRow(response);
+          return ProfileCodec.fromRow(response);
         },
         'Failed to load profile',
         code: kFailureLoad,
@@ -39,10 +40,13 @@ class SupabaseProfileRepository implements ProfileRepository {
   @override
   Future<Result<void>> upsertProfile(Profile profile) => Result.guard<void>(
         () async {
-          // toProfileRow() deliberately omits is_admin/membership_tier — the
-          // tier is admin-managed (migration 046) and RLS pins privileged
-          // columns to their existing values.
-          await _client.from('profiles').upsert(profile.toProfileRow());
+          // ProfileCodec.toProfileRow deliberately omits
+          // is_admin/membership_tier — the tier is admin-managed
+          // (migration 046) and RLS pins privileged columns to their
+          // existing values.
+          await _client.from('profiles').upsert(ProfileCodec.toProfileRow(
+                profile,
+              ));
         },
         'Failed to save profile',
         code: kFailureSave,

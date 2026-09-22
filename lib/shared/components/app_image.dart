@@ -54,7 +54,15 @@ class AppImage extends StatelessWidget {
       // Default downsampling (audit): explicit cacheWidth/cacheHeight win;
       // otherwise decode at the layout size * devicePixelRatio, capped at
       // 1080px, so callers that size the widget never decode full-res.
-      final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+      // Aspect-scoped dependency (audit 2026-09-21): the old
+      // MediaQuery.maybeOf rebuilt every AppImage on each IME/view-inset
+      // animation frame; devicePixelRatioOf depends on the DPR aspect only.
+      // Callers that pass BOTH cache bounds take no MediaQuery dependency
+      // at all — only the default-sizing path needs a DPR.
+      final needsDefault = cacheWidth == null || cacheHeight == null;
+      final dpr = needsDefault
+          ? (MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0)
+          : 1.0;
       int? defaultFor(double? extent) =>
           extent == null ? null : (extent * dpr).round().clamp(1, 1080);
       return CachedNetworkImage(

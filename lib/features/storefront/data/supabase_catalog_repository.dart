@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,10 +9,12 @@ import '../../../core/error/app_error.dart';
 import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
-import '../../../shared/services/logger.dart';
+import '../../../shared/extensions/iterable_x.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 import '../domain/repositories/catalog_repository.dart';
+import 'catalog_page_fetch.dart';
+import 'catalog_persistent_cache.dart';
 import 'product_mapper.dart';
 
 /// Supabase-backed catalog repository.
@@ -67,23 +68,6 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// (see `docs/perf-budget.md`).
   static const kCatalogPageSize = 100;
 
-  /// SharedPreferences key for the persistent catalog cache.
-  static const _persistentCacheKey = 'catalog_products_cache_v1';
-
-  /// Shared product select shape (single source of truth). [fetchProducts]
-  /// and [fetchProductById] must return identical column shapes — the
-  /// mapper ([ProductCodec.fromRow]) is written against exactly these
-  /// keys, so a divergence between the two queries would silently change
-  /// the decoded product (e.g. missing images) depending on which path
-  /// loaded it.
-  static const _productSelect = '''
-            id, name, slug, description, composition, care, origin,
-            base_price, old_price, rating, review_count,
-            categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override),
-            product_images(storage_path, sort_order)
-          ''';
-
   /// Whether the cached data is still within the TTL window.
   bool get _cacheIsFresh =>
       _cache != null &&
@@ -116,54 +100,26 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     if (_cacheIsFresh) return Success(_cache!);
 
     try {
-      // Single query with embedded variant + image relations. Supabase
-      // PostgREST returns variants/images as arrays inside each product row,
-      // eliminating extra round-trips.
-      final rows = await _client
-          .from('products')
-          .select(_productSelect)
-          .eq('is_active', true)
-          .order('name')
-          .limit(limit);
-
-      final result = <Product>[];
-      for (final row in rows) {
-        final variantsRaw = row['product_variants'];
-        final variants = variantsRaw is List
-            ? variantsRaw.whereType<Map<String, dynamic>>().toList()
-            : <Map<String, dynamic>>[];
-        final product = ProductCodec.fromRow(
-          row,
-          variants,
-          storageService: _storageService,
-        );
-        // Rows without a usable id/name are skipped, not fatal (audit P2).
-        if (product != null) result.add(product);
-      }
-
+      // Single query with embedded variant + image relations (see
+      // [fetchCatalogPage]); the offline-restore path is untouched (it
+      // reads the persistent cache, not the DB).
+      final page = await fetchCatalogPage(
+        client: _client,
+        storageService: _storageService,
+        productSelect: ProductCodec.productSelect,
+        limit: limit,
+      );
+      final result = page.products;
       _setCache(result);
 
-      // Truncation signal: `fetchProducts` is bounded, and every
-      // search/filter/sort pass runs CLIENT-side over this page, so a full
-      // page means the catalog has outgrown the bound and results are
-      // silently incomplete. Logged (not thrown) so the storefront keeps
-      // working while the owner decides between a larger page and
-      // server-side search — see the note on [_catalogPageSize].
-      if (result.length >= limit) {
-        Log.w(
-          'Catalog page is full ($limit rows): client-side search/filter '
-          'cannot see products beyond this page.',
-        );
-      }
-
       // Persist to SharedPreferences for offline fallback.
-      unawaited(_persistCache(result));
+      unawaited(persistCatalogCache(_preferences, result));
 
       return Success(result);
     } on Exception catch (e) {
       // On network failure, try persistent cache first (survives app restart),
       // then fall back to in-memory cache (same session only).
-      final persistentCache = await _restorePersistentCache();
+      final persistentCache = await restoreCatalogCache(_preferences);
       if (persistentCache != null) {
         _setCache(persistentCache);
         return Success(persistentCache);
@@ -198,16 +154,14 @@ final class SupabaseCatalogRepository implements CatalogRepository {
     try {
       final row = await _client
           .from('products')
-          .select(_productSelect)
+          .select(ProductCodec.productSelect)
           .eq('id', id)
           .single();
 
-      final variantsRaw = row['product_variants'];
-      final variants = variantsRaw is List
-          ? variantsRaw.whereType<Map<String, dynamic>>().toList()
-          : <Map<String, dynamic>>[];
-      final product =
-          ProductCodec.fromRow(row, variants, storageService: _storageService);
+      final product = ProductCodec.listFromRows(
+        [row],
+        storageService: _storageService,
+      ).firstOrNull;
       // A row that came back without a usable id/name is unusable — fail
       // closed rather than handing the UI a hollow product.
       if (product == null) {
@@ -223,7 +177,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // Offline cold start (Task #8): the in-memory index missed and the
       // network is gone. Restore the persistent cache once — a deep link
       // to a previously synced product still resolves from disk.
-      final restored = await _restorePersistentCache();
+      final restored = await restoreCatalogCache(_preferences);
       if (restored != null) {
         _setCache(restored);
         final hit = _productsById[id];
@@ -255,7 +209,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
       // order/limit move to the transform builder (no filter ops after).
       final filtered = _client
           .from('products')
-          .select(_productSelect)
+          .select(ProductCodec.productSelect)
           .eq('is_active', true)
           .eq('categories.name', category);
       final scoped = (excludeId != null && excludeId.isNotEmpty)
@@ -263,28 +217,17 @@ final class SupabaseCatalogRepository implements CatalogRepository {
           : filtered;
       final rows = await scoped.order('name').limit(limit);
 
-      final result = <Product>[];
-      for (final row in rows) {
-        final variantsRaw = row['product_variants'];
-        final variants = variantsRaw is List
-            ? variantsRaw.whereType<Map<String, dynamic>>().toList()
-            : <Map<String, dynamic>>[];
-        final product = ProductCodec.fromRow(
-          row,
-          variants,
-          storageService: _storageService,
-        );
-        // Rows without a usable id/name are skipped, not fatal (audit P2).
-        if (product != null) result.add(product);
-      }
-      return Success(result);
+      return Success(ProductCodec.listFromRows(
+        rows,
+        storageService: _storageService,
+      ));
     } on Exception catch (e) {
       // Offline degrade (Task #8): the related strip should not go blank
       // when a full catalog snapshot exists — derive the strip from the
       // in-memory cache, restoring the persistent cache on a cold start.
       var pool = _cache;
       if (pool == null) {
-        final restored = await _restorePersistentCache();
+        final restored = await restoreCatalogCache(_preferences);
         if (restored != null) {
           _setCache(restored);
           pool = restored;
@@ -328,89 +271,15 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   @override
   List<String> get defaultCategories => defaultCatalogCategories;
 
-  // ─── Persistent cache helpers ──────────────────────────────
-
-  /// Awaitable cache write so callers can sequence on it in tests and
-  /// the fire-and-forget production path marks the future [unawaited]
-  /// instead of tripping `discarded_futures`.
-  /// Payloads at or below this size parse inline: spawning an isolate
-  /// costs more (milliseconds + cold-start latency on the offline
-  /// fallback path) than parsing tens of KB itself. Only larger
-  /// payloads go through [compute] (audit P6).
-  static const _isolateJsonChars = 64 * 1024;
-
-  /// Item-count twin of [_isolateJsonChars] for the encode direction,
-  /// where the string length is unknown before encoding. A full
-  /// 100-row catalog page serializes to tens of KB, so above this
-  /// count the encode moves off the UI thread.
-  static const _isolateItemBudget = 40;
-
-  Future<void> _persistCache(List<Product> products) async {
-    final prefs = _preferences;
-    if (prefs == null) return;
-    try {
-      final encoded = products.map(ProductCodec.encode).toList();
-      // Large catalogs encode off the UI thread (audit P6); small ones
-      // inline — see [_isolateItemBudget]. `jsonEncode` is a top-level
-      // function, so it can go straight into `compute` (maps of
-      // primitives cross the isolate).
-      // Best-effort cache write — never crash the app over persistence.
-      final json = products.length > _isolateItemBudget
-          ? await compute(jsonEncode, encoded)
-          : jsonEncode(encoded);
-      await prefs.setString(_persistentCacheKey, json);
-    } catch (e) {
-      // Best-effort cache write — never crash the app over persistence.
-      // Logged without the raw error text; audit 2026-09-14 P0-5.
-      Log.w('Catalog persistent cache write failed.', error: e);
-    }
-  }
-
-  Future<List<Product>?> _restorePersistentCache() async {
-    final prefs = _preferences;
-    if (prefs == null) return null;
-    try {
-      final raw = prefs.getString(_persistentCacheKey);
-      if (raw == null) return null;
-      // Decode off the UI thread for large payloads only (audit P6,
-      // gated by [_isolateJsonChars]): this restore sits on the offline
-      // cold-start path, where isolate spawn latency would delay first
-      // paint for the common small-cache case.
-      final decoded = raw.length > _isolateJsonChars
-          ? await compute(jsonDecode, raw)
-          : jsonDecode(raw);
-      if (decoded is! List) return null;
-      // Per-item fail-soft: a corrupt/tampered entry is skipped, never
-      // fatal to its neighbours (previously one throwing entry discarded
-      // the whole cache via the catch-all below).
-      final products = <Product>[];
-      for (final entry in decoded) {
-        try {
-          if (entry is! Map) continue;
-          final product = ProductCodec.decode(entry as Map<Object?, Object?>);
-          if (product != null) products.add(product);
-        } catch (e) {
-          // Per-entry fail-soft (logged without payload text; P0-5).
-          Log.w('Catalog persistent cache skipping corrupt entry.', error: e);
-        }
-      }
-      return products;
-    } catch (e) {
-      // Fail-soft restore (logged without payload text; P0-5).
-      Log.w('Catalog persistent cache restore failed.', error: e);
-      return null;
-    }
-  }
-
   // ─── Testing helpers ──────────────────────────────────────
 
   @visibleForTesting
   Future<void> persistCacheForTest(List<Product> products) =>
-      _persistCache(products);
+      persistCatalogCache(_preferences, products);
 
   @visibleForTesting
   Future<List<Product>?> restorePersistentCacheForTest() =>
-      _restorePersistentCache();
+      restoreCatalogCache(_preferences);
 
   @visibleForTesting
   void setCacheForTest(List<Product> products) => _setCache(products);

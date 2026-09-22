@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/admin_error_feedback.dart';
 
 /// Catalog product management — the hub's "Products" destination.
 ///
@@ -86,13 +86,10 @@ class _AdminProductsPageState extends State<AdminProductsPage> {
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
-              ? FeedbackView(
-                  type: FeedbackViewType.error,
-                  body: failureText(context.l10n,
-                      code: _errorCode,
-                      message: _error,
-                      fallback: context.l10n.errorTitle),
-                  onAction: _loadProducts,
+              ? AdminErrorFeedback(
+                  errorCode: _errorCode,
+                  errorMessage: _error,
+                  onRetry: _loadProducts,
                 )
               : _products.isEmpty
                   ? FeedbackView(

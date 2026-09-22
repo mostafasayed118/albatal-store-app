@@ -1,68 +1,19 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-
-import '../../../../core/entities/profile.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
-import '../../../addresses/domain/repositories/address_repository.dart';
+import '../../../addresses/addresses.dart';
 import '../../domain/entities/auth_outcome.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/order_snapshot_port.dart';
 import '../../domain/repositories/profile_repository.dart';
 
-enum AuthStatus {
-  initial,
-  checkingSession,
-  unauthenticated,
-  authenticating,
-  authenticated,
-  passwordRecovery,
-  failure,
-}
+import 'auth_state.dart';
 
-final class AuthState extends Equatable {
-  const AuthState({
-    this.status = AuthStatus.initial,
-    this.profile,
-    this.errorMessage,
-    this.errorCode,
-  });
+export 'auth_state.dart';
 
-  final AuthStatus status;
-  final Profile? profile;
-  final String? errorMessage;
-
-  /// Machine-readable class of [errorMessage] (see `failure_codes.dart`). The
-  /// pages localize on this and never on the English text (audit 2026-09-19,
-  /// sweep part 32).
-  final String? errorCode;
-
-  bool get isAuthenticated => status == AuthStatus.authenticated;
-  bool get isGuest => status == AuthStatus.unauthenticated;
-  bool get isLoading =>
-      status == AuthStatus.initial ||
-      status == AuthStatus.checkingSession ||
-      status == AuthStatus.authenticating;
-
-  AuthState copyWith({
-    AuthStatus? status,
-    Profile? profile,
-    String? errorMessage,
-    String? errorCode,
-    bool clearProfile = false,
-  }) =>
-      AuthState(
-        status: status ?? this.status,
-        profile: clearProfile ? null : (profile ?? this.profile),
-        errorMessage: errorMessage,
-        errorCode: errorCode,
-      );
-
-  @override
-  List<Object?> get props => [status, profile, errorMessage, errorCode];
-}
+part 'parts/auth_snapshot_wipe.dart';
 
 // ─── Cubit ─────────────────────────────────────────────────
 
@@ -197,14 +148,14 @@ class AuthCubit extends Cubit<AuthState> {
   ///
   /// Server failure still signs out locally (the session is dead to the
   /// user) but is logged; snapshot-clear failures are retried once via
-  /// [_clearLocalSnapshots] so no address/order PII survives.
+  /// [AuthSnapshotWipe.clearLocalSnapshots] so no address/order PII survives.
   Future<void> signOut() async {
     final result = await _authRepository.signOut();
     if (result case Failure(:final error)) {
       Log.w('Sign-out server failure: ${error.message}',
           category: LogCategory.auth);
     }
-    await _clearLocalSnapshots();
+    await clearLocalSnapshots();
     if (isClosed) return;
     emit(state.copyWith(
       status: AuthStatus.unauthenticated,
@@ -224,7 +175,7 @@ class AuthCubit extends Cubit<AuthState> {
       case Success():
         // The server-side user is gone — clear the local session too.
         await _authRepository.signOut();
-        await _clearLocalSnapshots();
+        await clearLocalSnapshots();
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,
@@ -246,53 +197,6 @@ class AuthCubit extends Cubit<AuthState> {
 
   // ─── Private helpers ───────────────────────────────────
 
-  /// Removes on-device address and order snapshots so a signed-out or
-  /// deleted device holds no personal data (audit S9). Calls the same
-  /// local stores the app reads from — never raw prefs keys. Cart and
-  /// wishlist are deliberately untouched here: they are guest-accessible
-  /// and the settings page already owns their wipe (same UX-043 lane).
-  ///
-  /// Each wipe is retried once on failure and a still-failing wipe is
-  /// re-scheduled fire-and-forget so transient platform errors don't
-  /// leave PII behind; signOut/deleteAccount never abort on wipe failure.
-  Future<void> _clearLocalSnapshots() async {
-    final addressRepository = _addressRepository;
-    if (addressRepository is ClearableAddressRepository) {
-      var result = await addressRepository.clearAddresses();
-      if (result case Failure(error: final clearError)) {
-        Log.w('Address snapshot clear failed (retrying): ${clearError.message}',
-            category: LogCategory.auth);
-        result = await addressRepository.clearAddresses();
-        if (result case Failure(error: final retryError)) {
-          Log.w('Address snapshot clear retry failed: ${retryError.message}',
-              category: LogCategory.auth);
-          // Schedule a late retry — best-effort PII re-wipe.
-          unawaited(addressRepository.clearAddresses());
-        }
-      }
-    }
-    // Contained like the address clear above: a platform failure wiping
-    // the orders snapshot must never abort signOut or deleteAccount —
-    // those flows still need to reach emit(unauthenticated).
-    try {
-      await _orderSnapshots?.clearOrderSnapshots();
-    } catch (_) {
-      Log.w('clearOrders failed during snapshot wipe (retrying)',
-          category: LogCategory.auth);
-      try {
-        await _orderSnapshots?.clearOrderSnapshots();
-      } catch (_) {
-        Log.w('clearOrders retry failed during snapshot wipe',
-            category: LogCategory.auth);
-        unawaited(
-          Future(() => _orderSnapshots?.clearOrderSnapshots()).catchError(
-            (_) => null,
-          ),
-        );
-      }
-    }
-  }
-
   void _listenToAuthChanges() {
     _authSubscription =
         _authRepository.authStateChanges.listen((outcome) async {
@@ -306,7 +210,7 @@ class AuthCubit extends Cubit<AuthState> {
         // snapshots survived a revoked session. Double-wiping when the
         // user also tapped sign out is harmless — the clears are
         // idempotent and never abort on failure.
-        await _clearLocalSnapshots();
+        await clearLocalSnapshots();
         if (isClosed) return;
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,

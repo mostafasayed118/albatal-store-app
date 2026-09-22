@@ -10,6 +10,7 @@ import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_customer.dart';
 import '../../domain/repositories/admin_customers_port.dart';
 import '../cubit/admin_customers_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/membership_tier_dialog.dart';
 
 /// Admin customers list (feature-batch §14): profile directory with
@@ -120,13 +121,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           if (state.status == AdminCustomersStatus.error) {
             return Scaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
-              body: FeedbackView(
-                type: FeedbackViewType.error,
-                body: failureText(context.l10n,
-                    code: state.errorCode,
-                    message: state.errorMessage,
-                    fallback: context.l10n.errorTitle),
-                onAction: () => context.read<AdminCustomersCubit>().load(),
+              body: AdminErrorFeedback(
+                errorCode: state.errorCode,
+                errorMessage: state.errorMessage,
+                onRetry: () => context.read<AdminCustomersCubit>().load(),
               ),
             );
           }

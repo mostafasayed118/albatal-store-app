@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/error/app_error.dart';
-import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_button.dart';
-import '../../../../shared/components/app_image.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -12,15 +10,15 @@ import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
-import '../../../../shared/theme/app_colors.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/admin_error_feedback.dart';
+import '../widgets/dashboard/admin_image_grid.dart';
+import 'admin_image_upload_flow.dart';
 
-/// Picks one image for upload. Injectable so widget tests can drive
-/// the flow without the platform channel (audit 2026-09-13: the
-/// upload is real — the dummy-bytes stub is gone).
-typedef ProductImagePicker = Future<XFile?> Function(ImageSource source);
+export 'admin_image_upload_flow.dart' show ProductImagePicker;
 
-Future<XFile?> _defaultPick(ImageSource source) => ImagePicker().pickImage(
+Future<XFile?> defaultProductImagePick(ImageSource source) =>
+    ImagePicker().pickImage(
       source: source,
       maxWidth: kMaxUploadDimension.toDouble(),
       maxHeight: kMaxUploadDimension.toDouble(),
@@ -37,7 +35,7 @@ class AdminImageManagerPage extends StatefulWidget {
     required this.productId,
     required this.repository,
     required this.storage,
-    this.pickImage = _defaultPick,
+    this.pickImage = defaultProductImagePick,
     this.imageCompressor,
   });
   final String productId;
@@ -117,92 +115,44 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     );
   }
 
-  /// Post-compression size ceiling, mirroring the proof-upload guard —
-  /// a 1600px/82-quality re-encode should land far below this; hitting
-  /// it means something pathological was picked.
-  static const _maxImageBytes = 5 * 1024 * 1024;
-
-  /// Extensions the product-images storage policy accepts.
-  static const _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
-
-  static String _contentType(String ext) => switch (ext) {
-        'png' => 'image/png',
-        'webp' => 'image/webp',
-        _ => 'image/jpeg',
-      };
-
   Future<void> _uploadImage() async {
     setState(() => _uploading = true);
     try {
-      final picked = await widget.pickImage(ImageSource.gallery);
-      if (!mounted) return;
-      if (picked == null) {
-        // User cancelled the picker — not an error.
-        setState(() => _uploading = false);
-        return;
-      }
-      var bytes = await picked.readAsBytes();
-      if (!mounted) return;
-      if (bytes.isEmpty) {
-        setState(() => _uploading = false);
-        showFloatingError(context, context.l10n.adminImageFileEmpty);
-        return;
-      }
-      // §4 enforcement pass: the picker's imageQuality is only a hint
-      // on some platforms.
-      final compressor =
-          widget.imageCompressor ?? const FlutterImageCompressor();
-      bytes = await compressor.compress(bytes);
-      final ext = picked.name.contains('.')
-          ? picked.name.split('.').last.toLowerCase()
-          : 'jpg';
-      if (!_allowedExtensions.contains(ext)) {
-        if (!mounted) return;
-        setState(() => _uploading = false);
-        showFloatingError(context, context.l10n.adminImageUnsupportedFormat);
-        return;
-      }
-      if (bytes.length > _maxImageBytes) {
-        if (!mounted) return;
-        setState(() => _uploading = false);
-        showFloatingError(context, context.l10n.adminImageTooLarge);
-        return;
-      }
-      final fileName = 'upload_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      final storagePath = await widget.storage.uploadProductImage(
-        widget.productId,
-        bytes,
-        fileName,
-        _contentType(ext),
+      final outcome = await runAdminImageUpload(
+        productId: widget.productId,
+        pickImage: widget.pickImage,
+        compressor: widget.imageCompressor,
+        storage: widget.storage,
+        repository: widget.repository,
       );
-      final next = [..._paths, storagePath];
-      final saveResult =
-          await widget.repository.adminSetProductImages(widget.productId, next);
       if (!mounted) return;
-      if (saveResult case Failure(:final error)) {
-        // Best-effort cleanup: don't orphan the storage object when the
-        // DB write rejected the new gallery.
-        try {
-          await widget.storage.deleteProductImage(storagePath);
-        } on Exception catch (e) {
-          Log.w('orphaned product image after failed save.', error: e);
-        }
-        if (!mounted) return;
-        setState(() => _uploading = false);
-        showFloatingError(
-          context,
-          failureText(context.l10n,
-              code: error.code,
-              message: error.message,
-              fallback: context.l10n.errorTitle),
-        );
-        return;
+      setState(() => _uploading = false);
+      switch (outcome) {
+        case AdminUploadCancelled():
+          break;
+        case AdminUploadSuccess(:final paths):
+          setState(() => _paths = paths);
+          showConfirmation(context, context.l10n.adminImageUploaded);
+        case AdminUploadError(:final l10nKey, :final error):
+          if (error != null) {
+            showFloatingError(
+              context,
+              failureText(context.l10n,
+                  code: error.code,
+                  message: error.message,
+                  fallback: context.l10n.errorTitle),
+            );
+          } else if (l10nKey == 'adminImageFileEmpty') {
+            showFloatingError(context, context.l10n.adminImageFileEmpty);
+          } else if (l10nKey == 'adminImageUnsupportedFormat') {
+            showFloatingError(
+                context, context.l10n.adminImageUnsupportedFormat);
+          } else if (l10nKey == 'adminImageTooLarge') {
+            showFloatingError(context, context.l10n.adminImageTooLarge);
+          } else {
+            showFloatingError(context, context.l10n.adminImageUploadFailed);
+          }
       }
-      setState(() {
-        _paths = next;
-        _uploading = false;
-      });
-      showConfirmation(context, context.l10n.adminImageUploaded);
     } on AppError catch (e) {
       if (!mounted) return;
       setState(() => _uploading = false);
@@ -267,15 +217,12 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
-              ? FeedbackView(
-                  type: FeedbackViewType.error,
+              ? AdminErrorFeedback(
+                  errorCode: _errorCode,
+                  errorMessage: _error,
                   title: l10n.adminImagesLoadFailed,
-                  body: failureText(l10n,
-                      code: _errorCode,
-                      message: _error,
-                      fallback: l10n.errorTitle),
                   actionLabel: l10n.retry,
-                  onAction: _loadImages,
+                  onRetry: _loadImages,
                 )
               : Column(
                   children: [
@@ -299,126 +246,15 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
                               actionLabel: l10n.adminUploadImage,
                               onAction: _uploadImage,
                             )
-                          : GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1,
-                              ),
-                              itemCount: _paths.length,
-                              itemBuilder: (ctx, i) {
-                                final path = _paths[i];
-                                // Ask for the budget the tile decodes at (see
-                                // the AppImage below): this page was the last
-                                // surface still pulling the full upload
-                                // (audit P0-4). Falls back to the stored path
-                                // when the client is not available.
-                                String url;
-                                try {
-                                  url =
-                                      widget.storage.getProductImageUrlForWidth(
-                                    path,
-                                    StorageService.gridImageWidth,
-                                  );
-                                } catch (_) {
-                                  url = path;
-                                }
-                                return Card(
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      // Bounded at BOTH ends: the url above
-                                      // requests a 420 render and this decodes
-                                      // at 420, so a grid cell never touches
-                                      // the full-resolution bitmap (audit
-                                      // 2026-09-13 perf, P0-4).
-                                      AppImage(
-                                        source: url,
-                                        fit: BoxFit.cover,
-                                        cacheWidth: 420,
-                                        cacheHeight: 420,
-                                        placeholder: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(Icons.image, size: 40),
-                                            const SizedBox(height: 8),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsetsDirectional
-                                                      .symmetric(horizontal: 8),
-                                              child: Text(
-                                                path.split('/').last,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall,
-                                                textAlign: TextAlign.center,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            _IconBtn(
-                                              icon: Icons.arrow_upward,
-                                              onTap: i == 0
-                                                  ? null
-                                                  : () => _move(i, i - 1),
-                                            ),
-                                            _IconBtn(
-                                              icon: Icons.arrow_downward,
-                                              onTap: i == _paths.length - 1
-                                                  ? null
-                                                  : () => _move(i, i + 1),
-                                            ),
-                                            _IconBtn(
-                                              icon: Icons.delete,
-                                              onTap: () => _delete(i),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                          : AdminImageGrid(
+                              paths: _paths,
+                              storage: widget.storage,
+                              onMove: _move,
+                              onDelete: _delete,
                             ),
                     ),
                   ],
                 ),
-    );
-  }
-}
-
-final class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, this.onTap});
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.scrim,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 16, color: AppColors.white),
-        ),
-      ),
     );
   }
 }

@@ -17,6 +17,19 @@ const _placeholderImageColor = 0xFF888888;
 /// `colors`, `stock`, `rating` and `reviewCount`, so any product restored
 /// from SharedPreferences lost them.
 extension ProductCodec on Product {
+  /// Shared product select shape (single source of truth). The list and
+  /// single-row queries must return identical column shapes — [fromRow]
+  /// is written against exactly these keys, so a divergence between the
+  /// two queries would silently change the decoded product (e.g. missing
+  /// images) depending on which path loaded it.
+  static const productSelect = '''
+            id, name, slug, description, composition, care, origin,
+            base_price, old_price, rating, review_count,
+            categories!inner(name),
+            product_variants(product_id, size, color, stock, price_override),
+            product_images(storage_path, sort_order)
+          ''';
+
   /// Builds a [Product] from a joined `products` row with `product_variants`
   /// and `product_images` embedded.
   ///
@@ -219,6 +232,30 @@ extension ProductCodec on Product {
         ),
         rating: ratingRaw is num ? ratingRaw.toDouble() : 0.0,
         reviewCount: reviewRaw is num ? reviewRaw.toInt() : 0);
+  }
+
+  /// Maps product rows to [Product], skipping rows without a usable
+  /// id/name (audit P2) — the shared loop for the list, related, and
+  /// single-row paths so all three decode identically.
+  static List<Product> listFromRows(
+    Iterable<dynamic> rows, {
+    required StorageService storageService,
+  }) {
+    final result = <Product>[];
+    for (final row in rows) {
+      final variantsRaw = row['product_variants'];
+      final variants = variantsRaw is List
+          ? variantsRaw.whereType<Map<String, dynamic>>().toList()
+          : <Map<String, dynamic>>[];
+      final product = ProductCodec.fromRow(
+        row,
+        variants,
+        storageService: storageService,
+      );
+      // Rows without a usable id/name are skipped, not fatal (audit P2).
+      if (product != null) result.add(product);
+    }
+    return result;
   }
 }
 

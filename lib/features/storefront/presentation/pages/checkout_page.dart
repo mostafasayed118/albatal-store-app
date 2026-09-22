@@ -1,29 +1,23 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/entities/address.dart';
-import '../../../../core/entities/money.dart';
-import '../../../../generated/l10n/app_localizations.dart';
-import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
-import '../../../addresses/presentation/cubit/addresses_cubit.dart';
-import '../../domain/entities/coupon_discount.dart';
+import '../../../addresses/addresses.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/repositories/coupons_repository.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/checkout_cubit.dart';
-import '../widgets/address_form.dart';
-import '../widgets/address_picker.dart';
 import '../widgets/cart_summary.dart';
+import '../widgets/checkout/coupon_card.dart';
+import '../widgets/checkout/server_totals_card.dart';
+import '../widgets/checkout/shipping_address_card.dart';
 import '../widgets/order_review.dart';
 
 /// Checkout page — Stitch 3528 flow reskin.
@@ -118,7 +112,7 @@ class CheckoutPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               // Stitch Shipping Address card: surface + outlineVariant 1dp radius 16 clipAntiAlias.
-              _ShippingAddressCard(
+              CheckoutShippingAddressCard(
                 l10n: l10n,
                 scheme: scheme,
                 selectedAddress: s.selectedAddress,
@@ -150,12 +144,12 @@ class CheckoutPage extends StatelessWidget {
               // discount itself is computed server-side only.
               if (!s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
-                _CouponCard(l10n: l10n),
+                CheckoutCouponCard(l10n: l10n),
               ],
               // Show server-returned totals once the order is created — Stitch summary card.
               if (s.hasPendingOrder) ...[
                 const SizedBox(height: 16),
-                _ServerTotalsCard(
+                CheckoutServerTotalsCard(
                   l10n: l10n,
                   scheme: scheme,
                   subtotal: s.serverSubtotal,
@@ -262,234 +256,5 @@ class CheckoutPage extends StatelessWidget {
   /// lapsed.
   String _resolveCustomerEmail() {
     return _authSession?.currentUserEmail()?.trim() ?? '';
-  }
-}
-
-/// Shipping Address card — extracted from [CheckoutPage]'s build (audit
-/// Task 8b) verbatim: same tokens, same children, same behavior.
-/// §8: coupon entry — validation goes through [CheckoutCubit.applyCoupon]
-/// (server `validate_coupon` RPC); server-confirmed discounts appear on
-/// the order summary after creation, never computed here.
-final class _CouponCard extends StatefulWidget {
-  const _CouponCard({required this.l10n});
-
-  final AppLocalizations l10n;
-
-  @override
-  State<_CouponCard> createState() => _CouponCardState();
-}
-
-final class _CouponCardState extends State<_CouponCard> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  String _messageText(AppLocalizations l10n, String? code) {
-    switch (code) {
-      case kCouponInvalid:
-        return l10n.couponInvalid;
-      case kCouponUnavailable:
-        return l10n.couponUnavailable;
-      default:
-        return l10n.couponApplied;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = widget.l10n;
-    final scheme = Theme.of(context).colorScheme;
-    return AppCard(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.all(16),
-        child: BlocBuilder<CheckoutCubit, CheckoutState>(
-          buildWhen: (a, b) =>
-              a.appliedCoupon != b.appliedCoupon ||
-              a.couponMessage != b.couponMessage,
-          builder: (context, s) {
-            final coupon = s.appliedCoupon;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.couponFieldLabel,
-                    style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _controller,
-                  textCapitalization: TextCapitalization.characters,
-                  enabled: coupon == null,
-                  decoration: InputDecoration(
-                    hintText: l10n.couponFieldLabel,
-                    isDense: true,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: coupon == null
-                      ? FilledButton(
-                          onPressed: () => context
-                              .read<CheckoutCubit>()
-                              .applyCoupon(_controller.text),
-                          child: Text(l10n.couponApply))
-                      : IconButton(
-                          tooltip: l10n.couponRemove,
-                          onPressed: () {
-                            _controller.clear();
-                            context.read<CheckoutCubit>().clearCoupon();
-                          },
-                          icon: const Icon(Icons.close),
-                        ),
-                ),
-                if (coupon != null)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(top: 8),
-                    child: Text(l10n.couponApplied,
-                        style: TextStyle(color: scheme.primary)),
-                  ),
-                if (coupon == null && s.couponMessage != null)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(top: 8),
-                    child: Text(_messageText(l10n, s.couponMessage),
-                        style: TextStyle(color: scheme.error)),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-final class _ShippingAddressCard extends StatelessWidget {
-  const _ShippingAddressCard({
-    required this.l10n,
-    required this.scheme,
-    required this.selectedAddress,
-    required this.hasError,
-  });
-
-  final AppLocalizations l10n;
-  final ColorScheme scheme;
-  final Address? selectedAddress;
-  final bool hasError;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.shippingAddress,
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            AddressPicker(
-              selectedAddress: selectedAddress,
-              onSelect: (a) => context.read<CheckoutCubit>().selectAddress(a),
-              onAddNew: () async {
-                final address = await AddressForm.show(context);
-                if (address != null && context.mounted) {
-                  context.read<CheckoutCubit>().selectAddress(address);
-                  // Persist to the address book too: previously the new
-                  // address was only selected and vanished on restart
-                  // (live-found 2026-09-03).
-                  unawaited(context.read<AddressesCubit>().upsert(address));
-                }
-              },
-              l: l10n,
-              scheme: scheme,
-              hasError: hasError,
-            ),
-            if (hasError) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.error_outline, size: 16, color: scheme.error),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(l10n.validationSelectAddress,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: scheme.error)),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Server-confirmed totals card — extracted verbatim from
-/// [CheckoutPage]'s build (audit Task 8b).
-final class _ServerTotalsCard extends StatelessWidget {
-  const _ServerTotalsCard({
-    required this.l10n,
-    required this.scheme,
-    required this.subtotal,
-    required this.shipping,
-    required this.total,
-  });
-
-  final AppLocalizations l10n;
-  final ColorScheme scheme;
-  final Money? subtotal;
-  final Money? shipping;
-  final Money? total;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.serverConfirmedTotals,
-                style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            _ServerTotalRow(label: l10n.subtotal, value: subtotal),
-            _ServerTotalRow(label: l10n.shipping, value: shipping),
-            _ServerTotalRow(label: l10n.total, value: total),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final class _ServerTotalRow extends StatelessWidget {
-  const _ServerTotalRow({required this.label, required this.value});
-  final String label;
-  final Money? value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Text(label,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const Spacer(),
-          Text(value?.format() ?? '--',
-              style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
   }
 }

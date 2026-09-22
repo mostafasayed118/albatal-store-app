@@ -10,12 +10,13 @@ import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/services/image_compressor.dart';
-import '../../../../shared/services/logger.dart';
-import '../../../../shared/theme/app_theme.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
 import '../cubit/payment_cubit.dart';
-import '../payment_error_mapper.dart';
+import '../widgets/instapay_error_body.dart';
+import '../widgets/instapay_proof_form.dart';
+import '../widgets/instapay_proof_picker.dart';
+import '../widgets/instapay_transfer_card.dart';
 
 /// InstaPay transfer instructions + proof submission (migration 041).
 ///
@@ -128,59 +129,27 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
 
   Future<void> _pickScreenshot() async {
     final l = context.l10n;
-    try {
-      final xfile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 80,
-      );
-      if (xfile == null) return;
-      var bytes = await xfile.readAsBytes();
-      if (bytes.isEmpty) {
+    final picked = await pickInstapayProofScreenshot(
+      picker: _picker,
+      compressor: widget.imageCompressor,
+      maxBytes: _maxProofBytes,
+      allowedExtensions: _allowedProofExtensions,
+      emptyError: l.instapayPickScreenshotError,
+      tooLargeError: l.instapayFileTooLarge,
+      typeNotAllowedError: l.instapayFileTypeNotAllowed,
+      onError: (message) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.instapayPickScreenshotError)),
+          SnackBar(content: Text(message)),
         );
-        return;
-      }
-      // §4: picker imageQuality is only a hint on some platforms; this
-      // is the enforcement pass before the size check and upload. The
-      // compressor is constructor-injected (composition root) — a null
-      // (pre-DI test) falls back to the raw bytes; the server guard
-      // still bounds the upload.
-      final compressor = widget.imageCompressor;
-      if (compressor != null) bytes = await compressor.compress(bytes);
-      if (bytes.length > _maxProofBytes) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.instapayFileTooLarge)),
-        );
-        return;
-      }
-      final ext = xfile.name.contains('.')
-          ? xfile.name.split('.').last.toLowerCase()
-          : 'jpg';
-      if (!_allowedProofExtensions.contains(ext)) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.instapayFileTypeNotAllowed)),
-        );
-        return;
-      }
-      if (!mounted) return;
-      setState(() {
-        _attachedBytes = bytes;
-        _attachedExt = ext;
-        _attachedFileName = xfile.name;
-      });
-    } catch (e) {
-      Log.w('InstaPay screenshot pick failed.', error: e);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.instapayPickScreenshotError)),
-      );
-    }
+      },
+    );
+    if (!mounted || picked == null) return;
+    setState(() {
+      _attachedBytes = picked.bytes;
+      _attachedExt = picked.ext;
+      _attachedFileName = picked.fileName;
+    });
   }
 
   Future<void> _submitProof() async {
@@ -262,15 +231,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
           if (instructions == null) {
             return Scaffold(
               appBar: AppBar(title: Text(l.instapayInstructionsTitle)),
-              body: Center(
-                child: Text(
-                  // Localized fallback, not the raw message: see the sibling
-                  // fix in payment_method_page.dart.
-                  paymentMessageForCode(
-                      l, state.errorMessage, l.paymentFailedRetry),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              body: InstapayErrorBody(errorMessage: state.errorMessage),
             );
           }
 
@@ -287,138 +248,23 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                   scheme: scheme,
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  l.instapayTransferTo,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                // Transfer destination — server-provided address with
-                // a one-tap copy affordance.
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: scheme.outline.withValues(alpha: .3),
-                    ),
-                  ),
-                  child: ListTile(
-                    leading: Icon(Icons.account_balance, color: scheme.primary),
-                    title: Text(l.instapayAddressLabel,
-                        style: Theme.of(context).textTheme.labelSmall),
-                    subtitle: Text(
-                      instructions.instapayAddress,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    trailing: IconButton(
-                      tooltip: l.instapayCopy,
-                      icon: const Icon(Icons.copy),
-                      onPressed: () =>
-                          _copyAddress(instructions.instapayAddress),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Server-authoritative amount.
-                Row(
-                  children: [
-                    Text(l.instapayAmountLabel,
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    const Spacer(),
-                    Text(
-                      instructions.amount.format(),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold, color: scheme.primary),
-                    ),
-                  ],
+                InstapayTransferCard(
+                  address: instructions.instapayAddress,
+                  amountText: instructions.amount.format(),
+                  onCopy: () =>
+                      _copyAddress(instructions.instapayAddress),
                 ),
                 const SizedBox(height: 24),
-                TextField(
-                  controller: _referenceController,
-                  decoration: InputDecoration(
-                    labelText: l.instapayReferenceLabel,
-                    hintText: l.instapayReferenceHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                  maxLength: _maxReferenceLength,
-                  textInputAction: TextInputAction.done,
+                InstapayProofForm(
+                  referenceController: _referenceController,
+                  maxReferenceLength: _maxReferenceLength,
+                  hasAttachment: _attachedBytes != null,
+                  attachedFileName: _attachedFileName,
+                  submitted: _submitted,
+                  submitting: _submitting,
+                  onPickScreenshot: _pickScreenshot,
+                  onSubmitProof: _submitProof,
                 ),
-                const SizedBox(height: 24),
-                // Screenshot attachment (D3: required).
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: AppTheme.controlRadius),
-                  ),
-                  icon: Icon(
-                    _attachedBytes == null ? Icons.upload_file : Icons.check,
-                    color: _attachedBytes == null ? null : scheme.primary,
-                  ),
-                  label: Text(
-                    _attachedBytes == null
-                        ? l.instapayAttachScreenshot
-                        : l.instapayScreenshotAttached,
-                  ),
-                  onPressed: _submitted ? null : _pickScreenshot,
-                ),
-                if (_attachedFileName != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _attachedFileName!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 24),
-                if (_submitted)
-                  // Proof recorded — payment stays pending until the
-                  // admin review (or 24h expiry). The status watcher
-                  // is live: approval navigates to order success.
-                  Card(
-                    color: scheme.primaryContainer.withValues(alpha: .3),
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: AppTheme.controlRadius),
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.all(16),
-                      child: Row(
-                        children: [
-                          Icon(Icons.schedule, color: scheme.primary),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              l.instapayProofPendingNote,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: scheme.secondary,
-                      foregroundColor: scheme.onSecondary,
-                      minimumSize: const Size.fromHeight(52),
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: AppTheme.controlRadius),
-                      textStyle: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    onPressed: _attachedBytes != null && !_submitting
-                        ? _submitProof
-                        : null,
-                    child: _submitting
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: scheme.onSecondary),
-                          )
-                        : Text(l.instapaySubmitProof),
-                  ),
               ],
             ),
           );

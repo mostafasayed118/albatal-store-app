@@ -7,12 +7,13 @@ import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
-import '../../../storefront/presentation/cubit/cart_cubit.dart';
+import '../../../storefront/storefront.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/paymob_url_guard.dart';
 import '../../domain/repositories/payment_service.dart';
 import '../cubit/payment_cubit.dart';
 import '../payment_error_mapper.dart';
+import '../widgets/payment_option.dart';
 
 /// Payment method selection page.
 ///
@@ -190,7 +191,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                       fontWeight: FontWeight.bold,
                       color: scheme.primary)),
               const SizedBox(height: 24),
-              _PaymentOption(
+              PaymentOption(
                 icon: Icons.credit_card,
                 title: l.payWithCard,
                 subtitle: l.payWithCardDescription,
@@ -200,7 +201,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                     .selectMethod(PaymentMethod.paymobCard),
               ),
               const SizedBox(height: 12),
-              _PaymentOption(
+              PaymentOption(
                 icon: Icons.money,
                 title: l.cashOnDelivery,
                 subtitle: l.cashOnDeliveryDescription,
@@ -211,7 +212,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                     .selectMethod(PaymentMethod.cashOnDelivery),
               ),
               const SizedBox(height: 12),
-              _PaymentOption(
+              PaymentOption(
                 icon: Icons.currency_exchange,
                 title: l.instapay,
                 subtitle: l.instapayDescription,
@@ -278,51 +279,6 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           orderId: orderId,
         ),
       child: consumer,
-    );
-  }
-}
-
-class _PaymentOption extends StatelessWidget {
-  const _PaymentOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title, subtitle;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: isSelected ? scheme.primaryContainer.withValues(alpha: .3) : null,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isSelected
-              ? scheme.primary
-              : scheme.outline.withValues(alpha: .3),
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Icon(icon,
-            color: isSelected ? scheme.primary : scheme.onSurfaceVariant),
-        title: Text(title,
-            style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
-        subtitle: Text(subtitle),
-        trailing: isSelected
-            ? Icon(Icons.check_circle, color: scheme.primary)
-            : Icon(Icons.radio_button_unchecked, color: scheme.outline),
-        onTap: onTap,
-      ),
     );
   }
 }

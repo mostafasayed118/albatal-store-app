@@ -2,11 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../generated/l10n/app_localizations.dart';
-import '../extensions/build_context_x.dart';
 import '../services/biometric_service.dart';
 import '../services/logger.dart';
-import '../theme/app_theme.dart';
+import 'app_lock_screen.dart';
 
 /// Biometric app-lock gate (feature-batch §15).
 ///
@@ -161,97 +159,11 @@ class _AppLockGateState extends State<AppLockGate> {
   @override
   Widget build(BuildContext context) {
     if (!_locked) return widget.child;
-    return _AppLockScreen(
+    return AppLockScreen(
       busy: _busy,
       showFailure: _failed,
       onUnlock: _prompt,
       onSignOut: widget.onSignOut == null ? null : _signOut,
-    );
-  }
-}
-
-/// Standalone lock screen. Owns its own [MaterialApp] because the gate sits
-/// ABOVE the app's `MaterialApp` (so the theme/locale cubits are unreachable
-/// here); it therefore installs the localization delegates itself and lets
-/// the platform locale + OS theme mode decide.
-class _AppLockScreen extends StatelessWidget {
-  const _AppLockScreen({
-    required this.busy,
-    required this.showFailure,
-    required this.onUnlock,
-    this.onSignOut,
-  });
-
-  final bool busy;
-  final bool showFailure;
-  final Future<void> Function() onUnlock;
-  final Future<void> Function()? onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Builder(
-        builder: (context) {
-          final l = context.l10n;
-          final signOut = onSignOut;
-          return Scaffold(
-            body: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.lock_outline, size: 64),
-                    const SizedBox(height: 24),
-                    Text(
-                      l.appLocked,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(l.appLockMessage, textAlign: TextAlign.center),
-                    if (showFailure) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        l.appLockFailed,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 32),
-                    FilledButton.icon(
-                      onPressed: busy ? null : () => unawaited(onUnlock()),
-                      icon: busy
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.fingerprint),
-                      label: Text(l.appLockUnlock),
-                    ),
-                    if (signOut != null) ...[
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: busy ? null : () => unawaited(signOut()),
-                        child: Text(l.appLockSignOut),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }

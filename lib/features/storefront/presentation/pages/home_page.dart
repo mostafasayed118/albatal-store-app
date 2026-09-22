@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/entities/product.dart';
-import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
-import '../../../../shared/components/stitch/stitch_flash_sale_card.dart';
 import '../../../../shared/components/stitch/stitch_hero_carousel.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
 import '../../../../shared/components/stitch/stitch_search_bar.dart';
@@ -18,14 +15,19 @@ import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../../../../shared/widgets/skeleton_loaders.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../catalog_sort_label.dart';
-import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
 import '../widgets/catalog_empty_state.dart';
+import '../widgets/home/flash_sale_card.dart';
+import '../widgets/home/greeting_title.dart';
+import '../widgets/home/home_helpers.dart';
+import '../widgets/home/popular_header.dart';
+import '../widgets/home/recent_queries.dart';
+import '../widgets/home/section_header.dart';
 import '../widgets/offline_catalog_view.dart';
 import '../widgets/recently_viewed_strip.dart';
+
+export '../widgets/home/home_helpers.dart' show homeBuildWhen, homeGreeting;
 
 /// Home — Stitch reskin (spec §4/§5):
 /// pill search → 180dp gold hero → circular category chips →
@@ -69,33 +71,7 @@ class _HomePageState extends State<HomePage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: BlocSelector<AuthCubit, AuthState, String?>(
-          selector: (state) {
-            final fullName = state.profile?.fullName.trim() ?? '';
-            if (fullName.isEmpty) return null;
-            return fullName.split(RegExp(r'\s+')).first;
-          },
-          builder: (context, firstName) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                homeGreeting(l, firstName, (widget.clock ?? DateTime.now)()),
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(color: scheme.onSurface.withValues(alpha: .6)),
-              ),
-              Text(
-                l.brandName,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(color: scheme.primary, letterSpacing: 1.15),
-              ),
-            ],
-          ),
-        ),
+        title: HomeGreetingTitle(clock: widget.clock),
         actions: [
           IconButton(
             tooltip: l.openSettings,
@@ -165,21 +141,9 @@ class _HomePageState extends State<HomePage> {
                       if (state.filters.query.isEmpty &&
                           state.recentQueries.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            for (final q in state.recentQueries)
-                              Chip(
-                                label: Text(q),
-                                avatar: const Icon(Icons.history, size: 16),
-                                onDeleted: () => catalog.deleteRecentQuery(q),
-                                deleteIcon: const Icon(Icons.close, size: 14),
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                          ],
+                        HomeRecentQueries(
+                          queries: state.recentQueries,
+                          onDelete: catalog.deleteRecentQuery,
                         ),
                       ],
                       const SizedBox(height: 20),
@@ -217,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                     padding:
                         const EdgeInsetsDirectional.symmetric(horizontal: 16),
                     sliver: SliverToBoxAdapter(
-                      child: _SectionHeader(
+                      child: HomeSectionHeader(
                         title: l.flashSale,
                         trailing: Text(
                           discountLabel,
@@ -237,7 +201,7 @@ class _HomePageState extends State<HomePage> {
                     // remaining time (audit 2026-09-13 — the stream
                     // previously had zero subscribers).
                     sliver: SliverToBoxAdapter(
-                      child: _FlashSaleCard(
+                      child: HomeFlashSaleCard(
                         product: flashProduct,
                         discountLabel: discountLabel,
                         countdown: catalog.flashCountdown,
@@ -255,7 +219,7 @@ class _HomePageState extends State<HomePage> {
                   padding:
                       const EdgeInsetsDirectional.symmetric(horizontal: 16),
                   sliver: SliverToBoxAdapter(
-                    child: _PopularHeader(
+                    child: HomePopularHeader(
                       title: l.popularProducts,
                       sort: state.filters.sort,
                       onSortSelected: catalog.selectSort,
@@ -321,157 +285,4 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
-
-/// Section header row shared by the home surfaces (title + optional
-/// trailing widget). Extracted from the page build (audit 2026-09-13:
-/// home_page build extraction, checkout_page pattern).
-final class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.trailing});
-
-  final String title;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        if (trailing != null) trailing!,
-      ],
-    );
-  }
-}
-
-/// Flash-sale card bound to [CatalogCubit.flashCountdown]: the 1Hz
-/// countdown re-renders this subtree only, and shows nothing while the
-/// stream is quiet (no deadline or no active sale).
-final class _FlashSaleCard extends StatelessWidget {
-  const _FlashSaleCard({
-    required this.product,
-    required this.discountLabel,
-    required this.countdown,
-  });
-
-  final Product product;
-  final String discountLabel;
-  final Stream<Duration> countdown;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: countdown,
-      builder: (context, snapshot) {
-        final remaining =
-            (snapshot.data != null && snapshot.data! > Duration.zero)
-                ? snapshot.data
-                : null;
-        return StitchFlashSaleCard(
-          product: product,
-          discountLabel: discountLabel,
-          remaining: remaining,
-          onAdd: () {
-            context.read<CartCubit>().add(product);
-            // Acknowledge the add — the flash-sale card lives far from
-            // the cart badge, and a silent tap reads as "did that even
-            // work?".
-            showConfirmation(context, context.l10n.addedToCart);
-          },
-          onTap: () => context.push(Routes.product(product.id)),
-        );
-      },
-    );
-  }
-}
-
-/// Popular-products header: title + the sort chip driven by
-/// [CatalogCubit.selectSort].
-final class _PopularHeader extends StatelessWidget {
-  const _PopularHeader({
-    required this.title,
-    required this.sort,
-    required this.onSortSelected,
-  });
-
-  final String title;
-  final CatalogSort sort;
-  final ValueChanged<CatalogSort> onSortSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        PopupMenuButton<CatalogSort>(
-          tooltip: l.sortProducts,
-          initialValue: sort,
-          onSelected: onSortSelected,
-          itemBuilder: (_) => CatalogSort.values
-              .map((s) => PopupMenuItem(
-                  value: s, child: Text(catalogSortLabel(l, s))))
-              .toList(),
-          child: Chip(
-            avatar: const Icon(Icons.sort, size: 18),
-            label: Text(catalogSortLabel(l, sort)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Whether [HomePage]'s outer catalog [BlocBuilder] should rebuild for the
-/// transition [previous] → [current] (audit Task 11).
-///
-/// Compares only the fields this page actually renders: [CatalogStatus],
-/// the product list (drives [CatalogState.visible] and
-/// [CatalogState.featuredProducts]), categories, [CatalogFilters], recent
-/// queries, and [CatalogState.flashSales] (banner presence plus
-/// [CatalogState.discountLabel]).
-///
-/// The flash countdown needs no exclusion clause (audit P3): ticks flow
-/// on the cubit's [CatalogCubit.flashCountdown] stream and never produce
-/// a state emission at all. [CatalogState.carouselIndex] is excluded —
-/// StitchHeroCarousel owns its page position internally.
-///
-/// List fields are compared by identity: the cubit assigns fresh list
-/// instances only when the underlying data changes (copyWith passes the
-/// same instance through on data-preserving emits), which keeps the
-/// predicate O(1) instead of deep-scanning the catalog on every emit.
-bool homeBuildWhen(CatalogState previous, CatalogState current) {
-  if (previous.status != current.status) return true;
-  if (previous.isOffline != current.isOffline) return true;
-  if (!identical(previous.allProducts, current.allProducts)) return true;
-  if (previous.categories != current.categories) return true;
-  if (previous.filters != current.filters) return true;
-  if (previous.recentQueries != current.recentQueries) return true;
-  if (previous.flashSales != current.flashSales) return true;
-  return false;
-}
-
-/// Time-of-day greeting copy (UX-044).
-///
-/// Buckets: 05:00–11:59 morning, 12:00–16:59 afternoon, otherwise evening
-/// (17:00–04:59). [firstName] selects the personalized form; `null` picks
-/// the guest form.
-String homeGreeting(AppLocalizations l10n, String? firstName, DateTime now) {
-  final hour = now.hour;
-  if (hour >= 5 && hour < 12) {
-    return firstName == null
-        ? l10n.goodMorningGuest
-        : l10n.goodMorning(firstName);
-  }
-  if (hour >= 12 && hour < 17) {
-    return firstName == null
-        ? l10n.goodAfternoonGuest
-        : l10n.goodAfternoon(firstName);
-  }
-  return firstName == null
-      ? l10n.goodEveningGuest
-      : l10n.goodEvening(firstName);
 }
