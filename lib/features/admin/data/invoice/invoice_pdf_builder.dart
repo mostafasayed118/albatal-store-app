@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../entities/admin_order.dart';
+import '../../domain/entities/admin_order.dart';
 
 /// Branded invoice PDF generator (feature-batch §16).
 ///

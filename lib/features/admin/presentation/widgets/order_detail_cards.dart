@@ -84,8 +84,8 @@ class CustomerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    // Typed tier decode (shared with Profile.fromRow) instead of a raw
-    // `== 'premium'` string compare scattered through the UI.
+    // Typed tier decode (shared with ProfileCodec.fromRow) instead of a
+    // raw `== 'premium'` string compare scattered through the UI.
     final isPremium = membershipTierFromServerValue(order.customerTier) ==
         MembershipTier.premium;
     final accent = isPremium

@@ -13,12 +13,7 @@ import 'catalog_state.dart';
 import 'flash_sale_ticker.dart';
 
 export '../../domain/entities/catalog_filters.dart'
-    show
-        CatalogFilters,
-        CatalogSort,
-        CatalogSortLabel,
-        CatalogConstants,
-        catalogColorName;
+    show CatalogFilters, CatalogSort, CatalogSortLabel, CatalogConstants;
 
 /// Re-exported for backward compatibility: every consumer (pages, tests)
 /// historically imported [CatalogState]/[CatalogStatus] from this file.
