@@ -23,3 +23,9 @@ abstract interface class CheckoutRepository {
 /// (audit 2026-09-13). Domain-located so the data raiser and the
 /// presentation mapper share one name without importing each other.
 const kCheckoutFailedCode = 'checkout_failed';
+
+/// Machine code for the client-side empty-cart guard: the app words this
+/// message itself (audit 2026-09-21), so it must carry a code — an uncoded
+/// app-authored string is rendered verbatim by `failureText` and leaks
+/// English to Arabic users.
+const kCheckoutCartEmpty = 'checkout_cart_empty';

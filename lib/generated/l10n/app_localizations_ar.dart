@@ -1427,6 +1427,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get checkoutFailedRetry => 'فشل إتمام الطلب. يرجى المحاولة مجددًا.';
 
   @override
+  String get checkoutCartEmpty => 'سلتك فارغة. أضف شيئاً رائعاً أولاً.';
+
+  @override
   String get paymentMethodUnknown => 'غير معروف';
 
   @override

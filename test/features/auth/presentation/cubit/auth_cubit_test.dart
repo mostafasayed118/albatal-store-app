@@ -411,6 +411,57 @@ void main() {
       await cubit.close();
     });
 
+    test('server-driven signedOut wipes cached addresses and orders',
+        () async {
+      // The signedOut stream event also fires on refresh-token failure or
+      // revocation — i.e. without the user tapping sign out (audit
+      // 2026-09-21). The wipe must run on that path too: a revoked device
+      // must not keep the encrypted address book or order snapshots.
+      final secure = MemorySecureStore({
+        'saved_addresses_v1': jsonEncode([
+          {
+            'id': 'a1',
+            'recipient': 'Ahmed Hassan',
+            'line': '12 Nile Street',
+            'city': 'Cairo',
+            'country': 'EG',
+            'isDefault': true,
+          },
+        ]),
+        'storefront_orders_v1': jsonEncode([OrderCodec.encode(_seedOrder())]),
+      });
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final addressRepo = LocalAddressRepository(prefs, secureStore: secure);
+      final persistence =
+          LocalStorefrontPersistence(prefs, secureStore: secure);
+
+      final controller = StreamController<Authenticated?>();
+      addTearDown(controller.close);
+      final cubit = AuthCubit(
+        authRepository:
+            _StubAuthRepository(authStateChanges: () => controller.stream),
+        profileRepository: profileRepo,
+        addressRepository: addressRepo,
+        orderSnapshots: persistence,
+      );
+      // Establish the session so the snapshots exist under the user.
+      controller.add(const Authenticated('user-1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(await persistence.readOrders(), isNotEmpty);
+
+      // The server revokes the session: signedOut arrives on the stream.
+      controller.add(null);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.status, AuthStatus.unauthenticated);
+      expect(secure.values, isEmpty, reason: 'no PII may survive revocation');
+      expect(
+          (await addressRepo.read() as Success<List<Address>>).value, isEmpty);
+      expect(await persistence.readOrders(), isEmpty);
+      await cubit.close();
+    });
+
     test('authStateChanges Authenticated event loads profile', () async {
       final controller = StreamController<Authenticated?>();
       addTearDown(controller.close);

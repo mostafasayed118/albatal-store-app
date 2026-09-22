@@ -512,6 +512,7 @@
   "paymentTimeout": "انتهت مهلة الدفع. يرجى مراجعة طلباتك قبل المحاولة مجددًا.",
   "orderRefRequired": "تعذر المتابعة: مرجع الطلب مفقود.",
   "checkoutFailedRetry": "فشل إتمام الطلب. يرجى المحاولة مجددًا.",
+  "checkoutCartEmpty": "سلتك فارغة. أضف شيئاً رائعاً أولاً.",
   "paymentMethodUnknown": "غير معروف",
   "adminAccessRequired": "يلزم الوصول كمسؤول",
   "orderNotifications": "إشعارات الطلبات",

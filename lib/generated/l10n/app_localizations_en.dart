@@ -1426,6 +1426,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkoutFailedRetry => 'Checkout failed. Please try again.';
 
   @override
+  String get checkoutCartEmpty =>
+      'Your cart is empty. Add something exquisite first.';
+
+  @override
   String get paymentMethodUnknown => 'Unknown';
 
   @override

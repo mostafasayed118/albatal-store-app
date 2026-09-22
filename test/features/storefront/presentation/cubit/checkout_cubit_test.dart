@@ -92,6 +92,18 @@ void main() {
       expect(cubit.state.payment, PaymentMethod.cashOnDelivery);
     });
 
+    // ─── Test: empty-cart guard carries a machine code (audit 2026-09-21) ──
+
+    test('empty cart fails with the coded empty-cart error', () async {
+      await cubit.createPendingOrder(cartItems: const []);
+
+      expect(cubit.state.status, CheckoutStatus.error);
+      expect(cubit.state.errorCode, kCheckoutCartEmpty,
+          reason: 'the UI localizes by code; the raw message is diagnosis');
+      expect(cubit.state.pendingOrderId, isNull);
+      expect(repo.callCount, 0, reason: 'the server is never called');
+    });
+
     // ─── Test 1: Successful order creation ──────────────────
 
     test('successful order creation transitions to placing with server totals',
