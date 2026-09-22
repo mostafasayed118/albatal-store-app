@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../../shared/components/app_card.dart';
 import '../../../../../shared/components/app_image.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
+import '../../../../../shared/utils/app_date_formats.dart';
 import '../../../domain/entities/product_review.dart';
 
 /// Review tile body — extracted from `reviews_section.dart` verbatim
@@ -30,7 +30,8 @@ final class ReviewTileBody extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleSmall),
                 ),
                 Text(
-                  DateFormat('d MMM y', l.localeName).format(review.createdAt),
+                  AppDateFormats.dayMonthYear(l.localeName)
+                      .format(review.createdAt),
                   style: TextStyle(color: scheme.outline, fontSize: 12),
                 ),
               ],

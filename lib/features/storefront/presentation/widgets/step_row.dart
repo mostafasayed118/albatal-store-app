@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/app_date_formats.dart';
 
 /// One timeline row: status icon + connector rail, label, optional stamp.
 ///
@@ -65,7 +65,7 @@ class TimelineStepRow extends StatelessWidget {
                   ),
                   if (timestamp != null)
                     Text(
-                      DateFormat('d MMM y, HH:mm', l.localeName)
+                      AppDateFormats.dayMonthYearTime(l.localeName)
                           .format(timestamp!),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: scheme.onSurface.withValues(alpha: .6),
