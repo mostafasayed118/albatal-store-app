@@ -7,7 +7,7 @@ import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
-import '../../../storefront/presentation/cubit/cart_cubit.dart';
+import '../../../storefront/storefront.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/paymob_url_guard.dart';
 import '../../domain/repositories/payment_service.dart';
