@@ -1,67 +1,11 @@
 import 'package:go_router/go_router.dart';
 
-import '../../features/addresses/presentation/pages/addresses_page.dart';
-import '../../features/admin/domain/repositories/admin_repository.dart';
-import '../../features/admin/presentation/pages/admin_catalog_page.dart';
-import '../../features/admin/presentation/pages/admin_categories_page.dart';
-import '../../features/admin/presentation/pages/admin_coupons_page.dart';
-import '../../features/admin/presentation/pages/admin_customers_page.dart';
-import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
-import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
-import '../../features/admin/presentation/pages/admin_inventory_page.dart';
-import '../../features/admin/presentation/pages/admin_order_detail_page.dart';
-import '../../features/admin/presentation/pages/admin_orders_page.dart';
-import '../../features/admin/presentation/pages/admin_product_edit_page.dart';
-import '../../features/admin/presentation/pages/admin_products_page.dart';
-import '../../features/admin/presentation/pages/admin_reviews_page.dart';
-import '../../features/admin/presentation/pages/admin_sales_dashboard_page.dart';
-import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
-import '../../features/auth/presentation/pages/forgot_password_page.dart';
-import '../../features/auth/presentation/pages/profile_page.dart';
-import '../../features/auth/presentation/pages/reset_password_page.dart';
-import '../../features/auth/presentation/pages/sign_in_page.dart';
-import '../../features/auth/presentation/pages/sign_up_page.dart';
-import '../../features/onboarding/presentation/pages/onboarding_page.dart';
-import '../../features/onboarding/presentation/pages/splash_page.dart';
-import '../../features/payments/domain/repositories/payment_service.dart';
-import '../../features/payments/presentation/cubit/payment_cubit.dart';
-import '../../features/payments/presentation/pages/instapay_instructions_page.dart';
-import '../../features/payments/presentation/pages/payment_method_page.dart';
-import '../../features/payments/presentation/pages/paymob_checkout_page.dart';
-import '../../features/settings/presentation/pages/maintenance_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
-import '../../features/storefront/domain/repositories/auth_session_port.dart';
-import '../../features/storefront/domain/repositories/catalog_repository.dart';
-import '../../features/storefront/domain/repositories/checkout_repository.dart';
-import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
-import '../../features/storefront/domain/repositories/reviews_repository.dart';
-import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
-import '../../features/storefront/presentation/pages/cart_page.dart';
-import '../../features/storefront/presentation/pages/catalog_page.dart';
-import '../../features/storefront/presentation/pages/categories_page.dart';
-import '../../features/storefront/presentation/pages/checkout_page.dart';
-import '../../features/storefront/presentation/pages/details_page.dart';
-import '../../features/storefront/presentation/pages/home_page.dart';
-import '../../features/storefront/presentation/pages/order_success_page.dart';
-import '../../features/storefront/presentation/pages/orders_page.dart';
-import '../../features/storefront/presentation/pages/wishlist_page.dart';
-import '../../features/support/domain/repositories/support_repository.dart';
-import '../../features/support/presentation/pages/support_pages.dart';
-import '../components/app_shell.dart';
-import '../services/connectivity_gate.dart';
-import '../services/image_compressor.dart';
 import '../services/navigation_observer.dart';
-import '../services/notification_service.dart';
-import '../services/oauth_service.dart';
-import '../services/remote_config_service.dart';
-import '../services/service_locator.dart';
-import '../services/share_service.dart';
-import '../services/storage_service.dart';
-import '../services/whatsapp_share_service.dart';
-import '../settings_account_adapter.dart';
 import 'app_routes.dart';
+import 'auth_redirect.dart';
 import 'auth_refresh_notifier.dart';
+import 'route_pages.dart';
 
 GoRouter createAppRouter(
   AuthCubit authCubit, {
@@ -73,302 +17,136 @@ GoRouter createAppRouter(
       observers: [NavigationObserver()],
       refreshListenable:
           refreshListenable ?? AuthRefreshNotifier(authCubit.stream),
-      redirect: (_, state) => _redirect(authCubit.state, state),
+      redirect: (_, state) => authRedirect(
+        isAuthenticated: authCubit.state.isAuthenticated,
+        isAdmin: authCubit.state.profile?.isAdmin == true,
+        path: state.uri.path,
+      ),
       routes: _routes,
     );
 
-String? _redirect(AuthState auth, GoRouterState state) {
-  final path = state.uri.path;
-
-  String signInRedirect(String target) =>
-      Uri(path: Routes.signIn, queryParameters: {'redirect': target})
-          .toString();
-
-  bool matchesAuthRoute(String route) =>
-      path == route || path.startsWith('$route/');
-
-  if (matchesAuthRoute(Routes.admin)) {
-    if (!auth.isAuthenticated) return signInRedirect(path);
-    if (auth.profile?.isAdmin != true) return Routes.home;
-    return null;
-  }
-
-  // Checkout and post-purchase/account screens require a session. Cart is
-  // intentionally public — a guest must be able to review the cart they are
-  // building; the auth gate moves to checkout (UI/UX review P0 funnel fix).
-  const authRequired = [
-    Routes.checkout,
-    Routes.orders,
-    Routes.addresses,
-    Routes.wishlist,
-    Routes.paymentMethod,
-    Routes.paymobCheckout,
-    Routes.instapayInstructions,
-    Routes.orderSuccess,
-  ];
-  if (authRequired.any(matchesAuthRoute) && !auth.isAuthenticated) {
-    return signInRedirect(path);
-  }
-  return null;
-}
-
+/// The route table: paths, structure and delegation only. Page
+/// construction (service location, pre-DI test affordances, argument
+/// parsing) lives in [RoutePages]; the auth policy lives in
+/// `auth_redirect.dart` (audit 2026-09-21, P2 slim-down — this file was
+/// a 374-line mix of all three).
 final _routes = <RouteBase>[
+  GoRoute(path: Routes.splash, builder: (_, __) => RoutePages.splash()),
   GoRoute(
-    path: Routes.splash,
-    builder: (_, __) => SplashPage(
-      // §13 remote config is resolved at the composition root; the
-      // fail-soft probe keeps tests (which pump pre-DI) advisory-only.
-      remoteConfig: getIt.isRegistered<RemoteConfigService>()
-          ? getIt<RemoteConfigService>()
-          : null,
-    ),
-  ),
-  GoRoute(path: Routes.onboarding, builder: (_, __) => const OnboardingPage()),
+      path: Routes.onboarding, builder: (_, __) => RoutePages.onboarding()),
   ShellRoute(
-      builder: (_, __, child) =>
-          AppShell(gate: getIt<ConnectivityGate>(), child: child),
+      builder: (_, __, child) => RoutePages.appShell(child),
       routes: [
-        GoRoute(path: Routes.home, builder: (_, __) => const HomePage()),
+        GoRoute(path: Routes.home, builder: (_, __) => RoutePages.home()),
         GoRoute(
             path: Routes.categories,
-            builder: (_, __) => const CategoriesPage()),
+            builder: (_, __) => RoutePages.categories()),
+        GoRoute(path: Routes.catalog, builder: (_, s) => RoutePages.catalog(s)),
+        GoRoute(path: Routes.wishlist, builder: (_, __) => RoutePages.wishlist()),
+        GoRoute(path: Routes.cart, builder: (_, __) => RoutePages.cart()),
         GoRoute(
-          path: Routes.catalog,
-          builder: (_, s) => CatalogPage(
-            initialQuery: s.uri.queryParameters['q'],
-          ),
-        ),
-        GoRoute(
-          path: Routes.wishlist,
-          builder: (_, __) => WishlistPage(
-            // §5 restock notifications resolved at the composition root;
-            // the NoOp keeps pre-DI widget tests silent.
-            notificationService: getIt.isRegistered<NotificationService>()
-                ? getIt<NotificationService>()
-                : const NoOpNotificationService(),
-          ),
-        ),
-        GoRoute(path: Routes.cart, builder: (_, __) => const CartPage()),
-        GoRoute(path: Routes.profile, builder: (_, __) => const ProfilePage()),
+            path: Routes.profile, builder: (_, __) => RoutePages.profile()),
       ]),
   GoRoute(
     // Literal `:id` pattern (NOT the factory — `Uri.encodeComponent`
     // would turn `:id` into `%3Aid`, a static segment that matches
     // nothing; caught by `every admin route resolves`).
     path: Routes.productDetail,
-    builder: (_, s) => DetailsPage(
-      id: s.pathParameters['id']!,
-      catalogRepository: getIt<CatalogRepository>(),
-      gate: getIt<ConnectivityGate>(),
-      whatsappShareService: getIt<WhatsAppShareService>(),
-      shareService: getIt<ShareService>(),
-      reviewsRepository: getIt.isRegistered<ReviewsRepository>()
-          ? getIt<ReviewsRepository>()
-          : null,
-      imageCompressor: getIt.isRegistered<ImageCompressor>()
-          ? getIt<ImageCompressor>()
-          : null,
-      recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
-          ? getIt<RecentlyViewedStore>()
-          : null,
-    ),
+    builder: (_, s) => RoutePages.productDetail(s),
   ),
+  GoRoute(path: Routes.checkout, builder: (_, __) => RoutePages.checkout()),
   GoRoute(
-    path: Routes.checkout,
-    builder: (_, __) => CheckoutPage(
-      checkoutRepository: getIt<CheckoutRepository>(),
-      placeOrder: getIt.isRegistered<PlaceCheckoutOrderUseCase>()
-          ? getIt<PlaceCheckoutOrderUseCase>()
-          : null,
-      authSession: getIt<AuthSessionPort>(),
-    ),
-  ),
+      path: Routes.orderSuccess, builder: (_, s) => RoutePages.orderSuccess(s)),
+  GoRoute(path: Routes.orders, builder: (_, __) => RoutePages.orders()),
   GoRoute(
-    path: Routes.orderSuccess,
-    builder: (_, state) => OrderSuccessPage(
-      orderId: state.extra is String ? state.extra as String : '',
-      // §12 local order confirmation resolved at the composition root.
-      notificationService: getIt.isRegistered<NotificationService>()
-          ? getIt<NotificationService>()
-          : const NoOpNotificationService(),
-    ),
-  ),
-  GoRoute(path: Routes.orders, builder: (_, __) => const OrdersPage()),
-  GoRoute(
-    path: Routes.addresses,
-    builder: (_, __) => const AddressesPage(),
-  ),
+      path: Routes.addresses, builder: (_, __) => RoutePages.addresses()),
   GoRoute(
     path: Routes.settings,
-    // Composition root (audit 2026-09): the page depends on the domain
-    // AccountDeletionPort, never on other features' presentation cubits;
-    // the shared adapter resolves the app-scoped cubits from this route
+    // The shared adapter resolves the app-scoped cubits from this route
     // builder's context (inside its callbacks — no rebuilds needed).
-    builder: (context, __) =>
-        SettingsPage(accountDeletion: SettingsAccountAdapter(context)),
+    builder: (context, __) => RoutePages.settings(context),
   ),
+  GoRoute(path: Routes.signIn, builder: (_, __) => RoutePages.signIn()),
+  GoRoute(path: Routes.signUp, builder: (_, __) => RoutePages.signUp()),
   GoRoute(
-    path: Routes.signIn,
-    builder: (_, __) => SignInPage(
-      // Composition-root probe (audit 2026-09-13): tests pump the
-      // shell without the OAuth bean registered.
-      oauthService:
-          getIt.isRegistered<OAuthService>() ? getIt<OAuthService>() : null,
-    ),
-  ),
-  GoRoute(path: Routes.signUp, builder: (_, __) => const SignUpPage()),
+      path: Routes.forgotPassword,
+      builder: (_, __) => RoutePages.forgotPassword()),
   GoRoute(
-    path: Routes.forgotPassword,
-    builder: (_, __) => const ForgotPasswordPage(),
-  ),
+      path: Routes.resetPassword,
+      builder: (_, __) => RoutePages.resetPassword()),
   GoRoute(
-    path: Routes.resetPassword,
-    builder: (_, __) => const ResetPasswordPage(),
-  ),
+      path: Routes.paymentMethod, builder: (_, s) => RoutePages.paymentMethod(s)),
   GoRoute(
-    path: Routes.paymentMethod,
-    builder: (_, s) => PaymentMethodPage(
-      args: s.extra is Map<String, dynamic>
-          ? s.extra as Map<String, dynamic>
-          : {},
-      // Composition root resolves the service (audit 2026-09-13:
-      // payments getIt x2 closed — verifier must-fix #1).
-      paymentService: getIt<PaymentService>(),
-    ),
-  ),
-  GoRoute(
-    path: Routes.paymobCheckout,
-    builder: (_, s) => PaymobCheckoutPage(
-        checkoutUrl: s.extra is String ? s.extra as String : ''),
-  ),
+      path: Routes.paymobCheckout,
+      builder: (_, s) => RoutePages.paymobCheckout(s)),
   GoRoute(
     path: Routes.instapayInstructions,
     // No path change (router review gate): the shared PaymentCubit
     // stays load-bearing via `extra['cubit']`; `extra['orderId']` is
     // carried additively for the page's rehydration path.
-    builder: (_, s) {
-      final extra = s.extra;
-      final map = extra is Map<String, dynamic> ? extra : null;
-      final cubit = map?['cubit'];
-      final orderId = map?['orderId'];
-      final compressor = getIt.isRegistered<ImageCompressor>()
-          ? getIt<ImageCompressor>()
-          : null;
-      return InstapayInstructionsPage(
-        imageCompressor: compressor,
-        cubit: cubit is PaymentCubit ? cubit : null,
-        orderId: orderId is String ? orderId : null,
-        // Rehydration path resolves at the composition root.
-        paymentService: getIt<PaymentService>(),
-      );
-    },
+    builder: (_, s) => RoutePages.instapayInstructions(s),
   ),
-  GoRoute(path: Routes.admin, builder: (_, __) => const AdminDashboardPage()),
   GoRoute(
-      path: Routes.adminOrders,
-      // Composition root (audit P1): the only place that resolves
-      // dependencies; the page's own `getIt` lookup is now only a
-      // test-only fallback.
-      builder: (_, __) => AdminOrdersPage(shareService: getIt<ShareService>())),
+      path: Routes.admin, builder: (_, __) => RoutePages.adminDashboard()),
   GoRoute(
-      path: Routes.adminReviews,
-      // Composition root (audit P1): the only place that resolves
-      // dependencies; the page's own `getIt` lookup is now only a
-      // test-only fallback.
-      builder: (_, __) =>
-          AdminReviewsPage(repository: getIt<AdminRepository>())),
+      path: Routes.adminOrders, builder: (_, __) => RoutePages.adminOrders()),
   GoRoute(
-      path: Routes.maintenance, builder: (_, __) => const MaintenancePage()),
+      path: Routes.adminReviews, builder: (_, __) => RoutePages.adminReviews()),
+  GoRoute(
+      path: Routes.maintenance, builder: (_, __) => RoutePages.maintenance()),
   GoRoute(
       path: Routes.adminCustomers,
-      builder: (_, __) =>
-          AdminCustomersPage(repository: getIt<AdminRepository>())),
+      builder: (_, __) => RoutePages.adminCustomers()),
   GoRoute(
-      path: Routes.adminCoupons,
-      // Composition root (audit P1): the only place that resolves
-      // dependencies, like every other admin destination.
-      builder: (_, __) =>
-          AdminCouponsPage(repository: getIt<AdminRepository>())),
+      path: Routes.adminCoupons, builder: (_, __) => RoutePages.adminCoupons()),
   GoRoute(
     path: Routes.adminOrderDetail, // literal pattern (see Routes.productDetail)
-    builder: (_, s) => AdminOrderDetailPage(orderId: s.pathParameters['id']!),
+    builder: (_, s) => RoutePages.adminOrderDetail(s),
   ),
   GoRoute(
-    path: Routes.adminInventory,
-    builder: (_, __) => const AdminInventoryPage(),
+    path: Routes.adminInventory, builder: (_, __) => RoutePages.adminInventory(),
   ),
   GoRoute(
-    path: Routes.adminCatalog,
-    builder: (_, __) => AdminCatalogPage(repository: getIt<AdminRepository>()),
-  ),
+      path: Routes.adminCatalog, builder: (_, __) => RoutePages.adminCatalog()),
   GoRoute(
-    path: Routes.adminSales,
-    // Read-only sales dashboard (#12); repository resolved at the
-    // composition root like every other admin destination.
-    builder: (_, __) =>
-        AdminSalesDashboardPage(repository: getIt<AdminRepository>()),
-  ),
+      path: Routes.adminSales, builder: (_, __) => RoutePages.adminSales()),
   // Catalog management destinations (migration-era hub tiles pointed at
   // these paths, but the routes themselves were never registered — every
   // tile dead-ended on "Page Not Found").
   GoRoute(
     path: Routes.adminProducts,
-    builder: (_, __) => AdminProductsPage(repository: getIt<AdminRepository>()),
+    builder: (_, __) => RoutePages.adminProducts(),
   ),
   GoRoute(
     path: Routes.adminProductNew,
-    builder: (_, __) =>
-        AdminProductEditPage(repository: getIt<AdminRepository>()),
+    builder: (_, __) => RoutePages.adminProductNew(),
   ),
   GoRoute(
     path: Routes.adminProductEdit,
-    builder: (_, s) => AdminProductEditPage(
-      productId: s.pathParameters['id']!,
-      repository: getIt<AdminRepository>(),
-    ),
+    builder: (_, s) => RoutePages.adminProductEdit(s),
   ),
   GoRoute(
     path: Routes.adminCategories,
-    builder: (_, __) =>
-        AdminCategoriesPage(repository: getIt<AdminRepository>()),
+    builder: (_, __) => RoutePages.adminCategories(),
   ),
   GoRoute(
     path: Routes.adminImages,
-    builder: (_, s) => AdminImageManagerPage(
-      productId: s.pathParameters['id']!,
-      // Composition root (audit P1): the only place that resolves
-      // dependencies; pages receive them via constructors.
-      repository: getIt<AdminRepository>(),
-      storage: getIt<StorageService>(),
-      // §4 compression pass on the real upload path (audit 2026-09-13).
-      imageCompressor: getIt.isRegistered<ImageCompressor>()
-          ? getIt<ImageCompressor>()
-          : null,
-    ),
+    builder: (_, s) => RoutePages.adminImages(s),
   ),
   GoRoute(
     path: Routes.adminVariantEdit, // literal pattern
-    builder: (_, s) => AdminVariantEditorPage(
-      productId: s.pathParameters['id']!,
-      repository: getIt<AdminRepository>(),
-    ),
+    builder: (_, s) => RoutePages.adminVariantEdit(s),
   ),
+  GoRoute(path: Routes.support, builder: (_, __) => RoutePages.support()),
   GoRoute(
-    path: Routes.support,
-    builder: (_, __) =>
-        SupportPage(supportRepository: getIt<SupportRepository>()),
-  ),
-  GoRoute(
-    path: Routes.privacyPolicy,
-    builder: (_, __) => const PrivacyPolicyPage(),
-  ),
-  GoRoute(path: Routes.terms, builder: (_, __) => const TermsOfServicePage()),
+    path: Routes.privacyPolicy, builder: (_, __) => RoutePages.privacyPolicy()),
+  GoRoute(path: Routes.terms, builder: (_, __) => RoutePages.terms()),
   GoRoute(
     path: Routes.shippingPolicy,
-    builder: (_, __) => const ShippingPolicyPage(),
+    builder: (_, __) => RoutePages.shippingPolicy(),
   ),
   GoRoute(
     path: Routes.returnsPolicy,
-    builder: (_, __) => const ReturnsPolicyPage(),
+    builder: (_, __) => RoutePages.returnsPolicy(),
   ),
 ];
