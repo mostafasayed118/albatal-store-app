@@ -1,0 +1,38 @@
+-- ============================================================
+-- 067_external_tables_rls.sql (audit 2026-09-21, security MEDIUM)
+-- REVIEW-GATED PROPOSAL — owner review required before applying
+-- (AGENTS.md migration gate). Prepared 2026-09-22; not applied.
+--
+-- Two tables created OUTSIDE this repo's migration lineage (048 stubs
+-- document the remote origins) carried no in-tree RLS evidence:
+--   * `notifications` — customer PII (recipient_email, recipient_name,
+--     subject, body per 010's declared shape), written server-side by
+--     the send-order-notification Edge Function via the service role.
+--   * `analytics_events` — funnel events written by AnalyticsService.
+--
+-- Why this shape:
+--   * `notifications`: the service role BYPASSES RLS, so the Edge
+--     Function keeps writing unchanged; with RLS enabled and NO client
+--     policies, no PostgREST caller can read or mutate the PII rows
+--     (the app has no in-app notifications list — push is OneSignal).
+--     The client could previously SELECT every customer's email/subject/
+--     body if the live table had no RLS.
+--   * `analytics_events`: enabling RLS ACTIVATES the already-shipped
+--     `analytics_insert_own` policy (053: authenticated inserts with
+--     `user_id = auth.uid() OR NULL`). Client reads stay closed — the
+--     admin dashboard reads through the SECURITY DEFINER
+--     `analytics_event_counts_admin` RPC, which bypasses RLS by design.
+--
+-- IDEMPOTENT + SAFE BY CONSTRUCTION: enabling RLS on a table with these
+-- policies cannot break the client (analytics inserts keep working;
+-- notifications has no client path) and cannot break the Edge Functions
+-- (service role). The only behavior change is closing client access.
+--
+-- DEPLOY GATE: human review + staging apply first. Verify after apply:
+--   select relname, relrowsecurity from pg_class
+--    where relname in ('notifications','analytics_events');
+--   -- both must be true
+-- ============================================================
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
