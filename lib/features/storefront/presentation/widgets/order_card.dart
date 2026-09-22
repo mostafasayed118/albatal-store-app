@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/utils/app_date_formats.dart';
 import '../cubit/orders_cubit.dart';
 import '../cubit/reorder_cubit.dart';
 import 'order_status_timeline.dart';
@@ -148,4 +148,4 @@ class _OrderCardState extends State<OrderCard> {
 /// Locale-aware closed-order date — month names follow the UI locale via
 /// intl (the old hardcoded English list leaked "Jan…Dec" into AR history).
 String _fmtDate(DateTime d, String locale) =>
-    DateFormat('d MMM y', locale).format(d);
+    AppDateFormats.dayMonthYear(locale).format(d);

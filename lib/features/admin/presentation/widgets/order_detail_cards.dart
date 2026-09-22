@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/entities/profile.dart';
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
+import '../../../../shared/utils/app_date_formats.dart';
 import '../../domain/entities/admin_order.dart';
 import '../admin_order_status_label.dart';
 import '../cubit/admin_cubit.dart';
@@ -66,7 +66,7 @@ class OrderStatusCard extends StatelessWidget {
   /// `'yyyy-MM-dd HH:mm:ss'` was numeric-only, but the shared formatter
   /// keeps the admin card consistent with the customer order history.
   static String _formatPlacedAt(DateTime placedAt, AppLocalizations l) =>
-      DateFormat('yyyy-MM-dd HH:mm:ss', l.localeName).format(placedAt);
+      AppDateFormats.timestampSeconds(l.localeName).format(placedAt);
 }
 
 /// Customer identity + membership tier for the order's profile, with the

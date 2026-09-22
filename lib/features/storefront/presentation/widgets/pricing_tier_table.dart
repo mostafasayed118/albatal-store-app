@@ -11,6 +11,12 @@ import '../../domain/pricing/cut_length_pricing.dart';
 /// qualifies for. Purely presentational — all math lives in
 /// `cut_length_pricing.dart`.
 class PricingTierTable extends StatelessWidget {
+
+  /// The wholesale ladder, lowest threshold first. Built once: the const
+  /// ladder itself is unordered by design (it mirrors the RPC's tier list).
+  static final List<({double minMeters, int discountPercent})> _ascendingTiers = [...kWholesaleTiers]
+    ..sort((a, b) => a.minMeters.compareTo(b.minMeters));
+
   const PricingTierTable({super.key, required this.meters});
 
   /// Current cut length selection in meters (0 when none parsed).
@@ -24,9 +30,8 @@ class PricingTierTable extends StatelessWidget {
     final theme = Theme.of(context).textTheme;
     final activePercent = tierDiscountPercent(meters);
     // Render lowest threshold first (ascending) regardless of the
-    // const ladder order.
-    final tiers = [...kWholesaleTiers]
-      ..sort((a, b) => a.minMeters.compareTo(b.minMeters));
+    // const ladder order. Sorted once, not per build (audit 2026-09-21).
+    final tiers = _ascendingTiers;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
