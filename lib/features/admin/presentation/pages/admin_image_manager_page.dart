@@ -14,6 +14,7 @@ import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/admin_error_feedback.dart';
 
 /// Picks one image for upload. Injectable so widget tests can drive
 /// the flow without the platform channel (audit 2026-09-13: the
@@ -267,15 +268,12 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)
           : _error != null
-              ? FeedbackView(
-                  type: FeedbackViewType.error,
+              ? AdminErrorFeedback(
                   title: l10n.adminImagesLoadFailed,
-                  body: failureText(l10n,
-                      code: _errorCode,
-                      message: _error,
-                      fallback: l10n.errorTitle),
+                  errorCode: _errorCode,
+                  errorMessage: _error,
                   actionLabel: l10n.retry,
-                  onAction: _loadImages,
+                  onRetry: _loadImages,
                 )
               : Column(
                   children: [

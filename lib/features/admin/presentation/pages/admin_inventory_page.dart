@@ -7,6 +7,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/dialog_controllers.dart';
 
 /// Admin inventory — low stock alerts, stock editing.
@@ -84,13 +85,10 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
             if (state.status == AdminStatus.error) {
               // A failed load must not render as "all stock healthy" —
               // that lies to the person managing inventory.
-              return FeedbackView(
-                type: FeedbackViewType.error,
-                body: failureText(context.l10n,
-                    code: state.errorCode,
-                    message: state.errorMessage,
-                    fallback: context.l10n.errorTitle),
-                onAction: () =>
+              return AdminErrorFeedback(
+                errorCode: state.errorCode,
+                errorMessage: state.errorMessage,
+                onRetry: () =>
                     context.read<AdminCubit>().loadLowStockProducts(),
               );
             }

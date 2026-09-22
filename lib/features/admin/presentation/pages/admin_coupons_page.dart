@@ -5,9 +5,9 @@ import '../../../../core/entities/money.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/repositories/admin_coupons_port.dart';
 import '../cubit/admin_coupons_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 
 /// Admin coupon management (feature-batch §8): list, create, activate.
 ///
@@ -52,13 +52,11 @@ final class _AdminCouponsView extends StatelessWidget {
             return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminCouponsStatus.error) {
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(l,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: l.couponInvalid),
-              onAction: () => context.read<AdminCouponsCubit>().load(),
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              fallback: l.couponInvalid,
+              onRetry: () => context.read<AdminCouponsCubit>().load(),
             );
           }
           if (state.coupons.isEmpty) {
