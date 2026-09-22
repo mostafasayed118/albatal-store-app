@@ -6,7 +6,7 @@ import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
-import '../../payments/domain/entities/payment.dart';
+import '../../payments/payments.dart';
 import '../domain/entities/pending_order.dart';
 import '../domain/pricing/cut_length_pricing.dart';
 import '../domain/repositories/checkout_repository.dart';

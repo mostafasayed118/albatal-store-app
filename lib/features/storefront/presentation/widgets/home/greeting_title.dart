@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../shared/extensions/build_context_x.dart';
-import '../../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../../auth/auth.dart';
 import 'home_helpers.dart';
 
 /// Home app-bar title: time-of-day greeting + brand name.

@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../storefront/domain/repositories/auth_session_port.dart';
+import '../../storefront/storefront.dart';
 
 /// [AuthSessionPort] backed by the Supabase session.
 ///

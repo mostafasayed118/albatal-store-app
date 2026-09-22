@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
-import '../../../addresses/domain/repositories/address_repository.dart';
+import '../../../addresses/addresses.dart';
 import '../../domain/entities/auth_outcome.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/order_snapshot_port.dart';
