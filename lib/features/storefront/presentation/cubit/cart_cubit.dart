@@ -5,6 +5,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/extensions/iterable_x.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
 import '../../domain/repositories/cart_repository.dart';
 
@@ -14,13 +15,11 @@ final class CartState extends Equatable {
   const CartState(
     this.items, {
     this.status = CartStatus.initial,
-    this.errorMessage,
     this.isPremiumMember = false,
   });
 
   final List<CartItem> items;
   final CartStatus status;
-  final String? errorMessage;
 
   /// Whether the signed-in customer is a premium member (mirrored from
   /// AuthCubit — see [CartCubit.setPremiumMember]). Drives the shipping
@@ -45,18 +44,16 @@ final class CartState extends Equatable {
   CartState copyWith({
     List<CartItem>? items,
     CartStatus? status,
-    String? errorMessage,
     bool? isPremiumMember,
   }) =>
       CartState(
         items ?? this.items,
         status: status ?? this.status,
-        errorMessage: errorMessage,
         isPremiumMember: isPremiumMember ?? this.isPremiumMember,
       );
 
   @override
-  List<Object?> get props => [items, status, errorMessage, isPremiumMember];
+  List<Object?> get props => [items, status, isPremiumMember];
 }
 
 final class CartCubit extends Cubit<CartState> {
@@ -103,10 +100,11 @@ final class CartCubit extends Cubit<CartState> {
           emit(state.copyWith(status: CartStatus.ready));
         }
       case Failure(:final error):
-        emit(state.copyWith(
-          status: CartStatus.error,
-          errorMessage: error.message,
-        ));
+        // No raw-message payload: the page renders the localized
+        // FeedbackView(error) from the status alone (audit 2026-09-21);
+        // the cause rides in the log for diagnosis.
+        Log.w('Cart restore failed', category: LogCategory.cubit, error: error);
+        emit(state.copyWith(status: CartStatus.error));
     }
   }
 
@@ -176,10 +174,12 @@ final class CartCubit extends Cubit<CartState> {
         break;
       case Failure(:final error):
         if (isClosed) return;
-        emit(state.copyWith(
-          status: CartStatus.error,
-          errorMessage: 'Cart may not be saved: ${error.message}',
-        ));
+        // Persist failure keeps the items on screen; the full-screen
+        // error view with restore retry is the pre-existing signal. No
+        // raw-message payload: diagnosis rides in the log, not in state
+        // that no widget reads (audit 2026-09-21).
+        Log.w('Cart persist failed', category: LogCategory.cubit, error: error);
+        emit(state.copyWith(status: CartStatus.error));
     }
   }
 }
