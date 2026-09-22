@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
+import '../widgets/admin_nav_tile.dart';
 
 /// Admin dashboard home — shows order stats and quick actions.
 class AdminDashboardPage extends StatefulWidget {
@@ -47,15 +48,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             return const FeedbackView(type: FeedbackViewType.loading);
           }
           if (state.status == AdminStatus.error) {
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              body: failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.errorTitle),
-              // Reload the data; the old handler only cleared the error
-              // flag, leaving the dashboard empty on the "retry".
-              onAction: () => context.read<AdminCubit>()
+            // Reload the data; the old handler only cleared the error
+            // flag, leaving the dashboard empty on the "retry".
+            return AdminErrorFeedback(
+              errorCode: state.errorCode,
+              errorMessage: state.errorMessage,
+              onRetry: () => context.read<AdminCubit>()
                 ..clearError()
                 ..loadOrders()
                 ..loadLowStockProducts()
@@ -88,19 +86,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             const SizedBox(height: 24),
             Text(l.quickActions, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            _ActionTile(
+            AdminNavTile(
               icon: Icons.receipt_long,
               title: l.orderQueue,
               subtitle: l.viewAllOrders,
               onTap: () => context.push(Routes.adminOrders),
             ),
-            _ActionTile(
+            AdminNavTile(
               icon: Icons.inventory_2_outlined,
               title: l.inventory,
               subtitle: l.manageStock,
               onTap: () => context.push(Routes.adminInventory),
             ),
-            _ActionTile(
+            AdminNavTile(
               icon: Icons.shopping_bag_outlined,
               title: l.catalog,
               subtitle: l.manageProducts,
@@ -110,7 +108,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             // shipped with no destination, so a coupon could be redeemed
             // at checkout but never created. Both labels already exist in
             // EN + AR, so no ARB change was needed.
-            _ActionTile(
+            AdminNavTile(
               icon: Icons.local_offer_outlined,
               title: l.adminCoupons,
               subtitle: l.adminAddCoupon,
@@ -171,27 +169,3 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String title, subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Icon(context.directionalTrailingIcon),
-        onTap: onTap,
-      ),
-    );
-  }
-}

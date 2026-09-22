@@ -13,7 +13,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
-import '../../../addresses/presentation/cubit/addresses_cubit.dart';
+import '../../../addresses/addresses.dart';
 import '../../domain/entities/coupon_discount.dart';
 import '../../domain/repositories/auth_session_port.dart';
 import '../../domain/repositories/checkout_repository.dart';

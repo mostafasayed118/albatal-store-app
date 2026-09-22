@@ -29,28 +29,6 @@ abstract final class CatalogConstants {
   static const unboundedMax = Money.egp(999999);
 }
 
-/// Maps an imageColor int to a human-readable color name for filtering.
-///
-/// DB-derived alternative: `products.color_name` (migration 062) is mapped
-/// onto [Product.colorName] by ProductCodec.fromRow — prefer it when a row
-/// carries one. This tint map stays as the fallback for rows without a
-/// color_name (and for local/seed rows), keeping the 'Other' fallback for
-/// unknown values.
-String catalogColorName(int color) {
-  const map = {
-    0xFF176B57: 'Emerald',
-    0xFFC99A64: 'Gold',
-    0xFF302244: 'Purple',
-    0xFFD9C6A1: 'Beige',
-    0xFF88715F: 'Brown',
-    0xFFB57A2A: 'Amber',
-    0xFF6FA39A: 'Teal',
-    0xFF6B1F2E: 'Crimson',
-    0xFFE0CDA0: 'Sand',
-  };
-  return map[color] ?? 'Other';
-}
-
 /// Immutable value object that owns all catalog filter criteria.
 ///
 /// Extracted from [CatalogState] to reduce the God Cubit SRP violation

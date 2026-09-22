@@ -1,8 +1,20 @@
 import 'app_error.dart';
 
+/// The single error boundary type of the app (audit 2026-09-21, P1 docs).
+///
+/// Every repository and use case returns `Result<T>` instead of throwing:
+/// [Success] carries the value, [Failure] carries an [AppError] whose
+/// `message` is diagnosis-only English and whose optional `code` drives
+/// localized UI copy (see `failure_codes.dart`). Construct results through
+/// [Result.guard] — never hand-write try/catch blocks in repositories —
+/// and consume them with the `when`/switch pattern below so a new subtype
+/// is a compile-time error, not a missed branch.
 sealed class Result<T> {
   const Result();
 
+  /// Exhaustively maps this result to [R]: [success] receives the value,
+  /// [failure] the [AppError]. Because [Result] is sealed, the compiler
+  /// flags any future subtype missing from the consumer's switch.
   R when<R>({
     required R Function(T value) success,
     required R Function(AppError error) failure,
@@ -39,11 +51,20 @@ sealed class Result<T> {
   }
 }
 
+/// The ok branch of [Result]: carries the produced [value].
+///
+/// Constructed only inside [Result.guard]; repositories never wrap values
+/// by hand, so every `Success` provably passed through the boundary.
 final class Success<T> extends Result<T> {
   const Success(this.value);
   final T value;
 }
 
+/// The error branch of [Result]: carries the classified [AppError].
+///
+/// The `error.message` is fixed diagnosis copy (never rendered to shoppers
+/// when a `code` is present); `cause`/`stackTrace` keep the original
+/// exception for logging.
 final class Failure<T> extends Result<T> {
   const Failure(this.error);
   final AppError error;

@@ -18,7 +18,7 @@ import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/grid_delegate.dart';
 import '../../../../shared/widgets/skeleton_loaders.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/auth.dart';
 import '../catalog_sort_label.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/catalog_cubit.dart';

@@ -9,6 +9,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/admin_nav_tile.dart';
 
 /// Admin catalog management — product and category overview.
 ///
@@ -47,13 +48,13 @@ class AdminCatalogPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.shopping_bag_outlined,
             title: l10n.products,
             subtitle: l10n.manageProducts,
             onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.category_outlined,
             title: l10n.categories,
             subtitle: l10n.manageCategories,
@@ -64,31 +65,31 @@ class AdminCatalogPage extends StatelessWidget {
           // be chosen first, so both tiles land on the product list,
           // which doubles as the picker. (These tiles previously pushed
           // id-less paths that were never registered: "Page Not Found".)
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.image_outlined,
             title: l10n.productImages,
             subtitle: l10n.manageProductImages,
             onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.inventory_2_outlined,
             title: l10n.variants,
             subtitle: l10n.manageVariantsAndStock,
             onTap: () => _guardedPush(context, Routes.adminProducts),
           ),
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.rate_review_outlined,
             title: l10n.reviewModeration,
             subtitle: l10n.reviewApprove,
             onTap: () => _guardedPush(context, Routes.adminReviews),
           ),
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.people_outline,
             title: l10n.adminCustomers,
             subtitle: l10n.adminSearch,
             onTap: () => _guardedPush(context, Routes.adminCustomers),
           ),
-          _ManagementTile(
+          AdminNavTile(
             icon: Icons.insights_outlined,
             title: l10n.salesDashboard,
             subtitle: l10n.salesDashboardSubtitle,
@@ -100,27 +101,3 @@ class AdminCatalogPage extends StatelessWidget {
   }
 }
 
-final class _ManagementTile extends StatelessWidget {
-  const _ManagementTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String title, subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Icon(context.directionalTrailingIcon),
-        onTap: onTap,
-      ),
-    );
-  }
-}

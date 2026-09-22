@@ -12,7 +12,14 @@
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+  <!-- allowBackup=false (audit 2026-09-21, security LOW): Android auto
+       backup would otherwise copy app-private data (prefs, local stores)
+       to the user's Google Drive, where the customer's checkout state is
+       readable outside the device's encryption. PII lives in the
+       keystore-backed secure store, but there is no reason to ship any
+       of it to cloud backup. -->
   <application
+        android:allowBackup="false"
         android:label="albatal_store"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

@@ -7,7 +7,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/analytics_service.dart';
 import '../../../../shared/services/logger.dart';
-import '../../../payments/domain/entities/payment.dart';
+import '../../../payments/payments.dart';
 import '../../domain/entities/coupon_discount.dart';
 import '../../domain/repositories/checkout_repository.dart';
 import '../../domain/repositories/coupons_repository.dart';

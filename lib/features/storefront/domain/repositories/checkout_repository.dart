@@ -1,6 +1,6 @@
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
-import '../../../payments/domain/entities/payment.dart';
+import '../../../payments/payments.dart';
 import '../entities/pending_order.dart';
 
 /// Domain port for the checkout flow.

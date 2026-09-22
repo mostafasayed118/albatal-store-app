@@ -10,7 +10,7 @@ import '../../../core/utils/safe_parse.dart';
 import '../../../shared/extensions/iterable_x.dart';
 import '../../../shared/services/logger.dart';
 import '../../../shared/services/secure_store.dart';
-import '../../auth/domain/repositories/order_snapshot_port.dart';
+import '../../auth/auth.dart';
 import '../domain/repositories/cart_repository.dart';
 import '../domain/repositories/idempotency_store.dart';
 import 'product_mapper.dart';
