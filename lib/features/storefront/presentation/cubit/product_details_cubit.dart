@@ -17,7 +17,6 @@ final class DetailsState extends Equatable {
     this.color = '',
     this.length = '',
     this.quantity = 1,
-    this.errorMessage,
     this.isOffline = false,
   });
 
@@ -27,7 +26,6 @@ final class DetailsState extends Equatable {
   final String color;
   final String length;
   final int quantity;
-  final String? errorMessage;
 
   /// Connectivity truth sampled at load time (Task #8 offline catalog).
   /// An error / not-found while offline renders a friendly offline
@@ -46,7 +44,6 @@ final class DetailsState extends Equatable {
     String? color,
     String? length,
     int? quantity,
-    String? errorMessage,
     bool? isOffline,
   }) =>
       DetailsState(
@@ -56,7 +53,6 @@ final class DetailsState extends Equatable {
         color: color ?? this.color,
         length: length ?? this.length,
         quantity: quantity ?? this.quantity,
-        errorMessage: errorMessage,
         isOffline: isOffline ?? this.isOffline,
       );
 
@@ -68,7 +64,6 @@ final class DetailsState extends Equatable {
         color,
         length,
         quantity,
-        errorMessage,
         isOffline,
       ];
 }
@@ -152,9 +147,14 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
               .toList();
           emit(_readyState(product, related, offline: offline));
         },
+        // No raw-message payload: the page renders the localized
+        // FeedbackView(error) from the status alone (audit 2026-09-21 -
+        // the field was write-only English diagnosis).
+        // No raw-message payload: the page renders the localized
+        // FeedbackView(error) from the status alone (audit 2026-09-21 -
+        // the old field was write-only English diagnosis).
         failure: (_) => emit(DetailsState(
           status: DetailsStatus.error,
-          errorMessage: 'Unable to load product details.',
           isOffline: offline,
         )),
       );
@@ -163,7 +163,6 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
       Log.w('Product details load failed.', error: e);
       emit(DetailsState(
         status: DetailsStatus.error,
-        errorMessage: 'Unable to load product details.',
         isOffline: offline,
       ));
     }
