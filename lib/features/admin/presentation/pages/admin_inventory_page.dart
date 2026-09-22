@@ -7,6 +7,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/low_stock_variant.dart';
 import '../cubit/admin_cubit.dart';
+import '../widgets/dashboard/admin_stock_tile.dart';
 import '../widgets/dialog_controllers.dart';
 
 /// Admin inventory — low stock alerts, stock editing.
@@ -111,7 +112,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
             return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: products.length,
-              itemBuilder: (_, i) => _StockTile(
+              itemBuilder: (_, i) => AdminStockTile(
                 product: products[i],
                 onEditRequested: () => _showStockDialog(products[i]),
               ),
@@ -182,44 +183,6 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
             child: Text(context.l10n.update),
           ),
         ],
-      ),
-    );
-  }
-}
-
-final class _StockTile extends StatelessWidget {
-  const _StockTile({
-    required this.product,
-    required this.onEditRequested,
-  });
-
-  final LowStockVariant product;
-
-  /// Opens the stock dialog on the page State, which owns the dialog's
-  /// field controller lifecycle.
-  final VoidCallback onEditRequested;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: product.stock == 0
-              ? scheme.error.withValues(alpha: .12)
-              : scheme.secondary.withValues(alpha: .12),
-          child: Text('${product.stock}',
-              style: TextStyle(
-                  color: product.stock == 0 ? scheme.error : scheme.secondary,
-                  fontWeight: FontWeight.bold)),
-        ),
-        title: Text(product.productName),
-        subtitle: Text(product.variantLabel),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: onEditRequested,
-        ),
       ),
     );
   }

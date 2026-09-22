@@ -5,6 +5,7 @@ import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/dashboard/admin_category_chip.dart';
 
 /// Catalog category management — the hub's "Categories" destination.
 ///
@@ -98,40 +99,12 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
                               ),
                               title: Text(c.name),
                               subtitle: Text(c.id),
-                              trailing: _CategoryChip(isActive: c.isActive),
+                              trailing: AdminCategoryChip(isActive: c.isActive),
                             ),
                           );
                         },
                       ),
                     ),
-    );
-  }
-}
-
-final class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.isActive});
-
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding:
-          const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: (isActive ? scheme.secondary : scheme.outline)
-            .withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        isActive ? context.l10n.active : context.l10n.inactive,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: isActive ? scheme.secondary : scheme.outline,
-        ),
-      ),
     );
   }
 }

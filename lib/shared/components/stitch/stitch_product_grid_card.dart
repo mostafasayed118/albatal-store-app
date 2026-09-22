@@ -6,6 +6,7 @@ import '../../extensions/build_context_x.dart';
 import '../../theme/contrast.dart';
 import '../app_card.dart';
 import '../app_image.dart';
+import 'wishlist_heart.dart';
 
 /// Stitch 2-col product grid card — surface, outlineVariant border, square media.
 ///
@@ -94,7 +95,7 @@ class StitchProductGridCard extends StatelessWidget {
                                 width: 44,
                                 height: 44,
                                 child: Center(
-                                  child: _WishlistHeart(
+                                  child: WishlistHeart(
                                     isWishlisted: isWishlisted,
                                   ),
                                 ),
@@ -175,23 +176,6 @@ class StitchProductGridCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Heart icon split out so the 44px hit area stays constant while only
-/// the glyph rebuilds on wishlist toggles.
-class _WishlistHeart extends StatelessWidget {
-  const _WishlistHeart({required this.isWishlisted});
-  final bool isWishlisted;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Icon(
-      isWishlisted ? Icons.favorite : Icons.favorite_border,
-      size: 20,
-      color: isWishlisted ? scheme.error : scheme.onSurfaceVariant,
     );
   }
 }

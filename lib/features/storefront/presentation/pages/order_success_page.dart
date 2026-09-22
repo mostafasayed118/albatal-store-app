@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_button.dart';
-import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/notification_service.dart';
+import '../widgets/success_burst.dart';
 
 class OrderSuccessPage extends StatefulWidget {
   const OrderSuccessPage(
@@ -77,7 +77,7 @@ final class _OrderSuccessPageState extends State<OrderSuccessPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const _SuccessBurst(),
+              const SuccessBurst(),
               const SizedBox(height: 24),
               Text(l.successTitle,
                   style: Theme.of(context).textTheme.headlineLarge),
@@ -103,41 +103,6 @@ final class _OrderSuccessPageState extends State<OrderSuccessPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The success check-mark: a quick ease-out-back pop plus a single
-/// success haptic on entry. Motion here is earned — it marks the one
-/// moment the whole flow was aiming at.
-class _SuccessBurst extends StatefulWidget {
-  const _SuccessBurst();
-
-  @override
-  State<_SuccessBurst> createState() => _SuccessBurstState();
-}
-
-class _SuccessBurstState extends State<_SuccessBurst> {
-  @override
-  void initState() {
-    super.initState();
-    hapticSuccess();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.5, end: 1),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutBack,
-      builder: (context, scale, child) =>
-          Transform.scale(scale: scale, child: child),
-      child: CircleAvatar(
-        radius: 48,
-        backgroundColor: scheme.primary,
-        child: Icon(Icons.check, size: 60, color: scheme.onPrimary),
       ),
     );
   }

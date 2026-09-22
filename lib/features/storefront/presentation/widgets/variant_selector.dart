@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../domain/pricing/cut_length_pricing.dart';
 import '../cubit/product_details_cubit.dart';
 import 'color_swatches.dart';
+import 'metered_price_line.dart';
 import 'pricing_tier_table.dart';
 import 'quantity_stepper.dart';
 import 'stock_badge.dart';
@@ -98,7 +98,7 @@ class VariantSelector extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall),
                     // Wave C: running metered line price (tier-aware)
                     // + the wholesale tier ladder.
-                    _MeteredPriceLine(product: product, state: state),
+                    MeteredPriceLine(product: product, state: state),
                     const SizedBox(height: 8),
                     PricingTierTable(
                         meters: double.tryParse(state.length) ?? 0),
@@ -135,33 +135,6 @@ class VariantSelector extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// Live "price × meters × quantity" estimate under the cut selector.
-class _MeteredPriceLine extends StatelessWidget {
-  const _MeteredPriceLine({required this.product, required this.state});
-  final Product product;
-  final DetailsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final meters = double.tryParse(state.length);
-    if (meters == null) return const SizedBox.shrink();
-    final total = meteredLineTotal(
-        tieredPerMeterPrice(product.price, meters), meters,
-        quantity: state.quantity);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Text(
-        l.cutLengthEstimatedTotal(total.format()),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
     );
   }
 }
