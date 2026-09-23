@@ -325,10 +325,11 @@ void main() {
     expect(latestFile, isNotNull,
         reason: 'No migration defines create_checkout_order.');
     expect(latestFile!.replaceAll('\\', '/'),
-        'supabase/migrations/047_premium_free_shipping.sql',
-        reason: '047 must remain the newest definition of '
+        'supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql',
+        reason: '066 must remain the newest definition of '
             'create_checkout_order — a later migration rewriting the RPC '
-            'without the perk silently strips the premium benefit.');
+            'without the perk silently strips the premium benefit (the '
+            'coupon block was added on top of the 047 body verbatim).');
 
     final body = File(latestFile).readAsStringSync();
 
@@ -354,11 +355,55 @@ void main() {
     expect(perkStart, greaterThan(zoneLine),
         reason: 'The perk must apply AFTER the zone calculation.');
 
-    // Posture unchanged: authenticated-only execution.
+    // Posture unchanged: authenticated-only execution (5-arg identity
+    // since 066; the kept 4-arg overload retains its 047 grants).
     expect(
         body,
         contains(
-            'GRANT EXECUTE ON FUNCTION create_checkout_order(TEXT, JSONB, JSONB, TEXT) TO authenticated'),
+            'GRANT EXECUTE ON FUNCTION create_checkout_order(TEXT, JSONB, JSONB, TEXT, TEXT) TO authenticated'),
         reason: 'The rewrite must preserve the 019/024 grant posture.');
+  });
+
+  test('coupon discount is server-owned (migration 066 contract)', () {
+    final body = File(
+            'supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql')
+        .readAsStringSync();
+
+    // The coupon block must resolve AFTER shipping + the premium perk so
+    // the discount applies to the full total (056 reviewer-note contract).
+    final couponStart = body.indexOf('Coupon: server-owned discount');
+    expect(couponStart, greaterThan(0),
+        reason: 'The 066 coupon block is missing from the checkout RPC.');
+    final perkStart = body.indexOf('Premium perk: free shipping');
+    expect(perkStart, greaterThan(0));
+    final totalLine = body.indexOf('v_total    := v_subtotal + v_shipping');
+    expect(totalLine, greaterThan(0));
+    expect(couponStart, greaterThan(totalLine),
+        reason: 'The coupon must apply to the post-shipping total.');
+    expect(perkStart, greaterThan(0));
+
+    // An unknown/expired code must NOT block the order — it simply
+    // applies no discount.
+    expect(
+        body.substring(couponStart),
+        contains('IF NOT FOUND THEN'),
+        reason: 'Invalid codes must degrade to no-discount, not an error.');
+    expect(body.substring(couponStart), contains('v_coupon_discount := 0'));
+
+    // The discount is floored at zero — no negative totals.
+    expect(body.substring(couponStart), contains('GREATEST(v_total - v_coupon_discount, 0)'));
+
+    // The order row carries the redemption for auditing/refunds.
+    expect(body, contains('coupons_id, coupon_discount_minor'));
+
+    // validate_coupon: authenticated-only + throttled (no anon oracle).
+    expect(
+        body,
+        contains('REVOKE EXECUTE ON FUNCTION public.validate_coupon(text) FROM anon'),
+        reason: 'validate_coupon must not be an unauthenticated oracle.');
+    expect(
+        body,
+        contains("public.rate_limit_take(\n       'validate_coupon:'"),
+        reason: 'validate_coupon must throttle through the 060 infra.');
   });
 }
