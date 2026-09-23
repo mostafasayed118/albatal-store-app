@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-23 (part 62: **P1 money-path + security closed on STAGING — migrations 066/067 applied and live-verified; untracked docs committed; owner queue fully executed except sbp_ rotation. Autonomous "finish the app" grant from owner.**)
+Last run: 2026-09-23 (part 63: **portfolio-readiness wave — CI format drift fixed at the root (formatted with CI's own Dart 3.13.4), README refreshed to real numbers, coverage ratchet raised 50→70 (measured 74.0%). Awaiting CI confirmation on `ce9ed05`.**)
+
+## New — 2026-09-23 (part 63: CI green restoration + portfolio polish)
+
+- Owner ask: "continue" (full autonomy grant from part 62 stands).
+- **CI was red since ≥ part 58** (`Format & Analyze` job failing on 59d62ce and 86f7c2b — confirmed via unauthenticated check-runs API; the repo is public). Root cause: files formatted with local Dart 3.12.2 (Flutter 3.48.0-pre) drift from CI's formatter (Flutter 3.47.x → resolved 3.47.5 → bundled Dart **3.13.4**).
+- **Fix at the root:** downloaded standalone Dart SDK 3.13.4 (the exact tool version CI runs; ~220MB zip → `~/.workbuddy-ai/binaries/dart-sdks/`), dry-ran `dart format --output=none` → **43 files drifted**, applied format (+169/−182, whitespace-only), re-gated: format idempotent (0 changed), analyze 0, **1074/1074**. The part-56/61 `dart format` waiver in loop-constraints.md is now obsolete — repo is CI-format-clean.
+- **Coverage measured fresh:** `flutter test --coverage` → **74.0%** (8,782/11,871 lines; CI ratchet baseline was 52.1% from 2026-08-23). Raised the CI ratchet floor 50→70 per its own "raise as coverage grows" policy.
+- **README refreshed:** tests badge 397→1,074, coverage badge 52→74, feature list updated (coupons, InstaPay proof flow, photo reviews, membership tiers, biometric app lock, invoice PDF, deep links, offline cache, remote-config gates, admin console incl. customers+CSV), migration range 001–039→001–067, l10n 320+→512 keys/locale.
+- Commits: `ce9ed05` (format + README + ratchet) pushed on top of `b5e4bd4`. CI run pending at write time — verify via check-runs API.
+- Tooling note for future runs: to re-verify CI format parity locally, run `/c/Users/ASUS/.workbuddy-ai/binaries/dart-sdks/dart-sdk/bin/dart.exe format --output=none --set-exit-if-changed .`
 
 ## New — 2026-09-23 (part 62: 066/067 applied to staging + housekeeping — owner autonomy grant)
 
