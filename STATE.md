@@ -1,16 +1,18 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-23 (part 63: **portfolio-readiness wave — CI format drift fixed at the root (formatted with CI's own Dart 3.13.4), README refreshed to real numbers, coverage ratchet raised 50→70 (measured 74.0%). Awaiting CI confirmation on `ce9ed05`.**)
+Last run: 2026-09-23 (part 63: **CI fully green restored on `0a0c661` — Format & Analyze fixed at the root (CI-pinned Dart 3.13.4 format over 43 drifted files + one Dart 3.13 lint fix), README refreshed to real numbers, coverage ratchet raised 50→70 (measured 74.0%). All check runs passing except the long Android Release build at write time.**)
 
 ## New — 2026-09-23 (part 63: CI green restoration + portfolio polish)
 
 - Owner ask: "continue" (full autonomy grant from part 62 stands).
-- **CI was red since ≥ part 58** (`Format & Analyze` job failing on 59d62ce and 86f7c2b — confirmed via unauthenticated check-runs API; the repo is public). Root cause: files formatted with local Dart 3.12.2 (Flutter 3.48.0-pre) drift from CI's formatter (Flutter 3.47.x → resolved 3.47.5 → bundled Dart **3.13.4**).
-- **Fix at the root:** downloaded standalone Dart SDK 3.13.4 (the exact tool version CI runs; ~220MB zip → `~/.workbuddy-ai/binaries/dart-sdks/`), dry-ran `dart format --output=none` → **43 files drifted**, applied format (+169/−182, whitespace-only), re-gated: format idempotent (0 changed), analyze 0, **1074/1074**. The part-56/61 `dart format` waiver in loop-constraints.md is now obsolete — repo is CI-format-clean.
-- **Coverage measured fresh:** `flutter test --coverage` → **74.0%** (8,782/11,871 lines; CI ratchet baseline was 52.1% from 2026-08-23). Raised the CI ratchet floor 50→70 per its own "raise as coverage grows" policy.
+- **CI was red since ≥ part 58** (`Format & Analyze` failing on 59d62ce and 86f7c2b — confirmed via unauthenticated check-runs API; the repo is public). Root cause: files formatted with local Dart 3.12.2 (Flutter 3.48.0-pre) drift from CI's formatter (Flutter 3.47.x → resolves 3.47.5 → bundled Dart **3.13.4**).
+- **Format fixed at the root:** downloaded standalone Dart SDK 3.13.4 (the exact tool version CI runs; `~/.workbuddy-ai/binaries/dart-sdks/`), dry-ran → **43 files drifted**, applied format (+169/−182, whitespace-only), re-gated: idempotent (0 changed), analyze 0, 1074/1074. The part-56/61 `dart format` waiver in loop-constraints.md is obsolete — repo is CI-format-clean.
+- **Second failure layer (analyze step, which never ran while format blocked it):** CI's Dart 3.13.4 analyzer has the new `unawaited_return_in_try_block` lint — fired once, `product_edit_loaders.dart:26` (`return result.when(...)` in try; async-return context infers R=Future<...>). Found by running the standalone Dart 3.13.4 analyzer locally; fixed with `return await` + explanatory comment (`0a0c661`). Local 3.12.2 does not implement the lint — dual-analyzer verified (3.13.4: 0 issues; local 3.12.2: 0 issues).
+- **CI verified green on `0a0c661`:** Setup ✓, Format & Analyze ✓ (first green since 2026-09-21), Flutter Tests ✓ (incl. raised coverage gate), Edge Function Tests ✓, Secret Scan ✓, Deployment Readiness ✓; Android Release Build in progress at write time.
+- **Coverage measured fresh:** `flutter test --coverage` → **74.0%** (8,782/11,871 lines; ratchet baseline was 52.1%). CI ratchet floor raised 50→70 per its own "raise as coverage grows" policy; CI confirmed the gate passes.
 - **README refreshed:** tests badge 397→1,074, coverage badge 52→74, feature list updated (coupons, InstaPay proof flow, photo reviews, membership tiers, biometric app lock, invoice PDF, deep links, offline cache, remote-config gates, admin console incl. customers+CSV), migration range 001–039→001–067, l10n 320+→512 keys/locale.
-- Commits: `ce9ed05` (format + README + ratchet) pushed on top of `b5e4bd4`. CI run pending at write time — verify via check-runs API.
-- Tooling note for future runs: to re-verify CI format parity locally, run `/c/Users/ASUS/.workbuddy-ai/binaries/dart-sdks/dart-sdk/bin/dart.exe format --output=none --set-exit-if-changed .`
+- Commits: `ce9ed05` (format + README + ratchet) → `4c25ae5` (STATE part 63) → `0a0c661` (lint fix). Note: `ce9ed05`'s CI run was cancelled by the `4c25ae5` push (concurrency cancel-in-progress) — the verdicts on `4c25ae5`/`0a0c661` are the operative ones.
+- Tooling notes: (a) CI-parity format check locally: `/c/Users/ASUS/.workbuddy-ai/binaries/dart-sdks/dart-sdk/bin/dart.exe format --output=none --set-exit-if-changed .`; (b) full Flutter 3.47.5 toolchain extracted at `~/.workbuddy-ai/binaries/flutter-sdks/flutter/` for future CI-parity verification; (c) Android Release job's final verdict (signing secrets present?) to be confirmed by the owner if it fails.
 
 ## New — 2026-09-23 (part 62: 066/067 applied to staging + housekeeping — owner autonomy grant)
 
