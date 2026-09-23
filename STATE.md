@@ -17,7 +17,9 @@ Last run: 2026-09-23 (part 66: **both address follow-ups shipped — ONE address
   - New `checkout_shipping_phone_test.dart` (warning shown / not shown / the action opens the prefilled sheet). l10n: `addressPhoneMissing` + `addPhoneNumber` (en+ar) — keys now **565/locale**, README's stale "512" corrected.
   - Consequence recorded: `checkout_page_test`'s "default address is auto-selected (button enabled)" fixture had no phone; it now carries one (that test is about auto-selection, not the new rule — with a phone-less fixture the CTA is correctly disabled).
 - **Evidence:** format (CI-pinned Dart 3.13.4) idempotent — 0 changed; analyzer **0 diagnostics across 566 files** (lib + test). The suite itself is unrun locally (host incident) — CI is the verifier, as in part 65; expectations were re-read against Equatable's value-joining `toString()` and the ARB copy before pushing.
-- Standing human-only items: owner reported the part-65 trio (sbp_ rotation, prod cutover of 066/067, probe-user deletion) as DONE.
+- **CI GREEN (all 7) on `ea2b683`:** Flutter Tests **1,101/1,101** (was 1,097: +1 edit-prefill, +3 phone-gate), Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build, Setup & Cache.
+- **Follow-up 3 (coverage badge) CLOSED without a local run:** the CI Flutter Tests job measures coverage itself, so the number came from its log via `gh run view <id> --log` — **74.2%** (gate ≥70 met). README badge/prose now read the CI-verified 1,101 tests / 74.2% coverage (both were stale: 1,097 / 74%).
+- Standing human-only items: owner reported the part-65 trio (sbp_ rotation, prod cutover of 066/067, probe-user deletion) as DONE. The host pipe exhaustion is the only open environmental item — it still blocks local `flutter test`/`analyze`, so the workarounds in part 65 remain the way to verify locally (analyzer via `~/.workbuddy-ai/tools/analyze_via_server.py`).
 
 ## New — 2026-09-23 (part 65: UX-019 currency localization + a host-level tooling incident)
 
