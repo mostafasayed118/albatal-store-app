@@ -110,6 +110,20 @@ lib/
     └── extensions/        # Dart extensions
 ```
 
+**Mandatory vs optional subfolders (audit 2026-09-21 — documented so the
+exceptions below are rules, not drift):**
+- Mandatory per feature: `domain/entities/` for entities, `domain/repositories/`
+  for ports only, `data/` for implementations/mappers/codecs, and
+  `presentation/cubit/` whenever the feature owns state.
+- Documented exceptions: `support` injects its repository straight into the
+  page (static content — no cubit by choice); `admin` groups split widgets
+  under `presentation/widgets/<concern>/`; storefront's single-mapping
+  presentation helpers (`catalog_constants.dart`, `catalog_sort_label.dart`,
+  `catalog_color_label.dart`) sit beside `cubit/`/`pages/`/`widgets/`.
+- Cross-feature imports go through the feature barrel
+  (`lib/features/<feature>/<feature>.dart`) — never into another feature's
+  internals (see the four barrels: addresses, auth, payments, storefront).
+
 ## 3) Shared Code
 - Move logic to shared/ only if truly reused across features — premature abstraction is worse than two similar lines
 - Do not create shared utilities speculatively

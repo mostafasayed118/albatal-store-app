@@ -1,0 +1,70 @@
+{
+  "schema": "al_batal_elite.audit.scores.v1",
+  "rubric": "docs/audit/2026-09-15/01-rubric.md",
+  "rubricVersion": "1.0",
+  "auditDate": "2026-09-15",
+  "weights": {
+    "maintainability": 0.20,
+    "clean_architecture": 0.20,
+    "code_quality": 0.20,
+    "security": 0.25,
+    "performance": 0.15
+  },
+  "weightRationale": "Commerce app handling payments and PII: security weighted highest (25%). Architecture and code quality are the daily change-cost drivers (20% each). Maintainability likewise 20%. Performance lowest (15%) because no measured hotspot existed at baseline.",
+  "scores": {
+    "baseline": {
+      "maintainability": 8.5,
+      "clean_architecture": 9.5,
+      "code_quality": 7.5,
+      "security": 8.0,
+      "performance": 8.5
+    },
+    "postFix": {
+      "maintainability": 9.5,
+      "clean_architecture": 10.0,
+      "code_quality": 10.0,
+      "security": 9.5,
+      "performance": 9.0
+    }
+  },
+  "reportedOverall": {
+    "baseline": 8.4,
+    "postFix": 9.6
+  },
+  "ownerActionRound": {
+    "date": "2026-09-15",
+    "summary": "Owner executed the residual list: AUD-015 packed-refs repaired (clone verified), AUD-014 tracked template placeholdered (dashboard rotation still open), AUD-008 migration 061 shipped as a real migration (DB application remains an explicit gate), AUD-009 http pinned to ^1.2.0, AUD-011 schema decision recorded (products.color_name text). Branch merged with origin/master (PR #63) and pushed as PR #64.",
+    "scoreEffect": "code_quality 9.5 -> 10.0 (last actionable code-level finding pinned); security 9.0 -> 9.5 (RLS policy shipped, key placeholdered; rotation + DB apply + keystore location + pinning decision remain). maintainability stays 9.5 (colorName implementation and .gitignore reword still open); performance stays 9.0.",
+    "residualsClosingTo10": [
+      "Rotate the staging anon key in the Supabase dashboard (AUD-014)",
+      "Apply migration 061 to staging and verify the admin Customers screen (AUD-008)",
+      "Move release keystores out of the repository root",
+      "Accept or implement certificate pinning",
+      "Implement products.color_name and read it in the mapper (AUD-011)",
+      "Reword the .gitignore lib/generated contradiction (AUD-013)"
+    ]
+  },
+  "notScored": [
+    {
+      "id": "AUD-015",
+      "dimension": "repo_integrity",
+      "reason": "Repository infrastructure (.git/packed-refs corruption), not first-party source. Recorded in the ledger; deliberately excluded from the five-dimension weighting."
+    }
+  ],
+  "evidence": {
+    "baseline": {
+      "analyze": "4 warnings",
+      "tests": "875 passed / 9 failed",
+      "format": "7 files would change",
+      "build": "FAIL (ManifestMerger/SAXParseException)"
+    },
+    "postFix": {
+      "analyze": "0 issues",
+      "tests": "888 passed / 0 failed",
+      "format": "clean",
+      "build": "APK built",
+      "coverage": "70.4% (7471/10609)",
+      "perfSuites": "16 tests green"
+    }
+  }
+}

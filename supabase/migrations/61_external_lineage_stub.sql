@@ -1,0 +1,6 @@
+-- 61 EXTERNAL LINEAGE STUB (2026-09-23)
+-- The linked database has a migration history entry `61` (unpadded,
+-- distinct from this repo's 061_admin_profiles_read.sql) whose SQL file
+-- was never committed to this repository (applied by a parallel work
+-- session). Do NOT delete: keeps supabase db push history alignment.
+-- Content unknown; no verified live objects attributable to it yet.

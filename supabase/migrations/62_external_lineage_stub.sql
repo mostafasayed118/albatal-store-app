@@ -1,0 +1,6 @@
+-- 62 EXTERNAL LINEAGE STUB (2026-09-23)
+-- The linked database has a migration history entry `62` (unpadded,
+-- distinct from this repo's 062_products_color_name.sql) whose SQL file
+-- was never committed to this repository (applied by a parallel work
+-- session). Do NOT delete: keeps supabase db push history alignment.
+-- Content unknown; no verified live objects attributable to it yet.

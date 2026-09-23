@@ -51,3 +51,7 @@
 
 ---
 <!-- Add your own rules below. Use plain English. The loop reads this verbatim. -->
+
+## Toolchain waivers (recorded 2026-09-23, L2 fix run)
+- The local `dart format` gate is a documented toolchain drift, not a code defect: local Dart 3.12.2 / `flutter format` and the CI-pinned formatter disagree on line wrapping for a fixed set of ~8 files (byte content unchanged since `bed0d1c`). Do NOT reformat with the local toolchain to chase green — it can flip CI the other way. The waiver stands until the owner either upgrades the CI pin to the local SDK or re-runs `dart format` once under the CI-pinned SDK.
+- The 2026-09-21 structured review's Issue 15 file splits were executed under an explicit owner L2 enablement ("L2 enable, fix all" 2026-09-23); the `app_router` → `auth_redirect` + `route_pages` split is GoRouter-adjacent and awaits the owner's review pass before any push.

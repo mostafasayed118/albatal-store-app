@@ -80,3 +80,7 @@ package-lock.json
 loop-ledger.json
 
 .trees/
+
+# Flutter tool transient state
+.flutter
+.flutter_tool_state
