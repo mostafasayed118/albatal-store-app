@@ -23,7 +23,12 @@ Future<({List<AdminCategory> categories, String? selectedId})>
 }) async {
   try {
     final result = await repository.getAllCategories();
-    return result.when(
+    // `await` is load-bearing here: without it the generic inference
+    // resolves `when<R>` with R = Future<...> from the async return
+    // context, which is exactly the pattern the (Dart 3.13)
+    // `unawaited_return_in_try_block` lint flags — a throw inside the
+    // dispatched branch would escape this catch.
+    return await result.when(
       success: (categories) {
         var selected = selectedCategoryId;
         var merged = categories;
