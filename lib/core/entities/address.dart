@@ -33,6 +33,14 @@ final class Address extends Equatable {
 
   final bool isDefault;
 
+  /// Whether a callable number is on file.
+  ///
+  /// The checkout uses this to gate order placement: an Egyptian COD order
+  /// is undeliverable if the courier cannot call ahead (UX-003), and rows
+  /// saved before the phone field shipped carry `''`. Kept on the entity so
+  /// the card, the picker and the gate all agree on what "complete" means.
+  bool get hasPhone => phone.trim().isNotEmpty;
+
   Address copyWith({
     String? recipient,
     String? line,

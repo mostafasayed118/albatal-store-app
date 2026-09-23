@@ -5,18 +5,44 @@ import '../../../../core/entities/address.dart';
 import '../../../../core/utils/phone_validator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
-/// A bottom-sheet address form with field-level validation.
+/// The ONE address form, shared by both entry points.
 ///
-/// Uses Flutter's [Form] + [GlobalKey<FormState>] + [TextFormField] pattern.
-/// This is the canonical Flutter approach: each field owns its validator,
-/// the form coordinates validation on submit, and the result is returned
-/// via [Navigator.pop] so the caller never sees raw form internals.
+/// Lives in the addresses feature and is exported through its barrel: the
+/// address book and the checkout shipping step edit the same entity, and
+/// the audit's cross-feature rule (2026-09-21, P2) says other features
+/// import the barrel rather than reaching into a sibling's internals.
+///
+/// This replaced TWO hand-rolled forms (2026-09-23). The second one — an
+/// inline dialog in the address book — had drifted: no phone field, no
+/// numeric keyboard, and its own weaker validation, so the same customer
+/// data had two different quality bars depending on which screen they
+/// happened to use. One form means one set of validators, one set of ARB
+/// keys and one behavior to test.
+///
+/// Uses Flutter's [Form] + [GlobalKey<FormState>] + [TextFormField] pattern:
+/// each field owns its validator, the form coordinates validation on submit,
+/// and the result is returned via [Navigator.pop] so the caller never sees
+/// raw form internals.
 final class AddressForm extends StatefulWidget {
-  const AddressForm({super.key});
+  const AddressForm({super.key, this.initial, this.submitLabel});
+
+  /// The address being edited, or `null` for a new one. Prefills every
+  /// field and, on save, preserves the identity ([Address.id]) and the
+  /// [Address.isDefault] flag — editing must never mint a new id or drop
+  /// the default mark.
+  final Address? initial;
+
+  /// Overrides the submit button copy: the checkout flow says "Continue"
+  /// (it continues to payment), the address book says "Save".
+  final String? submitLabel;
 
   /// Shows the form in a modal bottom sheet and returns the entered address
   /// on successful validation, or `null` if the user cancels.
-  static Future<Address?> show(BuildContext context) async {
+  static Future<Address?> show(
+    BuildContext context, {
+    Address? initial,
+    String? submitLabel,
+  }) async {
     // Let the tapped row's frame finish rendering before pushing the sheet;
     // a slow device can otherwise starve the route's opening frame.
     await WidgetsBinding.instance.endOfFrame;
@@ -27,7 +53,7 @@ final class AddressForm extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => const AddressForm(),
+      builder: (_) => AddressForm(initial: initial, submitLabel: submitLabel),
     );
     return result;
   }
@@ -38,11 +64,12 @@ final class AddressForm extends StatefulWidget {
 
 final class _AddressFormState extends State<AddressForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-  final _streetCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
-  final _countryCtrl = TextEditingController();
+  late final _nameCtrl = TextEditingController(text: widget.initial?.recipient);
+  late final _phoneCtrl = TextEditingController(text: widget.initial?.phone);
+  late final _streetCtrl = TextEditingController(text: widget.initial?.line);
+  late final _cityCtrl = TextEditingController(text: widget.initial?.city);
+  late final _countryCtrl =
+      TextEditingController(text: widget.initial?.country);
 
   @override
   void dispose() {
@@ -57,14 +84,16 @@ final class _AddressFormState extends State<AddressForm> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       Navigator.of(context).pop(Address(
-        // Client-generated v4 UUID; the server treats it as an opaque key
-        // (never a timestamp ordering signal).
-        id: const Uuid().v4(),
+        // Client-generated v4 UUID for new rows; the server treats it as an
+        // opaque key (never a timestamp ordering signal). An edit keeps the
+        // id it came in with.
+        id: widget.initial?.id ?? const Uuid().v4(),
         recipient: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim(),
         line: _streetCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
         country: _countryCtrl.text.trim(),
+        isDefault: widget.initial?.isDefault ?? false,
       ));
     }
   }
@@ -81,7 +110,7 @@ final class _AddressFormState extends State<AddressForm> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.addNewAddress,
+            Text(widget.initial == null ? l10n.addNewAddress : l10n.editAddress,
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
             TextFormField(
@@ -131,7 +160,9 @@ final class _AddressFormState extends State<AddressForm> {
                   (v == null || v.trim().isEmpty) ? l10n.countryRequired : null,
             ),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _submit, child: Text(l10n.continueLabel)),
+            FilledButton(
+                onPressed: _submit,
+                child: Text(widget.submitLabel ?? l10n.continueLabel)),
           ],
         ),
       ),

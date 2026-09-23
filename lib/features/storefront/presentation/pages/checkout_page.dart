@@ -100,6 +100,11 @@ class CheckoutPage extends StatelessWidget {
       builder: (context, s) {
         final addressError = s.status == CheckoutStatus.error && !s.hasAddress;
         final isCreating = s.status == CheckoutStatus.creatingOrder;
+        // A phone-less address (saved before the field shipped) cannot
+        // complete a COD order: the courier has no number to call. Blocked
+        // here rather than at the server, so the customer sees the reason
+        // and can fix it in place.
+        final needsPhone = s.selectedAddress?.hasPhone == false;
         return Scaffold(
           appBar: AppBar(title: Text(l10n.checkout)),
           body: ListView(
@@ -117,6 +122,7 @@ class CheckoutPage extends StatelessWidget {
                 scheme: scheme,
                 selectedAddress: s.selectedAddress,
                 hasError: addressError,
+                needsPhone: needsPhone,
               ),
               const SizedBox(height: 24),
               if (s.hasAddress) ...[
@@ -173,7 +179,7 @@ class CheckoutPage extends StatelessWidget {
                     borderRadius: AppTheme.controlRadius),
                 textStyle: Theme.of(context).textTheme.labelLarge,
               ),
-              onPressed: s.hasAddress && !isCreating
+              onPressed: s.hasAddress && !needsPhone && !isCreating
                   ? () {
                       final cart = context.read<CartCubit>().state;
                       context

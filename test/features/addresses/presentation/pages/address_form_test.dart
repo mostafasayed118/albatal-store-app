@@ -1,4 +1,5 @@
-import 'package:al_batal_elite/features/storefront/presentation/widgets/address_form.dart';
+import 'package:al_batal_elite/core/entities/address.dart';
+import 'package:al_batal_elite/features/addresses/presentation/widgets/address_form.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +28,29 @@ Future<void> _openForm(WidgetTester tester) async {
   await tester.tap(find.text('Open Form'));
   await tester.pumpAndSettle();
 }
+
+/// Same sheet, opened in EDIT mode with the address-book copy ("Save") so
+/// the prefill/identity contract can be asserted end to end.
+Widget _editHarness(Address initial) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: FilledButton(
+            onPressed: () async {
+              final address = await AddressForm.show(context,
+                  initial: initial, submitLabel: 'Save');
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(address?.toString() ?? 'cancelled')),
+                );
+              }
+            },
+            child: const Text('Edit Form'),
+          ),
+        ),
+      ),
+    );
 
 /// Fills every field with valid values; [phone] is overridable so the
 /// invalid-phone test can submit a bad number with everything else clean.
@@ -124,5 +148,43 @@ void main() {
 
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('+20 101 234 5678'), findsOneWidget);
+  });
+
+  testWidgets('editing prefills every field and preserves identity',
+      (WidgetTester tester) async {
+    // The unified form serves the address book's edit flow too (2026-09-23):
+    // an edit must keep the id (the server treats it as an opaque key) and
+    // the default mark, or editing would duplicate the row and drop the
+    // customer's default choice.
+    const existing = Address(
+      id: 'addr-keep-me',
+      recipient: 'Layla Hassan',
+      phone: '01012345678',
+      line: '12 Nile Street',
+      city: 'Giza',
+      country: 'Egypt',
+      isDefault: true,
+    );
+    await tester.pumpWidget(_editHarness(existing));
+    await tester.tap(find.text('Edit Form'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit address'), findsOneWidget);
+    expect(find.text('Layla Hassan'), findsOneWidget);
+    expect(find.text('01012345678'), findsOneWidget);
+    expect(find.text('12 Nile Street'), findsOneWidget);
+    expect(find.text('Giza'), findsOneWidget);
+
+    // A phone-less legacy row can be completed in place.
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Phone number'), '01112345678');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Equatable's toString joins prop VALUES (no labels), and Address's
+    // props end with (…, phone, isDefault): the id must survive, the phone
+    // must be the edited one, and the default mark must still be true.
+    expect(find.textContaining('addr-keep-me'), findsOneWidget);
+    expect(find.textContaining('01112345678, true'), findsOneWidget);
   });
 }

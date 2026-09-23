@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:uuid/uuid.dart';
 
-import '../../../../core/utils/phone_validator.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/address.dart';
 import '../cubit/addresses_cubit.dart';
+import '../widgets/address_form.dart';
 
 final class AddressesPage extends StatelessWidget {
   const AddressesPage({super.key});
@@ -82,169 +81,20 @@ final class AddressesPage extends StatelessWidget {
   }
 }
 
-Future<void> _edit(BuildContext context, Address? a) async {
-  // Let the tapped row's frame finish rendering before pushing the dialog;
-  // a slow device can otherwise starve the route's opening frame.
-  await WidgetsBinding.instance.endOfFrame;
-  if (!context.mounted) return;
-  await showDialog<void>(
-    context: context,
-    builder: (_) => _AddressDialog(
-      initial: a,
-      // The cubit is read with the PAGE's context on purpose: showDialog
-      // pushes onto the root navigator, whose dialog routes are siblings
-      // of `home` — a dialog context cannot find the page's BlocProvider.
-      onSave: (addr) => context.read<AddressesCubit>().upsert(addr),
-    ),
-  );
-}
-
-/// The address-book add/edit dialog as a real widget.
+/// Opens the shared address form for a new (`null`) or existing address.
 ///
-/// Extracted from an inline `StatefulBuilder` when the phone field shipped
-/// (UX-003). The extraction is not cosmetic: the old version created the
-/// controllers in `_edit` and disposed them in a `finally` the moment
-/// `showDialog`'s future resolved — that happens at POP time, while the
-/// dialog's exit animation is still rebuilding its TextFields, so the
-/// widgets kept touching disposed controllers (`A TextEditingController
-/// was used after being disposed`, caught live by the phone-field widget
-/// test — the first test ever to save this dialog successfully). Owning
-/// the controllers in a [State] and disposing in [dispose] is the
-/// canonical pattern (same as `AddressForm`).
-class _AddressDialog extends StatefulWidget {
-  const _AddressDialog({this.initial, required this.onSave});
-
-  /// The address being edited, or `null` for the add flow (which also
-  /// drives the title copy).
-  final Address? initial;
-
-  /// Called with the validated address on Save, wired by [_edit] to the
-  /// addresses cubit.
-  final ValueChanged<Address> onSave;
-
-  @override
-  State<_AddressDialog> createState() => _AddressDialogState();
-}
-
-class _AddressDialogState extends State<_AddressDialog> {
-  late final _recipientCtrl =
-      TextEditingController(text: widget.initial?.recipient);
-  late final _phoneCtrl = TextEditingController(text: widget.initial?.phone);
-  late final _streetCtrl = TextEditingController(text: widget.initial?.line);
-  late final _cityCtrl = TextEditingController(text: widget.initial?.city);
-  late final _countryCtrl =
-      TextEditingController(text: widget.initial?.country);
-  var _submitted = false;
-
-  @override
-  void dispose() {
-    _recipientCtrl.dispose();
-    _phoneCtrl.dispose();
-    _streetCtrl.dispose();
-    _cityCtrl.dispose();
-    _countryCtrl.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    if (_fields.any((field) => _errorFor(field) != null)) {
-      setState(() => _submitted = true);
-      return;
-    }
-    widget.onSave(Address(
-      // Client-generated v4 UUID; the server treats it as an opaque key
-      // (never a timestamp ordering signal).
-      id: widget.initial?.id ?? const Uuid().v4(),
-      recipient: _recipientCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      line: _streetCtrl.text.trim(),
-      city: _cityCtrl.text.trim(),
-      country: _countryCtrl.text.trim(),
-      isDefault: widget.initial?.isDefault ?? false,
-    ));
-    Navigator.of(context).pop();
-  }
-
-  // Per-field validation: each entry carries an optional validator over
-  // the trimmed value; a `null` validator falls back to the required
-  // check (the pre-phone behavior, kept verbatim for the four text
-  // fields). The phone field validates via the shared Egyptian-mobile
-  // rule (UX-003) and gets a numeric keyboard with telephone autofill.
-  List<
-      (
-        TextEditingController,
-        String,
-        TextInputType?,
-        String? Function(String)?
-      )> get _fields {
-    final loc = context.l10n;
-    return [
-      (_recipientCtrl, loc.recipientName, null, null),
-      (
-        _phoneCtrl,
-        loc.phoneLabel,
-        TextInputType.phone,
-        (v) => phoneValidator(v, invalidMessage: loc.phoneInvalid),
-      ),
-      (_streetCtrl, loc.streetAddress, null, null),
-      (_cityCtrl, loc.city, null, null),
-      (_countryCtrl, loc.country, null, null),
-    ];
-  }
-
-  String? _errorFor(
-      (
-        TextEditingController,
-        String,
-        TextInputType?,
-        String? Function(String)?
-      ) field) {
-    final validator = field.$4;
-    if (validator != null) return validator(field.$1.text.trim());
-    return field.$1.text.trim().isEmpty ? context.l10n.fieldRequired : null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.l10n;
-    final fields = _fields;
-    return AlertDialog(
-      title: Text(widget.initial == null ? loc.addAddress : loc.editAddress),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final field in fields)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: TextField(
-                  controller: field.$1,
-                  keyboardType: field.$3,
-                  autofillHints: field.$3 == TextInputType.phone
-                      ? const [AutofillHints.telephoneNumber]
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: field.$2,
-                    errorText: _submitted ? _errorFor(field) : null,
-                  ),
-                  onChanged: (_) {
-                    if (_submitted) setState(() {});
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(loc.cancel),
-        ),
-        FilledButton(
-          onPressed: _save,
-          child: Text(loc.save),
-        ),
-      ],
-    );
+/// The address book used to own a second, hand-rolled dialog (audit
+/// UX-003/UX-014): no phone field, no numeric keyboard, weaker validation.
+/// It is now the same [AddressForm] the checkout flow uses — one form, one
+/// set of validators, one set of ARB keys.
+Future<void> _edit(BuildContext context, Address? a) async {
+  final updated = await AddressForm.show(
+    context,
+    initial: a,
+    // The address book saves; the checkout flow continues to payment.
+    submitLabel: context.l10n.save,
+  );
+  if (updated != null && context.mounted) {
+    await context.read<AddressesCubit>().upsert(updated);
   }
 }

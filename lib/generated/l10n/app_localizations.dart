@@ -1598,6 +1598,18 @@ abstract class AppLocalizations {
   /// **'EGP'**
   String get currencySymbol;
 
+  /// No description provided for @addressPhoneMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a phone number so the courier can reach you'**
+  String get addressPhoneMissing;
+
+  /// No description provided for @addPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Add phone number'**
+  String get addPhoneNumber;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:

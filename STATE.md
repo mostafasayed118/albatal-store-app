@@ -1,6 +1,23 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-23 (part 65: **UX-019 closed and CI-GREEN — prices no longer print the non-ISO `EGY` label; a new locale-aware `moneyText()` renders EGP with the reader's digits, grouping and symbol (EN "1,290 EGP", AR "١٬٢٩٠ ج.م."), migrated across all 25 money call sites. The first CI run caught a real defect (whole amounts printing `.00`); fixed and re-verified. All 7 checks green on `5218553` — Flutter Tests 1,097/1,097, Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build.**)
+Last run: 2026-09-23 (part 66: **both address follow-ups shipped — ONE address form for the address book and the checkout (the duplicate dialog is deleted, moved into the addresses feature and exported through its barrel), and a phone-completeness gate so a legacy phone-less address can no longer reach a COD order. Host pipe exhaustion still blocks `flutter test` locally, so CI remains the suite verifier; analyzer clean 0/566, format idempotent.**)
+
+## New — 2026-09-23 (part 66: address-form unification + phone-completeness gate)
+
+- Owner ask: "make them" — the two code follow-ups from part 64/65 (the third, a coverage-badge refresh, is blocked: it needs a measured run, and the host still cannot spawn `flutter test` — verified again at 22:25, same `CreateFile 231`).
+- **Follow-up 1 — one address form, not two.** The audit's "Address form ×2" was still two hand-rolled forms: the checkout's bottom sheet and the address book's inline dialog (no phone field, no numeric keyboard, weaker per-field validation, its own generic "This field is required"). Now:
+  - `AddressForm` moved to `features/addresses/presentation/widgets/address_form.dart` and **exported through the addresses barrel** — the repo's cross-feature rule (2026-09-21, P2) says features import the barrel, never a sibling's internals; the old file lived in storefront precisely so the book could avoid that dependency, which is why the duplicate existed.
+  - It gained `initial` (prefill + **preserve `id` and `isDefault`**) and `submitLabel` (checkout says "Continue", the book says "Save").
+  - `AddressesPage._edit` now calls `AddressForm.show(context, initial: a, submitLabel: l10n.save)`; `_AddressDialog` (and its `State.dispose` fix from part 64) is deleted — the use-after-dispose class of bug is now structurally impossible, since only one widget owns form controllers.
+  - Test renamed `addresses_dialog_l10n_test.dart` → `addresses_book_form_test.dart` and rewritten for the sheet: EN/AR copy, per-field validator copy on empty submit, invalid-phone blocks, valid phone closes. Plus a new edit-mode test pinning prefill + identity preservation.
+- **Follow-up 2 — a phone-less address can no longer reach a COD order.** Part 64 shipped the phone field, but rows saved before it carry `''` and still checked out (the courier would have no number — exactly the UX-003 failure the field was added to fix). Now:
+  - `Address.hasPhone` (entity) is the single definition of "a callable number is on file".
+  - `CheckoutShippingAddressCard` renders the reason (`addressPhoneMissing`) plus an **"Add phone number"** action that opens the SAME form prefilled in edit mode — so completing the row updates it in place (id preserved) and persists to the book, instead of adding a duplicate address.
+  - The checkout CTA is gated on `s.hasAddress && !needsPhone && !isCreating`, so the customer sees why rather than getting a server-side surprise.
+  - New `checkout_shipping_phone_test.dart` (warning shown / not shown / the action opens the prefilled sheet). l10n: `addressPhoneMissing` + `addPhoneNumber` (en+ar) — keys now **565/locale**, README's stale "512" corrected.
+  - Consequence recorded: `checkout_page_test`'s "default address is auto-selected (button enabled)" fixture had no phone; it now carries one (that test is about auto-selection, not the new rule — with a phone-less fixture the CTA is correctly disabled).
+- **Evidence:** format (CI-pinned Dart 3.13.4) idempotent — 0 changed; analyzer **0 diagnostics across 566 files** (lib + test). The suite itself is unrun locally (host incident) — CI is the verifier, as in part 65; expectations were re-read against Equatable's value-joining `toString()` and the ARB copy before pushing.
+- Standing human-only items: owner reported the part-65 trio (sbp_ rotation, prod cutover of 066/067, probe-user deletion) as DONE.
 
 ## New — 2026-09-23 (part 65: UX-019 currency localization + a host-level tooling incident)
 

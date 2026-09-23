@@ -16,9 +16,10 @@ class _StubAddressRepository implements AddressRepository {
       const Success(null);
 }
 
-/// The addresses-book add/edit dialog must speak the user's locale — same
-/// hardcoded-English class as the checkout sheet (labels, title, actions,
-/// and the per-field "is required" error).
+/// The address book opens the SHARED address form (2026-09-23 unification):
+/// the same bottom sheet the checkout flow uses, with the "Save" submit copy
+/// instead of "Continue". The old book-only dialog — no phone field, no
+/// numeric keyboard, weaker validation — is gone.
 Widget _harness({Locale? locale}) => MaterialApp(
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -29,93 +30,93 @@ Widget _harness({Locale? locale}) => MaterialApp(
       ),
     );
 
-Future<void> _openDialog(WidgetTester tester) async {
+Future<void> _openForm(WidgetTester tester, String fabLabel) async {
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Add Address').first);
+  await tester.tap(find.text(fabLabel).first);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _fillValid(WidgetTester tester,
+    {String phone = '01012345678'}) async {
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Full Name'), 'Sara Ahmed');
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Phone number'), phone);
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Street address'), '45 Nile Corniche');
+  await tester.enterText(find.widgetWithText(TextFormField, 'City'), 'Cairo');
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Country'), 'Egypt');
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('address dialog copy resolves via l10n (EN)',
+  testWidgets('address book form copy resolves via l10n (EN)',
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
-    await _openDialog(tester);
+    await _openForm(tester, 'Add Address');
 
-    // Title + opener button share the addAddress copy.
-    expect(find.text('Add Address'), findsNWidgets(2));
-    expect(find.text('Recipient'), findsOneWidget);
+    expect(find.text('Add New Address'), findsOneWidget);
+    expect(find.text('Full Name'), findsOneWidget);
     expect(find.text('Phone number'), findsOneWidget);
     expect(find.text('Street address'), findsOneWidget);
     expect(find.text('City'), findsOneWidget);
     expect(find.text('Country'), findsOneWidget);
-    expect(find.text('Cancel'), findsOneWidget);
+    // The book saves; the checkout flow continues.
     expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Cancel'), findsNothing);
   });
 
-  testWidgets('address dialog copy resolves via l10n (AR)',
+  testWidgets('address book form copy resolves via l10n (AR)',
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness(locale: const Locale('ar')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('إضافة عنوان').first);
-    await tester.pumpAndSettle();
+    await _openForm(tester, 'إضافة عنوان');
 
-    expect(find.text('إضافة عنوان'), findsNWidgets(2));
-    expect(find.text('المستلم'), findsOneWidget);
+    expect(find.text('إضافة عنوان جديد'), findsOneWidget);
+    expect(find.text('الاسم الكامل'), findsOneWidget);
+    expect(find.text('رقم الهاتف'), findsOneWidget);
     expect(find.text('عنوان الشارع'), findsOneWidget);
     expect(find.text('المدينة'), findsOneWidget);
     expect(find.text('البلد'), findsOneWidget);
-    expect(find.text('إلغاء'), findsOneWidget);
     expect(find.text('حفظ'), findsOneWidget);
   });
 
-  testWidgets('address dialog empty submit shows the generic required error',
+  testWidgets('empty submit shows per-field validator copy',
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
-    await _openDialog(tester);
+    await _openForm(tester, 'Add Address');
 
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    // The four text fields use the generic required copy; the phone field
-    // (UX-003) validates via the Egyptian-mobile rule, so its empty error
-    // is the phone-specific message, not the generic one.
-    expect(find.text('This field is required'), findsNWidgets(4));
+    // Field-specific copy — the old dialog's generic "This field is
+    // required" went away with the duplicate form.
+    expect(find.text('Name is required'), findsOneWidget);
     expect(find.text('Enter a valid Egyptian mobile number (e.g. 01012345678)'),
         findsOneWidget);
+    expect(find.text('Enter a valid street address'), findsOneWidget);
+    expect(find.text('City is required'), findsOneWidget);
+    expect(find.text('Country is required'), findsOneWidget);
+    expect(find.text('This field is required'), findsNothing);
   });
 
-  testWidgets('address dialog rejects an invalid phone but accepts a valid one',
+  testWidgets('an invalid phone blocks the save; a valid one closes the sheet',
       (WidgetTester tester) async {
     await tester.pumpWidget(_harness());
-    await _openDialog(tester);
+    await _openForm(tester, 'Add Address');
 
-    Future<void> fill(String phone) async {
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Recipient'), 'Sara Ahmed');
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Phone number'), phone);
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Street address'), '45 Nile Corniche');
-      await tester.enterText(find.widgetWithText(TextField, 'City'), 'Cairo');
-      await tester.enterText(
-          find.widgetWithText(TextField, 'Country'), 'Egypt');
-      await tester.pumpAndSettle();
-    }
-
-    await fill('12345');
+    await _fillValid(tester, phone: '12345');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    // Still open: the invalid phone blocked the save.
-    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget, reason: 'sheet stays open');
     expect(find.text('Enter a valid Egyptian mobile number (e.g. 01012345678)'),
         findsOneWidget);
 
-    await fill('010 1234 5678');
+    await _fillValid(tester, phone: '010 1234 5678');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    // Separator-typed numbers are accepted and the dialog closes.
-    expect(find.text('Save'), findsNothing);
+    expect(find.text('Save'), findsNothing, reason: 'saved and closed');
   });
 }

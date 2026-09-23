@@ -30,7 +30,7 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Profiles** — display name, phone, order history, time-of-day greeting
 - **Guest shopping** — browse, search, and review the cart without sign-in; sign-in required for wishlist, addresses, checkout
 - **Sharing & deep links** — product share sheets with `albatal://` deep links
-- **English & Arabic** — full RTL support with 512 localized keys per locale
+- **English & Arabic** — full RTL support with 565 localized keys per locale
 - **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode, WCAG AA contrast-audited by tests, all colors from one token file (`AppColors`)
 
 ### Cloud Backend (Supabase)

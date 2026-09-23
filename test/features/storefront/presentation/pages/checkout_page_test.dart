@@ -130,6 +130,10 @@ void main() {
       const Address(
           id: 'a1',
           recipient: 'Default Person',
+          // Complete address: the checkout also requires a callable number
+          // before it will place a COD order (UX-003), so a phone-less
+          // fixture would disable the CTA this test asserts is enabled.
+          phone: '01012345678',
           line: '1 Main St',
           city: 'Cairo',
           country: 'EG',

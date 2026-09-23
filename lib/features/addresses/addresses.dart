@@ -7,3 +7,4 @@ library;
 
 export 'domain/repositories/address_repository.dart';
 export 'presentation/cubit/addresses_cubit.dart';
+export 'presentation/widgets/address_form.dart';

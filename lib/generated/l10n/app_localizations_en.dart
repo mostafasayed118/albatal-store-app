@@ -848,6 +848,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currencySymbol => 'EGP';
 
   @override
+  String get addressPhoneMissing =>
+      'Add a phone number so the courier can reach you';
+
+  @override
+  String get addPhoneNumber => 'Add phone number';
+
+  @override
   String get save => 'Save';
 
   @override

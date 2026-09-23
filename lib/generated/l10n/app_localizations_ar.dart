@@ -857,6 +857,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get currencySymbol => 'ج.م.';
 
   @override
+  String get addressPhoneMissing =>
+      'أضف رقم هاتف ليتمكن المندوب من التواصل معك';
+
+  @override
+  String get addPhoneNumber => 'أضف رقم هاتف';
+
+  @override
   String get save => 'حفظ';
 
   @override

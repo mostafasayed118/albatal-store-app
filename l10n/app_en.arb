@@ -371,6 +371,8 @@
   "phoneLabel": "Phone number",
   "phoneInvalid": "Enter a valid Egyptian mobile number (e.g. 01012345678)",
   "currencySymbol": "EGP",
+  "addressPhoneMissing": "Add a phone number so the courier can reach you",
+  "addPhoneNumber": "Add phone number",
   "save": "Save",
   "setAsDefault": "Set as default",
   "edit": "Edit",
