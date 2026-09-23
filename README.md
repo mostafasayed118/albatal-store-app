@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
 [![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
-![Tests](https://img.shields.io/badge/tests-1%2C074%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1%2C097%20passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-74%25-yellowgreen)
 
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
@@ -282,7 +282,7 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-**1,090 Flutter tests** cover:
+**1,097 Flutter tests** cover:
 - Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin, Payments, Settings, Coupons, Reviews)
 - Product entity logic (stock, discount, inStock), coupon/membership contracts
 - SQL migration contract tests — the checkout RPC's server-owned pricing, premium perk, and coupon semantics are pinned against future rewrites
