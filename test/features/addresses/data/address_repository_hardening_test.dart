@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
-import 'package:al_batal_elite/features/addresses/domain/address.dart';
+import 'package:al_batal_elite/features/addresses/domain/entities/address.dart';
 import 'package:al_batal_elite/features/payments/data/payment_status_watcher.dart';
 import 'package:al_batal_elite/features/payments/domain/paymob_url_guard.dart';
 import 'package:al_batal_elite/features/storefront/data/storefront_persistence.dart';

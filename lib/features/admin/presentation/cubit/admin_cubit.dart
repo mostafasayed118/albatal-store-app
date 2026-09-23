@@ -35,10 +35,29 @@ final class AdminState extends Equatable {
   /// App-authored failure code; drives localization at the render site.
   final String? errorCode;
 
+  /// Memoized per instance via [Expando] — the same contract as
+  /// `CatalogState`'s memo fields ("equal states always derive equal
+  /// views"; memo data is deliberately NOT in `props`). An [Expando]
+  /// keyed on `this` keeps [AdminState]'s constructor `const` (every
+  /// memo-field approach would have broken ~20 const construction sites
+  /// for a ≤50-row queue).
+  static final Expando<
+      ({AdminOrderStatus filter, List<AdminOrder> source, List<AdminOrder> filtered})>
+      _filteredMemo = Expando('adminFilteredOrders');
+
   List<AdminOrder> get filteredOrders {
     final filter = statusFilter;
     if (filter == null) return orders;
-    return orders.where((o) => o.status == filter).toList();
+    final cached = _filteredMemo[this];
+    if (cached != null &&
+        cached.filter == filter &&
+        identical(cached.source, orders)) {
+      return cached.filtered;
+    }
+    final filtered = orders.where((o) => o.status == filter).toList();
+    _filteredMemo[this] =
+        (filter: filter, source: orders, filtered: filtered);
+    return filtered;
   }
 
   AdminState copyWith({

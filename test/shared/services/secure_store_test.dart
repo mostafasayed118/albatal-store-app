@@ -5,7 +5,7 @@ import 'package:al_batal_elite/core/entities/order.dart';
 import 'package:al_batal_elite/core/entities/profile.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/data/local_address_repository.dart';
-import 'package:al_batal_elite/features/addresses/domain/address.dart';
+import 'package:al_batal_elite/features/addresses/domain/entities/address.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';

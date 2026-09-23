@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../domain/address.dart';
+import '../../domain/entities/address.dart';
 import '../../domain/repositories/address_repository.dart';
 
 enum AddressesStatus { loading, ready, empty, failure }

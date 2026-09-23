@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../auth_failure_listener.dart';
 import '../cubit/auth_cubit.dart';
 
 /// Minimum accepted password length for new accounts (audit S9).
@@ -86,16 +86,9 @@ class _SignUpPageState extends State<SignUpPage> {
           if (state.isAuthenticated) {
             hapticSuccess();
             context.go(Routes.home);
-          } else if (state.status == AuthStatus.failure &&
-              state.errorMessage != null) {
-            // Code-first copy — see sign_in_page.dart (sweep part 32).
-            showFloatingError(
-              context,
-              failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.failureUnexpected),
-            );
+          } else if (state.status == AuthStatus.failure) {
+            // Code-first copy — shared since the 2026-09-21 dedupe.
+            showAuthFailure(context, state);
           } else if (state.status == AuthStatus.unauthenticated) {
             // Email confirmation required
             showConfirmation(context, l.checkEmailToVerify);

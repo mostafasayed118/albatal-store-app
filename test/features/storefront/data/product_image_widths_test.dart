@@ -5,11 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 /// Audit 2026-09-14 P0-4: product images must be requested as width-bounded
 /// RENDER URLs, never the full upload.
 ///
-/// The mapper carries two budgets because one photo feeds two surfaces:
-/// `imageAsset` is the card/thumbnail source at [StorageService.gridImageWidth]
-/// and `images` is the detail gallery + zoom source at
-/// [StorageService.detailImageWidth]. Both halves are pinned — a fix that
-/// bounded only one of them would look like a pass against the other.
+/// Audit 2026-09-21 (dual cache keys): `imageAsset` and `images` resolve
+/// at the SAME [StorageService.detailImageWidth] — one photo produces one
+/// URL string and therefore exactly one `CachedNetworkImage` cache entry.
+/// Surfaces bound their own DECODE (grid cards pass `cacheWidth: 420`),
+/// so both halves stay pinned: a fix that re-split the budgets (or
+/// dropped the bound on one surface) would fail here.
 final class _WidthRecordingStorage extends StorageService {
   /// Master's constructor requires the client explicitly (no global fallback),
   /// and these doubles exist to exercise the pure URL builders — which never
@@ -65,7 +66,7 @@ void main() {
       ]);
     });
 
-    test('imageAsset is the PRIMARY image at the grid budget', () {
+    test('imageAsset is the PRIMARY image at the detail budget', () {
       final storage = _WidthRecordingStorage();
       final product = ProductCodec.fromRow(
         _row([
@@ -79,15 +80,18 @@ void main() {
       // b.jpg sorts first, so the grid must show b — not the row's first entry.
       expect(
         product.imageAsset,
-        '/render/b.jpg?width=${StorageService.gridImageWidth}',
+        '/render/b.jpg?width=${StorageService.detailImageWidth}',
       );
 
-      // Exactly one grid-budget request (the primary), every image at detail.
+      // One budget everywhere: gallery entries AND the primary resolve at
+      // detail, so the primary URL string is byte-identical to the gallery's
+      // copy of the same photo — ONE cache entry per photo (audit 2026-09-21).
       expect(storage.requested, [
         'b.jpg@${StorageService.detailImageWidth}',
         'a.jpg@${StorageService.detailImageWidth}',
-        'b.jpg@${StorageService.gridImageWidth}',
+        'b.jpg@${StorageService.detailImageWidth}',
       ]);
+      expect(product.imageAsset, product.images.first);
     });
 
     test(

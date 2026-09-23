@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
-import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
-import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../../../shared/services/logger.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
+import '../widgets/product_edit_form.dart';
+import '../widgets/product_edit_loaders.dart';
 
 /// Admin product create/edit — calls [AdminRepository.adminUpsertProduct].
 ///
@@ -95,25 +94,18 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     setState(() => _loadingProduct = true);
     // Single-row fetch (audit 2026-09-13): the page previously loaded
     // the whole bounded products list and linear-scanned for the id.
-    final result = await widget.repository.getProductById(widget.productId!);
+    final loaded = await fetchProductForEdit(
+      repository: widget.repository,
+      productId: widget.productId!,
+    );
     if (!mounted) return;
-    String? failureMessage;
-    String? failureCode;
-    AdminProduct? product;
-    switch (result) {
-      case Success(:final value):
-        product = value;
-      case Failure(:final error):
-        failureMessage = error.message;
-        failureCode = error.code;
-    }
-    if (!mounted) return;
+    final product = loaded.product;
     if (product == null) {
       showFloatingError(
         context,
         failureText(context.l10n,
-            code: failureCode,
-            message: failureMessage,
+            code: loaded.failureCode,
+            message: loaded.failureMessage,
             fallback: context.l10n.adminProductNotFound),
       );
       setState(() => _loadingProduct = false);
@@ -137,56 +129,16 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
   }
 
   Future<void> _loadCategories() async {
-    try {
-      // The admin list (ids + names, including inactive) — not the
-      // storefront name list, which cannot satisfy the RPC's UUID contract.
-      final result = await widget.repository.getAllCategories();
-      if (!mounted) return;
-      result.when(
-        success: (categories) {
-          setState(() {
-            _categories = categories;
-            _loadingCategories = false;
-            final ids = categories.map((c) => c.id).toSet();
-            if (_selectedCategoryId != null &&
-                !ids.contains(_selectedCategoryId)) {
-              // The product's category vanished from the visible list
-              // (e.g. deactivated): keep it selectable instead of
-              // silently rewriting the product's value on save.
-              _categories = [
-                ..._categories,
-                AdminCategory(
-                  id: _selectedCategoryId!,
-                  name: _selectedCategoryId!,
-                  isActive: true,
-                ),
-              ];
-            } else if (_selectedCategoryId == null && _categories.isNotEmpty) {
-              _selectedCategoryId = _categories.first.id;
-            }
-          });
-        },
-        failure: (e) {
-          setState(() {
-            _loadingCategories = false;
-            if (_selectedCategoryId != null) {
-              // Degraded mode: keep the current category selectable so
-              // an edit can still save; the id stands in for the name.
-              _categories = [
-                AdminCategory(
-                  id: _selectedCategoryId!,
-                  name: _selectedCategoryId!,
-                  isActive: true,
-                ),
-              ];
-            }
-          });
-        },
-      );
-    } catch (e) {
-      Log.w('Admin categories load failed.', error: e);
-      if (mounted) setState(() => _loadingCategories = false);
-    }
+    final loaded = await loadProductEditCategories(
+      repository: widget.repository,
+      selectedCategoryId: _selectedCategoryId,
+    );
+    if (!mounted) return;
+    setState(() {
+      _categories = loaded.categories;
+      _selectedCategoryId = loaded.selectedId;
+      _loadingCategories = false;
+    });
   }
 
   @override
@@ -284,136 +236,32 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _nameCtrl,
-              decoration:
-                  InputDecoration(labelText: context.l10n.adminNameField),
-              validator: (v) => v == null || v.trim().isEmpty
-                  ? context.l10n.adminRequiredField
-                  : null,
+            AdminProductEditForm(
+              nameCtrl: _nameCtrl,
+              slugCtrl: _slugCtrl,
+              descriptionCtrl: _descriptionCtrl,
+              compositionCtrl: _compositionCtrl,
+              careCtrl: _careCtrl,
+              originCtrl: _originCtrl,
+              widthCtrl: _widthCtrl,
+              gsmCtrl: _gsmCtrl,
+              priceCtrl: _priceCtrl,
+              minCutCtrl: _minCutCtrl,
+              loadingCategories: _loadingCategories,
+              categories: _categories,
+              selectedCategoryId: _selectedCategoryId,
+              onCategoryChanged: (v) =>
+                  setState(() => _selectedCategoryId = v),
+              sellByLength: _sellByLength,
+              onSellByLengthChanged: (v) =>
+                  setState(() => _sellByLength = v),
+              isActive: _isActive,
+              onActiveChanged: (v) => setState(() => _isActive = v),
+              submitting: _submitting,
+              loadingProduct: _loadingProduct,
+              isCreate: widget.productId == null,
+              onSubmit: _submit,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _slugCtrl,
-              decoration:
-                  InputDecoration(labelText: context.l10n.adminSlugField),
-              validator: (v) => v == null || v.trim().isEmpty
-                  ? context.l10n.adminRequiredField
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionCtrl,
-              decoration: InputDecoration(labelText: context.l10n.description),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _compositionCtrl,
-              decoration: InputDecoration(labelText: context.l10n.composition),
-            ),
-            _loadingCategories
-                ? const Center(
-                    child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: CircularProgressIndicator()))
-                : DropdownButtonFormField<String>(
-                    // Values are category UUIDs (the RPC contract); the
-                    // display label is the human-readable name.
-                    initialValue: _selectedCategoryId,
-                    decoration:
-                        InputDecoration(labelText: context.l10n.category),
-                    items: _categories
-                        .map((c) =>
-                            DropdownMenuItem(value: c.id, child: Text(c.name)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedCategoryId = v),
-                    validator: (v) => v == null || v.isEmpty
-                        ? context.l10n.adminRequiredField
-                        : null,
-                  ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _priceCtrl,
-              decoration:
-                  InputDecoration(labelText: context.l10n.adminBasePrice),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return context.l10n.adminRequiredField;
-                }
-                if (double.tryParse(v.trim()) == null) {
-                  return context.l10n.adminInvalidNumber;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _careCtrl,
-              decoration: InputDecoration(labelText: context.l10n.care),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _originCtrl,
-              decoration: InputDecoration(labelText: context.l10n.origin),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _widthCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration:
-                        InputDecoration(labelText: context.l10n.adminWidthCm),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _gsmCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration:
-                        InputDecoration(labelText: context.l10n.adminWeightGsm),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.adminSellByLength),
-              subtitle: Text(context.l10n.adminSellByLengthHint),
-              value: _sellByLength,
-              onChanged: (v) => setState(() => _sellByLength = v),
-            ),
-            if (_sellByLength) ...[
-              TextFormField(
-                controller: _minCutCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration:
-                    InputDecoration(labelText: context.l10n.adminMinCutMeters),
-              ),
-              const SizedBox(height: 16),
-            ],
-            SwitchListTile(
-              title: Text(context.l10n.active),
-              value: _isActive,
-              onChanged: (v) => setState(() => _isActive = v),
-            ),
-            const SizedBox(height: 24),
-            _submitting || _loadingProduct
-                ? const Center(child: CircularProgressIndicator())
-                : AppButton(
-                    label: widget.productId == null
-                        ? context.l10n.adminCreateProduct
-                        : context.l10n.adminUpdateProduct,
-                    onPressed: _submit,
-                  ),
           ],
         ),
       ),

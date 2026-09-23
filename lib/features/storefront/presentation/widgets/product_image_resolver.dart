@@ -85,6 +85,11 @@ class ProductImageResolver extends StatelessWidget {
           url,
           fit: fit,
           gaplessPlayback: gaplessPlayback,
+          // Bound the decode like every other image path (audit
+          // 2026-09-21 perf LOW: the local-asset branch was the one
+          // un-bounded decode in the app).
+          cacheWidth: cacheWidth,
+          cacheHeight: cacheWidth,
           errorBuilder: (context, error, stackTrace) => _fallback(),
         ),
       ],

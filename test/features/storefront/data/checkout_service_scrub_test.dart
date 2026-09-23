@@ -38,7 +38,7 @@ void main() {
               quantity: 1),
         ],
         paymentMethod: PaymentMethod.cashOnDelivery,
-        addressSnapshot: const {},
+        address: null,
       );
 
       expect(result, isA<Failure>());

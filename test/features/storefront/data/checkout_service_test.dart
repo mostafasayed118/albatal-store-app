@@ -68,7 +68,7 @@ void main() {
     final result = await service.placeOrder(
       items: _items(),
       paymentMethod: PaymentMethod.paymobCard,
-      addressSnapshot: const {},
+      address: null,
     );
 
     expect(result, isA<Success<PendingOrder>>());
@@ -87,7 +87,7 @@ void main() {
     final result = await service.placeOrder(
       items: _items(),
       paymentMethod: PaymentMethod.cashOnDelivery,
-      addressSnapshot: const {},
+      address: null,
     );
 
     expect(result, isA<Success<PendingOrder>>());
@@ -109,7 +109,7 @@ void main() {
     final result = await service.placeOrder(
       items: _items(),
       paymentMethod: PaymentMethod.paymobCard,
-      addressSnapshot: const {},
+      address: null,
     );
 
     expect(result, isA<Success<PendingOrder>>());
@@ -126,7 +126,7 @@ void main() {
       return service.placeOrder(
         items: _items(),
         paymentMethod: PaymentMethod.paymobCard,
-        addressSnapshot: const {},
+        address: null,
       );
     }
 

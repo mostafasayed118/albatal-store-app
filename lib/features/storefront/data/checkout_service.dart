@@ -1,12 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/data/address_codec.dart';
+import '../../../../core/entities/address.dart';
 import '../../../../core/entities/money.dart';
+import '../../../../core/entities/order.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
-import '../../payments/domain/entities/payment.dart';
+import '../../payments/payments.dart';
 import '../domain/entities/pending_order.dart';
 import '../domain/pricing/cut_length_pricing.dart';
 import '../domain/repositories/checkout_repository.dart';
@@ -49,7 +52,7 @@ class CheckoutService implements CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
@@ -61,7 +64,13 @@ class CheckoutService implements CheckoutRepository {
           // strings the server gates on ('paymob_card' for 035/initiate,
           // 'cod' for COD confirm). Never send display strings.
           'p_payment_method': paymentMethod.serverValue,
-          'p_address': addressSnapshot,
+          // The 5-key server snapshot is encoded HERE, in the data layer —
+          // the domain port carries a typed [Address] (audit 2026-09-21:
+          // no raw Map in the domain contract). Absent address keeps the
+          // legacy empty-object wire shape.
+          'p_address': address == null
+              ? <String, dynamic>{}
+              : AddressCodec.toSnapshotJson(address),
           'p_items': items
               .map((item) => {
                     'product_id': item.product.id,
@@ -119,7 +128,8 @@ class CheckoutService implements CheckoutRepository {
         shipping: Money(shipping),
         total: Money(total),
         expiresAt: expiresAt,
-        status: safeString(data, 'status', fallback: 'pending'),
+        status: OrderStatus.fromName(
+            safeString(data, 'status', fallback: 'pending')),
         isIdempotentRetry: safeBool(data, 'idempotent'),
       ));
     } on PostgrestException catch (e, st) {

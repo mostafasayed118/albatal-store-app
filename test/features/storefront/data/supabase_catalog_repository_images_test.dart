@@ -192,20 +192,20 @@ void main() {
       final product = typed.first;
       expect(product.id, 'p1');
 
-      // Verify storage translation was invoked at the DETAIL budget for every
-      // storage_path, and at the GRID budget for the primary only.
+      // Every storage_path resolves at the DETAIL budget only — the primary
+      // shares the gallery's budget so one photo = one cache key (audit
+      // 2026-09-21 dual-cache finding). a.jpg is asked twice (gallery entry
+      // + primary); no grid-budget request may ever fire.
       verify(() => mockStorage.getProductImageUrlForWidth(
             'product-images/p1/a.jpg',
             StorageService.detailImageWidth,
-          )).called(1);
+          )).called(2);
       verify(() => mockStorage.getProductImageUrlForWidth(
             'product-images/p1/b.jpg',
             StorageService.detailImageWidth,
           )).called(1);
-      verify(() => mockStorage.getProductImageUrlForWidth(
-            'product-images/p1/a.jpg',
-            StorageService.gridImageWidth,
-          )).called(1);
+      verifyNever(() =>
+          mockStorage.getProductImageUrlForWidth(any(), StorageService.gridImageWidth));
 
       // Image URLs must be sorted by sort_order ascending (a.jpg before b.jpg)
       // at the detail budget...
@@ -216,11 +216,12 @@ void main() {
           'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/b.jpg?width=720',
         ]),
       );
-      // ...and the card/thumbnail surface gets the primary at the grid budget,
-      // which is what bounds the bandwidth of a full grid.
+      // ...and the card/thumbnail surface shares the DETAIL budget —
+      // one URL string per photo = one cache entry (audit 2026-09-21);
+      // the card still bounds its own decode via memCacheWidth.
       expect(
         product.imageAsset,
-        'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/a.jpg?width=420',
+        'https://mock.supabase.co/storage/v1/render/image/public/product-images/product-images/p1/a.jpg?width=720',
       );
 
       // Placeholder fallback not misapplied — images not empty,

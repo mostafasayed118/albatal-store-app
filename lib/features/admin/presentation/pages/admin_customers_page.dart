@@ -10,6 +10,7 @@ import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_customer.dart';
 import '../../domain/repositories/admin_customers_port.dart';
 import '../cubit/admin_customers_cubit.dart';
+import '../widgets/admin_error_feedback.dart';
 import '../widgets/membership_tier_dialog.dart';
 
 /// Admin customers list (feature-batch §14): profile directory with
@@ -110,6 +111,14 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
       // The router always injects [repository] (or a [cubit] in tests) —
       // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminCustomersCubit, AdminCustomersState>(
+        // Directory scaffold only: `isLoadingMore` flips twice per page
+        // load and must not rebuild the search field + list
+        // (audit 2026-09-21 perf LOW).
+        buildWhen: (previous, current) =>
+            previous.status != current.status ||
+            !identical(previous.customers, current.customers) ||
+            previous.total != current.total ||
+            previous.hasMore != current.hasMore,
         builder: (context, state) {
           if (state.status == AdminCustomersStatus.loading) {
             return Scaffold(
@@ -120,13 +129,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           if (state.status == AdminCustomersStatus.error) {
             return Scaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
-              body: FeedbackView(
-                type: FeedbackViewType.error,
-                body: failureText(context.l10n,
-                    code: state.errorCode,
-                    message: state.errorMessage,
-                    fallback: context.l10n.errorTitle),
-                onAction: () => context.read<AdminCustomersCubit>().load(),
+              body: AdminErrorFeedback(
+                errorCode: state.errorCode,
+                errorMessage: state.errorMessage,
+                onRetry: () => context.read<AdminCustomersCubit>().load(),
               ),
             );
           }

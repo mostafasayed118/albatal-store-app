@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/address.dart';
 import '../../../../generated/l10n/app_localizations.dart';
-import '../../../addresses/presentation/cubit/addresses_cubit.dart';
+import '../../../addresses/addresses.dart';
 import 'address_tile.dart';
 import 'empty_address_card.dart';
 

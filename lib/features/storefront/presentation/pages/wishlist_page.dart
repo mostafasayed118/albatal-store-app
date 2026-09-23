@@ -37,6 +37,25 @@ class _WishlistPageState extends State<WishlistPage> {
     // server-side Supabase trigger is the follow-up, out of scope here.
     _restockSub =
         context.read<WishlistCubit>().restockAlerts.listen(_onRestock);
+    // One initial attempt for the ordering where ids AND catalog are
+    // already loaded before this page mounts (no change event will fire
+    // afterwards to trigger the listeners below).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryResolve());
+  }
+
+  /// Resolves wishlist ids → products OUTSIDE the builder (audit
+  /// 2026-09-21 LOW: mutating cubits from build() made the page's
+  /// correctness depend on an Equatable no-op emission). Fires on mount,
+  /// when ids arrive, and whenever the catalog's product identity
+  /// changes — the three orderings in which either side loads first.
+  void _tryResolve() {
+    if (!mounted) return;
+    final wishlist = context.read<WishlistCubit>().state;
+    if (wishlist.products.isEmpty && wishlist.ids.isNotEmpty) {
+      context
+          .read<WishlistCubit>()
+          .resolveProducts(context.read<CatalogCubit>().state.allProducts);
+    }
   }
 
   void _onRestock(Product product) {
@@ -59,52 +78,75 @@ class _WishlistPageState extends State<WishlistPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l.wishlist)),
-      body: BlocBuilder<WishlistCubit, WishlistState>(
-        builder: (context, ws) {
-          if (ws.products.isEmpty && ws.ids.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.read<WishlistCubit>().resolveProducts(
-                  context.read<CatalogCubit>().state.allProducts);
-            });
+    return BlocListener<CatalogCubit, CatalogState>(
+      listenWhen: (previous, current) =>
+          !identical(previous.allProducts, current.allProducts),
+      listener: (context, _) => _tryResolve(),
+      child: BlocListener<WishlistCubit, WishlistState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status ||
+            previous.ids != current.ids ||
+            !identical(previous.products, current.products),
+        listener: (context, ws) {
+          // A persist failure keeps the resolved list on screen (the
+          // builder below renders it); surface it as a localized snackbar
+          // instead of the old write-only errorMessage field
+          // (audit 2026-09-21).
+          if (ws.status == WishlistStatus.error && ws.products.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(l.failureSave),
+            ));
           }
-          // A failed load must not read as "nothing saved yet" (audit
-          // 2026-09-21): the cubit emits [WishlistStatus.error] on a failed
-          // read, so consume it before the empty branch and offer a retry.
-          // Persist failures keep the resolved products, so the list stays
-          // visible and only the empty-load path lands here.
-          if (ws.status == WishlistStatus.error && ws.products.isEmpty) {
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              onAction: () =>
-                  context.read<WishlistCubit>().restore(force: true),
-            );
-          }
-          if (ws.products.isEmpty) {
-            return FeedbackView(
-              type: FeedbackViewType.empty,
-              // A heart reads as "nothing saved yet" — clearer than a
-              // warehouse/stock glyph for a wishlist. Wishlist-specific copy
-              // (UX-045) replaces the generic "no items found".
-              icon: Icons.favorite_border,
-              title: l.wishlistEmptyTitle,
-              body: l.wishlistEmptyBody,
-              actionLabel: l.exploreCategories,
-              onAction: () => context.go(Routes.categories),
-            );
-          }
-          return LayoutBuilder(
-            builder: (context, constraints) => GridView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: ws.products.length,
-              // Same width-aware delegate as Home/Catalog: 2 cols on phone,
-              // 3 at ≥700, 4 at ≥1000.
-              gridDelegate: productGridDelegateForWidth(constraints.maxWidth),
-              itemBuilder: (_, i) => WishlistTile(product: ws.products[i]),
-            ),
-          );
+          _tryResolve();
         },
+        child: Scaffold(
+        appBar: AppBar(title: Text(l.wishlist)),
+        body: BlocBuilder<WishlistCubit, WishlistState>(
+          // errorMessage is deliberately absent: it is diagnosis-only, so
+          // its changes must not rebuild the grid (audit 2026-09-21).
+          buildWhen: (previous, current) =>
+              previous.status != current.status ||
+              previous.products != current.products ||
+              previous.alertIds != current.alertIds,
+          builder: (context, ws) {
+            // A failed load must not read as "nothing saved yet" (audit
+            // 2026-09-21): consume [WishlistStatus.error] before the
+            // empty branch and offer a retry.
+            if (ws.status == WishlistStatus.error && ws.products.isEmpty) {
+              return FeedbackView(
+                type: FeedbackViewType.error,
+                onAction: () =>
+                    context.read<WishlistCubit>().restore(force: true),
+              );
+            }
+            if (ws.products.isEmpty) {
+              return FeedbackView(
+                type: FeedbackViewType.empty,
+                // A heart reads as "nothing saved yet" — clearer than a
+                // warehouse/stock glyph for a wishlist. Wishlist-specific
+                // copy (UX-045) replaces the generic "no items found".
+                icon: Icons.favorite_border,
+                title: l.wishlistEmptyTitle,
+                body: l.wishlistEmptyBody,
+                actionLabel: l.exploreCategories,
+                onAction: () => context.go(Routes.categories),
+              );
+            }
+            return LayoutBuilder(
+              builder: (context, constraints) => GridView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: ws.products.length,
+                // Same width-aware delegate as Home/Catalog: 2 cols on
+                // phone, 3 at ≥700, 4 at ≥1000.
+                gridDelegate:
+                    productGridDelegateForWidth(constraints.maxWidth),
+                itemBuilder: (_, i) => WishlistTile(product: ws.products[i]),
+              ),
+            );
+          },
+        ),
+      ),
       ),
     );
   }

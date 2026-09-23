@@ -79,10 +79,12 @@ final class CatalogState extends Equatable {
   // Plain lazy fields + explicit null checks: no clever idioms, the
   // pattern is identical for every getter below.
 
-  /// Variant color names across the catalog (drives the filter sheet).
+  /// Fabric color names across the catalog (drives the filter sheet).
   ///
-  /// Derived from each product's variant [Product.colors] — the server's
-  /// per-variant color set — not the placeholder [Product.imageColor]
+  /// Prefers the curated [Product.colorName] when a row carries one
+  /// (AUD-011 was plumbed end-to-end but never consumed — audit 2026-09-21
+  /// M-03) and falls back to the variant [Product.colors] set — the
+  /// server's per-variant names — not the placeholder [Product.imageColor]
   /// tint, which is a single grey fallback on network-loaded rows and
   /// collapsed every product to one bucket.
   List<String> get availableColors {
@@ -90,7 +92,12 @@ final class CatalogState extends Equatable {
     if (cached == null) {
       final colors = <String>{};
       for (final p in allProducts) {
-        colors.addAll(p.colors);
+        final named = p.colorName;
+        if (named != null && named.isNotEmpty) {
+          colors.add(named);
+        } else {
+          colors.addAll(p.colors);
+        }
       }
       cached = colors.toList()..sort();
       _m.availableColors = cached;
@@ -113,7 +120,7 @@ final class CatalogState extends Equatable {
     var cached = _m.priceMax;
     if (cached == null) {
       cached = allProducts.isEmpty
-          ? CatalogConstants.unboundedMax
+          ? CatalogPriceBounds.unboundedMax
           : allProducts.map((p) => p.price).reduce((a, b) => a > b ? a : b);
       _m.priceMax = cached;
     }

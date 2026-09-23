@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
-import '../../domain/address.dart';
+import '../../domain/entities/address.dart';
 import '../cubit/addresses_cubit.dart';
 
 final class AddressesPage extends StatelessWidget {
@@ -42,9 +42,11 @@ final class AddressesPage extends StatelessWidget {
                 body: l10n.noAddressesSaved,
               );
             }
-            return ListView(
+            return ListView.builder(
               padding: const EdgeInsets.all(16),
-              children: s.addresses.map((a) {
+              itemCount: s.addresses.length,
+              itemBuilder: (context, index) {
+                final a = s.addresses[index];
                 return Card(
                   child: ListTile(
                     leading: Icon(
@@ -68,7 +70,7 @@ final class AddressesPage extends StatelessWidget {
                     ),
                   ),
                 );
-              }).toList(),
+              },
             );
           },
         ),

@@ -28,30 +28,3 @@ final class ProductReview extends Equatable {
   List<Object?> get props =>
       [id, productId, authorName, rating, text, createdAt, photoUrl];
 }
-
-/// A pending moderation row in the admin queue.
-final class AdminReview extends Equatable {
-  const AdminReview({
-    required this.id,
-    required this.productId,
-    required this.authorName,
-    required this.rating,
-    required this.text,
-    required this.status,
-    this.photoUrl,
-  });
-
-  final String id;
-  final String productId;
-  final String authorName;
-  final int rating;
-  final String text;
-
-  /// `pending` | `approved` | `rejected`
-  final String status;
-  final String? photoUrl;
-
-  @override
-  List<Object?> get props =>
-      [id, productId, authorName, rating, text, status, photoUrl];
-}

@@ -6,6 +6,7 @@ import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/connectivity_gate.dart';
+import '../../../../shared/utils/app_durations.dart';
 import '../../domain/entities/catalog_filters.dart';
 import '../../domain/entities/flash_sale.dart';
 import '../../domain/repositories/catalog_repository.dart';
@@ -13,18 +14,17 @@ import 'catalog_state.dart';
 import 'flash_sale_ticker.dart';
 
 export '../../domain/entities/catalog_filters.dart'
-    show
-        CatalogFilters,
-        CatalogSort,
-        CatalogSortLabel,
-        CatalogConstants,
-        catalogColorName;
+    show CatalogFilters, CatalogSort, CatalogPriceBounds;
 
 /// Re-exported for backward compatibility: every consumer (pages, tests)
 /// historically imported [CatalogState]/[CatalogStatus] from this file.
 export 'catalog_state.dart';
 
 final class CatalogCubit extends Cubit<CatalogState> {
+  /// Flash-sale list refresh cadence. Named so tests can reference the
+  /// contract instead of re-typing the literal (audit 2026-09-21).
+  static const flashPollInterval = Duration(seconds: 60);
+
   CatalogCubit(this._repository, {DateTime Function()? now, this.gate})
       : _now = now ?? DateTime.now,
         super(CatalogState()) {
@@ -125,7 +125,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
     // the poll itself (or explicit retry paths) and must not stack
     // additional timers.
     _flashPollTimer ??= Timer.periodic(
-      const Duration(seconds: 60),
+      flashPollInterval,
       (_) {
         // Fire-and-forget: a tick is a refresh, not a state machine
         // transition; loadFlashSales already guards empty/failed loads.
@@ -167,7 +167,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   /// never lags. Recent queries are recorded in the same fire.
   void updateQuery(String query) {
     _queryDebounce?.cancel();
-    _queryDebounce = Timer(const Duration(milliseconds: 300), () {
+    _queryDebounce = Timer(AppDurations.searchDebounce, () {
       if (isClosed) return;
       final trimmed = query.trim();
       final recents = trimmed.isEmpty

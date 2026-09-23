@@ -23,7 +23,16 @@ enum OrderStatus {
   delivered,
   cancelled,
   refunded,
-  expired
+  expired;
+
+  /// Parses the server's status string into the enum, degrading to
+  /// [OrderStatus.pending] for null or unknown values — the same
+  /// fail-soft contract as [AdminOrderStatus.fromName] on the admin
+  /// side, so a typo or a new server value can never break checkout
+  /// (audit 2026-09-21: no raw `== 'pending'` on strings).
+  static OrderStatus fromName(String? raw) =>
+      OrderStatus.values.firstWhere((s) => s.name == raw,
+          orElse: () => OrderStatus.pending);
 }
 
 /// An immutable snapshot of a successfully placed order.

@@ -1,4 +1,6 @@
+import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/order.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -37,7 +39,7 @@ class _StubCheckoutRepo implements CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
@@ -211,7 +213,7 @@ void main() {
 class _SequencedCheckoutRepo implements CheckoutRepository {
   final List<String?> keys = [];
 
-  PendingOrder _order(String id, String status) => PendingOrder(
+  PendingOrder _order(String id, OrderStatus status) => PendingOrder(
         orderId: id,
         subtotal: const Money.egp(100),
         shipping: Money.zero,
@@ -224,15 +226,15 @@ class _SequencedCheckoutRepo implements CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
     keys.add(idempotencyKey);
     if (idempotencyKey == 'cko-stale-dead-key') {
-      return Success(_order('ord-dead', 'cancelled'));
+      return Success(_order('ord-dead', OrderStatus.cancelled));
     }
-    return Success(_order('ord-fresh', 'pending'));
+    return Success(_order('ord-fresh', OrderStatus.pending));
   }
 }
 
@@ -244,7 +246,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
@@ -255,7 +257,7 @@ class _AlwaysDeadCheckoutRepo implements CheckoutRepository {
       shipping: Money.zero,
       total: Money.zero,
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
-      status: 'cancelled',
+      status: OrderStatus.cancelled,
     ));
   }
 }

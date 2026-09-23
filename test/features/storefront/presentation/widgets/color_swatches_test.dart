@@ -1,7 +1,6 @@
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/presentation/catalog_constants.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
-import 'package:al_batal_elite/features/storefront/presentation/widgets/color_swatches.dart';
 import 'package:al_batal_elite/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,11 +111,6 @@ void main() {
       expect(visibleCategoryChips([]), CatalogConstants.chipsFor([]));
       // ignore: deprecated_member_use_from_same_package
       expect(visibleCategoryChips(['All', 'Wool', 'Silk']), ['Wool', 'Silk']);
-      // ignore: deprecated_member_use_from_same_package
-      expect(swatchColorFor('gold'), CatalogConstants.swatchFor('gold'));
-      // ignore: deprecated_member_use_from_same_package
-      expect(deterministicTint('Zanzibar'),
-          CatalogConstants.deterministicTint('Zanzibar'));
     });
 
     test('deterministic tint is stable and case-insensitive', () {

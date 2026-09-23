@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../catalog_color_label.dart';
 import '../cubit/catalog_cubit.dart';
 import 'color_swatches.dart';
 
@@ -98,6 +99,10 @@ class _FilterSheetState extends State<FilterSheet> {
               children: [
                 for (final c in state.categories)
                   ChoiceChip(
+                    // Category/fabric-family names stay in their source
+                    // spelling — data-driven proper nouns (audit 2026-09-21
+                    // M-03: translate-or-document; this is the documented
+                    // decision). Colors DO translate below.
                     label: Text(c),
                     selected: _selectedCategory == c,
                     onSelected: (_) => setState(() => _selectedCategory = c),
@@ -118,7 +123,7 @@ class _FilterSheetState extends State<FilterSheet> {
                       // the filter sheet and product page speak one visual
                       // language for colors.
                       avatar: ColorSwatchDot(name: color),
-                      label: Text(color),
+                      label: Text(catalogColorLabel(l, color)),
                       selected: _selectedColor == color,
                       onSelected: (_) => setState(() {
                         _selectedColor = _selectedColor == color ? '' : color;

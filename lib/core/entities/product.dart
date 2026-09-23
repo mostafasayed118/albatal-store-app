@@ -2,6 +2,13 @@ import 'package:equatable/equatable.dart';
 
 import 'money.dart';
 
+/// Catalog product (and its cart line).
+///
+/// Invariants: [price]/[oldPrice] are money values, never floats;
+/// [colors] holds VARIANT names the shopper picks (the filter chips and
+/// the matcher must read the same list or chips can never match);
+/// [imageColor] is a placeholder tint for rows that predate
+/// [colorName]; [stock] keys are `'<color>-<length>'` variant ids.
 final class Product extends Equatable {
   const Product({
     required this.id,
@@ -53,6 +60,10 @@ final class Product extends Equatable {
   /// migration 062). Null when the row does not carry one — filters keep
   /// using the variant-derived [colors]; this is the DB-derived source for
   /// future swatch/filter wiring.
+  /// A curated display color name from `products.color_name` (AUD-011,
+  /// migration 062). Null when the row does not carry one — filters fall
+  /// back to the variant-derived [colors]; this is the DB-curated source
+  /// consumed by `CatalogState.availableColors` (audit 2026-09-21 M-03).
   final String? colorName;
   final Map<String, int> stock;
   final double rating;
@@ -99,6 +110,10 @@ final class Product extends Equatable {
       ];
 }
 
+/// A cart line: one product + chosen variant ([color], [length]) and
+/// quantity. [key] is the merge identity — adding the same variant
+/// twice updates the quantity instead of duplicating the line. Sample/
+/// metered lines are flagged, never re-priced client-side.
 final class CartItem extends Equatable {
   const CartItem({
     required this.product,

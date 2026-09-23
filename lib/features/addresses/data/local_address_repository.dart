@@ -8,7 +8,7 @@ import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
 import '../../../core/utils/safe_parse.dart';
 import '../../../shared/services/logger.dart';
-import '../domain/address.dart';
+import '../domain/entities/address.dart';
 import '../domain/repositories/address_repository.dart';
 
 final class LocalAddressRepository implements ClearableAddressRepository {

@@ -7,9 +7,9 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
-import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/oauth_service.dart';
+import '../auth_failure_listener.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_up_page.dart' show passwordValidator;
 
@@ -65,17 +65,10 @@ class _SignInPageState extends State<SignInPage> {
           if (state.isAuthenticated) {
             hapticSuccess();
             context.go(redirectTarget);
-          } else if (state.status == AuthStatus.failure &&
-              state.errorMessage != null) {
-            // Code-first copy (audit 2026-09-19, sweep part 32): the message is
-            // English diagnosis, the code is what the shopper must read.
-            showFloatingError(
-              context,
-              failureText(context.l10n,
-                  code: state.errorCode,
-                  message: state.errorMessage,
-                  fallback: context.l10n.failureUnexpected),
-            );
+          } else if (state.status == AuthStatus.failure) {
+            // Code-first copy (audit 2026-09-19, sweep part 32) — one
+            // shared implementation since the 2026-09-21 dedupe.
+            showAuthFailure(context, state);
           }
         },
         child: SingleChildScrollView(

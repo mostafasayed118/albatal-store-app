@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
-import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
 import '../../../../shared/components/stitch/stitch_product_grid_card.dart';
@@ -11,7 +10,7 @@ import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/grid_delegate.dart';
-import '../../../../shared/widgets/skeleton_loaders.dart';
+import '../catalog_status_guard.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/recent_searches_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -19,7 +18,6 @@ import '../widgets/active_filters_bar.dart';
 import '../widgets/catalog_empty_state.dart';
 import '../widgets/catalog_sort_bar.dart';
 import '../widgets/filter_sheet.dart';
-import '../widgets/offline_catalog_view.dart';
 import '../widgets/search_suggestions_bar.dart';
 import 'home_page.dart' show homeBuildWhen;
 
@@ -92,21 +90,10 @@ class _CatalogPageState extends State<CatalogPage> {
         buildWhen: homeBuildWhen,
         builder: (context, state) {
           final catalog = context.read<CatalogCubit>();
-          if (state.status == CatalogStatus.loading ||
-              state.status == CatalogStatus.initial) {
-            return const CatalogSkeleton();
-          }
-          if (state.status == CatalogStatus.error) {
-            // Task #8: offline + cold cache is an offline notice, not
-            // an error; reserve the FeedbackView for real failures.
-            if (state.isOffline) {
-              return OfflineCatalogView(onRetry: catalog.load);
-            }
-            return FeedbackView(
-              type: FeedbackViewType.error,
-              onAction: catalog.load,
-            );
-          }
+          // loading/offline/error guards — shared with HomePage since the
+          // 2026-09-21 dedupe (byte-identical branching before).
+          final guard = catalogStatusGuard(state, catalog);
+          if (guard != null) return guard;
           return ResponsiveShell(
             child: Column(
               children: [
@@ -231,7 +218,7 @@ class _CatalogPageState extends State<CatalogPage> {
       count++;
     }
     if (state.filters.priceMin > Money.zero ||
-        state.filters.priceMax < CatalogConstants.unboundedMax) {
+        state.filters.priceMax < CatalogPriceBounds.unboundedMax) {
       count++;
     }
     return count;

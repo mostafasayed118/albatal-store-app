@@ -1,5 +1,5 @@
 import '../../../../core/error/result.dart';
-import '../address.dart';
+import '../entities/address.dart';
 
 /// Abstraction for the on-device address book.
 ///

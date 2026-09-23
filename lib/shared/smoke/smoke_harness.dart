@@ -24,6 +24,15 @@ const String kSmokeScenarioFilter = String.fromEnvironment('E2E_SCENARIOS');
 
 /// Debug-only smoke harness for on-device verification.
 ///
+/// WHY IT LIVES IN `lib/` (do not "clean it up" into `tool/` or
+/// `test/`): `lib/app.dart` and `lib/bootstrap.dart` both import this
+/// package to wire the [exitApp] hook gate, only `lib/` is importable
+/// from those production entry points, and the harness needs the real
+/// widget tree + `dart:io` exit — a test-only location would break the
+/// smoke build (`--target=lib/main_smoke.dart`). The gate below keeps it
+/// inert in every normal build (audit 2026-09-21 LOW: 391 LOC in `lib/`
+/// accepted in place with this rationale on record).
+///
 /// Mounted **only** by the dedicated smoke entry point
 /// (`lib/main_smoke.dart`), which passes the [exitApp] hook — that hook is
 /// the gate, so no dart-define is involved and a normal debug build cannot

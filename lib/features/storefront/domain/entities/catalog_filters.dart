@@ -6,49 +6,14 @@ import '../../../../core/entities/product.dart';
 /// Sort modes for the catalog visible list.
 enum CatalogSort { featured, priceLowToHigh, priceHighToLow, name, newest }
 
-extension CatalogSortLabel on CatalogSort {
-  /// English fallback for diagnostics only — never rendered.
-  ///
-  /// Shopper-visible surfaces must use `catalogSortLabel(l10n, sort)`
-  /// (`presentation/catalog_sort_label.dart`) so the copy follows the UI
-  /// locale (audit: this getter used to be rendered verbatim, leaking
-  /// English into Arabic sessions).
-  String get label => switch (this) {
-        CatalogSort.featured => 'Featured',
-        CatalogSort.priceLowToHigh => 'Price: low to high',
-        CatalogSort.priceHighToLow => 'Price: high to low',
-        CatalogSort.name => 'Name: A to Z',
-        CatalogSort.newest => 'Newest',
-      };
-}
-
-/// Centralized catalog constants for audit lint compliance.
-abstract final class CatalogConstants {
+/// Price bounds owned by the catalog domain (audit 2026-09-21: renamed —
+/// the presentation feature already owns a `CatalogConstants` for
+/// swatch/category data, and two same-named holders in one feature
+/// guarantee the wrong import).
+abstract final class CatalogPriceBounds {
   /// Upper bound used when no max-price filter is applied.
   /// Large enough to cover any plausible fabric price (999999 EGP).
   static const unboundedMax = Money.egp(999999);
-}
-
-/// Maps an imageColor int to a human-readable color name for filtering.
-///
-/// DB-derived alternative: `products.color_name` (migration 062) is mapped
-/// onto [Product.colorName] by ProductCodec.fromRow — prefer it when a row
-/// carries one. This tint map stays as the fallback for rows without a
-/// color_name (and for local/seed rows), keeping the 'Other' fallback for
-/// unknown values.
-String catalogColorName(int color) {
-  const map = {
-    0xFF176B57: 'Emerald',
-    0xFFC99A64: 'Gold',
-    0xFF302244: 'Purple',
-    0xFFD9C6A1: 'Beige',
-    0xFF88715F: 'Brown',
-    0xFFB57A2A: 'Amber',
-    0xFF6FA39A: 'Teal',
-    0xFF6B1F2E: 'Crimson',
-    0xFFE0CDA0: 'Sand',
-  };
-  return map[color] ?? 'Other';
 }
 
 /// Immutable value object that owns all catalog filter criteria.
@@ -64,7 +29,7 @@ final class CatalogFilters extends Equatable {
     this.sort = CatalogSort.featured,
     this.colorFilter = '',
     this.priceMin = Money.zero,
-    this.priceMax = CatalogConstants.unboundedMax,
+    this.priceMax = CatalogPriceBounds.unboundedMax,
   });
 
   final String category;
@@ -81,7 +46,7 @@ final class CatalogFilters extends Equatable {
       sort != CatalogSort.featured ||
       colorFilter.isNotEmpty ||
       priceMin > Money.zero ||
-      priceMax < CatalogConstants.unboundedMax;
+      priceMax < CatalogPriceBounds.unboundedMax;
 
   /// Returns true when [product] matches all active filter criteria.
   bool matches(Product product) {
@@ -91,11 +56,13 @@ final class CatalogFilters extends Equatable {
         product.name.toLowerCase().contains(normalizedQuery) ||
         product.category.toLowerCase().contains(normalizedQuery) ||
         (product.description?.toLowerCase().contains(normalizedQuery) ?? false);
-    // Same source as CatalogState.availableColors (variant colors) — the
-    // filter chips and the matcher must agree or offered chips can never
-    // match anything (imageColor is a placeholder tint on network rows).
-    final matchesColor =
-        colorFilter.isEmpty || product.colors.contains(colorFilter);
+    // Same source as CatalogState.availableColors (variant colors OR the
+    // curated products.color_name — audit 2026-09-21 M-03) — the filter
+    // chips and the matcher must agree or offered chips can never match
+    // anything (imageColor is a placeholder tint on network rows).
+    final matchesColor = colorFilter.isEmpty ||
+        product.colors.contains(colorFilter) ||
+        product.colorName == colorFilter;
     final matchesPrice = product.price >= priceMin && product.price <= priceMax;
     return matchesCategory && matchesQuery && matchesColor && matchesPrice;
   }
@@ -117,7 +84,7 @@ final class CatalogFilters extends Equatable {
         colorFilter: clearColorFilter ? '' : (colorFilter ?? this.colorFilter),
         priceMin: resetPrice ? Money.zero : (priceMin ?? this.priceMin),
         priceMax: resetPrice
-            ? CatalogConstants.unboundedMax
+            ? CatalogPriceBounds.unboundedMax
             : (priceMax ?? this.priceMax),
       );
 

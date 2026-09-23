@@ -1,89 +1,20 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/paymob_url_guard.dart';
 import '../../domain/repositories/payment_service.dart';
+import 'payment_state.dart';
 
-// ─── States ────────────────────────────────────────────────
+export 'payment_state.dart';
 
-enum PaymentStatus {
-  initial,
-  selectingMethod,
-  processing,
-  awaitingVerification,
-  awaitingProof,
-  success,
-  failed,
-  cancelled,
-  expired,
-  timedOut,
-}
+part 'parts/payment_card.dart';
+part 'parts/payment_cod.dart';
+part 'parts/payment_instapay.dart';
 
-final class PaymentState extends Equatable {
-  const PaymentState({
-    this.status = PaymentStatus.initial,
-    this.selectedMethod,
-    this.amount = Money.zero,
-    this.orderId = '',
-    this.transactionId,
-    this.errorMessage,
-    this.checkoutUrl,
-    this.instructions,
-  });
-
-  final PaymentStatus status;
-  final PaymentMethod? selectedMethod;
-  final Money amount;
-  final String orderId;
-  final String? transactionId;
-  final String? errorMessage;
-  final String? checkoutUrl;
-
-  /// Server-derived InstaPay transfer details while
-  /// [PaymentStatus.awaitingProof].
-  final InstapayInstructions? instructions;
-
-  bool get canProceed => selectedMethod != null;
-
-  PaymentState copyWith({
-    PaymentStatus? status,
-    PaymentMethod? selectedMethod,
-    Money? amount,
-    String? orderId,
-    String? transactionId,
-    String? errorMessage,
-    String? checkoutUrl,
-    InstapayInstructions? instructions,
-  }) =>
-      PaymentState(
-        status: status ?? this.status,
-        selectedMethod: selectedMethod ?? this.selectedMethod,
-        amount: amount ?? this.amount,
-        orderId: orderId ?? this.orderId,
-        transactionId: transactionId ?? this.transactionId,
-        errorMessage: errorMessage,
-        checkoutUrl: checkoutUrl ?? this.checkoutUrl,
-        instructions: instructions ?? this.instructions,
-      );
-
-  @override
-  List<Object?> get props => [
-        status,
-        selectedMethod,
-        amount,
-        orderId,
-        transactionId,
-        errorMessage,
-        checkoutUrl,
-        instructions,
-      ];
-}
-
-// ─── Cubit ─────────────────────────────────────────────────
+// --- Cubit ---
 
 class PaymentCubit extends Cubit<PaymentState> {
   PaymentCubit(this._paymentService,
@@ -113,6 +44,10 @@ class PaymentCubit extends Cubit<PaymentState> {
   // ignore: cancel_subscriptions - cancelled in _stopWatching/_complete/close
   StreamSubscription<PaymentResult>? _watchSubscription;
   Timer? _watchTimeoutTimer;
+
+  /// Public state transition for part-file extensions ([emit] is
+  /// @protected and only callable from instance members).
+  void emitState(PaymentState nextState) => emit(nextState);
 
   /// Initialize payment for an order.
   ///
@@ -146,144 +81,15 @@ class PaymentCubit extends Cubit<PaymentState> {
     // first session's watch.
     if (state.status == PaymentStatus.awaitingVerification) return;
     if (state.status == PaymentStatus.awaitingProof) return;
-    if (state.selectedMethod == PaymentMethod.cashOnDelivery) {
-      return _processCod();
-    }
-    if (state.selectedMethod == PaymentMethod.instapay) {
-      return _processInstapay();
-    }
-    return _processCard(customerEmail: customerEmail);
-  }
-
-  Future<void> _processCod() async {
-    // Cash on Delivery — server-confirmed path.
-    // The checkout creates the order BEFORE the customer picks a
-    // method, so first record the COD choice server-side
-    // (`set_pending_order_payment_method`, migration 037) — the
-    // `confirm_cod_payment` RPC requires a COD-like stored method
-    // and would otherwise reject with `payment_not_cod`.
-    // The client NEVER declares success without a server response.
-    emit(state.copyWith(status: PaymentStatus.processing));
-
-    final methodResult = await _paymentService.setOrderPaymentMethod(
-      orderId: state.orderId,
-      // Canonical 'cod' (037/039 allowlist) via the enum — no literals.
-      method: PaymentMethod.cashOnDelivery.serverValue,
-    );
-    if (isClosed) return;
-    if (methodResult case PaymentFailed(:final message, :final code)) {
-      emit(state.copyWith(
-        status: PaymentStatus.failed,
-        // Machine-readable code first so the pages' paymentMessageForCode()
-        // can localize data-layer failures; null-code results keep the raw
-        // message (mapper's unknown-code fallback).
-        errorMessage: code ?? message,
-      ));
-      return;
-    }
-
-    final result = await _paymentService.confirmCodPayment(
-      orderId: state.orderId,
-    );
-    if (isClosed) return;
-
-    switch (result) {
-      case PaymentSuccess(:final transactionId):
-        emit(state.copyWith(
-          status: PaymentStatus.success,
-          transactionId: transactionId,
-        ));
-      case PaymentFailed(:final message, :final code):
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: code ?? message,
-        ));
-      case PaymentPending():
-        // COD confirm never returns pending (server is synchronous);
-        // treat as a terminal failure instead of stranding in processing.
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: 'payment_not_pending',
-        ));
-      case PaymentCancelled():
-        emit(state.copyWith(status: PaymentStatus.cancelled));
-    }
-  }
-
-  Future<void> _processInstapay() async {
-    // InstaPay — prepare the transfer, then wait for proof upload
-    // (migration 041). Method switch + amount happen server-side.
-    emit(state.copyWith(status: PaymentStatus.processing));
-
-    final initiation = await _paymentService.initiateInstapayPayment(
-      orderId: state.orderId,
-    );
-    if (isClosed) return;
-
-    switch (initiation) {
-      case InstapayReady(:final instructions):
-        emit(state.copyWith(
-          status: PaymentStatus.awaitingProof,
-          instructions: instructions,
-        ));
-        // The payment row stays `pending` until an admin approves
-        // the submitted proof (or the 24h expiry). Subscribe to the
-        // same server-authoritative status stream used for Paymob so
-        // approval/rejection lands without polling.
-        await startWatching(state.orderId);
-      case InstapayUnavailable(:final message):
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: message,
-        ));
-    }
-  }
-
-  Future<void> _processCard({required String customerEmail}) async {
-    // Paymob Card — initiate payment
-    emit(state.copyWith(status: PaymentStatus.processing));
-
-    final result = await _paymentService.initiatePayment(
-      amount: state.amount,
-      method: state.selectedMethod!,
-      orderId: state.orderId,
-      customerEmail: customerEmail,
-    );
-    if (isClosed) return;
-
-    switch (result) {
-      case PaymentPending(:final checkoutUrl):
-        // Trust-boundary: only open Paymob-owned HTTPS checkout URLs
-        // (PaymobUrlGuard). A mistyped/proxied URL fails closed instead
-        // of opening attacker-controlled content in the WebView.
-        if (!PaymobUrlGuard.isSafePaymobCheckoutUrl(checkoutUrl)) {
-          emit(state.copyWith(
-            status: PaymentStatus.failed,
-            errorMessage: 'network_error',
-          ));
-          return;
-        }
-        emit(state.copyWith(
-          status: PaymentStatus.awaitingVerification,
-          checkoutUrl: checkoutUrl,
-        ));
-        // The Paymob hosted checkout is now open in a WebView. Subscribe
-        // to the server-side payment status so we detect the webhook's
-        // update without parsing the callback URL (which can be spoofed).
-        await startWatching(state.orderId);
-      case PaymentSuccess(:final transactionId):
-        emit(state.copyWith(
-          status: PaymentStatus.success,
-          transactionId: transactionId,
-        ));
-      case PaymentFailed(:final message, :final code):
-        emit(state.copyWith(
-          status: PaymentStatus.failed,
-          errorMessage: code ?? message,
-        ));
-      case PaymentCancelled():
-        emit(state.copyWith(status: PaymentStatus.cancelled));
-    }
+    // Strategy dispatch, not an if-chain (audit 2026-09-21): one
+    // exhaustive switch per method — a new method fails to compile here
+    // until it is deliberately routed, and the guards above stay
+    // method-agnostic.
+    return switch (state.selectedMethod!) {
+      PaymentMethod.cashOnDelivery => processCod(),
+      PaymentMethod.instapay => processInstapay(),
+      PaymentMethod.paymobCard => processCard(customerEmail: customerEmail),
+    };
   }
 
   /// Submit the transfer proof while [PaymentStatus.awaitingProof].

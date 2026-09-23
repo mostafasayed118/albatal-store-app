@@ -5,10 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/entities/money.dart';
 import '../../../core/utils/safe_parse.dart';
-import '../../../shared/services/logger.dart';
 import '../domain/entities/payment.dart';
 import '../domain/repositories/payment_service.dart';
 import 'payment_status_watcher.dart';
+import 'paymob_failures.dart';
 
 /// Paymob integration using a single server-side Edge Function.
 ///
@@ -52,15 +52,8 @@ class PaymobPaymentService implements PaymentService {
       );
 
       if (response.status != 200) {
-        // `response.data` is untyped (Map, List, or String depending on
-        // the transport): normalize through [safeMap] so a mistyped
-        // payload degrades to the fallback message instead of throwing.
-        final message = safeString(
-          safeMap(response.data),
-          'message',
-          fallback: 'Payment initiation failed',
-        );
-        return PaymentFailed(message: message);
+        return paymobInitiateFailure(response.data,
+            fallback: 'Payment initiation failed');
       }
 
       final checkoutUrl = safeString(safeMap(response.data), 'checkout_url');
@@ -79,8 +72,9 @@ class PaymobPaymentService implements PaymentService {
       // Scrubbed: never surface raw provider/transport exceptions to the
       // UI (they can leak URLs, tokens, or internal details).
       // Structured log keeps the detail diagnostic-only (never in the UI).
-      Log.e('Paymob initiate failed', error: e, category: LogCategory.payment);
-      return const PaymentFailed(
+      return paymobNetworkFailure(
+        error: e,
+        logMessage: 'Paymob initiate failed',
         message: 'Payment could not be started. Please try again.',
         code: 'payment_start_failed',
       );
@@ -133,33 +127,16 @@ class PaymobPaymentService implements PaymentService {
       }
 
       // Map machine-readable codes to user-safe messages.
-      final message = switch (code) {
-        'authentication_required' => 'Please sign in to confirm your order.',
-        'payment_not_found' =>
-          'No Cash on Delivery payment found for this order.',
-        'not_owner' => 'You can only confirm your own orders.',
-        'payment_not_pending' => 'This payment has already been processed.',
-        'payment_not_cod' => 'This order is not a Cash on Delivery order.',
-        'order_not_found' => 'Order not found.',
-        'order_not_pending' =>
-          'This order can no longer be confirmed. Please check your orders.',
-        'already_confirmed' =>
-          'This order was already confirmed. Please check your orders.',
-        _ => 'Failed to confirm payment. Please try again.',
-      };
-
-      return PaymentFailed(message: message, code: code);
+      return PaymentFailed(message: codFailureMessage(code), code: code);
     } on TimeoutException {
-      return const PaymentFailed(
-        message:
-            'Server did not respond in time. Please check your orders and try again.',
-        code: 'rpc_timeout',
+      return paymobTimeoutFailure(
+        'Server did not respond in time. Please check your orders and try again.',
       );
     } catch (e) {
-      Log.e('COD confirm failed', error: e, category: LogCategory.payment);
-      return const PaymentFailed(
+      return paymobNetworkFailure(
+        error: e,
+        logMessage: 'COD confirm failed',
         message: 'Failed to confirm payment. Please try again.',
-        code: 'network_error',
       );
     }
   }
@@ -190,29 +167,17 @@ class PaymobPaymentService implements PaymentService {
         return const PaymentSuccess(transactionId: '', amount: Money.zero);
       }
 
-      final message = switch (code) {
-        'authentication_required' => 'Please sign in to continue.',
-        'invalid_method' => 'Unsupported payment method.',
-        'not_owner' => 'You can only modify your own orders.',
-        'order_not_found' => 'Order not found.',
-        'order_not_pending' =>
-          'This order can no longer be modified. Please check your orders.',
-        _ => 'Failed to set payment method. Please try again.',
-      };
-
-      return PaymentFailed(message: message, code: code);
+      return PaymentFailed(
+          message: setMethodFailureMessage(code), code: code);
     } on TimeoutException {
-      return const PaymentFailed(
-        message:
-            'Server did not respond in time. Please check your orders and try again.',
-        code: 'rpc_timeout',
+      return paymobTimeoutFailure(
+        'Server did not respond in time. Please check your orders and try again.',
       );
     } catch (e) {
-      Log.e('Set order payment method failed',
-          error: e, category: LogCategory.payment);
-      return const PaymentFailed(
+      return paymobNetworkFailure(
+        error: e,
+        logMessage: 'Set order payment method failed',
         message: 'Failed to set payment method. Please try again.',
-        code: 'network_error',
       );
     }
   }
@@ -234,12 +199,8 @@ class PaymobPaymentService implements PaymentService {
       ).timeout(_rpcTimeout);
 
       if (response.status != 200) {
-        final message = safeString(
-          safeMap(response.data),
-          'message',
-          fallback: 'InstaPay is unavailable right now.',
-        );
-        return InstapayUnavailable(message: message);
+        return instapayInitiateFailure(response.data,
+            fallback: 'InstaPay is unavailable right now.');
       }
 
       final data = safeMap(response.data);
@@ -262,17 +223,14 @@ class PaymobPaymentService implements PaymentService {
         ),
       );
     } on TimeoutException {
-      return const InstapayUnavailable(
-        message:
-            'Server did not respond in time. Please check your orders and try again.',
-        code: 'rpc_timeout',
+      return instapayTimeoutFailure(
+        'Server did not respond in time. Please check your orders and try again.',
       );
     } catch (e) {
-      Log.e('InstaPay initiate failed',
-          error: e, category: LogCategory.payment);
-      return const InstapayUnavailable(
+      return instapayNetworkFailure(
+        error: e,
+        logMessage: 'InstaPay initiate failed',
         message: 'InstaPay could not be started. Please try again.',
-        code: 'network_error',
       );
     }
   }
@@ -293,19 +251,11 @@ class PaymobPaymentService implements PaymentService {
   }) async {
     try {
       final ext = fileExt.toLowerCase().trim();
-      const allowed = {'png', 'jpg', 'jpeg', 'webp'};
-      if (proofBytes.isEmpty) {
-        return const PaymentFailed(
-          message: 'Attach the transfer screenshot to continue.',
-          code: 'proof_missing',
-        );
-      }
-      if (!allowed.contains(ext)) {
-        return const PaymentFailed(
-          message: 'Unsupported screenshot format.',
-          code: 'unsupported_format',
-        );
-      }
+      final invalid = validateInstapayProof(
+        proofBytes: proofBytes,
+        ext: ext,
+      );
+      if (invalid != null) return invalid;
 
       final response = await _client.functions.invoke(
         'instapay-submit-proof',
@@ -322,27 +272,19 @@ class PaymobPaymentService implements PaymentService {
         return const PaymentSuccess(transactionId: '', amount: Money.zero);
       }
 
-      final message = switch (safeString(safeMap(response.data), 'message')) {
-        'Pending InstaPay payment not found' =>
-          'No pending InstaPay payment found for this order.',
-        'Proof too large' =>
-          'The screenshot is too large. Please attach a smaller image.',
-        'Unsupported proof format' => 'Unsupported screenshot format.',
-        'Upload failed' => 'Could not upload the screenshot. Please try again.',
-        _ => 'Could not submit the proof. Please try again.',
-      };
+      final message = proofServerFailureMessage(
+        safeString(safeMap(response.data), 'message'),
+      );
       return PaymentFailed(message: message);
     } on TimeoutException {
-      return const PaymentFailed(
-        message: 'Server did not respond in time. Please try again.',
-        code: 'rpc_timeout',
+      return paymobTimeoutFailure(
+        'Server did not respond in time. Please try again.',
       );
     } catch (e) {
-      Log.e('InstaPay proof submission failed',
-          error: e, category: LogCategory.payment);
-      return const PaymentFailed(
+      return paymobNetworkFailure(
+        error: e,
+        logMessage: 'InstaPay proof submission failed',
         message: 'Could not submit the proof. Please try again.',
-        code: 'network_error',
       );
     }
   }

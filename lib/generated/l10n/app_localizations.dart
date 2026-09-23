@@ -878,6 +878,72 @@ abstract class AppLocalizations {
   /// **'Newest'**
   String get sortNewest;
 
+  /// No description provided for @colorEmerald.
+  ///
+  /// In en, this message translates to:
+  /// **'Emerald'**
+  String get colorEmerald;
+
+  /// No description provided for @colorGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get colorGold;
+
+  /// No description provided for @colorIvory.
+  ///
+  /// In en, this message translates to:
+  /// **'Ivory'**
+  String get colorIvory;
+
+  /// No description provided for @colorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get colorPurple;
+
+  /// No description provided for @colorBeige.
+  ///
+  /// In en, this message translates to:
+  /// **'Beige'**
+  String get colorBeige;
+
+  /// No description provided for @colorBrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get colorBrown;
+
+  /// No description provided for @colorAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get colorAmber;
+
+  /// No description provided for @colorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get colorTeal;
+
+  /// No description provided for @colorCrimson.
+  ///
+  /// In en, this message translates to:
+  /// **'Crimson'**
+  String get colorCrimson;
+
+  /// No description provided for @colorSand.
+  ///
+  /// In en, this message translates to:
+  /// **'Sand'**
+  String get colorSand;
+
+  /// No description provided for @colorOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get colorOther;
+
   /// Number of fabrics found
   ///
   /// In en, this message translates to:

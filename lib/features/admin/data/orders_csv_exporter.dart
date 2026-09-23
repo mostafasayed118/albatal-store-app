@@ -1,4 +1,4 @@
-import 'entities/admin_order.dart';
+import '../domain/entities/admin_order.dart';
 
 /// Pure CSV builder for the admin orders export (feature-batch §14).
 ///

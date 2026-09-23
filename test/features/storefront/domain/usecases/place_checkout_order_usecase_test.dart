@@ -1,5 +1,6 @@
 import 'package:al_batal_elite/core/entities/address.dart';
 import 'package:al_batal_elite/core/entities/money.dart';
+import 'package:al_batal_elite/core/entities/order.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -18,20 +19,20 @@ class _StubCheckoutRepository implements CheckoutRepository {
   Result<PendingOrder>? result;
   Result<PendingOrder>? secondResult;
   int callCount = 0;
-  final List<({Map<String, dynamic> addressSnapshot, String? idempotencyKey})>
+  final List<({Address? address, String? idempotencyKey})>
       calls = [];
 
   @override
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
     callCount++;
     calls.add((
-      addressSnapshot: addressSnapshot,
+      address: address,
       idempotencyKey: idempotencyKey,
     ));
     if (callCount > 1 && secondResult != null) return secondResult!;
@@ -72,8 +73,10 @@ const _testAddress = Address(
   country: 'Egypt',
 );
 
-PendingOrder _pending(
-        {String orderId = 'server-ord-001', String status = 'pending'}) =>
+PendingOrder _pending({
+  String orderId = 'server-ord-001',
+  OrderStatus status = OrderStatus.pending,
+}) =>
     PendingOrder(
       orderId: orderId,
       subtotal: const Money.egp(500),
@@ -122,17 +125,19 @@ void main() {
       expect(store.timestampMs, isNotNull);
       expect(repo.callCount, 1);
       expect(repo.calls.single.idempotencyKey, outcome.idempotencyKey);
-      final snapshot = repo.calls.single.addressSnapshot;
-      expect(snapshot, {
-        'id': 'addr-1',
-        'recipient': 'Test User',
-        'line': '123 Test St',
-        'city': 'Cairo',
-        'country': 'Egypt',
-      });
+      final address = repo.calls.single.address;
+      // The domain hands over a typed Address; the DATA layer owns the
+      // 5-key wire shape (audit 2026-09-21 wire-format finding).
+      expect(address, isNotNull);
+      expect(address!.id, 'addr-1');
+      expect(address.recipient, 'Test User');
+      expect(address.line, '123 Test St');
+      expect(address.city, 'Cairo');
+      expect(address.country, 'Egypt');
     });
 
-    test('null address sends an empty snapshot', () async {
+    test('null address passes null (data layer keeps the wire shape)',
+        () async {
       repo.result = Success(_pending());
       final outcome = await usecase().call(
         items: _items(),
@@ -140,7 +145,7 @@ void main() {
       );
 
       expect(outcome.isSuccess, isTrue);
-      expect(repo.calls.single.addressSnapshot, isEmpty);
+      expect(repo.calls.single.address, isNull);
     });
 
     test('in-session key wins over the persisted key on retry', () async {
@@ -213,7 +218,7 @@ void main() {
 
     test('non-pending resurrected order retries ONCE with a fresh key',
         () async {
-      repo.result = Success(_pending(orderId: 'dead-ord', status: 'paid'));
+      repo.result = Success(_pending(orderId: 'dead-ord', status: OrderStatus.paid));
       repo.secondResult = Success(_pending(orderId: 'fresh-ord'));
 
       final outcome = await usecase().call(
@@ -234,8 +239,8 @@ void main() {
     });
 
     test('double non-pending does not loop forever', () async {
-      repo.result = Success(_pending(orderId: 'dead-1', status: 'paid'));
-      repo.secondResult = Success(_pending(orderId: 'dead-2', status: 'paid'));
+      repo.result = Success(_pending(orderId: 'dead-1', status: OrderStatus.paid));
+      repo.secondResult = Success(_pending(orderId: 'dead-2', status: OrderStatus.paid));
 
       final outcome = await usecase().call(
         items: _items(),

@@ -23,7 +23,7 @@ class MockCheckoutRepository implements CheckoutRepository {
       ({
         List<CartItem> items,
         PaymentMethod paymentMethod,
-        Map<String, dynamic> address,
+        Address? address,
         String? idempotencyKey
       })> calls = [];
 
@@ -31,7 +31,7 @@ class MockCheckoutRepository implements CheckoutRepository {
   Future<Result<PendingOrder>> placeOrder({
     required List<CartItem> items,
     required PaymentMethod paymentMethod,
-    required Map<String, dynamic> addressSnapshot,
+    required Address? address,
     String? couponCode,
     String? idempotencyKey,
   }) async {
@@ -39,7 +39,7 @@ class MockCheckoutRepository implements CheckoutRepository {
     calls.add((
       items: items,
       paymentMethod: paymentMethod,
-      address: addressSnapshot,
+      address: address,
       idempotencyKey: idempotencyKey,
     ));
     return result ?? const Failure(AppError('No result configured'));
@@ -377,11 +377,13 @@ void main() {
 
       expect(repo.callCount, 1);
       final call = repo.calls.first;
-      expect(call.address['recipient'], 'Test User');
-      expect(call.address['line'], '123 Test St');
-      expect(call.address['city'], 'Cairo');
-      expect(call.address['country'], 'Egypt');
-      expect(call.address['id'], 'addr-1');
+      final address = call.address;
+      expect(address, isNotNull);
+      expect(address!.recipient, 'Test User');
+      expect(address.line, '123 Test St');
+      expect(address.city, 'Cairo');
+      expect(address.country, 'Egypt');
+      expect(address.id, 'addr-1');
     });
 
     test('items are mapped to product_id, size, color, quantity', () async {

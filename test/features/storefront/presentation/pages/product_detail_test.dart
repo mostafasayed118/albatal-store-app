@@ -248,7 +248,6 @@ void main() {
         const DetailsState(status: DetailsStatus.loading),
         const DetailsState(
           status: DetailsStatus.error,
-          errorMessage: 'Unable to load product details.',
         ),
       ],
     );

@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/money.dart';
 
+import '../../../../core/entities/order.dart';
+
 /// Lightweight result of creating a pending order server-side.
 ///
 /// All monetary fields are the server-computed source of truth in
@@ -20,7 +22,7 @@ final class PendingOrder extends Equatable {
     required this.shipping,
     required this.total,
     required this.expiresAt,
-    this.status = 'pending',
+    this.status = OrderStatus.pending,
     this.isIdempotentRetry = false,
   });
 
@@ -29,7 +31,12 @@ final class PendingOrder extends Equatable {
   final Money shipping;
   final Money total;
   final DateTime expiresAt;
-  final String status;
+
+  /// Typed, never a raw server string: parsed once at the data boundary
+  /// (`CheckoutService.placeOrder`) via [OrderStatus.fromName] (audit
+  /// 2026-09-21 — `== 'pending'` on a literal was the last untyped
+  /// comparison in the domain).
+  final OrderStatus status;
   final bool isIdempotentRetry;
 
   @override

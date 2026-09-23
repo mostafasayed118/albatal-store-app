@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/error/result.dart';
+import '../../../../shared/utils/app_durations.dart';
 import '../../domain/entities/admin_customer.dart';
 import '../../domain/repositories/admin_customers_port.dart';
 
@@ -118,7 +119,7 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   AdminCustomersCubit({
     required AdminCustomersPort repository,
     this.pageSize = defaultCustomersPageSize,
-    this.searchDebounce = const Duration(milliseconds: 300),
+    this.searchDebounce = AppDurations.searchDebounce,
   })  : _repository = repository,
         super(const AdminCustomersState());
 

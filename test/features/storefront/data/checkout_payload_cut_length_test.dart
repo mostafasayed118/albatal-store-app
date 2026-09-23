@@ -35,7 +35,7 @@ Future<Map<String, dynamic>> _capture(List<CartItem> items) async {
   await service.placeOrder(
     items: items,
     paymentMethod: PaymentMethod.paymobCard,
-    addressSnapshot: const {},
+    address: null,
   );
   final captured = verify(() => client.rpc('create_checkout_order',
       params: captureAny(named: 'params'))).captured;

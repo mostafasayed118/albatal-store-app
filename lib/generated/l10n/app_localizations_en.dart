@@ -408,6 +408,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortNewest => 'Newest';
 
   @override
+  String get colorEmerald => 'Emerald';
+
+  @override
+  String get colorGold => 'Gold';
+
+  @override
+  String get colorIvory => 'Ivory';
+
+  @override
+  String get colorPurple => 'Purple';
+
+  @override
+  String get colorBeige => 'Beige';
+
+  @override
+  String get colorBrown => 'Brown';
+
+  @override
+  String get colorAmber => 'Amber';
+
+  @override
+  String get colorTeal => 'Teal';
+
+  @override
+  String get colorCrimson => 'Crimson';
+
+  @override
+  String get colorSand => 'Sand';
+
+  @override
+  String get colorOther => 'Other';
+
+  @override
   String fabricsFound(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
