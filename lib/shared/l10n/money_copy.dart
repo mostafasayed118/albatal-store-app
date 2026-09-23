@@ -35,6 +35,11 @@ String moneyText(AppLocalizations l10n, Money amount) {
   return NumberFormat.currency(
     locale: _numberLocale(l10n.localeName),
     symbol: l10n.currencySymbol,
+    // `decimalDigits` must be passed EXPLICITLY: with a custom pattern the
+    // currency formatter still applies its own fraction digits (default 2),
+    // which overrode the pattern's `#,##0` and printed "1,290.00 EGP" for
+    // whole amounts. CI caught it on the first run of this feature.
+    decimalDigits: whole ? 0 : 2,
     customPattern: whole ? '#,##0 ¤' : '#,##0.00 ¤',
   ).format(amount.majorUnits);
 }
