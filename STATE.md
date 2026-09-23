@@ -1,6 +1,6 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-23 (part 65: **UX-019 closed — prices no longer print the non-ISO `EGY` label; a new locale-aware `moneyText()` renders EGP with the reader's digits, grouping and symbol (EN "1,290 EGP", AR "١٬٢٩٠ ج.م."), migrated across all 25 money call sites. Local `flutter test` was BLOCKED by a host-level Windows pipe-exhaustion incident; the analyzer was driven directly over its own protocol instead — 0 diagnostics across 565 files.**)
+Last run: 2026-09-23 (part 65: **UX-019 closed and CI-GREEN — prices no longer print the non-ISO `EGY` label; a new locale-aware `moneyText()` renders EGP with the reader's digits, grouping and symbol (EN "1,290 EGP", AR "١٬٢٩٠ ج.م."), migrated across all 25 money call sites. The first CI run caught a real defect (whole amounts printing `.00`); fixed and re-verified. All 7 checks green on `5218553` — Flutter Tests 1,097/1,097, Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build.**)
 
 ## New — 2026-09-23 (part 65: UX-019 currency localization + a host-level tooling incident)
 
@@ -23,6 +23,8 @@ Last run: 2026-09-23 (part 65: **UX-019 closed — prices no longer print the no
   - **Fix:** pass `decimalDigits: whole ? 0 : 2` explicitly alongside `customPattern`, with a comment recording why (CI caught it; a pattern alone is not authoritative).
   - **Verified before re-pushing** with a standalone pure-Dart probe (intl only, outside the project so no build hooks): `129000→"1,290 EGP"`, `85000→"850 EGP"`, `0→"0 EGP"`, `99875→"998.75 EGP"`, `1→"0.01 EGP"`, `145000→"1,450 EGP"`, `107375→"1,073.75 EGP"`, `898875→"8,988.75 EGP"`, `7500→"75 EGP"`, `500→"5 EGP"`, `ar 129000→"١٬٢٩٠ ج.م."`, `ar 0→"٠ ج.م."`, `ar 99875→"٩٩٨٫٧٥ ج.م."` — every expectation in the suite's price assertions matches.
   - Probe kept at `C:\Users\ASUS\moneyprobe\` (its own `.dart_tool/package_config.json` extracted from this project) — it runs even while the host cannot spawn child processes, which is what makes it useful during this incident.
+- **CI green (all 7) on `5218553`:** Flutter Tests **1,097/1,097** (incl. the coverage ratchet), Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build, Setup & Cache. README badge + prose bumped to the CI-verified 1,097 (`5218553`) — the badge had been stale at 1,074 since part 63 while the prose said 1,090.
+- Commits: `c263c38` (UX-019) → `304f04e` (decimalDigits fix) → `5218553` (README count). Note the c263c38 push was superseded: its own run was cancelled by the follow-up push (concurrency cancel-in-progress), so the operative verdicts are on `304f04e`/`5218553`.
 - Standing human-only items unchanged: `sbp_` token rotation, prod cutover of 066/067, delete `autonomy-probe-066@test.local`.
 
 ## New — 2026-09-23 (part 64: UX-003 address phone field + the validator residual, resolved together)
