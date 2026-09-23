@@ -11,8 +11,7 @@ class _MockSupabaseClient extends Mock implements SupabaseClient {}
 /// fail fast with the invalid code before any network call.
 void main() {
   group('SupabaseReviewsRepository.submit guards', () {
-    test('blank text fails with the invalid code, no network call',
-        () async {
+    test('blank text fails with the invalid code, no network call', () async {
       final client = _MockSupabaseClient();
       final repo = SupabaseReviewsRepository(client: client);
 

@@ -250,11 +250,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
               loadingCategories: _loadingCategories,
               categories: _categories,
               selectedCategoryId: _selectedCategoryId,
-              onCategoryChanged: (v) =>
-                  setState(() => _selectedCategoryId = v),
+              onCategoryChanged: (v) => setState(() => _selectedCategoryId = v),
               sellByLength: _sellByLength,
-              onSellByLengthChanged: (v) =>
-                  setState(() => _sellByLength = v),
+              onSellByLengthChanged: (v) => setState(() => _sellByLength = v),
               isActive: _isActive,
               onActiveChanged: (v) => setState(() => _isActive = v),
               submitting: _submitting,

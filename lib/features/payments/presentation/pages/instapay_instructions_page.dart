@@ -247,8 +247,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                 InstapayTransferCard(
                   address: instructions.instapayAddress,
                   amountText: instructions.amount.format(),
-                  onCopy: () =>
-                      _copyAddress(instructions.instapayAddress),
+                  onCopy: () => _copyAddress(instructions.instapayAddress),
                 ),
                 const SizedBox(height: 24),
                 InstapayProofForm(

@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
 [![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
-![Tests](https://img.shields.io/badge/tests-397%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-52%25-yellow)
+![Tests](https://img.shields.io/badge/tests-1%2C074%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-74%25-yellowgreen)
 
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
 
@@ -16,18 +16,22 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 ## Features
 
 ### Customer App
-- **Product catalog** — 9 fabric swatches across Silk, Cotton, Velvet, Linen, and Wool categories
-- **Product search** — real-time search with debounce, category/color/price filters with fabric color swatches, 5 sort options
-- **Product details** — image gallery with zoom, size guide, stock per variant, related products, delivery/returns info, star ratings
-- **Cart** — add/remove/update items, quantity stepper, subtotal/shipping/total, guest-accessible cart review
-- **Checkout** — address picker from saved addresses, payment method selection (Paymob card / Cash on Delivery), order review, confirmation
+- **Product catalog** — fabric swatches across Silk, Cotton, Velvet, Linen, and Wool categories, with skeleton loading states and offline-persistent cache
+- **Product search** — real-time search with debounce, category/color/price filters with fabric color swatches, 5 sort options, recent searches + server-side suggestions
+- **Product details** — image gallery with pinch-zoom, size guide, stock per variant, related products, delivery/returns info, photo reviews (buy-to-review enforced server-side)
+- **Fabric attributes** — width/GSM/sell-by-length with cut-length stepper and metered pricing
+- **Cart & coupons** — add/remove/update items, quantity stepper, coupon validation (server-owned discount applied atomically in the checkout RPC)
+- **Checkout** — address picker from saved addresses, payment method selection (Paymob card / InstaPay transfer with proof upload / Cash on Delivery), order review, confirmation, one-tap reorder
+- **Membership tiers** — standard/premium; premium members get free shipping, applied server-side
 - **Wishlist** — save products, move to cart, responsive grid
-- **Orders** — order history with status tracking (placed → shipped → delivered)
-- **Authentication** — email/password sign up, sign in, password reset, email verification; sign-in honors `?redirect=` so you return to checkout after logging in
+- **Orders** — order history with status timeline, order-status local notifications, branded invoice PDF (admin share)
+- **Authentication** — email/password sign up, sign in, password reset, email verification, OAuth (Google/Apple); sign-in honors `?redirect=` so you return to checkout after logging in
+- **Security** — biometric app lock (opt-in), encrypted at-rest session storage, maintenance/forced-update gates via remote config
 - **Profiles** — display name, phone, order history, time-of-day greeting
 - **Guest shopping** — browse, search, and review the cart without sign-in; sign-in required for wishlist, addresses, checkout
-- **English & Arabic** — full RTL support with 320+ localized strings
-- **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode, all colors from one token file (`AppColors`)
+- **Sharing & deep links** — product share sheets with `albatal://` deep links
+- **English & Arabic** — full RTL support with 512 localized keys per locale
+- **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode, WCAG AA contrast-audited by tests, all colors from one token file (`AppColors`)
 
 ### Cloud Backend (Supabase)
 - **Authentication** — Supabase Auth with email/password, session restore
@@ -137,8 +141,8 @@ cp config/env.staging.json config/env.staging.local.json
 # Edit config/env.staging.local.json:
 #   SUPABASE_URL, SUPABASE_ANON_KEY, (optional) SENTRY_DSN
 
-# 3. Run the numbered migrations (001–039) in Supabase SQL Editor, in order.
-# See docs/supabase-integration.md for the migration list and helper scripts.
+# 3. Apply the numbered migrations (001–067) in order.
+#    With the Supabase CLI: supabase db push (they run in numeric order).
 
 # 4. Deploy the Edge Functions used by the configured flows.
 #    Set their secrets server-side (NEVER in the Flutter build):
@@ -278,15 +282,16 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-**397 Flutter tests** cover:
-- Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin)
-- Product entity logic (stock, discount, inStock)
-- Cross-cubit interactions (wishlist ↔ cart)
+**1,074 Flutter tests** cover:
+- Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin, Payments, Settings, Coupons, Reviews)
+- Product entity logic (stock, discount, inStock), coupon/membership contracts
+- SQL migration contract tests — the checkout RPC's server-owned pricing, premium perk, and coupon semantics are pinned against future rewrites
 - Auth state properties, Profile entity, and sign-in `?redirect=` behavior
 - Catalog performance contracts (O(1) id lookup, memoized derived views, single `CatalogFilters` source)
 - UI contracts (category grid, color swatches, cart badge cap, time-of-day greeting, FeedbackView states, wishlist toggle tap targets)
+- Accessibility (WCAG AA contrast audit in light and dark themes, stepper semantic actions, reduce-motion fallbacks)
 - Payment security (no client-side verification, URL guard, token redaction, error-message scrubbing)
-- Asset rules (SVG-only runtime images), l10n completeness, navigation
+- End-to-end smoke harness, asset rules (SVG-only runtime images), l10n completeness, navigation
 
 **Backend test suites** (`supabase/tests/`, run against staging):
 - RLS adversarial — 44/44

@@ -49,10 +49,10 @@ class SupabaseOAuthService implements OAuthService {
       // message can carry the redirect URL with the auth code, and the
       // logger redacts `error:` in release (audit P5). The stack stays
       // on the debug console only (Log.d is release-suppressed).
-      Log.w('oauth sign-in failed',
-          error: e, category: LogCategory.auth);
+      Log.w('oauth sign-in failed', error: e, category: LogCategory.auth);
       Log.d(st.toString(), category: LogCategory.auth);
-      return const Failure(AppError(kOAuthUnavailable, code: kOAuthUnavailable));
+      return const Failure(
+          AppError(kOAuthUnavailable, code: kOAuthUnavailable));
     }
   }
 }

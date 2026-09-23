@@ -45,8 +45,7 @@ final class SupabaseCouponsRepository implements CouponsRepository {
       final unavailable = e.code == '42883' ||
           e.code == 'PGRST202' ||
           e.message.contains('schema cache');
-      Log.w('validate_coupon failed',
-          error: e, category: LogCategory.network);
+      Log.w('validate_coupon failed', error: e, category: LogCategory.network);
       return Failure(AppError(
         unavailable ? kCouponUnavailable : kCouponInvalid,
         cause: e,

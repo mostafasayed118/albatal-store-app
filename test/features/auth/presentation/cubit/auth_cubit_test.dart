@@ -411,8 +411,7 @@ void main() {
       await cubit.close();
     });
 
-    test('server-driven signedOut wipes cached addresses and orders',
-        () async {
+    test('server-driven signedOut wipes cached addresses and orders', () async {
       // The signedOut stream event also fires on refresh-token failure or
       // revocation — i.e. without the user tapping sign out (audit
       // 2026-09-21). The wipe must run on that path too: a revoked device

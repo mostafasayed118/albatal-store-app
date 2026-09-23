@@ -15,8 +15,8 @@ void main() {
     expect(catalogSortLabel(en, CatalogSort.featured), 'Featured');
     expect(
         catalogSortLabel(en, CatalogSort.priceLowToHigh), 'Price: low to high');
-    expect(catalogSortLabel(
-        en, CatalogSort.priceHighToLow), 'Price: high to low');
+    expect(
+        catalogSortLabel(en, CatalogSort.priceHighToLow), 'Price: high to low');
     expect(catalogSortLabel(en, CatalogSort.name), 'Name: A to Z');
     expect(catalogSortLabel(en, CatalogSort.newest), 'Newest');
   });

@@ -73,7 +73,8 @@ void main() {
       await cubit.close();
     });
 
-    test('submit surfaces buy-to-review requirement as a message', () async {      final repo = _MockReviewsRepo();
+    test('submit surfaces buy-to-review requirement as a message', () async {
+      final repo = _MockReviewsRepo();
       when(() => repo.fetchForProduct('p1'))
           .thenAnswer((_) async => const Success(<ProductReview>[]));
       when(() => repo.submit(
@@ -95,8 +96,8 @@ void main() {
     test('load classifies on error.code, not the message (audit)', () async {
       final repo = _MockReviewsRepo();
       // A coded failure with unrelated prose still degrades to unavailable.
-      when(() => repo.fetchForProduct('p1')).thenAnswer(
-          (_) async => const Failure(AppError('boom', code: kReviewUnavailable)));
+      when(() => repo.fetchForProduct('p1')).thenAnswer((_) async =>
+          const Failure(AppError('boom', code: kReviewUnavailable)));
       final cubit = ReviewsCubit(repository: repo);
 
       await cubit.load('p1');
@@ -104,8 +105,7 @@ void main() {
       await cubit.close();
     });
 
-    test('load treats an uncoded failure as a generic error (audit)',
-        () async {
+    test('load treats an uncoded failure as a generic error (audit)', () async {
       final repo = _MockReviewsRepo();
       when(() => repo.fetchForProduct('p1'))
           .thenAnswer((_) async => const Failure(AppError('boom')));
@@ -125,7 +125,8 @@ void main() {
                 rating: any(named: 'rating'),
                 text: any(named: 'text'),
                 photoBytes: any(named: 'photoBytes'),
-              )).thenAnswer((_) async =>
+              ))
+          .thenAnswer((_) async =>
               const Failure(AppError('boom', code: kReviewBuyRequired)));
       final cubit = ReviewsCubit(repository: repo);
       await cubit.load('p1');

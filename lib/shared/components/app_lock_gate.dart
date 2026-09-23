@@ -146,7 +146,7 @@ class _AppLockGateState extends State<AppLockGate> {
       // Error — must keep the lock. Letting it propagate would crash the
       // lock screen and defeat the fail-closed contract this escape exists
       // to preserve (verified by the no-bypass test).
-        Log.w('app lock: sign-out escape failed.', error: e);
+      Log.w('app lock: sign-out escape failed.', error: e);
       return;
     }
     if (!mounted) return;

@@ -155,9 +155,7 @@ class StorageService {
     // assert documents the contract for future callers rather than
     // changing release behavior.
     assert(
-        userId.isNotEmpty &&
-            !userId.contains('..') &&
-            !fileName.contains('..'),
+        userId.isNotEmpty && !userId.contains('..') && !fileName.contains('..'),
         'Suspicious avatar path components');
     return _requiredClient.storage
         .from('avatars')

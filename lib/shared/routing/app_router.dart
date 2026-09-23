@@ -32,21 +32,16 @@ GoRouter createAppRouter(
 /// a 374-line mix of all three).
 final _routes = <RouteBase>[
   GoRoute(path: Routes.splash, builder: (_, __) => RoutePages.splash()),
-  GoRoute(
-      path: Routes.onboarding, builder: (_, __) => RoutePages.onboarding()),
-  ShellRoute(
-      builder: (_, __, child) => RoutePages.appShell(child),
-      routes: [
-        GoRoute(path: Routes.home, builder: (_, __) => RoutePages.home()),
-        GoRoute(
-            path: Routes.categories,
-            builder: (_, __) => RoutePages.categories()),
-        GoRoute(path: Routes.catalog, builder: (_, s) => RoutePages.catalog(s)),
-        GoRoute(path: Routes.wishlist, builder: (_, __) => RoutePages.wishlist()),
-        GoRoute(path: Routes.cart, builder: (_, __) => RoutePages.cart()),
-        GoRoute(
-            path: Routes.profile, builder: (_, __) => RoutePages.profile()),
-      ]),
+  GoRoute(path: Routes.onboarding, builder: (_, __) => RoutePages.onboarding()),
+  ShellRoute(builder: (_, __, child) => RoutePages.appShell(child), routes: [
+    GoRoute(path: Routes.home, builder: (_, __) => RoutePages.home()),
+    GoRoute(
+        path: Routes.categories, builder: (_, __) => RoutePages.categories()),
+    GoRoute(path: Routes.catalog, builder: (_, s) => RoutePages.catalog(s)),
+    GoRoute(path: Routes.wishlist, builder: (_, __) => RoutePages.wishlist()),
+    GoRoute(path: Routes.cart, builder: (_, __) => RoutePages.cart()),
+    GoRoute(path: Routes.profile, builder: (_, __) => RoutePages.profile()),
+  ]),
   GoRoute(
     // Literal `:id` pattern (NOT the factory — `Uri.encodeComponent`
     // would turn `:id` into `%3Aid`, a static segment that matches
@@ -58,8 +53,7 @@ final _routes = <RouteBase>[
   GoRoute(
       path: Routes.orderSuccess, builder: (_, s) => RoutePages.orderSuccess(s)),
   GoRoute(path: Routes.orders, builder: (_, __) => RoutePages.orders()),
-  GoRoute(
-      path: Routes.addresses, builder: (_, __) => RoutePages.addresses()),
+  GoRoute(path: Routes.addresses, builder: (_, __) => RoutePages.addresses()),
   GoRoute(
     path: Routes.settings,
     // The shared adapter resolves the app-scoped cubits from this route
@@ -75,7 +69,8 @@ final _routes = <RouteBase>[
       path: Routes.resetPassword,
       builder: (_, __) => RoutePages.resetPassword()),
   GoRoute(
-      path: Routes.paymentMethod, builder: (_, s) => RoutePages.paymentMethod(s)),
+      path: Routes.paymentMethod,
+      builder: (_, s) => RoutePages.paymentMethod(s)),
   GoRoute(
       path: Routes.paymobCheckout,
       builder: (_, s) => RoutePages.paymobCheckout(s)),
@@ -86,8 +81,7 @@ final _routes = <RouteBase>[
     // carried additively for the page's rehydration path.
     builder: (_, s) => RoutePages.instapayInstructions(s),
   ),
-  GoRoute(
-      path: Routes.admin, builder: (_, __) => RoutePages.adminDashboard()),
+  GoRoute(path: Routes.admin, builder: (_, __) => RoutePages.adminDashboard()),
   GoRoute(
       path: Routes.adminOrders, builder: (_, __) => RoutePages.adminOrders()),
   GoRoute(
@@ -104,12 +98,12 @@ final _routes = <RouteBase>[
     builder: (_, s) => RoutePages.adminOrderDetail(s),
   ),
   GoRoute(
-    path: Routes.adminInventory, builder: (_, __) => RoutePages.adminInventory(),
+    path: Routes.adminInventory,
+    builder: (_, __) => RoutePages.adminInventory(),
   ),
   GoRoute(
       path: Routes.adminCatalog, builder: (_, __) => RoutePages.adminCatalog()),
-  GoRoute(
-      path: Routes.adminSales, builder: (_, __) => RoutePages.adminSales()),
+  GoRoute(path: Routes.adminSales, builder: (_, __) => RoutePages.adminSales()),
   // Catalog management destinations (migration-era hub tiles pointed at
   // these paths, but the routes themselves were never registered — every
   // tile dead-ended on "Page Not Found").
@@ -139,7 +133,8 @@ final _routes = <RouteBase>[
   ),
   GoRoute(path: Routes.support, builder: (_, __) => RoutePages.support()),
   GoRoute(
-    path: Routes.privacyPolicy, builder: (_, __) => RoutePages.privacyPolicy()),
+      path: Routes.privacyPolicy,
+      builder: (_, __) => RoutePages.privacyPolicy()),
   GoRoute(path: Routes.terms, builder: (_, __) => RoutePages.terms()),
   GoRoute(
     path: Routes.shippingPolicy,

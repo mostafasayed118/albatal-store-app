@@ -167,8 +167,7 @@ class PaymobPaymentService implements PaymentService {
         return const PaymentSuccess(transactionId: '', amount: Money.zero);
       }
 
-      return PaymentFailed(
-          message: setMethodFailureMessage(code), code: code);
+      return PaymentFailed(message: setMethodFailureMessage(code), code: code);
     } on TimeoutException {
       return paymobTimeoutFailure(
         'Server did not respond in time. Please check your orders and try again.',

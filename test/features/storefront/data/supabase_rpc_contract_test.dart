@@ -384,14 +384,13 @@ void main() {
 
     // An unknown/expired code must NOT block the order — it simply
     // applies no discount.
-    expect(
-        body.substring(couponStart),
-        contains('IF NOT FOUND THEN'),
+    expect(body.substring(couponStart), contains('IF NOT FOUND THEN'),
         reason: 'Invalid codes must degrade to no-discount, not an error.');
     expect(body.substring(couponStart), contains('v_coupon_discount := 0'));
 
     // The discount is floored at zero — no negative totals.
-    expect(body.substring(couponStart), contains('GREATEST(v_total - v_coupon_discount, 0)'));
+    expect(body.substring(couponStart),
+        contains('GREATEST(v_total - v_coupon_discount, 0)'));
 
     // The order row carries the redemption for auditing/refunds.
     expect(body, contains('coupons_id, coupon_discount_minor'));
@@ -399,11 +398,10 @@ void main() {
     // validate_coupon: authenticated-only + throttled (no anon oracle).
     expect(
         body,
-        contains('REVOKE EXECUTE ON FUNCTION public.validate_coupon(text) FROM anon'),
+        contains(
+            'REVOKE EXECUTE ON FUNCTION public.validate_coupon(text) FROM anon'),
         reason: 'validate_coupon must not be an unauthenticated oracle.');
-    expect(
-        body,
-        contains("public.rate_limit_take(\n       'validate_coupon:'"),
+    expect(body, contains("public.rate_limit_take(\n       'validate_coupon:'"),
         reason: 'validate_coupon must throttle through the 060 infra.');
   });
 }

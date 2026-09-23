@@ -77,8 +77,7 @@ PaymentFailed? validateInstapayProof({
 
 /// Non-200 `paymob-initiate` response: normalizes the untyped payload
 /// through [safeMap] so a mistyped body degrades to [fallback].
-PaymentFailed paymobInitiateFailure(Object? data,
-        {required String fallback}) =>
+PaymentFailed paymobInitiateFailure(Object? data, {required String fallback}) =>
     PaymentFailed(
       message: safeString(safeMap(data), 'message', fallback: fallback),
     );

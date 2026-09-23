@@ -9,8 +9,7 @@ import '../domain/entities/catalog_filters.dart';
 /// options (audit). The enum lives in the domain layer, which must not know
 /// about presentation copy (same rule as `adminOrderStatusLabel`), so the
 /// mapping lives here against ARB keys.
-String catalogSortLabel(AppLocalizations l, CatalogSort sort) =>
-    switch (sort) {
+String catalogSortLabel(AppLocalizations l, CatalogSort sort) => switch (sort) {
       CatalogSort.featured => l.sortFeatured,
       CatalogSort.priceLowToHigh => l.sortPriceLowToHigh,
       CatalogSort.priceHighToLow => l.sortPriceHighToLow,

@@ -30,9 +30,8 @@ enum OrderStatus {
   /// fail-soft contract as [AdminOrderStatus.fromName] on the admin
   /// side, so a typo or a new server value can never break checkout
   /// (audit 2026-09-21: no raw `== 'pending'` on strings).
-  static OrderStatus fromName(String? raw) =>
-      OrderStatus.values.firstWhere((s) => s.name == raw,
-          orElse: () => OrderStatus.pending);
+  static OrderStatus fromName(String? raw) => OrderStatus.values
+      .firstWhere((s) => s.name == raw, orElse: () => OrderStatus.pending);
 }
 
 /// An immutable snapshot of a successfully placed order.

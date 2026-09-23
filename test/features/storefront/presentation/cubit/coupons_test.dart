@@ -65,7 +65,11 @@ void main() {
       expect(couponFromRpcPayload('nope'), isNull);
       expect(couponFromRpcPayload(const []), isNull);
       expect(couponFromRpcPayload([1, 2, 3]), isNull);
-      expect(couponFromRpcPayload([['nested']]), isNull);
+      expect(
+          couponFromRpcPayload([
+            ['nested']
+          ]),
+          isNull);
       expect(couponFromRpcPayload([null]), isNull);
     });
 

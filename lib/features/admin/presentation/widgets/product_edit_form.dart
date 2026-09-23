@@ -76,8 +76,7 @@ class AdminProductEditForm extends StatelessWidget {
       children: [
         TextFormField(
           controller: nameCtrl,
-          decoration:
-              InputDecoration(labelText: context.l10n.adminNameField),
+          decoration: InputDecoration(labelText: context.l10n.adminNameField),
           validator: (v) => v == null || v.trim().isEmpty
               ? context.l10n.adminRequiredField
               : null,
@@ -85,8 +84,7 @@ class AdminProductEditForm extends StatelessWidget {
         const SizedBox(height: 16),
         TextFormField(
           controller: slugCtrl,
-          decoration:
-              InputDecoration(labelText: context.l10n.adminSlugField),
+          decoration: InputDecoration(labelText: context.l10n.adminSlugField),
           validator: (v) => v == null || v.trim().isEmpty
               ? context.l10n.adminRequiredField
               : null,
@@ -111,8 +109,7 @@ class AdminProductEditForm extends StatelessWidget {
                 // Values are category UUIDs (the RPC contract); the
                 // display label is the human-readable name.
                 initialValue: selectedCategoryId,
-                decoration:
-                    InputDecoration(labelText: context.l10n.category),
+                decoration: InputDecoration(labelText: context.l10n.category),
                 items: categories
                     .map((c) =>
                         DropdownMenuItem(value: c.id, child: Text(c.name)))
@@ -125,10 +122,8 @@ class AdminProductEditForm extends StatelessWidget {
         const SizedBox(height: 16),
         TextFormField(
           controller: priceCtrl,
-          decoration:
-              InputDecoration(labelText: context.l10n.adminBasePrice),
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: context.l10n.adminBasePrice),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: (v) {
             if (v == null || v.trim().isEmpty) {
               return context.l10n.adminRequiredField;
@@ -183,8 +178,7 @@ class AdminProductEditForm extends StatelessWidget {
         if (sellByLength) ...[
           TextFormField(
             controller: minCutCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration:
                 InputDecoration(labelText: context.l10n.adminMinCutMeters),
           ),

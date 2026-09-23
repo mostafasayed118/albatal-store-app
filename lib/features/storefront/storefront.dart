@@ -4,5 +4,6 @@
 /// into another feature's internals — they import this barrel. Exports
 /// are limited to what is actually consumed across features today.
 library;
+
 export 'domain/repositories/auth_session_port.dart';
 export 'presentation/cubit/cart_cubit.dart';

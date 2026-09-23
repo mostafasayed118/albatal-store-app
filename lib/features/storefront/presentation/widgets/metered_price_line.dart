@@ -10,7 +10,8 @@ import '../cubit/product_details_cubit.dart';
 /// Extracted from `variant_selector.dart` verbatim (was private
 /// `_MeteredPriceLine`).
 class MeteredPriceLine extends StatelessWidget {
-  const MeteredPriceLine({super.key, required this.product, required this.state});
+  const MeteredPriceLine(
+      {super.key, required this.product, required this.state});
   final Product product;
   final DetailsState state;
 

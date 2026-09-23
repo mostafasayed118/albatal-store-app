@@ -41,8 +41,10 @@ Future<({List<AdminCategory> categories, String? selectedId})>
         }
         return (categories: merged, selectedId: selected);
       },
-      failure: (_) =>
-          (categories: _degraded(selectedCategoryId), selectedId: selectedCategoryId),
+      failure: (_) => (
+        categories: _degraded(selectedCategoryId),
+        selectedId: selectedCategoryId
+      ),
     );
   } catch (e) {
     Log.w('Admin categories load failed.', error: e);
@@ -55,15 +57,16 @@ Future<({List<AdminCategory> categories, String? selectedId})>
 
 /// Degraded category list: the current selection stands in for its own
 /// name so an edit can still save when the list cannot load.
-List<AdminCategory> _degraded(String? selectedCategoryId) => selectedCategoryId == null
-    ? const []
-    : [
-        AdminCategory(
-          id: selectedCategoryId,
-          name: selectedCategoryId,
-          isActive: true,
-        ),
-      ];
+List<AdminCategory> _degraded(String? selectedCategoryId) =>
+    selectedCategoryId == null
+        ? const []
+        : [
+            AdminCategory(
+              id: selectedCategoryId,
+              name: selectedCategoryId,
+              isActive: true,
+            ),
+          ];
 
 /// Single-row product fetch for the edit prefill (audit 2026-09-13).
 ///

@@ -26,8 +26,7 @@ abstract final class ProfileCodec {
       phone: optString(row, 'phone'),
       avatarUrl: optString(row, 'avatar_url'),
       isAdmin: safeBool(row, 'is_admin'),
-      tier:
-          membershipTierFromServerValue(optString(row, 'membership_tier')),
+      tier: membershipTierFromServerValue(optString(row, 'membership_tier')),
     );
   }
 

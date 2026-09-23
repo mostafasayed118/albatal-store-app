@@ -27,8 +27,8 @@ class CatalogSortBar extends StatelessWidget {
             initialValue: state.filters.sort,
             onSelected: catalog.selectSort,
             itemBuilder: (_) => CatalogSort.values
-                .map((s) =>
-                    PopupMenuItem(value: s, child: Text(catalogSortLabel(l, s))))
+                .map((s) => PopupMenuItem(
+                    value: s, child: Text(catalogSortLabel(l, s))))
                 .toList(),
             child: Chip(
               avatar: const Icon(Icons.sort, size: 18),

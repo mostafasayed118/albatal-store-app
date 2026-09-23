@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 /// Extracted from `order_status_timeline.dart` verbatim (was private
 /// `_CancelledTerminal`).
 class CancelledTerminal extends StatelessWidget {
-  const CancelledTerminal({super.key, required this.scheme, required this.label});
+  const CancelledTerminal(
+      {super.key, required this.scheme, required this.label});
 
   final ColorScheme scheme;
   final String label;

@@ -19,8 +19,7 @@ class _StubCheckoutRepository implements CheckoutRepository {
   Result<PendingOrder>? result;
   Result<PendingOrder>? secondResult;
   int callCount = 0;
-  final List<({Address? address, String? idempotencyKey})>
-      calls = [];
+  final List<({Address? address, String? idempotencyKey})> calls = [];
 
   @override
   Future<Result<PendingOrder>> placeOrder({
@@ -218,7 +217,8 @@ void main() {
 
     test('non-pending resurrected order retries ONCE with a fresh key',
         () async {
-      repo.result = Success(_pending(orderId: 'dead-ord', status: OrderStatus.paid));
+      repo.result =
+          Success(_pending(orderId: 'dead-ord', status: OrderStatus.paid));
       repo.secondResult = Success(_pending(orderId: 'fresh-ord'));
 
       final outcome = await usecase().call(
@@ -239,8 +239,10 @@ void main() {
     });
 
     test('double non-pending does not loop forever', () async {
-      repo.result = Success(_pending(orderId: 'dead-1', status: OrderStatus.paid));
-      repo.secondResult = Success(_pending(orderId: 'dead-2', status: OrderStatus.paid));
+      repo.result =
+          Success(_pending(orderId: 'dead-1', status: OrderStatus.paid));
+      repo.secondResult =
+          Success(_pending(orderId: 'dead-2', status: OrderStatus.paid));
 
       final outcome = await usecase().call(
         items: _items(),

@@ -105,9 +105,9 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return BlocProvider<AdminCustomersCubit>(
-      create: (_) => (widget.cubit ??
-          AdminCustomersCubit(repository: widget.repository!))
-        ..load(),
+      create: (_) =>
+          (widget.cubit ?? AdminCustomersCubit(repository: widget.repository!))
+            ..load(),
       // The router always injects [repository] (or a [cubit] in tests) —
       // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminCustomersCubit, AdminCustomersState>(

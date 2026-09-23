@@ -4,4 +4,5 @@
 /// into another feature's internals — they import this barrel. Exports
 /// are limited to what is actually consumed across features today.
 library;
+
 export 'domain/entities/payment.dart';

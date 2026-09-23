@@ -204,8 +204,8 @@ void main() {
             'product-images/p1/b.jpg',
             StorageService.detailImageWidth,
           )).called(1);
-      verifyNever(() =>
-          mockStorage.getProductImageUrlForWidth(any(), StorageService.gridImageWidth));
+      verifyNever(() => mockStorage.getProductImageUrlForWidth(
+          any(), StorageService.gridImageWidth));
 
       // Image URLs must be sorted by sort_order ascending (a.jpg before b.jpg)
       // at the detail budget...

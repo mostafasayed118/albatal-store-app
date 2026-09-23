@@ -107,8 +107,7 @@ void main() {
     expect(find.text('Account deleted'), findsOneWidget);
   });
 
-  testWidgets(
-      'coded deletion failure shows localized retry copy, not the code',
+  testWidgets('coded deletion failure shows localized retry copy, not the code',
       (tester) async {
     accountDeletion.nextResult =
         const Failure(AppError(kDeleteFailed, code: kDeleteFailed));
@@ -125,8 +124,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-        find.text('Account deletion failed. Please try again.'),
-        findsOneWidget,
+        find.text('Account deletion failed. Please try again.'), findsOneWidget,
         reason: 'kDeleteFailed must localize via failureText, not verbatim');
   });
 

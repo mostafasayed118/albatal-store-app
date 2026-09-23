@@ -23,11 +23,9 @@ void main() {
     });
 
     test('null and unexpected values map to standard, never crash', () {
-      expect(
-          ProfileCodec.fromRow({'id': 'u1', 'membership_tier': null}).tier,
+      expect(ProfileCodec.fromRow({'id': 'u1', 'membership_tier': null}).tier,
           MembershipTier.standard);
-      expect(
-          ProfileCodec.fromRow({'id': 'u1', 'membership_tier': 'gold'}).tier,
+      expect(ProfileCodec.fromRow({'id': 'u1', 'membership_tier': 'gold'}).tier,
           MembershipTier.standard);
     });
 

@@ -19,16 +19,18 @@ void main() {
 
   group('CatalogFilters.matches — curated colorName vocabulary', () {
     test('a chip sourced from colorName matches', () {
-      expect(const CatalogFilters(colorFilter: 'Sand').matches(product), isTrue);
+      expect(
+          const CatalogFilters(colorFilter: 'Sand').matches(product), isTrue);
     });
 
     test('a chip sourced from the variant colors still matches', () {
-      expect(
-          const CatalogFilters(colorFilter: 'Emerald').matches(product), isTrue);
+      expect(const CatalogFilters(colorFilter: 'Emerald').matches(product),
+          isTrue);
     });
 
     test('an unrelated chip does not match', () {
-      expect(const CatalogFilters(colorFilter: 'Gold').matches(product), isFalse);
+      expect(
+          const CatalogFilters(colorFilter: 'Gold').matches(product), isFalse);
     });
 
     test('an empty filter matches everything', () {

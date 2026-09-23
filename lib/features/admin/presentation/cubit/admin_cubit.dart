@@ -42,8 +42,11 @@ final class AdminState extends Equatable {
   /// memo-field approach would have broken ~20 const construction sites
   /// for a ≤50-row queue).
   static final Expando<
-      ({AdminOrderStatus filter, List<AdminOrder> source, List<AdminOrder> filtered})>
-      _filteredMemo = Expando('adminFilteredOrders');
+      ({
+        AdminOrderStatus filter,
+        List<AdminOrder> source,
+        List<AdminOrder> filtered
+      })> _filteredMemo = Expando('adminFilteredOrders');
 
   List<AdminOrder> get filteredOrders {
     final filter = statusFilter;
@@ -55,8 +58,7 @@ final class AdminState extends Equatable {
       return cached.filtered;
     }
     final filtered = orders.where((o) => o.status == filter).toList();
-    _filteredMemo[this] =
-        (filter: filter, source: orders, filtered: filtered);
+    _filteredMemo[this] = (filter: filter, source: orders, filtered: filtered);
     return filtered;
   }
 

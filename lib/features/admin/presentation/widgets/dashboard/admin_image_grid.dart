@@ -90,9 +90,8 @@ class AdminImageGrid extends StatelessWidget {
                     ),
                     AdminImageIconBtn(
                       icon: Icons.arrow_downward,
-                      onTap: i == paths.length - 1
-                          ? null
-                          : () => onMove(i, i + 1),
+                      onTap:
+                          i == paths.length - 1 ? null : () => onMove(i, i + 1),
                     ),
                     AdminImageIconBtn(
                       icon: Icons.delete,
