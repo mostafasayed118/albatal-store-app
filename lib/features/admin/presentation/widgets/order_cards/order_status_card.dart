@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../generated/l10n/app_localizations.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
+import '../../../../../shared/l10n/money_copy.dart';
 import '../../../../../shared/utils/app_date_formats.dart';
 import '../../../domain/entities/admin_order.dart';
 import '../../admin_order_status_label.dart';
@@ -18,7 +19,7 @@ class OrderStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final total = order.total.format();
+    final total = moneyText(l, order.total);
     // Localized fallback — a missing payment method used to render the
     // hardcoded English 'Unknown' on Arabic-visible paths.
     final paymentMethod = order.paymentMethod ?? l.paymentMethodUnknown;

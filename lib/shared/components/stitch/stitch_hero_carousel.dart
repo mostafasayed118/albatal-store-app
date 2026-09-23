@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
+import '../../../generated/l10n/app_localizations.dart';
 import '../../extensions/build_context_x.dart';
+import '../../l10n/money_copy.dart';
 import '../../theme/app_colors.dart';
 import 'hero/hero_dot.dart';
 import 'hero/hero_slide_card.dart';
@@ -68,7 +70,14 @@ class StitchHeroSlide {
   /// decode budget), so it takes the DETAIL render from [Product.images]
   /// rather than the grid-width budget [Product.imageAsset] carries. Local
   /// products (asset paths, no image list) keep using their primary asset.
-  factory StitchHeroSlide.fromProduct(Product product, {VoidCallback? onTap}) =>
+  ///
+  /// [l10n] is required rather than optional: the subtitle is shopper
+  /// copy, so it must render in the reader's locale (audit UX-019). A
+  /// context-free factory cannot reach [Localizations], so the caller
+  /// hands its own in — silently falling back to the Latin formatter
+  /// would reintroduce the defect on the app's most prominent price.
+  factory StitchHeroSlide.fromProduct(Product product,
+          {required AppLocalizations l10n, VoidCallback? onTap}) =>
       StitchHeroSlide(
         imageAsset: product.images.isNotEmpty
             ? product.images.first
@@ -76,7 +85,7 @@ class StitchHeroSlide {
         swatchColor: Color(product.imageColor),
         eyebrow: product.category,
         title: product.name,
-        subtitle: product.price.format(),
+        subtitle: moneyText(l10n, product.price),
         onTap: onTap,
       );
 }

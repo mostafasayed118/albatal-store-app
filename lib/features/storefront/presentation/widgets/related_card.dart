@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import 'product_image_placeholder.dart';
 
 /// Compact card for a related product in horizontal list.
@@ -52,7 +54,7 @@ class RelatedCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       Text(
-                        product.price.format(),
+                        moneyText(context.l10n, product.price),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: scheme.primary,
                               fontWeight: FontWeight.w700,

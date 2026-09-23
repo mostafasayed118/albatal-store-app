@@ -33,15 +33,15 @@ void main() {
     await tester.pumpWidget(_harness(_cart(premium: true)));
 
     expect(find.text('Free'), findsOneWidget);
-    // 75 EGY is the standard flat estimate; a premium member's total
+    // 75 EGP is the standard flat estimate; a premium member's total
     // equals their subtotal.
-    expect(find.text('75 EGY'), findsNothing);
+    expect(find.text('75 EGP'), findsNothing);
   });
 
   testWidgets('standard members still see the shipping fee', (tester) async {
     await tester.pumpWidget(_harness(_cart(premium: false)));
 
     expect(find.text('Free'), findsNothing);
-    expect(find.text('75 EGY'), findsOneWidget);
+    expect(find.text('75 EGP'), findsOneWidget);
   });
 }

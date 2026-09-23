@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../cubit/catalog_cubit.dart';
 
 /// Horizontal scrollable chips showing active filters with "Clear all".
@@ -38,7 +39,7 @@ class ActiveFiltersBar extends StatelessWidget {
         state.filters.priceMax < CatalogPriceBounds.unboundedMax) {
       chips.add(_filterChip(
         label:
-            '${state.filters.priceMin.format()} – ${state.filters.priceMax.format()}',
+            '${moneyText(l, state.filters.priceMin)} – ${moneyText(l, state.filters.priceMax)}',
         onDeleted: () =>
             catalog.setPriceRange(Money.zero, CatalogPriceBounds.unboundedMax),
       ));

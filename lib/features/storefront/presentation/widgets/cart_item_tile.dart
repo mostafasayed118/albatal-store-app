@@ -5,6 +5,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
 import '../cubit/cart_cubit.dart';
 import '../cubit/wishlist_cubit.dart';
@@ -86,7 +87,7 @@ class CartItemTile extends StatelessWidget {
                     Text(item.sample
                         ? '${item.color} · ${l.sampleLineItem}'
                         : '${item.color} · ${item.length}'),
-                    Text(item.effectiveLineTotal.format()),
+                    Text(moneyText(l, item.effectiveLineTotal)),
                     if (!item.sample)
                       QuantityStepper(
                         quantity: item.quantity,

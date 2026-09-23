@@ -149,6 +149,7 @@ class _HomePageState extends State<HomePage> {
                           for (final p in state.featuredProducts)
                             StitchHeroSlide.fromProduct(
                               p,
+                              l10n: l,
                               onTap: () => context.push(Routes.product(p.id)),
                             ),
                         ],

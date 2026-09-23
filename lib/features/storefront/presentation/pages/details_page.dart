@@ -9,6 +9,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/image_compressor.dart';
@@ -88,7 +89,7 @@ class DetailsPage extends StatelessWidget {
   Future<void> _shareOnWhatsApp(BuildContext context, Product p) async {
     final launched = await whatsappShareService.share(context.l10n
         .whatsappShareProductMessage(
-            p.name, p.price.format(), productUrl(p.id)));
+            p.name, moneyText(context.l10n, p.price), productUrl(p.id)));
     if (!launched && context.mounted) {
       showFloatingError(context, context.l10n.couldNotOpenLink);
     }

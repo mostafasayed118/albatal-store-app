@@ -7,6 +7,8 @@ import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_r
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/filter_sheet.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_en.dart';
+import 'package:al_batal_elite/shared/l10n/money_copy.dart';
 import 'package:al_batal_elite/shared/theme/app_colors.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -105,8 +107,10 @@ void main() {
 
       expect(find.byType(RangeSlider), findsNothing);
       // Fixed-price text + the collapsed start/end labels all read the
-      // single catalog price.
-      expect(find.text(const Money.egp(1290).format()), findsNWidgets(3));
+      // single catalog price, formatted the way the sheet renders it
+      // (localized: grouping + ISO code — audit UX-019).
+      expect(find.text(moneyText(AppLocalizationsEn(), const Money.egp(1290))),
+          findsNWidgets(3));
     });
   });
 

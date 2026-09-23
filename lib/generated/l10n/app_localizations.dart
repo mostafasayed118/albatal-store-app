@@ -1592,6 +1592,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid Egyptian mobile number (e.g. 01012345678)'**
   String get phoneInvalid;
 
+  /// No description provided for @currencySymbol.
+  ///
+  /// In en, this message translates to:
+  /// **'EGP'**
+  String get currencySymbol;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:

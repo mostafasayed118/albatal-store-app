@@ -845,6 +845,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a valid Egyptian mobile number (e.g. 01012345678)';
 
   @override
+  String get currencySymbol => 'EGP';
+
+  @override
   String get save => 'Save';
 
   @override

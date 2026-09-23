@@ -52,7 +52,7 @@ Widget _harness(String productId, _RecordingLauncher launcher) {
 void main() {
   group('whatsappShareUrl (#13)', () {
     const message =
-        'Royal Emerald Silk — 1290 EGY\nhttps://albatal.app/product/silk-01';
+        'Royal Emerald Silk — 1,290 EGP\nhttps://albatal.app/product/silk-01';
 
     test('builds a wa.me universal link with the text prefill', () {
       final uri = whatsappShareUrl(message);
@@ -71,7 +71,8 @@ void main() {
     });
 
     test('is RTL-safe: Arabic text round-trips through the encoding', () {
-      const ar = 'حرير ملكي بسعر 1290 EGY\nhttps://albatal.app/product/silk-01';
+      const ar =
+          'حرير ملكي بسعر 1,290 EGP\nhttps://albatal.app/product/silk-01';
       final uri = whatsappShareUrl(ar);
       // The wire format is ASCII-only (valid UTF-8 percent escapes), and
       // decoding restores the Arabic message byte-for-byte.
@@ -82,13 +83,13 @@ void main() {
     test('localized prefill carries name, price and deep link (EN + AR)', () {
       const url = 'https://albatal.app/product/silk-01';
       final en = AppLocalizationsEn()
-          .whatsappShareProductMessage('Royal Emerald Silk', '1290 EGY', url);
-      expect(en, 'Royal Emerald Silk — 1290 EGY\n$url');
+          .whatsappShareProductMessage('Royal Emerald Silk', '1,290 EGP', url);
+      expect(en, 'Royal Emerald Silk — 1,290 EGP\n$url');
       expect(en.contains(url), isTrue);
 
       final ar = AppLocalizationsAr()
-          .whatsappShareProductMessage('حرير ملكي', '1290 EGY', url);
-      expect(ar, 'حرير ملكي بسعر 1290 EGY\n$url');
+          .whatsappShareProductMessage('حرير ملكي', '1,290 EGP', url);
+      expect(ar, 'حرير ملكي بسعر 1,290 EGP\n$url');
       // The Arabic template must be real Arabic, not a copy of the EN one.
       expect(ar, isNot(en));
       expect(ar, contains('بسعر'));
@@ -120,7 +121,7 @@ void main() {
       expect(uri.scheme, 'https');
       expect(uri.host, 'wa.me');
       expect(uri.queryParameters['text'],
-          'Royal Emerald Silk — 1290 EGY\nhttps://albatal.app/product/silk-01');
+          'Royal Emerald Silk — 1,290 EGP\nhttps://albatal.app/product/silk-01');
     });
 
     testWidgets('shows the shared floating error when no app takes the link',

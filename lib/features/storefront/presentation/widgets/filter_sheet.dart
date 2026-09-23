@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../catalog_color_label.dart';
 import '../cubit/catalog_cubit.dart';
 import 'color_swatches.dart';
@@ -142,7 +143,7 @@ class _FilterSheetState extends State<FilterSheet> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  Money.egp(min.round()).format(),
+                  moneyText(l, Money.egp(min.round())),
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               )
@@ -153,17 +154,17 @@ class _FilterSheetState extends State<FilterSheet> {
                 max: max,
                 divisions: 20,
                 labels: RangeLabels(
-                  Money.egp(_priceRange.start.round()).format(),
-                  Money.egp(_priceRange.end.round()).format(),
+                  moneyText(l, Money.egp(_priceRange.start.round())),
+                  moneyText(l, Money.egp(_priceRange.end.round())),
                 ),
                 onChanged: (v) => setState(() => _priceRange = v),
               ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(Money.egp(_priceRange.start.round()).format(),
+                Text(moneyText(l, Money.egp(_priceRange.start.round())),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
-                Text(Money.egp(_priceRange.end.round()).format(),
+                Text(moneyText(l, Money.egp(_priceRange.end.round())),
                     style: TextStyle(color: scheme.onSurfaceVariant)),
               ],
             ),

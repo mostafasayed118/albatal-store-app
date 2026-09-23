@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/entities/product.dart';
 import '../../extensions/build_context_x.dart';
+import '../../l10n/money_copy.dart';
 import '../../theme/contrast.dart';
 import '../app_card.dart';
 import '../app_image.dart';
@@ -144,7 +145,7 @@ class StitchFlashSaleCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          product.price.format(),
+                          moneyText(context.l10n, product.price),
                           style: textTheme.labelLarge?.copyWith(
                             color: scheme.primary,
                             fontWeight: FontWeight.w700,

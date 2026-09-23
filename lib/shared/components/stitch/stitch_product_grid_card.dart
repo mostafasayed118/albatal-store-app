@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/entities/product.dart';
 import '../../components/feedback.dart';
 import '../../extensions/build_context_x.dart';
+import '../../l10n/money_copy.dart';
 import '../../theme/contrast.dart';
 import '../app_card.dart';
 import '../app_image.dart';
@@ -37,7 +38,7 @@ class StitchProductGridCard extends StatelessWidget {
     return Semantics(
       container: true,
       button: true,
-      label: '${product.name}, ${product.price.format()}',
+      label: '${product.name}, ${moneyText(l, product.price)}',
       child: RepaintBoundary(
         child: AppCard(
           clipBehavior: Clip.antiAlias,
@@ -148,7 +149,7 @@ class StitchProductGridCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
-                            product.price.format(),
+                            moneyText(l, product.price),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.labelLarge?.copyWith(
@@ -158,7 +159,7 @@ class StitchProductGridCard extends StatelessWidget {
                           ),
                           if (product.oldPrice != null)
                             Text(
-                              product.oldPrice!.format(),
+                              moneyText(l, product.oldPrice!),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: textTheme.labelSmall?.copyWith(

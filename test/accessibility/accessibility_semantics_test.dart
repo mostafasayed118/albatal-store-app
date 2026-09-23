@@ -3,6 +3,7 @@ import 'dart:ui' show Tristate;
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_en.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_flash_sale_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_hero_carousel.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
@@ -152,8 +153,8 @@ void main() {
           subtitle: 's',
           ctaLabel: 'c',
         ),
-        StitchHeroSlide.fromProduct(_product()),
-        StitchHeroSlide.fromProduct(_product()),
+        StitchHeroSlide.fromProduct(_product(), l10n: AppLocalizationsEn()),
+        StitchHeroSlide.fromProduct(_product(), l10n: AppLocalizationsEn()),
       ];
       await tester.pumpWidget(_localized(
         StitchHeroCarousel(slides: slides),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../storefront/storefront.dart';
@@ -185,7 +186,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
               Text(l.selectPaymentMethod,
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
-              Text('${l.total}: ${state.amount.format()}',
+              Text('${l.total}: ${moneyText(l, state.amount)}',
                   style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

@@ -84,7 +84,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       // Server-derived details are rendered — never client values.
       expect(find.text('instapay@merchant'), findsOneWidget);
-      expect(find.text('1290 EGY'), findsOneWidget);
+      expect(find.text('1,290 EGP'), findsOneWidget);
       // The instructions page received the same cubit instance, so the
       // single status watch keeps running across the push.
       expect(cubit.state.status, PaymentStatus.awaitingProof);

@@ -854,6 +854,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'أدخل رقم هاتف محمول مصري صحيح (مثال: 01012345678)';
 
   @override
+  String get currencySymbol => 'ج.م.';
+
+  @override
   String get save => 'حفظ';
 
   @override

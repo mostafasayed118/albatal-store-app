@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../shared/extensions/build_context_x.dart';
+import '../../../../../shared/l10n/money_copy.dart';
 import '../../../../../shared/routing/app_routes.dart';
 import '../../../domain/entities/admin_order.dart';
 
@@ -20,7 +21,7 @@ final class AdminOrderTile extends StatelessWidget {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final status = order.status;
-    final total = order.total.format();
+    final total = moneyText(l10n, order.total);
     final customerName = order.customerName ?? l10n.unknown;
     final itemCount = order.itemCount ?? order.items.length;
 

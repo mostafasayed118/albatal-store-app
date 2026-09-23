@@ -1,9 +1,15 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_en.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_hero_carousel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// The factory's subtitle is shopper copy, so it takes an
+/// [AppLocalizations] (audit UX-019); these value-object assertions are not
+/// locale tests, so the English instance is the fixture.
+AppLocalizations _en() => AppLocalizationsEn();
 
 Product _product(String id, {Money? oldPrice, double rating = 4.0}) => Product(
       id: id,
@@ -55,9 +61,9 @@ void main() {
       [
         StitchHeroSlide.promo(
             eyebrow: 'e0', title: 'Promo', subtitle: 's', ctaLabel: 'c'),
-        StitchHeroSlide.fromProduct(_product('a')),
-        StitchHeroSlide.fromProduct(_product('b')),
-        StitchHeroSlide.fromProduct(_product('c')),
+        StitchHeroSlide.fromProduct(_product('a'), l10n: _en()),
+        StitchHeroSlide.fromProduct(_product('b'), l10n: _en()),
+        StitchHeroSlide.fromProduct(_product('c'), l10n: _en()),
       ],
       onPageChanged: reported.add,
     );
@@ -72,7 +78,7 @@ void main() {
 
     expect(reported, [1]);
     expect(find.text('Product a'), findsOneWidget);
-    expect(find.text('850 EGY'), findsOneWidget);
+    expect(find.text('850 EGP'), findsOneWidget);
   });
 
   testWidgets('tapping a dot jumps to its slide', (tester) async {
@@ -82,8 +88,8 @@ void main() {
       [
         StitchHeroSlide.promo(
             eyebrow: 'e0', title: 'Promo', subtitle: 's', ctaLabel: 'c'),
-        StitchHeroSlide.fromProduct(_product('b')),
-        StitchHeroSlide.fromProduct(_product('c')),
+        StitchHeroSlide.fromProduct(_product('b'), l10n: _en()),
+        StitchHeroSlide.fromProduct(_product('c'), l10n: _en()),
       ],
       onPageChanged: reported.add,
     );
@@ -110,9 +116,11 @@ void main() {
     // catalog_state_memo_test (featuredProducts); the factory mapping is
     // covered by the swipe test above (category eyebrow + price).
     final slide = StitchHeroSlide.fromProduct(
-        _product('x', oldPrice: const Money.egp(1000), rating: 4.9));
+        _product('x', oldPrice: const Money.egp(1000), rating: 4.9),
+        l10n: _en());
     expect(slide.imageAsset, isNull);
-    expect(slide.subtitle, '850 EGY');
+    // Locale-correct shopper copy, not the legacy '850 EGY' label.
+    expect(slide.subtitle, '850 EGP');
     expect(slide.swatchColor, const Color(0xFF176B57));
   });
 
@@ -134,7 +142,7 @@ void main() {
       imageAsset: grid,
       images: [detail],
     );
-    expect(StitchHeroSlide.fromProduct(remote).imageAsset, detail);
+    expect(StitchHeroSlide.fromProduct(remote, l10n: _en()).imageAsset, detail);
 
     // Local products (asset paths, no image list) keep their primary asset.
     const local = Product(
@@ -146,7 +154,7 @@ void main() {
       imageAsset: 'assets/images/1.svg',
     );
     expect(
-      StitchHeroSlide.fromProduct(local).imageAsset,
+      StitchHeroSlide.fromProduct(local, l10n: _en()).imageAsset,
       'assets/images/1.svg',
     );
   });

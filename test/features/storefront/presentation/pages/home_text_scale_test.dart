@@ -11,9 +11,11 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/recently_v
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/home_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_en.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_category_chips.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_product_grid_card.dart';
 import 'package:al_batal_elite/shared/components/stitch/stitch_search_bar.dart';
+import 'package:al_batal_elite/shared/l10n/money_copy.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -173,8 +175,10 @@ void main() {
     for (final element in find.byType(StitchProductGridCard).evaluate()) {
       final product = (element.widget as StitchProductGridCard).product;
       for (final amount in <String>[
-        product.price.format(),
-        if (product.oldPrice != null) product.oldPrice!.format(),
+        // Rendered through the localized formatter, like the card itself.
+        moneyText(AppLocalizationsEn(), product.price),
+        if (product.oldPrice != null)
+          moneyText(AppLocalizationsEn(), product.oldPrice!),
       ]) {
         final matches = find
             .descendant(

@@ -297,6 +297,7 @@
   "countryRequired": "البلد مطلوب",
   "phoneLabel": "رقم الهاتف",
   "phoneInvalid": "أدخل رقم هاتف محمول مصري صحيح (مثال: 01012345678)",
+  "currencySymbol": "ج.م.",
   "save": "حفظ",
   "setAsDefault": "تعيين كافتراضي",
   "edit": "تعديل",

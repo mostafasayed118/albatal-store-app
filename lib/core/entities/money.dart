@@ -32,16 +32,25 @@ final class Money extends Equatable {
   double get majorUnits => minorUnits / 100;
 
   /// Formats as a compact currency string for UI display:
-  /// `Money.egp(1290).format()` → `"1290 EGY"`.
+  /// `Money.egp(1290).format()` → `"1290 EGP"`.
+  ///
+  /// The default symbol is the ISO 4217 code for the Egyptian pound.
+  /// It used to be `'EGY'`, which is not a currency code at all (that is
+  /// the ISO 3166 country code) — audit UX-019. `format()` stays
+  /// deterministic and locale-agnostic on purpose: it is the domain-level
+  /// formatter used by generated documents, the admin console, and
+  /// non-UI composition. Shopper-facing surfaces go through
+  /// `moneyText()` in `shared/l10n/money_copy.dart`, which localizes the
+  /// digits, the grouping, the symbol and its placement.
   ///
   /// Whole amounts carry no decimals (the app's existing UI convention),
   /// but fractional piasters are KEPT rather than truncated:
-  /// `Money(99875).format()` → `"998.75 EGY"`. This matters because
+  /// `Money(99875).format()` → `"998.75 EGP"`. This matters because
   /// cut-length metered lines routinely land on a fractional major unit
   /// ([meteredLineTotal] rounds to whole minor units, not whole pounds),
   /// so truncating would show the customer a total that disagrees with
   /// the amount recorded on the order.
-  String format({String symbol = 'EGY'}) {
+  String format({String symbol = 'EGP'}) {
     final minor = minorUnits % 100;
     if (minor == 0) return '${minorUnits ~/ 100} $symbol';
     return '${minorUnits ~/ 100}.${minor.toString().padLeft(2, '0')} $symbol';

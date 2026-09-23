@@ -86,8 +86,8 @@ void main() {
       ),
     ));
     expect(tester.takeException(), isNull);
-    _expectPriceVisibleInFull(tester, '1450 EGY');
-    _expectPriceVisibleInFull(tester, '1900 EGY');
+    _expectPriceVisibleInFull(tester, '1,450 EGP');
+    _expectPriceVisibleInFull(tester, '1,900 EGP');
   });
 
   testWidgets('no overflow with large system font scale', (tester) async {
@@ -100,8 +100,8 @@ void main() {
     ));
     expect(tester.takeException(), isNull);
     // 1.4x is where the old Row clipped hardest (~27dp short).
-    _expectPriceVisibleInFull(tester, '1450 EGY');
-    _expectPriceVisibleInFull(tester, '1900 EGY');
+    _expectPriceVisibleInFull(tester, '1,450 EGP');
+    _expectPriceVisibleInFull(tester, '1,900 EGP');
   });
 
   testWidgets('renders name, category and price', (tester) async {
@@ -110,6 +110,6 @@ void main() {
     )));
     expect(find.text('Royal Emerald Silk'), findsOneWidget);
     expect(find.text('Silk'), findsOneWidget);
-    _expectPriceVisibleInFull(tester, '1450 EGY');
+    _expectPriceVisibleInFull(tester, '1,450 EGP');
   });
 }

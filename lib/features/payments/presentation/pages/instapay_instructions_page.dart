@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/services/image_compressor.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payment_service.dart';
@@ -246,7 +247,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
                 const SizedBox(height: 24),
                 InstapayTransferCard(
                   address: instructions.instapayAddress,
-                  amountText: instructions.amount.format(),
+                  amountText: moneyText(l, instructions.amount),
                   onCopy: () => _copyAddress(instructions.instapayAddress),
                 ),
                 const SizedBox(height: 24),

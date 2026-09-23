@@ -140,7 +140,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(CartSummary), findsOneWidget);
     expect(find.text('Total'), findsOneWidget);
-    expect(find.textContaining('EGY'), findsWidgets);
+    expect(find.textContaining('EGP'), findsWidgets);
   });
 
   testWidgets(
@@ -176,8 +176,8 @@ void main() {
     expect(tester.takeException(), isNull);
 
     // 998.75 EGP in the tile: the amount the truncating formatter printed as
-    // "998 EGY". (The same string heads the totals row, so this is ≥1.)
-    expect(find.text('998.75 EGY'), findsWidgets);
+    // "998 EGP". (The same string heads the totals row, so this is ≥1.)
+    expect(find.text('998.75 EGP'), findsWidgets);
     expect(find.byType(QuantityStepper), findsOneWidget);
 
     // It must also flow through the totals: 998.75 + 75.00 shipping =
@@ -189,9 +189,9 @@ void main() {
     );
     await tester.pump();
     expect(tester.takeException(), isNull);
-    expect(find.text('1073.75 EGY'), findsOneWidget);
+    expect(find.text('1,073.75 EGP'), findsOneWidget);
     expect(
-        tester.getRect(find.text('1073.75 EGY')).right, lessThanOrEqualTo(360),
+        tester.getRect(find.text('1,073.75 EGP')).right, lessThanOrEqualTo(360),
         reason: 'the amount must stay inside the 360dp viewport');
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../cubit/cart_cubit.dart';
 
@@ -16,7 +17,7 @@ class CartSummary extends StatelessWidget {
         padding: const EdgeInsetsDirectional.all(16),
         child: Column(
           children: [
-            _row(context, l.subtotal, state.subtotal.format()),
+            _row(context, l.subtotal, moneyText(l, state.subtotal)),
             // Premium perk (migration 047): the server zeroes shipping for
             // premium members; show the perk, not a zero amount.
             if (state.isPremiumMember)
@@ -27,9 +28,9 @@ class CartSummary extends StatelessWidget {
                 valueColor: AppColors.gold,
               )
             else
-              _row(context, l.shipping, state.shipping.format()),
+              _row(context, l.shipping, moneyText(l, state.shipping)),
             const Divider(),
-            _row(context, l.total, state.total.format(), bold: true),
+            _row(context, l.total, moneyText(l, state.total), bold: true),
           ],
         ),
       ),

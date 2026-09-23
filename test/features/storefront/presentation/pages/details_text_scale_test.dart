@@ -50,7 +50,7 @@ Widget _harness(String productId) {
 
 /// Metered fabric whose line total lands on fractional piasters:
 /// 399.50 EGP/m x 2.5 m = 998.75 EGP. Before the money fix the CTA printed the
-/// truncated "998 EGY", so this is the amount that made the label longer.
+/// truncated "998 EGP", so this is the amount that made the label longer.
 const _metered = Product(
   id: 'silk-metered',
   name: 'Royal Emerald Silk',
@@ -116,10 +116,10 @@ void main() {
 
     // Name/price block: AppBar title + body title → two occurrences.
     expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
-    expect(find.text('1290 EGY'), findsOneWidget);
+    expect(find.text('1,290 EGP'), findsOneWidget);
     // CTA line total renders at scale AND in full — with the real fonts
     // loaded, "not ellipsized" is a claim this pin can actually make.
-    _expectFitsInFull(tester, 'Add to Cart - 1290 EGY');
+    _expectFitsInFull(tester, 'Add to Cart - 1,290 EGP');
   });
 
   testWidgets(
@@ -155,7 +155,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Desert Gold Silk'), findsOneWidget);
-    expect(find.textContaining('EGY'), findsOneWidget);
+    expect(find.textContaining('EGP'), findsOneWidget);
   });
 
   testWidgets(
@@ -176,7 +176,7 @@ void main() {
     )));
 
     // 399.50 EGP/m x 2.5 m = 998.75 EGP — the formerly-truncated amount.
-    _expectFitsInFull(tester, 'Add to Cart - 998.75 EGY');
+    _expectFitsInFull(tester, 'Add to Cart - 998.75 EGP');
   });
 
   testWidgets(
@@ -201,7 +201,7 @@ void main() {
       quantity: 9,
     )));
 
-    _expectFitsInFull(tester, 'Add to Cart - 8988.75 EGY');
+    _expectFitsInFull(tester, 'Add to Cart - 8,988.75 EGP');
   });
 }
 

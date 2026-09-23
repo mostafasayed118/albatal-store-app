@@ -128,8 +128,8 @@ void main() {
         findsOneWidget,
       );
 
-      // EGY-suffixed pricing stays visible.
-      expect(find.textContaining('EGY'), findsWidgets);
+      // EGP-suffixed pricing stays visible.
+      expect(find.textContaining('EGP'), findsWidgets);
 
       // Single FilledButton CTA, gold (#904D00 secondary token).
       final button = tester.widget<FilledButton>(find.byType(FilledButton));

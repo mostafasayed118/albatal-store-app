@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/extensions/build_context_x.dart';
+import '../../../../../shared/l10n/money_copy.dart';
 import '../../../domain/entities/admin_order.dart';
 
 /// Line items for the admin detail view.
@@ -28,8 +29,8 @@ class OrderItemsCard extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   title: Text(item.productName),
                   subtitle: Text('${item.size} / ${item.color}'),
-                  trailing:
-                      Text('×${item.quantity} · ${item.unitPrice.format()}'),
+                  trailing: Text(
+                      '×${item.quantity} · ${moneyText(context.l10n, item.unitPrice)}'),
                 )),
           ],
         ),

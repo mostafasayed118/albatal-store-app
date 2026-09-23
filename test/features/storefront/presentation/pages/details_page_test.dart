@@ -39,10 +39,10 @@ void main() {
     // Product name now leads the AppBar (UX-047) and still appears as the
     // body title → exactly two occurrences.
     expect(find.text('Royal Emerald Silk'), findsNWidgets(2));
-    expect(find.text('1290 EGY'), findsOneWidget);
+    expect(find.text('1,290 EGP'), findsOneWidget);
     // CTA shows the live line total (unit price × qty, Stitch parity):
-    // "Add to Cart - 1290 EGY" at the default quantity of 1.
-    expect(find.text('Add to Cart - 1290 EGY'), findsOneWidget);
+    // "Add to Cart - 1,290 EGP" at the default quantity of 1.
+    expect(find.text('Add to Cart - 1,290 EGP'), findsOneWidget);
   });
 
   testWidgets('details page shows wishlist and share buttons',

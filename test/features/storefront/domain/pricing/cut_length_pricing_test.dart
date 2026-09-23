@@ -61,7 +61,7 @@ void main() {
       // line_total the checkout payload submits for the same line.
       final total = meteredLineTotal(const Money(39950), 2.5);
       expect(total, const Money(99875));
-      expect(total.format(), '998.75 EGY');
+      expect(total.format(), '998.75 EGP');
     });
   });
 

@@ -19,9 +19,11 @@ class NameAndPrice extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            // Stitch price: EGY-suffixed amount in label-md (labelLarge)
-            // bold primary #003527 (spec §4). Intrinsic width: the price
-            // is never truncated; the discount chip below flexes instead.
+            // Stitch price: EGP-suffixed amount in label-md (labelLarge)
+            // bold primary #003527 (spec §4), rendered in the reader's
+            // locale by PriceText (audit UX-019). Intrinsic width: the
+            // price is never truncated; the discount chip below flexes
+            // instead.
             PriceText(
               product.price,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../../../shared/l10n/money_copy.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
 import '../cubit/product_details_cubit.dart';
 
@@ -26,7 +27,7 @@ class MeteredPriceLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Text(
-        l.cutLengthEstimatedTotal(total.format()),
+        l.cutLengthEstimatedTotal(moneyText(l, total)),
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.w600,
