@@ -838,6 +838,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get countryRequired => 'Country is required';
 
   @override
+  String get phoneLabel => 'Phone number';
+
+  @override
+  String get phoneInvalid =>
+      'Enter a valid Egyptian mobile number (e.g. 01012345678)';
+
+  @override
   String get save => 'Save';
 
   @override

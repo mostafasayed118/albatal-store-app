@@ -31,6 +31,7 @@ void main() {
     await _openForm(tester);
 
     expect(find.text('Full Name'), findsOneWidget);
+    expect(find.text('Phone number'), findsOneWidget);
     expect(find.text('Street address'), findsOneWidget);
     expect(find.text('City'), findsOneWidget);
     expect(find.text('Country'), findsOneWidget);
@@ -45,6 +46,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Name is required'), findsOneWidget);
+    expect(find.text('Enter a valid Egyptian mobile number (e.g. 01012345678)'),
+        findsOneWidget);
     expect(find.text('Enter a valid street address'), findsOneWidget);
     expect(find.text('City is required'), findsOneWidget);
     expect(find.text('Country is required'), findsOneWidget);
@@ -56,6 +59,7 @@ void main() {
     await _openForm(tester);
 
     expect(find.text('الاسم الكامل'), findsOneWidget);
+    expect(find.text('رقم الهاتف'), findsOneWidget);
     expect(find.text('عنوان الشارع'), findsOneWidget);
     expect(find.text('المدينة'), findsOneWidget);
     expect(find.text('البلد'), findsOneWidget);
@@ -70,6 +74,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('الاسم مطلوب'), findsOneWidget);
+    expect(find.text('أدخل رقم هاتف محمول مصري صحيح (مثال: 01012345678)'),
+        findsOneWidget);
     expect(find.text('أدخل عنوان شارع صالحًا'), findsOneWidget);
     expect(find.text('المدينة مطلوبة'), findsOneWidget);
     expect(find.text('البلد مطلوب'), findsOneWidget);

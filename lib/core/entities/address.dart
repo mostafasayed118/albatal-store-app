@@ -5,18 +5,32 @@ import 'package:equatable/equatable.dart';
 /// Invariants: [id] is stable identity (a missing id means the row is
 /// unusable — callers skip it); at most one address in the book carries
 /// [isDefault], enforced by the addresses feature, not by this value
-/// object. Wire shapes live in `core/data/address_codec.dart`, never
-/// here.
+/// object; [phone] is a validated Egyptian mobile number stored AS TYPED
+/// (separators preserved — the courier dials what the customer sees, and
+/// migration 065's `phone_digits` column already makes the admin
+/// directory's digit search separator-proof, so no client-side reformat).
+/// Wire shapes live in `core/data/address_codec.dart`, never here.
 final class Address extends Equatable {
-  const Address(
-      {required this.id,
-      required this.recipient,
-      required this.line,
-      required this.city,
-      required this.country,
-      this.isDefault = false});
+  const Address({
+    required this.id,
+    required this.recipient,
+    required this.line,
+    required this.city,
+    required this.country,
+    this.phone = '',
+    this.isDefault = false,
+  });
 
   final String id, recipient, line, city, country;
+
+  /// The customer's contact number for fulfillment (courier calls before
+  /// COD hand-off — UX-003). Defaults to `''` because addresses saved
+  /// before the field shipped have no phone on file; `fromJson` degrades
+  /// a missing/mistyped column to `''` the same way. Required at every
+  /// UI entry point (both address forms validate it), so only legacy
+  /// rows can carry `''`.
+  final String phone;
+
   final bool isDefault;
 
   Address copyWith({
@@ -24,6 +38,7 @@ final class Address extends Equatable {
     String? line,
     String? city,
     String? country,
+    String? phone,
     bool? isDefault,
   }) =>
       Address(
@@ -32,8 +47,10 @@ final class Address extends Equatable {
           line: line ?? this.line,
           city: city ?? this.city,
           country: country ?? this.country,
+          phone: phone ?? this.phone,
           isDefault: isDefault ?? this.isDefault);
 
   @override
-  List<Object?> get props => [id, recipient, line, city, country, isDefault];
+  List<Object?> get props =>
+      [id, recipient, line, city, country, phone, isDefault];
 }

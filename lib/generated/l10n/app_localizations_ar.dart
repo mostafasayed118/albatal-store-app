@@ -847,6 +847,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get countryRequired => 'البلد مطلوب';
 
   @override
+  String get phoneLabel => 'رقم الهاتف';
+
+  @override
+  String get phoneInvalid =>
+      'أدخل رقم هاتف محمول مصري صحيح (مثال: 01012345678)';
+
+  @override
   String get save => 'حفظ';
 
   @override

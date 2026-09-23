@@ -1580,6 +1580,18 @@ abstract class AppLocalizations {
   /// **'Country is required'**
   String get countryRequired;
 
+  /// No description provided for @phoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneLabel;
+
+  /// No description provided for @phoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid Egyptian mobile number (e.g. 01012345678)'**
+  String get phoneInvalid;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:

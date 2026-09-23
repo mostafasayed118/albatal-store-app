@@ -368,6 +368,8 @@
   "streetAddressRequired": "Enter a valid street address",
   "cityRequired": "City is required",
   "countryRequired": "Country is required",
+  "phoneLabel": "Phone number",
+  "phoneInvalid": "Enter a valid Egyptian mobile number (e.g. 01012345678)",
   "save": "Save",
   "setAsDefault": "Set as default",
   "edit": "Edit",

@@ -282,7 +282,7 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-**1,074 Flutter tests** cover:
+**1,090 Flutter tests** cover:
 - Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin, Payments, Settings, Coupons, Reviews)
 - Product entity logic (stock, discount, inStock), coupon/membership contracts
 - SQL migration contract tests — the checkout RPC's server-owned pricing, premium perk, and coupon semantics are pinned against future rewrites

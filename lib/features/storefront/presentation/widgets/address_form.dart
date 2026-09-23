@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/entities/address.dart';
+import '../../../../core/utils/phone_validator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
 /// A bottom-sheet address form with field-level validation.
@@ -38,6 +39,7 @@ final class AddressForm extends StatefulWidget {
 final class _AddressFormState extends State<AddressForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _streetCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
   final _countryCtrl = TextEditingController();
@@ -45,6 +47,7 @@ final class _AddressFormState extends State<AddressForm> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _phoneCtrl.dispose();
     _streetCtrl.dispose();
     _cityCtrl.dispose();
     _countryCtrl.dispose();
@@ -58,6 +61,7 @@ final class _AddressFormState extends State<AddressForm> {
         // (never a timestamp ordering signal).
         id: const Uuid().v4(),
         recipient: _nameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
         line: _streetCtrl.text.trim(),
         city: _cityCtrl.text.trim(),
         country: _countryCtrl.text.trim(),
@@ -86,6 +90,19 @@ final class _AddressFormState extends State<AddressForm> {
               textInputAction: TextInputAction.next,
               validator: (v) =>
                   (v == null || v.trim().length < 2) ? l10n.nameRequired : null,
+            ),
+            const SizedBox(height: 12),
+            // Phone sits right after the name: it is the courier's primary
+            // contact for COD hand-off (UX-003), so it leads the address
+            // fields. Validated by the shared Egyptian-mobile rule.
+            TextFormField(
+              controller: _phoneCtrl,
+              decoration: InputDecoration(labelText: l10n.phoneLabel),
+              keyboardType: TextInputType.phone,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              textInputAction: TextInputAction.next,
+              validator: (v) =>
+                  phoneValidator(v, invalidMessage: l10n.phoneInvalid),
             ),
             const SizedBox(height: 12),
             TextFormField(

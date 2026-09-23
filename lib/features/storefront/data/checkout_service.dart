@@ -64,10 +64,13 @@ class CheckoutService implements CheckoutRepository {
           // strings the server gates on ('paymob_card' for 035/initiate,
           // 'cod' for COD confirm). Never send display strings.
           'p_payment_method': paymentMethod.serverValue,
-          // The 5-key server snapshot is encoded HERE, in the data layer —
-          // the domain port carries a typed [Address] (audit 2026-09-21:
-          // no raw Map in the domain contract). Absent address keeps the
-          // legacy empty-object wire shape.
+          // The 6-key server snapshot (the 5 legacy keys + phone, UX-003)
+          // is encoded HERE, in the data layer — the domain port carries
+          // a typed [Address] (audit 2026-09-21: no raw Map in the domain
+          // contract). Absent address keeps the legacy empty-object wire
+          // shape. The RPC enforces only recipient/line/city and stores
+          // the map verbatim (migrations 013→066), so the additive phone
+          // key is contract-safe.
           'p_address': address == null
               ? <String, dynamic>{}
               : AddressCodec.toSnapshotJson(address),

@@ -44,6 +44,7 @@ void main() {
     // Title + opener button share the addAddress copy.
     expect(find.text('Add Address'), findsNWidgets(2));
     expect(find.text('Recipient'), findsOneWidget);
+    expect(find.text('Phone number'), findsOneWidget);
     expect(find.text('Street address'), findsOneWidget);
     expect(find.text('City'), findsOneWidget);
     expect(find.text('Country'), findsOneWidget);
@@ -75,6 +76,46 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
+    // The four text fields use the generic required copy; the phone field
+    // (UX-003) validates via the Egyptian-mobile rule, so its empty error
+    // is the phone-specific message, not the generic one.
     expect(find.text('This field is required'), findsNWidgets(4));
+    expect(find.text('Enter a valid Egyptian mobile number (e.g. 01012345678)'),
+        findsOneWidget);
+  });
+
+  testWidgets('address dialog rejects an invalid phone but accepts a valid one',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(_harness());
+    await _openDialog(tester);
+
+    Future<void> fill(String phone) async {
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Recipient'), 'Sara Ahmed');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Phone number'), phone);
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Street address'), '45 Nile Corniche');
+      await tester.enterText(find.widgetWithText(TextField, 'City'), 'Cairo');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Country'), 'Egypt');
+      await tester.pumpAndSettle();
+    }
+
+    await fill('12345');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Still open: the invalid phone blocked the save.
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text('Enter a valid Egyptian mobile number (e.g. 01012345678)'),
+        findsOneWidget);
+
+    await fill('010 1234 5678');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Separator-typed numbers are accepted and the dialog closes.
+    expect(find.text('Save'), findsNothing);
   });
 }
