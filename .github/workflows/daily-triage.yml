@@ -17,7 +17,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
   pull-requests: read
 
 jobs:
@@ -36,11 +35,14 @@ jobs:
           flutter-version: '3.47.x'
           channel: stable
 
+      - name: Install dependencies
+        run: flutter pub get
+
       - name: Flutter analyze
-        run: flutter analyze --no-pub 2> analyze-output.txt || true
+        run: flutter analyze --no-pub 2> analyze-output.txt
 
       - name: Flutter test
-        run: flutter test --no-pub 2> test-output.txt || true
+        run: flutter test --no-pub 2> test-output.txt
 
       - name: Check pub outdated
         run: flutter pub outdated --json > outdated-output.json 2>&1 || true
@@ -73,17 +75,3 @@ jobs:
           name: triage-report-${{ github.run_id }}
           path: triage-report.md
           retention-days: 7
-
-      - name: Post summary to PR (if on PR)
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const report = fs.readFileSync('triage-report.md', 'utf8');
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: report
-            });

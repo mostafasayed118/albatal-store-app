@@ -8,7 +8,7 @@
 // Run: deno test supabase/functions/_shared/rate_limit_test.ts
 // ============================================================
 
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
   bucket,
   clientIp,
@@ -26,9 +26,20 @@ Deno.test("bucket namespaces kind and id", () => {
   assertEquals(bucket("proof:user", "abc"), "proof:user:abc");
 });
 
+Deno.test("rate-limit SQL accepts IPv4 callback buckets", async () => {
+  const migration = await Deno.readTextFile(
+    new URL("../../migrations/070_payment_review_rate_limit_hardening.sql", import.meta.url),
+  );
+  assert(migration.includes("[A-Za-z0-9:._-]+"));
+});
+
 Deno.test("clientIp takes the first forwarded hop, unknown when absent", () => {
   assertEquals(clientIp(reqWithIp("203.0.113.7")), "203.0.113.7");
   assertEquals(clientIp(reqWithIp(null)), "unknown");
+  const spoofed = new Request("https://example.com/function", {
+    headers: { "x-forwarded-for": "not-an-ip" },
+  });
+  assertEquals(clientIp(spoofed), "unknown");
 });
 
 Deno.test("enforceRateLimit allows while budget lasts, 429 when spent", async () => {

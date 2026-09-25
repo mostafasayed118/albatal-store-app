@@ -151,9 +151,9 @@ jobs:
             EXIT=1
           fi
 
-          echo "==> Tracked keystore artifacts"
-          if git ls-files | grep -iE '\.(jks|keystore)$|(^|/)release-keystore$'; then
-            echo "::error::Keystore file tracked in git"
+          echo "==> Tracked keystore and signing artifacts"
+          if git ls-files | grep -iE '\.(jks|keystore)$|(^|/)release-keystore$|(^|/)key\.properties$|(^|/)secrets-[^/]*\.env$'; then
+            echo "::error::Signing or secret artifact tracked in git"
             EXIT=1
           fi
 
@@ -166,13 +166,18 @@ jobs:
           fi
 
           echo "==> JWT-like tokens in source"
-          # config/env*.json hold only the Supabase ANON key (public by
-          # design: ships in the client bundle; access is RLS-gated).
-          # Service-role/Paymob secrets are checked separately below.
+          # Public Supabase anon keys are JWT-shaped and are excluded here;
+          # the next check rejects privileged/provider values in those files.
           if rg -n --type-add 'src:*.{dart,ts,js,json,yaml,yml,env,toml,sh}' --type src \
               --glob '!config/env*.json' \
               -e 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'; then
             echo "::error::JWT-like token detected in source"
+            EXIT=1
+          fi
+
+          echo "==> Public build config contains no privileged values"
+          if rg -n -i 'SUPABASE_SERVICE_ROLE_KEY|PAYMOB_(API_KEY|HMAC_SECRET)|PRIVATE_KEY' config/env*.json; then
+            echo "::error::Privileged secret found in public build config"
             EXIT=1
           fi
 
@@ -212,7 +217,7 @@ jobs:
 
       - name: Verify active functions exist
         run: |
-          for fn in checkout paymob-initiate paymob-callback cancel-expired-orders send-order-notification; do
+          for fn in checkout paymob-initiate paymob-callback cancel-expired-orders send-order-notification delete-account instapay-initiate instapay-submit-proof instapay-review; do
             if [ ! -d "supabase/functions/$fn" ]; then
               echo "ERROR: Active function $fn is missing!"
               exit 1
@@ -222,8 +227,36 @@ jobs:
 
       - name: Verify migration sequence
         run: |
-          ls -1 supabase/migrations/*.sql | head -20
-          echo "Migration files present."
+          python - <<'PY'
+          from pathlib import Path
+          files = sorted(Path("supabase/migrations").glob("[0-9][0-9][0-9]_*.sql"))
+          if not files:
+              raise SystemExit("No migrations found")
+          numbers = [int(path.name[:3]) for path in files]
+          if len(numbers) != len(set(numbers)):
+              raise SystemExit("Duplicate migration sequence numbers")
+          artifact = Path("scripts/run_all_migrations.sql").read_text(encoding="utf-8")
+          missing = [path.name for path in files if f"-- MIGRATION: {path.name}" not in artifact]
+          if missing:
+              raise SystemExit(f"Migration artifact missing: {missing}")
+          for fn in (
+              "checkout", "paymob-initiate", "paymob-callback",
+              "cancel-expired-orders", "send-order-notification", "delete-account",
+              "instapay-initiate", "instapay-submit-proof", "instapay-review",
+          ):
+              if not Path("supabase/functions", fn).is_dir():
+                  raise SystemExit(f"Missing Edge Function: {fn}")
+              if f"[functions.{fn}]" not in Path("supabase/config.toml").read_text(encoding="utf-8"):
+                  raise SystemExit(f"Missing Supabase config: {fn}")
+              for manifest in (
+                  Path("scripts/deploy-staging.sh"),
+                  Path("scripts/deploy-staging.ps1"),
+                  Path("scripts/deploy-staging.bat"),
+              ):
+                  if fn not in manifest.read_text(encoding="utf-8"):
+                      raise SystemExit(f"{manifest} is missing {fn}")
+          print(f"Validated {len(files)} migrations and 9 Edge Functions")
+          PY
 
   android-release:
     name: Android Release Build

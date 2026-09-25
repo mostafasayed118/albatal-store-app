@@ -116,6 +116,25 @@ void main() {
     expect((result as Success<PendingOrder>).value.total.minorUnits, 136500);
   });
 
+  test('fails closed for unsupported sample checkout items', () async {
+    final client = MockSupabaseClient();
+    final service = CheckoutService(client: client);
+    final result = await service.placeOrder(
+      items: [
+        CartItem(
+          product: products.first,
+          color: 'Emerald',
+          length: 'sample',
+          quantity: 1,
+          sample: true,
+        ),
+      ],
+      paymentMethod: PaymentMethod.paymobCard,
+      address: null,
+    );
+    expect(result, isA<Failure<PendingOrder>>());
+    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
+  });
   test('fails closed on a malformed RPC payload instead of throwing', () async {
     Future<Result<PendingOrder>> place(Map<String, dynamic> payload) async {
       final client = MockSupabaseClient();
@@ -138,6 +157,14 @@ void main() {
     // Money fields are not integers.
     expect(
       await place({..._rpcResponse()}..['subtotal'] = 'free'),
+      isA<Failure<PendingOrder>>(),
+    );
+    expect(
+      await place({..._rpcResponse()}..['total'] = 136500.5),
+      isA<Failure<PendingOrder>>(),
+    );
+    expect(
+      await place({..._rpcResponse()}..['total'] = -1),
       isA<Failure<PendingOrder>>(),
     );
     // Unparseable expiry.

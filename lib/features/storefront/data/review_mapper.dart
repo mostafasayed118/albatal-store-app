@@ -10,16 +10,15 @@ ProductReview? reviewFromRow(Map<String, dynamic> row) {
   if (id.isEmpty || productId.isEmpty || rating < 1 || rating > 5) {
     return null;
   }
-  final createdAtMs = safeInt(row, 'created_at_ms');
+  final createdAt = safeDateTime(row, 'created_at');
+  if (createdAt == null) return null;
   return ProductReview(
     id: id,
     productId: productId,
     authorName: safeString(row, 'author_name', fallback: 'Al Batal'),
     rating: rating,
     text: safeString(row, 'text'),
-    createdAt: createdAtMs > 0
-        ? DateTime.fromMillisecondsSinceEpoch(createdAtMs, isUtc: true)
-        : DateTime.fromMillisecondsSinceEpoch(0),
+    createdAt: createdAt,
     photoUrl: safeString(row, 'photo_url').isEmpty
         ? null
         : safeString(row, 'photo_url'),

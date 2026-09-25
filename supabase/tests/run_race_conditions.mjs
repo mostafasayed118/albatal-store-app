@@ -75,7 +75,7 @@ console.log('  RACE CONDITION TEST SUITE — Migration 025');
 console.log('═══════════════════════════════════════════════════════');
 console.log('');
 
-const client = new Client({ connectionString: STAGING_DB_URL, ssl: { rejectUnauthorized: false } });
+const client = new Client({ connectionString: STAGING_DB_URL, ssl: { rejectUnauthorized: true } });
 
 try {
   await client.connect();
@@ -547,7 +547,7 @@ try {
   // Open a SECOND independent pg Client to confirm from outside
   // the runner session that no test residue remains.
   console.log('═══ CLEANUP VERIFICATION (second session) ═══');
-  const verifier = new Client({ connectionString: STAGING_DB_URL, ssl: { rejectUnauthorized: false } });
+  const verifier = new Client({ connectionString: STAGING_DB_URL, ssl: { rejectUnauthorized: true } });
   try {
     await verifier.connect();
     const residue = (await verifier.query(

@@ -6,6 +6,7 @@ import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
+import '../../../../shared/services/analytics_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../addresses/addresses.dart';
 import '../../domain/repositories/auth_session_port.dart';
@@ -43,17 +44,20 @@ class CheckoutPage extends StatelessWidget {
     PlaceCheckoutOrderUseCase? placeOrder,
     AuthSessionPort? authSession,
     CouponsRepository? couponsRepository,
+    AnalyticsService? analytics,
   })  : _checkoutRepository = checkoutRepository,
         _checkoutCubit = checkoutCubit,
         _placeOrder = placeOrder,
         _authSession = authSession,
-        _couponsRepository = couponsRepository;
+        _couponsRepository = couponsRepository,
+        _analytics = analytics;
 
   final CheckoutRepository _checkoutRepository;
   final CheckoutCubit? _checkoutCubit;
   final PlaceCheckoutOrderUseCase? _placeOrder;
   final AuthSessionPort? _authSession;
   final CouponsRepository? _couponsRepository;
+  final AnalyticsService? _analytics;
 
   @override
   Widget build(BuildContext context) {
@@ -251,6 +255,7 @@ class CheckoutPage extends StatelessWidget {
         _checkoutRepository,
         placeOrder: _placeOrder,
         coupons: _couponsRepository,
+        analytics: _analytics,
       ),
       child: page,
     );

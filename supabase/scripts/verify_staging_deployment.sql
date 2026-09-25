@@ -15,130 +15,108 @@
 
 -- ============================================================
 -- SECTION 1: Migration files applied
--- Supabase tracks applied migrations in supabase_migrations
--- .schema_migrations. We expect exactly 19 migrations
--- (001 through 019).
 -- ============================================================
 
 \echo '\n=== SECTION 1: Applied migrations ==='
 
 SELECT
   'total_migrations_applied' AS check_name,
-  count(*)::text              AS expected,
-  CASE WHEN count(*) >= 19 THEN 'PASS' ELSE 'FAIL' END AS status
+  'latest-073-or-newer' AS expected,
+  CASE
+    WHEN max(version::integer) >= 73 THEN 'PASS'
+    ELSE 'FAIL'
+  END AS status
 FROM supabase_migrations.schema_migrations
-
-UNION ALL
-
-SELECT
-  'migration_018_confirm_cod_payment' AS check_name,
-  'present'                           AS expected,
-  CASE WHEN EXISTS (
-    SELECT 1 FROM supabase_migrations.schema_migrations
-    WHERE version LIKE '%018_confirm_cod_payment%'
-  ) THEN 'PASS' ELSE 'FAIL' END AS status
-
-UNION ALL
+WHERE version ~ '^[0-9]{3}$';
 
 SELECT
-  'migration_019_harden_rpc_grants' AS check_name,
-  'present'                         AS expected,
+  'migration_073_payment_integrity' AS check_name,
+  'present' AS expected,
   CASE WHEN EXISTS (
     SELECT 1 FROM supabase_migrations.schema_migrations
-    WHERE version LIKE '%019_harden_rpc%'
+    WHERE version = '073'
+  ) THEN 'PASS' ELSE 'FAIL' END AS status;
+
+SELECT
+  'migration_072_checkout_bounds' AS check_name,
+  'present' AS expected,
+  CASE WHEN EXISTS (
+    SELECT 1 FROM supabase_migrations.schema_migrations
+    WHERE version = '072'
   ) THEN 'PASS' ELSE 'FAIL' END AS status;
 
 
 -- ============================================================
 -- SECTION 2: RPC existence + signature
--- Confirms the 4 critical RPCs exist with the expected
--- parameter types (so PostgREST can route the Flutter calls).
 -- ============================================================
 
 \echo '\n=== SECTION 2: RPC existence + signature ==='
 
+WITH required(name, signature) AS (
+  VALUES
+    ('confirm_cod_payment', 'uuid'),
+    ('create_checkout_order', 'text,jsonb,jsonb,text,text'),
+    ('update_order_status', 'uuid,text,text'),
+    ('process_paymob_callback', 'text,text,integer,text,boolean'),
+    ('get_or_claim_paymob_payment', 'uuid'),
+    ('set_payment_provider_order_id_claim', 'uuid,text,uuid'),
+    ('admin_upsert_variant', 'uuid,text,text,integer,numeric'),
+    ('admin_set_product_images', 'uuid,text[]'),
+    ('submit_product_review', 'uuid,integer,text,text'),
+    ('review_instapay_proof', 'uuid,boolean,text')
+)
 SELECT
-  proname AS rpc_name,
-  pg_get_function_identity_arguments(oid) AS args,
+  name || '(' || signature || ')' AS rpc,
   CASE
-    WHEN proname = 'confirm_cod_payment'
-       AND pg_get_function_identity_arguments(oid) = 'uuid'
-    THEN 'PASS'
-    WHEN proname = 'create_checkout_order'
-       AND pg_get_function_identity_arguments(oid) = 'text, jsonb, jsonb, text'
-    THEN 'PASS'
-    WHEN proname = 'update_order_status'
-       AND pg_get_function_identity_arguments(oid) = 'uuid, text, text'
-    THEN 'PASS'
-    WHEN proname = 'process_paymob_callback'
-       AND pg_get_function_identity_arguments(oid) = 'text, text, integer, text, boolean'
-    THEN 'PASS'
+    WHEN to_regprocedure('public.' || name || '(' || signature || ')') IS NOT NULL
+      THEN 'PASS'
     ELSE 'FAIL'
   END AS status
-FROM pg_proc
-WHERE proname IN (
-  'confirm_cod_payment',
-  'create_checkout_order',
-  'update_order_status',
-  'process_paymob_callback'
-)
-AND pronamespace = 'public'::regnamespace
-ORDER BY proname;
+FROM required;
+
+SELECT
+  'old_checkout_overload_absent' AS rpc,
+  CASE
+    WHEN to_regprocedure('public.create_checkout_order(text,jsonb,jsonb,text)') IS NULL
+      THEN 'PASS'
+    ELSE 'FAIL'
+  END AS status;
 
 
 -- ============================================================
 -- SECTION 3: RPC EXECUTE grants (least privilege)
---
--- Required state:
---   confirm_cod_payment      → authenticated (NOT anon, NOT public)
---   create_checkout_order    → authenticated (NOT anon, NOT public)
---   update_order_status      → authenticated (NOT anon, NOT public)
---   process_paymob_callback  → service_role  (NOT anon, NOT authenticated)
 -- ============================================================
 
 \echo '\n=== SECTION 3: RPC EXECUTE grants ==='
 
--- Helper: does role R have EXECUTE on function F(args)?
--- proacl is null when default privileges apply; we treat null
--- as "PUBLIC has it" (the pre-019 state, which must be fixed).
+WITH required(name, signature, allowed_role) AS (
+  VALUES
+    ('confirm_cod_payment', 'uuid', 'authenticated'),
+    ('create_checkout_order', 'text,jsonb,jsonb,text,text', 'authenticated'),
+    ('update_order_status', 'uuid,text,text', 'authenticated'),
+    ('process_paymob_callback', 'text,text,integer,text,boolean', 'service_role'),
+    ('get_or_claim_paymob_payment', 'uuid', 'authenticated'),
+    ('set_payment_provider_order_id_claim', 'uuid,text,uuid', 'service_role'),
+    ('admin_upsert_variant', 'uuid,text,text,integer,numeric', 'authenticated'),
+    ('admin_set_product_images', 'uuid,text[]', 'authenticated'),
+    ('submit_product_review', 'uuid,integer,text,text', 'authenticated'),
+    ('review_instapay_proof', 'uuid,boolean,text', 'authenticated')
+)
 SELECT
-  f.proname AS rpc_name,
+  name || '(' || signature || ')' AS rpc,
+  allowed_role AS expected_grantee,
   CASE
-    WHEN f.proname = 'confirm_cod_payment'     THEN 'authenticated'
-    WHEN f.proname = 'create_checkout_order'  THEN 'authenticated'
-    WHEN f.proname = 'update_order_status'    THEN 'authenticated'
-    WHEN f.proname = 'process_paymob_callback' THEN 'service_role'
-  END AS expected_grantee,
-  CASE
-    WHEN f.proname = 'confirm_cod_payment'
-      AND has_function_privilege('authenticated',  f.oid, 'EXECUTE')
-      AND NOT has_function_privilege('anon',        f.oid, 'EXECUTE')
-      THEN 'PASS'
-    WHEN f.proname = 'create_checkout_order'
-      AND has_function_privilege('authenticated',  f.oid, 'EXECUTE')
-      AND NOT has_function_privilege('anon',        f.oid, 'EXECUTE')
-      THEN 'PASS'
-    WHEN f.proname = 'update_order_status'
-      AND has_function_privilege('authenticated',  f.oid, 'EXECUTE')
-      AND NOT has_function_privilege('anon',        f.oid, 'EXECUTE')
-      THEN 'PASS'
-    WHEN f.proname = 'process_paymob_callback'
-      AND has_function_privilege('service_role',   f.oid, 'EXECUTE')
-      AND NOT has_function_privilege('anon',        f.oid, 'EXECUTE')
-      AND NOT has_function_privilege('authenticated', f.oid, 'EXECUTE')
+    WHEN has_function_privilege(allowed_role, 'public.' || name || '(' || signature || ')', 'EXECUTE')
+      AND NOT has_function_privilege('anon', 'public.' || name || '(' || signature || ')', 'EXECUTE')
+      AND (
+        allowed_role = 'service_role'
+        OR name = 'get_or_claim_paymob_payment'
+        OR NOT has_function_privilege('service_role', 'public.' || name || '(' || signature || ')', 'EXECUTE')
+      )
       THEN 'PASS'
     ELSE 'FAIL'
-  END AS status,
-  coalesce(f.proacl::text, 'NULL (default→PUBLIC)') AS current_acl
-FROM pg_proc f
-WHERE f.proname IN (
-  'confirm_cod_payment',
-  'create_checkout_order',
-  'update_order_status',
-  'process_paymob_callback'
-)
-AND f.pronamespace = 'public'::regnamespace
-ORDER BY f.proname;
+  END AS status
+FROM required;
 
 
 -- ============================================================
@@ -201,7 +179,7 @@ WHERE n.nspname = 'public'
   AND c.relkind = 'r'
   AND c.relname IN (
     'profiles', 'addresses', 'wishlists', 'cart_items',
-    'orders', 'order_items', 'payments'
+    'orders', 'order_items', 'payments', 'product_reviews', 'instapay_proofs'
   )
 ORDER BY c.relname;
 
@@ -223,5 +201,32 @@ FROM pg_policies
 WHERE schemaname = 'public'
   AND tablename = 'payments'
   AND policyname = 'payments_insert_own';
+
+SELECT
+  'product_reviews_direct_insert' AS check_name,
+  CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS status
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'product_reviews'
+  AND cmd = 'INSERT';
+
+WITH expected(bucket_id) AS (
+  VALUES ('instapay-proofs'::TEXT), ('review-images'::TEXT)
+), actual AS (
+  SELECT b.id AS bucket_id, b.public, b.file_size_limit, b.allowed_mime_types
+  FROM expected e
+  LEFT JOIN storage.buckets b ON b.id = e.bucket_id
+)
+SELECT
+  bucket_id,
+  CASE
+    WHEN public = false
+      AND file_size_limit <= 5 * 1024 * 1024
+      AND allowed_mime_types @> ARRAY['image/jpeg', 'image/png', 'image/webp']::TEXT[]
+    THEN 'PASS'
+    ELSE 'FAIL'
+  END AS status
+FROM actual
+ORDER BY bucket_id;
 
 \echo '\n=== Verification complete — all sections must show PASS ==='

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -86,6 +87,8 @@ class FakeAdminRepository implements AdminRepository {
   /// Captured `categoryId` from the last adminUpsertProduct call —
   /// regression evidence that the form submits a category UUID.
   String? lastUpsertCategoryId;
+  Money? lastUpsertBasePrice;
+  Money? lastUpsertPriceOverride;
 
   /// Commit counters for the negative-input regression tests: a rejected
   /// entry must leave these untouched.
@@ -141,10 +144,11 @@ class FakeAdminRepository implements AdminRepository {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) async {
     lastUpsertCategoryId = categoryId;
+    lastUpsertBasePrice = basePrice;
     upsertProductCalls++;
     return const Success('fake-product-id');
   }
@@ -155,8 +159,9 @@ class FakeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) async {
+    lastUpsertPriceOverride = priceOverride;
     upsertVariantCalls++;
     return const Success('fake-variant-id');
   }
@@ -420,7 +425,7 @@ void main() {
           slug: 'royal-emerald-silk',
           categoryId: 'cat-uuid-1',
           categoryName: 'Silk',
-          basePrice: 1890,
+          basePrice: Money.egp(1890),
           isActive: true,
         ),
       ];
@@ -513,6 +518,7 @@ void main() {
     // ('Cotton'), which admin_upsert_product (p_category_id UUID)
     // rejects — every save failed against the deployed RPC.
     expect(fake.lastUpsertCategoryId, 'cat-uuid-2');
+    expect(fake.lastUpsertBasePrice, const Money.egp(450));
     expect(fake.getAllProductsCalls, 2,
         reason: 'list loads once on entry, then must refresh when the create '
             'flow pops back with a changed signal');
@@ -565,13 +571,48 @@ void main() {
         reason: 'the dialog stays open');
     expect(fake.upsertVariantCalls, 0);
 
-    // A valid entry saves and closes.
+    // A valid entry saves and closes; the editor converts major units exactly.
     await tester.enterText(find.widgetWithText(TextField, 'Stock'), '9');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Price Override (optional)'),
+      '125.75',
+    );
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(fake.upsertVariantCalls, 1);
+    expect(fake.lastUpsertPriceOverride, const Money(12575));
     expect(find.text('Edit Variant'), findsNothing);
+  });
+
+  testWidgets('variant editor rejects a negative price override',
+      (tester) async {
+    final fake = FakeAdminRepository()
+      ..variants = const [
+        AdminVariant(variantId: 'v1', size: 'M', color: 'Navy', stock: 12),
+      ];
+    registerFakes(fake);
+
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: AdminVariantEditorPage(productId: 'pid', repository: fake),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Price Override (optional)'),
+      '-5',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Price override cannot be negative'), findsOneWidget);
+    expect(find.text('Edit Variant'), findsOneWidget);
+    expect(fake.upsertVariantCalls, 0);
   });
 
   testWidgets('product form rejects a negative base price commit',

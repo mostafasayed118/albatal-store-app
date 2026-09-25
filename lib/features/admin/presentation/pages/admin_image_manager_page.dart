@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
@@ -59,6 +60,7 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   String? _error;
   String? _errorCode;
   bool _uploading = false;
+  Future<void> _mutationQueue = Future<void>.value();
 
   @override
   void initState() {
@@ -90,6 +92,30 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
     );
   }
 
+  Future<void> _runSerializedMutation(Future<void> Function() action) {
+    final completer = Completer<void>();
+    _mutationQueue = _mutationQueue.then((_) async {
+      if (!mounted) {
+        completer.complete();
+        return;
+      }
+      try {
+        await action();
+        completer.complete();
+      } catch (error, stackTrace) {
+        if (!mounted) {
+          completer.complete();
+          return;
+        }
+        Log.e('Admin image mutation failed',
+            error: error, stackTrace: stackTrace);
+        showFloatingError(context, context.l10n.adminImageUploadFailed);
+        completer.complete();
+      }
+    });
+    return completer.future;
+  }
+
   Future<void> _persistPaths(List<String> paths, {String? confirmation}) async {
     final result =
         await widget.repository.adminSetProductImages(widget.productId, paths);
@@ -116,8 +142,9 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
   }
 
   Future<void> _uploadImage() async {
+    if (_uploading) return;
     setState(() => _uploading = true);
-    try {
+    await _runSerializedMutation(() async {
       final outcome = await runAdminImageUpload(
         productId: widget.productId,
         pickImage: widget.pickImage,
@@ -126,7 +153,6 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
         repository: widget.repository,
       );
       if (!mounted) return;
-      setState(() => _uploading = false);
       switch (outcome) {
         case AdminUploadCancelled():
           break;
@@ -153,31 +179,30 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
             showFloatingError(context, context.l10n.adminImageUploadFailed);
           }
       }
-    } on AppError catch (e) {
-      if (!mounted) return;
-      setState(() => _uploading = false);
-      showFloatingError(context, e.message);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _uploading = false);
-      Log.e('Admin image upload failed', error: e);
-      showFloatingError(context, context.l10n.adminImageUploadFailed);
-    }
+    });
+    if (!mounted) return;
+    setState(() => _uploading = false);
   }
 
   void _move(int from, int to) {
+    if (from < 0 || from >= _paths.length) return;
     if (to < 0 || to >= _paths.length) return;
+    final path = _paths[from];
     hapticTap();
-    final next = List<String>.of(_paths);
-    final item = next.removeAt(from);
-    next.insert(to, item);
-    // sort_order is implicit by list order passed to adminSetProductImages.
-    _persistPaths(next);
+    unawaited(_runSerializedMutation(() async {
+      final current = _paths.indexOf(path);
+      if (current < 0 || to < 0 || to >= _paths.length) return;
+      final next = List<String>.of(_paths)..removeAt(current);
+      next.insert(to, path);
+      await _persistPaths(next);
+    }));
   }
 
   /// A single tap on the small overlay icon must not delete an image:
   /// confirm first, then confirm the outcome.
   Future<void> _delete(int index) async {
+    if (index < 0 || index >= _paths.length) return;
+    final path = _paths[index];
     hapticWarning();
     // Let the tapped tile's frame finish rendering before pushing the
     // dialog (same slow-device guard used by the other admin dialogs).
@@ -205,8 +230,12 @@ class _AdminImageManagerPageState extends State<AdminImageManagerPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    final next = List<String>.of(_paths)..removeAt(index);
-    await _persistPaths(next, confirmation: context.l10n.imageRemoved);
+    await _runSerializedMutation(() async {
+      final current = _paths.indexOf(path);
+      if (current < 0) return;
+      final next = List<String>.of(_paths)..removeAt(current);
+      await _persistPaths(next, confirmation: context.l10n.imageRemoved);
+    });
   }
 
   @override

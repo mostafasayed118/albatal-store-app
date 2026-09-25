@@ -33,7 +33,25 @@ import {
 } from "../_shared/cors.ts";
 import { enforceRateLimit } from "../_shared/rate_limit.ts";
 
-const MAX_PROOF_BYTES = 5 * 1024 * 1024; // 5 MB decoded
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
+const MAX_REFERENCE_LENGTH = 64;
+
+function hasImageSignature(bytes: Uint8Array, ext: string): boolean {
+  if (ext === "png") {
+    return bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 &&
+      bytes[2] === 0x4e && bytes[3] === 0x47 && bytes[4] === 0x0d &&
+      bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+  }
+  if (ext === "jpg" || ext === "jpeg") {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 &&
+      bytes[2] === 0xff;
+  }
+  if (ext === "webp") {
+    return bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+      String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+  }
+  return false;
+}
 
 export async function handleInstapaySubmitProof(
   req: Request,
@@ -88,7 +106,22 @@ export async function handleInstapaySubmitProof(
     );
     if (rateLimited) return rateLimited;
 
-    const body = await req.json();
+    const rawBody = await req.text();
+    if (rawBody.length > Math.ceil((MAX_PROOF_BYTES * 4) / 3) + 1024) {
+      return new Response(JSON.stringify({ message: "Proof too large" }), {
+        status: 413,
+        headers: jsonHeadersFor(req),
+      });
+    }
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return new Response(JSON.stringify({ message: "Invalid JSON body" }), {
+        status: 400,
+        headers: jsonHeadersFor(req),
+      });
+    }
     const orderId = typeof body.order_id === "string" ? body.order_id : "";
     const proofBase64 = typeof body.proof_base64 === "string"
       ? body.proof_base64
@@ -96,7 +129,12 @@ export async function handleInstapaySubmitProof(
     const reference = typeof body.reference === "string"
       ? body.reference.trim()
       : "";
-    // Gallery picks are usually JPEG; allow a small validated set.
+    if (reference.length > MAX_REFERENCE_LENGTH) {
+      return new Response(JSON.stringify({ message: "Reference too long" }), {
+        status: 400,
+        headers: jsonHeadersFor(req),
+      });
+    }
     const EXT_CONTENT_TYPES: Record<string, string> = {
       png: "image/png",
       jpg: "image/jpeg",
@@ -104,7 +142,7 @@ export async function handleInstapaySubmitProof(
       webp: "image/webp",
     };
     const fileExt = typeof body.file_ext === "string"
-      ? body.file_ext.toLowerCase()
+      ? body.file_ext.trim().toLowerCase()
       : "png";
     const contentType = EXT_CONTENT_TYPES[fileExt];
 
@@ -190,6 +228,16 @@ export async function handleInstapaySubmitProof(
       );
     }
 
+    if (!hasImageSignature(bytes, fileExt)) {
+      return new Response(
+        JSON.stringify({ message: "Proof content does not match format" }),
+        {
+          status: 400,
+          headers: jsonHeadersFor(req),
+        },
+      );
+    }
+
     // Upload to the private bucket under the caller's own folder —
     // storage RLS (041) enforces the same layout for reads.
     const storagePath = `${user.id}/${payment.id}/${Date.now()}.${fileExt}`;
@@ -217,11 +265,15 @@ export async function handleInstapaySubmitProof(
       .single();
 
     if (insertError || !proof) {
+      await supabase.storage.from("instapay-proofs").remove([storagePath]);
       console.error("instapay-submit-proof: insert failed");
-      return new Response(JSON.stringify({ message: "Insert failed" }), {
-        status: 500,
-        headers: jsonHeadersFor(req),
-      });
+      const status = insertError?.code === "23505" ? 409 : 500;
+      return new Response(
+        JSON.stringify({
+          message: status === 409 ? "A proof is already pending" : "Insert failed",
+        }),
+        { status, headers: jsonHeadersFor(req) },
+      );
     }
 
     return new Response(

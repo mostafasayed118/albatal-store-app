@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../shared/components/app_button.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
@@ -78,7 +79,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
     final colorCtrl = newDialogController(existing?.color ?? '');
     final stockCtrl = newDialogController(existing?.stock.toString() ?? '');
     final priceCtrl = newDialogController(
-      existing?.priceOverride?.toString() ?? '',
+      existing?.priceOverride?.format(symbol: '') ?? '',
     );
     bool saving = false;
 
@@ -154,16 +155,21 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                         showFloatingError(ctx, ctx.l10n.stockCannotBeNegative);
                         return;
                       }
-                      final priceOverride = priceCtrl.text.trim().isEmpty
+                      final priceText = priceCtrl.text.trim();
+                      final priceOverride = priceText.isEmpty
                           ? null
-                          : double.tryParse(priceCtrl.text.trim());
-                      if (priceCtrl.text.trim().isNotEmpty &&
-                          priceOverride == null) {
+                          : Money.tryParseMajor(priceText);
+                      if (priceText.isNotEmpty && priceOverride == null) {
                         showFloatingError(
-                            ctx, ctx.l10n.adminInvalidPriceOverride);
+                          ctx,
+                          priceText.startsWith('-')
+                              ? ctx.l10n.adminPriceOverrideNegative
+                              : ctx.l10n.adminInvalidPriceOverride,
+                        );
                         return;
                       }
-                      if (priceOverride != null && priceOverride <= 0) {
+                      if (priceOverride != null &&
+                          priceOverride.minorUnits <= 0) {
                         // No DB guard existed for price_override until
                         // migration 044 — this is the first line of defense;
                         // the CHECK is the last.
@@ -268,7 +274,7 @@ class _AdminVariantEditorPageState extends State<AdminVariantEditorPage>
                             child: ListTile(
                               title: Text('${v.size} / ${v.color}'),
                               subtitle: Text(
-                                  '${l10n.adminVariantStock(v.stock)}${override != null ? ' • ${l10n.adminVariantOverride('$override')}' : ''}'),
+                                  '${l10n.adminVariantStock(v.stock)}${override != null ? ' • ${l10n.adminVariantOverride(override.format())}' : ''}'),
                               trailing: IconButton(
                                 icon: const Icon(Icons.edit),
                                 onPressed: () =>

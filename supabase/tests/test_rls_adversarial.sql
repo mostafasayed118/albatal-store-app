@@ -511,9 +511,10 @@ BEGIN
     -- Create a fresh order with idempotency key so it doesn't collide
     SELECT create_checkout_order(
       'paymob_card',
-      '{"recipient":"Test","line":"Test St","city":"Cairo"}'::jsonb,
-      '[{"product_id":"44444444-4444-4444-4444-444444444444","size":"M","color":"Blue","quantity":1,"unit_price":1}]'::jsonb,
-      'rls-pricing-test-key'
+       '{"recipient":"Test","line":"Test St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::jsonb,
+       '[{"product_id":"44444444-4444-4444-4444-444444444444","size":"M","color":"Blue","quantity":1,"unit_price":1}]'::jsonb,
+       'rls-pricing-test-key',
+       NULL
     ) INTO v_result;
     v_subtotal := (v_result->>'subtotal');
     -- Expected subtotal = 1000 (DB price) * 1 = 1000, NOT 1 (client price)

@@ -135,7 +135,7 @@ const run = async () => {
     console.log('No demo variant — skipping orders');
   } else {
     const std = DEMOS.find((x) => x.tier === 'standard');
-    const stdAddress = { recipient: std.full_name, line: '12 Talaat Harb St, Apt 4', city: std.city, country: 'Egypt' };
+     const stdAddress = { recipient: std.full_name, line: '12 Talaat Harb St, Apt 4', city: std.city, country: 'Egypt', phone: '+201001234567' };
     const { error: stdSignInErr } = await anon.auth.signInWithPassword({ email: std.email, password: std.password });
     if (stdSignInErr) throw new Error(`sign-in ${std.email}: ${stdSignInErr.message}`);
     try {
@@ -143,8 +143,9 @@ const run = async () => {
         p_payment_method: 'cod',
         p_address: stdAddress,
         p_items: [{ product_id: variant.product_id, size: variant.size, color: variant.color, quantity: 2 }],
-        p_idempotency_key: 'demo-standard-001',
-      });
+         p_idempotency_key: 'demo-standard-001',
+         p_coupon_code: null,
+       });
       if (stdErr) throw stdErr;
       standardOrderId = stdOrder?.order_id ?? null;
       standardIdempotent = stdOrder?.idempotent ?? false;
@@ -153,7 +154,7 @@ const run = async () => {
       await anon.auth.signOut();
     }
     const prem = DEMOS.find((x) => x.tier === 'premium');
-    const premAddress = { recipient: prem.full_name, line: '12 Talaat Harb St, Apt 4', city: prem.city, country: 'Egypt' };
+     const premAddress = { recipient: prem.full_name, line: '12 Talaat Harb St, Apt 4', city: prem.city, country: 'Egypt', phone: '+201001234567' };
     const { error: premSignInErr } = await anon.auth.signInWithPassword({ email: prem.email, password: prem.password });
     if (premSignInErr) throw new Error(`sign-in ${prem.email}: ${premSignInErr.message}`);
     try {
@@ -161,8 +162,9 @@ const run = async () => {
         p_payment_method: 'cod',
         p_address: premAddress,
         p_items: [{ product_id: variant.product_id, size: variant.size, color: variant.color, quantity: 2 }],
-        p_idempotency_key: 'demo-premium-001',
-      });
+         p_idempotency_key: 'demo-premium-001',
+         p_coupon_code: null,
+       });
       if (premErr) throw premErr;
       premiumOrderId = premOrder?.order_id ?? null;
       premiumIdempotent = premOrder?.idempotent ?? false;

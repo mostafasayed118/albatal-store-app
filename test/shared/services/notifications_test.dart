@@ -1,8 +1,13 @@
 import 'package:al_batal_elite/features/settings/data/notification_prefs_store.dart';
 import 'package:al_batal_elite/shared/services/notification_service.dart';
 import 'package:al_batal_elite/shared/services/push_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _MockNotificationsPlugin extends Mock
+    implements FlutterLocalNotificationsPlugin {}
 
 class _RecordingService implements NotificationService {
   _RecordingService(this.prefs);
@@ -32,6 +37,14 @@ class _RecordingService implements NotificationService {
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      ),
+    );
+  });
+
   group('NotificationPrefsStore (§12)', () {
     test('order notifications default to enabled', () async {
       SharedPreferences.setMockInitialValues({});
@@ -71,6 +84,24 @@ void main() {
       await service.showOrderNotification(title: 't', body: 'b');
       expect(service.shown, 0);
     });
+  });
+
+  test('local notification init requests permission exactly once', () async {
+    final plugin = _MockNotificationsPlugin();
+    when(() => plugin.initialize(settings: any(named: 'settings')))
+        .thenAnswer((_) async => true);
+    var requests = 0;
+    final service = LocalNotificationService(
+      plugin: plugin,
+      requestNotificationPermission: () async {
+        requests++;
+      },
+    );
+
+    await service.init();
+    await service.init();
+
+    expect(requests, 1);
   });
 
   group('PushService (§12)', () {

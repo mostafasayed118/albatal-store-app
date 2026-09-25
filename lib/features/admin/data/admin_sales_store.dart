@@ -6,6 +6,7 @@ import '../domain/entities/admin_sales.dart';
 import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_sales_port.dart';
 import 'admin_mappers.dart';
+import 'admin_sales_mappers.dart';
 
 /// Sales dashboard and low-stock reads for [SupabaseAdminRepository].
 ///
@@ -29,27 +30,10 @@ final class SupabaseAdminSales implements AdminSalesPort {
   @override
   Future<Result<AdminSalesOverview>> getSalesOverview({int days = 14}) =>
       Result.guard(() async {
-        // Read-only dashboard aggregation (#12): a single bounded select
-        // over existing orders rows with the joined line-item columns the
-        // detail query already uses. Client-side aggregation keeps the
-        // schema untouched; the limit keeps a burst of orders from
-        // stalling the dashboard (same bounded-read discipline as the
-        // catalog list).
-        final now = DateTime.now();
-        final firstDay = DateTime.utc(now.year, now.month, now.day).subtract(
-          Duration(days: (days < 1 ? 1 : days) - 1),
+        final response = await _client.rpc(
+          'admin_sales_overview',
+          params: {'p_days': days},
         );
-        final rows = await _client
-            .from('orders')
-            .select('id, status, total, placed_at, '
-                'order_items(product_name, quantity)')
-            .gte('placed_at', firstDay.toIso8601String())
-            .order('placed_at')
-            .limit(1000);
-        return AdminMappers.salesOverviewFromRows(
-          rows as List<dynamic>,
-          days: days,
-          now: now,
-        );
+        return AdminSalesMappers.salesOverviewFromRpc(response);
       }, 'Failed to load sales overview', code: kAdminSalesLoadFailed);
 }

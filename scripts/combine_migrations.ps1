@@ -14,7 +14,11 @@ param([string]$Output = "scripts\run_all_migrations.sql")
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $migrationsDir = Join-Path (Split-Path -Parent $scriptDir) "supabase\migrations"
-$outFile = Join-Path (Split-Path -Parent $scriptDir) $Output
+$outFile = if ([System.IO.Path]::IsPathRooted($Output)) {
+    $Output
+} else {
+    Join-Path (Split-Path -Parent $scriptDir) $Output
+}
 
 # Get migration files sorted by name (001_, 002_, etc.)
 $files = Get-ChildItem -Path $migrationsDir -Filter "*.sql" |
@@ -34,6 +38,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine("-- Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
 [void]$sb.AppendLine("--")
 [void]$sb.AppendLine("-- Paste into Supabase SQL Editor → Run")
+[void]$sb.AppendLine("-- Existing projects should use run_migrations.ps1 with the migration ledger.")
 [void]$sb.AppendLine("-- ============================================================")
 [void]$sb.AppendLine("")
 [void]$sb.AppendLine("SET client_min_messages = warning;")
@@ -50,7 +55,9 @@ foreach ($f in $files) {
 }
 
 [void]$sb.AppendLine("-- ============================================================")
-[void]$sb.AppendLine("-- All migrations complete. Run verify_schema.sql to confirm.")
+[void]$sb.AppendLine("-- All migrations complete. Reload the PostgREST schema cache.")
+[void]$sb.AppendLine("NOTIFY pgrst, 'reload schema';")
+[void]$sb.AppendLine("-- Run verify_schema.sql to confirm.")
 [void]$sb.AppendLine("-- ============================================================")
 
 # Ensure output directory exists

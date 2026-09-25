@@ -85,4 +85,47 @@ class AdminSalesMappers {
       ]..sort((a, b) => b.count.compareTo(a.count)),
     );
   }
+
+  static AdminSalesOverview salesOverviewFromRpc(Object? payload) {
+    if (payload is! Map) {
+      throw const FormatException('Invalid sales overview payload');
+    }
+    final root = safeMap(payload);
+    final revenueRows = root['revenue_by_day'];
+    final productRows = root['top_products'];
+    final statusRows = root['status_counts'];
+    if (revenueRows is! List ||
+        revenueRows.isEmpty ||
+        productRows is! List ||
+        statusRows is! List) {
+      throw const FormatException('Incomplete sales overview payload');
+    }
+    return AdminSalesOverview(
+      revenueByDay: [
+        for (final raw in revenueRows)
+          if (raw is Map)
+            if (DateTime.tryParse(safeString(raw, 'day')) case final day?)
+              AdminRevenuePoint(
+                day: DateTime.utc(day.year, day.month, day.day),
+                revenueMinor: optInt(raw, 'revenue_minor') ?? 0,
+              ),
+      ],
+      topProducts: [
+        for (final raw in productRows.take(5))
+          if (raw is Map)
+            AdminTopProduct(
+              productName: safeString(raw, 'product_name', fallback: 'Unknown'),
+              unitsSold: optInt(raw, 'units_sold') ?? 0,
+            ),
+      ],
+      statusCounts: [
+        for (final raw in statusRows)
+          if (raw is Map)
+            AdminSalesStatusCount(
+              status: AdminOrderStatus.fromName(safeString(raw, 'status')),
+              count: optInt(raw, 'count') ?? 0,
+            ),
+      ],
+    );
+  }
 }

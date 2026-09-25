@@ -163,10 +163,11 @@ Deno.test("internal transitions use a separate service-role client", () => {
     'serviceRoleClient.rpc(\n      "get_or_claim_paymob_payment"',
     "claim RPC must remain caller-scoped",
   );
-  assertNotIncludes(
-    serviceSection,
-    'serviceRoleClient\n        .rpc("set_payment_provider_order_id"',
-    "provider persistence must remain caller-scoped",
+  assert(
+    /serviceRoleClient\s*\.rpc\(\s*"set_payment_provider_order_id_claim"/s.test(
+      providerSection,
+    ),
+    "provider persistence must use the service-role claim-bound RPC",
   );
 });
 
@@ -269,7 +270,7 @@ Deno.test("in-progress and claimed branches prevent duplicate provider orders", 
 Deno.test("provider persistence uses the guarded RPC and protects the claim on persistence failure", () => {
   assertIncludes(
     source,
-    '"set_payment_provider_order_id"',
+    '"set_payment_provider_order_id_claim"',
     "provider order must use the guarded persistence RPC",
   );
   assertIncludes(

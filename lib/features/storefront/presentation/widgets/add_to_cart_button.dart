@@ -31,8 +31,12 @@ class AddToCartButton extends StatelessWidget {
     // tiered per-meter × cut meters × quantity (Wave C).
     final meters = p.sellByLength ? double.tryParse(state.length) : null;
     final lineTotal = meters != null
-        ? meteredLineTotal(tieredPerMeterPrice(p.price, meters), meters,
-            quantity: state.quantity)
+        ? meteredLineTotalWithTier(
+            p.price,
+            meters,
+            tierDiscountPercent(meters),
+            quantity: state.quantity,
+          )
         : p.price * state.quantity;
     final label = state.inStock && lineTotal.minorUnits > 0
         ? l.addToCartTotal(moneyText(l, lineTotal))

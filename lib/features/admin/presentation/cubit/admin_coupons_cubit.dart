@@ -48,8 +48,10 @@ class AdminCouponsCubit extends Cubit<AdminCouponsState> {
   final AdminCouponsPort _repository;
 
   Future<void> load() async {
+    if (isClosed) return;
     emit(state.copyWith(status: AdminCouponsStatus.loading));
     final result = await _repository.fetchCoupons();
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(status: AdminCouponsStatus.ready, coupons: value));
@@ -71,21 +73,34 @@ class AdminCouponsCubit extends Cubit<AdminCouponsState> {
       discountMinor: discountMinor,
       description: description,
     );
-    if (result is Success<AdminCoupon>) {
-      await load();
+    if (isClosed) return;
+    switch (result) {
+      case Success():
+        await load();
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminCouponsStatus.error,
+          errorMessage: error.message,
+          errorCode: error.code,
+        ));
     }
   }
 
   Future<void> setActive(String id, bool active) async {
     final result = await _repository.setCouponActive(id, active);
+    if (isClosed) return;
     switch (result) {
       case Success():
         emit(state.copyWith(
             coupons: state.coupons
                 .map((c) => c.id == id ? c.copyWith(active: active) : c)
                 .toList()));
-      case Failure():
-        break; // row keeps its previous toggle state in the UI
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminCouponsStatus.error,
+          errorMessage: error.message,
+          errorCode: error.code,
+        ));
     }
   }
 }

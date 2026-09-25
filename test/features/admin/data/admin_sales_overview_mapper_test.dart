@@ -1,4 +1,5 @@
 import 'package:al_batal_elite/features/admin/data/admin_mappers.dart';
+import 'package:al_batal_elite/features/admin/data/admin_sales_mappers.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -121,6 +122,34 @@ void main() {
       expect(
         overview.topProducts.map((t) => t.productName),
         ['P6', 'P5', 'P4', 'P3', 'P2'],
+      );
+    });
+  });
+
+  group('AdminSalesMappers.salesOverviewFromRpc', () {
+    test('maps the server aggregate contract defensively', () {
+      final overview = AdminSalesMappers.salesOverviewFromRpc({
+        'revenue_by_day': [
+          {'day': '2026-09-12', 'revenue_minor': 20000},
+          {'day': 'not-a-date', 'revenue_minor': 99},
+        ],
+        'top_products': [
+          {'product_name': 'Silk', 'units_sold': 7},
+        ],
+        'status_counts': [
+          {'status': 'paid', 'count': 3},
+        ],
+      });
+      expect(overview.revenueByDay, hasLength(1));
+      expect(overview.revenueByDay.single.day, DateTime.utc(2026, 9, 12));
+      expect(overview.revenueByDay.single.revenueMinor, 20000);
+      expect(overview.topProducts.single.productName, 'Silk');
+      expect(overview.statusCounts.single.count, 3);
+    });
+    test('fails closed on an incomplete server payload', () {
+      expect(
+        () => AdminSalesMappers.salesOverviewFromRpc(const {}),
+        throwsFormatException,
       );
     });
   });

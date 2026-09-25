@@ -1,6 +1,8 @@
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 
+const bool serverMeteredCheckoutEnabled = false;
+
 /// Cut-length and wholesale pricing (Wave C).
 ///
 /// Domain-level, owner-tunable constants: change the tier table here to
@@ -50,6 +52,19 @@ Money tieredPerMeterPrice(Money basePerMeter, double meters) {
 /// 39950 × 2.5 = 99875, i.e. 998.75 EGP. Rendering it must therefore
 /// keep the piasters ([Money.format] does); truncating to whole pounds
 /// would display less than the `line_total` submitted at checkout.
+/// Applies a tier discount once to the complete line total.
+Money meteredLineTotalWithTier(
+  Money basePerMeter,
+  double meters,
+  int discountPercent, {
+  int quantity = 1,
+}) {
+  final meterTenths = (meters * 10).round();
+  final numerator =
+      basePerMeter.minorUnits * (100 - discountPercent) * meterTenths;
+  return Money((numerator * quantity / 1000).round());
+}
+
 Money meteredLineTotal(Money perMeter, double meters, {int quantity = 1}) =>
     Money((perMeter.minorUnits * meters).round() * quantity);
 
@@ -81,7 +96,11 @@ extension CartItemPricing on CartItem {
     if (sample) return Money.zero;
     final meters = cutMeters;
     if (meters == null) return lineTotal;
-    return meteredLineTotal(tieredPerMeterPrice(product.price, meters), meters,
-        quantity: quantity);
+    return meteredLineTotalWithTier(
+      product.price,
+      meters,
+      tierDiscountPercent(meters),
+      quantity: quantity,
+    );
   }
 }

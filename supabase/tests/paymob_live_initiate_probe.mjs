@@ -50,7 +50,7 @@ async function main() {
   const uid = su.user?.id;
   check('signup', !!token && !!uid, token ? `user ${uid}` : `response keys: ${Object.keys(su).join(',')} (email confirmation likely ON)`);
 
-  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: true } });
   await client.connect();
   try {
     if (!token || !uid) return;

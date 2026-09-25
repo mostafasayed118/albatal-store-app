@@ -94,6 +94,11 @@ Deno.test("payable amount is read server-side, never from the client", () => {
   );
 });
 
+Deno.test("amount formatting preserves minor-unit piastres", () => {
+  assertIncludes(source, "toFixed(2)", "amount display must preserve piastres");
+  assertNotIncludes(source, "Math.round(payment.amount / 100)", "rounding loses piastres");
+});
+
 Deno.test("fail-closed CORS and no secret leakage in responses", () => {
   assertIncludes(source, "requireCors(req)", "CORS must fail closed");
   const forbidden = [

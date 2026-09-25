@@ -72,7 +72,7 @@ async function postCallback(values, hmac) {
   return { status: res.status, json, text: text.slice(0, 200) };
 }
 
-const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: false } });
+const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: true } });
 const scenario = process.argv[2]?.toUpperCase() ?? '';
 
 try {

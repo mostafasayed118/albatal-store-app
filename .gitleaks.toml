@@ -10,11 +10,8 @@
 #    Full git history of this path contains no credential material.
 #
 # 3. config/env.staging.json / config/env.production.json
-#    Hold only the Supabase ANON key (public by design: it ships inside the
-#    client app bundle; data access is enforced by RLS — adversarial suite
-#    44/44 PASS). High-risk secrets (PAYMOB_*, SUPABASE_SERVICE_ROLE_KEY,
-#    private keys) are still caught by the dedicated CI step in ci.yml and
-#    by default gitleaks rules on every other path.
+#    These are intentionally scanned by default; the dedicated CI rule
+#    separately checks for service-role and provider secrets.
 [extend]
 useDefault = true
 
@@ -23,6 +20,4 @@ description = "Triaged false positives — see comments above"
 paths = [
   '''^supabase/tests/test_026_forward_repair\.sql$''',
   '''^test/features/storefront/presentation/pages/stitch_details_test\.dart$''',
-  '''^config/env\.staging\.json$''',
-  '''^config/env\.production\.json$''',
 ]

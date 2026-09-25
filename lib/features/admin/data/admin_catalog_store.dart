@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
 import '../domain/entities/admin_catalog.dart';
@@ -16,6 +17,11 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
 
   final SupabaseClient _client;
 
+  static const _adminProductSelect =
+      'id, name, slug, description, composition, care, origin, category_id, '
+      'base_price, is_active, width_cm, gsm, sell_by_length, min_cut_meters, '
+      'color_name, categories(name)';
+
   @override
   Future<Result<void>> updateStock(String variantId, int newStock) =>
       Result.guard<void>(() async {
@@ -31,8 +37,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
         // name via an explicit range page (audit residual P4).
         final rows = await _client
             .from('products')
-            .select('id, name, slug, description, composition, category_id, '
-                'base_price, is_active, categories(name)')
+            .select(_adminProductSelect)
             .order('name')
             .limit(100)
             .range(0, 99);
@@ -44,8 +49,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
       Result.guard(() async {
         final rows = await _client
             .from('products')
-            .select('id, name, slug, description, composition, category_id, '
-                'base_price, is_active, categories(name)')
+            .select(_adminProductSelect)
             .eq('id', productId)
             .limit(1);
         final list = rows as List<dynamic>;
@@ -77,7 +81,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) =>
       Result.guard<String>(() async {
@@ -88,16 +92,14 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
           'p_description': description,
           'p_composition': composition,
           'p_category_id': categoryId,
-          'p_base_price': basePrice,
+          'p_base_price': basePrice.minorUnits,
           'p_is_active': isActive,
-          // §10 fabric attributes: only sent when set — the pre-051 RPC
-          // rejects unknown named parameters.
-          if (care != null) 'p_care': care,
-          if (origin != null) 'p_origin': origin,
-          if (widthCm != null) 'p_width_cm': widthCm,
-          if (gsm != null) 'p_gsm': gsm,
-          if (sellByLength != null) 'p_sell_by_length': sellByLength,
-          if (minCutMeters != null) 'p_min_cut_meters': minCutMeters,
+          'p_sell_by_length': sellByLength,
+          'p_care': care,
+          'p_origin': origin,
+          'p_width_cm': widthCm,
+          'p_gsm': gsm,
+          'p_min_cut_meters': minCutMeters,
         });
         if (res is! String || res.isEmpty) {
           // An RPC that answers without the product id is a protocol
@@ -115,7 +117,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) =>
       Result.guard<String>(() async {
         final res = await _client.rpc('admin_upsert_variant', params: {
@@ -123,7 +125,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
           'p_size': size,
           'p_color': color,
           'p_stock': stock,
-          'p_price_override': priceOverride,
+          'p_price_override': priceOverride?.minorUnits,
         });
         if (res is! String || res.isEmpty) {
           // Same protocol-violation shape as [adminUpsertProduct]: message

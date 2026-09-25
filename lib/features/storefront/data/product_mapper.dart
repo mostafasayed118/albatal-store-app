@@ -24,6 +24,7 @@ extension ProductCodec on Product {
   /// images) depending on which path loaded it.
   static const productSelect = '''
             id, name, slug, description, composition, care, origin,
+            width_cm, gsm, sell_by_length, min_cut_meters, color_name,
             base_price, old_price, rating, review_count,
             categories!inner(name),
             product_variants(product_id, size, color, stock, price_override),

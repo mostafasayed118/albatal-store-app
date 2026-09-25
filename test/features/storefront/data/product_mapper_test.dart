@@ -5,6 +5,13 @@ import 'package:al_batal_elite/shared/services/storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('shared product select includes every row-mapped fabric field', () {
+    expect(
+      ProductCodec.productSelect,
+      contains('width_cm, gsm, sell_by_length, min_cut_meters, color_name'),
+    );
+  });
+
   test('encode/decode preserves every product field', () {
     const product = Product(
       id: 'silk-1',

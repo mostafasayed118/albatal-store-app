@@ -86,6 +86,7 @@ class ReviewsCubit extends Cubit<ReviewsState> {
     required String text,
     List<int>? photoBytes,
   }) async {
+    if (isClosed || state.submitting) return;
     final repo = _repository;
     if (repo == null || _productId.isEmpty) {
       emit(state.copyWith(

@@ -8,7 +8,7 @@ if (!DB_URL || !DB_URL.includes(REF)) {
   console.log(JSON.stringify({ ABORT: "STAGING_DB_URL missing or wrong ref" }));
   process.exit(1);
 }
-const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
+const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: true } });
 await db.connect();
 
 const pend = await db.query(

@@ -35,6 +35,23 @@ void main() {
     });
   });
 
+  group('Money.tryParseMajor', () {
+    test('parses whole and fractional major units exactly', () {
+      expect(Money.tryParseMajor('1890'), const Money(189000));
+      expect(Money.tryParseMajor(' 12.5 '), const Money(1250));
+      expect(Money.tryParseMajor('12.50'), const Money(1250));
+      expect(Money.tryParseMajor('0.01'), const Money(1));
+    });
+
+    test('rejects ambiguous or lossy input instead of rounding', () {
+      expect(Money.tryParseMajor(''), isNull);
+      expect(Money.tryParseMajor('-1'), isNull);
+      expect(Money.tryParseMajor('1.234'), isNull);
+      expect(Money.tryParseMajor('1e2'), isNull);
+      expect(Money.tryParseMajor('1,290'), isNull);
+    });
+  });
+
   group('Money.formatExact (document/table form)', () {
     test('always carries two decimals', () {
       expect(const Money.egp(1290).formatExact(), '1290.00 EGP');

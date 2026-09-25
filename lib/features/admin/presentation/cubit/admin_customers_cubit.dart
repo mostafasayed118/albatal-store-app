@@ -167,7 +167,11 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   /// blanking it would tear down the page that owns the focused field.
   void search(String query) {
     _query = query.trim();
+    _generation++;
     _searchDebounceTimer?.cancel();
+    if (state.isLoadingMore) {
+      emit(state.copyWith(isLoadingMore: false));
+    }
     _searchDebounceTimer = Timer(
       searchDebounce,
       () => unawaited(_loadFirstPage(withSpinner: false)),

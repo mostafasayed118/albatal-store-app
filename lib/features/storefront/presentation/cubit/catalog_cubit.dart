@@ -83,6 +83,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
       _repository.fetchProducts().then((r) => productResult = r),
       _repository.fetchCategories().then((r) => categoryResult = r),
     ]);
+    if (isClosed) return;
     productResult.when(
       success: (products) {
         final cats = categoryResult.when(
@@ -121,6 +122,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   /// for the periodic tick, and [_flashPollTimer] starts on the first
   /// call and is cancelled in [close].
   Future<void> loadFlashSales() async {
+    if (isClosed) return;
     // Start the poll once — subsequent calls are refreshes driven by
     // the poll itself (or explicit retry paths) and must not stack
     // additional timers.
@@ -134,6 +136,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
       },
     );
     final result = await _repository.getActiveFlashSales();
+    if (isClosed) return;
     result.when(
       success: (sales) {
         // Deep-equal polls emit nothing: the 60s refresh otherwise

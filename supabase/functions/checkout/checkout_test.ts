@@ -52,6 +52,12 @@ Deno.test("checkout uses jsonHeadersFor(req) not legacy jsonHeaders()", () => {
   );
 });
 
+Deno.test("checkout returns canonical total fields", () => {
+  const source = readFileSync(SOURCE_PATH);
+  assertEquals(source.includes("total: data.total"), true);
+  assertEquals(source.includes("coupon_discount_minor"), true);
+});
+
 Deno.test("checkout never logs raw error objects", () => {
   const source = readFileSync(SOURCE_PATH);
   const catchIdx = source.indexOf("catch");

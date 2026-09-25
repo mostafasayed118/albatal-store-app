@@ -22,6 +22,20 @@ final class Money extends Equatable {
       : minorUnits = majorUnits * 100,
         assert(majorUnits >= 0);
 
+  /// Parses a major-unit amount into exact integer minor units.
+  ///
+  /// Returns null for malformed, negative, exponent, or sub-piastre input so
+  /// an editor can reject a value instead of silently rounding it.
+  static Money? tryParseMajor(String source) {
+    final value = source.trim();
+    if (!RegExp(r'^\d+(?:\.\d{1,2})?$').hasMatch(value)) return null;
+    final parts = value.split('.');
+    final major = int.parse(parts.first);
+    final fractional =
+        parts.length == 1 ? 0 : int.parse(parts.last.padRight(2, '0'));
+    return Money(major * 100 + fractional);
+  }
+
   /// Zero value for empty carts, free shipping, etc.
   static const zero = Money(0);
 

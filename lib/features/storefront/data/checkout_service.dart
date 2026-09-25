@@ -32,12 +32,16 @@ class CheckoutService implements CheckoutRepository {
 
   /// Minor-unit extractor for server-computed money fields.
   ///
-  /// JSON numbers arrive as `int` or `double`; both are accepted and
-  /// truncated to integer minor units. Anything else (null, string, bool)
-  /// yields null so the caller can fail closed.
+  /// JSON numbers arrive as `int` or integral `double`; fractional,
+  /// negative, or non-finite values yield null so the caller fails closed.
   int? _minorUnits(Object? value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
+    if (value is int) return value >= 0 ? value : null;
+    if (value is num &&
+        value.isFinite &&
+        value >= 0 &&
+        value == value.roundToDouble()) {
+      return value.toInt();
+    }
     return null;
   }
 
@@ -56,6 +60,13 @@ class CheckoutService implements CheckoutRepository {
     String? couponCode,
     String? idempotencyKey,
   }) async {
+    if (!serverMeteredCheckoutEnabled &&
+        items.any((item) => item.sample || item.cutMeters != null)) {
+      return const Failure(
+        AppError('This checkout option is not available',
+            code: kCheckoutFailedCode),
+      );
+    }
     try {
       final response = await _client.rpc(
         'create_checkout_order',
@@ -67,10 +78,8 @@ class CheckoutService implements CheckoutRepository {
           // The 6-key server snapshot (the 5 legacy keys + phone, UX-003)
           // is encoded HERE, in the data layer — the domain port carries
           // a typed [Address] (audit 2026-09-21: no raw Map in the domain
-          // contract). Absent address keeps the legacy empty-object wire
-          // shape. The RPC enforces only recipient/line/city and stores
-          // the map verbatim (migrations 013→066), so the additive phone
-          // key is contract-safe.
+          // contract). The current checkout RPC also requires a bounded
+          // recipient/line/city/phone snapshot and validates it server-side.
           'p_address': address == null
               ? <String, dynamic>{}
               : AddressCodec.toSnapshotJson(address),

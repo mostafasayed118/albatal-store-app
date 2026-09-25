@@ -77,8 +77,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _minCutCtrl = TextEditingController(text: safeString(d, 'min_cut_meters'));
     _sellByLength = safeString(d, 'sell_by_length') == 'true';
     final price = d?['base_price'];
+    final priceMinor = price is num && price >= 0 ? price.toInt() : 0;
     _priceCtrl = TextEditingController(
-      text: price == null ? '' : price.toString(),
+      text: priceMinor == 0 ? '' : Money(priceMinor).format(symbol: ''),
     );
     _isActive = safeBool(d, 'is_active', fallback: true);
     _selectedCategoryId = d?['category_id'] as String?;
@@ -121,8 +122,9 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
     _gsmCtrl.text = product.gsm?.toString() ?? '';
     _minCutCtrl.text = product.minCutMeters?.toString() ?? '';
     _sellByLength = product.sellByLength;
-    _priceCtrl.text =
-        product.basePrice == 0 ? '' : Money.wholeEgpLabel(product.basePrice);
+    _priceCtrl.text = product.basePrice.minorUnits == 0
+        ? ''
+        : product.basePrice.format(symbol: '');
     _isActive = product.isActive;
     _selectedCategoryId = product.categoryId;
     setState(() => _loadingProduct = false);
@@ -162,12 +164,18 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
       showFloatingError(context, context.l10n.adminSelectCategory);
       return;
     }
-    final price = double.tryParse(_priceCtrl.text.trim());
+    final priceText = _priceCtrl.text.trim();
+    final price = Money.tryParseMajor(priceText);
     if (price == null) {
-      showFloatingError(context, context.l10n.adminInvalidPrice);
+      showFloatingError(
+        context,
+        priceText.startsWith('-')
+            ? context.l10n.adminPriceNegative
+            : context.l10n.adminInvalidPrice,
+      );
       return;
     }
-    if (price <= 0) {
+    if (price.minorUnits <= 0) {
       // The DB enforces this too (001: base_price > 0), but failing here
       // gives an inline message instead of a generic save failure.
       showFloatingError(context, context.l10n.adminPriceNegative);

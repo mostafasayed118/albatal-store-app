@@ -99,6 +99,14 @@ void main() {
     });
   });
 
+  test('zoom provider accepts HTTPS and rejects cleartext HTTP', () {
+    expect(
+      ZoomGallery.imageProviderFor('https://cdn.test/fabric.jpg'),
+      isNotNull,
+    );
+    expect(ZoomGallery.imageProviderFor('http://cdn.test/fabric.jpg'), isNull);
+  });
+
   testWidgets('tapping the hero image pushes the fullscreen zoom viewer',
       (tester) async {
     await _openViewer(tester);

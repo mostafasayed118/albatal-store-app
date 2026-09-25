@@ -21,9 +21,12 @@ class MeteredPriceLine extends StatelessWidget {
     final l = context.l10n;
     final meters = double.tryParse(state.length);
     if (meters == null) return const SizedBox.shrink();
-    final total = meteredLineTotal(
-        tieredPerMeterPrice(product.price, meters), meters,
-        quantity: state.quantity);
+    final total = meteredLineTotalWithTier(
+      product.price,
+      meters,
+      tierDiscountPercent(meters),
+      quantity: state.quantity,
+    );
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Text(

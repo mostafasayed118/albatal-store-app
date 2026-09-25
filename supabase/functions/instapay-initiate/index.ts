@@ -162,12 +162,20 @@ export async function handleInstapayInitiate(req: Request): Promise<Response> {
       );
     }
 
+    const amountMinor = Number(payment.amount);
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      return new Response(JSON.stringify({ message: "Invalid payment amount" }), {
+        status: 500,
+        headers: jsonHeadersFor(req),
+      });
+    }
+
     return new Response(
       JSON.stringify({
         payment_id: payment.id,
         instapay_address: instapayAddress,
-        amount: payment.amount,
-        amount_formatted: `${Math.round(payment.amount / 100)} EGP`,
+        amount: amountMinor,
+        amount_formatted: `${(amountMinor / 100).toFixed(2)} EGP`,
       }),
       { status: 200, headers: jsonHeadersFor(req) },
     );

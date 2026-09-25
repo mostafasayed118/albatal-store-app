@@ -127,7 +127,7 @@ export async function postCallback(values, hmac) {
   return { status: r.status, body };
 }
 
-export const ADDRESS = { recipient: "E2E Tester", line: "1 Test St", city: "Cairo" };
+export const ADDRESS = { recipient: "E2E Tester", line: "1 Test St", city: "Cairo", country: "Egypt", phone: "+201001234567" };
 
 export function log(obj) {
   process.stdout.write(JSON.stringify(obj) + "\n");

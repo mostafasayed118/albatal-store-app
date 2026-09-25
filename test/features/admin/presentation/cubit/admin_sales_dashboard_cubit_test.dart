@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -111,7 +112,7 @@ class _FakeAdminRepository implements AdminRepository {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) async =>
       const Success('fake');
@@ -122,7 +123,7 @@ class _FakeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) async =>
       const Success('fake');
 
