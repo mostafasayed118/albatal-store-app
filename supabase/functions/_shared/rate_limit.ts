@@ -27,7 +27,10 @@ export interface RateLimitRpc {
 export function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for") ?? "";
   const first = fwd.split(",")[0].trim();
-  return first.length > 0 ? first : "unknown";
+  const isIpv4 = first.split(".").length === 4 &&
+    first.split(".").every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255);
+  const isIpv6 = first.includes(":") && /^[0-9a-f:]+$/i.test(first);
+  return isIpv4 || isIpv6 ? first : "unknown";
 }
 
 /** Bucket namespacing: `<kind>:<id>` — see migration 060 docs. */

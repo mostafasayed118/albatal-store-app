@@ -35,7 +35,7 @@ final class SupabaseAdminOrders implements AdminOrdersPort {
   /// the snapshot ×50 per load). [AdminMappers.orderFromRow] tolerates
   /// the absent key and yields `address: null` for queue rows.
   static const _orderListSelect =
-      'id,status,total,placed_at,payment_method,tracking_number,'
+      'id,status,total,placed_at,payment_method,payment_id,'
       'profiles(full_name),order_items(id)';
 
   @override

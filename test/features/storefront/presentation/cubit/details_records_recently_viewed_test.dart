@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -42,6 +44,32 @@ final class _OneProductCatalog
       Future.value(const Success<List<FlashSale>>([]));
 }
 
+final class _PendingProductCatalog
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
+  final Completer<Result<Product>> result = Completer<Result<Product>>();
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) => result.future;
+
+  @override
+  Future<Result<List<Product>>> fetchProducts() async => const Success([_silk]);
+
+  @override
+  Future<Result<List<String>>> fetchCategories() async =>
+      const Success(['Silk']);
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const ['Silk'];
+
+  @override
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
+}
+
 final class _MemoryStore implements RecentlyViewedStore {
   final List<Product> entries = [];
 
@@ -69,5 +97,16 @@ void main() {
 
     expect(store.entries.single.id, _silk.id);
     expect(cubit.state.status, DetailsStatus.ready);
+  });
+
+  test('a product response after close is ignored', () async {
+    final repository = _PendingProductCatalog();
+    final cubit = ProductDetailsCubit(repository);
+    final load = cubit.loadProduct(_silk.id);
+
+    await cubit.close();
+    repository.result.complete(const Success(_silk));
+
+    await expectLater(load, completes);
   });
 }

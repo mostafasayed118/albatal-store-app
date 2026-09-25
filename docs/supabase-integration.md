@@ -101,7 +101,7 @@ wishlist, addresses, and order history live in `SharedPreferences`.
 
 ## SQL migrations
 
-Fourteen numbered migrations, run in order:
+72 numbered migrations, run in order from `supabase/migrations/`:
 
 1. `001_initial_schema.sql` — tables, indexes, triggers
 2. `002_rls_policies.sql` — access control
@@ -119,10 +119,9 @@ Fourteen numbered migrations, run in order:
 14. `014_paymob_security_repair.sql` — Paymob callback hardening
 
 Helper scripts live in `scripts/` (`run_all_migrations.sql`,
-`run_new_migrations_only.sql`, `combine_migrations.ps1`,
-`run_migrations.ps1`, `verify_schema.sql`, `drop_everything.sql`) and the
-`supabase/migrations/` folder also contains `verify_rls.sql` plus two test SQL
-files (`test_create_checkout_order.sql`, `test_paymob_callback.sql`).
+`combine_migrations.ps1`, `run_migrations.ps1`, `verify_schema.sql`,
+`drop_everything.sql`) and the `supabase/migrations/` folder also contains
+`verify_rls.sql` plus SQL test files.
 
 ## Edge Functions
 

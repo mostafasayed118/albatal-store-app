@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/data/supabase_admin_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +56,7 @@ void main() {
       description: 'd',
       composition: 'cotton',
       categoryId: 'cat-1',
-      basePrice: 100,
+      basePrice: const Money.egp(100),
       isActive: true,
     );
     verify(() => client.rpc('admin_upsert_product', params: {
@@ -65,8 +66,14 @@ void main() {
           'p_description': 'd',
           'p_composition': 'cotton',
           'p_category_id': 'cat-1',
-          'p_base_price': 100,
+          'p_base_price': 10000,
           'p_is_active': true,
+          'p_sell_by_length': null,
+          'p_care': null,
+          'p_origin': null,
+          'p_width_cm': null,
+          'p_gsm': null,
+          'p_min_cut_meters': null,
         })).called(1);
     final value = result.when(success: (v) => v, failure: (e) => null);
     expect(value, 'new-uuid');
@@ -82,7 +89,7 @@ void main() {
       name: 'Thobe',
       slug: 'thobe',
       categoryId: 'cat-1',
-      basePrice: 100,
+      basePrice: const Money.egp(100),
       isActive: true,
     );
     expect(result, isA<Failure<String>>());
@@ -103,14 +110,39 @@ void main() {
     expect(result, isA<Failure<String>>());
   });
 
+  test('adminUpsertVariant sends price override in minor units', () async {
+    final client = MockSupabaseClient();
+    when(() => client.rpc('admin_upsert_variant', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>('variant-uuid'));
+    final repo = SupabaseAdminRepository(client: client);
+
+    final result = await repo.adminUpsertVariant(
+      productId: 'p1',
+      size: 'M',
+      color: 'Navy',
+      stock: 3,
+      priceOverride: const Money.egp(125) + const Money(75),
+    );
+
+    verify(() => client.rpc('admin_upsert_variant', params: {
+          'p_product_id': 'p1',
+          'p_size': 'M',
+          'p_color': 'Navy',
+          'p_stock': 3,
+          'p_price_override': 12575,
+        })).called(1);
+    expect(result, isA<Success<String>>());
+  });
+
   test('getAllProducts bounds the query with limit(100) + range page',
       () async {
     final client = MockSupabaseClient();
     final calls = <String>[];
     final transform = _AdminProductsTransform(calls);
+    final selects = <String>[];
     final filter = _AdminProductsFilter(calls, transform);
     when(() => client.from('products'))
-        .thenAnswer((_) => _AdminProductsFrom(filter));
+        .thenAnswer((_) => _AdminProductsFrom(filter, selects));
     final repo = SupabaseAdminRepository(client: client);
     final ok = await repo
         .getAllProducts()
@@ -119,6 +151,14 @@ void main() {
     expect(calls, contains('order:name'));
     expect(calls, contains('limit:100'));
     expect(calls, contains('range:0-99'));
+    expect(selects, hasLength(1));
+    expect(
+      selects.single,
+      contains(
+        'care, origin, category_id, base_price, is_active, width_cm, gsm, '
+        'sell_by_length, min_cut_meters, color_name, categories(name)',
+      ),
+    );
   });
 }
 
@@ -127,12 +167,15 @@ void main() {
 /// `.limit(100)` + `.range(0, 99)`) can be asserted. Future delegation
 /// mirrors FakePostgrestFilterBuilder above.
 class _AdminProductsFrom extends Fake implements SupabaseQueryBuilder {
-  _AdminProductsFrom(this._filter);
+  _AdminProductsFrom(this._filter, this._selects);
   final _AdminProductsFilter _filter;
+  final List<String> _selects;
 
   @override
-  PostgrestFilterBuilder<PostgrestList> select([String columns = '*']) =>
-      _filter;
+  PostgrestFilterBuilder<PostgrestList> select([String columns = '*']) {
+    _selects.add(columns);
+    return _filter;
+  }
 }
 
 class _AdminProductsFilter extends Fake

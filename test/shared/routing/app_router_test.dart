@@ -548,7 +548,7 @@ final class _RouteProbeAdminRepository implements AdminRepository {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) async =>
       const Success('probe');
@@ -559,7 +559,7 @@ final class _RouteProbeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) async =>
       const Success('probe');
 

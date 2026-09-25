@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/product.dart';
 import '../../../../shared/extensions/build_context_x.dart';
+import '../../domain/pricing/cut_length_pricing.dart';
 import '../catalog_color_label.dart';
 import '../cubit/product_details_cubit.dart';
 import 'color_swatches.dart';
@@ -64,7 +65,7 @@ class VariantSelector extends StatelessWidget {
                   Text(l.length,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  if (product.sellByLength) ...[
+                  if (product.sellByLength && serverMeteredCheckoutEnabled) ...[
                     // §10: cut-length stepper for sell-by-the-meter rolls
                     // (0.5 m steps, min cut clamped in the cubit).
                     Row(

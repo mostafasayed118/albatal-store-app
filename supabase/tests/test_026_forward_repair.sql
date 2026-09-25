@@ -71,10 +71,11 @@ INSERT INTO profiles (id, full_name, is_admin)
 SELECT set_config('request.jwt.claims', '{"sub":"44444444-4444-4444-4444-444444444444"}', true);
 
 SELECT create_checkout_order(
-  'Cash on Delivery',
-  '{"recipient":"Test User","line":"123 Main St","city":"Cairo"}'::jsonb,
-  '[{"product_id":"22222222-2222-2222-2222-222222222222","size":"M","color":"Black","quantity":1}]'::jsonb,
-  'test-idempotency-001'
+  'cod',
+   '{"recipient":"Test User","line":"123 Main St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::jsonb,
+   '[{"product_id":"22222222-2222-2222-2222-222222222222","size":"M","color":"Black","quantity":1}]'::jsonb,
+   'test-idempotency-001',
+   NULL
 );
 
 -- Verify: a pending COD payment row should exist
@@ -243,8 +244,8 @@ SELECT confirm_cod_payment('DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD');
 -- Verify that the privilege grants are correct after migration 026.
 
 SELECT 'T10 create_checkout_order grants' AS test,
-  has_function_privilege('authenticated', 'create_checkout_order(TEXT, JSONB, JSONB, TEXT)', 'execute') AS auth_can_execute,
-  has_function_privilege('anon', 'create_checkout_order(TEXT, JSONB, JSONB, TEXT)', 'execute') AS anon_can_execute;
+  has_function_privilege('authenticated', 'create_checkout_order(TEXT, JSONB, JSONB, TEXT, TEXT)', 'execute') AS auth_can_execute,
+  has_function_privilege('anon', 'create_checkout_order(TEXT, JSONB, JSONB, TEXT, TEXT)', 'execute') AS anon_can_execute;
 -- Expected: auth_can_execute=true, anon_can_execute=false
 
 SELECT 'T10 confirm_cod_payment grants' AS test,

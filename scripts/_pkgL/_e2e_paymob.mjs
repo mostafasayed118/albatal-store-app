@@ -62,7 +62,7 @@ async function sendValidCallback(paymobOrderId, txnId, amountCents, success) {
 
 async function newPaymobOrder(user) {
   const co = await rpc("create_checkout_order",
-    { p_payment_method: "paymob_card", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk() }, user.jwt);
+     { p_payment_method: "paymob_card", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk(), p_coupon_code: null }, user.jwt);
   const orderId = co.body?.order_id;
   const total = co.body?.total;
   const init = await initiate(orderId, user.jwt);
@@ -195,7 +195,7 @@ async function main() {
   // ── Race-2: two concurrent COD confirmations ─────────────
   const S = await signup();
   const coS = await rpc("create_checkout_order",
-    { p_payment_method: "Cash on Delivery", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk() }, S.jwt);
+    { p_payment_method: "cod", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk(), p_coupon_code: null }, S.jwt);
   const orderS = coS.body?.order_id;
   const [ca, cb] = await Promise.all([
     rpc("confirm_cod_payment", { p_order_id: orderS }, S.jwt),

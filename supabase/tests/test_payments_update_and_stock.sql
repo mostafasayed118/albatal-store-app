@@ -97,14 +97,17 @@ INSERT INTO payments (id, order_id, user_id, method, amount, status)
 -- verified structurally + by the Flutter integration test.
 SELECT proname, proconfig, prosecdef
   FROM pg_proc
-  WHERE proname = 'set_payment_provider_order_id';
+  WHERE proname = 'set_payment_provider_order_id_claim';
 -- Expected: prosecdef = true, proconfig includes search_path=public
 
--- T1 structural: the RPC is granted to authenticated (the
--- initiate Edge Function runs with the user's auth).
-SELECT has_function_privilege('authenticated',
-  'set_payment_provider_order_id(uuid,text)', 'EXECUTE') AS owner_can_call;
--- Expected: true
+-- T1 structural: persistence is service-role-only and claim-bound.
+SELECT has_function_privilege('service_role',
+  'set_payment_provider_order_id_claim(uuid,text,uuid)', 'EXECUTE') AS service_can_call,
+       has_function_privilege('authenticated',
+  'set_payment_provider_order_id_claim(uuid,text,uuid)', 'EXECUTE') AS auth_can_call,
+       has_function_privilege('authenticated',
+  'set_payment_provider_order_id(uuid,text)', 'EXECUTE') AS legacy_auth_can_call;
+-- Expected: service_can_call = true, auth_can_call = false, legacy_auth_can_call = false
 
 -- ─── T5: process_paymob_callback is service-role-only ─────
 SELECT has_function_privilege('anon',
@@ -134,9 +137,9 @@ SELECT has_function_privilege('service_role',
   'decrement_stock(uuid,text,text,integer)', 'EXECUTE') AS svc_dec;
 -- Expected: both = true
 
--- ─── T7: checkout + admin RPCs remain authenticated-callable ─
+-- ─── T7: bounded checkout + admin RPCs remain authenticated-callable ─
 SELECT has_function_privilege('authenticated',
-  'create_checkout_order(text,jsonb,jsonb,text)', 'EXECUTE') AS auth_checkout,
+  'create_checkout_order(text,jsonb,jsonb,text,text)', 'EXECUTE') AS auth_checkout,
        has_function_privilege('authenticated',
   'update_order_status(uuid,text,text)', 'EXECUTE') AS auth_admin;
 -- Expected: both = true (so normal checkout and admin fulfillment work)

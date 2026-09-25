@@ -20,9 +20,9 @@ Status legend: `[ ]` open · `[x]` done
   - **DONE:** `supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql`
     (promoted from the reviewed `docs/proposals/066_*.sql`) applied to STAGING
     via `supabase db push` 2026-09-23. Live-verified post-apply: the 5-arg RPC
-    resolves (probe with p_coupon_code reaches domain validation —
-    `P0001 'Variant not found'`, not `PGRST202`). The 4-arg overload is kept
-    for older builds.
+     resolves (probe with p_coupon_code reaches domain validation —
+     `P0001 'Variant not found'`, not `PGRST202`). The legacy 4-arg
+     overload is removed by 072; clients must use the 5-arg contract.
   - Prod: NOT pushed — same owner gate as 043–065.
 
 ## P1 — Security

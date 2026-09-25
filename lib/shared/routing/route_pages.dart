@@ -35,6 +35,7 @@ import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
 import '../../features/storefront/domain/repositories/checkout_repository.dart';
+import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
@@ -50,6 +51,7 @@ import '../../features/storefront/presentation/pages/wishlist_page.dart';
 import '../../features/support/domain/repositories/support_repository.dart';
 import '../../features/support/presentation/pages/support_pages.dart';
 import '../components/app_shell.dart';
+import '../services/analytics_service.dart';
 import '../services/connectivity_gate.dart';
 import '../services/image_compressor.dart';
 import '../services/notification_service.dart';
@@ -123,6 +125,8 @@ abstract final class RoutePages {
             ? getIt<PlaceCheckoutOrderUseCase>()
             : null,
         authSession: getIt<AuthSessionPort>(),
+        couponsRepository: getIt<CouponsRepository>(),
+        analytics: getIt<AnalyticsService>(),
       );
 
   static Widget orderSuccess(GoRouterState s) => OrderSuccessPage(

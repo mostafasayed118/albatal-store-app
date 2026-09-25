@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/storage_service.dart';
 import '../domain/entities/product_review.dart';
@@ -15,31 +16,32 @@ import 'review_mapper.dart';
 /// `review_unavailable` failure and the details page hides the section.
 final class SupabaseReviewsRepository implements ReviewsRepository {
   SupabaseReviewsRepository({required SupabaseClient client})
-      : _client = client;
+      : _client = client,
+        _storage = StorageService(client: client);
 
   final SupabaseClient _client;
+  final StorageService _storage;
 
   @override
   Future<Result<List<ProductReview>>> fetchForProduct(String productId) async {
     try {
       final rows = await _client
-          .from('product_reviews')
+          .from('product_reviews_public')
           .select(
               'id, product_id, rating, text, created_at, author_name, photo_url')
           .eq('product_id', productId)
           .order('created_at', ascending: false)
           .limit(50);
-      final list = rows as List<dynamic>;
-      final reviews = list
-          .map((row) => reviewFromRow(row as Map<String, dynamic>))
-          .whereType<ProductReview>()
-          .toList();
+      final reviews = <ProductReview>[];
+      for (final raw in rows as List<dynamic>) {
+        if (raw is! Map) continue;
+        final review = reviewFromRow(safeMap(raw));
+        if (review == null) continue;
+        reviews.add(await _withSignedPhoto(review));
+      }
       return Success(reviews);
     } on PostgrestException catch (e, st) {
       Log.w('reviews fetch failed: ${e.code}', category: LogCategory.network);
-      // Code-not-message (audit): the cubit classifies on `code`, so the
-      // machine string must travel in `code` — `message` stays identical
-      // for legacy readers that still match on it.
       return Failure(AppError(kReviewUnavailable,
           cause: e, stackTrace: st, code: kReviewUnavailable));
     } on Exception catch (e, st) {
@@ -59,56 +61,53 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
       return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
     }
     final trimmed = text.trim();
-    if (trimmed.isEmpty) {
-      // Empty reviews carry no signal and previously stored a blank row;
-      // fail fast with the invalid code the sheet already localizes.
+    if (trimmed.isEmpty || trimmed.length > maxReviewTextLength) {
       return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
     }
-    if (trimmed.length > maxReviewTextLength) {
-      // Client-side upper bound so one submission cannot stage megabytes
-      // of text for the insert (the server text column is unbounded;
-      // confirm the contract before raising this).
-      return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      return const Failure(
+          AppError(kReviewUnavailable, code: kReviewUnavailable));
     }
+
+    String? photoPath;
     try {
-      String? photoUrl;
       if (photoBytes != null && photoBytes.isNotEmpty) {
-        // Review photos arrive already compressed from the submission
-        // sheet (§4) and upload to the product-images bucket; the row
-        // stores the storage path and moderation approval flips the row
-        // to `approved`. No synchronous file re-read on submit
-        // (audit 2026-09-13).
-        // Composition-root client (audit P1): reuse the injected client
-        // rather than a hidden global fallback.
-        final storage = StorageService(client: _client);
-        final path = await storage.uploadProductImage(
-          productId,
-          photoBytes,
-          'review_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          'image/jpeg',
+        photoPath = await _storage.uploadReviewImage(
+          userId: userId,
+          productId: productId,
+          bytes: photoBytes,
+          fileName: 'review_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          contentType: 'image/jpeg',
         );
-        photoUrl = _client.storage.from('product-images').getPublicUrl(path);
       }
-      final row = await _client
-          .from('product_reviews')
-          .insert({
-            'product_id': productId,
-            'rating': rating,
-            'text': trimmed,
-            if (photoUrl != null) 'photo_url': photoUrl,
-          })
-          .select(
-              'id, product_id, rating, text, created_at, author_name, photo_url')
-          .single();
+      final response = await _client.rpc('submit_product_review', params: {
+        'p_product_id': productId,
+        'p_rating': rating,
+        'p_text': trimmed,
+        'p_photo_path': photoPath,
+      });
+      final row = safeMap(response);
       final review = reviewFromRow(row);
       if (review == null) {
+        if (photoPath != null) await _storage.deleteReviewImage(photoPath);
         return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
       }
-      return Success(review);
+      return Success(await _withSignedPhoto(review));
     } on PostgrestException catch (e, st) {
-      // RLS buy-to-review rejection lands here as a 42501/403.
-      final buyRequired =
-          e.code == '42501' || e.code == '403' || e.message.contains('policy');
+      if (photoPath != null) {
+        try {
+          await _storage.deleteReviewImage(photoPath);
+        } on Exception catch (cleanupError, cleanupStack) {
+          Log.e('review photo cleanup failed',
+              error: cleanupError, stackTrace: cleanupStack);
+        }
+      }
+      final message = e.message.toLowerCase();
+      final buyRequired = e.code == '42501' ||
+          e.code == '403' ||
+          message.contains('purchase') ||
+          message.contains('buy');
       Log.w('review submit failed: ${e.code}', category: LogCategory.network);
       final outcome = buyRequired ? kReviewBuyRequired : kReviewUnavailable;
       return Failure(AppError(
@@ -118,10 +117,48 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
         code: outcome,
       ));
     } on Exception catch (e, st) {
+      if (photoPath != null) {
+        try {
+          await _storage.deleteReviewImage(photoPath);
+        } on Exception catch (cleanupError, cleanupStack) {
+          Log.e('review photo cleanup failed',
+              error: cleanupError, stackTrace: cleanupStack);
+        }
+      }
       return Failure(AppError(kReviewUnavailable,
           cause: e, stackTrace: st, code: kReviewUnavailable));
     }
   }
+
+  Future<ProductReview> _withSignedPhoto(ProductReview review) async {
+    final path = review.photoUrl;
+    if (path == null || path.isEmpty || path.startsWith('http')) return review;
+    try {
+      final signed = await _storage.createReviewImageUrl(path);
+      if (signed == null || signed.isEmpty) return _withoutPhoto(review);
+      return ProductReview(
+        id: review.id,
+        productId: review.productId,
+        authorName: review.authorName,
+        rating: review.rating,
+        text: review.text,
+        createdAt: review.createdAt,
+        photoUrl: signed,
+      );
+    } on Exception catch (e, st) {
+      Log.e('review photo URL signing failed', error: e, stackTrace: st);
+      return _withoutPhoto(review);
+    }
+  }
+
+  ProductReview _withoutPhoto(ProductReview review) => ProductReview(
+        id: review.id,
+        productId: review.productId,
+        authorName: review.authorName,
+        rating: review.rating,
+        text: review.text,
+        createdAt: review.createdAt,
+      );
 }
 
 /// Client-side upper bound for review text (see [submit]): the server text

@@ -62,6 +62,68 @@ class StorageService {
     return path;
   }
 
+  static const reviewImageBucket = 'review-images';
+  static const maxReviewImageBytes = 5 * 1024 * 1024;
+  static const _reviewContentTypes = <String>{
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  };
+
+  String buildReviewImagePath(
+    String userId,
+    String productId,
+    String fileName,
+  ) {
+    if (userId.isEmpty || productId.isEmpty) {
+      throw ArgumentError('review path owner/product missing');
+    }
+    final safeName = fileName.split('/').last.split('\\').last;
+    if (safeName.isEmpty || safeName.contains('..')) {
+      throw ArgumentError('invalid review file name');
+    }
+    return '$userId/$productId/${const Uuid().v4()}_$safeName';
+  }
+
+  Future<String> uploadReviewImage({
+    required String userId,
+    required String productId,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final normalizedContentType = contentType.toLowerCase() == 'image/jpg'
+        ? 'image/jpeg'
+        : contentType.toLowerCase();
+    if (!_reviewContentTypes.contains(normalizedContentType)) {
+      throw Exception('unsupported review image type');
+    }
+    final data = bytes is Uint8List ? bytes : Uint8List.fromList(bytes);
+    if (data.isEmpty || data.length > maxReviewImageBytes) {
+      throw Exception('review image exceeds size limit');
+    }
+    final path = buildReviewImagePath(userId, productId, fileName);
+    await _requiredClient.storage.from(reviewImageBucket).uploadBinary(
+          path,
+          data,
+          fileOptions: FileOptions(
+            contentType: normalizedContentType,
+            upsert: false,
+          ),
+        );
+    return path;
+  }
+
+  Future<String?> createReviewImageUrl(String path) async {
+    return _requiredClient.storage
+        .from(reviewImageBucket)
+        .createSignedUrl(path, 3600);
+  }
+
+  Future<void> deleteReviewImage(String path) async {
+    await _requiredClient.storage.from(reviewImageBucket).remove([path]);
+  }
+
   String getProductImageUrl(String storagePath) {
     // Debug-only shape check (audit P5): `getPublicUrl` only builds a URL
     // string — it never touches the filesystem, so `..` cannot traverse

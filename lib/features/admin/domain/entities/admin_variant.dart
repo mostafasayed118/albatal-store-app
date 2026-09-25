@@ -1,3 +1,5 @@
+import '../../../../core/entities/money.dart';
+
 /// A product variant as returned by the admin `product_variants` query.
 ///
 /// Typed replacement for the raw `Map<String, dynamic>` rows the variant
@@ -18,6 +20,6 @@ final class AdminVariant {
   final String color;
   final int stock;
 
-  /// `price_override` when present; null means "inherits base price".
-  final double? priceOverride;
+  /// `price_override` in integer minor units; null means "inherits base price".
+  final Money? priceOverride;
 }

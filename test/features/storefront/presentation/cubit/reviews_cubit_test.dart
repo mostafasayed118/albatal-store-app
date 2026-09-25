@@ -14,7 +14,7 @@ Map<String, dynamic> _row() => {
       'product_id': 'p1',
       'rating': 4,
       'text': 'Lovely drape',
-      'created_at_ms': 1757289600000,
+      'created_at': '2025-09-09T00:00:00.000Z',
       'author_name': 'Nour',
       'photo_url': 'https://example.test/photo.jpg',
     };
@@ -28,6 +28,7 @@ void main() {
       expect(review.rating, 4);
       expect(review.authorName, 'Nour');
       expect(review.photoUrl, isNotNull);
+      expect(review.createdAt, DateTime.utc(2025, 9, 9));
     });
 
     test('fails closed on out-of-range ratings', () {
@@ -38,6 +39,11 @@ void main() {
     test('fails closed on missing ids', () {
       expect(reviewFromRow({..._row(), 'id': ''}), isNull);
       expect(reviewFromRow({..._row(), 'product_id': ''}), isNull);
+    });
+
+    test('fails closed on a missing timestamp', () {
+      final row = _row()..remove('created_at');
+      expect(reviewFromRow(row), isNull);
     });
   });
 

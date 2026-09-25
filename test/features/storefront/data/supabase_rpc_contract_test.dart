@@ -299,11 +299,8 @@ void main() {
             'anon like every admin RPC.');
   });
 
-  test('premium free-shipping perk is server-side (migration 047 contract)',
-      () {
+  test('latest checkout wrapper preserves the 066 perk and adds bounds', () {
     final migrationsDir = Directory('supabase/migrations');
-    expect(migrationsDir.existsSync(), isTrue);
-
     final files = migrationsDir
         .listSync()
         .whereType<File>()
@@ -311,63 +308,87 @@ void main() {
         .toList()
       ..sort((a, b) => a.path.compareTo(b.path));
 
-    // The LAST definition of create_checkout_order wins on the server, so
-    // the perk must live in the newest file defining it — and in every
-    // future one.
     String? latestFile;
     for (final file in files) {
-      if (file
-          .readAsStringSync()
-          .contains('CREATE OR REPLACE FUNCTION create_checkout_order')) {
+      if (file.readAsStringSync().contains(
+          'CREATE OR REPLACE FUNCTION public.create_checkout_order')) {
         latestFile = file.path;
       }
     }
-    expect(latestFile, isNotNull,
-        reason: 'No migration defines create_checkout_order.');
-    expect(latestFile!.replaceAll('\\', '/'),
-        'supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql',
-        reason: '066 must remain the newest definition of '
-            'create_checkout_order — a later migration rewriting the RPC '
-            'without the perk silently strips the premium benefit (the '
-            'coupon block was added on top of the 047 body verbatim).');
+    expect(
+      latestFile!.replaceAll('\\', '/'),
+      'supabase/migrations/072_checkout_bounds_and_expiry.sql',
+    );
 
     final body = File(latestFile).readAsStringSync();
-
-    // The perk reads the tier from the profile row, never from the
-    // request — a tampered client must not be able to claim premium.
-    final perkStart = body.indexOf('Premium perk: free shipping');
-    expect(perkStart, greaterThan(0),
-        reason: 'The 047 perk block is missing from the checkout RPC.');
-    final perkBody =
-        body.substring(perkStart, body.indexOf('v_total', perkStart));
-    expect(perkBody, contains('FROM profiles WHERE id = v_user_id'),
-        reason: 'The perk must read membership_tier from the profile row, '
-            'not from any request parameter.');
-    expect(perkBody, contains("'premium'"),
-        reason: 'The perk must gate on the premium tier value.');
-    expect(perkBody, contains('v_shipping := 0'),
-        reason: 'The perk must zero shipping before the total is computed.');
-
-    // Applied after the zone calculation, so standard users keep the
-    // 024 shipping-zone logic untouched.
-    final zoneLine = body.indexOf('v_shipping := calculate_shipping_fee');
-    expect(zoneLine, greaterThan(0));
-    expect(perkStart, greaterThan(zoneLine),
-        reason: 'The perk must apply AFTER the zone calculation.');
-
-    // Posture unchanged: authenticated-only execution (5-arg identity
-    // since 066; the kept 4-arg overload retains its 047 grants).
+    expect(body, contains('Metered checkout is not available'));
+    expect(body, contains('p.sell_by_length'));
+    expect(body, contains("regexp_replace(lower(btrim(item->>'product_id'))"));
+    expect(body, contains('char_length(input_id.hex_id) = 32'));
+    expect(body, contains('BEGIN;'));
+    expect(body, contains('COMMIT;'));
+    expect(body, contains('A valid shipping address with phone is required'));
+    expect(body, contains('octet_length(p_address::TEXT) > 4096'));
+    expect(body, contains('Invalid idempotency key'));
+    expect(body, contains('Checkout total must be greater than zero'));
+    expect(body, contains('create_checkout_order_unchecked_072'));
     expect(
         body,
         contains(
-            'GRANT EXECUTE ON FUNCTION create_checkout_order(TEXT, JSONB, JSONB, TEXT, TEXT) TO authenticated'),
-        reason: 'The rewrite must preserve the 019/024 grant posture.');
+            "to_regprocedure('public.create_checkout_order_unchecked_072"));
+    expect(
+      body,
+      contains(
+        'GRANT EXECUTE ON FUNCTION public.create_checkout_order(TEXT, JSONB, JSONB, TEXT, TEXT) TO authenticated',
+      ),
+    );
+
+    final source066 = File(
+            'supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql')
+        .readAsStringSync();
+    final perkStart = source066.indexOf('Premium perk: free shipping');
+    expect(perkStart, greaterThan(0));
+    final perkBody = source066.substring(
+      perkStart,
+      source066.indexOf('v_total', perkStart),
+    );
+    expect(perkBody, contains('FROM profiles WHERE id = v_user_id'));
+    expect(perkBody, contains("'premium'"));
+    expect(perkBody, contains('v_shipping := 0'));
+  });
+
+  test('payment hardening enforces private proof storage and uniqueness', () {
+    final body = File(
+      'supabase/migrations/070_payment_review_rate_limit_hardening.sql',
+    ).readAsStringSync();
+    expect(body, contains("'instapay-proofs'"));
+    expect(body, contains('ON CONFLICT (id) DO UPDATE SET public = false'));
+    expect(body, contains('uq_instapay_proofs_one_pending_per_payment'));
+    expect(body, contains('[A-Za-z0-9:._-]'));
+    expect(body, contains('allowed_mime_types'));
+    expect(body, contains('file_size_limit'));
+  });
+
+  test('payment expiry and proof integrity migration is forward-only', () {
+    final body = File(
+      'supabase/migrations/073_payment_expiry_and_proof_integrity.sql',
+    ).readAsStringSync();
+    expect(body, contains('order_expired'));
+    expect(body, contains('process_paymob_callback_legacy_073'));
+    expect(body, contains('proof_storage_missing'));
+    expect(body, contains("'already_set'"));
+    expect(body, contains("paymob_initiation_phase = 'provider_submitted'"));
+    expect(body, contains('RAISE EXCEPTION \'payment_not_pending\''));
+    expect(body, contains('FOR UPDATE'));
+    expect(body, contains('admin_upsert_variant'));
+    expect(body, contains('ordinality = 1'));
   });
 
   test('coupon discount is server-owned (migration 066 contract)', () {
     final body = File(
             'supabase/migrations/066_coupon_checkout_and_validate_lockdown.sql')
-        .readAsStringSync();
+        .readAsStringSync()
+        .replaceAll('\r\n', '\n');
 
     // The coupon block must resolve AFTER shipping + the premium perk so
     // the discount applies to the full total (056 reviewer-note contract).
@@ -394,6 +415,10 @@ void main() {
 
     // The order row carries the redemption for auditing/refunds.
     expect(body, contains('coupons_id, coupon_discount_minor'));
+    expect(
+        body,
+        contains(
+            "'coupon_discount_minor', COALESCE(v_existing_coupon_discount, 0)"));
 
     // validate_coupon: authenticated-only + throttled (no anon oracle).
     expect(

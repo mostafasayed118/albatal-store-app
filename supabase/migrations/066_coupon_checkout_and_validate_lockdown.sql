@@ -96,7 +96,8 @@ DECLARE
   v_existing_subtotal INTEGER;
   v_existing_shipping INTEGER;
   v_existing_total    INTEGER;
-  v_existing_expires  TIMESTAMPTZ;
+  v_existing_expires    TIMESTAMPTZ;
+  v_existing_coupon_discount INTEGER;
   v_order_items_to_insert JSONB := '[]'::JSONB;
   v_is_cod       BOOLEAN;
   v_coupon_id     UUID;
@@ -129,9 +130,10 @@ BEGIN
 
   -- ─── Idempotency: return existing order if key matches ───
   IF p_idempotency_key IS NOT NULL THEN
-    SELECT id, status::TEXT, subtotal, shipping, total, expires_at
+    SELECT id, status::TEXT, subtotal, shipping, total, expires_at, coupon_discount_minor
       INTO v_existing_id, v_existing_status, v_existing_subtotal,
-           v_existing_shipping, v_existing_total, v_existing_expires
+           v_existing_shipping, v_existing_total, v_existing_expires,
+           v_existing_coupon_discount
       FROM orders
       WHERE idempotency_key = p_idempotency_key
         AND user_id = v_user_id;
@@ -144,7 +146,8 @@ BEGIN
         'total',      v_existing_total,
         'status',     v_existing_status,
         'expires_at', v_existing_expires,
-        'idempotent', true
+        'idempotent', true,
+        'coupon_discount_minor', COALESCE(v_existing_coupon_discount, 0)
       );
     END IF;
   END IF;
@@ -255,9 +258,10 @@ BEGIN
     RETURNING id INTO v_order_id;
 
   EXCEPTION WHEN unique_violation THEN
-    SELECT id, status::TEXT, subtotal, shipping, total, expires_at
+    SELECT id, status::TEXT, subtotal, shipping, total, expires_at, coupon_discount_minor
       INTO v_existing_id, v_existing_status, v_existing_subtotal,
-           v_existing_shipping, v_existing_total, v_existing_expires
+           v_existing_shipping, v_existing_total, v_existing_expires,
+           v_existing_coupon_discount
       FROM orders
       WHERE idempotency_key = p_idempotency_key
         AND user_id = v_user_id;
@@ -268,9 +272,10 @@ BEGIN
       'shipping',   v_existing_shipping,
       'total',      v_existing_total,
       'status',     v_existing_status,
-      'expires_at', v_existing_expires,
-      'idempotent', true
-    );
+       'expires_at', v_existing_expires,
+       'idempotent', true,
+       'coupon_discount_minor', COALESCE(v_existing_coupon_discount, 0)
+     );
   END;
 
   -- ─── Insert order items + decrement stock ────────────────

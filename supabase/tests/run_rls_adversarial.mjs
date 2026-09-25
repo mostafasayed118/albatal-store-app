@@ -24,7 +24,7 @@ let sql = readFileSync('supabase/tests/test_rls_adversarial_cli.sql', 'utf8');
 
 const client = new Client({
   connectionString: STAGING_DB_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: true }
 });
 
 try {

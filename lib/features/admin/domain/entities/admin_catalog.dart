@@ -1,3 +1,5 @@
+import '../../../../core/entities/money.dart';
+
 /// A product row as the admin catalog screens consume it.
 ///
 /// Typed replacement for ad-hoc `Map<String, dynamic>` access in the
@@ -5,8 +7,8 @@
 /// payload degrades to a safe default instead of throwing in the
 /// widget tree. Lives in the admin feature (not the shared core
 /// [Product]) because the admin surfaces need management fields the
-/// storefront model deliberately does not carry (`isActive`, raw
-/// `basePrice`).
+/// storefront model deliberately does not carry (`isActive`, management
+/// product fields).
 final class AdminProduct {
   const AdminProduct({
     required this.id,
@@ -24,6 +26,7 @@ final class AdminProduct {
     this.gsm,
     this.sellByLength = false,
     this.minCutMeters,
+    this.colorName,
   });
 
   final String id;
@@ -34,8 +37,8 @@ final class AdminProduct {
   /// Display name from the joined `categories(name)` row.
   final String categoryName;
 
-  /// Base price in major EGP units, as the upsert RPC accepts it.
-  final double basePrice;
+  /// Base price in integer minor units, matching the products table.
+  final Money basePrice;
   final bool isActive;
 
   final String? description;
@@ -46,6 +49,7 @@ final class AdminProduct {
   final int? gsm;
   final bool sellByLength;
   final double? minCutMeters;
+  final String? colorName;
 
   /// Compact status chip for list rows.
   ///

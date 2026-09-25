@@ -117,7 +117,8 @@ void main() {
       await cubit.close();
     });
 
-    test('card flow never calls setOrderPaymentMethod', () async {
+    test('card flow records the canonical card method before initiation',
+        () async {
       final service = _SequenceRecordingService();
       final cubit = PaymentCubit(service);
 
@@ -125,11 +126,10 @@ void main() {
       cubit.selectMethod(PaymentMethod.paymobCard);
       await cubit.processPayment(customerEmail: 'a@b.c');
 
-      expect(
-        service.calls.where((c) => c.startsWith('set-method:')),
-        isEmpty,
-      );
-      expect(service.calls, ['initiate:ord-037-3']);
+      expect(service.calls, [
+        'set-method:ord-037-3:paymob_card',
+        'initiate:ord-037-3',
+      ]);
 
       await cubit.close();
     });

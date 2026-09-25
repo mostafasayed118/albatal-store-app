@@ -91,22 +91,31 @@ Future<AdminUploadOutcome> runAdminImageUpload({
   );
 
   final current = await repository.getProductImagePaths(productId);
-  final existing = current.when(
-    success: (p) => p,
-    failure: (_) => <String>[],
-  );
+  final List<String> existing;
+  switch (current) {
+    case Success(:final value):
+      existing = value;
+    case Failure(:final error):
+      await _deleteUploadedImage(storage, storagePath);
+      return AdminUploadError(error: error);
+  }
   final next = [...existing, storagePath];
   final saveResult = await repository.adminSetProductImages(productId, next);
 
   if (saveResult case Failure(:final error)) {
-    // Best-effort cleanup: don't orphan the storage object when the
-    // DB write rejected the new gallery.
-    try {
-      await storage.deleteProductImage(storagePath);
-    } on Exception catch (e) {
-      Log.w('orphaned product image after failed save.', error: e);
-    }
+    await _deleteUploadedImage(storage, storagePath);
     return AdminUploadError(error: error);
   }
   return AdminUploadSuccess(paths: next);
+}
+
+Future<void> _deleteUploadedImage(
+  StorageService storage,
+  String storagePath,
+) async {
+  try {
+    await storage.deleteProductImage(storagePath);
+  } on Exception catch (e) {
+    Log.w('orphaned product image after failed save.', error: e);
+  }
 }

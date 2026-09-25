@@ -392,10 +392,11 @@ export async function handlePaymobInitiate(req: Request): Promise<Response> {
 
       // ─── Persist the REAL Paymob provider order id ────────
       console.log("paymob-initiate: Persisting Paymob order ID");
-      const { data: providerOrderUpdate, error: updateError } = await supabase
-        .rpc("set_payment_provider_order_id", {
+      const { data: providerOrderUpdate, error: updateError } =
+        await serviceRoleClient.rpc("set_payment_provider_order_id_claim", {
           p_payment_id: paymentId,
           p_paymob_order_id: paymobOrderId,
+          p_claim_token: claimToken,
         });
 
       if (updateError || !providerOrderUpdate?.ok) {

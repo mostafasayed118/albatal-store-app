@@ -44,6 +44,39 @@ final class StubCatalogRepository
       const Success<List<FlashSale>>([]);
 }
 
+final class _CloseAwareCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
+  _CloseAwareCatalogRepository({
+    required this.products,
+    required this.categories,
+    required this.flashSales,
+  });
+
+  final Completer<Result<List<Product>>> products;
+  final Completer<Result<List<String>>> categories;
+  final Completer<Result<List<FlashSale>>> flashSales;
+
+  @override
+  Future<Result<List<Product>>> fetchProducts() => products.future;
+
+  @override
+  Future<Result<List<String>>> fetchCategories() => categories.future;
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      const Failure(AppError('unused'));
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const [];
+
+  @override
+  Future<Result<List<FlashSale>>> getActiveFlashSales() => flashSales.future;
+}
+
 /// Stub repository that always fails.
 final class FailingCatalogRepository
     with FetchRelatedFromProducts
@@ -119,6 +152,40 @@ void main() {
         CatalogState(status: CatalogStatus.error),
       ],
     );
+
+    test('a product load that resolves after close does not emit', () async {
+      final products = Completer<Result<List<Product>>>();
+      final categories = Completer<Result<List<String>>>();
+      final cubit = CatalogCubit(_CloseAwareCatalogRepository(
+        products: products,
+        categories: categories,
+        flashSales: Completer<Result<List<FlashSale>>>(),
+      ));
+      final load = cubit.load();
+
+      await cubit.close();
+      products.complete(const Success([]));
+      categories.complete(const Success([]));
+
+      await expectLater(load, completes);
+    });
+  });
+
+  group('CatalogCubit — flash sales', () {
+    test('a flash response that resolves after close does not emit', () async {
+      final flashSales = Completer<Result<List<FlashSale>>>();
+      final cubit = CatalogCubit(_CloseAwareCatalogRepository(
+        products: Completer<Result<List<Product>>>(),
+        categories: Completer<Result<List<String>>>(),
+        flashSales: flashSales,
+      ));
+      final load = cubit.loadFlashSales();
+
+      await cubit.close();
+      flashSales.complete(const Success([]));
+
+      await expectLater(load, completes);
+    });
   });
 
   group('CatalogCubit — filtering', () {

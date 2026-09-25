@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/entities/money.dart';
 import '../../../../core/error/result.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
@@ -139,7 +140,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) =>
       _catalog.adminUpsertProduct(
@@ -165,7 +166,7 @@ final class SupabaseAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) =>
       _catalog.adminUpsertVariant(
         productId: productId,

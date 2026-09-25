@@ -1,3 +1,4 @@
+import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
@@ -135,7 +136,7 @@ class _FakeAdminRepository implements AdminRepository {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   }) async =>
       const Success('new-id');
@@ -146,7 +147,7 @@ class _FakeAdminRepository implements AdminRepository {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   }) async =>
       const Success('new-id');
 
@@ -198,7 +199,7 @@ void main() {
           slug: 'royal-emerald-silk',
           categoryId: 'c-1',
           categoryName: 'Silk',
-          basePrice: 1890,
+          basePrice: Money.egp(1890),
           isActive: true,
         ),
         AdminProduct(
@@ -207,7 +208,7 @@ void main() {
           slug: 'egyptian-cotton',
           categoryId: 'c-2',
           categoryName: 'Cotton',
-          basePrice: 990,
+          basePrice: Money.egp(990),
           isActive: false,
         ),
       ];
@@ -247,7 +248,7 @@ void main() {
           slug: 'royal-emerald-silk',
           categoryId: 'c-1',
           categoryName: 'Silk',
-          basePrice: 1890,
+          basePrice: Money.egp(1890),
           isActive: true,
         ),
       ];

@@ -103,7 +103,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
 
     try {
       final singleResult = await _catalogRepository.fetchProductById(id);
-      if (generation != _generation) return;
+      if (isClosed || generation != _generation) return;
       final singleProduct = singleResult.when(
         success: (product) => product,
         failure: (_) => null,
@@ -115,23 +115,24 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
             singleProduct.category,
             excludeId: singleProduct.id,
           );
-          if (generation != _generation) return;
+          if (isClosed || generation != _generation) return;
           related = relatedResult.when(
             success: (items) => items,
             failure: (_) => <Product>[],
           );
         } catch (e) {
+          if (isClosed || generation != _generation) return;
           Log.w('Product details related fetch failed.', error: e);
           related = <Product>[];
         }
-        if (generation != _generation) return;
+        if (isClosed || generation != _generation) return;
         emit(_readyState(singleProduct, related, offline: offline));
         return;
       }
 
       // Retain the legacy full-catalog fallback, but only accept the requested id.
       final result = await _catalogRepository.fetchProducts();
-      if (generation != _generation) return;
+      if (isClosed || generation != _generation) return;
       result.when(
         success: (allProducts) {
           final matches = allProducts.where((x) => x.id == id);
@@ -159,7 +160,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
         )),
       );
     } catch (e) {
-      if (generation != _generation) return;
+      if (isClosed || generation != _generation) return;
       Log.w('Product details load failed.', error: e);
       emit(DetailsState(
         status: DetailsStatus.error,

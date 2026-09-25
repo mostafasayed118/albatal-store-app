@@ -213,8 +213,10 @@ class _StubPaymentService implements PaymentService {
       const InstapayUnavailable(message: 'stub');
 
   /// COD-path results; defaults keep existing tests' behaviour.
-  PaymentResult setOrderPaymentMethodResult =
-      const PaymentFailed(message: 'stub');
+  PaymentResult setOrderPaymentMethodResult = const PaymentSuccess(
+    transactionId: '',
+    amount: Money.zero,
+  );
   PaymentResult confirmCodResult = const PaymentFailed(message: 'stub');
 
   @override

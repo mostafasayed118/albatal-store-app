@@ -78,9 +78,8 @@ void main() {
     });
 
     test('toSnapshotJson carries an empty phone for phone-less rows', () {
-      // Legacy addresses saved before the field shipped still check out —
-      // the server stores the snapshot verbatim and enforces only
-      // recipient/line/city (migrations 013→066), so '' is contract-safe.
+      // Legacy rows still decode; the checkout gate blocks them until a
+      // phone is supplied before the server receives the snapshot.
       const address = Address(
         id: 'addr-1',
         recipient: 'Test User',

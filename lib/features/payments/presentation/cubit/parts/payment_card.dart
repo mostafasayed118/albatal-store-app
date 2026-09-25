@@ -4,8 +4,20 @@ part of '../payment_cubit.dart';
 
 extension PaymentCardFlow on PaymentCubit {
   Future<void> processCard({required String customerEmail}) async {
-    // Paymob Card — initiate payment
     emitState(state.copyWith(status: PaymentStatus.processing));
+
+    final methodResult = await _paymentService.setOrderPaymentMethod(
+      orderId: state.orderId,
+      method: PaymentMethod.paymobCard.serverValue,
+    );
+    if (isClosed) return;
+    if (methodResult case PaymentFailed(:final message, :final code)) {
+      emitState(state.copyWith(
+        status: PaymentStatus.failed,
+        errorMessage: code ?? message,
+      ));
+      return;
+    }
 
     final result = await _paymentService.initiatePayment(
       amount: state.amount,

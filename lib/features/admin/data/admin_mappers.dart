@@ -41,7 +41,7 @@ class AdminMappers {
           ? (row['order_items'] as List).length
           : items.length,
       items: items,
-      trackingNumber: optString(row, 'tracking_number'),
+      trackingNumber: optString(row, 'payment_id'),
       address: row['address_snapshot'] is Map
           ? addressFromSnapshot(
               (row['address_snapshot'] as Map).cast<String, dynamic>())
@@ -120,13 +120,15 @@ class AdminMappers {
   static AdminVariant? variantFromRow(Map<String, dynamic> row) {
     final id = row['id'];
     if (id is! String || id.isEmpty) return null;
-    final overrideRaw = row['price_override'];
+    final overrideMinor = optInt(row, 'price_override');
     return AdminVariant(
       variantId: id,
       size: optString(row, 'size') ?? '',
       color: optString(row, 'color') ?? '',
       stock: optInt(row, 'stock') ?? 0,
-      priceOverride: overrideRaw is num ? overrideRaw.toDouble() : null,
+      priceOverride: overrideMinor != null && overrideMinor > 0
+          ? Money(overrideMinor)
+          : null,
     );
   }
 
@@ -156,14 +158,16 @@ class AdminMappers {
   /// storefront list there is no active-only filter upstream.
   static AdminProduct productFromRow(Map<String, dynamic> row) {
     final category = row['categories'];
-    final basePriceRaw = row['base_price'];
+    final basePriceMinor = optInt(row, 'base_price');
     return AdminProduct(
       id: row['id'] as String,
       name: optString(row, 'name') ?? '',
       slug: optString(row, 'slug') ?? '',
       categoryId: optString(row, 'category_id') ?? '',
       categoryName: category is Map ? optString(category, 'name') ?? '' : '',
-      basePrice: basePriceRaw is num ? basePriceRaw.toDouble() : 0,
+      basePrice: basePriceMinor != null && basePriceMinor > 0
+          ? Money(basePriceMinor)
+          : Money.zero,
       isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
       description: optString(row, 'description'),
       composition: optString(row, 'composition'),
@@ -176,6 +180,7 @@ class AdminMappers {
       minCutMeters: row['min_cut_meters'] is num
           ? (row['min_cut_meters'] as num).toDouble()
           : null,
+      colorName: optString(row, 'color_name'),
     );
   }
 

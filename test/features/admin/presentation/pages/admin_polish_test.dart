@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
+import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_coupon.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
@@ -70,15 +72,21 @@ class _WidthRecordingStorageService extends _FakeStorageService {
 
 /// Records upload file names without touching Supabase.
 class _UploadingStorageService extends _FakeStorageService {
-  _UploadingStorageService(this.uploadedFileNames);
+  _UploadingStorageService(this.uploadedFileNames, {this.deletedPaths});
 
   final List<String> uploadedFileNames;
+  final List<String>? deletedPaths;
 
   @override
   Future<String> uploadProductImage(String productId, List<int> bytes,
       String fileName, String contentType) async {
     uploadedFileNames.add(fileName);
     return 'product-images/pid/$fileName';
+  }
+
+  @override
+  Future<void> deleteProductImage(String storagePath) async {
+    deletedPaths?.add(storagePath);
   }
 }
 
@@ -923,6 +931,116 @@ void main() {
       expect(uploadedFileNames.single, endsWith('.jpg'));
       verify(() => repo.adminSetProductImages('pid', any())).called(1);
       expect(find.text('Image uploaded'), findsOneWidget);
+    });
+
+    testWidgets('upload fails closed when existing paths cannot be read',
+        (tester) async {
+      var reads = 0;
+      when(() => repo.getProductImagePaths('pid')).thenAnswer((_) async {
+        reads++;
+        return reads == 1
+            ? const Success<List<String>>([])
+            : const Failure<List<String>>(AppError(
+                'gallery unavailable',
+                code: kAdminImagesLoadFailed,
+              ));
+      });
+      final uploadedFileNames = <String>[];
+      final deletedPaths = <String>[];
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+          productId: 'pid',
+          repository: repo,
+          storage: _UploadingStorageService(
+            uploadedFileNames,
+            deletedPaths: deletedPaths,
+          ),
+          pickImage: (_) async => XFile.fromData(
+            Uint8List.fromList(List.filled(300 * 1024, 1)),
+            name: 'fabric.jpg',
+            mimeType: 'image/jpeg',
+          ),
+          imageCompressor: _ShrinkCompressor(),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byType(AppButton).first);
+      await tester.pump();
+      await tester.pump();
+
+      expect(uploadedFileNames, hasLength(1));
+      expect(deletedPaths, hasLength(1));
+      verifyNever(() => repo.adminSetProductImages('pid', any()));
+      expect(find.text('Couldn\'t load images. Please try again.'),
+          findsOneWidget);
+      expect(find.text('Image uploaded'), findsNothing);
+    });
+
+    testWidgets('reorder writes are serialized against the latest path order',
+        (tester) async {
+      when(() => repo.getProductImagePaths('pid')).thenAnswer(
+        (_) async => const Success([
+          'product-images/pid/a.jpg',
+          'product-images/pid/b.jpg',
+          'product-images/pid/c.jpg',
+        ]),
+      );
+      final calls = <List<String>>[];
+      final completers = <Completer<void>>[];
+      when(() => repo.adminSetProductImages('pid', any()))
+          .thenAnswer((invocation) {
+        final paths = invocation.positionalArguments[1] as List<String>;
+        calls.add(List.of(paths));
+        final completer = Completer<void>();
+        completers.add(completer);
+        return completer.future.then((_) => const Success(null));
+      });
+
+      await tester.pumpWidget(harness(
+        AdminImageManagerPage(
+          productId: 'pid',
+          repository: repo,
+          storage: storage,
+        ),
+      ));
+      await tester.pump();
+      await tester.pump();
+
+      final downButtons = find.byIcon(Icons.arrow_downward);
+      await tester.tap(downButtons.at(0));
+      await tester.pump();
+      await tester.tap(downButtons.at(1));
+      await tester.pump();
+
+      expect(calls, [
+        [
+          'product-images/pid/b.jpg',
+          'product-images/pid/a.jpg',
+          'product-images/pid/c.jpg'
+        ],
+      ]);
+
+      completers.first.complete();
+      await tester.pump();
+      await tester.pump();
+
+      expect(calls, [
+        [
+          'product-images/pid/b.jpg',
+          'product-images/pid/a.jpg',
+          'product-images/pid/c.jpg'
+        ],
+        [
+          'product-images/pid/a.jpg',
+          'product-images/pid/c.jpg',
+          'product-images/pid/b.jpg'
+        ],
+      ]);
+      completers.last.complete();
+      await tester.pump();
     });
   });
 

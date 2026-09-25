@@ -60,7 +60,14 @@ AppDeepLink? parseDeepLink(
       isAppScheme && uri.host.isNotEmpty ? [uri.host, ...segments] : segments;
 
   if (segs.length == 2 && segs.first == 'product' && segs[1].isNotEmpty) {
-    return ProductDeepLink(Uri.decodeComponent(segs[1]));
+    // R12: the segment is already percent-decoded by [Uri], so an encoded
+    // `%2F` arrives here as a literal `/` — re-encode-safe downstream
+    // ([Routes.product] uses `encodeComponent`), but a decoded separator
+    // must never become a trusted id. Reject it (and absurd lengths)
+    // instead of navigating blind.
+    final id = Uri.decodeComponent(segs[1]);
+    if (id.isEmpty || id.contains('/') || id.length > 256) return null;
+    return ProductDeepLink(id);
   }
   if (segs.length == 1 && segs.first == 'catalog') {
     final q = uri.queryParameters['q'];

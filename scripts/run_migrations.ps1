@@ -6,8 +6,8 @@
     Two modes:
     1. --Mode File   — Concatenates all migration SQL files into one output file
                        you paste into the Supabase SQL Editor. No API key needed.
-    2. --Mode API    — Executes each migration via the Supabase Management API.
-                       Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars.
+    2. --Mode API    — Links the project and uses the Supabase CLI migration
+                       command so the remote migration ledger is updated.
 
 .PARAMETER Mode
     "File" (default) or "API".
@@ -24,7 +24,7 @@
     # File mode — generates a SQL file you paste into SQL Editor
     .\scripts\run_migrations.ps1
 
-    # API mode — executes migrations directly
+    # API mode — applies pending migrations and records them remotely
     .\scripts\run_migrations.ps1 -Mode API -ProjectRef "your-project-ref"
 #>
 
@@ -39,7 +39,6 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $migrationsDir = Join-Path (Split-Path -Parent $scriptDir) "supabase\migrations"
 
-# ─── Get ordered migration files ────────────────────────────
 $migrationFiles = Get-ChildItem -Path $migrationsDir -Filter "*.sql" |
     Where-Object { $_.Name -match '^\d{3}_' } |
     Sort-Object Name
@@ -56,11 +55,7 @@ foreach ($f in $migrationFiles) {
     Write-Host "  $($f.Name)" -ForegroundColor White
 }
 
-# ════════════════════════════════════════════════════════════
-#  MODE 1: FILE — Concatenate into a single SQL file
-# ════════════════════════════════════════════════════════════
 if ($Mode -eq "File") {
-
     $outputFile = Join-Path (Split-Path -Parent $scriptDir) $OutputPath
     $sb = [System.Text.StringBuilder]::new()
 
@@ -69,7 +64,7 @@ if ($Mode -eq "File") {
     [void]$sb.AppendLine("-- Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
     [void]$sb.AppendLine("--")
     [void]$sb.AppendLine("-- Paste this into Supabase SQL Editor and click Run.")
-    [void]$sb.AppendLine("-- For existing databases, only run NEW migrations.")
+    [void]$sb.AppendLine("-- Existing projects should use run_migrations.ps1 with the migration ledger.")
     [void]$sb.AppendLine("-- ============================================================")
     [void]$sb.AppendLine("")
     [void]$sb.AppendLine("SET client_min_messages = warning;")
@@ -85,8 +80,9 @@ if ($Mode -eq "File") {
     }
 
     [void]$sb.AppendLine("-- ============================================================")
-    [void]$sb.AppendLine("-- All migrations applied successfully!")
-    [void]$sb.AppendLine("-- Run verify_schema.sql to confirm the schema is correct.")
+    [void]$sb.AppendLine("-- All migrations included. Reload the PostgREST schema cache.")
+    [void]$sb.AppendLine("NOTIFY pgrst, 'reload schema';")
+    [void]$sb.AppendLine("-- Run verify_schema.sql to confirm the schema.")
     [void]$sb.AppendLine("-- ============================================================")
 
     $sb.ToString() | Out-File -FilePath $outputFile -Encoding UTF8
@@ -98,77 +94,44 @@ if ($Mode -eq "File") {
     Write-Host "   2. Paste the contents of the file" -ForegroundColor White
     Write-Host "   3. Click 'Run'" -ForegroundColor White
     Write-Host "   4. Run verify_schema.sql to confirm" -ForegroundColor White
-
     exit 0
 }
 
-# ════════════════════════════════════════════════════════════
-#  MODE 2: API — Execute via Supabase Management API
-# ════════════════════════════════════════════════════════════
-if ($Mode -eq "API") {
+if ($Mode -ne "API") {
+    Write-Error "Unsupported migration mode: $Mode"
+    exit 1
+}
 
-    # ─── Validate credentials ────────────────────────────────
-    $serviceRoleKey = $env:SUPABASE_SERVICE_ROLE_KEY
-    if (-not $ProjectRef -or -not $serviceRoleKey) {
-        Write-Error @"
-API mode requires environment variables:
+$accessToken = $env:SUPABASE_ACCESS_TOKEN
+if (-not $ProjectRef -or -not $accessToken) {
+    Write-Error @"
+API mode requires:
   SUPABASE_PROJECT_REF   = your project reference ID
-  SUPABASE_SERVICE_ROLE_KEY = your service role key
-
-Set them and retry:
-  `$env:SUPABASE_PROJECT_REF = "your-ref"
-  `$env:SUPABASE_SERVICE_ROLE_KEY = "your-key"
-  .\scripts\run_migrations.ps1 -Mode API
+  SUPABASE_ACCESS_TOKEN  = your Supabase management API token
 "@
-        exit 1
-    }
-
-    $apiUrl = "https://api.supabase.com/v1/projects/$ProjectRef/database/query"
-    $headers = @{
-        "Authorization" = "Bearer $serviceRoleKey"
-        "Content-Type"  = "application/json"
-    }
-
-    Write-Host "`nTarget: project $ProjectRef" -ForegroundColor Yellow
-    Write-Host ""
-
-    $success = 0
-    $failed = 0
-
-    foreach ($f in $migrationFiles) {
-        $sql = Get-Content -Path $f.FullName -Raw
-        Write-Host "  Running $($f.Name)... " -NoNewline -ForegroundColor White
-
-        try {
-            $body = @{ query = $sql } | ConvertTo-Json -Depth 10
-            $response = Invoke-RestMethod -Uri $apiUrl -Method Post -Headers $headers -Body $body -ErrorAction Stop
-            Write-Host "✅" -ForegroundColor Green
-            $success++
-        }
-        catch {
-            $errMsg = $_.ErrorDetails.Message ?? $_.Exception.Message
-            Write-Host "❌ FAILED" -ForegroundColor Red
-            Write-Host "     $errMsg" -ForegroundColor DarkRed
-            $failed++
-
-            # Continue on non-fatal errors (e.g., "already exists")
-            if ($errMsg -match "already exists|IF NOT EXISTS") {
-                Write-Host "     (non-fatal, continuing...)" -ForegroundColor DarkYellow
-                $failed--
-                $success++
-            }
-        }
-    }
-
-    Write-Host "`n=== Results ===" -ForegroundColor Cyan
-    Write-Host "  ✅ Succeeded: $success" -ForegroundColor Green
-    Write-Host "  ❌ Failed:    $failed" -ForegroundColor $(if ($failed -gt 0) { "Red" } else { "Green" })
-
-    if ($failed -gt 0) {
-        Write-Host "`n⚠️  Some migrations failed. Check errors above." -ForegroundColor Yellow
-        exit 1
-    }
-
-    Write-Host "`n✅ All migrations applied successfully!" -ForegroundColor Green
-    exit 0
+    exit 1
 }
+
+Write-Host "`nTarget: project $ProjectRef" -ForegroundColor Yellow
+Write-Host "Using the Supabase CLI migration ledger." -ForegroundColor Gray
+
+& supabase link --project-ref $ProjectRef
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Supabase project linking failed."
+    exit 1
+}
+
+& supabase db push --linked --yes
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Supabase migration push failed; no schema reload was attempted."
+    exit 1
+}
+
+& supabase db query --linked "NOTIFY pgrst, 'reload schema';"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Migrations applied, but the PostgREST schema reload failed."
+    exit 1
+}
+
+Write-Host "`n✅ Pending migrations applied and PostgREST reloaded." -ForegroundColor Green
+exit 0

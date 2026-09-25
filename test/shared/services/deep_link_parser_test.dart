@@ -110,5 +110,22 @@ void main() {
         const ProductDeepLink('fabric-42'),
       );
     });
+
+    test('rejects encoded path separators in product ids (R12)', () {
+      expect(
+        parseDeepLink(
+          Uri.parse('https://albatal.app/product/a%2Fb'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+      expect(
+        parseDeepLink(
+          Uri.parse('albatal://product/a%2Fb'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+    });
   });
 }

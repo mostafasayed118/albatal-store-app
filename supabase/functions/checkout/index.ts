@@ -62,22 +62,35 @@ Deno.serve(async (req) => {
 
     const { payment_method, address_snapshot, items, idempotency_key } =
       await req.json();
+    const address = address_snapshot && typeof address_snapshot === "object" ? address_snapshot : {};
+    if (
+      typeof address.recipient !== "string" || !address.recipient.trim() ||
+      typeof address.line !== "string" || !address.line.trim() ||
+      typeof address.city !== "string" || !address.city.trim() ||
+      typeof address.phone !== "string" || !address.phone.trim()
+    ) {
+      return new Response(
+        JSON.stringify({ message: "A complete shipping address is required" }),
+        { status: 400, headers: jsonHeadersFor(req) }
+      );
+    }
 
     // ─── Call the atomic RPC ─────────────────────────────────
     // The RPC handles all validation, price lookup, stock
     // decrement, and order creation in one transaction.
     const { data, error } = await supabase.rpc("create_checkout_order", {
       p_payment_method: payment_method,
-      p_address: address_snapshot,
+      p_address: address,
       p_items: items,
       p_idempotency_key: idempotency_key ?? null,
+      p_coupon_code: null,
     });
 
     if (error) {
       // SECURITY: Never expose raw PostgREST/RPC error messages to
       // clients — they may contain SQL details, table names, or
       // constraint names. Log server-side, return generic message.
-      console.error("checkout: RPC error", error.code, error.message);
+      console.error("checkout: RPC error", error.code ?? "unknown");
       const status = error.code === "PGRST301" ? 400 : 400;
       return new Response(
         JSON.stringify({ message: "Checkout failed. Please try again." }),
@@ -91,7 +104,9 @@ Deno.serve(async (req) => {
         order_id: data.order_id,
         subtotal: data.subtotal,
         shipping: data.shipping,
+        total: data.total,
         total_cents: data.total,
+        coupon_discount_minor: data.coupon_discount_minor ?? 0,
         status: data.status,
         expires_at: data.expires_at,
         idempotent: data.idempotent,

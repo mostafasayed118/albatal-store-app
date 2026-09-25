@@ -21,9 +21,10 @@
 /*
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-001'
+  p_idempotency_key := 'test-key-001',
+  p_coupon_code := NULL
 );
 -- Assert: returns JSONB with order_id (UUID), subtotal, shipping, total, status='pending'
 -- Assert: SELECT count(*) FROM orders WHERE idempotency_key = 'test-key-001' = 1
@@ -40,9 +41,10 @@ UPDATE product_variants SET stock = 1 WHERE product_id = '<PRODUCT_UUID>' AND si
 
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":5}]'::JSONB,
-  p_idempotency_key := 'test-key-stock'
+  p_idempotency_key := 'test-key-stock',
+  p_coupon_code := NULL
 );
 -- Assert: raises 'Insufficient stock for ...'
 -- Assert: SELECT count(*) FROM orders WHERE idempotency_key = 'test-key-stock' = 0
@@ -55,17 +57,19 @@ SELECT create_checkout_order(
 -- First call
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-retry'
+  p_idempotency_key := 'test-key-retry',
+  p_coupon_code := NULL
 );
 
 -- Second call with same key
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-retry'
+  p_idempotency_key := 'test-key-retry',
+  p_coupon_code := NULL
 );
 -- Assert: both calls return the SAME order_id
 -- Assert: SELECT count(*) FROM orders WHERE idempotency_key = 'test-key-retry' = 1
@@ -91,9 +95,10 @@ UPDATE product_variants SET stock = 2 WHERE product_id = '<PRODUCT_UUID>' AND si
 -- Simple simulation: request quantity=3 when stock=2
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":3}]'::JSONB,
-  p_idempotency_key := 'test-key-rollback'
+  p_idempotency_key := 'test-key-rollback',
+  p_coupon_code := NULL
 );
 -- Assert: raises 'Insufficient stock'
 -- Assert: SELECT count(*) FROM orders WHERE idempotency_key = 'test-key-rollback' = 0
@@ -115,9 +120,10 @@ SELECT create_checkout_order(
 /*
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-price'
+  p_idempotency_key := 'test-key-price',
+  p_coupon_code := NULL
 );
 -- Assert: returned subtotal = DB price for the variant
 -- Assert: order_items.unit_price = COALESCE(variant.price_override, product.base_price)
@@ -136,18 +142,20 @@ SELECT create_checkout_order(
 /*
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-ship-cairo'
+  p_idempotency_key := 'test-key-ship-cairo',
+  p_coupon_code := NULL
 );
 -- Assert: returned shipping = Cairo zone fee (5000) or 0 if subtotal >= free_shipping_threshold
 
 -- Verify Alexandria gets a different fee:
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Alexandria","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Alexandria","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-ship-alex'
+  p_idempotency_key := 'test-key-ship-alex',
+  p_coupon_code := NULL
 );
 -- Assert: returned shipping = Alexandria zone fee (6000) or 0 if subtotal >= threshold
 */
@@ -160,9 +168,10 @@ SELECT create_checkout_order(
 /*
 SELECT create_checkout_order(
   p_payment_method := 'paymob_card',
-  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt"}'::JSONB,
+  p_address := '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::JSONB,
   p_items := '[{"product_id":"<PRODUCT_UUID>","size":"2m","color":"Emerald","quantity":1}]'::JSONB,
-  p_idempotency_key := 'test-key-noauth'
+  p_idempotency_key := 'test-key-noauth',
+  p_coupon_code := NULL
 );
 -- Assert: raises 'Authentication required'
 -- Assert: SELECT count(*) FROM orders WHERE idempotency_key = 'test-key-noauth' = 0

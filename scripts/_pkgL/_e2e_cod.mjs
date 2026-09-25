@@ -24,7 +24,7 @@ async function orderState(orderId, jwt) {
 
 async function makeCodOrder(user, qty) {
   const r = await rpc("create_checkout_order",
-    { p_payment_method: "Cash on Delivery", p_address: ADDRESS, p_items: item(qty), p_idempotency_key: idk() }, user.jwt);
+    { p_payment_method: "cod", p_address: ADDRESS, p_items: item(qty), p_idempotency_key: idk(), p_coupon_code: null }, user.jwt);
   return r;
 }
 
@@ -108,7 +108,7 @@ async function main() {
   // ── Test 5: COD on non-COD (paymob) order ────────────────
   const D = await signup();
   const coD = await rpc("create_checkout_order",
-    { p_payment_method: "paymob_card", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk() }, D.jwt);
+    { p_payment_method: "paymob_card", p_address: ADDRESS, p_items: item(1), p_idempotency_key: idk(), p_coupon_code: null }, D.jwt);
   const orderD = coD.body?.order_id;
   const notCod = await rpc("confirm_cod_payment", { p_order_id: orderD }, D.jwt);
   const stD = await orderState(orderD, D.jwt);

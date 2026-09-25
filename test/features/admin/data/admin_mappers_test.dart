@@ -26,6 +26,7 @@ void main() {
         'total': 125000,
         'placed_at': '2026-08-01T10:30:00Z',
         'payment_method': 'card',
+        'payment_id': 'TRACK-42',
         'profiles': {'full_name': 'Ahmed Hassan'},
         'order_items': [
           {'id': 'i1'},
@@ -39,6 +40,7 @@ void main() {
       expect(order.total, const Money(125000));
       expect(order.customerName, 'Ahmed Hassan');
       expect(order.paymentMethod, 'card');
+      expect(order.trackingNumber, 'TRACK-42');
       expect(order.itemCount, 3);
       expect(order.items, isEmpty);
       expect(order.placedAt, DateTime.parse('2026-08-01T10:30:00Z'));
@@ -307,6 +309,39 @@ void main() {
     });
   });
 
+  group('AdminMappers.variantFromRow', () {
+    test('maps a positive override as minor-unit Money', () {
+      final variant = AdminMappers.variantFromRow({
+        'id': 'v1',
+        'size': 'M',
+        'color': 'Navy',
+        'stock': 4,
+        'price_override': 12575,
+      });
+
+      expect(variant!.priceOverride, const Money(12575));
+    });
+
+    test('a malformed or non-positive override degrades to null', () {
+      expect(
+        AdminMappers.variantFromRow({
+          'id': 'v1',
+          'price_override': '12575',
+        })!
+            .priceOverride,
+        isNull,
+      );
+      expect(
+        AdminMappers.variantFromRow({
+          'id': 'v2',
+          'price_override': 0,
+        })!
+            .priceOverride,
+        isNull,
+      );
+    });
+  });
+
   group('AdminMappers.productsFromRows (admin catalog list)', () {
     test('maps a full products row with joined category', () {
       final products = AdminMappers.productsFromRows([
@@ -317,8 +352,15 @@ void main() {
           'description': 'Woven in the delta',
           'composition': '100% mulberry silk',
           'category_id': 'c-1',
-          'base_price': 1890.0,
+          'base_price': 189000,
           'is_active': true,
+          'care': 'Dry clean',
+          'origin': 'Egypt',
+          'width_cm': 140,
+          'gsm': 95,
+          'sell_by_length': true,
+          'min_cut_meters': 0.5,
+          'color_name': 'Royal Emerald',
           'categories': {'name': 'Silk'},
         },
       ]);
@@ -330,7 +372,14 @@ void main() {
       expect(p.slug, 'royal-emerald-silk');
       expect(p.categoryId, 'c-1');
       expect(p.categoryName, 'Silk');
-      expect(p.basePrice, 1890.0);
+      expect(p.basePrice, const Money.egp(1890));
+      expect(p.care, 'Dry clean');
+      expect(p.origin, 'Egypt');
+      expect(p.widthCm, 140);
+      expect(p.gsm, 95);
+      expect(p.sellByLength, isTrue);
+      expect(p.minCutMeters, 0.5);
+      expect(p.colorName, 'Royal Emerald');
       expect(p.isActive, isTrue);
       expect(p.statusLabel, 'Active');
       expect(p.description, 'Woven in the delta');
@@ -350,7 +399,7 @@ void main() {
       final p = products.single;
       expect(p.name, '');
       expect(p.categoryName, '');
-      expect(p.basePrice, 0);
+      expect(p.basePrice, Money.zero);
       // Inactive is the safe default: a mistyped flag must not hide the
       // row from the manage list.
       expect(p.isActive, isFalse);

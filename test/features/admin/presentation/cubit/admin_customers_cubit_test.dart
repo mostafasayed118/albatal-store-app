@@ -346,6 +346,47 @@ void main() {
       expect(cubit.state.total, 1);
     });
 
+    test('search clears page-loading immediately when it supersedes a page',
+        () async {
+      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
+        (_) async => Success<_Page>((
+          customers: [_sara, _omar],
+          total: 5,
+          nextCursor: _bookmark('profile-8'),
+        )),
+      );
+      final pending = Completer<Result<_Page>>();
+      when(() => repo.fetchCustomers(
+            query: null,
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          )).thenAnswer((_) => pending.future);
+      final cubit = AdminCustomersCubit(
+        repository: repo,
+        pageSize: 2,
+        searchDebounce: const Duration(days: 1),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+
+      final more = cubit.loadMore();
+      await settle();
+      expect(cubit.state.isLoadingMore, isTrue);
+
+      cubit.search('new query');
+
+      expect(cubit.state.isLoadingMore, isFalse,
+          reason: 'the debounce window must not leave the old page spinner up');
+      pending.complete(
+        const Success<_Page>((
+          customers: [],
+          total: null,
+          nextCursor: null,
+        )),
+      );
+      await more;
+    });
+
     test('an in-flight page cannot append onto a newer search', () async {
       when(() => repo.fetchCustomers(query: null, limit: 2))
           .thenAnswer((_) async => Success<_Page>((

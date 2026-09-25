@@ -25,6 +25,19 @@ class ZoomGallery extends StatefulWidget {
   final int initialIndex;
   final int imageColor;
 
+  static ImageProvider? imageProviderFor(String source) {
+    if (source.isEmpty) return null;
+    if (source.startsWith('https://')) {
+      return CachedNetworkImageProvider(
+        source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+      );
+    }
+    if (source.startsWith('http://')) return null;
+    return ResizeImage(AssetImage(source), width: 1080, height: 1080);
+  }
+
   @override
   State<ZoomGallery> createState() => _ZoomGalleryState();
 }
@@ -48,19 +61,6 @@ class _ZoomGalleryState extends State<ZoomGallery> {
     super.dispose();
   }
 
-  /// Same resolution rules as the detail pipeline:
-  /// empty → fallback icon, http(s) → cached network, else local asset.
-  ImageProvider? _providerFor(String source) {
-    if (source.isEmpty) return null;
-    // Bounded decode like the detail path: fullscreen contain never
-    // needs more than ~1080px per axis.
-    if (source.startsWith('http')) {
-      return CachedNetworkImageProvider(source,
-          maxWidth: 1080, maxHeight: 1080);
-    }
-    return ResizeImage(AssetImage(source), width: 1080, height: 1080);
-  }
-
   Widget _fallback() => Icon(
         Icons.texture,
         color: AppColors.white.withValues(alpha: .5),
@@ -68,8 +68,8 @@ class _ZoomGalleryState extends State<ZoomGallery> {
       );
 
   PhotoViewGalleryPageOptions _pageOption(String source) {
-    // Empty source: zoomable placeholder, no image decode at all.
-    if (source.isEmpty) {
+    final provider = ZoomGallery.imageProviderFor(source);
+    if (provider == null) {
       return PhotoViewGalleryPageOptions.customChild(
         childSize: const Size(120, 120),
         minScale: 1.0,
@@ -78,7 +78,7 @@ class _ZoomGalleryState extends State<ZoomGallery> {
       );
     }
     return PhotoViewGalleryPageOptions(
-      imageProvider: _providerFor(source),
+      imageProvider: provider,
       minScale: PhotoViewComputedScale.contained,
       maxScale: PhotoViewComputedScale.covered * 4.0,
       errorBuilder: (_, __, ___) => Center(child: _fallback()),

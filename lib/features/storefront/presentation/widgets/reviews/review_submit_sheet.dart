@@ -8,12 +8,26 @@ import '../../../../../shared/extensions/build_context_x.dart';
 import '../../../../../shared/services/image_compressor.dart';
 import '../../cubit/reviews_cubit.dart';
 
+typedef ReviewImagePicker = Future<XFile?> Function();
+
+Future<XFile?> _defaultReviewImagePicker() => ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
+    );
+
 /// Review submit bottom sheet — extracted from `reviews_section.dart`
 /// verbatim (was private `_ReviewSubmitSheet`).
 final class ReviewSubmitSheet extends StatefulWidget {
-  const ReviewSubmitSheet({super.key, this.imageCompressor});
+  const ReviewSubmitSheet({
+    super.key,
+    this.imageCompressor,
+    this.pickImage = _defaultReviewImagePicker,
+  });
 
   final ImageCompressor? imageCompressor;
+  final ReviewImagePicker pickImage;
 
   @override
   State<ReviewSubmitSheet> createState() => ReviewSubmitSheetState();
@@ -37,12 +51,7 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
   Future<void> _pickPhoto() async {
     setState(() => _processingPhoto = true);
     try {
-      final xfile = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        imageQuality: 80,
-      );
+      final xfile = await widget.pickImage();
       if (xfile == null) return;
       // §4 enforcement pass before the upload path. The compressed
       // bytes ARE the upload payload — the old sheet discarded them and
@@ -55,6 +64,7 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
       final compressor = widget.imageCompressor;
       final compressed =
           compressor != null ? await compressor.compress(bytes) : bytes;
+      if (!mounted) return;
       setState(() => _photoBytes = compressed);
     } on Exception {
       // picker unavailable (web/tests) — text-only review still works
@@ -133,13 +143,17 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
                 FilledButton(
                   onPressed: state.submitting
                       ? null
-                      : () {
-                          context.read<ReviewsCubit>().submit(
-                                rating: _rating,
-                                text: _textController.text,
-                                photoBytes: _photoBytes,
-                              );
-                          Navigator.of(context).pop();
+                      : () async {
+                          final cubit = context.read<ReviewsCubit>();
+                          await cubit.submit(
+                            rating: _rating,
+                            text: _textController.text,
+                            photoBytes: _photoBytes,
+                          );
+                          if (!context.mounted) return;
+                          if (cubit.state.submitMessage == null) {
+                            Navigator.of(context).pop();
+                          }
                         },
                   child: Text(l.reviewSubmit),
                 ),

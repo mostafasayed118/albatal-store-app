@@ -6,13 +6,20 @@ import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/coupon_discount.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/auth_session_port.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/checkout_repository.dart';
+import 'package:al_batal_elite/features/storefront/domain/repositories/coupons_repository.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/cart_cubit.dart';
+import 'package:al_batal_elite/features/storefront/presentation/cubit/checkout_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/checkout_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/routing/route_pages.dart';
+import 'package:al_batal_elite/shared/services/analytics_service.dart';
+import 'package:al_batal_elite/shared/services/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,6 +69,39 @@ class StubCheckoutRepository implements CheckoutRepository {
       total: subtotal + shipping,
       expiresAt: DateTime.now().add(const Duration(minutes: 15)),
     ));
+  }
+}
+
+class _StubCouponsRepository implements CouponsRepository {
+  final List<String> codes = [];
+
+  @override
+  Future<Result<CouponDiscount>> validate(String code) async {
+    codes.add(code);
+    return Success(CouponDiscount(code: code, discountMinor: 500));
+  }
+}
+
+class _StubAuthSession implements AuthSessionPort {
+  @override
+  String? currentUserEmail() => 'shopper@example.test';
+}
+
+class _RecordingAnalyticsSink implements AnalyticsSink {
+  final List<({String name, Map<String, dynamic> props})> events = [];
+
+  @override
+  Future<void> send(String name, Map<String, dynamic> props) async {
+    events.add((name: name, props: props));
+  }
+
+  @override
+  Future<void> sendBatch(
+    List<({String name, Map<String, dynamic> props})> events,
+  ) async {
+    for (final event in events) {
+      await send(event.name, event.props);
+    }
   }
 }
 
@@ -162,5 +202,70 @@ void main() {
     );
     expect(button.onPressed, isNotNull,
         reason: 'default address must be auto-selected on open');
+  });
+
+  testWidgets(
+      'production route injects registered coupon and analytics services',
+      (tester) async {
+    final checkoutRepository = StubCheckoutRepository();
+    final coupons = _StubCouponsRepository();
+    final sink = _RecordingAnalyticsSink();
+    final analytics = AnalyticsService(sink: sink);
+    void replace<T extends Object>(T value) {
+      if (getIt.isRegistered<T>()) getIt.unregister<T>();
+      getIt.registerSingleton<T>(value);
+    }
+
+    replace<CheckoutRepository>(checkoutRepository);
+    replace<CouponsRepository>(coupons);
+    replace<AnalyticsService>(analytics);
+    replace<AuthSessionPort>(_StubAuthSession());
+    addTearDown(() {
+      analytics.dispose();
+      if (getIt.isRegistered<CheckoutRepository>()) {
+        getIt.unregister<CheckoutRepository>();
+      }
+      if (getIt.isRegistered<CouponsRepository>()) {
+        getIt.unregister<CouponsRepository>();
+      }
+      if (getIt.isRegistered<AnalyticsService>()) {
+        getIt.unregister<AnalyticsService>();
+      }
+      if (getIt.isRegistered<AuthSessionPort>()) {
+        getIt.unregister<AuthSessionPort>();
+      }
+    });
+
+    final persistence = MemoryStorefrontPersistence();
+    final cart = CartCubit(persistence)
+      ..add(products.first, color: 'Emerald', length: '2m', quantity: 1);
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cart),
+          BlocProvider(create: (_) => WishlistCubit(persistence)),
+          BlocProvider(create: (_) => OrdersCubit(persistence)),
+          BlocProvider(create: (_) => AddressesCubit(StubAddressRepository())),
+        ],
+        child: RoutePages.checkout(),
+      ),
+    ));
+    await tester.pump();
+
+    final checkout = BlocProvider.of<CheckoutCubit>(
+      tester.element(
+        find.byWidgetPredicate(
+          (widget) => widget is BlocConsumer<CheckoutCubit, CheckoutState>,
+        ),
+      ),
+    );
+    await checkout.applyCoupon('SAVE10');
+    checkout.markSuccess();
+    await analytics.flush();
+
+    expect(coupons.codes, ['SAVE10']);
+    expect(sink.events.single.name, AnalyticsService.purchase);
   });
 }

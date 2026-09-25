@@ -174,7 +174,7 @@ function startWatch(orderId, jwt, deadlineMs) {
 // ── Main ─────────────────────────────────────────────────────
 const db = new Client({
   connectionString: STAGING_DB_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: true },
 });
 await db.connect();
 
@@ -203,8 +203,9 @@ try {
           quantity: 1,
         },
       ],
-      p_idempotency_key: idk(),
-    },
+       p_idempotency_key: idk(),
+       p_coupon_code: null,
+     },
     A.jwt,
   );
   const orderId = co.body?.order_id;

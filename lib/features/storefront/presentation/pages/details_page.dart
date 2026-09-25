@@ -20,7 +20,6 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../domain/repositories/recently_viewed_store.dart';
 import '../../domain/repositories/reviews_repository.dart';
-import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/back_in_stock_toggle.dart';
@@ -246,17 +245,6 @@ class DetailsPage extends StatelessWidget {
                   label: Text(l.sizeGuide),
                 ),
                 const SizedBox(height: 12),
-                // Wave C: swatch/sample ordering — adds a flagged sample
-                // line to the cart; the checkout flow prices it (server
-                // enforcement pending in supabase/).
-                OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<CartCubit>().addSample(p, color: s.color);
-                    showConfirmation(context, l.sampleAdded);
-                  },
-                  icon: const Icon(Icons.palette_outlined, size: 18),
-                  label: Text(l.orderSample),
-                ),
                 if (s.relatedProducts.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(l.relatedProducts,

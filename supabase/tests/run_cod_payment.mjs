@@ -42,7 +42,7 @@ function assert(testId, description, expected, actual) {
   if (!ok) console.log(`         expected=${expected} actual=${actual}`);
 }
 
-const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: false } });
+const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: true } });
 
 try {
   await client.connect();

@@ -55,6 +55,20 @@ void main() {
           const Money(72000));
     });
 
+    test('applies a tier once at the final line total', () {
+      expect(
+        meteredLineTotalWithTier(const Money(39950), 2.5, 5),
+        const Money(94881),
+      );
+    });
+
+    test('quantity is applied before final rounding', () {
+      expect(
+        meteredLineTotalWithTier(const Money(1), 0.5, 5, quantity: 2),
+        const Money(1),
+      );
+    });
+
     test('a fractional major-unit total renders with its piasters', () {
       // 39950 minor/m (399.50 EGP/m) x 2.5 m = 99875, i.e. 998.75 EGP.
       // Truncating this to whole pounds would display less than the

@@ -18,7 +18,7 @@ if (!DB_URL || !DB_URL.includes(REF)) {
   process.exit(1);
 }
 const c = cfg();
-const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
+const db = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: true } });
 await db.connect();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

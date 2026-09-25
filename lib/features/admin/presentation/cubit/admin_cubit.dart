@@ -239,6 +239,7 @@ class AdminCubit extends Cubit<AdminState> {
         emit(state.copyWith(
           status: AdminStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }

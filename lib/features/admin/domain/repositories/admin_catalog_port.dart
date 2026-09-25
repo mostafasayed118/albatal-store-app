@@ -1,3 +1,4 @@
+import '../../../../core/entities/money.dart';
 import '../../../../core/error/result.dart';
 import '../entities/admin_catalog.dart';
 import '../entities/admin_variant.dart';
@@ -22,7 +23,7 @@ abstract interface class AdminCatalogPort {
     bool? sellByLength,
     double? minCutMeters,
     required String categoryId,
-    required double basePrice,
+    required Money basePrice,
     required bool isActive,
   });
 
@@ -32,7 +33,7 @@ abstract interface class AdminCatalogPort {
     required String size,
     required String color,
     required int stock,
-    double? priceOverride,
+    Money? priceOverride,
   });
 
   /// Replace all images for a product with the given storage paths.

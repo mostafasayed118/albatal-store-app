@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'logger.dart';
 
@@ -61,15 +62,23 @@ final class LocalNotificationService implements NotificationService {
   LocalNotificationService({
     FlutterLocalNotificationsPlugin? plugin,
     NotificationPrefsStore? prefs,
+    Future<void> Function()? requestNotificationPermission,
   })  : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
-        _prefs = prefs;
+        _prefs = prefs,
+        _requestNotificationPermission =
+            requestNotificationPermission ?? _requestPermission;
 
   final FlutterLocalNotificationsPlugin _plugin;
   final NotificationPrefsStore? _prefs;
+  final Future<void> Function() _requestNotificationPermission;
   bool _initialized = false;
 
   static const _androidInit =
       AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  static Future<void> _requestPermission() async {
+    await Permission.notification.request();
+  }
 
   @override
   Future<void> init() async {
@@ -79,6 +88,7 @@ final class LocalNotificationService implements NotificationService {
         settings: const InitializationSettings(android: _androidInit),
       );
       _initialized = true;
+      await _requestNotificationPermission();
     } on Exception catch (e, st) {
       Log.w('notifications init failed.', error: e);
       Log.d(st.toString());

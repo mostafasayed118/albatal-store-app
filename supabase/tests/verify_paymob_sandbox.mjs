@@ -33,7 +33,7 @@ function assert(testId, description, expected, actual) {
   if (!ok) console.log(`         expected=${expected} actual=${actual}`);
 }
 
-const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: false } });
+const client = new Client({ connectionString: STAGING_URL, ssl: { rejectUnauthorized: true } });
 
 try {
   await client.connect();
@@ -65,8 +65,8 @@ try {
     SET ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
     PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
-    SELECT create_checkout_order('paymob_card', '{"recipient":"Test","line":"123 St","city":"Cairo"}'::jsonb,
-      '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf1') INTO v_order;
+     SELECT create_checkout_order('paymob_card', '{"recipient":"Test","line":"123 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::jsonb,
+       '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf1', NULL) INTO v_order;
     RESET ROLE;
     INSERT INTO payments (order_id, user_id, method, amount, paymob_order_id, status) VALUES ((v_order->>'order_id')::uuid, v_user, 'paymob_card', 10000, 'ps-s1', 'pending') RETURNING id INTO v_pay;
     SET ROLE service_role;
@@ -94,8 +94,8 @@ try {
     SET ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
     PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
-    SELECT create_checkout_order('paymob_card', '{"recipient":"T","line":"1 St","city":"Cairo"}'::jsonb,
-      '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf2') INTO v_order;
+     SELECT create_checkout_order('paymob_card', '{"recipient":"T","line":"1 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::jsonb,
+       '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf2', NULL) INTO v_order;
     RESET ROLE;
     INSERT INTO payments (order_id, user_id, method, amount, paymob_order_id, status) VALUES ((v_order->>'order_id')::uuid, v_user, 'paymob_card', 10000, 'ps-d1', 'pending') RETURNING id INTO v_pay;
     SET ROLE service_role;
@@ -120,8 +120,8 @@ try {
     SET ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', v_user::text, true);
     PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
-    SELECT create_checkout_order('paymob_card', '{"recipient":"T","line":"1 St","city":"Cairo"}'::jsonb,
-      '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf3') INTO v_order;
+     SELECT create_checkout_order('paymob_card', '{"recipient":"T","line":"1 St","city":"Cairo","country":"Egypt","phone":"+201001234567"}'::jsonb,
+       '[{"product_id":"AA000000-0000-0000-0000-000000000002","variant_id":"AA000000-0000-0000-0000-000000000003","size":"M","color":"Black","quantity":1,"unit_price":5000}]'::jsonb, 'pf3', NULL) INTO v_order;
     RESET ROLE;
     INSERT INTO payments (order_id, user_id, method, amount, paymob_order_id, status) VALUES ((v_order->>'order_id')::uuid, v_user, 'paymob_card', 10000, 'ps-c1', 'pending') RETURNING id INTO v_pay;
     SET ROLE service_role;

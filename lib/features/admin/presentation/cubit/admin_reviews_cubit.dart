@@ -71,9 +71,16 @@ class AdminReviewsCubit extends Cubit<AdminReviewsState> {
     final result = await _repository.setReviewStatus(
         id, approve ? 'approved' : 'rejected');
     if (isClosed) return;
-    if (result is Success<void>) {
-      emit(state.copyWith(
-          pending: state.pending.where((r) => r.id != id).toList()));
+    switch (result) {
+      case Success():
+        emit(state.copyWith(
+            pending: state.pending.where((r) => r.id != id).toList()));
+      case Failure(:final error):
+        emit(state.copyWith(
+          status: AdminReviewsStatus.error,
+          errorMessage: error.message,
+          errorCode: error.code,
+        ));
     }
   }
 }

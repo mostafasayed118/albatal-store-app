@@ -1,7 +1,9 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
+import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
+import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -50,40 +52,48 @@ void main() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  test('metered line carries meters, line_total, and tiered_price', () async {
-    final params = await _capture([
-      CartItem(product: _cutFabric(), color: 'Emerald', length: '12.5'),
-    ]);
-    final line = (params['p_items'] as List).single as Map;
-    expect(line['meters'], 12.5);
-    // 12.5 m hits the 5% tier: 12000 * 0.95 = 11400/m, x 12.5 = 142500.
-    expect(line['tiered_price'], 11400);
-    expect(line['line_total'], 142500);
-    expect(line.containsKey('sample'), isFalse);
+  test(
+      'metered checkout is rejected before the RPC while server support is gated',
+      () async {
+    final client = MockSupabaseClient();
+    final result = await CheckoutService(client: client).placeOrder(
+      items: [
+        CartItem(product: _cutFabric(), color: 'Emerald', length: '12.5')
+      ],
+      paymentMethod: PaymentMethod.paymobCard,
+      address: null,
+    );
+    expect(result, isA<Failure<PendingOrder>>());
+    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
   });
 
-  test('sub-tier metered line omits tiered_price', () async {
-    final params = await _capture([
-      CartItem(product: _cutFabric(), color: 'Emerald', length: '5.0'),
-    ]);
-    final line = (params['p_items'] as List).single as Map;
-    expect(line['meters'], 5.0);
-    expect(line['line_total'], 60000);
-    expect(line.containsKey('tiered_price'), isFalse);
+  test('sub-tier metered checkout is rejected before the RPC', () async {
+    final client = MockSupabaseClient();
+    final result = await CheckoutService(client: client).placeOrder(
+      items: [CartItem(product: _cutFabric(), color: 'Emerald', length: '5.0')],
+      paymentMethod: PaymentMethod.paymobCard,
+      address: null,
+    );
+    expect(result, isA<Failure<PendingOrder>>());
+    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
   });
 
-  test('sample lines flag sample: true with no metered fields', () async {
-    final params = await _capture([
-      CartItem(
+  test('sample checkout is rejected before the RPC', () async {
+    final client = MockSupabaseClient();
+    final result = await CheckoutService(client: client).placeOrder(
+      items: [
+        CartItem(
           product: _cutFabric(),
           color: 'Emerald',
           length: 'sample',
-          sample: true),
-    ]);
-    final line = (params['p_items'] as List).single as Map;
-    expect(line['sample'], isTrue);
-    expect(line.containsKey('meters'), isFalse);
-    expect(line.containsKey('tiered_price'), isFalse);
+          sample: true,
+        ),
+      ],
+      paymentMethod: PaymentMethod.paymobCard,
+      address: null,
+    );
+    expect(result, isA<Failure<PendingOrder>>());
+    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
   });
 
   test('fixed-size lines keep the legacy payload shape untouched', () async {
