@@ -345,7 +345,7 @@ CREATE POLICY "instapay_proofs_insert_own"
       SELECT 1
       FROM public.payments p
       JOIN public.orders o ON o.id = p.order_id
-      WHERE p.id = payment_id
+      WHERE p.id = instapay_proofs.payment_id
         AND p.user_id = auth.uid()
         AND p.status = 'pending'
         AND p.method = 'instapay'

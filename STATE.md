@@ -1,6 +1,6 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-25 (part 73: pre-launch check review + L2 fix — R12 closed, verifier APPROVE)
+Last run: 2026-09-26 (part 75: production preflight, prod push HELD for approval)
 
 ## New — 2026-09-25 (part 73: pre-launch check review + L2 fix)
 
@@ -7638,3 +7638,27 @@ fix/l2-audit-fixes branch still needs an owner decision.
    clean, flutter test 763/763 PASS.
 4. NOT done (owner gates): no push to origin, no PR, no prod cutover, no
    OneSignal/OAuth provider credentials configured, assetlinks.json not hosted.
+
+---
+
+## Part 74 — Staging cutover 068-073 (2026-09-26)
+
+- Staging ref `zvpjngdgbpnkkqrorkul` linked; preflights green (required columns present, legacy functions present, no unique-index blockers).
+- First push failed on 070 `CREATE POLICY instapay_proofs_insert_own`: ERROR 42883 `operator does not exist: uuid = text`.
+- Root cause: unqualified `payment_id` in EXISTS scope (payments p + orders o) bound to `orders.payment_id` TEXT instead of `instapay_proofs.payment_id` UUID.
+- Fix (1 line): `supabase/migrations/070_payment_review_rate_limit_hardening.sql:348` `WHERE p.id = payment_id` -> `WHERE p.id = instapay_proofs.payment_id`; mirrored in `scripts/run_all_migrations.sql` embedded 070 copy; siblings in landed-history sections untouched (safe: single-table scope).
+- Re-push OK: ledger shows remote 068,069,070,071,072,073.
+- Live verified: `admin_upsert_product` 8+14-arg, `submit_product_review` 4-arg, `review_instapay_proof`, `set_payment_provider_order_id_claim`, `create_checkout_order` 5-arg, `get_or_claim_paymob_payment` 1-arg, `process_paymob_callback` 5-arg, `expire_stale_instapay_payments`, `admin_sales_overview(p_days)`, `instapay_proofs_insert_own` policy, buckets `instapay-proofs`/`review-images` private 5MB, reference/note length constraints.
+- Next: production preflight+apply, 44-case checklist, `sbp_` rotation handoff.
+
+---
+
+## Part 75 — Production preflight (2026-09-26)
+
+- Prod candidate `alxwvyflasewslinufqe` linked (only other ACTIVE_HEALTHY project, eu-west-1); read-only probes, no writes.
+- Prod ledger gap: remote has 001-047, 060-065 + stub rows 61/62, MISSING 048-059, 066, 067. A push would attempt 12 files (048-059, 066-073), not 6.
+- Prod objects: EXISTS `analytics_events`, `notifications`, `instapay_proofs`; MISSING `app_config`, `coupons`, `product_reviews`.
+- Prod functions: legacy `admin_upsert_product` 8-arg, `create_checkout_order` 4-arg; already new: `get_or_claim_paymob_payment` 1-arg, `process_paymob_callback` 5-arg. Absent: `validate_coupon`, `submit_product_review`.
+- Consequence: 069 would fail on prod without 057 (`product_reviews_public` view needs `product_reviews` table). Prod needs the 048-067 chain first, incl. review-gated 054-058 (AGENTS.md migration gate) — HELD for explicit human approval, no prod writes made.
+- One transient `LegacyDbConfigConnectTempRoleError` on a tables probe; retry succeeded (flaky temp-role connect, not auth).
+- Uncommitted on master: 1-line 070 fix + `run_all` mirror, awaiting commit approval.
