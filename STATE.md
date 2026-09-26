@@ -1,6 +1,6 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-26 (part 75: production preflight, prod push HELD for approval)
+Last run: 2026-09-26 (part 79: follow-up findings F1-F3)
 
 ## New — 2026-09-25 (part 73: pre-launch check review + L2 fix)
 
@@ -7662,3 +7662,57 @@ fix/l2-audit-fixes branch still needs an owner decision.
 - Consequence: 069 would fail on prod without 057 (`product_reviews_public` view needs `product_reviews` table). Prod needs the 048-067 chain first, incl. review-gated 054-058 (AGENTS.md migration gate) — HELD for explicit human approval, no prod writes made.
 - One transient `LegacyDbConfigConnectTempRoleError` on a tables probe; retry succeeded (flaky temp-role connect, not auth).
 - Uncommitted on master: 1-line 070 fix + `run_all` mirror, awaiting commit approval.
+
+---
+
+## Part 76 — Production cutover 048-073 (2026-09-26)
+
+- Owner approved options 1+2: commit fix + full prod chain incl review-gated 054-058 (owner approval overrides migration gate).
+- Committed `c66c82d` (070:348 qualifier + `run_all` mirror + STATE parts 74-75); pushed `e0d0ba4..c66c82d` master->master.
+- Prod preflights: `analytics_events` has exact lineage shape (id,event,properties,user_id,created_at) so 053 safe; `instapay_proofs` 0 oversized rows so 070 guard passes; prod `orders` lacks `payment_id` column (differs from staging — harmless post-fix).
+- Push `--include-all` applied 048,049,050,051,052,053,054,055,056,057,058,059,066,067,068,069,070,071,072,073 with only benign IF-NOT-EXISTS notices, Finished clean.
+- Prod ledger now 001-073 all remote; live verified tables `app_config`/`coupons`/`product_reviews` + functions `submit_product_review`/`validate_coupon`/`review_instapay_proof`/`expire_stale_instapay_payments` + `instapay_proofs_insert_own` policy.
+- Queued: 44-case checklist, `sbp_` rotation handoff.
+
+---
+
+## Part 77 — Audit Top-5 remediation worktree (2026-09-26)
+
+- L2 approved scope `lib + protected paths`; worktree `.trees/fix-top5` @ e0d0ba4 (one behind master c66c82d — rebase needed before merge).
+- Fixes: 074 throttle (`init:checkout` 10/60s) + phone 8-15 digits + to_regprocedure guard; checkout coupon passthrough (was null); bare-`as` → total-decode mappers; catalog limit+1 probe + `CatalogTruncation` extension + `isTruncated`; coded `markError` + Money labels + payment stale-URL clear; `ValidateCouponUseCase` + narrow Admin*Port views + data/→domain/ moves.
+- Self-caught regression during run: Fix-2 edit dropped `.limit(100)` in admin `getAllProducts` — contract test caught it, restored.
+- Evidence: `flutter analyze --no-pub` clean; `flutter test` 1134/1134 passed; verifier sub-agent APPROVE.
+
+---
+
+## Part 78 — 44-case checklist automatable pass (2026-09-26)
+
+- Staging-live, read-only probes vs `zvpjngdgbpnkkqrorkul`; no writes. Checkout 5-arg wrapper: method allowlist + item bounds qty 1-99 + metered/sample rejection + address+phone + total>0 + idempotency (072 file read).
+- `submit_product_review` touches orders + photo + moderation. `validate_coupon` LIVE BODY = 20/min `rate_limit_take` throttle + active + expiry; NO min-spend, NO usage cap (coupons cols only id/code/discount_minor/description/active/expires_at/created_at).
+- Claim/expiry fns carry claim+expiry logic. Proof insert policy + review-images read/write/delete policies live. Buckets private 5MB. Reference/note length checks live. Admin RPCs + sales overview live.
+- Code-verified on master: minorUnits write path (admin_catalog_store 95/128); metered gate false + 2 enforcement sites; `product_reviews_public`; manifest flags; 5MB client guards; R12 parser + 1133 tests green; CI drift check present.
+- Gaps: E5 min-spend N/A (no schema concept); coupon usage-cap absent (single-code + idempotency only); checkout per-user throttle absent (validate-only throttle); temp-role `LegacyDbConfigConnectTempRoleError` flaky ~50%, retry succeeds.
+- Manual remainder: all W/M device cases + Paymob/auth/store flows.
+- Committed c66c82d + pushed master; prod 001-073 applied (parts 74-76).
+
+---
+
+## Part 79 — Follow-up findings F1-F3 (2026-09-26)
+
+- Owner approved filing as follow-ups (not accepted limitations).
+- F1 [E5 min-spend, P1 spec/schema gap]: `coupons` cols only id/code/discount_minor/description/active/expires_at/created_at; `validate_coupon` live body enforces active+expiry+throttle only; E5 min-spend boundary untestable.
+  - Remediation: add `min_spend_minor` + server check in `validate_coupon`/checkout, or drop E5 with product sign-off.
+- F2 [E6 coupon usage-cap, P1]: no max_uses / per-user usage tracking; only guard is single `p_coupon_code` per order + idempotency key.
+  - Remediation: `coupon_redemptions` table or `max_uses` column enforced in checkout wrapper.
+- F3 [checkout per-user throttle, P2]: rate limit only on `validate_coupon` (20/min via 060 `rate_limit_take`); `create_checkout_order` wrapper (072) has bounds but no per-user throttle.
+  - Remediation: `rate_limit_take` gate in checkout wrapper, or accept bounds+idempotency as sufficient (owner call).
+- Note: rotation handoff delivered; execution is owner-side.
+
+---
+
+## Part 79 — fix-top5 rebased + re-verified (2026-09-26)
+
+- Owner said go ahead: rebased `.trees/fix-top5` e0d0ba4 → c66c82d via stash round-trip (clean, no conflicts; c66c82d only touches 070 + STATE).
+- Re-gated on rebased tree: `flutter analyze --no-pub` clean; `flutter test` 1134/1134 passed. Diff is 31 files, lib/test/supabase only, zero generated-file churn.
+- NOTE vs Part 78 F3: unmerged 074 already adds the `rate_limit_take('init:checkout', 10, 60)` gate to the checkout wrapper — F3 is resolved on merge, not a follow-up.
+- PROPOSED (awaiting explicit merge/push approval): merge worktree into master, then push. No commits or pushes made.
