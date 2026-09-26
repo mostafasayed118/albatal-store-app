@@ -5,7 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
 import '../../features/admin/data/supabase_admin_repository.dart';
+import '../../features/admin/domain/repositories/admin_catalog_port.dart';
+import '../../features/admin/domain/repositories/admin_coupons_port.dart';
+import '../../features/admin/domain/repositories/admin_customers_port.dart';
+import '../../features/admin/domain/repositories/admin_orders_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
+import '../../features/admin/domain/repositories/admin_reviews_port.dart';
+import '../../features/admin/domain/repositories/admin_sales_port.dart';
 import '../../features/auth/data/supabase_auth_repository.dart';
 import '../../features/auth/data/supabase_auth_session_port.dart';
 import '../../features/auth/data/supabase_profile_repository.dart';
@@ -97,6 +103,21 @@ Future<void> configureDependencies() async {
         () => getIt<LocalAddressRepository>())
     ..registerLazySingleton<AdminRepository>(
         () => SupabaseAdminRepository(client: getIt<SupabaseClient>()))
+    // Narrow admin ports (audit Top-5 #5 ISP): single-concern pages depend
+    // on these, not the ~20-method facade. One shared instance behind all
+    // registrations — the facade implements every narrow port, so this is
+    // a typed view, not a second repository.
+    ..registerLazySingleton<AdminReviewsPort>(
+        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCouponsPort>(
+        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCustomersPort>(
+        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminSalesPort>(
+        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminOrdersPort>(() => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCatalogPort>(
+        () => getIt<AdminRepository>())
     ..registerLazySingleton<AuthRepository>(
         () => SupabaseAuthRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ProfileRepository>(

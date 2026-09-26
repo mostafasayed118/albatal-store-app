@@ -14,6 +14,7 @@ import '../../domain/repositories/coupons_repository.dart';
 import '../../domain/repositories/idempotency_store.dart';
 import '../../domain/repositories/memory_idempotency_store.dart';
 import '../../domain/usecases/place_checkout_order_usecase.dart';
+import '../../domain/usecases/validate_coupon_usecase.dart';
 
 enum CheckoutStatus { initial, creatingOrder, placing, success, error }
 
@@ -76,6 +77,7 @@ final class CheckoutState extends Equatable {
     bool clearAddress = false,
     String? errorMessage,
     String? errorCode,
+    bool clearError = false,
     String? pendingOrderId,
     Money? serverSubtotal,
     Money? serverShipping,
@@ -91,8 +93,12 @@ final class CheckoutState extends Equatable {
         payment: payment ?? this.payment,
         selectedAddress:
             clearAddress ? null : (selectedAddress ?? this.selectedAddress),
-        errorMessage: errorMessage,
-        errorCode: errorCode,
+        // Error fields clear on omission (null) OR on explicit clearError —
+        // the explicit flag documents intent at call sites that also pass
+        // sticky fields (pendingOrderId/serverTotal use `?? this` and
+        // survive omission by design so retries keep their order context).
+        errorMessage: clearError ? null : errorMessage,
+        errorCode: clearError ? null : errorCode,
         pendingOrderId: pendingOrderId ?? this.pendingOrderId,
         serverSubtotal: serverSubtotal ?? this.serverSubtotal,
         serverShipping: serverShipping ?? this.serverShipping,
@@ -136,8 +142,12 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     PlaceCheckoutOrderUseCase? placeOrder,
     IdempotencyStore? idempotencyStore,
     CouponsRepository? coupons,
+    ValidateCouponUseCase? validateCoupon,
     AnalyticsService? analytics,
-  })  : _coupons = coupons,
+  })  : _validateCoupon = validateCoupon ??
+            (coupons != null
+                ? ValidateCouponUseCase(coupons: coupons)
+                : null),
         _analytics = analytics,
         _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(
@@ -147,21 +157,23 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
         super(const CheckoutState());
 
   final PlaceCheckoutOrderUseCase _placeOrder;
-  final CouponsRepository? _coupons;
+  final ValidateCouponUseCase? _validateCoupon;
   final AnalyticsService? _analytics;
 
   /// Validates [code] via the server and attaches it to this attempt.
   ///
-  /// Validation failures (invalid code, coupons backend not deployed
-  /// yet) set [CheckoutState.couponMessage]; the checkout itself is
-  /// unaffected either way.
+  /// Thin delegation to [ValidateCouponUseCase] (audit Top-5 #5): coupon
+  /// policy lives in the domain layer, the cubit only maps the [Result]
+  /// to state. Validation failures (invalid code, coupons backend not
+  /// deployed yet) set [CheckoutState.couponMessage]; the checkout itself
+  /// is unaffected either way.
   Future<void> applyCoupon(String code) async {
-    final repo = _coupons;
-    if (repo == null) {
+    final usecase = _validateCoupon;
+    if (usecase == null) {
       emit(state.copyWith(couponMessage: kCouponUnavailable));
       return;
     }
-    final result = await repo.validate(code);
+    final result = await usecase(code);
     if (isClosed) return;
     switch (result) {
       case Success(:final value):
@@ -296,6 +308,11 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(status: CheckoutStatus.success));
   }
 
-  void markError(String message) =>
-      emit(state.copyWith(status: CheckoutStatus.error, errorMessage: message));
+  void markError(String message, {String? code}) => emit(state.copyWith(
+        status: CheckoutStatus.error,
+        errorMessage: message,
+        // App-authored copy must carry a code (failure_codes.dart rule) —
+        // default keeps legacy callers coded instead of leaking verbatim.
+        errorCode: code ?? kCheckoutFailedCode,
+      ));
 }

@@ -60,8 +60,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { payment_method, address_snapshot, items, idempotency_key } =
-      await req.json();
+    const { payment_method, address_snapshot, items, idempotency_key, coupon_code } =
+      await req.json() as {
+        payment_method?: unknown;
+        address_snapshot?: unknown;
+        items?: unknown;
+        idempotency_key?: unknown;
+        coupon_code?: unknown;
+      };
     const address = address_snapshot && typeof address_snapshot === "object" ? address_snapshot : {};
     if (
       typeof address.recipient !== "string" || !address.recipient.trim() ||
@@ -75,6 +81,13 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Coupon is optional: trim, cap length, pass through — the RPC owns
+    // validation (066 resolves after shipping+premium, invalid ⇒ no discount).
+    const coupon =
+      typeof coupon_code === "string" && coupon_code.trim().length > 0
+        ? coupon_code.trim().slice(0, 64)
+        : null;
+
     // ─── Call the atomic RPC ─────────────────────────────────
     // The RPC handles all validation, price lookup, stock
     // decrement, and order creation in one transaction.
@@ -83,7 +96,7 @@ Deno.serve(async (req) => {
       p_address: address,
       p_items: items,
       p_idempotency_key: idempotency_key ?? null,
-      p_coupon_code: null,
+      p_coupon_code: coupon,
     });
 
     if (error) {

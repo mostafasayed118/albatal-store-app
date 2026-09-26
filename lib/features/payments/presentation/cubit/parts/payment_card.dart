@@ -4,7 +4,12 @@ part of '../payment_cubit.dart';
 
 extension PaymentCardFlow on PaymentCubit {
   Future<void> processCard({required String customerEmail}) async {
-    emitState(state.copyWith(status: PaymentStatus.processing));
+    // Clear any stale checkout URL from a prior failed attempt — the state
+    // keeps it sticky by design, so a retry must not reuse it.
+    emitState(state.copyWith(
+      status: PaymentStatus.processing,
+      clearCheckoutUrl: true,
+    ));
 
     final methodResult = await _paymentService.setOrderPaymentMethod(
       orderId: state.orderId,

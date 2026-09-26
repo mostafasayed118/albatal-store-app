@@ -25,7 +25,8 @@ class _RecordingQueryBuilder extends Fake implements SupabaseQueryBuilder {
 
 /// Query-chain fake that records every filter/transform call the
 /// repository makes, so the bounded-load contract (`.order('name')` then
-/// `.limit(100)`) can be asserted. Future delegation mirrors
+/// `.limit(pageSize + 1)` over-fetch probe) can be asserted. Future
+/// delegation mirrors
 /// FakePostgrestFilterBuilder in supabase_catalog_repository_images_test.
 class _RecordingPostgrestBuilder extends Fake
     implements PostgrestFilterBuilder<PostgrestList> {
@@ -34,7 +35,7 @@ class _RecordingPostgrestBuilder extends Fake
   final List<Map<String, dynamic>> _value;
 
   /// Recorded call names, e.g. `eq:is_active=true`, `order:name`,
-  /// `limit:100`.
+  /// `limit:101`.
   final List<String> calls;
 
   @override
@@ -323,7 +324,7 @@ void main() {
 
   group('SupabaseCatalogRepository — bounded catalog load (audit Task 11)', () {
     test(
-        'fetchProducts requests a deterministic bounded page: .order(name) then .limit(100)',
+        'fetchProducts requests a deterministic bounded page: .order(name) then .limit(pageSize + 1) probe',
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -342,8 +343,42 @@ void main() {
       expect(result, isA<Success<List<Product>>>());
       // Deterministic ordering must stay in place.
       expect(calls, contains('order:name'));
-      // The bound: exactly one limit call — 100 rows on the cold load.
-      expect(calls.where((c) => c.startsWith('limit:')), ['limit:100']);
+      // The bound: exactly one limit call — pageSize + 1 probe row so the
+      // repo can tell a full page from the catalog end (audit Top-5 #3).
+      expect(calls.where((c) => c.startsWith('limit:')), ['limit:101']);
+      // Empty page: not truncated.
+      expect(repo.lastPageTruncated, isFalse);
+    });
+
+    test('fetchProducts flags truncation when the probe row is present',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockClient = _MockSupabaseClient();
+      final calls = <String>[];
+      final rows = List.generate(
+        101,
+        (i) => <String, dynamic>{
+          'id': 'p$i',
+          'name': 'Fabric $i',
+          'base_price': 1000,
+          'is_active': true,
+        },
+      );
+      final fakeBuilder = _RecordingPostgrestBuilder(rows, calls);
+      when(() => mockClient.from('products'))
+          .thenAnswer((_) => _RecordingQueryBuilder(fakeBuilder));
+      final repo = SupabaseCatalogRepository(
+        client: mockClient,
+        preferences: prefs,
+      );
+
+      final result = await repo.fetchProducts();
+
+      expect(result, isA<Success<List<Product>>>());
+      // Probe row is consumed, not surfaced: exactly pageSize products.
+      expect((result as Success<List<Product>>).value, hasLength(100));
+      expect(repo.lastPageTruncated, isTrue);
     });
   });
 }

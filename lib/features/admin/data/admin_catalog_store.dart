@@ -41,7 +41,9 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
             .order('name')
             .limit(100)
             .range(0, 99);
-        return AdminMappers.productsFromRows(rows as List<dynamic>);
+        // Static type is already List (typed Postgrest builder) — per-row
+        // safety lives in the mappers (whereType/optString), same as before.
+        return AdminMappers.productsFromRows(rows);
       }, 'Failed to load products', code: kAdminProductsLoadFailed);
 
   @override
@@ -52,9 +54,8 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
             .select(_adminProductSelect)
             .eq('id', productId)
             .limit(1);
-        final list = rows as List<dynamic>;
-        if (list.isEmpty) return null;
-        return AdminMappers.productsFromRows(list).first;
+        if (rows.isEmpty) return null;
+        return AdminMappers.productsFromRows(rows).first;
       }, 'Failed to load product', code: kAdminProductLoadFailed);
 
   @override
@@ -64,7 +65,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
             .from('categories')
             .select('id, name, is_active')
             .order('sort_order');
-        return AdminMappers.categoriesFromRows(rows as List<dynamic>);
+        return AdminMappers.categoriesFromRows(rows);
       }, 'Failed to load categories', code: kAdminCategoriesLoadFailed);
 
   @override
@@ -155,7 +156,7 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
             .select('id, size, color, stock, price_override')
             .eq('product_id', productId)
             .order('size');
-        return AdminMappers.variantsFromRows(res as List);
+        return AdminMappers.variantsFromRows(res);
       }, 'Failed to load variants', code: kAdminVariantsLoadFailed);
 
   @override
@@ -166,6 +167,6 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
             .select('storage_path')
             .eq('product_id', productId)
             .order('sort_order');
-        return AdminMappers.imagePathsFromRows(res as List);
+        return AdminMappers.imagePathsFromRows(res);
       }, 'Failed to load images', code: kAdminImagesLoadFailed);
 }

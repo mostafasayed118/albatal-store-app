@@ -85,10 +85,28 @@ final class Money extends Equatable {
   /// Whole-major-units label without decimals (the admin surfaces render
   /// 1890, not 1890.0); keeps two decimals when the value is fractional
   /// (`12.5` → `"12.50"`).
+  ///
+  /// NOTE: this `double` entry exists for non-money quantities (e.g. meter
+  /// cut lengths in `pricing_tier_table.dart`). Money callers must prefer
+  /// [wholeEgpLabelFromMinor] so a `double` can never round-trip back into
+  /// the minor-unit discipline this file enforces.
   static String wholeEgpLabel(double majorUnits) {
     final s = majorUnits.toStringAsFixed(2);
     return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
   }
+
+  /// Canonical money label from integer minor units — no `double` in the
+  /// path. `Money(129000).label()` → `"1290"`, `Money(99875).label()` →
+  /// `"998.75"`. Prefer this over [wholeEgpLabel] for prices.
+  String label() {
+    final minor = minorUnits % 100;
+    if (minor == 0) return '${minorUnits ~/ 100}';
+    return '${minorUnits ~/ 100}.${minor.toString().padLeft(2, '0')}';
+  }
+
+  /// Static twin of [label] for call sites holding raw minor units.
+  static String wholeEgpLabelFromMinor(int minorUnits) =>
+      Money(minorUnits).label();
 
   // ─── Arithmetic ────────────────────────────────────────────
 

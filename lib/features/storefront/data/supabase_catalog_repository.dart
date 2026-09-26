@@ -68,6 +68,13 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   /// (see `docs/perf-budget.md`).
   static const kCatalogPageSize = 100;
 
+  /// Whether the last [fetchProducts] hit the page bound.
+  ///
+  /// Set on every network fetch from [fetchCatalogPage]; preserved across
+  /// cache-fresh short-circuits so the UI banner survives TTL hits.
+  /// Surfaced to [CatalogState.isTruncated] by the cubit.
+  bool lastPageTruncated = false;
+
   /// Whether the cached data is still within the TTL window.
   bool get _cacheIsFresh =>
       _cache != null &&
@@ -110,6 +117,7 @@ final class SupabaseCatalogRepository implements CatalogRepository {
         limit: limit,
       );
       final result = page.products;
+      lastPageTruncated = page.truncated;
       _setCache(result);
 
       // Persist to SharedPreferences for offline fallback.
@@ -264,7 +272,8 @@ final class SupabaseCatalogRepository implements CatalogRepository {
   Future<Result<List<FlashSale>>> getActiveFlashSales() =>
       Result.guard(() async {
         final value = await _client.rpc('get_active_flash_sales');
-        final rows = (value as List).whereType<Map<String, dynamic>>();
+        final rows = (value is List ? value : const <dynamic>[])
+            .whereType<Map<String, dynamic>>();
         return rows.map(FlashSaleCodec.fromRow).whereType<FlashSale>().toList();
       }, 'Failed to load flash sales', code: kFailureLoad);
 

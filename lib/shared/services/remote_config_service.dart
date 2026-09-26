@@ -24,12 +24,14 @@ final class SupabaseRemoteConfigFetcher implements RemoteConfigFetcher {
   @override
   Future<Map<String, String>> fetch() async {
     final rows = await _client.from('app_config').select('key, value');
-    final list = rows as List<dynamic>;
-    return {
-      for (final row in list.cast<Map<String, dynamic>>())
-        if (row['key'] is String && row['value'] is String)
-          row['key'] as String: row['value'] as String,
-    };
+    // `rows` is statically List via the typed Postgrest builder.
+    final out = <String, String>{};
+    for (final row in rows.whereType<Map>()) {
+      final k = row['key'];
+      final v = row['value'];
+      if (k is String && v is String) out[k] = v;
+    }
+    return out;
   }
 }
 

@@ -19,6 +19,9 @@ import 'product_mapper.dart';
 /// has outgrown the bound and results are silently incomplete. Logged
 /// (not thrown) so the storefront keeps working while the owner decides
 /// between a larger page and server-side search.
+///
+/// Over-fetch by one (`limit + 1`) so `truncated` is exact: true only when
+/// more than [limit] rows exist. The extra row is dropped before mapping.
 Future<({List<Product> products, bool truncated})> fetchCatalogPage({
   required SupabaseClient client,
   required StorageService storageService,
@@ -31,17 +34,19 @@ Future<({List<Product> products, bool truncated})> fetchCatalogPage({
       .select(productSelect)
       .eq('is_active', true)
       .order('name')
-      .limit(limit);
+      .limit(limit + 1);
+
+  final truncated = rows.length > limit;
+  final pageRows = truncated ? rows.sublist(0, limit) : rows;
 
   final products = ProductCodec.listFromRows(
-    rows,
+    pageRows,
     storageService: storageService,
   );
 
-  final truncated = products.length >= limit;
   if (truncated) {
     Log.w(
-      'Catalog page is full ($limit rows): client-side search/filter '
+      'Catalog page is full ($limit rows shown): client-side search/filter '
       'cannot see products beyond this page.',
     );
   }

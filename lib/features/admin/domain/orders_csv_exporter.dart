@@ -1,6 +1,9 @@
-import '../domain/entities/admin_order.dart';
+import 'entities/admin_order.dart';
 
 /// Pure CSV builder for the admin orders export (feature-batch §14).
+///
+/// Domain-located (audit Top-5 #5): pure function over entities, no
+/// Supabase imports — presentation depends on domain, never on data.
 ///
 /// Security: every cell passes the formula-injection guard — values
 /// starting with `=`, `+`, `-`, `@`, TAB or CR are prefixed with a

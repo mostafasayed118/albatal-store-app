@@ -95,6 +95,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
           allProducts: products,
           categories: cats,
           isOffline: offline,
+          isTruncated: _repository.lastPageTruncated,
         ));
         // Integrate flash sales into initial load (T1). Fire-and-forget;
         // emissions are skipped when sales are empty to keep existing

@@ -52,7 +52,9 @@ final class PaymentState extends Equatable {
     String? transactionId,
     String? errorMessage,
     String? checkoutUrl,
+    bool clearCheckoutUrl = false,
     InstapayInstructions? instructions,
+    bool clearInstructions = false,
   }) =>
       PaymentState(
         status: status ?? this.status,
@@ -60,9 +62,15 @@ final class PaymentState extends Equatable {
         amount: amount ?? this.amount,
         orderId: orderId ?? this.orderId,
         transactionId: transactionId ?? this.transactionId,
+        // errorMessage clears on omission (failure_codes rule); checkoutUrl
+        // and instructions are sticky (`?? this`) so a failed-then-retried
+        // card flow must pass the explicit clear flags — otherwise a prior
+        // URL/instructions survive the retry.
         errorMessage: errorMessage,
-        checkoutUrl: checkoutUrl ?? this.checkoutUrl,
-        instructions: instructions ?? this.instructions,
+        checkoutUrl:
+            clearCheckoutUrl ? null : (checkoutUrl ?? this.checkoutUrl),
+        instructions:
+            clearInstructions ? null : (instructions ?? this.instructions),
       );
 
   @override

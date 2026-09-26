@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../domain/entities/admin_coupon.dart';
 import '../domain/repositories/admin_coupons_port.dart';
 
@@ -20,9 +21,11 @@ final class SupabaseAdminCoupons implements AdminCouponsPort {
             .from('coupons')
             .select('id, code, discount_minor, description, active')
             .order('created_at', ascending: false);
-        final list = rows as List<dynamic>;
-        return list
-            .map((row) => _couponFromRow(row as Map<String, dynamic>))
+        // `rows` is statically List via the typed Postgrest builder.
+        return rows
+            .whereType<Map<String, dynamic>>()
+            .map(_couponFromRow)
+            .whereType<AdminCoupon>()
             .toList();
       }, 'Failed to fetch coupons', code: kAdminCouponsLoadFailed);
 
@@ -33,7 +36,7 @@ final class SupabaseAdminCoupons implements AdminCouponsPort {
     String? description,
   }) =>
       Result.guard(() async {
-        final row = await _client
+        final res = await _client
             .from('coupons')
             .upsert({
               'code': code.trim().toUpperCase(),
@@ -43,7 +46,13 @@ final class SupabaseAdminCoupons implements AdminCouponsPort {
             })
             .select('id, code, discount_minor, description, active')
             .single();
-        return _couponFromRow(row);
+        // `.single()` is statically Map via the typed Postgrest builder.
+        final row = safeMap(res);
+        final coupon = _couponFromRow(row);
+        if (coupon == null) {
+          throw StateError('createCoupon returned no coupon id');
+        }
+        return coupon;
       }, 'Failed to create coupon', code: kAdminCouponCreateFailed);
 
   @override
@@ -54,10 +63,16 @@ final class SupabaseAdminCoupons implements AdminCouponsPort {
 }
 
 /// Maps one `coupons` row into an [AdminCoupon].
-AdminCoupon _couponFromRow(Map<String, dynamic> row) => AdminCoupon(
-      id: row['id'] as String,
-      code: (row['code'] as String?)?.toUpperCase() ?? '',
-      discountMinor: (row['discount_minor'] as num?)?.toInt() ?? 0,
-      active: row['active'] as bool? ?? false,
-      description: row['description'] as String?,
-    );
+/// Returns null for id-less rows (cannot be toggled) — the list skips them
+/// instead of one malformed row failing the whole fetch.
+AdminCoupon? _couponFromRow(Map<String, dynamic> row) {
+  final id = optString(row, 'id');
+  if (id == null || id.isEmpty) return null;
+  return AdminCoupon(
+    id: id,
+    code: (optString(row, 'code') ?? '').toUpperCase(),
+    discountMinor: optInt(row, 'discount_minor') ?? 0,
+    active: safeBool(row, 'active'),
+    description: optString(row, 'description'),
+  );
+}
