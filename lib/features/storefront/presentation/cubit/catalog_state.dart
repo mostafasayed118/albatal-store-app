@@ -39,6 +39,7 @@ final class CatalogState extends Equatable {
     this.recentQueries = const [],
     this.flashSales = const [],
     this.isOffline = false,
+    this.isTruncated = false,
   });
 
   final CatalogStatus status;
@@ -55,6 +56,13 @@ final class CatalogState extends Equatable {
   /// generic error view. The error FeedbackView is reserved for real
   /// (online) failures.
   final bool isOffline;
+
+  /// True when the loaded page hit the repository bound (`kCatalogPageSize`):
+  /// client-side search/filter/sort operate over this page only, so the UI
+  /// shows a "showing first 100 — refine search" hint instead of silently
+  /// omitting products. Set by the cubit from
+  /// [CatalogRepository.lastPageTruncated].
+  final bool isTruncated;
 
   /// Active flash sales (T1) — typed domain entities mapped from the
   /// repository; schema knowledge lives in `FlashSaleCodec.fromRow`.
@@ -219,6 +227,7 @@ final class CatalogState extends Equatable {
     List<String>? recentQueries,
     List<FlashSale>? flashSales,
     bool? isOffline,
+    bool? isTruncated,
   }) {
     final resolvedProducts = allProducts ?? this.allProducts;
     final resolvedFilters = filters ?? this.filters;
@@ -231,6 +240,7 @@ final class CatalogState extends Equatable {
       recentQueries: recentQueries ?? this.recentQueries,
       flashSales: flashSales ?? this.flashSales,
       isOffline: isOffline ?? this.isOffline,
+      isTruncated: isTruncated ?? this.isTruncated,
     );
     // Data-only emits (e.g. a refreshed sales list over the same catalog)
     // leave the underlying products/filters untouched — carry the
@@ -252,6 +262,7 @@ final class CatalogState extends Equatable {
         recentQueries,
         flashSales,
         isOffline,
+        isTruncated,
       ];
 }
 

@@ -13,7 +13,11 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_sales.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_coupons_port.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_customers_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_reviews_port.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_sales_port.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
@@ -259,6 +263,18 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<AdminRepository>()) {
       getIt.unregister<AdminRepository>();
     }
+    if (getIt.isRegistered<AdminReviewsPort>()) {
+      getIt.unregister<AdminReviewsPort>();
+    }
+    if (getIt.isRegistered<AdminCustomersPort>()) {
+      getIt.unregister<AdminCustomersPort>();
+    }
+    if (getIt.isRegistered<AdminCouponsPort>()) {
+      getIt.unregister<AdminCouponsPort>();
+    }
+    if (getIt.isRegistered<AdminSalesPort>()) {
+      getIt.unregister<AdminSalesPort>();
+    }
     if (getIt.isRegistered<StorageService>()) {
       getIt.unregister<StorageService>();
     }
@@ -273,6 +289,25 @@ Future<_RouterHarness> _pumpRouter(
     getIt.unregister<AdminRepository>();
   }
   getIt.registerSingleton<AdminRepository>(adminRepo);
+  // Single-concern admin pages resolve narrow ports at the composition
+  // root (audit Top-5 #5 ISP); the probe implements the facade, hence
+  // every narrow port, so it serves all registrations.
+  if (getIt.isRegistered<AdminReviewsPort>()) {
+    getIt.unregister<AdminReviewsPort>();
+  }
+  getIt.registerSingleton<AdminReviewsPort>(adminRepo);
+  if (getIt.isRegistered<AdminCustomersPort>()) {
+    getIt.unregister<AdminCustomersPort>();
+  }
+  getIt.registerSingleton<AdminCustomersPort>(adminRepo);
+  if (getIt.isRegistered<AdminCouponsPort>()) {
+    getIt.unregister<AdminCouponsPort>();
+  }
+  getIt.registerSingleton<AdminCouponsPort>(adminRepo);
+  if (getIt.isRegistered<AdminSalesPort>()) {
+    getIt.unregister<AdminSalesPort>();
+  }
+  getIt.registerSingleton<AdminSalesPort>(adminRepo);
   // The /admin/images/:id builder resolves storage at the composition
   // root now (audit P1 constructor injection) — the route probe needs it
   // registered even though its assertions never touch images.

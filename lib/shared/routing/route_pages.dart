@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/addresses/presentation/pages/addresses_page.dart';
+import '../../features/admin/domain/repositories/admin_coupons_port.dart';
+import '../../features/admin/domain/repositories/admin_customers_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
+import '../../features/admin/domain/repositories/admin_reviews_port.dart';
+import '../../features/admin/domain/repositories/admin_sales_port.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_coupons_page.dart';
@@ -199,18 +203,21 @@ abstract final class RoutePages {
   /// Composition root (audit P1): the only place that resolves
   /// dependencies; the page's own `getIt` lookup is now only a
   /// test-only fallback.
+  ///
+  /// Narrow port (audit Top-5 #5 ISP): the reviews page only moderates,
+  /// so it receives [AdminReviewsPort], not the full facade.
   static Widget adminReviews() =>
-      AdminReviewsPage(repository: getIt<AdminRepository>());
+      AdminReviewsPage(repository: getIt<AdminReviewsPort>());
 
   static Widget maintenance() => const MaintenancePage();
 
   static Widget adminCustomers() =>
-      AdminCustomersPage(repository: getIt<AdminRepository>());
+      AdminCustomersPage(repository: getIt<AdminCustomersPort>());
 
   /// Composition root (audit P1): the only place that resolves
   /// dependencies, like every other admin destination.
   static Widget adminCoupons() =>
-      AdminCouponsPage(repository: getIt<AdminRepository>());
+      AdminCouponsPage(repository: getIt<AdminCouponsPort>());
 
   static Widget adminOrderDetail(GoRouterState s) =>
       AdminOrderDetailPage(orderId: s.pathParameters['id']!);
@@ -223,7 +230,7 @@ abstract final class RoutePages {
   /// Read-only sales dashboard (#12); repository resolved at the
   /// composition root like every other admin destination.
   static Widget adminSales() =>
-      AdminSalesDashboardPage(repository: getIt<AdminRepository>());
+      AdminSalesDashboardPage(repository: getIt<AdminSalesPort>());
 
   static Widget adminProducts() =>
       AdminProductsPage(repository: getIt<AdminRepository>());

@@ -1,5 +1,6 @@
 import '../../../../core/entities/money.dart';
 import '../../../../core/utils/safe_parse.dart';
+import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_sales.dart';
@@ -28,8 +29,12 @@ class AdminMappers {
   }) {
     final placedRaw = row['placed_at'];
     final placedAt = placedRaw is String ? DateTime.tryParse(placedRaw) : null;
+    final orderItems = row['order_items'];
+    final snapshot = row['address_snapshot'];
     return AdminOrder(
-      id: row['id'] as String,
+      // Repository filters id-less rows before calling; optString keeps a
+      // single malformed row from throwing inside the widget tree.
+      id: optString(row, 'id') ?? '',
       status: AdminOrderStatus.fromName(row['status']),
       total: Money(optInt(row, 'total') ?? 0),
       placedAt: placedAt ?? DateTime.now(),
@@ -37,14 +42,12 @@ class AdminMappers {
       customerId: _customerId(row),
       customerTier: _customerTier(row),
       paymentMethod: optString(row, 'payment_method'),
-      itemCount: row['order_items'] is List
-          ? (row['order_items'] as List).length
-          : items.length,
+      itemCount:
+          orderItems is List ? orderItems.length : items.length,
       items: items,
       trackingNumber: optString(row, 'payment_id'),
-      address: row['address_snapshot'] is Map
-          ? addressFromSnapshot(
-              (row['address_snapshot'] as Map).cast<String, dynamic>())
+      address: snapshot is Map
+          ? addressFromSnapshot(safeMap(snapshot))
           : null,
     );
   }
@@ -159,27 +162,40 @@ class AdminMappers {
   static AdminProduct productFromRow(Map<String, dynamic> row) {
     final category = row['categories'];
     final basePriceMinor = optInt(row, 'base_price');
+    final id = optString(row, 'id') ?? '';
+    // Fail-closed money boundary (audit Top-5 #4): a missing/non-positive
+    // price is corrupt data, not a free product — render zero but log so
+    // the catalog team sees it. Absurd values (>999M minor ≈ 9.99M EGP)
+    // are clamped to zero for the same reason; the server (068/073)
+    // rejects them on write.
+    Money basePrice;
+    if (basePriceMinor == null || basePriceMinor <= 0) {
+      if (basePriceMinor != null) {
+        Log.w('admin product $id has non-positive base_price $basePriceMinor');
+      }
+      basePrice = Money.zero;
+    } else if (basePriceMinor > 999999999) {
+      Log.w('admin product $id base_price $basePriceMinor exceeds cap');
+      basePrice = Money.zero;
+    } else {
+      basePrice = Money(basePriceMinor);
+    }
     return AdminProduct(
-      id: row['id'] as String,
+      id: id,
       name: optString(row, 'name') ?? '',
       slug: optString(row, 'slug') ?? '',
       categoryId: optString(row, 'category_id') ?? '',
       categoryName: category is Map ? optString(category, 'name') ?? '' : '',
-      basePrice: basePriceMinor != null && basePriceMinor > 0
-          ? Money(basePriceMinor)
-          : Money.zero,
-      isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
+      basePrice: basePrice,
+      isActive: safeBool(row, 'is_active'),
       description: optString(row, 'description'),
       composition: optString(row, 'composition'),
       care: optString(row, 'care'),
       origin: optString(row, 'origin'),
-      widthCm: row['width_cm'] is int ? row['width_cm'] as int : null,
-      gsm: row['gsm'] is int ? row['gsm'] as int : null,
-      sellByLength:
-          row['sell_by_length'] is bool ? row['sell_by_length'] as bool : false,
-      minCutMeters: row['min_cut_meters'] is num
-          ? (row['min_cut_meters'] as num).toDouble()
-          : null,
+      widthCm: optInt(row, 'width_cm'),
+      gsm: optInt(row, 'gsm'),
+      sellByLength: safeBool(row, 'sell_by_length'),
+      minCutMeters: optDouble(row, 'min_cut_meters'),
       colorName: optString(row, 'color_name'),
     );
   }
@@ -187,7 +203,10 @@ class AdminMappers {
   /// Maps a list of product rows, skipping id-less entries.
   static List<AdminProduct> productsFromRows(List<dynamic> rows) => rows
       .whereType<Map<String, dynamic>>()
-      .where((row) => row['id'] is String && (row['id'] as String).isNotEmpty)
+      .where((row) {
+        final id = optString(row, 'id');
+        return id != null && id.isNotEmpty;
+      })
       .map(productFromRow)
       .toList();
 
@@ -196,16 +215,19 @@ class AdminMappers {
   /// Same id precondition as [productFromRow].
   static AdminCategory categoryFromRow(Map<String, dynamic> row) {
     return AdminCategory(
-      id: row['id'] as String,
+      id: optString(row, 'id') ?? '',
       name: optString(row, 'name') ?? '',
-      isActive: row['is_active'] is bool ? row['is_active'] as bool : false,
+      isActive: safeBool(row, 'is_active'),
     );
   }
 
   /// Maps a list of category rows, skipping id-less entries.
   static List<AdminCategory> categoriesFromRows(List<dynamic> rows) => rows
       .whereType<Map<String, dynamic>>()
-      .where((row) => row['id'] is String && (row['id'] as String).isNotEmpty)
+      .where((row) {
+        final id = optString(row, 'id');
+        return id != null && id.isNotEmpty;
+      })
       .map(categoryFromRow)
       .toList();
 

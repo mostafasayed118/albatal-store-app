@@ -49,7 +49,8 @@ final class SupabaseAdminOrders implements AdminOrdersPort {
             status != null ? query.eq('status', status.dbValue) : query;
         final rows =
             await filtered.order('placed_at', ascending: false).limit(limit);
-        return (rows as List)
+        // `rows` is statically List via the typed Postgrest builder.
+        return rows
             .whereType<Map<String, dynamic>>()
             // Rows without a string id cannot be navigated to; skip them.
             .where((r) => r['id'] is String)

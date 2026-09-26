@@ -27,16 +27,22 @@ final class SupabaseAdminReviews implements AdminReviewsPort {
             // degrade to skips instead of one malformed review failing the
             // whole pending queue. Rows without a usable id/product_id
             // cannot be moderated or navigated to, so they are skipped.
-            final list = (rows as List)
+            // (`rows` is statically List via the typed Postgrest builder.)
+            final list = rows
                 .whereType<Map<String, dynamic>>()
                 .where(
                     (row) => row['id'] is String && row['product_id'] is String)
-                .map((row) => (
-                      id: row['id'] as String,
-                      product: row['product_id'] as String,
-                      text: safeString(row, 'text'),
-                      rating: safeInt(row, 'rating'),
-                    ))
+                .map((row) {
+                  final id = optString(row, 'id') ?? '';
+                  final product = optString(row, 'product_id') ?? '';
+                  return (
+                    id: id,
+                    product: product,
+                    text: safeString(row, 'text'),
+                    rating: safeInt(row, 'rating'),
+                  );
+                })
+                .where((r) => r.id.isNotEmpty && r.product.isNotEmpty)
                 .toList();
             return list;
           }, 'Failed to fetch pending reviews', code: kAdminReviewsLoadFailed);

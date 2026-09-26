@@ -317,7 +317,7 @@ void main() {
     }
     expect(
       latestFile!.replaceAll('\\', '/'),
-      'supabase/migrations/072_checkout_bounds_and_expiry.sql',
+      'supabase/migrations/074_checkout_throttle_and_phone.sql',
     );
 
     final body = File(latestFile).readAsStringSync();
@@ -332,6 +332,17 @@ void main() {
     expect(body, contains('Invalid idempotency key'));
     expect(body, contains('Checkout total must be greater than zero'));
     expect(body, contains('create_checkout_order_unchecked_072'));
+    expect(
+        body,
+        contains(
+            "to_regprocedure('public.create_checkout_order_unchecked_072"));
+    // 074 additions: per-user throttle through the 060 infra (audit Top-5
+    // #1) and E.164-length phone digits (Top-5 #4 phone split).
+    expect(body, contains("public.rate_limit_take('init:checkout', 10, 60)"));
+    expect(body, contains('Too many checkouts'));
+    expect(body, contains('v_phone_digits'));
+    expect(body, contains('char_length(v_phone_digits) < 8'));
+    expect(body, contains('char_length(v_phone_digits) > 15'));
     expect(
         body,
         contains(

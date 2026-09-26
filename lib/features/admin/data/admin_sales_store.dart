@@ -24,7 +24,8 @@ final class SupabaseAdminSales implements AdminSalesPort {
       Result.guard(() async {
         final response = await _client
             .rpc('get_low_stock_products', params: {'p_threshold': threshold});
-        return AdminMappers.lowStockVariantsFromRows(response as List<dynamic>);
+        final list = response is List ? response : const <dynamic>[];
+        return AdminMappers.lowStockVariantsFromRows(list);
       }, 'Failed to load low stock products', code: kAdminLowStockLoadFailed);
 
   @override

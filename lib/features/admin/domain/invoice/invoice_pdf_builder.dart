@@ -4,9 +4,12 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../domain/entities/admin_order.dart';
+import '../entities/admin_order.dart';
 
 /// Branded invoice PDF generator (feature-batch §16).
+///
+/// Domain-located (audit Top-5 #5): pure Dart over entities, no platform
+/// channels, no network — presentation depends on domain, never on data.
 ///
 /// Pure Dart — no platform channels, no network: fully unit-testable.
 /// The document build runs on a background isolate via [Isolate.run] so

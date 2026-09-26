@@ -77,3 +77,15 @@ abstract interface class CatalogRepository {
   Future<Result<List<FlashSale>>> getActiveFlashSales() =>
       Future.value(const Success<List<FlashSale>>([]));
 }
+
+/// Truncation flag for the bounded catalog page (audit Top-5 #3).
+///
+/// Implemented as an extension with a `false` default — not an interface
+/// member — so existing fakes stay valid without modification. The
+/// Supabase implementation declares its own measured
+/// [SupabaseCatalogRepository.lastPageTruncated] field (instance members
+/// win over extension members), and fakes that need to simulate a full
+/// page can declare the same getter.
+extension CatalogTruncation on CatalogRepository {
+  bool get lastPageTruncated => false;
+}
