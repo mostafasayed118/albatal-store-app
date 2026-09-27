@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
+import 'logger.dart';
+
 /// Downscale/re-encode gate (feature-batch §4): images below this size
 /// skip compression — re-encoding small files costs CPU and can grow
 /// PNGs.
@@ -42,7 +44,10 @@ final class FlutterImageCompressor implements ImageCompressor {
       return out.lengthInBytes < bytes.lengthInBytes
           ? Uint8List.fromList(out)
           : bytes;
-    } on Exception {
+    } on Exception catch (e) {
+      // Logged but fail-open per the port contract: the upload proceeds
+      // with the original bytes (Batch 2 polish).
+      Log.w('image compression failed; uploading original.', error: e);
       return bytes;
     }
   }

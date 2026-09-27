@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/components/app_image.dart';
+import '../../../../../shared/services/logger.dart';
 import '../../../../../shared/services/storage_service.dart';
 import 'admin_image_icon_btn.dart';
 
@@ -43,7 +44,10 @@ class AdminImageGrid extends StatelessWidget {
             path,
             StorageService.gridImageWidth,
           );
-        } catch (_) {
+        } catch (e) {
+          // Logged: the tile silently falls back to the full upload
+          // otherwise (Batch 2 polish).
+          Log.w('admin grid render URL failed; using stored path.', error: e);
           url = path;
         }
         return Card(
