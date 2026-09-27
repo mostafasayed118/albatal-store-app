@@ -63,6 +63,7 @@ final class AlBatalApp extends StatefulWidget {
 final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthCubit _authCubit;
   late final CartCubit _cartCubit;
+  late final WishlistCubit _wishlistCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final ReorderCubit _reorderCubit;
   late final RecentSearchesCubit _recentSearchesCubit;
@@ -93,10 +94,30 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     // (premium = free shipping, migration 047). The authoritative perk
     // is applied server-side in create_checkout_order; this only keeps
     // the client's local estimate and order snapshot consistent.
+    // Wishlist sync (Batch 3 #6): app-scoped so the auth listener below
+    // can force a pull on sign-in; the tree gets the same instance.
+    _wishlistCubit = WishlistCubit(
+      getIt<WishlistRepository>(),
+      alertStore: getIt.isRegistered<BackInStockAlertStore>()
+          ? getIt<BackInStockAlertStore>()
+          : null,
+    )..restore();
+    // Snapshot (not `false`): if the session check already completed
+    // authenticated before this listener attaches, the first emission
+    // must not masquerade as a guest→auth transition (verifier catch).
+    var wasAuthenticated = _authCubit.state.isAuthenticated;
     _authSub = _authCubit.stream.listen((auth) {
       _cartCubit.setPremiumMember(
         isPremium: auth.profile?.tier == MembershipTier.premium,
       );
+      // Sign-in transition (guest → authenticated): pull + union-merge the
+      // server wishlist. Sign-out keeps the local list (existing guest
+      // behavior — the device list is shared, not per-account, until the
+      // account-deletion wipe via clearAll).
+      if (auth.isAuthenticated && !wasAuthenticated) {
+        unawaited(_wishlistCubit.restore(force: true));
+      }
+      wasAuthenticated = auth.isAuthenticated;
     });
     // One-tap reorder (feature-batch §6): app-scoped so the orders
     // surface stays GetIt-free; cart adds flow through the live cubit.
@@ -203,16 +224,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                       gate: getIt<ConnectivityGate>())
                     ..load()),
               BlocProvider.value(value: _cartCubit..restore()),
-              BlocProvider(
-                  create: (_) => WishlistCubit(
-                        getIt<WishlistRepository>(),
-                        // Composition-root probe (same pattern as the
-                        // settings notification store above): shells without
-                        // the store registered get a no-op toggle.
-                        alertStore: getIt.isRegistered<BackInStockAlertStore>()
-                            ? getIt<BackInStockAlertStore>()
-                            : null,
-                      )..restore()),
+              BlocProvider.value(value: _wishlistCubit),
               BlocProvider(
                   create: (_) =>
                       OrdersCubit(getIt<OrdersRepository>())..restore()),

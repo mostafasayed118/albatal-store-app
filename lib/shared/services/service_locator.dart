@@ -36,6 +36,8 @@ import '../../features/storefront/data/supabase_catalog_repository.dart';
 import '../../features/storefront/data/supabase_coupons_repository.dart';
 import '../../features/storefront/data/supabase_orders_repository.dart';
 import '../../features/storefront/data/supabase_reviews_repository.dart';
+import '../../features/storefront/data/supabase_wishlist_repository.dart';
+import '../../features/storefront/data/supabase_wishlist_sync_remote.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
@@ -150,8 +152,15 @@ Future<void> configureDependencies() async {
         () => SupabaseAuthSessionPort(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<CartRepository>(
         () => LocalCartRepository(getIt<LocalStorefrontPersistence>()))
-    ..registerLazySingleton<WishlistRepository>(
-        () => LocalWishlistRepository(getIt<LocalStorefrontPersistence>()))
+    // Wishlist sync (Batch 3 #6, migration 075): decorator over the local
+    // repository. Guests behave exactly as before (local only); signed-in
+    // users union-merge through `sync_wishlist` with local fallback.
+    ..registerLazySingleton<WishlistRepository>(() =>
+        SupabaseWishlistRepository(
+          local: LocalWishlistRepository(getIt<LocalStorefrontPersistence>()),
+          remote: SupabaseWishlistSyncRemote(client: getIt<SupabaseClient>()),
+          session: getIt<AuthSessionPort>(),
+        ))
     // Server-backed orders in ALL builds: checkout creates orders
     // server-side via the `create_checkout_order` RPC (CheckoutService
     // is registered unconditionally above), so the orders list must

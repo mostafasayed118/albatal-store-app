@@ -1,4 +1,4 @@
--- 075 — Wishlist sync (DRAFT for human review, NOT applied).
+-- 075 — Wishlist sync (owner-reviewed + approved 2026-09-27; NOT yet applied).
 --
 -- Adds the server half of cross-device wishlist sync (Batch 3 #6):
 --   * `public.wishlists` — one row per (user, product), owner-only RLS.
