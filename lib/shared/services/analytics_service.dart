@@ -75,6 +75,11 @@ class AnalyticsService {
       await _sink.sendBatch(batch);
     } catch (_) {
       // Swallow: analytics failures never reach the user or Sentry.
+      // Re-queue for the next flush (bounded) so funnel events are not
+      // permanently lost on flaky networks.
+      if (_buffer.isEmpty) {
+        _buffer.addAll(batch.take(batchSize));
+      }
     } finally {
       _flushing = false;
     }

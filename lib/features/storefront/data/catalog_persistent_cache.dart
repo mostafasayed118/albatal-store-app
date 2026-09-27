@@ -73,7 +73,9 @@ Future<List<Product>?> restoreCatalogCache(SharedPreferences? prefs) async {
     for (final entry in decoded) {
       try {
         if (entry is! Map) continue;
-        final product = ProductCodec.decode(entry as Map<Object?, Object?>);
+        // `entry` is promoted to Map here; normalize without an `as`
+        // cast so a non-String-keyed map never throws.
+        final product = ProductCodec.decode(Map<Object?, Object?>.from(entry));
         if (product != null) products.add(product);
       } catch (e) {
         // Per-entry fail-soft (logged without payload text; P0-5).

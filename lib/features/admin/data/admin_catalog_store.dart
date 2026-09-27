@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../core/error/app_error.dart';
 import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
 import '../domain/entities/admin_catalog.dart';
@@ -84,33 +85,43 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
     required String categoryId,
     required Money basePrice,
     required bool isActive,
-  }) =>
-      Result.guard<String>(() async {
-        final res = await _client.rpc('admin_upsert_product', params: {
-          'p_id': id,
-          'p_name': name,
-          'p_slug': slug,
-          'p_description': description,
-          'p_composition': composition,
-          'p_category_id': categoryId,
-          'p_base_price': basePrice.minorUnits,
-          'p_is_active': isActive,
-          'p_sell_by_length': sellByLength,
-          'p_care': care,
-          'p_origin': origin,
-          'p_width_cm': widthCm,
-          'p_gsm': gsm,
-          'p_min_cut_meters': minCutMeters,
-        });
-        if (res is! String || res.isEmpty) {
-          // An RPC that answers without the product id is a protocol
-          // violation, not a transport error — but it is reported with the
-          // same message the boundary uses, so the text stays byte-identical
-          // and the empty payload rides along as the cause.
-          throw StateError('admin_upsert_product returned no product id');
-        }
-        return res;
-      }, 'Failed to save product', code: kAdminProductSaveFailed);
+  }) {
+    // Client-side guard (Batch 1): reject empty identity fields and
+    // non-positive prices before the RPC with the same boundary code.
+    if (name.trim().isEmpty ||
+        slug.trim().isEmpty ||
+        categoryId.isEmpty ||
+        basePrice.minorUnits <= 0) {
+      return Future.value(const Failure(
+          AppError('Failed to save product', code: kAdminProductSaveFailed)));
+    }
+    return Result.guard<String>(() async {
+      final res = await _client.rpc('admin_upsert_product', params: {
+        'p_id': id,
+        'p_name': name,
+        'p_slug': slug,
+        'p_description': description,
+        'p_composition': composition,
+        'p_category_id': categoryId,
+        'p_base_price': basePrice.minorUnits,
+        'p_is_active': isActive,
+        'p_sell_by_length': sellByLength,
+        'p_care': care,
+        'p_origin': origin,
+        'p_width_cm': widthCm,
+        'p_gsm': gsm,
+        'p_min_cut_meters': minCutMeters,
+      });
+      if (res is! String || res.isEmpty) {
+        // An RPC that answers without the product id is a protocol
+        // violation, not a transport error — but it is reported with the
+        // same message the boundary uses, so the text stays byte-identical
+        // and the empty payload rides along as the cause.
+        throw StateError('admin_upsert_product returned no product id');
+      }
+      return res;
+    }, 'Failed to save product', code: kAdminProductSaveFailed);
+  }
 
   @override
   Future<Result<String>> adminUpsertVariant({
@@ -119,22 +130,29 @@ final class SupabaseAdminCatalog implements AdminCatalogPort {
     required String color,
     required int stock,
     Money? priceOverride,
-  }) =>
-      Result.guard<String>(() async {
-        final res = await _client.rpc('admin_upsert_variant', params: {
-          'p_product_id': productId,
-          'p_size': size,
-          'p_color': color,
-          'p_stock': stock,
-          'p_price_override': priceOverride?.minorUnits,
-        });
-        if (res is! String || res.isEmpty) {
-          // Same protocol-violation shape as [adminUpsertProduct]: message
-          // text unchanged, empty payload recorded as the cause.
-          throw StateError('admin_upsert_variant returned no variant id');
-        }
-        return res;
-      }, 'Failed to save variant', code: kAdminVariantSaveFailed);
+  }) {
+    // Client-side guard (Batch 1): reject empty size/color and negative
+    // stock before the RPC with the same boundary code.
+    if (size.trim().isEmpty || color.trim().isEmpty || stock < 0) {
+      return Future.value(const Failure(
+          AppError('Failed to save variant', code: kAdminVariantSaveFailed)));
+    }
+    return Result.guard<String>(() async {
+      final res = await _client.rpc('admin_upsert_variant', params: {
+        'p_product_id': productId,
+        'p_size': size,
+        'p_color': color,
+        'p_stock': stock,
+        'p_price_override': priceOverride?.minorUnits,
+      });
+      if (res is! String || res.isEmpty) {
+        // Same protocol-violation shape as [adminUpsertProduct]: message
+        // text unchanged, empty payload recorded as the cause.
+        throw StateError('admin_upsert_variant returned no variant id');
+      }
+      return res;
+    }, 'Failed to save variant', code: kAdminVariantSaveFailed);
+  }
 
   @override
   Future<Result<void>> adminSetProductImages(

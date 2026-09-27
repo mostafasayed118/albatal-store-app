@@ -1,6 +1,7 @@
 import '../../../core/entities/money.dart';
 import '../../../core/entities/product.dart';
 import '../../../core/utils/safe_parse.dart';
+import '../../../shared/services/logger.dart';
 import '../../../shared/services/storage_service.dart';
 import '../domain/entities/flash_sale.dart';
 
@@ -53,6 +54,13 @@ extension ProductCodec on Product {
 
     final basePrice = safeInt(row, 'base_price');
     final oldPrice = optInt(row, 'old_price');
+    // Fail-closed visibility (Batch 1): corrupt non-positive prices still
+    // render as zero (existing contract) but are now logged with the
+    // product id so the catalog team can fix the row instead of shipping
+    // a silent "free" product.
+    if (basePrice <= 0) {
+      Log.w('storefront product $id has non-positive base_price $basePrice');
+    }
 
     // Derive sizes and colors from variants. Malformed variant rows are
     // skipped rather than throwing into the repository.
@@ -150,7 +158,7 @@ extension ProductCodec on Product {
       care: optString(row, 'care'),
       widthCm: optInt(row, 'width_cm'),
       gsm: optInt(row, 'gsm'),
-      sellByLength: (row['sell_by_length'] as bool?) ?? false,
+      sellByLength: safeBool(row, 'sell_by_length'),
       minCutMeters: optDouble(row, 'min_cut_meters'),
       origin: optString(row, 'origin'),
       sizes: sizeSet.toList()..sort(),
@@ -227,8 +235,7 @@ extension ProductCodec on Product {
         care: optString(raw, 'care'),
         widthCm: optInt(raw, 'widthCm'),
         gsm: optInt(raw, 'gsm'),
-        sellByLength:
-            raw['sellByLength'] is bool ? raw['sellByLength'] as bool : false,
+        sellByLength: safeBool(raw, 'sellByLength'),
         minCutMeters: optDouble(raw, 'minCutMeters'),
         origin: optString(raw, 'origin'),
         sizes: optStrList(raw['sizes']),

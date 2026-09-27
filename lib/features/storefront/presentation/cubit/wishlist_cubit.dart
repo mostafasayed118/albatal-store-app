@@ -17,6 +17,7 @@ final class WishlistState extends Equatable {
     this.products = const [],
     this.alertIds = const {},
     this.errorMessage,
+    this.errorCode,
   });
 
   final WishlistStatus status;
@@ -27,6 +28,10 @@ final class WishlistState extends Equatable {
   final Set<String> alertIds;
   final String? errorMessage;
 
+  /// Stable machine-readable failure code for localization (Batch 1:
+  /// additive, defaults null so existing constructions keep compiling).
+  final String? errorCode;
+
   bool contains(String id) => ids.contains(id);
 
   WishlistState copyWith({
@@ -35,6 +40,7 @@ final class WishlistState extends Equatable {
     List<Product>? products,
     Set<String>? alertIds,
     String? errorMessage,
+    String? errorCode,
   }) =>
       WishlistState(
         status: status ?? this.status,
@@ -42,10 +48,12 @@ final class WishlistState extends Equatable {
         products: products ?? this.products,
         alertIds: alertIds ?? this.alertIds,
         errorMessage: errorMessage,
+        errorCode: errorCode ?? this.errorCode,
       );
 
   @override
-  List<Object?> get props => [status, ids, products, alertIds, errorMessage];
+  List<Object?> get props =>
+      [status, ids, products, alertIds, errorMessage, errorCode];
 }
 
 final class WishlistCubit extends Cubit<WishlistState> {
@@ -96,6 +104,7 @@ final class WishlistCubit extends Cubit<WishlistState> {
         emit(state.copyWith(
           status: WishlistStatus.error,
           errorMessage: error.message,
+          errorCode: error.code,
         ));
     }
   }
@@ -188,6 +197,7 @@ final class WishlistCubit extends Cubit<WishlistState> {
         emit(state.copyWith(
           status: WishlistStatus.error,
           errorMessage: 'Wishlist may not be saved: ${error.message}',
+          errorCode: error.code,
         ));
     }
   }

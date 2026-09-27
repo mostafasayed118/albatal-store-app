@@ -32,13 +32,19 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
           .eq('product_id', productId)
           .order('created_at', ascending: false)
           .limit(50);
-      final reviews = <ProductReview>[];
-      for (final raw in rows as List<dynamic>) {
+      // Widen to List<dynamic> by assignment (no `as` cast): per-row
+      // `is! Map` + `safeMap` below keep one malformed row from failing
+      // the whole list.
+      final List<dynamic> rowList = rows;
+      final parsed = <ProductReview>[];
+      for (final raw in rowList) {
         if (raw is! Map) continue;
         final review = reviewFromRow(safeMap(raw));
         if (review == null) continue;
-        reviews.add(await _withSignedPhoto(review));
+        parsed.add(review);
       }
+      // Batch photo-URL signing concurrently (was sequential await in loop).
+      final reviews = await Future.wait(parsed.map(_withSignedPhoto));
       return Success(reviews);
     } on PostgrestException catch (e, st) {
       Log.w('reviews fetch failed: ${e.code}', category: LogCategory.network);
@@ -62,6 +68,12 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
     }
     final trimmed = text.trim();
     if (trimmed.isEmpty || trimmed.length > maxReviewTextLength) {
+      return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
+    }
+    // Client-side guard (Batch 1): 5MB cap before upload; larger files
+    // fail fast with the same invalid code instead of staging megabytes.
+    // Checked before auth so oversized input never depends on session state.
+    if (photoBytes != null && photoBytes.length > maxReviewPhotoBytes) {
       return const Failure(AppError(kReviewInvalid, code: kReviewInvalid));
     }
     final userId = _client.auth.currentUser?.id;
@@ -166,3 +178,6 @@ final class SupabaseReviewsRepository implements ReviewsRepository {
 /// for the insert. Generous on purpose — confirm the server contract
 /// before lowering it.
 const maxReviewTextLength = 2000;
+
+/// Client-side upper bound for review photo uploads (see [submit]).
+const maxReviewPhotoBytes = 5 * 1024 * 1024;

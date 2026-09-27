@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_coupon.dart';
@@ -56,7 +57,7 @@ final class SupabaseAdminRepository implements AdminRepository {
           .select('is_admin')
           .eq('id', user.id)
           .single();
-      return response['is_admin'] as bool? ?? false;
+      return safeBool(safeMap(response), 'is_admin');
     } catch (e) {
       // A failed permission probe must not grant admin. Catches broadly
       // because malformed payloads raise TypeError (an Error, not an

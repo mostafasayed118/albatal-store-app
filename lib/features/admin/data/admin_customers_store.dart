@@ -91,9 +91,10 @@ final class SupabaseAdminCustomers implements AdminCustomersPort {
       // to size: they cannot be navigated to, and a bookmark taken past them
       // is what keeps `nextCursor` describing a row that was actually
       // returned.
-      final rows = (response.data as List)
-          .whereType<Map<String, dynamic>>()
-          .where((row) {
+      // Widen to List<dynamic> by assignment (no `as` cast); rows
+      // without a usable string id are dropped before the page is cut.
+      final List<dynamic> rawRows = response.data;
+      final rows = rawRows.whereType<Map<String, dynamic>>().where((row) {
         final id = row['id'];
         return id is String && id.isNotEmpty;
       }).toList();

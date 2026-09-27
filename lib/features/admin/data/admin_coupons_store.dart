@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/error/app_error.dart';
 import '../../../../core/error/failure_codes.dart';
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/safe_parse.dart';
@@ -34,26 +35,34 @@ final class SupabaseAdminCoupons implements AdminCouponsPort {
     required String code,
     required int discountMinor,
     String? description,
-  }) =>
-      Result.guard(() async {
-        final res = await _client
-            .from('coupons')
-            .upsert({
-              'code': code.trim().toUpperCase(),
-              'discount_minor': discountMinor,
-              if (description != null && description.isNotEmpty)
-                'description': description,
-            })
-            .select('id, code, discount_minor, description, active')
-            .single();
-        // `.single()` is statically Map via the typed Postgrest builder.
-        final row = safeMap(res);
-        final coupon = _couponFromRow(row);
-        if (coupon == null) {
-          throw StateError('createCoupon returned no coupon id');
-        }
-        return coupon;
-      }, 'Failed to create coupon', code: kAdminCouponCreateFailed);
+  }) {
+    // Client-side guard (Batch 1): reject empty codes and non-positive
+    // discounts before the RPC so typos fail fast with the same boundary
+    // code instead of a server round-trip.
+    if (code.trim().isEmpty || discountMinor <= 0) {
+      return Future.value(const Failure(
+          AppError('Failed to create coupon', code: kAdminCouponCreateFailed)));
+    }
+    return Result.guard(() async {
+      final res = await _client
+          .from('coupons')
+          .upsert({
+            'code': code.trim().toUpperCase(),
+            'discount_minor': discountMinor,
+            if (description != null && description.isNotEmpty)
+              'description': description,
+          })
+          .select('id, code, discount_minor, description, active')
+          .single();
+      // `.single()` is statically Map via the typed Postgrest builder.
+      final row = safeMap(res);
+      final coupon = _couponFromRow(row);
+      if (coupon == null) {
+        throw StateError('createCoupon returned no coupon id');
+      }
+      return coupon;
+    }, 'Failed to create coupon', code: kAdminCouponCreateFailed);
+  }
 
   @override
   Future<Result<void>> setCouponActive(String id, bool active) =>
