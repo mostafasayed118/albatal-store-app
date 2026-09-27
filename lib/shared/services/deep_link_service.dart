@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 
+import 'logger.dart';
+
 /// Inbound deep-link port (feature-batch §5). Interface-wrapped like
 /// the other batch services so consumers depend on the port, not the
 /// `app_links` plugin (audit 2026-09-13).
@@ -24,7 +26,10 @@ final class AppLinksDeepLinkService implements DeepLinkService {
     Uri? initial;
     try {
       initial = await _links.getInitialLink();
-    } on Exception {
+    } on Exception catch (e) {
+      // Logged: a dropped cold-start link is otherwise invisible
+      // (Batch 2 polish).
+      Log.w('initial deep link lookup failed; continuing linkless.', error: e);
       initial = null;
     }
     if (initial != null) yield initial;

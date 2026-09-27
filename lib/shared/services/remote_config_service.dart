@@ -54,7 +54,10 @@ class RemoteConfigService {
     try {
       final info = await PackageInfo.fromPlatform();
       return info.version;
-    } on Exception {
+    } on Exception catch (e) {
+      // Logged: a null version silently disables the forced-update gate
+      // in [updateRequired] (Batch 2 polish).
+      Log.w('app version lookup failed; update gate disabled.', error: e);
       return null;
     }
   }

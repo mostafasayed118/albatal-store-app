@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/services/biometric_service.dart';
+import '../../../../shared/services/logger.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'settings_state.dart';
@@ -97,7 +98,8 @@ final class SettingsCubit extends Cubit<SettingsState> {
     var canAuthenticate = false;
     try {
       canAuthenticate = await biometrics.canAuthenticate();
-    } on Exception {
+    } on Exception catch (e) {
+      Log.w('biometric availability check failed.', error: e);
       canAuthenticate = false;
     }
     if (isClosed) return false;
@@ -106,7 +108,8 @@ final class SettingsCubit extends Cubit<SettingsState> {
     var confirmed = false;
     try {
       confirmed = await biometrics.authenticate(reason: reason);
-    } on Exception {
+    } on Exception catch (e) {
+      Log.w('biometric authentication errored.', error: e);
       confirmed = false;
     }
     if (isClosed) return false;
