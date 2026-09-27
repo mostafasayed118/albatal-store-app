@@ -1,9 +1,7 @@
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/entities/product.dart';
-import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/payments/domain/entities/payment.dart';
 import 'package:al_batal_elite/features/storefront/data/checkout_service.dart';
-import 'package:al_batal_elite/features/storefront/domain/entities/pending_order.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -44,56 +42,57 @@ Future<Map<String, dynamic>> _capture(List<CartItem> items) async {
   return (captured.single as Map).cast<String, dynamic>();
 }
 
-/// Wave C payload contract: cut-length meters + client-estimated totals
-/// and the sample flag must ride `p_items` so the (pending) server-side
-/// validation can reject tampered lines.
+/// Swatch-kit payload contract (migration 077 live): cut-length meters +
+/// client-estimated totals and the sample flag ride `p_items` so the
+/// server prices samples and cross-checks metered lines. The client
+/// gate only fails closed for line types the server cannot price —
+/// both flags are on, so every line below reaches the RPC.
 void main() {
   setUpAll(() {
     registerFallbackValue(<String, dynamic>{});
   });
 
-  test(
-      'metered checkout is rejected before the RPC while server support is gated',
-      () async {
-    final client = MockSupabaseClient();
-    final result = await CheckoutService(client: client).placeOrder(
-      items: [
-        CartItem(product: _cutFabric(), color: 'Emerald', length: '12.5')
-      ],
-      paymentMethod: PaymentMethod.paymobCard,
-      address: null,
-    );
-    expect(result, isA<Failure<PendingOrder>>());
-    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
+  test('metered lines reach the RPC with the metered payload', () async {
+    // 12000 minor/m x 12.5 m at the 5 % tier: tiered/m = 11400,
+    // line_total = (12000*95*125+500)/1000 = 142500.
+    final params = await _capture([
+      CartItem(product: _cutFabric(), color: 'Emerald', length: '12.5'),
+    ]);
+    final line = (params['p_items'] as List).single as Map;
+    expect(line['meters'], 12.5);
+    expect(line['line_total'], 142500);
+    expect(line['tiered_price'], 11400);
   });
 
-  test('sub-tier metered checkout is rejected before the RPC', () async {
-    final client = MockSupabaseClient();
-    final result = await CheckoutService(client: client).placeOrder(
-      items: [CartItem(product: _cutFabric(), color: 'Emerald', length: '5.0')],
-      paymentMethod: PaymentMethod.paymobCard,
-      address: null,
-    );
-    expect(result, isA<Failure<PendingOrder>>());
-    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
+  test('sub-tier metered lines omit tiered_price', () async {
+    // 5.0 m earns no tier: line_total = (12000*100*50+500)/1000 = 60000,
+    // and the undiscounted per-meter price rides no tiered_price key.
+    final params = await _capture([
+      CartItem(product: _cutFabric(), color: 'Emerald', length: '5.0'),
+    ]);
+    final line = (params['p_items'] as List).single as Map;
+    expect(line['meters'], 5.0);
+    expect(line['line_total'], 60000);
+    expect(line.containsKey('tiered_price'), isFalse);
   });
 
-  test('sample checkout is rejected before the RPC', () async {
-    final client = MockSupabaseClient();
-    final result = await CheckoutService(client: client).placeOrder(
-      items: [
-        CartItem(
-          product: _cutFabric(),
-          color: 'Emerald',
-          length: 'sample',
-          sample: true,
-        ),
-      ],
-      paymentMethod: PaymentMethod.paymobCard,
-      address: null,
-    );
-    expect(result, isA<Failure<PendingOrder>>());
-    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
+  test('sample lines reach the RPC flagged sample-only', () async {
+    final params = await _capture([
+      CartItem(
+        product: _cutFabric(),
+        color: 'Emerald',
+        length: 'sample',
+        sample: true,
+      ),
+    ]);
+    final line = (params['p_items'] as List).single as Map;
+    expect(line, {
+      'product_id': 'fabric-01',
+      'size': 'sample',
+      'color': 'Emerald',
+      'quantity': 1,
+      'sample': true,
+    });
   });
 
   test('fixed-size lines keep the legacy payload shape untouched', () async {

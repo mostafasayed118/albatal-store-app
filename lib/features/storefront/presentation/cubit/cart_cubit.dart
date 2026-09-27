@@ -125,11 +125,12 @@ final class CartCubit extends Cubit<CartState> {
     }
   }
 
-  /// Add a swatch/sample line for [product] (Wave C). One sample per
-  /// color: re-tapping the button is an idempotent no-op, since sample
-  /// quantity is fixed by convention. The line carries `sample: true`
-  /// into the checkout payload; its client-side estimate is zero and
-  /// server-side sample pricing is a pending follow-up.
+  /// Add a swatch/sample line for [product]. One sample per color:
+  /// re-tapping the button is an idempotent no-op, since sample
+  /// quantity is fixed to 1 by the server contract (migration 077).
+  /// The line carries `sample: true` into the checkout payload; its
+  /// client-side estimate is zero and the server prices it at the
+  /// fixed sample price.
   void addSample(Product product, {String color = 'Emerald'}) {
     final item = CartItem(
       product: product,

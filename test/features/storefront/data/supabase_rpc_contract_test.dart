@@ -315,9 +315,11 @@ void main() {
         latestFile = file.path;
       }
     }
+    // 077 (swatch-kit): the wrapper delegates to the sample/metered-aware
+    // unchecked_077 core; the 072 core stays in place as the rollback.
     expect(
       latestFile!.replaceAll('\\', '/'),
-      'supabase/migrations/074_checkout_throttle_and_phone.sql',
+      'supabase/migrations/077_sample_metered_checkout.sql',
     );
 
     final body = File(latestFile).readAsStringSync();
@@ -331,11 +333,19 @@ void main() {
     expect(body, contains('octet_length(p_address::TEXT) > 4096'));
     expect(body, contains('Invalid idempotency key'));
     expect(body, contains('Checkout total must be greater than zero'));
+    expect(body, contains('create_checkout_order_unchecked_077'));
     expect(body, contains('create_checkout_order_unchecked_072'));
+    // Per-line key gating replaces the blanket sample/metered rejection:
+    // sample lines carry only the flag, metered lines carry meters +
+    // line_total, plain lines carry none of the four keys.
+    expect(body, contains('Invalid sample line'));
+    expect(body, contains('Invalid sample flag'));
+    expect(body, contains('Invalid metered line'));
+    // The core stays unreachable except through the wrapper.
     expect(
         body,
         contains(
-            "to_regprocedure('public.create_checkout_order_unchecked_072"));
+            'REVOKE ALL ON FUNCTION public.create_checkout_order_unchecked_077'));
     // 074 additions: per-user throttle through the 060 infra (audit Top-5
     // #1) and E.164-length phone digits (Top-5 #4 phone split).
     expect(body, contains("public.rate_limit_take('init:checkout', 10, 60)"));
@@ -343,10 +353,9 @@ void main() {
     expect(body, contains('v_phone_digits'));
     expect(body, contains('char_length(v_phone_digits) < 8'));
     expect(body, contains('char_length(v_phone_digits) > 15'));
-    expect(
-        body,
-        contains(
-            "to_regprocedure('public.create_checkout_order_unchecked_072"));
+    // No to_regprocedure guard for the 072 core here: 077 creates its
+    // own unchecked_077 core in the same transaction, so the delegate
+    // target cannot be missing at call time (atomic apply or nothing).
     expect(
       body,
       contains(

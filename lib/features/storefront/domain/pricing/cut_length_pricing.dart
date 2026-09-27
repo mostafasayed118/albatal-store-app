@@ -1,7 +1,15 @@
 import '../../../../core/entities/money.dart';
 import '../../../../core/entities/product.dart';
 
-const bool serverMeteredCheckoutEnabled = false;
+/// Server-side checkout capability flags (migration 077, live on staging).
+/// Sample and metered checkout unlock independently: the server prices
+/// sample lines at `sample_price_minor` and validates metered cuts
+/// against the fabric contract, so the client gates each path on its
+/// own flag instead of one shared kill-switch.
+const bool serverSampleCheckoutEnabled = true;
+
+/// See [serverSampleCheckoutEnabled]: metered cut-length checkout.
+const bool serverMeteredCheckoutEnabled = true;
 
 /// Cut-length and wholesale pricing (Wave C).
 ///

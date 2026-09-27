@@ -10,7 +10,10 @@ import '../cubit/cart_cubit.dart';
 import '../cubit/product_details_cubit.dart';
 
 /// Stitch details CTA bar (spec §4/§5): a 72dp surface bar pinned at
-/// `bottomNavigationBar` holding one gold [FilledButton].
+/// `bottomNavigationBar` holding one gold [FilledButton], plus the
+/// swatch entry point above it: an [OutlinedButton] that drops a
+/// fixed-price sample line into the cart (migration 077 prices it
+/// server-side; the button hides while the capability flag is off).
 ///
 /// Token map: fill `scheme.secondary` #904D00, `controlRadius` 8,
 /// EdgeInsetsDirectional.all(16) padding, label `labelLarge`.
@@ -41,10 +44,31 @@ class AddToCartButton extends StatelessWidget {
     final label = state.inStock && lineTotal.minorUnits > 0
         ? l.addToCartTotal(moneyText(l, lineTotal))
         : (state.inStock ? l.addToCart : l.outOfStock);
+    // Swatch entry point: one sample per color, idempotent by
+    // construction (CartCubit.addSample no-ops on re-tap), priced
+    // server-side at the fixed sample price — never from this label.
+    final showSample = serverSampleCheckoutEnabled && state.inStock;
     return Container(
       padding: const EdgeInsetsDirectional.all(16),
       decoration: BoxDecoration(color: scheme.surface),
-      child: FilledButton(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showSample) ...[
+            OutlinedButton.icon(
+              icon: const Icon(Icons.palette_outlined),
+              label: Text(l.orderSample),
+              onPressed: () {
+                context
+                    .read<CartCubit>()
+                    .addSample(p, color: state.color);
+                showConfirmation(context, l.sampleAdded);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+          FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor: state.inStock ? scheme.secondary : scheme.outline,
           foregroundColor:
@@ -83,6 +107,8 @@ class AddToCartButton extends StatelessWidget {
             ),
           ],
         ),
+          ),
+        ],
       ),
     );
   }

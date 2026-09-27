@@ -116,8 +116,12 @@ void main() {
     expect((result as Success<PendingOrder>).value.total.minorUnits, 136500);
   });
 
-  test('fails closed for unsupported sample checkout items', () async {
+  test('sample lines reach the RPC flagged (077 prices them server-side)',
+      () async {
     final client = MockSupabaseClient();
+    when(() =>
+            client.rpc('create_checkout_order', params: any(named: 'params')))
+        .thenAnswer((_) => FakePostgrestFilterBuilder<dynamic>(_rpcResponse()));
     final service = CheckoutService(client: client);
     final result = await service.placeOrder(
       items: [
@@ -132,8 +136,11 @@ void main() {
       paymentMethod: PaymentMethod.paymobCard,
       address: null,
     );
-    expect(result, isA<Failure<PendingOrder>>());
-    verifyNever(() => client.rpc(any(), params: any(named: 'params')));
+    expect(result, isA<Success<PendingOrder>>());
+    final captured = verify(() => client.rpc('create_checkout_order',
+        params: captureAny(named: 'params'))).captured;
+    final line = ((captured.single as Map)['p_items'] as List).single as Map;
+    expect(line['sample'], isTrue);
   });
   test('fails closed on a malformed RPC payload instead of throwing', () async {
     Future<Result<PendingOrder>> place(Map<String, dynamic> payload) async {

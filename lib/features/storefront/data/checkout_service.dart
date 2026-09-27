@@ -60,8 +60,14 @@ class CheckoutService implements CheckoutRepository {
     String? couponCode,
     String? idempotencyKey,
   }) async {
-    if (!serverMeteredCheckoutEnabled &&
-        items.any((item) => item.sample || item.cutMeters != null)) {
+    // 077: the server prices sample lines and validates metered cuts,
+    // so each path is gated on its own capability flag — never on one
+    // shared switch. A line type the server cannot price fails closed
+    // here before any RPC goes out.
+    final hasSample = items.any((item) => item.sample);
+    final hasMetered = items.any((item) => item.cutMeters != null);
+    if ((hasSample && !serverSampleCheckoutEnabled) ||
+        (hasMetered && !serverMeteredCheckoutEnabled)) {
       return const Failure(
         AppError('This checkout option is not available',
             code: kCheckoutFailedCode),
@@ -89,10 +95,9 @@ class CheckoutService implements CheckoutRepository {
                     'size': item.length,
                     'color': item.color,
                     'quantity': item.quantity,
-                    // Wave C: sample lines are flagged so the checkout
-                    // flow can apply the fixed sample price server-side
-                    // (enforcement = pending supabase/ follow-up; extra
-                    // JSON keys are ignored by the pre-update RPC).
+                    // Sample lines are flagged so the server prices them
+                    // at the fixed sample price (migration 077); the
+                    // wrapper rejects sample lines carrying metered keys.
                     if (item.sample) 'sample': true,
                     // Metered lines carry the cut meters plus the client
                     // estimate so the server can cross-check; when the
