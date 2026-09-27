@@ -10,6 +10,7 @@ import '../../../../shared/components/stitch/stitch_search_bar.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/theme/grid_delegate.dart';
+import '../../domain/entities/catalog_filters.dart';
 import '../catalog_status_guard.dart';
 import '../cubit/catalog_cubit.dart';
 import '../cubit/recent_searches_cubit.dart';
@@ -221,6 +222,21 @@ class _CatalogPageState extends State<CatalogPage> {
         state.filters.priceMax < CatalogPriceBounds.unboundedMax) {
       count++;
     }
+    if (state.filters.weight != FabricWeight.any) {
+      count++;
+    }
+    if (state.filters.width != FabricWidth.any) {
+      count++;
+    }
+    if (state.filters.fabricKeyword.isNotEmpty) {
+      count++;
+    }
+    if (state.filters.inStockOnly || state.filters.sellByLengthOnly) {
+      count++;
+    }
+    if (state.filters.minRating > 0) {
+      count++;
+    }
     return count;
   }
 
@@ -236,10 +252,27 @@ class _CatalogPageState extends State<CatalogPage> {
       ),
       builder: (_) => FilterSheet(
         state: state,
-        onApply: (category, color, priceMin, priceMax) {
+        onApply: ({
+          required category,
+          required color,
+          required priceMin,
+          required priceMax,
+          required weight,
+          required width,
+          required fabricKeyword,
+          required inStockOnly,
+          required sellByLengthOnly,
+          required minRating,
+        }) {
           if (category != state.filters.category) catalog.select(category);
           catalog.setColorFilter(color);
           catalog.setPriceRange(priceMin, priceMax);
+          catalog.setFabricWeight(weight);
+          catalog.setFabricWidth(width);
+          catalog.setFabricKeyword(fabricKeyword);
+          catalog.setInStockOnly(inStockOnly);
+          catalog.setSellByLengthOnly(sellByLengthOnly);
+          catalog.setMinRating(minRating);
         },
       ),
     );

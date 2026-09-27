@@ -645,5 +645,18 @@
   "adminFailureCouponUpdate": "تعذّر تحديث كود الخصم. حاول مرة أخرى.",
   "adminFailureCustomersLoad": "تعذّر تحميل العملاء. حاول مرة أخرى.",
   "adminFailureReviewsLoad": "تعذّر تحميل قائمة المراجعات. حاول مرة أخرى.",
-  "adminFailureReviewUpdate": "تعذّر تحديث المراجعة. حاول مرة أخرى."
+  "adminFailureReviewUpdate": "تعذّر تحديث المراجعة. حاول مرة أخرى.",
+  "fabricWeight": "وزن القماش",
+  "fabricWidth": "عرض القماش",
+  "fabricType": "الخامة",
+  "filterAny": "أي",
+  "weightLight": "خفيف",
+  "weightMedium": "متوسط",
+  "weightHeavy": "ثقيل",
+  "widthNarrow": "ضيق",
+  "widthStandard": "قياسي",
+  "widthWide": "واسع",
+  "inStockOnly": "المتوفر فقط",
+  "sellByLengthOnly": "يُباع بالمتر فقط",
+  "minRating": "أقل تقييم"
 }

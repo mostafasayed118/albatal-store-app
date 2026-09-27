@@ -1895,4 +1895,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminFailureReviewUpdate =>
       'Couldn\'t update the review. Please try again.';
+
+  @override
+  String get fabricWeight => 'Fabric weight';
+
+  @override
+  String get fabricWidth => 'Fabric width';
+
+  @override
+  String get fabricType => 'Fabric';
+
+  @override
+  String get filterAny => 'Any';
+
+  @override
+  String get weightLight => 'Light';
+
+  @override
+  String get weightMedium => 'Medium';
+
+  @override
+  String get weightHeavy => 'Heavy';
+
+  @override
+  String get widthNarrow => 'Narrow';
+
+  @override
+  String get widthStandard => 'Standard';
+
+  @override
+  String get widthWide => 'Wide';
+
+  @override
+  String get inStockOnly => 'In stock only';
+
+  @override
+  String get sellByLengthOnly => 'Sold by the meter only';
+
+  @override
+  String get minRating => 'Minimum rating';
 }

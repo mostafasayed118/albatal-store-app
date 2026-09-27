@@ -48,7 +48,19 @@ Widget _filterHarness(CatalogState state) => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
-          body: FilterSheet(state: state, onApply: (_, __, ___, ____) {})),
+          body: FilterSheet(
+              state: state,
+              onApply: (
+                  {required category,
+                  required color,
+                  required priceMin,
+                  required priceMax,
+                  required weight,
+                  required width,
+                  required fabricKeyword,
+                  required inStockOnly,
+                  required sellByLengthOnly,
+                  required minRating}) {})),
     );
 
 void main() {
@@ -101,9 +113,13 @@ void main() {
       await tester.pumpAndSettle();
 
       // The price row sits below the fold of the 0.6-height sheet —
-      // ListView builds lazily, so scroll it into view first.
-      await tester.drag(find.byType(ListView), const Offset(0, -400));
-      await tester.pump();
+      // ListView builds lazily, so scroll it into view first (the
+      // finder facet rows added above it need more than one drag).
+      final priceText = moneyText(AppLocalizationsEn(), const Money.egp(1290));
+      for (var i = 0; i < 8 && find.text(priceText).evaluate().isEmpty; i++) {
+        await tester.drag(find.byType(ListView), const Offset(0, -400));
+        await tester.pumpAndSettle();
+      }
 
       expect(find.byType(RangeSlider), findsNothing);
       // Fixed-price text + the collapsed start/end labels all read the

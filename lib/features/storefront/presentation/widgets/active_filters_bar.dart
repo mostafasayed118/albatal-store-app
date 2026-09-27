@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/money_copy.dart';
+import '../../domain/entities/catalog_filters.dart';
+import '../catalog_fabric_label.dart';
 import '../cubit/catalog_cubit.dart';
 
 /// Horizontal scrollable chips showing active filters with "Clear all".
@@ -42,6 +44,42 @@ class ActiveFiltersBar extends StatelessWidget {
             '${moneyText(l, state.filters.priceMin)} – ${moneyText(l, state.filters.priceMax)}',
         onDeleted: () =>
             catalog.setPriceRange(Money.zero, CatalogPriceBounds.unboundedMax),
+      ));
+    }
+    if (state.filters.weight != FabricWeight.any) {
+      chips.add(_filterChip(
+        label: fabricWeightLabel(l, state.filters.weight),
+        onDeleted: () => catalog.setFabricWeight(FabricWeight.any),
+      ));
+    }
+    if (state.filters.width != FabricWidth.any) {
+      chips.add(_filterChip(
+        label: fabricWidthLabel(l, state.filters.width),
+        onDeleted: () => catalog.setFabricWidth(FabricWidth.any),
+      ));
+    }
+    if (state.filters.fabricKeyword.isNotEmpty) {
+      chips.add(_filterChip(
+        label: state.filters.fabricKeyword,
+        onDeleted: () => catalog.setFabricKeyword(''),
+      ));
+    }
+    if (state.filters.inStockOnly) {
+      chips.add(_filterChip(
+        label: l.inStockOnly,
+        onDeleted: () => catalog.setInStockOnly(false),
+      ));
+    }
+    if (state.filters.sellByLengthOnly) {
+      chips.add(_filterChip(
+        label: l.sellByLengthOnly,
+        onDeleted: () => catalog.setSellByLengthOnly(false),
+      ));
+    }
+    if (state.filters.minRating > 0) {
+      chips.add(_filterChip(
+        label: '${l.minRating} ${state.filters.minRating}+',
+        onDeleted: () => catalog.setMinRating(0),
       ));
     }
 

@@ -248,14 +248,18 @@
   "metersValue": "{value} m",
   "@metersValue": {
     "placeholders": {
-      "value": {"type": "num"}
+      "value": {
+        "type": "num"
+      }
     }
   },
   "gsmLabel": "Weight",
   "gsmValue": "{value} GSM",
   "@gsmValue": {
     "placeholders": {
-      "value": {"type": "int"}
+      "value": {
+        "type": "int"
+      }
     }
   },
   "cutLength": "Cut length",
@@ -264,7 +268,9 @@
   "@cutLengthEstimatedTotal": {
     "description": "Running line price under the cut-length selector",
     "placeholders": {
-      "total": {"type": "String"}
+      "total": {
+        "type": "String"
+      }
     }
   },
   "pricingTiersTitle": "Wholesale pricing",
@@ -272,8 +278,12 @@
   "@pricingTierRow": {
     "description": "One wholesale tier row: minimum meters and discount",
     "placeholders": {
-      "meters": {"type": "String"},
-      "percent": {"type": "int"}
+      "meters": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "orderSample": "Order fabric sample",
@@ -307,13 +317,17 @@
   "reorderAdded": "{count, plural, =0{Nothing was added to your cart} =1{Added 1 item to your cart} other{Added {count} items to your cart}}",
   "@reorderAdded": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "reorderUnavailable": "{count, plural, =1{1 item is unavailable and was skipped} other{{count} items are unavailable and were skipped}}",
   "@reorderUnavailable": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "shareProductMessage": "{name} — Al Batal Elite\n{url}",
@@ -806,5 +820,18 @@
   "adminFailureCouponUpdate": "Couldn't update the coupon. Please try again.",
   "adminFailureCustomersLoad": "Couldn't load customers. Please try again.",
   "adminFailureReviewsLoad": "Couldn't load the review queue. Please try again.",
-  "adminFailureReviewUpdate": "Couldn't update the review. Please try again."
+  "adminFailureReviewUpdate": "Couldn't update the review. Please try again.",
+  "fabricWeight": "Fabric weight",
+  "fabricWidth": "Fabric width",
+  "fabricType": "Fabric",
+  "filterAny": "Any",
+  "weightLight": "Light",
+  "weightMedium": "Medium",
+  "weightHeavy": "Heavy",
+  "widthNarrow": "Narrow",
+  "widthStandard": "Standard",
+  "widthWide": "Wide",
+  "inStockOnly": "In stock only",
+  "sellByLengthOnly": "Sold by the meter only",
+  "minRating": "Minimum rating"
 }

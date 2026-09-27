@@ -3,15 +3,21 @@ import 'package:flutter/material.dart';
 import '../../../../core/entities/money.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/money_copy.dart';
+import '../../domain/entities/catalog_filters.dart';
 import '../catalog_color_label.dart';
+import '../catalog_fabric_label.dart';
 import '../cubit/catalog_cubit.dart';
 import 'color_swatches.dart';
 
-/// Bottom sheet with category, color, and price range filters.
+/// Bottom sheet with category, color, price range, and fabric filters.
 ///
 /// The price range slider operates in major units (EGP) because
 /// [RangeSlider] requires `double` values. Conversion to [Money]
 /// happens at the boundary when [onApply] fires.
+///
+/// Fabric facets (weight / width / fabric / availability / rating) commit
+/// through the same [onApply] call as named parameters so the sheet keeps
+/// one draft → one commit, like category/color/price.
 class FilterSheet extends StatefulWidget {
   const FilterSheet({
     super.key,
@@ -20,8 +26,18 @@ class FilterSheet extends StatefulWidget {
   });
 
   final CatalogState state;
-  final void Function(
-      String category, String color, Money priceMin, Money priceMax) onApply;
+  final void Function({
+    required String category,
+    required String color,
+    required Money priceMin,
+    required Money priceMax,
+    required FabricWeight weight,
+    required FabricWidth width,
+    required String fabricKeyword,
+    required bool inStockOnly,
+    required bool sellByLengthOnly,
+    required double minRating,
+  }) onApply;
 
   @override
   State<FilterSheet> createState() => _FilterSheetState();
@@ -31,18 +47,55 @@ class _FilterSheetState extends State<FilterSheet> {
   late String _selectedCategory;
   late String _selectedColor;
   late RangeValues _priceRange;
+  late FabricWeight _weight;
+  late FabricWidth _width;
+  late String _fabricKeyword;
+  late bool _inStockOnly;
+  late bool _sellByLengthOnly;
+  late double _minRating;
+
+  /// Rating chips offered in the sheet. Numerals need no localization
+  /// (ratings render as digits everywhere, including product cards).
+  static const _ratingOptions = [0.0, 3.0, 4.0, 4.5];
 
   @override
   void initState() {
     super.initState();
-    _selectedCategory = widget.state.filters.category;
-    _selectedColor = widget.state.filters.colorFilter;
+    final filters = widget.state.filters;
+    _selectedCategory = filters.category;
+    _selectedColor = filters.colorFilter;
     final min = widget.state.catalogPriceMin.majorUnits;
     final max = widget.state.catalogPriceMax.majorUnits;
     _priceRange = RangeValues(
       widget.state.filters.priceMin.majorUnits.clamp(min, max),
       widget.state.filters.priceMax.majorUnits.clamp(min, max),
     );
+    // `unspecified` means "unknown data", never a shopper choice — seed
+    // the draft as Any so reopening the sheet shows a clean facet row.
+    _weight = filters.weight == FabricWeight.unspecified
+        ? FabricWeight.any
+        : filters.weight;
+    _width = filters.width == FabricWidth.unspecified
+        ? FabricWidth.any
+        : filters.width;
+    _fabricKeyword = filters.fabricKeyword;
+    _inStockOnly = filters.inStockOnly;
+    _sellByLengthOnly = filters.sellByLengthOnly;
+    _minRating = filters.minRating;
+  }
+
+  void _resetDraft(double min, double max) {
+    setState(() {
+      _selectedCategory = 'All';
+      _selectedColor = '';
+      _priceRange = RangeValues(min, max);
+      _weight = FabricWeight.any;
+      _width = FabricWidth.any;
+      _fabricKeyword = '';
+      _inStockOnly = false;
+      _sellByLengthOnly = false;
+      _minRating = 0;
+    });
   }
 
   @override
@@ -80,13 +133,7 @@ class _FilterSheetState extends State<FilterSheet> {
                     child: Text(l.filter,
                         style: Theme.of(context).textTheme.titleLarge)),
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedCategory = 'All';
-                      _selectedColor = '';
-                      _priceRange = RangeValues(min, max);
-                    });
-                  },
+                  onPressed: () => _resetDraft(min, max),
                   child: Text(l.resetFilters),
                 ),
               ],
@@ -134,6 +181,101 @@ class _FilterSheetState extends State<FilterSheet> {
               ),
             ],
             const SizedBox(height: 24),
+            Text(l.fabricWeight,
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final w in FabricWeight.values)
+                  if (w != FabricWeight.unspecified)
+                    ChoiceChip(
+                      label: Text(fabricWeightLabel(l, w)),
+                      selected: _weight == w,
+                      onSelected: (_) => setState(() {
+                        _weight = _weight == w ? FabricWeight.any : w;
+                      }),
+                    ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(l.fabricWidth, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final w in FabricWidth.values)
+                  if (w != FabricWidth.unspecified)
+                    ChoiceChip(
+                      label: Text(fabricWidthLabel(l, w)),
+                      selected: _width == w,
+                      onSelected: (_) => setState(() {
+                        _width = _width == w ? FabricWidth.any : w;
+                      }),
+                    ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(l.fabricType, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                // Curated keyword vocabulary (FabricFinder.keywords) matched
+                // against product compositions. Source spelling, like
+                // category names — data-driven, documented, not ARB keys.
+                for (final keyword in FabricFinder.keywords)
+                  ChoiceChip(
+                    label: Text(keyword),
+                    selected:
+                        _fabricKeyword.toLowerCase() == keyword.toLowerCase(),
+                    onSelected: (_) => setState(() {
+                      _fabricKeyword =
+                          _fabricKeyword.toLowerCase() == keyword.toLowerCase()
+                              ? ''
+                              : keyword;
+                    }),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                FilterChip(
+                  label: Text(l.inStockOnly),
+                  selected: _inStockOnly,
+                  onSelected: (v) => setState(() => _inStockOnly = v),
+                ),
+                FilterChip(
+                  label: Text(l.sellByLengthOnly),
+                  selected: _sellByLengthOnly,
+                  onSelected: (v) => setState(() => _sellByLengthOnly = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(l.minRating, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final rating in _ratingOptions)
+                  ChoiceChip(
+                    label: Text(rating == 0
+                        ? l.filterAny
+                        : '${rating.toStringAsFixed(rating.truncateToDouble() == rating ? 0 : 1)}+'),
+                    selected: _minRating == rating,
+                    onSelected: (_) => setState(() => _minRating = rating),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 24),
             Text(l.priceRange, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             // Degenerate catalog (single price or empty): RangeSlider
@@ -172,10 +314,16 @@ class _FilterSheetState extends State<FilterSheet> {
             FilledButton(
               onPressed: () {
                 widget.onApply(
-                  _selectedCategory,
-                  _selectedColor,
-                  Money.egp(_priceRange.start.round()),
-                  Money.egp(_priceRange.end.round()),
+                  category: _selectedCategory,
+                  color: _selectedColor,
+                  priceMin: Money.egp(_priceRange.start.round()),
+                  priceMax: Money.egp(_priceRange.end.round()),
+                  weight: _weight,
+                  width: _width,
+                  fabricKeyword: _fabricKeyword,
+                  inStockOnly: _inStockOnly,
+                  sellByLengthOnly: _sellByLengthOnly,
+                  minRating: _minRating,
                 );
                 Navigator.pop(context);
               },

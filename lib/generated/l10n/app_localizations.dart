@@ -3487,6 +3487,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t update the review. Please try again.'**
   String get adminFailureReviewUpdate;
+
+  /// No description provided for @fabricWeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Fabric weight'**
+  String get fabricWeight;
+
+  /// No description provided for @fabricWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Fabric width'**
+  String get fabricWidth;
+
+  /// No description provided for @fabricType.
+  ///
+  /// In en, this message translates to:
+  /// **'Fabric'**
+  String get fabricType;
+
+  /// No description provided for @filterAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get filterAny;
+
+  /// No description provided for @weightLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get weightLight;
+
+  /// No description provided for @weightMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get weightMedium;
+
+  /// No description provided for @weightHeavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy'**
+  String get weightHeavy;
+
+  /// No description provided for @widthNarrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow'**
+  String get widthNarrow;
+
+  /// No description provided for @widthStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get widthStandard;
+
+  /// No description provided for @widthWide.
+  ///
+  /// In en, this message translates to:
+  /// **'Wide'**
+  String get widthWide;
+
+  /// No description provided for @inStockOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'In stock only'**
+  String get inStockOnly;
+
+  /// No description provided for @sellByLengthOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by the meter only'**
+  String get sellByLengthOnly;
+
+  /// No description provided for @minRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum rating'**
+  String get minRating;
 }
 
 class _AppLocalizationsDelegate

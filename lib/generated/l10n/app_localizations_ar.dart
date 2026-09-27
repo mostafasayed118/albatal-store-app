@@ -1881,4 +1881,43 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get adminFailureReviewUpdate => 'تعذّر تحديث المراجعة. حاول مرة أخرى.';
+
+  @override
+  String get fabricWeight => 'وزن القماش';
+
+  @override
+  String get fabricWidth => 'عرض القماش';
+
+  @override
+  String get fabricType => 'الخامة';
+
+  @override
+  String get filterAny => 'أي';
+
+  @override
+  String get weightLight => 'خفيف';
+
+  @override
+  String get weightMedium => 'متوسط';
+
+  @override
+  String get weightHeavy => 'ثقيل';
+
+  @override
+  String get widthNarrow => 'ضيق';
+
+  @override
+  String get widthStandard => 'قياسي';
+
+  @override
+  String get widthWide => 'واسع';
+
+  @override
+  String get inStockOnly => 'المتوفر فقط';
+
+  @override
+  String get sellByLengthOnly => 'يُباع بالمتر فقط';
+
+  @override
+  String get minRating => 'أقل تقييم';
 }

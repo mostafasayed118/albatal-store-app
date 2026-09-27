@@ -45,7 +45,17 @@ Widget _harness() {
               isScrollControlled: true,
               builder: (_) => FilterSheet(
                 state: state,
-                onApply: (_, __, ___, ____) {},
+                onApply: (
+                    {required category,
+                    required color,
+                    required priceMin,
+                    required priceMax,
+                    required weight,
+                    required width,
+                    required fabricKeyword,
+                    required inStockOnly,
+                    required sellByLengthOnly,
+                    required minRating}) {},
               ),
             ),
             child: const Text('open'),

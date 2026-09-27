@@ -201,6 +201,29 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void setPriceRange(Money min, Money max) => emit(state.copyWith(
       filters: state.filters.copyWith(priceMin: min, priceMax: max)));
 
+  /// Attribute-finder facets (Batch 3 #4). Plain setters — the filter
+  /// sheet owns toggle/draft UX and commits the final values on Apply.
+  void setFabricWeight(FabricWeight weight) =>
+      emit(state.copyWith(filters: state.filters.copyWith(weight: weight)));
+
+  void setFabricWidth(FabricWidth width) =>
+      emit(state.copyWith(filters: state.filters.copyWith(width: width)));
+
+  void setFabricKeyword(String keyword) => emit(
+      state.copyWith(filters: state.filters.copyWith(fabricKeyword: keyword)));
+
+  void setInStockOnly(bool value) =>
+      emit(state.copyWith(filters: state.filters.copyWith(inStockOnly: value)));
+
+  void setSellByLengthOnly(bool value) => emit(
+      state.copyWith(filters: state.filters.copyWith(sellByLengthOnly: value)));
+
+  void setMinRating(double value) =>
+      emit(state.copyWith(filters: state.filters.copyWith(minRating: value)));
+
+  void clearFabricFilters() => emit(state.copyWith(
+      filters: state.filters.copyWith(clearFabricFilters: true)));
+
   void clearFilters() {
     // A pending debounced query must not land after the reset.
     _queryDebounce?.cancel();
