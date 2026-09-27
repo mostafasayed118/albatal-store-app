@@ -237,6 +237,9 @@ class _CatalogPageState extends State<CatalogPage> {
     if (state.filters.minRating > 0) {
       count++;
     }
+    if (state.filters.remnantsOnly) {
+      count++;
+    }
     return count;
   }
 
@@ -263,6 +266,7 @@ class _CatalogPageState extends State<CatalogPage> {
           required inStockOnly,
           required sellByLengthOnly,
           required minRating,
+          required remnantsOnly,
         }) {
           if (category != state.filters.category) catalog.select(category);
           catalog.setColorFilter(color);
@@ -273,6 +277,7 @@ class _CatalogPageState extends State<CatalogPage> {
           catalog.setInStockOnly(inStockOnly);
           catalog.setSellByLengthOnly(sellByLengthOnly);
           catalog.setMinRating(minRating);
+          catalog.setRemnantsOnly(remnantsOnly);
         },
       ),
     );

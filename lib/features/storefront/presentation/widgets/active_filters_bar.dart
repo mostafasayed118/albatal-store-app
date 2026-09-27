@@ -82,6 +82,12 @@ class ActiveFiltersBar extends StatelessWidget {
         onDeleted: () => catalog.setMinRating(0),
       ));
     }
+    if (state.filters.remnantsOnly) {
+      chips.add(_filterChip(
+        label: l.remnantsOnly,
+        onDeleted: () => catalog.setRemnantsOnly(false),
+      ));
+    }
 
     return SizedBox(
       height: 48,

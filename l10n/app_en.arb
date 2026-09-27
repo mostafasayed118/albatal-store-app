@@ -833,5 +833,7 @@
   "widthWide": "Wide",
   "inStockOnly": "In stock only",
   "sellByLengthOnly": "Sold by the meter only",
-  "minRating": "Minimum rating"
+  "minRating": "Minimum rating",
+  "remnant": "Remnant",
+  "remnantsOnly": "Remnants only"
 }

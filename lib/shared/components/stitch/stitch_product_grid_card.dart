@@ -70,6 +70,30 @@ class StitchProductGridCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      // Remnant badge top-start (Batch 3 #3): only for
+                      // in-stock flagged variants — sold-out remnants
+                      // don't badge (Product.hasRemnant). The text block
+                      // below keeps its layout; the badge floats on media.
+                      if (product.hasRemnant)
+                        PositionedDirectional(
+                          top: 8,
+                          start: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: scheme.tertiaryContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              l.remnant,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: scheme.onTertiaryContainer,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
                       // Wishlist heart top-end — 44px touch target with an
                       // accessible name (action + product, selected state).
                       PositionedDirectional(

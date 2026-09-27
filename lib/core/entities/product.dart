@@ -31,6 +31,7 @@ final class Product extends Equatable {
     this.colors = const ['Emerald', 'Gold', 'Ivory'],
     this.colorName,
     this.stock = const {},
+    this.remnants = const {},
     this.rating = 0.0,
     this.reviewCount = 0,
   });
@@ -66,6 +67,16 @@ final class Product extends Equatable {
   /// consumed by `CatalogState.availableColors` (audit 2026-09-21 M-03).
   final String? colorName;
   final Map<String, int> stock;
+
+  /// Variant keys (`'<color>-<length>'`, same shape as [stock]) flagged
+  /// `is_remnant` in `product_variants` (migration 076).
+  ///
+  /// Landing sequence (hard requirement): 076 must be APPLIED before a
+  /// build carrying the mapper's `is_remnant` select ships — PostgREST
+  /// 400s a select on a column that does not exist yet. The empty-set
+  /// tolerance below covers only cached/offline rows and hand-built
+  /// rows, never a live pre-076 backend.
+  final Set<String> remnants;
   final double rating;
   final int reviewCount;
 
@@ -82,6 +93,10 @@ final class Product extends Equatable {
   int stockFor(String color, String length) => stock['$color-$length'] ?? 0;
 
   bool get inStock => stock.values.any((v) => v > 0);
+
+  /// True when at least one flagged remnant variant still has stock.
+  /// Unflagged (sold-out) remnants don't badge — no dead-end chips.
+  bool get hasRemnant => remnants.any((k) => (stock[k] ?? 0) > 0);
 
   @override
   List<Object?> get props => [
@@ -105,6 +120,7 @@ final class Product extends Equatable {
         colors,
         colorName,
         stock,
+        remnants,
         rating,
         reviewCount,
       ];

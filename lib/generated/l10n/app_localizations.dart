@@ -3565,6 +3565,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Minimum rating'**
   String get minRating;
+
+  /// No description provided for @remnant.
+  ///
+  /// In en, this message translates to:
+  /// **'Remnant'**
+  String get remnant;
+
+  /// No description provided for @remnantsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Remnants only'**
+  String get remnantsOnly;
 }
 
 class _AppLocalizationsDelegate

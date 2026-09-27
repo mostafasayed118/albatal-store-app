@@ -28,7 +28,7 @@ extension ProductCodec on Product {
             width_cm, gsm, sell_by_length, min_cut_meters, color_name,
             base_price, old_price, rating, review_count,
             categories!inner(name),
-            product_variants(product_id, size, color, stock, price_override),
+            product_variants(product_id, size, color, stock, price_override, is_remnant),
             product_images(storage_path, sort_order)
           ''';
 
@@ -67,6 +67,7 @@ extension ProductCodec on Product {
     final sizeSet = <String>{};
     final colorSet = <String>{};
     final stockMap = <String, int>{};
+    final remnantKeys = <String>{};
 
     for (final v in variants) {
       final size = safeString(v, 'size');
@@ -74,7 +75,13 @@ extension ProductCodec on Product {
       if (size.isEmpty || color.isEmpty) continue;
       sizeSet.add(size);
       colorSet.add(color);
-      stockMap['$color-$size'] = safeInt(v, 'stock');
+      final key = '$color-$size';
+      stockMap[key] = safeInt(v, 'stock');
+      // Rows without the key (older caches, hand-built rows) degrade to
+      // false. Live queries always carry it — productSelect requests
+      // is_remnant, which requires migration 076 applied (see the
+      // landing-sequence note on Product.remnants).
+      if (safeBool(v, 'is_remnant')) remnantKeys.add(key);
     }
 
     // Category name via the join.
@@ -165,6 +172,7 @@ extension ProductCodec on Product {
       colors: colorSet.toList()..sort(),
       colorName: optString(row, 'color_name'),
       stock: stockMap,
+      remnants: remnantKeys,
       rating: rating,
       reviewCount: safeInt(row, 'review_count'),
     );
@@ -196,6 +204,7 @@ extension ProductCodec on Product {
         'colors': p.colors,
         'colorName': p.colorName,
         'stock': p.stock,
+        'remnants': p.remnants.toList(),
         'rating': p.rating,
         'reviewCount': p.reviewCount,
       };
@@ -244,6 +253,8 @@ extension ProductCodec on Product {
         stock: safeMap(raw['stock']).map(
           (k, v) => MapEntry(k, v is num ? v.toInt() : 0),
         ),
+        // Older caches predate remnants — missing key decodes to empty.
+        remnants: optStrList(raw['remnants']).toSet(),
         rating: ratingRaw is num ? ratingRaw.toDouble() : 0.0,
         reviewCount: reviewRaw is num ? reviewRaw.toInt() : 0);
   }

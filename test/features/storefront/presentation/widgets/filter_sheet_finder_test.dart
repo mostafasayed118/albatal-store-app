@@ -46,6 +46,7 @@ typedef _ApplyPayload = ({
   bool inStockOnly,
   bool sellByLengthOnly,
   double minRating,
+  bool remnantsOnly,
 });
 
 Widget _harness(void Function(_ApplyPayload) onApply) {
@@ -76,6 +77,7 @@ Widget _harness(void Function(_ApplyPayload) onApply) {
                   required inStockOnly,
                   required sellByLengthOnly,
                   required minRating,
+                  required remnantsOnly,
                 }) =>
                     onApply((
                   category: category,
@@ -88,6 +90,7 @@ Widget _harness(void Function(_ApplyPayload) onApply) {
                   inStockOnly: inStockOnly,
                   sellByLengthOnly: sellByLengthOnly,
                   minRating: minRating,
+                  remnantsOnly: remnantsOnly,
                 )),
               ),
             ),

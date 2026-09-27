@@ -37,6 +37,7 @@ class FilterSheet extends StatefulWidget {
     required bool inStockOnly,
     required bool sellByLengthOnly,
     required double minRating,
+    required bool remnantsOnly,
   }) onApply;
 
   @override
@@ -53,6 +54,7 @@ class _FilterSheetState extends State<FilterSheet> {
   late bool _inStockOnly;
   late bool _sellByLengthOnly;
   late double _minRating;
+  late bool _remnantsOnly;
 
   /// Rating chips offered in the sheet. Numerals need no localization
   /// (ratings render as digits everywhere, including product cards).
@@ -82,6 +84,7 @@ class _FilterSheetState extends State<FilterSheet> {
     _inStockOnly = filters.inStockOnly;
     _sellByLengthOnly = filters.sellByLengthOnly;
     _minRating = filters.minRating;
+    _remnantsOnly = filters.remnantsOnly;
   }
 
   void _resetDraft(double min, double max) {
@@ -95,6 +98,7 @@ class _FilterSheetState extends State<FilterSheet> {
       _inStockOnly = false;
       _sellByLengthOnly = false;
       _minRating = 0;
+      _remnantsOnly = false;
     });
   }
 
@@ -256,6 +260,11 @@ class _FilterSheetState extends State<FilterSheet> {
                   selected: _sellByLengthOnly,
                   onSelected: (v) => setState(() => _sellByLengthOnly = v),
                 ),
+                FilterChip(
+                  label: Text(l.remnantsOnly),
+                  selected: _remnantsOnly,
+                  onSelected: (v) => setState(() => _remnantsOnly = v),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -324,6 +333,7 @@ class _FilterSheetState extends State<FilterSheet> {
                   inStockOnly: _inStockOnly,
                   sellByLengthOnly: _sellByLengthOnly,
                   minRating: _minRating,
+                  remnantsOnly: _remnantsOnly,
                 );
                 Navigator.pop(context);
               },

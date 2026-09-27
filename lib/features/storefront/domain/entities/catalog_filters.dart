@@ -71,6 +71,7 @@ final class CatalogFilters extends Equatable {
     this.inStockOnly = false,
     this.sellByLengthOnly = false,
     this.minRating = 0,
+    this.remnantsOnly = false,
   });
 
   final String category;
@@ -89,6 +90,14 @@ final class CatalogFilters extends Equatable {
   final bool sellByLengthOnly;
   final double minRating;
 
+  /// Remnants only (Batch 3 #3): keep products with an in-stock flagged
+  /// remnant variant. Inert default false — pre-076 products decode with
+  /// empty [Product.remnants], so the filter matches nothing until the
+  /// backend carries the flag AND an admin flags rows (fail-closed, not
+  /// fail-open: shoppers never see a "remnants" list that is really
+  /// "everything").
+  final bool remnantsOnly;
+
   /// True when any filter differs from its default.
   bool get hasActiveFilters =>
       category != 'All' ||
@@ -102,7 +111,8 @@ final class CatalogFilters extends Equatable {
       fabricKeyword.isNotEmpty ||
       inStockOnly ||
       sellByLengthOnly ||
-      minRating > 0;
+      minRating > 0 ||
+      remnantsOnly;
 
   /// Returns true when [product] matches all active filter criteria.
   bool matches(Product product) {
@@ -149,6 +159,7 @@ final class CatalogFilters extends Equatable {
     final matchesStock = !inStockOnly || product.inStock;
     final matchesCut = !sellByLengthOnly || product.sellByLength;
     final matchesRating = product.rating >= minRating;
+    final matchesRemnant = !remnantsOnly || product.hasRemnant;
     return matchesCategory &&
         matchesQuery &&
         matchesColor &&
@@ -158,7 +169,8 @@ final class CatalogFilters extends Equatable {
         matchesFabric &&
         matchesStock &&
         matchesCut &&
-        matchesRating;
+        matchesRating &&
+        matchesRemnant;
   }
 
   CatalogFilters copyWith({
@@ -174,6 +186,7 @@ final class CatalogFilters extends Equatable {
     bool? inStockOnly,
     bool? sellByLengthOnly,
     double? minRating,
+    bool? remnantsOnly,
     bool clearColorFilter = false,
     bool resetPrice = false,
     bool clearFabricFilters = false,
@@ -197,6 +210,7 @@ final class CatalogFilters extends Equatable {
             ? false
             : (sellByLengthOnly ?? this.sellByLengthOnly),
         minRating: clearFabricFilters ? 0 : (minRating ?? this.minRating),
+        remnantsOnly: remnantsOnly ?? this.remnantsOnly,
       );
 
   @override
@@ -213,5 +227,6 @@ final class CatalogFilters extends Equatable {
         inStockOnly,
         sellByLengthOnly,
         minRating,
+        remnantsOnly,
       ];
 }

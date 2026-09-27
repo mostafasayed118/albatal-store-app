@@ -1920,4 +1920,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get minRating => 'أقل تقييم';
+
+  @override
+  String get remnant => 'بواقي';
+
+  @override
+  String get remnantsOnly => 'البواقي فقط';
 }

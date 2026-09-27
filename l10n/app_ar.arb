@@ -658,5 +658,7 @@
   "widthWide": "واسع",
   "inStockOnly": "المتوفر فقط",
   "sellByLengthOnly": "يُباع بالمتر فقط",
-  "minRating": "أقل تقييم"
+  "minRating": "أقل تقييم",
+  "remnant": "بواقي",
+  "remnantsOnly": "البواقي فقط"
 }

@@ -224,6 +224,11 @@ final class CatalogCubit extends Cubit<CatalogState> {
   void clearFabricFilters() => emit(state.copyWith(
       filters: state.filters.copyWith(clearFabricFilters: true)));
 
+  /// Remnants only (Batch 3 #3). Plain setter — the filter sheet owns
+  /// the toggle UX and commits on Apply.
+  void setRemnantsOnly(bool value) => emit(
+      state.copyWith(filters: state.filters.copyWith(remnantsOnly: value)));
+
   void clearFilters() {
     // A pending debounced query must not land after the reset.
     _queryDebounce?.cancel();

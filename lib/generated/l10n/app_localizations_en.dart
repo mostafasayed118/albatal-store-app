@@ -1934,4 +1934,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get minRating => 'Minimum rating';
+
+  @override
+  String get remnant => 'Remnant';
+
+  @override
+  String get remnantsOnly => 'Remnants only';
 }

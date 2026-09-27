@@ -112,4 +112,36 @@ void main() {
     expect(find.text('Silk'), findsOneWidget);
     _expectPriceVisibleInFull(tester, '1,450 EGP');
   });
+
+  group('remnant badge (Batch 3 #3)', () {
+    Product remnantProduct(
+            {Map<String, int> stock = const {'Emerald-1m': 2}}) =>
+        Product(
+          id: 'p-remnant',
+          name: 'Remnant Cotton',
+          category: 'Cotton',
+          price: const Money.egp(200),
+          imageColor: 0xFF2E5E4E,
+          stock: stock,
+          remnants: const {'Emerald-1m'},
+        );
+
+    testWidgets('badges in-stock flagged variants', (tester) async {
+      await tester.pumpWidget(
+          _harness(StitchProductGridCard(product: remnantProduct())));
+      expect(find.text('Remnant'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('no badge for sold-out remnants or plain products',
+        (tester) async {
+      await tester.pumpWidget(_harness(StitchProductGridCard(
+          product: remnantProduct(stock: const {'Emerald-1m': 0}))));
+      expect(find.text('Remnant'), findsNothing);
+
+      await tester
+          .pumpWidget(_harness(StitchProductGridCard(product: _product())));
+      expect(find.text('Remnant'), findsNothing);
+    });
+  });
 }

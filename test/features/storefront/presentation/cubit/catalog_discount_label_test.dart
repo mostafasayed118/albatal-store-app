@@ -60,7 +60,8 @@ Widget _filterHarness(CatalogState state) => MaterialApp(
                   required fabricKeyword,
                   required inStockOnly,
                   required sellByLengthOnly,
-                  required minRating}) {})),
+                  required minRating,
+                  required remnantsOnly}) {})),
     );
 
 void main() {
