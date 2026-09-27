@@ -1,7 +1,8 @@
 -- supabase/tests/test_075_wishlist_sync.sql  (DRAFT for human review)
 -- Run via: psql $STAGING_DB_URL -f supabase/tests/test_075_wishlist_sync.sql
--- Expected before migration 075: table public.wishlists does not exist,
---   function sync_wishlist does not exist.
+-- Expected before migration 075: function sync_wishlist does not exist
+--   (the 001-era `wishlists` table itself pre-exists with owner-only
+--   policies — 075 only ADDS the index, cap CHECK, and RPC).
 -- Expected after migration:
 --   * as anon: sync_wishlist raises 42501 (Authentication required);
 --     direct SELECT on wishlists returns 0 rows (RLS, no anon policy).
