@@ -1926,4 +1926,38 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get remnantsOnly => 'البواقي فقط';
+
+  @override
+  String get fitFinder => 'اعرف مقاسك';
+
+  @override
+  String get fitGarment => 'القطعة';
+
+  @override
+  String get fitHeight => 'الطول';
+
+  @override
+  String fitYouNeed(String meters) {
+    return 'ستحتاج حوالي $meters';
+  }
+
+  @override
+  String fitApply(String meters) {
+    return 'استخدم $meters';
+  }
+
+  @override
+  String get fitNarrowNote => 'القماش ضيق — تمت إضافة طول إضافي';
+
+  @override
+  String get garmentTrousers => 'بنطلون';
+
+  @override
+  String get garmentShirt => 'قميص';
+
+  @override
+  String get garmentAbaya => 'عباية';
+
+  @override
+  String get garmentThobe => 'ثوب';
 }

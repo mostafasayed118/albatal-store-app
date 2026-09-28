@@ -660,5 +660,29 @@
   "sellByLengthOnly": "يُباع بالمتر فقط",
   "minRating": "أقل تقييم",
   "remnant": "بواقي",
-  "remnantsOnly": "البواقي فقط"
+  "remnantsOnly": "البواقي فقط",
+  "fitFinder": "اعرف مقاسك",
+  "fitGarment": "القطعة",
+  "fitHeight": "الطول",
+  "fitYouNeed": "ستحتاج حوالي {meters}",
+  "@fitYouNeed": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "fitApply": "استخدم {meters}",
+  "@fitApply": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "fitNarrowNote": "القماش ضيق — تمت إضافة طول إضافي",
+  "garmentTrousers": "بنطلون",
+  "garmentShirt": "قميص",
+  "garmentAbaya": "عباية",
+  "garmentThobe": "ثوب"
 }

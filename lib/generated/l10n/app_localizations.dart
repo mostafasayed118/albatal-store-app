@@ -3577,6 +3577,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remnants only'**
   String get remnantsOnly;
+
+  /// No description provided for @fitFinder.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my fit'**
+  String get fitFinder;
+
+  /// No description provided for @fitGarment.
+  ///
+  /// In en, this message translates to:
+  /// **'Garment'**
+  String get fitGarment;
+
+  /// No description provided for @fitHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get fitHeight;
+
+  /// No description provided for @fitYouNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll need about {meters}'**
+  String fitYouNeed(String meters);
+
+  /// No description provided for @fitApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {meters}'**
+  String fitApply(String meters);
+
+  /// No description provided for @fitNarrowNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow roll — extra length included'**
+  String get fitNarrowNote;
+
+  /// No description provided for @garmentTrousers.
+  ///
+  /// In en, this message translates to:
+  /// **'Trousers'**
+  String get garmentTrousers;
+
+  /// No description provided for @garmentShirt.
+  ///
+  /// In en, this message translates to:
+  /// **'Shirt'**
+  String get garmentShirt;
+
+  /// No description provided for @garmentAbaya.
+  ///
+  /// In en, this message translates to:
+  /// **'Abaya'**
+  String get garmentAbaya;
+
+  /// No description provided for @garmentThobe.
+  ///
+  /// In en, this message translates to:
+  /// **'Thobe'**
+  String get garmentThobe;
 }
 
 class _AppLocalizationsDelegate

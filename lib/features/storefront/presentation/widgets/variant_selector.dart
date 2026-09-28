@@ -7,6 +7,7 @@ import '../../domain/pricing/cut_length_pricing.dart';
 import '../catalog_color_label.dart';
 import '../cubit/product_details_cubit.dart';
 import 'color_swatches.dart';
+import 'fit_recommender_sheet.dart';
 import 'metered_price_line.dart';
 import 'pricing_tier_table.dart';
 import 'quantity_stepper.dart';
@@ -98,14 +99,25 @@ class VariantSelector extends StatelessWidget {
                     ),
                     Text(l.sellByLengthNote,
                         style: Theme.of(context).textTheme.bodySmall),
-                    // Wave C: running metered line price (tier-aware)
-                    // + the wholesale tier ladder.
-                    MeteredPriceLine(product: product, state: state),
-                    const SizedBox(height: 8),
-                    PricingTierTable(
-                        meters: double.tryParse(state.length) ?? 0),
-                  ] else ...[
-                    Wrap(
+                     // Wave C: running metered line price (tier-aware)
+                     // + the wholesale tier ladder.
+                     MeteredPriceLine(product: product, state: state),
+                     const SizedBox(height: 8),
+                     PricingTierTable(
+                         meters: double.tryParse(state.length) ?? 0),
+                     const SizedBox(height: 8),
+                     Align(
+                       alignment: Alignment.centerRight,
+                       child: TextButton.icon(
+                         icon: const Icon(Icons.person_outline,
+                             size: 16),
+                         label: Text(l.fitFinder),
+                         onPressed: () => showFitRecommender(
+                             context, product),
+                       ),
+                     ),
+                    ] else ...[
+                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: product.sizes
@@ -117,6 +129,16 @@ class VariantSelector extends StatelessWidget {
                                 onSelected: (_) => cubit.length(x),
                               ))
                           .toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.person_outline, size: 16),
+                        label: Text(l.fitFinder),
+                        onPressed: () =>
+                            showFitRecommender(context, product),
+                      ),
                     ),
                   ],
                 ],

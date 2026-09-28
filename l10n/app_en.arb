@@ -835,5 +835,29 @@
   "sellByLengthOnly": "Sold by the meter only",
   "minRating": "Minimum rating",
   "remnant": "Remnant",
-  "remnantsOnly": "Remnants only"
+  "remnantsOnly": "Remnants only",
+  "fitFinder": "Find my fit",
+  "fitGarment": "Garment",
+  "fitHeight": "Height",
+  "fitYouNeed": "You'll need about {meters}",
+  "@fitYouNeed": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "fitApply": "Use {meters}",
+  "@fitApply": {
+    "placeholders": {
+      "meters": {
+        "type": "String"
+      }
+    }
+  },
+  "fitNarrowNote": "Narrow roll — extra length included",
+  "garmentTrousers": "Trousers",
+  "garmentShirt": "Shirt",
+  "garmentAbaya": "Abaya",
+  "garmentThobe": "Thobe"
 }

@@ -1940,4 +1940,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get remnantsOnly => 'Remnants only';
+
+  @override
+  String get fitFinder => 'Find my fit';
+
+  @override
+  String get fitGarment => 'Garment';
+
+  @override
+  String get fitHeight => 'Height';
+
+  @override
+  String fitYouNeed(String meters) {
+    return 'You\'ll need about $meters';
+  }
+
+  @override
+  String fitApply(String meters) {
+    return 'Use $meters';
+  }
+
+  @override
+  String get fitNarrowNote => 'Narrow roll — extra length included';
+
+  @override
+  String get garmentTrousers => 'Trousers';
+
+  @override
+  String get garmentShirt => 'Shirt';
+
+  @override
+  String get garmentAbaya => 'Abaya';
+
+  @override
+  String get garmentThobe => 'Thobe';
 }
