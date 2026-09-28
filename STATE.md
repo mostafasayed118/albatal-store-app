@@ -1,6 +1,133 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-09-26 (part 79: follow-up findings F1-F3)
+Last run: 2026-09-28 (part 97: tailor merged+pushed; Batch 3 #2 complete)
+
+## New — 2026-09-28 (part 97: tailor merged+pushed; Batch 3 #2 complete)
+
+- Owner "do it": fast-forward merged `fix/batch3-tailor-078` → `master` (`cfe9376`); gates on master (analyze clean, **1,214/1,214** = 1,192 + 22 new); pushed `origin/master` (`4fc8627..cfe9376`); removed worktree `.trees/batch3-tailor`.
+- Batch 3 #2 tailor complete (client-only fit recommendation, no migration).
+
+## New — 2026-09-28 (part 96: tailor fit-recommendation client slice, branch ready)
+
+- Batch 3 #2 tailor (owner chose "Fit recommendation", client-only, no migration): worktree `.trees/batch3-tailor`, branch `fix/batch3-tailor-078`, commit `cfe9376` (base `4fc8627`).
+- New `lib/features/storefront/domain/fit/fit_recommendation.dart`: `FitGarment` yardage table (trousers 1.5 / shirt 2.0 / abaya 3.0 / thobe 3.5 m), `recommendedMeters` (height scale clamped 0.9–1.15×, +0.5 m narrow-roll pad, snap UP to 0.5 m grid), `nearestFixedSize`, `fitApplyLength` (metered cut vs nearest fixed size), `isNarrowRoll`.
+- New `lib/features/storefront/presentation/widgets/fit_recommender_sheet.dart`: `FitRecommenderSheet` (garment chips + height stepper + result + Apply) and `showFitRecommender` modal; Apply writes `setCutLength` (sell-by-length) or `length` (fixed sizes) into `ProductDetailsCubit`. Entry `TextButton.icon` in `variant_selector.dart` in BOTH sell-by-length and fixed-size branches.
+- l10n: 10 keys × en+ar (`fitFinder/fitGarment/fitHeight/fitYouNeed/fitApply/fitNarrowNote` + 4 garment names), `lib/generated/l10n` via `flutter gen-l10n` only. No router/migration/getIt changes.
+- Tests: `fit_recommendation_test.dart` 18/18, `fit_recommender_sheet_test.dart` 4/4 (incl. `showFitRecommender modal forwards the PDP cubit` regression). Regression: details 3/3, cart_sample 4/4, sample_order_button 3/3. `flutter analyze --no-pub` → No issues found.
+- Verifier round 1 REJECT caught two real defects (modal dropped the PDP cubit → ProviderNotFoundException on Apply; entry button missing from fixed-size branch) — both fixed, regression test added, round 2 APPROVE. Fix attempts used: 1/3.
+- No push/merge (needs human approval). Next (owner-gated): merge `fix/batch3-tailor-078` → master.
+
+## New — 2026-09-27 (part 87: wishlist merged+pushed; finder v1 done)
+
+- Owner "do it": fast-forward merged `fix/batch3-wishlist-075` → `master` (`ee5e4bd`); gates on master (analyze clean, **1,157/1,157**); pushed `origin/master` (`abc6966..ee5e4bd`); removed batch1/batch2/batch3 worktrees.
+- Batch 3 #4 v1 (zero migration): worktree `.trees/batch3-finder`, branch `fix/batch3-finder-v1`, commit `cd8e11a`. Additive facets on `CatalogFilters` (same file): `FabricWeight`/`FabricWidth` band enums + `FabricFinder` constants (gsm edges 150/300, width edge 150cm, 8-keyword curated list); new fields `weight/width/fabricKeyword/inStockOnly/sellByLengthOnly/minRating` with inert defaults; `matches()` extensions (null gsm/width match only unspecified/any; keyword allow-list fail-open on composition contains); `hasActiveFilters`/`copyWith`(+`clearFabricFilters`)/`props` updated (props change keeps `visible` memo key correct). No cubit/page/router/migration changes — inert until UI exposes facets.
+- Tests: `catalog_fabric_filters_test.dart`, 15 tests (inert defaults, band edges inclusive, null contract, keyword fail-open, stock/cut/rating, combos+reset, equality). Evidence: analyze clean; 15/15 targeted; full **1,172/1,172**. Verifier: APPROVE.
+- Next (owner-gated): merge `fix/batch3-finder-v1` → finder UI slice (filter sheet + cubit setters; route only if new page needed — GoRouter needs approval) → Batch 3 #3 remnants / #1 swatch-kit.
+
+## New — 2026-09-27 (part 88: finder UI slice done, branch ready)
+
+- Batch 3 #4 UI slice: worktree `.trees/batch3-finder`, branch `fix/batch3-finder-ui`, commit `84a8c6c` (base `cd8e11a`, already on master). FilterSheet gains Weight / Width / Fabric / availability / Minimum-rating sections with draft→commit on Apply (`onApply` 4 positional → 10 named params; one caller `catalog_page` rewired). 7 additive `CatalogCubit` setters + `clearFabricFilters`. Badge count + `ActiveFiltersBar` cover all facets with per-chip delete. `catalog_fabric_label.dart` mirrors `catalogColorLabel`; keywords stay source-spelling (documented, like categories).
+- l10n: 13 keys × en+ar (`l10n/*.arb` hand-edited, `lib/generated/l10n` via `flutter gen-l10n` only). No router/migration changes.
+- Tests: `filter_sheet_finder_test.dart` 6 tests (sections render, weight toggle→Apply payload, reset clears draft, cubit setters incl. facet-only clear, label helpers). Lesson: sheet body is a lazy ListView — tests must drag-scroll (explicit drag loop; `scrollUntilVisible`'s default scrollable lookup failed). Fixed 1 regression in old degenerate-price test (price row moved below fold → scroll loop).
+- Evidence: analyze clean; full **1,178/1,178** (1,172 + 6 new). Verifier: APPROVE. `diff --check` clean; generated-plugin churn reverted.
+- Next (owner-gated): merge `fix/batch3-finder-ui` → Batch 3 #3 remnants / #1 swatch-kit.
+
+## New — 2026-09-27 (part 89: finder merged+pushed; Batch 3 #4 complete)
+
+- Owner "do it": fast-forward merged `fix/batch3-finder-ui` → `master` (`84a8c6c`); gates on master (analyze clean, **1,178/1,178**); pushed `origin/master` (`ee5e4bd..84a8c6c`); removed `.trees/batch3-finder` worktree + both finder branches. Batch 3 #4 attribute finder v1 (facets + sheet UI, en+ar) is now fully on master.
+- Next (owner-gated): Batch 3 #3 remnants (home ribbon? verify on master) / #1 swatch-kit / #2 tailor / #5 B2B.
+
+## New — 2026-09-27 (part 90: remnants 076 draft ready for review)
+
+- Owner "do it" → started Batch 3 #3 (remnants) per suggested build order. Worktree `.trees/batch3-remnants`, branch `fix/batch3-remnants-076`, commit `57084fd` (REVIEW ONLY): `076_variant_remnant_flag.sql` + `test_076_variant_remnant_flag.sql`. Grounding: sizes are meter lengths ('1m/2m/5m'); flag lives on product_variants (one short piece = one row); inherits `variants_select_public` (002) so no RLS change; partial index for the remnants list; DEFAULT false = zero behavior change until client ships + admin flags rows.
+- NOT applied (no staging DB access from here — owner step). No client code touched (gate: client after migration approval, per wishlist-075 pattern).
+- Next (owner-gated): review/apply 076 → client slice (mapper `is_remnant`, remnant badge, remnants filter/chip en+ar) → #1 swatch-kit.
+
+## New — 2026-09-27 (part 91: remnants client done, HOLD merge pending 076)
+
+- Owner "do it" (could not apply 076 — no staging DB access this session). Built the client anyway in `.trees/batch3-remnants`, branch `fix/batch3-remnants-076`, commit `c579aca`: `Product.remnants` + `hasRemnant` (flagged AND in stock); mapper `is_remnant` select/parse + codec round-trip; `CatalogFilters.remnantsOnly` (fail-closed); cubit setter; sheet chip + active-bar chip + badge count; grid-card Remnant badge (tertiaryContainer, top-start); l10n remnant/remnantsOnly en+ar.
+- Verifier REJECT→fixed (comments overclaimed pre-076 safety) → APPROVE. Landing sequence is now a documented hard requirement: APPLY 076 before merging/shipping (live select 400s pre-076). Evidence: analyze clean; full **1,189/1,189** (11 new). `diff --check` clean; plugin churn reverted.
+- Env note: fresh worktree needed `flutter pub get --offline` before analyze (383 phantom errors without it).
+- Next (owner-gated): apply 076 to staging + proof → merge `fix/batch3-remnants-076` → push → #1 swatch-kit.
+
+## New — 2026-09-27 (part 92: remnants merged+pushed; Batch 3 #3 complete)
+
+- Owner "go ahead": fast-forward merged `fix/batch3-remnants-076` → `master` (`c579aca`, includes 076 migration + proof + client); gates on master (analyze clean, **1,189/1,189**); pushed `origin/master` (`84a8c6c..c579aca`); removed `.trees/batch3-remnants` + branch. Batch 3 #3 remnants complete on master.
+- Assumption (owner-asserted by the go-ahead): 076 applied to staging BEFORE this ships, per the documented landing sequence — else the catalog query 400s. If 076 was NOT applied yet, apply it now and re-verify the catalog loads.
+- Next (owner-gated): #1 swatch-kit (migration review first) / #2 tailor / #5 B2B.
+
+## New — 2026-09-27 (part 93: 077 swatch-kit draft ready for review)
+
+- Owner chose full scope (samples + metered). Drafted `077_sample_metered_checkout.sql` + `test_077_sample_metered_checkout.sql` on `fix/batch3-swatch-077` (`4655e2b`) — REVIEW ONLY, not applied, not merged. No lib/ changes, so no flutter gates/verifier apply (DB-gated proof).
+- Design: new `unchecked_077` core (066 body + sample/metered branches, zero grants) + wrapper (074 body + per-line key gating, delegates to 077); 072 core kept as rollback. Samples: fixed `sample_price_minor` (seed 5000 = 50 EGP, REVIEW), qty exactly 1, max `sample_max_per_order` (10), 1 unit stock off same-color variant. Metered: sell_by_length only, min_cut/max_cut bounds, 0.5 m snap, tier mirror (25 m/10 %, 10 m/5 %), line_total + tiered_price cross-checks, CEIL decrement on '1m' variant.
+- Declined the 058 '<meters>m' size sketch: client contract is the plain meters string double.tryParse reads — draft follows the client.
+- Next (owner-gated): review 077 → apply to staging + proof → client flip (split serverMeteredCheckoutEnabled) → merge → #2 tailor / #5 B2B.
+
+## New — 2026-09-27 (part 94: swatch-kit client done, HOLD merge pending 077)
+
+- Owner "go ahead": built client slice on `fix/batch3-swatch-077` (`4fc8627`, on top of draft `4655e2b`): split flag into `serverSampleCheckoutEnabled` + `serverMeteredCheckoutEnabled` (both true, 077 live), per-type fail-closed gate in `checkout_service`, PDP "Order fabric sample" OutlinedButton above the CTA (in-stock only, `addSample` + `sampleAdded` confirm, no price in label), stale Wave C comments refreshed.
+- Tests: 3 gate tests flipped to proceed-to-RPC with payload math (12.5 m → 142500/11400; 5 m → 60000 no tier key; sample exact map); `checkout_service_test` sample test flipped; contract test repinned latest-wrapper to 077 + gating/revoke asserts (072-guard expect removed: same-transaction core creation makes it moot); new `sample_order_button_test` (tap adds line + confirm, re-tap idempotent, hidden OOS). Gates: analyze clean, **1,192/1,192** (one interim fail on the old gate test, fixed). Verifier APPROVE.
+- NOT merged: same landing sequence as remnants — merge + push only after owner confirms 077 applied to staging + proof run.
+- Next (owner-gated): confirm 077 staging apply → merge `fix/batch3-swatch-077` → push → #2 tailor / #5 B2B.
+
+## New — 2026-09-27 (part 95: swatch-kit merged+pushed; Batch 3 #1 complete)
+
+- Owner "go ahead" (077 staging apply asserted): fast-forward merged `fix/batch3-swatch-077` → `master` (`4fc8627`, 077 migration + proof + client slice); gates on master (analyze clean, **1,192/1,192**); pushed `origin/master` (`c579aca..4fc8627`); removed `.trees/batch3-swatch` + branch. Batch 3 #1 swatch-kit complete on master.
+- Next (owner-gated): #2 tailor / #5 B2B (migration review first each).
+
+## New — 2026-09-27 (part 86: 074+075 applied + live proof)
+
+- Owner supplied `sbp_` access token + dashboard link for project `zvpjngdgbpnkkqrorkul`. Token kept in-process env only; never written to any file (not in STATE/ledger/git). **Owner should rotate it** — it is now in chat history.
+- Linked via CLI 2.109.1 in the batch3 worktree (config change, if any, stays out of the branch). Remote history: 001–073 + out-of-order 61/62; local-only 074/075/61/62-stubs. Dry-run wanted 074+075; pushed with `--include-all` (remote 61/62 sort last).
+- Push hit live-DB reality: 001-era `wishlists(id, user_id, product_id, created_at, UNIQUE(user_id,product_id))` already exists with owner-only SELECT/INSERT/DELETE policies + 6 live rows; no app code references it. First 075 failed atomically (rolled back, unrecorded). Rewrote 075 (commit `ee5e4bd`) to ADOPT the table: `created_at`-based index/order, cap CHECK + helper, conditional owner-policy fallback, same secdef RPC + grants. Re-pushed: history now shows 074 + 075 applied.
+- Live proof via `db query` (JWT-claims spoof as a real user): pull returned 3 ids newest-first with no wipe; repush idempotent (3); bogus UUID ignored (3); merge +1 (4); cleanup DELETE restored 3. Static: secdef true, volatile, authenticated grant present; null-auth raises 42501. Probe row deleted — user data untouched.
+- Next (owner-gated): merge `fix/batch3-wishlist-075` → push → Batch 3 #4 attribute finder.
+
+## New — 2026-09-27 (part 85: wishlist-sync client done)
+
+- Owner approved 075 draft → built the client in `.trees/batch3-wishlist`, branch `fix/batch3-wishlist-075`, commit `a54f68b` (on top of `aed3bfa` draft). Migration NOT applied (no staging DB access from here — owner step).
+- New: `domain/repositories/wishlist_sync_remote.dart` (Supabase-free port), `data/supabase_wishlist_sync_remote.dart` (rpc + pure `parseWishlistIds`), `data/supabase_wishlist_repository.dart` (decorator: guest delegates byte-identical to local; signed-in read merges via RPC with local fallback, write local-first + kFailureSave sync-pending). Wired in `service_locator.dart`; `app.dart` lifts WishlistCubit app-scoped + pulls (`restore(force:true)`) on genuine guest→auth transitions.
+- New tests (10): `supabase_wishlist_repository_test.dart` — parse shapes, guest isolation (remote never called), merge/fallback/both-fail/write-pending/short-circuit.
+- Verifier first pass REJECT → fixed: `wasAuthenticated` now snapshots `_authCubit.state.isAuthenticated`; Admin-port format reflow reverted (drift pre-exists on HEAD under pinned dart 3.13.4 — left as-is); generated-file churn reverted. Re-verify: APPROVE.
+- Evidence: analyze clean; targeted 10/10; full suite **1,157/1,157**; `git diff --check` clean. Test-fake lesson: `StateError` is Error not Exception — fakes must throw Exception to mirror Postgrest failures.
+- Next (owner-gated): apply 075 to staging + run `test_075_wishlist_sync.sql` proof → merge `fix/batch3-wishlist-075` → push → continue Batch 3 (#4 attribute finder).
+
+## New — 2026-09-27 (part 84: wishlist-sync migration 075 DRAFT)
+
+- Owner "go ahead" → started Batch 3 #6 (wishlist sync), migration draft first per the agreed gate. No migration applied; no client code touched.
+- Worktree `.trees/batch3-wishlist`, branch `fix/batch3-wishlist-075`, commit `aed3bfa` (REVIEW ONLY): `supabase/migrations/075_wishlist_sync.sql` + `supabase/tests/test_075_wishlist_sync.sql`.
+- Draft contents: `public.wishlists(user_id→profiles CASCADE, product_id→products CASCADE, added_at, PK(user_id,product_id))`; owner-only RLS FOR ALL, no admin read; 200-row cap via `wishlist_count_for_user` CHECK (backstop) + deterministic RPC trim (`ORDER BY ordinality … LIMIT GREATEST(200-count,0)`); `sync_wishlist(UUID[])` SECURITY DEFINER, locked search_path, REVOKE/GRANT authenticated-only, anon gets 42501; NULL/empty input PULLs (never wipes); unknown ids ignored; idempotent via ON CONFLICT DO NOTHING; returns merged UUID[] for one-round-trip reconcile. Proof test asserts objects/RLS/grants + staged owner/anon/cross-user checks for staging.
+- Next: owner reviews draft → apply to staging + run proof test → then client `SupabaseWishlistRepository` (union-merge on sign-in, guest flow untouched).
+
+## New — 2026-09-27 (part 83: Batch 3 feature specs)
+
+- Owner "go ahead" continued into Batch 3. L1 report-only: no source modified; specs grounded by live grep (wishlist local-only via `LocalWishlistRepository`; tiers standard/premium + `admin_set_membership_tier` RPC 046 + domain `kWholesaleTiers`; product columns lack fabric_type/weave/remnant flags; no tailor tables).
+- Six specs delivered in chat (swatch-kit, tailor profiles, remnants, attribute finder, B2B tiers, wishlist sync), each with schema touch + RLS shape + client touch + migration-review flag. Suggested build order: wishlist-sync → attribute-finder → remnants → swatch-kit → tailor → B2B. All need human-reviewed migrations before any L2.
+
+## New — 2026-09-27 (part 82: Batch 1+2 merged to master)
+
+- Owner "go ahead" = approval to merge (push stays gated — not pushed).
+- Merged `fix/batch1-lib-guards` (`36a8e59`) + `fix/batch2-polish` (`73d28c4`) into local `master` via octopus merge `8e11b51` (disjoint files, no conflicts). `loop-ledger.json` confirmed gitignored (`.gitignore:80`) — records stay local-only.
+- Post-merge gates on `master`: `flutter analyze --no-pub` → No issues found; full `flutter test --no-pub` → **1,147/1,147** (1,134 baseline + 13 Batch 1). Untracked `deliverables/` + `flutter_01.log` left alone (not ours).
+- Next: push `master` (needs explicit owner go-ahead) → Batch 3 feature specs (L1 report-only).
+
+## New — 2026-09-27 (part 81: Batch 2 silent-catch logging)
+
+- Follow-up: owner "Continue". Note: Batch 1 was committed on `fix/batch1-lib-guards` (`36a8e59`) during the walkthrough — this run started Batch 2.
+- Correction vs the Batch 1 audit: the `buildWhen` and `cacheExtent` Batch 2 items are **stale** — verified on `master`: `catalog_page.dart:87`/`wishlist_page.dart:105`/`admin_orders_page.dart:97` already carry audit 2026-09-21 `buildWhen`s; nested `RecentSearchesCubit` builder without `buildWhen` is correct (reads outer query state); `cacheExtent` already bounded per caller (`product_image_placeholder.dart:25` default 720; cart 144, related 280, wishlist 360). Only the silent-catch item was genuine.
+- Worktree: `.trees/batch2-polish` (detached `abc6966` → new branch `fix/batch2-polish`, commit `73d28c4`); main checkout untouched except this record + `loop-ledger.json`. No push/merge (owner-gated). Tooling churn (`.flutter-plugins-dependencies`, desktop registrants) left uncommitted.
+- Changes (5 `lib/` files, logging-only, fallbacks byte-identical): `Log.w` added to `remote_config_service._defaultVersionProvider` (null version silently disabled the forced-update gate), `deep_link_service` cold-start link drop, `image_compressor` fail-open path, `settings_cubit` biometric availability/auth errors, `admin_image_grid` render-URL→stored-path fallback. Deliberately skipped: `share_service` dismissals + `whatsapp_share_service` bool-contract — silent-by-design (user action / caller feedback); logging them would be prod noise.
+- Evidence: `flutter analyze --no-pub` → No issues found (worktree needed `flutter pub get --offline` first — missing `.dart_tool` caused false 353-issue cascade); `dart format` applied (2 files reflowed); full `flutter test --no-pub` → **1,134/1,134** (master baseline, no Batch 1 tests in this worktree); `git diff --check` clean. Verifier: **APPROVE**.
+- Next: owner review → merge `fix/batch1-lib-guards` + `fix/batch2-polish` → Batch 3 feature specs (swatch/tailor/remnants/finder/B2B/wishlist-sync; migrations need human review).
+
+## New — 2026-09-27 (part 80: Batch 1 lib-only fixes)
+
+- Owner ask: "do all i approve" on the improvement + feature recommendations. Scoped per loop-constraints.md (lib-only auto-fix, one fix per run, no supabase/GoRouter/state-signature/pubspec changes without review): owner chose **Start Batch 1 lib-only** via explicit prompt. Features (swatch/tailor/remnants/finder/B2B/wishlist-sync) need migrations + human review — parked as Batch 3 specs.
+- Worktree: `.trees/batch1-lib-fixes` (detached HEAD `abc6966`); main checkout untouched except this record + `loop-ledger.json`. No commit, push, or merge (owner-gated).
+- Changes (11 `lib/` files, all additive/equivalent): `as`-cast removal via `safeBool`/`safeMap`/assignment-widening (`product_mapper`, `supabase_admin_repository` + new safe_parse import, `supabase_reviews_repository`, `admin_customers_store`, `catalog_persistent_cache`); reviews photo signing batched with `Future.wait` + 5MB `maxReviewPhotoBytes` cap before auth; analytics flush re-queues bounded (`batch.take(batchSize)` iff buffer empty) on sink failure; `WishlistState`/`OnboardingState` additive nullable `errorCode` + cubit wiring; storefront non-positive price `Log.w` with product id; admin `createCoupon`/`adminUpsertProduct`/`adminUpsertVariant` fail-fast guards returning the same boundary codes.
+- Tests: 3 new files (`batch1_storefront_guards`, `batch1_admin_guards`, `batch1_onboarding_guards`) — 13 tests, all `verifyNever` network-proof. Evidence: `flutter analyze --no-pub` → No issues found; CI-pinned Dart format 0 changed; full `flutter test --no-pub` → **1,147/1,147** (1,134 baseline + 13 new); `git diff --check` clean. Verifier: **APPROVE**.
+- Notes: worktree needed `flutter pub get --offline` (untracked `.dart_tool` absent there; `.flutter-plugins-dependencies` + registrant noise reverted). Local Flutter 3.49 formatter drift vs CI pin checked via `~/.workbuddy-ai/binaries/dart-sdks` — 0 changed. Finding while testing: addresses PII already migrated to secure store (pinned by `secure_store_test.dart`) — the earlier cleartext-address note is stale.
+- Next: owner review → commit Batch 1 → Batch 2 polish (buildWhen/cacheExtent/silent catches) → Batch 3 feature specs.
 
 ## New — 2026-09-25 (part 73: pre-launch check review + L2 fix)
 
@@ -7716,3 +7843,29 @@ fix/l2-audit-fixes branch still needs an owner decision.
 - Re-gated on rebased tree: `flutter analyze --no-pub` clean; `flutter test` 1134/1134 passed. Diff is 31 files, lib/test/supabase only, zero generated-file churn.
 - NOTE vs Part 78 F3: unmerged 074 already adds the `rate_limit_take('init:checkout', 10, 60)` gate to the checkout wrapper — F3 is resolved on merge, not a follow-up.
 - PROPOSED (awaiting explicit merge/push approval): merge worktree into master, then push. No commits or pushes made.
+
+---
+
+## Part 80 — fix-top5 merged + pushed (2026-09-26)
+
+- Owner approved: committed `ea5d2aa` on `fix/audit-top5` (rename detection kept the data→domain moves), merged `--no-ff` as `c7967e1`, committed STATE part 79 as `abc6966`, pushed `c66c82d..abc6966` master→master.
+- Post-merge `flutter analyze --no-pub` on master: clean. (Tests 1134/1134 were green on the identical rebased tree pre-merge.)
+- Note: 074 migration is now on master but NOT yet applied to staging/prod Supabase — needs `supabase db push` + function deploy per the normal rollout (owner-side, like Part 76).
+- Stale worktree `.trees/fix-top5` (branch `fix/audit-top5`) can be removed with `git worktree remove .trees/fix-top5` once reviewed.
+
+---
+
+## Part 81 — L1 flavor-setup triage (2026-09-27, report-only, no source edits)
+
+- Owner ask: build flavors (development + production) with per-flavor app name, bundle id/application id, API base URLs, env vars; each flavor independently buildable/runnable; document flavor selection.
+- Findings: NO flavors exist. `android/app/build.gradle.kts` has no `productFlavors` (single `applicationId com.albatal.elite`); `AndroidManifest.xml` hardcodes `android:label="albatal_store"`; iOS `project.pbxproj` bundle id is still the Flutter template `com.example.albatalStore` (all configs) with `CFBundleDisplayName "Albatal Store"`; single entrypoint `lib/main.dart` (+ debug-only `main_smoke.dart`). Env injection already build-time via `--dart-define-from-file=config/env.*.json` (`EnvConfig`: SUPABASE_URL, SUPABASE_ANON_KEY, SENTRY_DSN, WEB_BASE_URL, ONESIGNAL_APP_ID, APP_ENV) with `*.local.json` gitignored — flavors will reuse this mechanism, not replace it. No `config/env.development.json` yet (only staging/production/e2e).
+- L2 plan proposed (awaiting explicit enablement): Android `productFlavors { development (applicationIdSuffix .dev, versionNameSuffix -dev), production }` + manifest `android:label` via placeholder; iOS xcconfigs/schemes setting bundle id (`com.albatal.elite.dev` vs `com.albatal.elite`) + display name ("Al Batal Dev" vs "Al Batal Elite"); `lib/main_development.dart` / `lib/main_production.dart` entrypoints over shared `bootstrap()`; `config/env.development.json` (+ `.local` values filled owner-side); flavor contract test. Full file list + commands in the session reply. Blocked: flavor work touches `android/`, `ios/`, `config/` — outside the `lib/`-only auto-fix scope, so it needs explicit human L2 + protected-path approval per AGENTS.md/loop-constraints.md. No commit/push planned without approval.
+
+---
+
+## Part 82 — L2 flavor implementation (2026-09-27, worktree `.trees/feat-flavors`, branch `feat/flavor-dev-prod`)
+
+- Owner enabled L2 (touch `android/`, `ios/`, `config/`, `lib/` entrypoints; no commit/push without second approval), dev → staging backend, `.dev` identity as proposed.
+- Implemented: Android `productFlavors` (dev: `.dev` suffix, `-dev` version suffix, "Al Batal Dev"; prod: base id, "Al Batal Elite") + manifest `android:label="${appLabel}"`; `AppFlavor` enum + `main_development.dart`/`main_production.dart` over `bootstrap(flavor:)` → `AlBatalApp(flavor:)` title; `config/env.development.json` (staging URL, placeholder key, `APP_ENV=development`) + `APP_ENV=production` in prod template; iOS `*-development` configs (bundle `com.albatal.elite.dev`, `APP_DISPLAY_NAME`), base configs fixed `com.example.albatalStore` → `com.albatal.elite`, `development`/`production` schemes, `Info.plist` display name via `$(APP_DISPLAY_NAME)`; `app_flavor_test.dart` (7 tests); README + `config/README.md` flavor docs.
+- Evidence (worktree): `flutter analyze --no-pub` → No issues; `flutter test --no-pub` → **1141/1141** (1134 master + 7 new); `assembleDevelopmentDebug` → `app-development-debug.apk`, `assembleProductionDebug` → `app-production-debug.apk`; aapt badging: dev `com.albatal.elite.dev` / "Al Batal Dev" / `0.1.0-dev`, prod `com.albatal.elite` / "Al Batal Elite" / `0.1.0`; flavorless `flutter build apk --debug` fails as documented (no `assembleDebug` once flavors exist). Pinned Dart 3.13.4 format: touched files clean; 3 pre-existing drifts (`admin_mappers`, `checkout_cubit`, `service_locator`) identical on master — left untouched. Generated registrant noise reverted; diff secret-scan 0 hits. Verifier: **APPROVE**, no must-fix.
+- NOT done / owner gates: no commit, push, or merge (awaiting approval); iOS not compiled (no Xcode on Windows — needs `flutter build ipa --flavor development/production` on a Mac); owner must create `config/env.development.local.json` (from staging key) + `config/env.production.local.json`; **CI will break on merge**: `.github/workflows/ci.yml:317` + `android-release.yml:162,165` run flavorless builds — need `--flavor production -t lib/main_production.dart` (CI edits need separate approval per loop-constraints.md).
