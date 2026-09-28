@@ -226,7 +226,7 @@ void main() {
     final addStart = addText.indexOf('ADD CONSTRAINT $tierCheck');
     final stmtEnd = addText.indexOf(';', addStart);
     expect(addText.substring(addStart, stmtEnd),
-        contains("membership_tier IN ('standard', 'premium')"),
+        contains("membership_tier IN ('standard', 'premium', 'wholesale')"),
         reason: 'The tier CHECK in $latestAddFile no longer pins the '
             'value set the client maps against.');
 
@@ -297,6 +297,22 @@ void main() {
             'REVOKE EXECUTE ON FUNCTION admin_set_membership_tier(UUID, TEXT) FROM PUBLIC, anon'),
         reason: 'admin_set_membership_tier must be revoked from PUBLIC and '
             'anon like every admin RPC.');
+
+    // 5. The LATEST definition of the RPC (078 wholesale) must accept the
+    // wholesale tier — otherwise the CHECK widen is unusable and wholesale
+    // members can never be assigned.
+    String? latestRpcFile;
+    for (final file in files) {
+      final text = file.readAsStringSync();
+      if (text.contains(
+          'CREATE OR REPLACE FUNCTION admin_set_membership_tier')) {
+        latestRpcFile = file.path;
+      }
+    }
+    final latestRpcBody = File(latestRpcFile!).readAsStringSync();
+    expect(latestRpcBody, contains("'wholesale'"),
+        reason: 'The latest admin_set_membership_tier in $latestRpcFile '
+            'does not accept the wholesale tier.');
   });
 
   test('latest checkout wrapper preserves the 066 perk and adds bounds', () {
@@ -315,11 +331,11 @@ void main() {
         latestFile = file.path;
       }
     }
-    // 077 (swatch-kit): the wrapper delegates to the sample/metered-aware
-    // unchecked_077 core; the 072 core stays in place as the rollback.
+    // 078 (B2B wholesale): the wrapper delegates to the wholesale-aware
+    // unchecked_078 core; the 077 core stays in place as the rollback.
     expect(
       latestFile!.replaceAll('\\', '/'),
-      'supabase/migrations/077_sample_metered_checkout.sql',
+      'supabase/migrations/078_wholesale_tier.sql',
     );
 
     final body = File(latestFile).readAsStringSync();
@@ -333,8 +349,9 @@ void main() {
     expect(body, contains('octet_length(p_address::TEXT) > 4096'));
     expect(body, contains('Invalid idempotency key'));
     expect(body, contains('Checkout total must be greater than zero'));
+    expect(body, contains('create_checkout_order_unchecked_078'));
+    // The 077 core stays in place as the one-line rollback target.
     expect(body, contains('create_checkout_order_unchecked_077'));
-    expect(body, contains('create_checkout_order_unchecked_072'));
     // Per-line key gating replaces the blanket sample/metered rejection:
     // sample lines carry only the flag, metered lines carry meters +
     // line_total, plain lines carry none of the four keys.
@@ -345,7 +362,11 @@ void main() {
     expect(
         body,
         contains(
-            'REVOKE ALL ON FUNCTION public.create_checkout_order_unchecked_077'));
+            'REVOKE ALL ON FUNCTION public.create_checkout_order_unchecked_078'));
+    // 078 wholesale price preference: list price first, then override,
+    // then base — in both the metered and plain branches.
+    expect(body, contains('wholesale_price_lists'));
+    expect(body, contains('COALESCE(wpl.price_minor'));
     // 074 additions: per-user throttle through the 060 infra (audit Top-5
     // #1) and E.164-length phone digits (Top-5 #4 phone split).
     expect(body, contains("public.rate_limit_take('init:checkout', 10, 60)"));
@@ -353,8 +374,8 @@ void main() {
     expect(body, contains('v_phone_digits'));
     expect(body, contains('char_length(v_phone_digits) < 8'));
     expect(body, contains('char_length(v_phone_digits) > 15'));
-    // No to_regprocedure guard for the 072 core here: 077 creates its
-    // own unchecked_077 core in the same transaction, so the delegate
+    // No to_regprocedure guard for the 077 core here: 078 creates its
+    // own unchecked_078 core in the same transaction, so the delegate
     // target cannot be missing at call time (atomic apply or nothing).
     expect(
       body,
