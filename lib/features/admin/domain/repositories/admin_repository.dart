@@ -4,6 +4,7 @@ import 'admin_customers_port.dart';
 import 'admin_orders_port.dart';
 import 'admin_reviews_port.dart';
 import 'admin_sales_port.dart';
+import 'admin_wholesale_prices_port.dart';
 
 /// Paging contract for the customer directory — canonical home is
 /// [AdminCustomersPort]; re-exported here so existing importers keep
@@ -34,7 +35,8 @@ abstract interface class AdminRepository
         AdminCustomersPort,
         AdminReviewsPort,
         AdminSalesPort,
-        AdminCatalogPort {
+        AdminCatalogPort,
+        AdminWholesalePricesPort {
   /// Check if the current user is an admin.
   Future<bool> isCurrentUserAdmin();
 }

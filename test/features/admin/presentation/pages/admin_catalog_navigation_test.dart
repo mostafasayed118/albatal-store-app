@@ -10,6 +10,7 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_customer.dar
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_sales.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_wholesale_price_entry.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/presentation/pages/admin_catalog_page.dart';
@@ -56,6 +57,19 @@ class FakeAdminRepository implements AdminRepository {
 
   @override
   Future<Result<void>> setReviewStatus(String id, String status) async =>
+      const Success(null);
+
+  @override
+  Future<Result<List<AdminWholesalePriceEntry>>> fetchWholesalePrices() async =>
+      const Success(<AdminWholesalePriceEntry>[]);
+
+  @override
+  Future<Result<void>> upsertWholesalePrice(
+          {required String productId, required int priceMinor}) async =>
+      const Success(null);
+
+  @override
+  Future<Result<void>> deleteWholesalePrice(String productId) async =>
       const Success(null);
 
   @override

@@ -577,6 +577,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminAddCoupon => 'Add coupon';
 
   @override
+  String get adminWholesalePrices => 'Wholesale prices';
+
+  @override
+  String get adminAddWholesalePrice => 'Add wholesale price';
+
+  @override
+  String get adminEditWholesalePrice => 'Save price';
+
+  @override
+  String get adminDeleteWholesalePrice => 'Delete price';
+
+  @override
+  String get adminWholesalePriceProduct => 'Product';
+
+  @override
+  String get adminWholesalePriceEgp => 'Price (EGP)';
+
+  @override
+  String get adminWholesalePriceDeleteConfirm =>
+      'Remove the negotiated wholesale price for this product?';
+
+  @override
   String get customerReviews => 'Customer reviews';
 
   @override
@@ -1897,6 +1919,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adminFailureReviewsLoad =>
       'Couldn\'t load the review queue. Please try again.';
+
+  @override
+  String get adminFailureWholesalePricesLoad =>
+      'Couldn\'t load the wholesale price list. Please try again.';
+
+  @override
+  String get adminFailureWholesalePriceUpsert =>
+      'Couldn\'t save the wholesale price. Please try again.';
+
+  @override
+  String get adminFailureWholesalePriceDelete =>
+      'Couldn\'t delete the wholesale price. Please try again.';
 
   @override
   String get adminFailureReviewUpdate =>

@@ -58,6 +58,12 @@ const _expectedEn = {
   kAdminCustomersLoadFailed: "Couldn't load customers. Please try again.",
   kAdminReviewsLoadFailed: "Couldn't load the review queue. Please try again.",
   kAdminReviewUpdateFailed: "Couldn't update the review. Please try again.",
+  kAdminWholesalePricesLoadFailed:
+      "Couldn't load the wholesale price list. Please try again.",
+  kAdminWholesalePriceUpsertFailed:
+      "Couldn't save the wholesale price. Please try again.",
+  kAdminWholesalePriceDeleteFailed:
+      "Couldn't delete the wholesale price. Please try again.",
 };
 
 void main() {

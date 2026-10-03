@@ -58,6 +58,9 @@ String? failureCopyForCode(AppLocalizations l10n, String? code) =>
       kAdminCustomersLoadFailed => l10n.adminFailureCustomersLoad,
       kAdminReviewsLoadFailed => l10n.adminFailureReviewsLoad,
       kAdminReviewUpdateFailed => l10n.adminFailureReviewUpdate,
+      kAdminWholesalePricesLoadFailed => l10n.adminFailureWholesalePricesLoad,
+      kAdminWholesalePriceUpsertFailed => l10n.adminFailureWholesalePriceUpsert,
+      kAdminWholesalePriceDeleteFailed => l10n.adminFailureWholesalePriceDelete,
       _ => null,
     };
 

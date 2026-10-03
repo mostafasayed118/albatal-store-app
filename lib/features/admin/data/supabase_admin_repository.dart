@@ -10,6 +10,7 @@ import '../domain/entities/admin_customer.dart';
 import '../domain/entities/admin_order.dart';
 import '../domain/entities/admin_sales.dart';
 import '../domain/entities/admin_variant.dart';
+import '../domain/entities/admin_wholesale_price_entry.dart';
 import '../domain/entities/low_stock_variant.dart';
 import '../domain/repositories/admin_repository.dart';
 import 'admin_catalog_store.dart';
@@ -18,6 +19,7 @@ import 'admin_customers_store.dart';
 import 'admin_orders_store.dart';
 import 'admin_reviews_store.dart';
 import 'admin_sales_store.dart';
+import 'admin_wholesale_prices_store.dart';
 
 export 'admin_customer_search.dart';
 
@@ -37,7 +39,8 @@ final class SupabaseAdminRepository implements AdminRepository {
         _catalog = SupabaseAdminCatalog(client: client),
         _coupons = SupabaseAdminCoupons(client: client),
         _customers = SupabaseAdminCustomers(client: client),
-        _reviews = SupabaseAdminReviews(client: client);
+        _reviews = SupabaseAdminReviews(client: client),
+        _wholesalePrices = SupabaseAdminWholesalePrices(client: client);
 
   final SupabaseClient _client;
   final SupabaseAdminOrders _orders;
@@ -46,6 +49,7 @@ final class SupabaseAdminRepository implements AdminRepository {
   final SupabaseAdminCoupons _coupons;
   final SupabaseAdminCustomers _customers;
   final SupabaseAdminReviews _reviews;
+  final SupabaseAdminWholesalePrices _wholesalePrices;
 
   @override
   Future<bool> isCurrentUserAdmin() async {
@@ -240,4 +244,24 @@ final class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<Result<void>> setReviewStatus(String id, String status) =>
       _reviews.setReviewStatus(id, status);
+
+  // ─── Wholesale price list (078 B2B) ─────────────────────
+
+  @override
+  Future<Result<List<AdminWholesalePriceEntry>>> fetchWholesalePrices() =>
+      _wholesalePrices.fetchWholesalePrices();
+
+  @override
+  Future<Result<void>> upsertWholesalePrice({
+    required String productId,
+    required int priceMinor,
+  }) =>
+      _wholesalePrices.upsertWholesalePrice(
+        productId: productId,
+        priceMinor: priceMinor,
+      );
+
+  @override
+  Future<Result<void>> deleteWholesalePrice(String productId) =>
+      _wholesalePrices.deleteWholesalePrice(productId);
 }

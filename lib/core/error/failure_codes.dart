@@ -147,3 +147,12 @@ const kAdminReviewsLoadFailed = 'admin_reviews_load_failed';
 
 /// A review-status write failed.
 const kAdminReviewUpdateFailed = 'admin_review_update_failed';
+
+/// The wholesale price list did not load (078 B2B).
+const kAdminWholesalePricesLoadFailed = 'admin_wholesale_prices_load_failed';
+
+/// A wholesale price upsert failed (078 B2B).
+const kAdminWholesalePriceUpsertFailed = 'admin_wholesale_price_upsert_failed';
+
+/// A wholesale price delete failed (078 B2B).
+const kAdminWholesalePriceDeleteFailed = 'admin_wholesale_price_delete_failed';

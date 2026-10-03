@@ -1166,6 +1166,48 @@ abstract class AppLocalizations {
   /// **'Add coupon'**
   String get adminAddCoupon;
 
+  /// No description provided for @adminWholesalePrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Wholesale prices'**
+  String get adminWholesalePrices;
+
+  /// No description provided for @adminAddWholesalePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Add wholesale price'**
+  String get adminAddWholesalePrice;
+
+  /// No description provided for @adminEditWholesalePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Save price'**
+  String get adminEditWholesalePrice;
+
+  /// No description provided for @adminDeleteWholesalePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete price'**
+  String get adminDeleteWholesalePrice;
+
+  /// No description provided for @adminWholesalePriceProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get adminWholesalePriceProduct;
+
+  /// No description provided for @adminWholesalePriceEgp.
+  ///
+  /// In en, this message translates to:
+  /// **'Price (EGP)'**
+  String get adminWholesalePriceEgp;
+
+  /// No description provided for @adminWholesalePriceDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the negotiated wholesale price for this product?'**
+  String get adminWholesalePriceDeleteConfirm;
+
   /// No description provided for @customerReviews.
   ///
   /// In en, this message translates to:
@@ -3493,6 +3535,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load the review queue. Please try again.'**
   String get adminFailureReviewsLoad;
+
+  /// No description provided for @adminFailureWholesalePricesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the wholesale price list. Please try again.'**
+  String get adminFailureWholesalePricesLoad;
+
+  /// No description provided for @adminFailureWholesalePriceUpsert.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the wholesale price. Please try again.'**
+  String get adminFailureWholesalePriceUpsert;
+
+  /// No description provided for @adminFailureWholesalePriceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the wholesale price. Please try again.'**
+  String get adminFailureWholesalePriceDelete;
 
   /// No description provided for @adminFailureReviewUpdate.
   ///

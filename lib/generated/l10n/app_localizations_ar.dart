@@ -583,6 +583,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get adminAddCoupon => 'إضافة كود';
 
   @override
+  String get adminWholesalePrices => 'أسعار الجملة';
+
+  @override
+  String get adminAddWholesalePrice => 'إضافة سعر جملة';
+
+  @override
+  String get adminEditWholesalePrice => 'حفظ السعر';
+
+  @override
+  String get adminDeleteWholesalePrice => 'حذف السعر';
+
+  @override
+  String get adminWholesalePriceProduct => 'المنتج';
+
+  @override
+  String get adminWholesalePriceEgp => 'السعر (جنيه)';
+
+  @override
+  String get adminWholesalePriceDeleteConfirm =>
+      'حذف سعر الجملة المتفق عليه لهذا المنتج؟';
+
+  @override
   String get customerReviews => 'تقييمات العملاء';
 
   @override
@@ -1884,6 +1906,18 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get adminFailureReviewsLoad =>
       'تعذّر تحميل قائمة المراجعات. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureWholesalePricesLoad =>
+      'تعذّر تحميل قائمة أسعار الجملة. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureWholesalePriceUpsert =>
+      'تعذّر حفظ سعر الجملة. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureWholesalePriceDelete =>
+      'تعذّر حذف سعر الجملة. حاول مرة أخرى.';
 
   @override
   String get adminFailureReviewUpdate => 'تعذّر تحديث المراجعة. حاول مرة أخرى.';
