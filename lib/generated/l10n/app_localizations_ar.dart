@@ -1908,6 +1908,18 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر تحميل قائمة المراجعات. حاول مرة أخرى.';
 
   @override
+  String get adminFailureWholesalePricesLoad =>
+      'تعذّر تحميل قائمة أسعار الجملة. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureWholesalePriceUpsert =>
+      'تعذّر حفظ سعر الجملة. حاول مرة أخرى.';
+
+  @override
+  String get adminFailureWholesalePriceDelete =>
+      'تعذّر حذف سعر الجملة. حاول مرة أخرى.';
+
+  @override
   String get adminFailureReviewUpdate => 'تعذّر تحديث المراجعة. حاول مرة أخرى.';
 
   @override

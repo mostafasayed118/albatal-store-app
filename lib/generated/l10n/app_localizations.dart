@@ -3536,6 +3536,24 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load the review queue. Please try again.'**
   String get adminFailureReviewsLoad;
 
+  /// No description provided for @adminFailureWholesalePricesLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the wholesale price list. Please try again.'**
+  String get adminFailureWholesalePricesLoad;
+
+  /// No description provided for @adminFailureWholesalePriceUpsert.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the wholesale price. Please try again.'**
+  String get adminFailureWholesalePriceUpsert;
+
+  /// No description provided for @adminFailureWholesalePriceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete the wholesale price. Please try again.'**
+  String get adminFailureWholesalePriceDelete;
+
   /// No description provided for @adminFailureReviewUpdate.
   ///
   /// In en, this message translates to:

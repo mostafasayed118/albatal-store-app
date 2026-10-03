@@ -1921,6 +1921,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load the review queue. Please try again.';
 
   @override
+  String get adminFailureWholesalePricesLoad =>
+      'Couldn\'t load the wholesale price list. Please try again.';
+
+  @override
+  String get adminFailureWholesalePriceUpsert =>
+      'Couldn\'t save the wholesale price. Please try again.';
+
+  @override
+  String get adminFailureWholesalePriceDelete =>
+      'Couldn\'t delete the wholesale price. Please try again.';
+
+  @override
   String get adminFailureReviewUpdate =>
       'Couldn\'t update the review. Please try again.';
 

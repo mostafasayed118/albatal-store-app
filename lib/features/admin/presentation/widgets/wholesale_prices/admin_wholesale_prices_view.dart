@@ -145,9 +145,8 @@ final class AdminWholesalePricesView extends StatelessWidget {
                     final productId = entry?.productId ?? selectedProductId;
                     final egp = int.tryParse(priceController.text.trim());
                     if (productId == null || egp == null || egp <= 0) return;
-                    sheetContext
-                        .read<AdminWholesalePricesCubit>()
-                        .upsertPrice(productId: productId, priceMinor: egp * 100);
+                    sheetContext.read<AdminWholesalePricesCubit>().upsertPrice(
+                        productId: productId, priceMinor: egp * 100);
                     Navigator.of(sheetContext).pop();
                   },
                   child: Text(entry == null
