@@ -42,6 +42,7 @@ abstract final class Routes {
   static const adminInventory = '/admin/inventory';
   // Promo codes (§8): create and activate the coupons checkout redeems.
   static const adminCoupons = '/admin/coupons';
+  static const adminWholesalePrices = '/admin/wholesale-prices';
   // Feature-batch §9/§14 + §13 surfaces (merged locally with the batch).
   static const adminReviews = '/admin/reviews';
   static const adminCustomers = '/admin/customers';

@@ -577,6 +577,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminAddCoupon => 'Add coupon';
 
   @override
+  String get adminWholesalePrices => 'Wholesale prices';
+
+  @override
+  String get adminAddWholesalePrice => 'Add wholesale price';
+
+  @override
+  String get adminEditWholesalePrice => 'Save price';
+
+  @override
+  String get adminDeleteWholesalePrice => 'Delete price';
+
+  @override
+  String get adminWholesalePriceProduct => 'Product';
+
+  @override
+  String get adminWholesalePriceEgp => 'Price (EGP)';
+
+  @override
+  String get adminWholesalePriceDeleteConfirm =>
+      'Remove the negotiated wholesale price for this product?';
+
+  @override
   String get customerReviews => 'Customer reviews';
 
   @override

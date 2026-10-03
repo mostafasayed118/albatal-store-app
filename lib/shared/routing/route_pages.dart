@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/addresses/presentation/pages/addresses_page.dart';
+import '../../features/admin/domain/repositories/admin_catalog_port.dart';
 import '../../features/admin/domain/repositories/admin_coupons_port.dart';
 import '../../features/admin/domain/repositories/admin_customers_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_reviews_port.dart';
 import '../../features/admin/domain/repositories/admin_sales_port.dart';
+import '../../features/admin/domain/repositories/admin_wholesale_prices_port.dart';
 import '../../features/admin/presentation/pages/admin_catalog_page.dart';
 import '../../features/admin/presentation/pages/admin_categories_page.dart';
 import '../../features/admin/presentation/pages/admin_coupons_page.dart';
@@ -22,6 +24,7 @@ import '../../features/admin/presentation/pages/admin_products_page.dart';
 import '../../features/admin/presentation/pages/admin_reviews_page.dart';
 import '../../features/admin/presentation/pages/admin_sales_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_variant_editor_page.dart';
+import '../../features/admin/presentation/pages/admin_wholesale_prices_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/profile_page.dart';
 import '../../features/auth/presentation/pages/reset_password_page.dart';
@@ -222,6 +225,13 @@ abstract final class RoutePages {
   /// dependencies, like every other admin destination.
   static Widget adminCoupons() =>
       AdminCouponsPage(repository: getIt<AdminCouponsPort>());
+
+  /// 078 B2B: the same facade instance satisfies both narrow ports
+  /// (price-list reads/writes + catalog candidates for the picker).
+  static Widget adminWholesalePrices() => AdminWholesalePricesPage(
+        repository: getIt<AdminWholesalePricesPort>(),
+        catalogRepository: getIt<AdminCatalogPort>(),
+      );
 
   static Widget adminOrderDetail(GoRouterState s) =>
       AdminOrderDetailPage(orderId: s.pathParameters['id']!);

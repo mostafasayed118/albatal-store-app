@@ -12,6 +12,7 @@ import '../../features/admin/domain/repositories/admin_orders_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_reviews_port.dart';
 import '../../features/admin/domain/repositories/admin_sales_port.dart';
+import '../../features/admin/domain/repositories/admin_wholesale_prices_port.dart';
 import '../../features/auth/data/supabase_auth_repository.dart';
 import '../../features/auth/data/supabase_auth_session_port.dart';
 import '../../features/auth/data/supabase_profile_repository.dart';
@@ -117,6 +118,8 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AdminSalesPort>(() => getIt<AdminRepository>())
     ..registerLazySingleton<AdminOrdersPort>(() => getIt<AdminRepository>())
     ..registerLazySingleton<AdminCatalogPort>(() => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminWholesalePricesPort>(
+        () => getIt<AdminRepository>())
     ..registerLazySingleton<AuthRepository>(
         () => SupabaseAuthRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ProfileRepository>(

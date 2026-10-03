@@ -94,6 +94,9 @@ final _routes = <RouteBase>[
   GoRoute(
       path: Routes.adminCoupons, builder: (_, __) => RoutePages.adminCoupons()),
   GoRoute(
+      path: Routes.adminWholesalePrices,
+      builder: (_, __) => RoutePages.adminWholesalePrices()),
+  GoRoute(
     path: Routes.adminOrderDetail, // literal pattern (see Routes.productDetail)
     builder: (_, s) => RoutePages.adminOrderDetail(s),
   ),

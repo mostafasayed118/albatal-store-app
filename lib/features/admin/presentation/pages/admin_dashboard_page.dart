@@ -115,6 +115,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               subtitle: l.adminAddCoupon,
               onTap: () => context.push(Routes.adminCoupons),
             ),
+            // 078 B2B: negotiated wholesale prices need a management
+            // surface — without this tile the RPCs are unreachable.
+            AdminActionTile(
+              icon: Icons.sell_outlined,
+              title: l.adminWholesalePrices,
+              subtitle: l.adminAddWholesalePrice,
+              onTap: () => context.push(Routes.adminWholesalePrices),
+            ),
           ];
           return ListView.builder(
             padding: const EdgeInsets.all(16),

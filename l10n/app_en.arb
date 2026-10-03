@@ -225,6 +225,13 @@
   "couponDiscountEgp": "Discount (EGP)",
   "couponActive": "Active",
   "adminAddCoupon": "Add coupon",
+  "adminWholesalePrices": "Wholesale prices",
+  "adminAddWholesalePrice": "Add wholesale price",
+  "adminEditWholesalePrice": "Save price",
+  "adminDeleteWholesalePrice": "Delete price",
+  "adminWholesalePriceProduct": "Product",
+  "adminWholesalePriceEgp": "Price (EGP)",
+  "adminWholesalePriceDeleteConfirm": "Remove the negotiated wholesale price for this product?",
   "customerReviews": "Customer reviews",
   "showAllReviews": "{count, plural, =1{Show all} other{Show all ({count})}}",
   "@showAllReviews": {
