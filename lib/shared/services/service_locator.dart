@@ -38,6 +38,7 @@ import '../../features/storefront/data/supabase_orders_repository.dart';
 import '../../features/storefront/data/supabase_reviews_repository.dart';
 import '../../features/storefront/data/supabase_wishlist_repository.dart';
 import '../../features/storefront/data/supabase_wishlist_sync_remote.dart';
+import '../../features/storefront/data/wholesale_price_store.dart';
 import '../../features/storefront/domain/repositories/auth_session_port.dart';
 import '../../features/storefront/domain/repositories/cart_repository.dart';
 import '../../features/storefront/domain/repositories/catalog_repository.dart';
@@ -48,6 +49,7 @@ import '../../features/storefront/domain/repositories/orders_repository.dart';
 import '../../features/storefront/domain/repositories/recent_searches_store.dart';
 import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
+import '../../features/storefront/domain/repositories/wholesale_price_source.dart';
 import '../../features/storefront/domain/repositories/wishlist_repository.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/support/data/local_support_repository.dart';
@@ -109,17 +111,12 @@ Future<void> configureDependencies() async {
     // on these, not the ~20-method facade. One shared instance behind all
     // registrations — the facade implements every narrow port, so this is
     // a typed view, not a second repository.
-    ..registerLazySingleton<AdminReviewsPort>(
-        () => getIt<AdminRepository>())
-    ..registerLazySingleton<AdminCouponsPort>(
-        () => getIt<AdminRepository>())
-    ..registerLazySingleton<AdminCustomersPort>(
-        () => getIt<AdminRepository>())
-    ..registerLazySingleton<AdminSalesPort>(
-        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminReviewsPort>(() => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCouponsPort>(() => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCustomersPort>(() => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminSalesPort>(() => getIt<AdminRepository>())
     ..registerLazySingleton<AdminOrdersPort>(() => getIt<AdminRepository>())
-    ..registerLazySingleton<AdminCatalogPort>(
-        () => getIt<AdminRepository>())
+    ..registerLazySingleton<AdminCatalogPort>(() => getIt<AdminRepository>())
     ..registerLazySingleton<AuthRepository>(
         () => SupabaseAuthRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ProfileRepository>(
@@ -211,6 +208,10 @@ Future<void> configureDependencies() async {
         () => SupabaseCouponsRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ReviewsRepository>(
         () => SupabaseReviewsRepository(client: getIt<SupabaseClient>()))
+    // B2B (078): wholesale price-list reader — RLS-gated server-side;
+    // the client only queries it for wholesale-member sessions.
+    ..registerLazySingleton<WholesalePriceSource>(
+        () => SupabaseWholesalePriceSource(getIt<SupabaseClient>()))
     // §11: first-party funnel analytics (fail-silent).
     ..registerLazySingleton<AnalyticsService>(() => AnalyticsService(
         sink: SupabaseAnalyticsSink(client: getIt<SupabaseClient>())))

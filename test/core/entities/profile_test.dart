@@ -12,6 +12,17 @@ void main() {
       expect(p.tier, MembershipTier.premium);
     });
 
+    test('wholesale row maps to MembershipTier.wholesale (078)', () {
+      final p = Profile.fromRow({
+        'id': 'u1',
+        'full_name': 'Ahmed',
+        'membership_tier': 'wholesale',
+      });
+      expect(p.tier, MembershipTier.wholesale);
+      expect(
+          membershipTierFromServerValue('wholesale'), MembershipTier.wholesale);
+    });
+
     test('missing column (pre-046 deployment) maps to standard', () {
       final p = Profile.fromRow({'id': 'u1', 'full_name': 'Ahmed'});
       expect(p.tier, MembershipTier.standard);

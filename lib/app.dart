@@ -23,6 +23,7 @@ import 'features/storefront/domain/repositories/catalog_repository.dart';
 import 'features/storefront/domain/repositories/orders_repository.dart';
 import 'features/storefront/domain/repositories/recent_searches_store.dart';
 import 'features/storefront/domain/repositories/recently_viewed_store.dart';
+import 'features/storefront/domain/repositories/wholesale_price_source.dart';
 import 'features/storefront/domain/repositories/wishlist_repository.dart';
 import 'features/storefront/presentation/cubit/cart_cubit.dart';
 import 'features/storefront/presentation/cubit/catalog_cubit.dart';
@@ -78,6 +79,9 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _cartCubit = CartCubit(
       getIt<CartRepository>(),
       productLookup: getIt<CatalogRepository>().findProductById,
+      // B2B (078): negotiated prices ride on live fetches; the cart
+      // re-attaches them for wholesale sessions (restore + tier mirror).
+      wholesalePrices: getIt<WholesalePriceSource>(),
     );
     _authCubit = AuthCubit(
       authRepository: getIt<AuthRepository>(),
@@ -109,6 +113,11 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _authSub = _authCubit.stream.listen((auth) {
       _cartCubit.setPremiumMember(
         isPremium: auth.profile?.tier == MembershipTier.premium,
+      );
+      // B2B (078): attach/strip negotiated price lists with the tier —
+      // metered line totals must match the server's cross-check.
+      _cartCubit.setWholesaleViewer(
+        isWholesale: auth.profile?.tier == MembershipTier.wholesale,
       );
       // Sign-in transition (guest → authenticated): pull + union-merge the
       // server wishlist. Sign-out keeps the local list (existing guest

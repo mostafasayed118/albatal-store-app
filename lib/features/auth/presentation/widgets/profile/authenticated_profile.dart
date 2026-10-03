@@ -62,6 +62,24 @@ class AuthenticatedProfile extends StatelessWidget {
               ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ],
+      // B2B (078): wholesale badge — admins assign the tier, the server
+      // resolves negotiated list prices. Emerald accent (brand primary)
+      // to read as a business account next to the gold premium badge.
+      if (profile?.tier == MembershipTier.wholesale) ...[
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.storefront_outlined,
+                size: 18, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Text(
+              l.wholesaleMember,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.primary, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ],
       const SizedBox(height: 16),
       ListTile(
         leading: const Icon(Icons.receipt_long_outlined),

@@ -124,4 +124,57 @@ void main() {
       expect(sample, isNot(regular));
     });
   });
+
+  group('wholesale list-price parity (078)', () {
+    test('effectiveBasePrice falls back to the catalog price', () {
+      expect(_fabric().effectiveBasePrice, const Money(12000));
+      expect(_fabric().withWholesalePrice(const Money(8000)).effectiveBasePrice,
+          const Money(8000));
+    });
+
+    test('withWholesalePrice copies without touching the catalog price', () {
+      final base = _fabric();
+      final listed = base.withWholesalePrice(const Money(8000));
+      expect(listed.price, const Money(12000));
+      expect(listed.wholesalePrice, const Money(8000));
+      expect(listed.id, base.id);
+      expect(listed.stock, base.stock);
+      // null clears the list price (sign-out strip path).
+      expect(listed.withWholesalePrice(null).wholesalePrice, isNull);
+    });
+
+    test('metered estimate prices off the list price + ladder (server T4)', () {
+      // Server proof T4 (078 staging): list 8000/m, 12.5 m -> 5 % ladder
+      // stacks on the LIST base -> 8000*95/100 = 7600/m, 7600*12.5 = 95000.
+      final item = CartItem(
+        product: _fabric().withWholesalePrice(const Money(8000)),
+        color: 'Emerald',
+        length: '12.5',
+      );
+      expect(item.effectivePerMeterPrice, const Money(7600));
+      expect(item.effectiveLineTotal, const Money(95000));
+    });
+
+    test('fixed-size lines price at the list price for wholesale viewers', () {
+      final item = CartItem(
+        product: _fabric().withWholesalePrice(const Money(8000)),
+        color: 'Emerald',
+        length: '2m',
+        quantity: 2,
+      );
+      expect(item.effectiveLineTotal, const Money(16000));
+      // The core lineTotal keeps the catalog-price contract.
+      expect(item.lineTotal, const Money(24000));
+    });
+
+    test('absence of a list row keeps the legacy base-price math', () {
+      final item = CartItem(
+        product: _fabric().withWholesalePrice(null),
+        color: 'Emerald',
+        length: '12.5',
+      );
+      expect(item.effectivePerMeterPrice, const Money(11400));
+      expect(item.effectiveLineTotal, const Money(142500));
+    });
+  });
 }

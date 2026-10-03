@@ -656,6 +656,18 @@ abstract class AppLocalizations {
   /// **'Premium Member'**
   String get premiumMember;
 
+  /// No description provided for @wholesaleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Wholesale Partner'**
+  String get wholesaleMember;
+
+  /// No description provided for @wholesalePriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Wholesale price'**
+  String get wholesalePriceLabel;
+
   /// No description provided for @customer.
   ///
   /// In en, this message translates to:

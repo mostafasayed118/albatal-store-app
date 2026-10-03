@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../core/entities/profile.dart';
 import '../../../../shared/services/connectivity_gate.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../domain/repositories/recently_viewed_store.dart';
+import '../../domain/repositories/wholesale_price_source.dart';
 
 enum DetailsStatus { initial, loading, ready, notFound, error }
 
@@ -70,7 +74,7 @@ final class DetailsState extends Equatable {
 
 final class ProductDetailsCubit extends Cubit<DetailsState> {
   ProductDetailsCubit(this._catalogRepository,
-      {this.recentlyViewed, ConnectivityGate? gate})
+      {this.recentlyViewed, this.wholesalePrices, ConnectivityGate? gate})
       : _gate = gate,
         super(const DetailsState());
 
@@ -79,6 +83,11 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
   /// #3: app-scoped recently-viewed store. Null in widget tests that
   /// pump the page without the store registered (fail-soft probe).
   final RecentlyViewedStore? recentlyViewed;
+
+  /// B2B (078): wholesale price-list reader. Null in widget tests /
+  /// pre-DI harnesses — the page then never surfaces negotiated prices.
+  /// Only consulted when [loadProduct] receives a wholesale viewer tier.
+  final WholesalePriceSource? wholesalePrices;
 
   /// Optional connectivity truth (Task #8). Null keeps the legacy
   /// online-assumption behaviour for existing test seams.
@@ -96,7 +105,12 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
   /// Falls back to the full [fetchProducts] scan if the single fetch fails.
   /// Related products come from the category-scoped [fetchRelated] query —
   /// never the full catalog pull.
-  Future<void> loadProduct(String id) async {
+  ///
+  /// [viewerTier] drives the B2B price-list fetch (078): a wholesale
+  /// member's product is re-emitted carrying the negotiated list price so
+  /// every downstream estimate (CTA, metered line, cart) matches the
+  /// totals the server validates. Everyone else skips the query entirely.
+  Future<void> loadProduct(String id, {MembershipTier? viewerTier}) async {
     final generation = ++_generation;
     final offline = _gate?.current == false;
     emit(DetailsState(status: DetailsStatus.loading, isOffline: offline));
@@ -127,6 +141,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
         }
         if (isClosed || generation != _generation) return;
         emit(_readyState(singleProduct, related, offline: offline));
+        unawaited(_attachWholesalePrice(singleProduct, viewerTier, generation));
         return;
       }
 
@@ -147,6 +162,7 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
                   (x) => x.category == product.category && x.id != product.id)
               .toList();
           emit(_readyState(product, related, offline: offline));
+          unawaited(_attachWholesalePrice(product, viewerTier, generation));
         },
         // No raw-message payload: the page renders the localized
         // FeedbackView(error) from the status alone (audit 2026-09-21 -
@@ -166,6 +182,34 @@ final class ProductDetailsCubit extends Cubit<DetailsState> {
         status: DetailsStatus.error,
         isOffline: offline,
       ));
+    }
+  }
+
+  /// B2B (078): fetch the viewer's negotiated price for [product] and
+  /// re-emit it carrying [Product.wholesalePrice]. Fire-and-forget after
+  /// the ready emit — the page paints catalog prices immediately, then
+  /// the wholesale price lands (generation-guarded against A→B races;
+  /// a stale continuation can never re-price the wrong product).
+  Future<void> _attachWholesalePrice(
+    Product product,
+    MembershipTier? viewerTier,
+    int generation,
+  ) async {
+    final store = wholesalePrices;
+    if (store == null || viewerTier != MembershipTier.wholesale) return;
+    try {
+      final prices = await store.fetchWholesalePrices([product.id]);
+      if (isClosed || generation != _generation) return;
+      final price = prices[product.id];
+      final current = state.product;
+      // Guard both staleness axes: a newer loadProduct replaced the
+      // product, or the price-list row simply does not exist (absence
+      // means "resolve as usual" — no re-emit, no clobber).
+      if (price == null || current == null || current.id != product.id) return;
+      emit(state.copyWith(product: current.withWholesalePrice(price)));
+    } catch (e) {
+      if (isClosed || generation != _generation) return;
+      Log.w('Wholesale price attach failed.', error: e);
     }
   }
 

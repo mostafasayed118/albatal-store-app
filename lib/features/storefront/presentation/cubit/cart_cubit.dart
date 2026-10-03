@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
@@ -8,6 +10,7 @@ import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/services/logger.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
 import '../../domain/repositories/cart_repository.dart';
+import '../../domain/repositories/wholesale_price_source.dart';
 
 enum CartStatus { initial, loading, ready, error }
 
@@ -57,11 +60,22 @@ final class CartState extends Equatable {
 }
 
 final class CartCubit extends Cubit<CartState> {
-  CartCubit(this._repository, {ProductLookup? productLookup})
+  CartCubit(this._repository,
+      {ProductLookup? productLookup, this.wholesalePrices})
       : _productLookup = productLookup,
         super(const CartState([]));
 
   final CartRepository _repository;
+
+  /// B2B (078): wholesale price-list reader. Null in tests / pre-DI
+  /// harnesses — cart estimates then always price at catalog values.
+  final WholesalePriceSource? wholesalePrices;
+
+  /// Whether the signed-in viewer is a wholesale member (mirrored from
+  /// AuthCubit — see [setWholesaleViewer]). Cubit-private: unlike
+  /// [CartState.isPremiumMember] it drives no estimate math itself, it
+  /// only gates the negotiated price attach/strip.
+  bool _isWholesaleViewer = false;
 
   /// Mirror the signed-in customer's membership tier into the estimate
   /// math (see [CartState.isPremiumMember]). Fired from AuthCubit state
@@ -69,6 +83,22 @@ final class CartCubit extends Cubit<CartState> {
   void setPremiumMember({required bool isPremium}) {
     if (state.isPremiumMember == isPremium) return;
     emit(state.copyWith(isPremiumMember: isPremium));
+  }
+
+  /// Mirror the wholesale tier (078) and keep the cart lines priced in
+  /// parity with the server: attaching the negotiated list price makes
+  /// every metered `line_total` the client submits match the RPC's
+  /// cross-check; stripping on non-wholesale sessions prevents a
+  /// wholesale member's in-session prices from surviving a sign-out on
+  /// a shared device.
+  void setWholesaleViewer({required bool isWholesale}) {
+    if (_isWholesaleViewer == isWholesale) return;
+    _isWholesaleViewer = isWholesale;
+    if (isWholesale) {
+      unawaited(_attachWholesalePrices());
+    } else {
+      _stripWholesalePrices();
+    }
   }
 
   /// Resolves a product id to a [Product] when restoring the cart.
@@ -95,6 +125,11 @@ final class CartCubit extends Cubit<CartState> {
           emit(CartState(value,
               status: CartStatus.ready,
               isPremiumMember: state.isPremiumMember));
+          // 078: restored products resolve through [productLookup] (live
+          // catalog / cache) and never carry a wholesale price — re-attach
+          // so persisted metered lines keep passing the server's
+          // line-total cross-check after a restart.
+          if (_isWholesaleViewer) unawaited(_attachWholesalePrices());
         } else {
           // Keep the user's live items; just leave loading state.
           emit(state.copyWith(status: CartStatus.ready));
@@ -106,6 +141,58 @@ final class CartCubit extends Cubit<CartState> {
         Log.w('Cart restore failed', category: LogCategory.cubit, error: error);
         emit(state.copyWith(status: CartStatus.error));
     }
+  }
+
+  /// Re-price cart lines with the viewer's negotiated list prices (078).
+  /// Reads [state.items] AFTER the fetch so an add/remove during the
+  /// round-trip is included, not clobbered; emits only when something
+  /// actually changed. The source fails soft (empty map) — absence of a
+  /// price means the line keeps resolving as usual.
+  Future<void> _attachWholesalePrices() async {
+    final source = wholesalePrices;
+    if (source == null || !_isWholesaleViewer) return;
+    final ids = state.items.map((item) => item.product.id).toSet();
+    if (ids.isEmpty) return;
+    final prices = await source.fetchWholesalePrices(ids);
+    // Tier re-check AFTER the fetch (M1): a sign-out / downgrade during
+    // the round-trip must not re-attach prices onto the stripped cart.
+    if (isClosed || !_isWholesaleViewer || prices.isEmpty) return;
+    var changed = false;
+    final items = state.items.map((item) {
+      final price = prices[item.product.id];
+      if (price == null || item.product.wholesalePrice == price) return item;
+      changed = true;
+      return CartItem(
+        product: item.product.withWholesalePrice(price),
+        color: item.color,
+        length: item.length,
+        quantity: item.quantity,
+        sample: item.sample,
+      );
+    }).toList();
+    if (isClosed || !changed) return;
+    emit(state.copyWith(items: items));
+  }
+
+  /// Clear injected wholesale prices (sign-out / non-wholesale session on
+  /// a shared device): lines fall back to catalog-price estimates. Sync —
+  /// the strip must land before any checkout the ex-viewer can start.
+  void _stripWholesalePrices() {
+    final items = state.items;
+    if (!items.any((item) => item.product.wholesalePrice != null)) return;
+    emit(state.copyWith(
+      items: items
+          .map((item) => item.product.wholesalePrice == null
+              ? item
+              : CartItem(
+                  product: item.product.withWholesalePrice(null),
+                  color: item.color,
+                  length: item.length,
+                  quantity: item.quantity,
+                  sample: item.sample,
+                ))
+          .toList(),
+    ));
   }
 
   void add(Product product,
@@ -123,6 +210,11 @@ final class CartCubit extends Cubit<CartState> {
     } else {
       update(item.key, old.quantity + qty);
     }
+    // 078 (M2): a wholesale viewer's new line must not stay catalog-priced
+    // when the details-page attach missed it (fail-soft error, offline
+    // transition) — the fetch re-reads state after the round-trip, so
+    // this heals the line without clobbering concurrent edits.
+    if (_isWholesaleViewer) unawaited(_attachWholesalePrices());
   }
 
   /// Add a swatch/sample line for [product]. One sample per color:
@@ -142,6 +234,7 @@ final class CartCubit extends Cubit<CartState> {
     if (state.items.any((existing) => existing.key == item.key)) return;
     _emitAndPersist(
         CartState([...state.items, item], status: CartStatus.ready));
+    if (_isWholesaleViewer) unawaited(_attachWholesalePrices());
   }
 
   void update(String key, int quantity) => _emitAndPersist(CartState(

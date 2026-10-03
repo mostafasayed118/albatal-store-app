@@ -34,6 +34,7 @@ final class Product extends Equatable {
     this.remnants = const {},
     this.rating = 0.0,
     this.reviewCount = 0,
+    this.wholesalePrice,
   });
 
   final String id, name, category;
@@ -80,6 +81,55 @@ final class Product extends Equatable {
   final double rating;
   final int reviewCount;
 
+  /// Negotiated B2B unit price for wholesale members (migration 078,
+  /// `wholesale_price_lists.price_minor`). Null for every other viewer:
+  /// RLS exposes list rows to wholesale members (+ admins) only, so this
+  /// field is populated exclusively from an authorized fetch — it can
+  /// never leak into the public catalog. The server resolves
+  /// `COALESCE(list, override, base)`; the client mirrors the list term
+  /// through [effectiveBasePrice] so local estimates match the totals
+  /// the checkout RPC validates against.
+  final Money? wholesalePrice;
+
+  /// The per-unit price the server charges THIS viewer (078 resolution
+  /// order, client-visible terms): the wholesale list price when one was
+  /// fetched for a wholesale member, else the catalog price. All client
+  /// pricing math must read this — never [price] directly — or metered
+  /// checkout fails the server's `line_total` cross-check for wholesale
+  /// members on products with a list row.
+  Money get effectiveBasePrice => wholesalePrice ?? price;
+
+  /// Returns a copy of this product carrying [price] as the wholesale
+  /// list price (null clears it). Single-purpose copy point: the core
+  /// entity has no general copyWith, and the storefront injects fetched
+  /// list prices without re-decoding the whole row.
+  Product withWholesalePrice(Money? price) => Product(
+        id: id,
+        name: name,
+        category: category,
+        price: this.price,
+        oldPrice: oldPrice,
+        imageColor: imageColor,
+        imageAsset: imageAsset,
+        images: images,
+        description: description,
+        composition: composition,
+        care: care,
+        origin: origin,
+        widthCm: widthCm,
+        gsm: gsm,
+        sellByLength: sellByLength,
+        minCutMeters: minCutMeters,
+        sizes: sizes,
+        colors: colors,
+        colorName: colorName,
+        stock: stock,
+        remnants: remnants,
+        rating: rating,
+        reviewCount: reviewCount,
+        wholesalePrice: price,
+      );
+
   int? get discountPercent {
     final original = oldPrice;
     if (original == null || original.minorUnits == 0) return null;
@@ -123,6 +173,7 @@ final class Product extends Equatable {
         remnants,
         rating,
         reviewCount,
+        wholesalePrice,
       ];
 }
 

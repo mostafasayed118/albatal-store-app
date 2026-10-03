@@ -23,12 +23,28 @@ class CustomerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = context.l10n;
     // Typed tier decode (shared with ProfileCodec.fromRow) instead of a raw
-    // `== 'premium'` string compare scattered through the UI.
-    final isPremium = membershipTierFromServerValue(order.customerTier) ==
-        MembershipTier.premium;
-    final accent = isPremium
-        ? AppColors.gold
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+    // `== 'premium'` string compare scattered through the UI. 078: the
+    // vocabulary is three-valued now — the switch keeps every tier
+    // explicit so a new enum value cannot silently render as standard.
+    final scheme = Theme.of(context).colorScheme;
+    final (icon, label, accent) =
+        switch (membershipTierFromServerValue(order.customerTier)) {
+      MembershipTier.premium => (
+          Icons.workspace_premium,
+          l.premiumMember,
+          AppColors.gold
+        ),
+      MembershipTier.wholesale => (
+          Icons.storefront_outlined,
+          l.wholesaleMember,
+          AppColors.primary
+        ),
+      MembershipTier.standard => (
+          Icons.person_outline,
+          l.standardMember,
+          scheme.onSurfaceVariant
+        ),
+    };
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -41,14 +57,10 @@ class CustomerCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  isPremium ? Icons.workspace_premium : Icons.person_outline,
-                  size: 18,
-                  color: accent,
-                ),
+                Icon(icon, size: 18, color: accent),
                 const SizedBox(width: 6),
                 Text(
-                  isPremium ? l.premiumMember : l.standardMember,
+                  label,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: accent,
                         fontWeight: FontWeight.w600,

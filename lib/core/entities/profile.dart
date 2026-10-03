@@ -5,15 +5,28 @@ import '../utils/safe_parse.dart';
 /// Customer membership tier. Server-managed: only admins can change it
 /// (migration 046 — `admin_set_membership_tier`), so the client treats it
 /// as display data and never writes it through profile upserts.
-enum MembershipTier { standard, premium }
+///
+/// `wholesale` (migration 078) is the B2B tier: admins assign it, and the
+/// server resolves negotiated list prices for wholesale members
+/// (`wholesale_price_lists`). Never send it through self-service writes —
+/// RLS pins privileged columns either way.
+enum MembershipTier { standard, premium, wholesale }
 
-/// Parses the server's tier string (`'standard' | 'premium'`) into the
-/// typed enum, degrading to [MembershipTier.standard] for null or
+/// Parses the server's tier string (`'standard' | 'premium' | 'wholesale'`)
+/// into the typed enum, degrading to [MembershipTier.standard] for null or
 /// unknown values — the same fail-soft contract as [Profile.fromRow].
 /// One shared decoder so the admin detail page and profile reads agree
 /// on what a tier string means instead of scattering `== 'premium'`.
-MembershipTier membershipTierFromServerValue(String? raw) =>
-    raw == 'premium' ? MembershipTier.premium : MembershipTier.standard;
+MembershipTier membershipTierFromServerValue(String? raw) {
+  switch (raw) {
+    case 'premium':
+      return MembershipTier.premium;
+    case 'wholesale':
+      return MembershipTier.wholesale;
+    default:
+      return MembershipTier.standard;
+  }
+}
 
 /// Customer profile entity.
 final class Profile extends Equatable {

@@ -44,10 +44,12 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
   /// Localised tier name for a raw column value. Unknown values fall back
   /// to the standard label, matching the order-detail customer card.
-  String _tierLabel(String raw) =>
-      membershipTierFromServerValue(raw) == MembershipTier.premium
-          ? context.l10n.premiumMember
-          : context.l10n.standardMember;
+  /// 078: exhaustive over the three-value tier vocabulary.
+  String _tierLabel(String raw) => switch (membershipTierFromServerValue(raw)) {
+        MembershipTier.premium => context.l10n.premiumMember,
+        MembershipTier.wholesale => context.l10n.wholesaleMember,
+        MembershipTier.standard => context.l10n.standardMember,
+      };
 
   /// Opens the shared tier picker for [customer] and persists a real change.
   ///

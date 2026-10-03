@@ -40,7 +40,10 @@ Future<String?> showMembershipTierDialog(
             children: [
               // Radio values are the enum's own names: the tier vocabulary
               // has one source of truth (core MembershipTier), not a second
-              // copy of the wire strings here.
+              // copy of the wire strings here. `wholesale` (078) requires
+              // the migration applied server-side — the RPC rejects the
+              // value on older backends and the write surfaces its
+              // existing failure path.
               RadioListTile<String>(
                 value: MembershipTier.standard.name,
                 title: Text(l.standardMember),
@@ -48,6 +51,10 @@ Future<String?> showMembershipTierDialog(
               RadioListTile<String>(
                 value: MembershipTier.premium.name,
                 title: Text(l.premiumMember),
+              ),
+              RadioListTile<String>(
+                value: MembershipTier.wholesale.name,
+                title: Text(l.wholesaleMember),
               ),
             ],
           ),

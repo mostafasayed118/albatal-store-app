@@ -12,10 +12,15 @@ class NameAndPrice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context).textTheme;
+    // 078: wholesale members see their negotiated list price as THE price
+    // (injected into the product by the details cubit — only RLS-cleared
+    // viewers carry it). Everyone else sees the catalog price unchanged.
+    final isWholesalePrice = product.wholesalePrice != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(product.name, style: Theme.of(context).textTheme.headlineMedium),
+        Text(product.name, style: theme.headlineMedium),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -25,11 +30,11 @@ class NameAndPrice extends StatelessWidget {
             // price is never truncated; the discount chip below flexes
             // instead.
             PriceText(
-              product.price,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+              product.effectiveBasePrice,
+              style: theme.labelLarge?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
               showStrikeThrough: product.oldPrice != null,
               strikeThroughAmount: product.oldPrice,
             ),
@@ -49,6 +54,20 @@ class NameAndPrice extends StatelessWidget {
             ],
           ],
         ),
+        if (isWholesalePrice) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.storefront_outlined, size: 14, color: scheme.primary),
+              const SizedBox(width: 4),
+              Text(
+                context.l10n.wholesalePriceLabel,
+                style:
+                    theme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
