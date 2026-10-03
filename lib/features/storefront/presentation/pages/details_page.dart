@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/product.dart';
+import '../../../../core/entities/profile.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
@@ -17,9 +18,11 @@ import '../../../../shared/services/product_share_service.dart';
 import '../../../../shared/services/share_service.dart';
 import '../../../../shared/services/whatsapp_share_service.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../domain/repositories/recently_viewed_store.dart';
 import '../../domain/repositories/reviews_repository.dart';
+import '../../domain/repositories/wholesale_price_source.dart';
 import '../cubit/product_details_cubit.dart';
 import '../widgets/add_to_cart_button.dart';
 import '../widgets/back_in_stock_toggle.dart';
@@ -50,6 +53,7 @@ class DetailsPage extends StatelessWidget {
     this.reviewsRepository,
     this.recentlyViewed,
     this.imageCompressor,
+    this.wholesalePrices,
     ConnectivityGate? gate,
   })  : _catalogRepository = catalogRepository,
         _gate = gate;
@@ -57,6 +61,23 @@ class DetailsPage extends StatelessWidget {
   final String id;
   final CatalogRepository _catalogRepository;
   final ConnectivityGate? _gate;
+
+  /// B2B (078): the viewer's tier for the price-list fetch, read at load
+  /// time (the tier is admin-managed — it never changes mid-page). Null
+  /// when no AuthCubit sits above this tree (pre-DI widget tests): the
+  /// page then behaves exactly like a guest — no list-price query.
+  static MembershipTier? _viewerTierOf(BuildContext context) {
+    try {
+      return context.read<AuthCubit>().state.profile?.tier;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// B2B (078): wholesale price-list reader. Null in widget tests that
+  /// pump the page pre-DI (fail-soft) — the page then always renders
+  /// catalog prices.
+  final WholesalePriceSource? wholesalePrices;
 
   /// #13: WhatsApp-first share service (wa.me universal link), resolved
   /// at the composition root — the page never service-locates.
@@ -102,11 +123,15 @@ class DetailsPage extends StatelessWidget {
     return BlocProvider(
       // #3: record the view into the app-scoped store injected at the
       // composition root; null in widget tests that pump pre-DI.
-      create: (_) => ProductDetailsCubit(
+      create: (context) => ProductDetailsCubit(
         _catalogRepository,
         gate: _gate,
         recentlyViewed: recentlyViewed,
-      )..loadProduct(id),
+        wholesalePrices: wholesalePrices,
+      )
+        // B2B (078): the tier is read once per load — it is admin-managed
+        // and never changes mid-page, so no subscription is needed.
+        ..loadProduct(id, viewerTier: _viewerTierOf(context)),
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
       // gallery or the related strip.
@@ -145,12 +170,14 @@ class DetailsPage extends StatelessWidget {
               // not a product error — offer the offline notice + retry.
               body: s.isOffline
                   ? OfflineCatalogView(
-                      onRetry: () =>
-                          context.read<ProductDetailsCubit>().loadProduct(id))
+                      onRetry: () => context
+                          .read<ProductDetailsCubit>()
+                          .loadProduct(id, viewerTier: _viewerTierOf(context)))
                   : FeedbackView(
                       type: FeedbackViewType.error,
-                      onAction: () =>
-                          context.read<ProductDetailsCubit>().loadProduct(id),
+                      onAction: () => context
+                          .read<ProductDetailsCubit>()
+                          .loadProduct(id, viewerTier: _viewerTierOf(context)),
                     ),
             );
           }

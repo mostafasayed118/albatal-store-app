@@ -31,16 +31,18 @@ class AddToCartButton extends StatelessWidget {
     // Stitch CTA shows the live line total (unit price × quantity), like
     // "Add to Cart - EGP 1,700"; falls back to the plain label when the
     // product carries no price yet. Metered fabrics price per meter:
-    // tiered per-meter × cut meters × quantity (Wave C).
+    // tiered per-meter × cut meters × quantity (Wave C). Both branches
+    // price off the effective base (078: wholesale list price parity —
+    // the server cross-checks metered line totals against it).
     final meters = p.sellByLength ? double.tryParse(state.length) : null;
     final lineTotal = meters != null
         ? meteredLineTotalWithTier(
-            p.price,
+            p.effectiveBasePrice,
             meters,
             tierDiscountPercent(meters),
             quantity: state.quantity,
           )
-        : p.price * state.quantity;
+        : p.effectiveBasePrice * state.quantity;
     final label = state.inStock && lineTotal.minorUnits > 0
         ? l.addToCartTotal(moneyText(l, lineTotal))
         : (state.inStock ? l.addToCart : l.outOfStock);
@@ -60,53 +62,52 @@ class AddToCartButton extends StatelessWidget {
               icon: const Icon(Icons.palette_outlined),
               label: Text(l.orderSample),
               onPressed: () {
-                context
-                    .read<CartCubit>()
-                    .addSample(p, color: state.color);
+                context.read<CartCubit>().addSample(p, color: state.color);
                 showConfirmation(context, l.sampleAdded);
               },
             ),
             const SizedBox(height: 8),
           ],
           FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: state.inStock ? scheme.secondary : scheme.outline,
-          foregroundColor:
-              state.inStock ? scheme.onSecondary : scheme.onSurfaceVariant,
-          // DESIGN CTA contract: 50px minimum touch height.
-          minimumSize: const Size.fromHeight(50),
-          shape: const RoundedRectangleBorder(
-              borderRadius: AppTheme.controlRadius),
-        ),
-        onPressed: state.inStock
-            ? () {
-                context.read<CartCubit>().add(p,
-                    color: state.color,
-                    length: state.length,
-                    quantity: state.quantity);
-                // Same acknowledgment vocabulary as the home flash-sale
-                // add: physical tick + floating confirmation.
-                showConfirmation(context, l.addedToCart);
-              }
-            : null,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.shopping_bag_outlined),
-            const SizedBox(width: 8),
-            // Flexible + ellipsis: at large text scales (1.4×) the live
-            // line total yields width to the icon instead of overflowing
-            // the CTA row; unchanged at the default scale.
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                softWrap: false,
-              ),
+            style: FilledButton.styleFrom(
+              backgroundColor:
+                  state.inStock ? scheme.secondary : scheme.outline,
+              foregroundColor:
+                  state.inStock ? scheme.onSecondary : scheme.onSurfaceVariant,
+              // DESIGN CTA contract: 50px minimum touch height.
+              minimumSize: const Size.fromHeight(50),
+              shape: const RoundedRectangleBorder(
+                  borderRadius: AppTheme.controlRadius),
             ),
-          ],
-        ),
+            onPressed: state.inStock
+                ? () {
+                    context.read<CartCubit>().add(p,
+                        color: state.color,
+                        length: state.length,
+                        quantity: state.quantity);
+                    // Same acknowledgment vocabulary as the home flash-sale
+                    // add: physical tick + floating confirmation.
+                    showConfirmation(context, l.addedToCart);
+                  }
+                : null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.shopping_bag_outlined),
+                const SizedBox(width: 8),
+                // Flexible + ellipsis: at large text scales (1.4×) the live
+                // line total yields width to the icon instead of overflowing
+                // the CTA row; unchanged at the default scale.
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

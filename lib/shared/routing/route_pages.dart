@@ -42,6 +42,7 @@ import '../../features/storefront/domain/repositories/checkout_repository.dart';
 import '../../features/storefront/domain/repositories/coupons_repository.dart';
 import '../../features/storefront/domain/repositories/recently_viewed_store.dart';
 import '../../features/storefront/domain/repositories/reviews_repository.dart';
+import '../../features/storefront/domain/repositories/wholesale_price_source.dart';
 import '../../features/storefront/domain/usecases/place_checkout_order_usecase.dart';
 import '../../features/storefront/presentation/pages/cart_page.dart';
 import '../../features/storefront/presentation/pages/catalog_page.dart';
@@ -120,6 +121,9 @@ abstract final class RoutePages {
             : null,
         recentlyViewed: getIt.isRegistered<RecentlyViewedStore>()
             ? getIt<RecentlyViewedStore>()
+            : null,
+        wholesalePrices: getIt.isRegistered<WholesalePriceSource>()
+            ? getIt<WholesalePriceSource>()
             : null,
       );
 

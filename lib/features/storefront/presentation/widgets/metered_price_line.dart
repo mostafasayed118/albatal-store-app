@@ -22,7 +22,9 @@ class MeteredPriceLine extends StatelessWidget {
     final meters = double.tryParse(state.length);
     if (meters == null) return const SizedBox.shrink();
     final total = meteredLineTotalWithTier(
-      product.price,
+      // 078: wholesale members price off the negotiated list price —
+      // the RPC cross-checks exactly this math.
+      product.effectiveBasePrice,
       meters,
       tierDiscountPercent(meters),
       quantity: state.quantity,

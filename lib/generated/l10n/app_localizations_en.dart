@@ -295,6 +295,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumMember => 'Premium Member';
 
   @override
+  String get wholesaleMember => 'Wholesale Partner';
+
+  @override
+  String get wholesalePriceLabel => 'Wholesale price';
+
+  @override
   String get customer => 'Customer';
 
   @override

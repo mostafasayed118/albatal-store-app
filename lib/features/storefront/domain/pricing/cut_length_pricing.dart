@@ -89,23 +89,28 @@ extension CartItemPricing on CartItem {
       product.sellByLength ? double.tryParse(length) : null;
 
   /// Per-meter price after the wholesale tier for this line's meters,
-  /// or null for fixed-size / sample lines.
+  /// or null for fixed-size / sample lines. Prices off
+  /// [Product.effectiveBasePrice] so a wholesale member's metered
+  /// estimate matches the server's 078 `COALESCE(list, …)` base — the
+  /// RPC rejects a `line_total` computed from the catalog price when a
+  /// list row exists ('Metered price mismatch').
   Money? get effectivePerMeterPrice {
     final meters = cutMeters;
     if (meters == null) return null;
-    return tieredPerMeterPrice(product.price, meters);
+    return tieredPerMeterPrice(product.effectiveBasePrice, meters);
   }
 
   /// Client-side estimate of the line total used for cart/checkout
   /// display: zero for sample lines (server prices them), metered
-  /// tier math for sell-by-length lines, fixed math otherwise. The
-  /// server totals remain authoritative.
+  /// tier math for sell-by-length lines, fixed math otherwise. All
+  /// paths price off [Product.effectiveBasePrice] (wholesale parity).
+  /// The server totals remain authoritative.
   Money get effectiveLineTotal {
     if (sample) return Money.zero;
     final meters = cutMeters;
-    if (meters == null) return lineTotal;
+    if (meters == null) return product.effectiveBasePrice * quantity;
     return meteredLineTotalWithTier(
-      product.price,
+      product.effectiveBasePrice,
       meters,
       tierDiscountPercent(meters),
       quantity: quantity,

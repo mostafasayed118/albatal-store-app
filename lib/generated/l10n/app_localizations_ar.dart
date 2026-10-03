@@ -295,6 +295,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get premiumMember => 'عضو مميز';
 
   @override
+  String get wholesaleMember => 'شريك جملة';
+
+  @override
+  String get wholesalePriceLabel => 'سعر الجملة';
+
+  @override
   String get customer => 'العميل';
 
   @override

@@ -93,6 +93,8 @@
   "myOrders": "My Orders",
   "myProfile": "My Profile",
   "premiumMember": "Premium Member",
+  "wholesaleMember": "Wholesale Partner",
+  "wholesalePriceLabel": "Wholesale price",
   "customer": "Customer",
   "membershipTier": "Membership tier",
   "standardMember": "Standard Member",
