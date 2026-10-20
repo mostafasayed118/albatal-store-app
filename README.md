@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
 [![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
-![Tests](https://img.shields.io/badge/tests-1%2C247%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-75.0%25-yellowgreen)
+![Tests](https://img.shields.io/badge/tests-1%2C249%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-74.9%25-yellowgreen)
 
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
 
@@ -26,7 +26,8 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Wholesale (B2B)** — admin price-list management, tier-aware catalog pricing, and server-checked wholesale checkout
 - **Fabric tools** — remnant badges and filtering, fabric finder facets, fit recommendation, fabric samples and metered cut-length checkout
 - **Wishlist** — save products, move to cart, responsive grid, cloud sync for signed-in customers
-- **Orders** — order history with status timeline, order-status local notifications, branded invoice PDF (admin share)
+- **Orders** — order history with status timeline, branded invoice PDF (admin share)
+- **Notifications** — local order-status alerts plus server-dispatched email (Resend) and push (OneSignal) on order lifecycle changes
 - **Authentication** — email/password sign up, sign in, password reset, email verification, OAuth (Google/Apple); sign-in honors `?redirect=` so you return to checkout after logging in
 - **Security** — biometric app lock (opt-in), encrypted at-rest session storage, maintenance/forced-update gates via remote config
 - **Profiles** — display name, phone, order history, time-of-day greeting
@@ -286,7 +287,7 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-**1,247 Flutter tests** cover:
+**1,249 Flutter tests** cover:
 - Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin, Payments, Settings, Coupons, Reviews)
 - Product entity logic (stock, discount, inStock), coupon/membership contracts
 - SQL migration contract tests — the checkout RPC's server-owned pricing, premium perk, and coupon semantics are pinned against future rewrites

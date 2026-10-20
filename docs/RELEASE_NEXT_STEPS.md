@@ -97,18 +97,34 @@ APK** on every release run — no build work needed.
 
 ---
 
-## 3. Notification delivery (deferred T4)
+## 3. Notification delivery (email + push)
 
-`send-order-notification` currently only inserts rows into
-`notifications`. To make it real:
+The server-side dispatcher is **implemented and deployed** (migration 080):
+order inserts/status changes queue `send-order-notification` (Resend email)
+and `push-order-status` (OneSignal) through `pg_net`, using internal keys in
+Vault. Without provider keys both functions return
+`{ skipped: true, reason: "..._not_configured" }` — orders are never blocked.
 
-1. Create a Resend account (or any SMTP/transactional provider) → get API key
-2. `supabase secrets set RESEND_API_KEY=...` on BOTH projects
-3. Extend the function: after the notifications INSERT, POST to
-   `https://api.resend.com/emails` with the localized template
-4. Localized templates: the current 6 templates are hardcoded English —
-   port them to AR/EN pairs keyed off the order's locale
-5. Push notifications (FCM) remain a separate future work item
+Owner steps to make delivery live:
+
+1. **Email:** create a Resend account (or any transactional provider) and set
+   `RESEND_API_KEY`; verify a sending domain and set `RESEND_FROM` (defaults
+   to the Resend onboarding sender, which only delivers to the account owner).
+2. **Push:** create a OneSignal app; set `ONESIGNAL_APP_ID` and
+   `ONESIGNAL_REST_API_KEY` as Edge Function secrets on both projects, and
+   build the app with `--dart-define=ONESIGNAL_APP_ID=<app-id>`.
+3. The client calls `OneSignal.login(userId)` after sign-in (external id);
+   the server targets `include_external_user_ids`, so no player-id table is
+   needed.
+4. The internal keys (`NOTIFICATIONS_INTERNAL_KEY`,
+   `PUSH_ORDER_STATUS_INTERNAL_KEY`) are already provisioned in Edge secrets
+   and Vault on staging/production — keep the two values in sync if rotated.
+
+Localized email templates (en/ar) are in the function; the trigger passes the
+locale from `auth.users.raw_user_meta_data.locale` when present, defaulting to
+English.
+
+Push notifications (FCM direct) remain a separate future work item.
 
 ---
 

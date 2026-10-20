@@ -1,6 +1,18 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-20 (L1 full-project exploration + mechanical CI repairs)
+Last run: 2026-10-20 (wave 2: order notifications — email + push wired, applied, deployed)
+
+## New — 2026-10-20 (wave 2: notifications end-to-end + 079 live apply)
+
+- Owner supplied a fresh Supabase PAT and ordered the next wave. The old User-scope `SUPABASE_ACCESS_TOKEN` (unrelated `aladawyshop` account) was replaced at User scope; the new PAT transited chat — **rotate it**. Project access now resolves both albatal projects.
+- **079 applied live** with the new PAT: `db push --include-all` on staging (`zvpjng…`) and production (`alxwvy…`), each pushing only `079_lock_stock_restorations.sql`. Static proof via the Management API on BOTH: `stock_restorations`/`rate_limits` RLS on, 0 policies, 0 anon/authenticated/PUBLIC grants, service_role intact; `handle_new_user` secdef with `search_path=""`; `on_auth_user_created` attached; `update_order_status` secdef with `search_path=public, auth`. Staging link restored after the prod window.
+- **New 080_order_notification_dispatch.sql** (applied staging + prod): `dispatch_order_notification()` SECURITY DEFINER, `search_path=''`, outer exception handler that returns NEW (order transitions never block), Vault-held `PROJECT_URL` + both internal keys, pg_net posts to the two Edge Functions. Mapping: INSERT→order_placed email; paid→payment_confirmed email; processing→push; shipped/delivered/cancelled→email+push. Triggers: AFTER INSERT + AFTER UPDATE OF status (WHEN status changed). Proof script `supabase/tests/test_080_order_notification_dispatch.sql`.
+- **Functions:** `push-order-status` promoted from `_proposals` to an active function (internal-key auth, external user ids via `include_external_user_ids`, no player-id table, `push_not_configured` skip, 502 on provider failure); `send-order-notification` now delivers through Resend (en/ar templates, `email_not_configured` skip BEFORE insert, pending→sent/failed audit row, 502 on thrown/non-OK provider calls). `_shared/cors.ts` allows `x-internal-key`; config/CI/deploy scripts list 10 active functions.
+- **Live infra:** Edge secrets + Vault (`PROJECT_URL`, `NOTIFICATIONS_INTERNAL_KEY`, `PUSH_ORDER_STATUS_INTERNAL_KEY`) provisioned on staging and prod; both functions deployed to both projects. Probes: no key → 401; with key + unknown order → `{skipped:true}` (push) / `{skipped:true,reason:"email_not_configured"}` (email). Static proof: function + both triggers + Vault names present on both.
+- **Staging end-to-end trigger test:** temporary order inserted (email dispatch → 200 `email_not_configured`), status moved to processing (push dispatch → 200 `push_not_configured`), both responses observed in `net._http_response`, temp order deleted (remaining 0). No production test order created.
+- **Client:** `PushService.login/logout` (shared in-flight init, fail-silent) + `PushSdk` seam; `AuthState.userId` carries the session id even when the profile read fails; `app.dart` links/unlinks the OneSignal external id on auth transitions and restored sessions.
+- **External keys still absent (owner):** `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, `RESEND_API_KEY` (and a verified `RESEND_FROM`). Until set, email/push skip cleanly; the Flutter build also needs `--dart-define=ONESIGNAL_APP_ID=...`.
+- Evidence: `flutter analyze --no-pub` clean; `dart format` 0 changed; full **1,249/1,249**; coverage **74.9%** (9,665/12,896); Deno **108 passed**; combined migration artifact 79 markers (001–080). Commit/push pending at the time of writing.
 
 ## New — 2026-10-20 (L1 exploration: done vs missing; CI repair in working tree)
 
