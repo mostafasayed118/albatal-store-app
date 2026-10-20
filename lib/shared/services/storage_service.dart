@@ -175,12 +175,23 @@ class StorageService {
   /// the value actually put on the wire.
   static const productImageCacheSeconds = '31536000';
 
-  /// Width-bounded render URL for a product image (audit 2026-09-14 P0-4).
+  /// Image transformation (`/render/image`) is a plan-gated feature and is NOT
+  /// enabled on this tenant — the endpoint returns `403 FeatureNotEnabled`
+  /// ("feature not enabled for this tenant"), verified 2026-10-03. So product
+  /// images are served as the BARE public URL (the uploaded object as-is)
+  /// rather than a width-bounded render URL, which would 403 in-app. Flip this
+  /// to true only after enabling image transformation on the project (Pro
+  /// plan) to restore the original P0-4 width-bounded render design.
+  static const bool useImageTransformation = false;
+
+  /// Width-bounded URL for a product image (audit 2026-09-14 P0-4).
   ///
-  /// Serves the downsized variant instead of the full upload. Pass one of the
-  /// named budgets on this class rather than a literal: [gridImageWidth] for
+  /// When [useImageTransformation] is true this serves the server-side
+  /// downsized variant instead of the full upload. Pass one of the named
+  /// budgets on this class rather than a literal: [gridImageWidth] for
   /// list/card surfaces, [detailImageWidth] for the detail gallery — which the
   /// full-screen zoom view shares, so a product's photos are fetched once.
+  ///
   /// Falls back to the bare public URL when the path has no usable image
   /// extension (fail-open, same posture as `ImageCompressor`) so a bad path
   /// never breaks the image pipeline. Widths are allowlisted — arbitrary
@@ -193,6 +204,11 @@ class StorageService {
     final ext = dot >= 0 ? lower.substring(dot + 1) : '';
     const renderable = <String>{'jpg', 'jpeg', 'png', 'webp'};
     if (!renderable.contains(ext)) {
+      return getProductImageUrl(storagePath);
+    }
+    if (!useImageTransformation) {
+      // FeatureNotEnabled on this tenant (2026-10-03): the render endpoint
+      // 403s, so serve the bare public URL instead of a broken render URL.
       return getProductImageUrl(storagePath);
     }
     final base = getPublicUrlBase(storagePath);

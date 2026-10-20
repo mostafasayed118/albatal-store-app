@@ -111,6 +111,24 @@ void main() {
       expect(product.imageAsset, 'cdn:logo.svg');
     });
 
+    test(
+        'a renderable path serves the bare public URL while image '
+        'transformation is disabled (2026-10-03)', () {
+      final product = ProductCodec.fromRow(
+        _row([
+          {'storage_path': 'a.jpg', 'sort_order': 0},
+        ]),
+        const [],
+        storageService: _BareStorage(),
+      )!;
+
+      // `.jpg` is renderable, but image transformation is FeatureNotEnabled on
+      // this tenant, so the real helper serves the bare public URL — NOT a
+      // /render/image URL that would 403 in-app.
+      expect(product.images, ['cdn:a.jpg']);
+      expect(product.imageAsset, 'cdn:a.jpg');
+    });
+
     test('no usable image leaves both surfaces empty', () {
       final storage = _WidthRecordingStorage();
       final product = ProductCodec.fromRow(
