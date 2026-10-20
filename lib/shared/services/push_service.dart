@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'env_config.dart';
@@ -32,7 +33,12 @@ final class OneSignalSdk implements PushSdk {
   const OneSignalSdk();
 
   @override
-  Future<void> initialize(String appId) => OneSignal.initialize(appId);
+  Future<void> initialize(String appId) {
+    if (kDebugMode) {
+      OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+    }
+    return OneSignal.initialize(appId);
+  }
 
   @override
   Future<void> login(String externalId) => OneSignal.login(externalId);

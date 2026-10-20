@@ -1,6 +1,16 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-20 (wave 2: order notifications — email + push wired, applied, deployed)
+Last run: 2026-10-21 (OneSignal App ID wired + device proof; FCM service account pending)
+
+## New — 2026-10-21 (OneSignal client integration: App ID wired, device-tested)
+
+- Owner created a OneSignal app and supplied the public App ID `7e13d554-5760-46b6-b11a-d347549cc8ea`; ordered the SDK integration.
+- **Config:** `ONESIGNAL_APP_ID` added to `config/env.staging.json` + `config/env.production.json` (public, committed), both gitignored `*.local.json` files, and the CI `android-release` build-time env (repo variable override with the literal fallback). Documented in `config/README.md` + `docs/configuration.md`. Edge secret `ONESIGNAL_APP_ID` set on staging + production.
+- **Permission flow corrected to OneSignal guidance:** `NotificationService.init()` no longer prompts at launch; new `requestPermission()` is called only from the user-initiated Settings notification toggle (`SettingsCubit.toggleOrderNotifications(true)`), wired at the composition root. Debug builds set OneSignal verbose logging.
+- **Device proof:** built `app-debug.apk` with `--dart-define-from-file=config/env.staging.local.json`, installed on the connected Infinix X6882 (Android 14 / API 34). Logcat shows the OneSignal SDK init at app start (`sdkVersion=051000`, `app=com.albatal.elite@0.1.0`) and **`Missing Google Project number!`** — the App ID is present (no "push disabled" log), but the OneSignal app has no FCM Service Account configured yet, so no subscription/token exists.
+- **Still owner-gated:** upload the Firebase Service Account JSON in OneSignal → Settings → Push & In-App → Google Android (FCM); copy the app's **REST API Key** into the Edge secrets (`ONESIGNAL_REST_API_KEY`) on both projects; grant OS notification permission via Settings → order notifications (the toggle now asks). After that the device subscription appears under OneSignal → Audience → Subscriptions and server pushes can deliver.
+- Verification: `dart analyze` on the changed files → **No issues**; `flutter test test/shared/services/notifications_test.dart test/features/settings` → **17 passed** (incl. the new init-does-not-prompt pin); `dart format` clean. Full suite not rerun because a parallel session left untracked test files in `test/` (left untouched, not staged).
+- Commit/push pending at the time of writing.
 
 ## New — 2026-10-20 (wave 2: notifications end-to-end + 079 live apply)
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,15 +29,18 @@ final class SettingsCubit extends Cubit<SettingsState> {
   SettingsCubit(
     this._repository, {
     NotificationPrefsStore? notificationPrefs,
+    NotificationService? notifications,
     BiometricService? biometrics,
     AppLockPrefsStore? appLockStore,
   })  : _notificationPrefs = notificationPrefs,
+        _notifications = notifications,
         _biometrics = biometrics,
         _appLockStore = appLockStore,
         super(const SettingsState());
 
   final SettingsRepository _repository;
   final NotificationPrefsStore? _notificationPrefs;
+  final NotificationService? _notifications;
   final BiometricService? _biometrics;
   final AppLockPrefsStore? _appLockStore;
 
@@ -68,6 +73,11 @@ final class SettingsCubit extends Cubit<SettingsState> {
     final prefs = _notificationPrefs;
     if (prefs == null) return;
     prefs.setOrderNotifications(enabled);
+    // OS permission is requested only from this user-initiated opt-in.
+    final notifications = _notifications;
+    if (enabled && notifications != null) {
+      unawaited(notifications.requestPermission());
+    }
     emit(state.copyWith(orderNotifications: enabled));
   }
 

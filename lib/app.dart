@@ -230,6 +230,11 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                             getIt.isRegistered<NotificationPrefsStore>()
                                 ? getIt<NotificationPrefsStore>()
                                 : null,
+                        // Permission is requested from the user-initiated
+                        // toggle, never at launch (OneSignal guidance).
+                        notifications: getIt.isRegistered<NotificationService>()
+                            ? getIt<NotificationService>()
+                            : null,
                         // §15: the app-lock toggle lives in Settings and flows
                         // through this cubit (the page never touches DI), so the
                         // opt-in that arms [AppLockGate] is finally reachable.

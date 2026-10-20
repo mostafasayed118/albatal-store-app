@@ -145,12 +145,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID || '7e13d554-5760-46b6-b11a-d347549cc8ea' }}
         run: |
           cat > config/env.production.local.json << EOF
           {
             "SUPABASE_URL": "${SUPABASE_URL}",
             "SUPABASE_ANON_KEY": "${SUPABASE_ANON_KEY}",
-            "SENTRY_DSN": "${SENTRY_DSN}"
+            "SENTRY_DSN": "${SENTRY_DSN}",
+            "ONESIGNAL_APP_ID": "${ONESIGNAL_APP_ID}"
           }
           EOF
           echo "config/env.production.local.json written (values not logged)."

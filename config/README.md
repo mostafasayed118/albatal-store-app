@@ -17,6 +17,7 @@ time:
 | `SUPABASE_URL`      | yes (public)     | `config/env.*.json`     |
 | `SUPABASE_ANON_KEY` | yes (RLS-backed) | `config/env.*.json`     |
 | `SENTRY_DSN`        | yes (public id)  | `config/env.*.json`     |
+| `ONESIGNAL_APP_ID`  | yes (public id)  | `config/env.*.json`     |
 
 The following are **never** present in the Flutter build and must only
 live in Supabase Edge Function secrets (`supabase functions secrets set`):

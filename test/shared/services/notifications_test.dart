@@ -18,6 +18,9 @@ class _RecordingService implements NotificationService {
   Future<void> init() async {}
 
   @override
+  Future<void> requestPermission() async {}
+
+  @override
   Future<void> showOrderNotification({
     required String title,
     required String body,
@@ -105,7 +108,7 @@ void main() {
     });
   });
 
-  test('local notification init requests permission exactly once', () async {
+  test('init never prompts; requestPermission is user-initiated', () async {
     final plugin = _MockNotificationsPlugin();
     when(() => plugin.initialize(settings: any(named: 'settings')))
         .thenAnswer((_) async => true);
@@ -119,8 +122,11 @@ void main() {
 
     await service.init();
     await service.init();
+    expect(requests, 0);
 
-    expect(requests, 1);
+    await service.requestPermission();
+    await service.requestPermission();
+    expect(requests, 2);
   });
 
   group('PushService (§12)', () {

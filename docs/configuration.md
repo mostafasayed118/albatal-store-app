@@ -19,6 +19,7 @@ receive values that are safe to publish.
 | `SUPABASE_URL`      | Public project endpoint. RLS enforces access. |
 | `SUPABASE_ANON_KEY` | Public key designed for clients. RLS is the boundary, not the key. |
 | `SENTRY_DSN`        | Public project identifier, not a secret. Only set when Sentry is approved. |
+| `ONESIGNAL_APP_ID`  | Public OneSignal app identifier; the REST key stays server-side. |
 
 ### NEVER shipped to the client (server-only)
 

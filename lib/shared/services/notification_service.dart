@@ -36,8 +36,12 @@ abstract interface class BackInStockAlertStore {
 
 /// Local notification port (feature-batch §12).
 abstract interface class NotificationService {
-  /// Idempotent plugin init + permission request. Fail-silent.
+  /// Idempotent plugin init. Fail-silent; never prompts for permission.
   Future<void> init();
+
+  /// Requests OS notification permission. Call only from a user-initiated
+  /// opt-in (the Settings toggle), never at app launch.
+  Future<void> requestPermission();
 
   /// Shows a local notification when order notifications are opted in.
   /// Safe to call anywhere; no-ops on unsupported platforms.
@@ -88,9 +92,20 @@ final class LocalNotificationService implements NotificationService {
         settings: const InitializationSettings(android: _androidInit),
       );
       _initialized = true;
-      await _requestNotificationPermission();
+      // Permission is requested from the Settings opt-in
+      // (requestPermission), never at launch.
     } on Exception catch (e, st) {
       Log.w('notifications init failed.', error: e);
+      Log.d(st.toString());
+    }
+  }
+
+  @override
+  Future<void> requestPermission() async {
+    try {
+      await _requestNotificationPermission();
+    } on Exception catch (e, st) {
+      Log.w('notification permission request failed.', error: e);
       Log.d(st.toString());
     }
   }
@@ -159,6 +174,9 @@ class NoOpNotificationService implements NotificationService {
 
   @override
   Future<void> init() async {}
+
+  @override
+  Future<void> requestPermission() async {}
 
   @override
   Future<void> showOrderNotification(
