@@ -1,6 +1,24 @@
-// push-order-status — edge function PROPOSAL (feature-batch §12)
+// ============================================================
+// Edge Function PROPOSAL: push-order-status (feature-batch §12)
+//
 // Owner review required. Not registered in config.toml; deploy only
 // after review.
+//
+// SECURITY HARDENING (audit 2026-10-05, MEDIUM):
+//   This endpoint must not accept arbitrary public POSTs — otherwise
+//   anyone could trigger spoofed "shipped/delivered" pushes for known
+//   order ids. It now requires the same internal authorization model
+//   as send-order-notification:
+//
+//     The caller MUST send `x-internal-key` matching the
+//     `PUSH_ORDER_STATUS_INTERNAL_KEY` server secret. This secret
+//     lives ONLY in Edge Function environment variables and is never
+//     shipped to Flutter. Public callers without the key receive 401.
+//
+//   In addition:
+//     * status is validated against the STATUS_COPY allowlist,
+//     * order_id must be a non-empty string,
+//     * error responses are generic; details go to server logs only.
 //
 // Sends an OneSignal push when an order status changes. The admin
 // `update_order_status` RPC/flow calls this function with the order id
@@ -8,9 +26,13 @@
 // subscription from profiles and posts the notification.
 //
 // Deploy: supabase functions deploy push-order-status
-// Secrets: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY
+// Secrets: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY,
+//          PUSH_ORDER_STATUS_INTERNAL_KEY
+// ============================================================
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeadersFor, jsonHeadersFor, requireCors } from '../../_shared/cors.ts';
+import { constantTimeEquals, requireSecret } from '../../_shared/secrets.ts';
 
 const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID') ?? '';
 const ONESIGNAL_REST_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY') ?? '';
@@ -23,11 +45,47 @@ const STATUS_COPY: Record<string, { en: string; ar: string }> = {
 };
 
 Deno.serve(async (req) => {
+  // Fail closed on CORS misconfiguration.
+  const corsFail = requireCors(req);
+  if (corsFail) return corsFail;
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeadersFor(req) });
+  }
+
   try {
+    // ─── Internal authorization (audit 2026-10-05) ──────────
+    // Only callers that present the server-side internal key may
+    // trigger push notifications. The key is never shipped to Flutter.
+    const keyFail = requireSecret(req, 'PUSH_ORDER_STATUS_INTERNAL_KEY');
+    if (keyFail) return keyFail;
+    const expectedKey = Deno.env.get(
+      'PUSH_ORDER_STATUS_INTERNAL_KEY',
+    ) as string;
+
+    const providedKey = req.headers.get('x-internal-key') ?? '';
+    // Constant-time compare so the key cannot be timed.
+    if (!constantTimeEquals(providedKey, expectedKey)) {
+      return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+        status: 401,
+        headers: jsonHeadersFor(req),
+      });
+    }
+
+    // ─── Parse + validate request ───────────────────────────
     const { order_id, status } = await req.json();
+    if (typeof order_id !== 'string' || order_id.trim() === '') {
+      return new Response(JSON.stringify({ message: 'Invalid order_id' }), {
+        status: 400,
+        headers: jsonHeadersFor(req),
+      });
+    }
     const copy = STATUS_COPY[status];
-    if (!copy || !order_id) {
-      return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+    if (!copy) {
+      return new Response(JSON.stringify({ message: 'Unknown status' }), {
+        status: 400,
+        headers: jsonHeadersFor(req),
+      });
     }
 
     const supabase = createClient(
@@ -73,8 +131,14 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: res.ok }), {
       status: res.ok ? 200 : 502,
+      headers: jsonHeadersFor(req),
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 400 });
+    // Never echo internal error details to the caller; log server-side.
+    console.error('push-order-status: request failed:', e);
+    return new Response(
+      JSON.stringify({ message: 'Push notification failed.' }),
+      { status: 400, headers: jsonHeadersFor(req) },
+    );
   }
 });
