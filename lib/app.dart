@@ -43,6 +43,7 @@ import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
 import 'shared/services/notification_service.dart';
+import 'shared/services/push_service.dart';
 import 'shared/services/service_locator.dart';
 import 'shared/smoke/smoke_harness.dart';
 import 'shared/theme/app_theme.dart';
@@ -126,8 +127,12 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       if (auth.isAuthenticated && !wasAuthenticated) {
         unawaited(_wishlistCubit.restore(force: true));
       }
+      _syncPushIdentity(auth, wasAuthenticated: wasAuthenticated);
       wasAuthenticated = auth.isAuthenticated;
     });
+    // A session restored before the listener attached has already
+    // emitted its terminal state; link the push identity once here.
+    _syncPushIdentity(_authCubit.state, wasAuthenticated: false);
     // One-tap reorder (feature-batch §6): app-scoped so the orders
     // surface stays GetIt-free; cart adds flow through the live cubit.
     _reorderCubit = ReorderCubit(
@@ -154,6 +159,16 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     // around the shell in [build]. It locks on the very first frame and
     // releases only on a real authentication (audit fix — the previous
     // inline flow failed OPEN and locked only after an awaited probe).
+  }
+
+  void _syncPushIdentity(AuthState auth, {required bool wasAuthenticated}) {
+    if (!getIt.isRegistered<PushService>()) return;
+    final userId = auth.userId;
+    if (auth.isAuthenticated && userId != null && userId.isNotEmpty) {
+      unawaited(getIt<PushService>().login(userId));
+    } else if (wasAuthenticated && !auth.isAuthenticated) {
+      unawaited(getIt<PushService>().logout());
+    }
   }
 
   void _handleDeepLink(Uri uri) {

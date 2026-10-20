@@ -227,7 +227,7 @@ Future<void> configureDependencies() async {
     // Task #5: per-product back-in-stock alert opt-ins (client-side).
     ..registerLazySingleton<BackInStockAlertStore>(
         () => PrefsBackInStockAlertStore(getIt<SharedPreferences>()))
-    ..registerLazySingleton<PushService>(() => const OneSignalPushService())
+    ..registerLazySingleton<PushService>(() => OneSignalPushService())
     // §15: OAuth sign-in + biometric app lock (both fail-soft).
     ..registerLazySingleton<OAuthService>(
         () => SupabaseOAuthService(client: getIt<SupabaseClient>()))

@@ -36,6 +36,25 @@ class _RecordingService implements NotificationService {
   }
 }
 
+class _FakePushSdk implements PushSdk {
+  final List<String> calls = <String>[];
+
+  @override
+  Future<void> initialize(String appId) async {
+    calls.add('initialize:$appId');
+  }
+
+  @override
+  Future<void> login(String externalId) async {
+    calls.add('login:$externalId');
+  }
+
+  @override
+  Future<void> logout() async {
+    calls.add('logout');
+  }
+}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(
@@ -108,7 +127,30 @@ void main() {
     test('construction is safe without configuration', () {
       // EnvConfig.onesignalAppId is empty in tests: init() must be a
       // no-op that neither throws nor touches the network.
-      expect(const OneSignalPushService(), isA<PushService>());
+      expect(OneSignalPushService(), isA<PushService>());
+    });
+
+    test('empty app id never touches the SDK', () async {
+      final sdk = _FakePushSdk();
+      final service = OneSignalPushService(sdk: sdk, appId: '');
+
+      await service.init();
+      await service.login('user-1');
+      await service.logout();
+
+      expect(sdk.calls, isEmpty);
+    });
+
+    test('init, login and logout forward to the SDK once configured', () async {
+      final sdk = _FakePushSdk();
+      final service = OneSignalPushService(sdk: sdk, appId: 'app-1');
+
+      await service.init();
+      await service.init();
+      await service.login('user-1');
+      await service.logout();
+
+      expect(sdk.calls, ['initialize:app-1', 'login:user-1', 'logout']);
     });
   });
 }

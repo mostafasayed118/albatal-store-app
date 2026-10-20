@@ -246,6 +246,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           profile: value,
+          userId: userId,
         ));
       case Failure(:final error):
         // Profile may not exist yet (race with the database trigger) or
@@ -253,7 +254,10 @@ class AuthCubit extends Cubit<AuthState> {
         // without a profile so the user isn't stuck. Log for diagnosis.
         Log.w('Profile load failed: ${error.message}',
             category: LogCategory.auth);
-        emit(state.copyWith(status: AuthStatus.authenticated));
+        emit(state.copyWith(
+          status: AuthStatus.authenticated,
+          userId: userId,
+        ));
     }
   }
 

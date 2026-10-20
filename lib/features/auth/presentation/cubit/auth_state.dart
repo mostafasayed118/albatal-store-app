@@ -18,12 +18,17 @@ final class AuthState extends Equatable {
   const AuthState({
     this.status = AuthStatus.initial,
     this.profile,
+    this.userId,
     this.errorMessage,
     this.errorCode,
   });
 
   final AuthStatus status;
   final Profile? profile;
+
+  /// The authenticated Supabase user id, available even when the profile
+  /// row failed to load (push external-id linking must not depend on it).
+  final String? userId;
   final String? errorMessage;
 
   /// Machine-readable class of [errorMessage] (see `failure_codes.dart`). The
@@ -41,6 +46,7 @@ final class AuthState extends Equatable {
   AuthState copyWith({
     AuthStatus? status,
     Profile? profile,
+    String? userId,
     String? errorMessage,
     String? errorCode,
     bool clearProfile = false,
@@ -48,10 +54,11 @@ final class AuthState extends Equatable {
       AuthState(
         status: status ?? this.status,
         profile: clearProfile ? null : (profile ?? this.profile),
+        userId: clearProfile ? null : (userId ?? this.userId),
         errorMessage: errorMessage,
         errorCode: errorCode,
       );
 
   @override
-  List<Object?> get props => [status, profile, errorMessage, errorCode];
+  List<Object?> get props => [status, profile, userId, errorMessage, errorCode];
 }
