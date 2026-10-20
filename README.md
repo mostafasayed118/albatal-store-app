@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
 [![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
-![Tests](https://img.shields.io/badge/tests-1%2C101%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-74.2%25-yellowgreen)
+![Tests](https://img.shields.io/badge/tests-1%2C247%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-75.0%25-yellowgreen)
 
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
 
@@ -22,15 +22,17 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Fabric attributes** — width/GSM/sell-by-length with cut-length stepper and metered pricing
 - **Cart & coupons** — add/remove/update items, quantity stepper, coupon validation (server-owned discount applied atomically in the checkout RPC)
 - **Checkout** — address picker from saved addresses, payment method selection (Paymob card / InstaPay transfer with proof upload / Cash on Delivery), order review, confirmation, one-tap reorder
-- **Membership tiers** — standard/premium; premium members get free shipping, applied server-side
-- **Wishlist** — save products, move to cart, responsive grid
+- **Membership tiers** — standard/premium/wholesale; premium members get free shipping and wholesale partners get admin-managed list prices, both applied server-side
+- **Wholesale (B2B)** — admin price-list management, tier-aware catalog pricing, and server-checked wholesale checkout
+- **Fabric tools** — remnant badges and filtering, fabric finder facets, fit recommendation, fabric samples and metered cut-length checkout
+- **Wishlist** — save products, move to cart, responsive grid, cloud sync for signed-in customers
 - **Orders** — order history with status timeline, order-status local notifications, branded invoice PDF (admin share)
 - **Authentication** — email/password sign up, sign in, password reset, email verification, OAuth (Google/Apple); sign-in honors `?redirect=` so you return to checkout after logging in
 - **Security** — biometric app lock (opt-in), encrypted at-rest session storage, maintenance/forced-update gates via remote config
 - **Profiles** — display name, phone, order history, time-of-day greeting
 - **Guest shopping** — browse, search, and review the cart without sign-in; sign-in required for wishlist, addresses, checkout
 - **Sharing & deep links** — product share sheets with `albatal://` deep links
-- **English & Arabic** — full RTL support with 565 localized keys per locale
+- **English & Arabic** — full RTL support with 602 localized keys per locale
 - **Two themes** — Emerald/Gold light mode and Charcoal/Slate dark mode, WCAG AA contrast-audited by tests, all colors from one token file (`AppColors`)
 
 ### Cloud Backend (Supabase)
@@ -42,14 +44,16 @@ A premium fabric-commerce Flutter application with a tactile, textile-inspired d
 - **Storage** — product images (public) and avatars (private)
 - **Admin support** — admin role for catalog/order management
 
-> **Note on local persistence:** Cart, wishlist, and addresses are persisted
-> locally on-device via SharedPreferences (offline-first). The product
-> **catalog, orders, admin operations, checkout, and Paymob payments are fully
+> **Note on local persistence:** Cart and addresses are persisted locally
+> on-device via SharedPreferences (offline-first); addresses are encrypted at
+> rest. Wishlist is local-first and syncs to Supabase for signed-in customers
+> (migration 075), while guests stay fully local. The product **catalog,
+> orders, admin operations, checkout, and Paymob payments are fully
 > Supabase-backed** — catalog embeds product images from Storage, orders read
 > live through Realtime, and checkout runs through server-side RPCs. Cloud
-> sync for cart/wishlist/addresses is planned (the domain repository
-> interfaces already exist so Cubits won't change when Supabase
-> implementations are wired).
+> sync for cart and addresses is planned (the domain repository interfaces
+> already exist so Cubits won't change when Supabase implementations are
+> wired).
 
 ---
 
@@ -282,7 +286,7 @@ supabase functions secrets set SCHEDULER_SECRET=...
 flutter test
 ```
 
-**1,101 Flutter tests** cover:
+**1,247 Flutter tests** cover:
 - Cubit state transitions (Cart, Catalog, Checkout, Orders, Auth, Wishlist, Details, Admin, Payments, Settings, Coupons, Reviews)
 - Product entity logic (stock, discount, inStock), coupon/membership contracts
 - SQL migration contract tests — the checkout RPC's server-owned pricing, premium perk, and coupon semantics are pinned against future rewrites
