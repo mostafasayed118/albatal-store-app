@@ -43,6 +43,7 @@ for secret in \
     PAYMOB_IFRAME_ID \
     SCHEDULER_SECRET \
     NOTIFICATIONS_INTERNAL_KEY \
+    PUSH_ORDER_STATUS_INTERNAL_KEY \
     INSTAPAY_MERCHANT_ADDRESS; do
     if ! printf '%s\n' "$SECRETS_OUTPUT" | grep -Eq "(^|[[:space:]])${secret}([[:space:]]|$)"; then
         echo "ERROR: missing required Edge Function secret: $secret"
@@ -58,6 +59,7 @@ ACTIVE_FUNCTIONS=(
     "paymob-callback"
     "cancel-expired-orders"
     "send-order-notification"
+    "push-order-status"
     "delete-account"
     "instapay-initiate"
     "instapay-submit-proof"
@@ -78,6 +80,7 @@ echo "   supabase secrets set PAYMOB_IFRAME_ID=your-iframe-id"
 echo "   supabase secrets set PAYMOB_HMAC_SECRET=your-secret"
 echo "   supabase secrets set SCHEDULER_SECRET=your-scheduler-secret"
 echo "   supabase secrets set NOTIFICATIONS_INTERNAL_KEY=your-internal-key"
+echo "   supabase secrets set PUSH_ORDER_STATUS_INTERNAL_KEY=your-push-internal-key"
 echo "   supabase secrets set INSTAPAY_MERCHANT_ADDRESS=your-merchant-address"
 echo "   supabase secrets set CORS_ALLOWED_ORIGINS=https://staging.example.com"
 

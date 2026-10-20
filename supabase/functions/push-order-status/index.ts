@@ -1,8 +1,11 @@
 // ============================================================
-// Edge Function PROPOSAL: push-order-status (feature-batch §12)
+// Supabase Edge Function: push-order-status
 //
-// Owner review required. Not registered in config.toml; deploy only
-// after review.
+// Sends an OneSignal push notification when an order status
+// changes. The DB trigger (migration 080) calls this function via
+// pg_net with the order id and new status; the function resolves
+// the customer's user id from orders and posts the notification
+// using OneSignal external user ids (no player-id storage).
 //
 // SECURITY HARDENING (audit 2026-10-05, MEDIUM):
 //   This endpoint must not accept arbitrary public POSTs — otherwise
@@ -20,10 +23,10 @@
 //     * order_id must be a non-empty string,
 //     * error responses are generic; details go to server logs only.
 //
-// Sends an OneSignal push when an order status changes. The admin
-// `update_order_status` RPC/flow calls this function with the order id
-// and new status; the function resolves the customer's OneSignal
-// subscription from profiles and posts the notification.
+// Contract:
+//   POST body: { "order_id": "<uuid>",
+//                "status": "processing|shipped|delivered|cancelled" }
+//   Header:    x-internal-key == PUSH_ORDER_STATUS_INTERNAL_KEY
 //
 // Deploy: supabase functions deploy push-order-status
 // Secrets: ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY,
@@ -31,8 +34,8 @@
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeadersFor, jsonHeadersFor, requireCors } from '../../_shared/cors.ts';
-import { constantTimeEquals, requireSecret } from '../../_shared/secrets.ts';
+import { corsHeadersFor, jsonHeadersFor, requireCors } from '../_shared/cors.ts';
+import { constantTimeEquals, requireSecret } from '../_shared/secrets.ts';
 
 const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID') ?? '';
 const ONESIGNAL_REST_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY') ?? '';
@@ -80,65 +83,91 @@ Deno.serve(async (req) => {
         headers: jsonHeadersFor(req),
       });
     }
-    const copy = STATUS_COPY[status];
-    if (!copy) {
+    if (typeof status !== 'string' || !Object.hasOwn(STATUS_COPY, status)) {
       return new Response(JSON.stringify({ message: 'Unknown status' }), {
         status: 400,
         headers: jsonHeadersFor(req),
       });
     }
+    const copy = STATUS_COPY[status];
+
+    const serviceRoleFail = requireSecret(req, 'SUPABASE_SERVICE_ROLE_KEY');
+    if (serviceRoleFail) return serviceRoleFail;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Resolve the order owner's push subscription id. Storage of the
-    // OneSignal player id on profiles is part of the owner review for
-    // this proposal (schema delta: profiles.onesignal_player_id).
+    // Resolve the order owner. OneSignal external user ids are set to
+    // the Supabase user id, so no player-id storage is needed.
     const { data: order } = await supabase
       .from('orders')
       .select('user_id')
       .eq('id', order_id)
       .single();
     if (!order?.user_id) {
-      return new Response(JSON.stringify({ skipped: true }), { status: 200 });
-    }
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onesignal_player_id')
-      .eq('id', order.user_id)
-      .single();
-    const playerId = profile?.onesignal_player_id;
-    if (!playerId || !ONESIGNAL_APP_ID) {
-      return new Response(JSON.stringify({ skipped: true }), { status: 200 });
+      return new Response(JSON.stringify({ skipped: true }), {
+        status: 200,
+        headers: jsonHeadersFor(req),
+      });
     }
 
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_player_ids: [playerId],
-        headings: { en: 'Al Batal Elite', ar: 'البطل إيليت' },
-        contents: { en: copy.en, ar: copy.ar },
-        data: { order_id, status },
-      }),
-    });
+    // No provider configured: skip cleanly without calling OneSignal.
+    if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'push_not_configured' }),
+        { status: 200, headers: jsonHeadersFor(req) },
+      );
+    }
 
-    return new Response(JSON.stringify({ ok: res.ok }), {
-      status: res.ok ? 200 : 502,
-      headers: jsonHeadersFor(req),
-    });
-  } catch (e) {
+    let res: Response;
+    try {
+      res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
+        },
+        body: JSON.stringify({
+          app_id: ONESIGNAL_APP_ID,
+          include_external_user_ids: [order.user_id],
+          target_channel: 'push',
+          headings: { en: 'Al Batal Elite', ar: 'البطل إيليت' },
+          contents: { en: copy.en, ar: copy.ar },
+          data: { order_id, status },
+        }),
+      });
+    } catch (_error) {
+      console.error('push-order-status: provider request failed');
+      return new Response(
+        JSON.stringify({ message: 'Push notification failed.' }),
+        { status: 502, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    if (!res.ok) {
+      // Never log provider payloads or credentials.
+      console.error(
+        `push-order-status: provider rejected notification (status ${res.status})`,
+      );
+      return new Response(
+        JSON.stringify({ message: 'Push notification failed.' }),
+        { status: 502, headers: jsonHeadersFor(req) },
+      );
+    }
+
+    const providerBody = await res.json().catch(() => null);
+    return new Response(
+      JSON.stringify({ ok: true, id: providerBody?.id ?? null }),
+      { status: 200, headers: jsonHeadersFor(req) },
+    );
+  } catch (_error) {
     // Never echo internal error details to the caller; log server-side.
-    console.error('push-order-status: request failed:', e);
+    console.error('push-order-status: unhandled error');
     return new Response(
       JSON.stringify({ message: 'Push notification failed.' }),
-      { status: 400, headers: jsonHeadersFor(req) },
+      { status: 500, headers: jsonHeadersFor(req) },
     );
   }
 });

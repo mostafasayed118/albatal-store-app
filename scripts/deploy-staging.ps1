@@ -42,6 +42,7 @@ $requiredSecrets = @(
     "PAYMOB_IFRAME_ID",
     "SCHEDULER_SECRET",
     "NOTIFICATIONS_INTERNAL_KEY",
+    "PUSH_ORDER_STATUS_INTERNAL_KEY",
     "INSTAPAY_MERCHANT_ADDRESS"
 )
 $secretsOutput = (& supabase secrets list 2>&1 | Out-String)
@@ -61,6 +62,7 @@ $functions = @(
     "paymob-callback",
     "cancel-expired-orders",
     "send-order-notification",
+    "push-order-status",
     "delete-account",
     "instapay-initiate",
     "instapay-submit-proof",

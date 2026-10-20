@@ -94,6 +94,11 @@ verify_jwt = false
 [functions.send-order-notification]
 verify_jwt = false
 
+[functions.push-order-status]
+# Called by the DB trigger (migration 080) through pg_net, which
+# has no user JWT; the x-internal-key header is the auth.
+verify_jwt = false
+
 [functions.delete-account]
 # Called by the Flutter client with the user's own JWT; the
 # function re-verifies the session and refuses admin accounts

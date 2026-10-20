@@ -37,7 +37,7 @@ if errorlevel 1 (
 
 REM Verify required Edge Function secrets
 echo [3/5] Verifying Edge Function secrets...
-for %%S in (CORS_ALLOWED_ORIGINS PAYMOB_API_KEY PAYMOB_INTEGRATION_ID PAYMOB_HMAC_SECRET PAYMOB_IFRAME_ID SCHEDULER_SECRET NOTIFICATIONS_INTERNAL_KEY INSTAPAY_MERCHANT_ADDRESS) do (
+for %%S in (CORS_ALLOWED_ORIGINS PAYMOB_API_KEY PAYMOB_INTEGRATION_ID PAYMOB_HMAC_SECRET PAYMOB_IFRAME_ID SCHEDULER_SECRET NOTIFICATIONS_INTERNAL_KEY PUSH_ORDER_STATUS_INTERNAL_KEY INSTAPAY_MERCHANT_ADDRESS) do (
     supabase secrets list | findstr /R /C:"^ *%%S " >nul
     if errorlevel 1 (
         echo ERROR: missing required Edge Function secret: %%S
@@ -56,6 +56,8 @@ if errorlevel 1 exit /b 1
 supabase functions deploy cancel-expired-orders
 if errorlevel 1 exit /b 1
 supabase functions deploy send-order-notification
+if errorlevel 1 exit /b 1
+supabase functions deploy push-order-status
 if errorlevel 1 exit /b 1
 supabase functions deploy delete-account
 if errorlevel 1 exit /b 1
@@ -76,6 +78,7 @@ echo   - paymob-initiate
 echo   - paymob-callback
 echo   - cancel-expired-orders
 echo   - send-order-notification
+echo   - push-order-status
 echo   - delete-account
 echo   - instapay-initiate
 echo   - instapay-submit-proof

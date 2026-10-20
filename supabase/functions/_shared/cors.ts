@@ -64,7 +64,7 @@ export function corsHeadersFor(req: Request): Record<string, string> {
     "Access-Control-Allow-Origin": allow,
     "Vary": "Origin",
     "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+      "authorization, x-client-info, apikey, content-type, x-internal-key",
   };
 }
 
@@ -79,7 +79,7 @@ export function corsHeadersFor(req: Request): Record<string, string> {
  */
 export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-internal-key",
 };
 
 /**

@@ -92,6 +92,75 @@ Deno.test("send-order-notification uses jsonHeadersFor(req) not legacy jsonHeade
   );
 });
 
+Deno.test("send-order-notification requires RESEND_API_KEY", () => {
+  const source = readFileSync(SOURCE_PATH);
+  assertEquals(
+    source.includes('Deno.env.get("RESEND_API_KEY")'),
+    true,
+    "Function must read RESEND_API_KEY from the environment",
+  );
+});
+
+Deno.test("send-order-notification skips before insert when email is unconfigured", () => {
+  const source = readFileSync(SOURCE_PATH);
+  const skipIdx = source.indexOf('reason: "email_not_configured"');
+  const insertIdx = source.indexOf('.from("notifications")');
+  assertEquals(
+    skipIdx !== -1,
+    true,
+    "Function must return skipped/email_not_configured when unconfigured",
+  );
+  assertEquals(
+    insertIdx !== -1,
+    true,
+    "Function must insert an audit-trail notification row when sending",
+  );
+  assertEquals(
+    skipIdx < insertIdx,
+    true,
+    "Unconfigured skip must happen before any notifications insert",
+  );
+});
+
+Deno.test("send-order-notification posts to the Resend API", () => {
+  const source = readFileSync(SOURCE_PATH);
+  assertEquals(
+    source.includes("https://api.resend.com/emails"),
+    true,
+    "Function must post email to the Resend API",
+  );
+  assertEquals(
+    source.includes("Authorization: `Bearer ${resendApiKey}`"),
+    true,
+    "Function must authenticate with a Bearer RESEND_API_KEY",
+  );
+});
+
+Deno.test("send-order-notification tracks pending/sent/failed statuses", () => {
+  const source = readFileSync(SOURCE_PATH);
+  for (const status of ["pending", "sent", "failed"]) {
+    assertEquals(
+      source.includes(`status: "${status}"`),
+      true,
+      `Function must write notification status ${status}`,
+    );
+  }
+});
+
+Deno.test("send-order-notification supports en/ar templates", () => {
+  const source = readFileSync(SOURCE_PATH);
+  assertEquals(
+    source.includes('const lang = locale === "ar" ? "ar" : "en"'),
+    true,
+    "Function must default to en and select ar when requested",
+  );
+  assertEquals(
+    source.includes("textToHtml(body)"),
+    true,
+    "Function must send an HTML body derived from the localized text",
+  );
+});
+
 Deno.test("send-order-notification never logs raw error objects", () => {
   const source = readFileSync(SOURCE_PATH);
   const catchIdx = source.indexOf("catch");
