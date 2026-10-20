@@ -84,3 +84,9 @@ loop-ledger.json
 # Flutter tool transient state
 .flutter
 .flutter_tool_state
+
+# Local agent state / scratch output (never commit)
+.mimosa/
+deliverables/
+*.log
+hs_err_pid*.log
