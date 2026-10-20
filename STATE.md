@@ -12,7 +12,9 @@ Last run: 2026-10-20 (wave 2: order notifications — email + push wired, applie
 - **Staging end-to-end trigger test:** temporary order inserted (email dispatch → 200 `email_not_configured`), status moved to processing (push dispatch → 200 `push_not_configured`), both responses observed in `net._http_response`, temp order deleted (remaining 0). No production test order created.
 - **Client:** `PushService.login/logout` (shared in-flight init, fail-silent) + `PushSdk` seam; `AuthState.userId` carries the session id even when the profile read fails; `app.dart` links/unlinks the OneSignal external id on auth transitions and restored sessions.
 - **External keys still absent (owner):** `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, `RESEND_API_KEY` (and a verified `RESEND_FROM`). Until set, email/push skip cleanly; the Flutter build also needs `--dart-define=ONESIGNAL_APP_ID=...`.
-- Evidence: `flutter analyze --no-pub` clean; `dart format` 0 changed; full **1,249/1,249**; coverage **74.9%** (9,665/12,896); Deno **108 passed**; combined migration artifact 79 markers (001–080). Commit/push pending at the time of writing.
+- Evidence: `flutter analyze --no-pub` clean; `dart format` 0 changed; full **1,249/1,249**; coverage **74.9%** (9,665/12,896); Deno **108 passed**; combined migration artifact 79 markers (001–080).
+- **Pushed** `192587c..ebd8f8c` (4 commits: `c91b764` 080 + proof + artifact, `569198d` functions/config/CI/deploy, `6020c3f` client push identity, `ebd8f8c` docs); CI run `39461510908` = **7/7 success** (Flutter Tests, Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build, Setup & Cache). Local `master` == `origin/master` = `ebd8f8c`, tree clean.
+- PAT hygiene: the old User-scope PAT was overwritten; the NEW PAT also transited chat — **rotate both** (the old account token may still be valid until revoked in its dashboard).
 
 ## New — 2026-10-20 (L1 exploration: done vs missing; CI repair in working tree)
 
