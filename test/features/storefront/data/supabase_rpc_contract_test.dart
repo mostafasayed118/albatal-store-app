@@ -304,8 +304,8 @@ void main() {
     String? latestRpcFile;
     for (final file in files) {
       final text = file.readAsStringSync();
-      if (text.contains(
-          'CREATE OR REPLACE FUNCTION admin_set_membership_tier')) {
+      if (text
+          .contains('CREATE OR REPLACE FUNCTION admin_set_membership_tier')) {
         latestRpcFile = file.path;
       }
     }

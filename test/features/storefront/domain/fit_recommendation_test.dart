@@ -21,15 +21,13 @@ void main() {
 
     test('narrow roll adds the pad', () {
       // 2.0 + 0.5 pad = 2.5 → snap up = 2.5
-      expect(
-          recommendedMeters(FitGarment.shirt, widthCm: 120), 2.5);
+      expect(recommendedMeters(FitGarment.shirt, widthCm: 120), 2.5);
     });
 
     test('standard or wider width adds no pad', () {
       expect(recommendedMeters(FitGarment.shirt, widthCm: 150), 2.0);
       expect(recommendedMeters(FitGarment.shirt, widthCm: null), 2.0);
-      expect(
-          recommendedMeters(FitGarment.shirt, widthCm: 200), 2.0);
+      expect(recommendedMeters(FitGarment.shirt, widthCm: 200), 2.0);
     });
 
     test('result snaps up (never down)', () {
@@ -48,14 +46,10 @@ void main() {
   });
 
   group('isNarrowRoll', () {
-    test('true below reference', () =>
-        expect(isNarrowRoll(120), isTrue));
-    test('false at reference', () =>
-        expect(isNarrowRoll(150), isFalse));
-    test('false above reference', () =>
-        expect(isNarrowRoll(200), isFalse));
-    test('null is not narrow', () =>
-        expect(isNarrowRoll(null), isFalse));
+    test('true below reference', () => expect(isNarrowRoll(120), isTrue));
+    test('false at reference', () => expect(isNarrowRoll(150), isFalse));
+    test('false above reference', () => expect(isNarrowRoll(200), isFalse));
+    test('null is not narrow', () => expect(isNarrowRoll(null), isFalse));
   });
 
   group('nearestFixedSize', () {
@@ -82,24 +76,24 @@ void main() {
 
   group('fitApplyLength', () {
     test('sell-by-length returns the meters string', () {
-       final p = const Product(
-         id: 'fabric-01',
-         name: 'Cut Silk',
-         category: 'Silk',
-         price: Money(12000),
-         imageColor: 0xFF064E3B,
-         sellByLength: true,
-         minCutMeters: 1.0,
-       );
+      final p = const Product(
+        id: 'fabric-01',
+        name: 'Cut Silk',
+        category: 'Silk',
+        price: Money(12000),
+        imageColor: 0xFF064E3B,
+        sellByLength: true,
+        minCutMeters: 1.0,
+      );
       expect(fitApplyLength(p, 12.5), '12.5');
     });
 
     test('fixed-size returns the nearest size', () {
-       final p = const Product(
-         id: 'fixed-01',
-         name: 'Silk',
+      final p = const Product(
+        id: 'fixed-01',
+        name: 'Silk',
         category: 'Silk',
-         price: Money(129000),
+        price: Money(129000),
         imageColor: 0xFF176B57,
         sizes: ['1m', '2m', '5m'],
       );

@@ -42,13 +42,10 @@ class AdminMappers {
       customerId: _customerId(row),
       customerTier: _customerTier(row),
       paymentMethod: optString(row, 'payment_method'),
-      itemCount:
-          orderItems is List ? orderItems.length : items.length,
+      itemCount: orderItems is List ? orderItems.length : items.length,
       items: items,
       trackingNumber: optString(row, 'payment_id'),
-      address: snapshot is Map
-          ? addressFromSnapshot(safeMap(snapshot))
-          : null,
+      address: snapshot is Map ? addressFromSnapshot(safeMap(snapshot)) : null,
     );
   }
 

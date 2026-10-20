@@ -41,8 +41,8 @@ class _FitRecommenderSheetState extends State<FitRecommenderSheet> {
   FitGarment _garment = FitGarment.thobe;
   double _heightCm = kFitReferenceHeightCm;
 
-  String _garmentLabel(AppLocalizations l, FitGarment garment) => switch (
-        garment) {
+  String _garmentLabel(AppLocalizations l, FitGarment garment) =>
+      switch (garment) {
         FitGarment.trousers => l.garmentTrousers,
         FitGarment.shirt => l.garmentShirt,
         FitGarment.abaya => l.garmentAbaya,

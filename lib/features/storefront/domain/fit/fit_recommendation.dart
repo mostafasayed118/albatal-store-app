@@ -71,8 +71,8 @@ String? nearestFixedSize(List<String> sizes, double meters) {
     if (value != null) numeric[value] = size;
   }
   if (numeric.isEmpty) return null;
-  final atOrAbove =
-      numeric.keys.where((value) => value >= meters).toList()..sort();
+  final atOrAbove = numeric.keys.where((value) => value >= meters).toList()
+    ..sort();
   if (atOrAbove.isNotEmpty) return numeric[atOrAbove.first];
   final all = numeric.keys.toList()..sort();
   return numeric[all.last];

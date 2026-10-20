@@ -99,25 +99,23 @@ class VariantSelector extends StatelessWidget {
                     ),
                     Text(l.sellByLengthNote,
                         style: Theme.of(context).textTheme.bodySmall),
-                     // Wave C: running metered line price (tier-aware)
-                     // + the wholesale tier ladder.
-                     MeteredPriceLine(product: product, state: state),
-                     const SizedBox(height: 8),
-                     PricingTierTable(
-                         meters: double.tryParse(state.length) ?? 0),
-                     const SizedBox(height: 8),
-                     Align(
-                       alignment: Alignment.centerRight,
-                       child: TextButton.icon(
-                         icon: const Icon(Icons.person_outline,
-                             size: 16),
-                         label: Text(l.fitFinder),
-                         onPressed: () => showFitRecommender(
-                             context, product),
-                       ),
-                     ),
-                    ] else ...[
-                     Wrap(
+                    // Wave C: running metered line price (tier-aware)
+                    // + the wholesale tier ladder.
+                    MeteredPriceLine(product: product, state: state),
+                    const SizedBox(height: 8),
+                    PricingTierTable(
+                        meters: double.tryParse(state.length) ?? 0),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.person_outline, size: 16),
+                        label: Text(l.fitFinder),
+                        onPressed: () => showFitRecommender(context, product),
+                      ),
+                    ),
+                  ] else ...[
+                    Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: product.sizes
@@ -136,8 +134,7 @@ class VariantSelector extends StatelessWidget {
                       child: TextButton.icon(
                         icon: const Icon(Icons.person_outline, size: 16),
                         label: Text(l.fitFinder),
-                        onPressed: () =>
-                            showFitRecommender(context, product),
+                        onPressed: () => showFitRecommender(context, product),
                       ),
                     ),
                   ],

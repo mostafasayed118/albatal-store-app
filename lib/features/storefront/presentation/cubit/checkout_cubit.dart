@@ -145,9 +145,7 @@ final class CheckoutCubit extends Cubit<CheckoutState> {
     ValidateCouponUseCase? validateCoupon,
     AnalyticsService? analytics,
   })  : _validateCoupon = validateCoupon ??
-            (coupons != null
-                ? ValidateCouponUseCase(coupons: coupons)
-                : null),
+            (coupons != null ? ValidateCouponUseCase(coupons: coupons) : null),
         _analytics = analytics,
         _placeOrder = placeOrder ??
             PlaceCheckoutOrderUseCase(

@@ -63,8 +63,7 @@ Widget _barHarness(CartCubit cart, DetailsState state) => MaterialApp(
 
 void main() {
   group('details sample order button (swatch-kit)', () {
-    testWidgets('tapping it adds one sample line and confirms',
-        (tester) async {
+    testWidgets('tapping it adds one sample line and confirms', (tester) async {
       final cart = CartCubit(MemoryStorefrontPersistence());
       addTearDown(cart.close);
       await tester.pumpWidget(_barHarness(cart, _stateFor(_inStock)));

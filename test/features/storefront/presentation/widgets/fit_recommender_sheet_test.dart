@@ -57,8 +57,7 @@ void main() {
       expect(find.textContaining('3.5 m'), findsWidgets);
     });
 
-    testWidgets('tapping a garment chip changes the result',
-        (tester) async {
+    testWidgets('tapping a garment chip changes the result', (tester) async {
       await tester.pumpWidget(_harness(_product('fabric'), _cubit()));
       await tester.pumpAndSettle();
 
@@ -75,8 +74,8 @@ void main() {
       // cubit.length (works with no loaded product; setCutLength
       // requires state.product so it is covered by the domain test).
       final cubit = _cubit();
-      await tester.pumpWidget(
-          _harness(_product('fabric', sellByLength: false), cubit));
+      await tester
+          .pumpWidget(_harness(_product('fabric', sellByLength: false), cubit));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Use 3.5 m'));
