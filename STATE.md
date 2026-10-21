@@ -13,7 +13,7 @@ Last run: 2026-10-21 (OneSignal App ID wired + device proof; FCM service account
 - Verification: `dart analyze` on the changed files → **No issues**; `flutter test test/shared/services/notifications_test.dart test/features/settings` → **17 passed**; `test/app/app_bootstrap_branches_test.dart` + `widget_test` + smoke harness → **8 passed** locally (that bootstrap test is an untracked parallel-session file whose `_Push` fake was extended locally so it compiles against the new interface); `dart format` clean.
 - Full local `flutter test` now runs **1,938** tests because a parallel session left many untracked test files in `test/`; **5 failures are in those untracked files**, not in tracked code. Untracked files were left unstaged.
 - Note: OneSignal's releases JSON lists Flutter **stable 5.5.2**; the project is on `onesignal_flutter 5.6.10` (already approved, newer than the listed stable). Not downgraded.
-- Commit `c78cf77` (App ID + permission flow) pushed; CI run `39511267461` = **7/7 success**. The verification-dialog follow-up commit is pending at the time of writing.
+- Commits pushed: `c78cf77` (App ID + permission flow) → CI run `39511267461` = **7/7 success**; `669e649` (subscription verifier + permission API) → CI run `39575940490` = **7/7 success**. Local `master` == `origin/master` = `669e649`.
 
 ## New — 2026-10-20 (wave 2: notifications end-to-end + 079 live apply)
 
