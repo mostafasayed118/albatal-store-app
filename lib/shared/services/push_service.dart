@@ -19,6 +19,20 @@ abstract interface class PushService {
 
   /// Unlinks the external id on sign-out. Fail-silent.
   Future<void> logout();
+
+  /// Requests OS push permission. Call only from a user-initiated action.
+  Future<void> requestPermission();
+
+  /// Server-assigned push subscription id, or null before registration.
+  String? get subscriptionId;
+
+  /// Registers a listener for subscription-id changes. The caller must
+  /// retain [listener] and pass the same reference to
+  /// [removeSubscriptionObserver].
+  Future<void> addSubscriptionObserver(void Function(String? id) listener);
+
+  /// Removes a previously registered subscription listener.
+  void removeSubscriptionObserver(void Function(String? id) listener);
 }
 
 /// Seam over the static OneSignal entry points so the service is
@@ -27,10 +41,19 @@ abstract interface class PushSdk {
   Future<void> initialize(String appId);
   Future<void> login(String externalId);
   Future<void> logout();
+  Future<bool> requestPermission();
+  String? get subscriptionId;
+  void addSubscriptionObserver(void Function(String? id) listener);
+  void removeSubscriptionObserver(void Function(String? id) listener);
 }
 
 final class OneSignalSdk implements PushSdk {
-  const OneSignalSdk();
+  OneSignalSdk();
+
+  /// Maps our listener to the SDK observer so removal uses the exact
+  /// same function object the SDK stored.
+  final Map<void Function(String?), OnPushSubscriptionChangeObserver>
+      _observers = {};
 
   @override
   Future<void> initialize(String appId) {
@@ -45,6 +68,29 @@ final class OneSignalSdk implements PushSdk {
 
   @override
   Future<void> logout() => OneSignal.logout();
+
+  @override
+  Future<bool> requestPermission() =>
+      OneSignal.Notifications.requestPermission(true);
+
+  @override
+  String? get subscriptionId => OneSignal.User.pushSubscription.id;
+
+  @override
+  void addSubscriptionObserver(void Function(String? id) listener) {
+    void observer(OSPushSubscriptionChangedState state) =>
+        listener(state.current.id);
+    _observers[listener] = observer;
+    OneSignal.User.pushSubscription.addObserver(observer);
+  }
+
+  @override
+  void removeSubscriptionObserver(void Function(String? id) listener) {
+    final observer = _observers.remove(listener);
+    if (observer != null) {
+      OneSignal.User.pushSubscription.removeObserver(observer);
+    }
+  }
 }
 
 /// OneSignal push service.
@@ -56,9 +102,9 @@ final class OneSignalSdk implements PushSdk {
 /// `push-order-status` Edge Function targets that id server-side.
 final class OneSignalPushService implements PushService {
   OneSignalPushService({
-    PushSdk sdk = const OneSignalSdk(),
+    PushSdk? sdk,
     String? appId,
-  })  : _sdk = sdk,
+  })  : _sdk = sdk ?? OneSignalSdk(),
         _appId = appId;
 
   final PushSdk _sdk;
@@ -122,4 +168,34 @@ final class OneSignalPushService implements PushService {
       Log.d(st.toString());
     }
   }
+
+  @override
+  String? get subscriptionId =>
+      _resolvedAppId.isEmpty ? null : _sdk.subscriptionId;
+
+  @override
+  Future<void> requestPermission() async {
+    if (_resolvedAppId.isEmpty) return;
+    await init();
+    if (!_initialized) return;
+    try {
+      await _sdk.requestPermission();
+    } on Exception catch (e, st) {
+      Log.w('push permission request failed.', error: e);
+      Log.d(st.toString());
+    }
+  }
+
+  @override
+  Future<void> addSubscriptionObserver(
+      void Function(String? id) listener) async {
+    if (_resolvedAppId.isEmpty) return;
+    await init();
+    if (!_initialized) return;
+    _sdk.addSubscriptionObserver(listener);
+  }
+
+  @override
+  void removeSubscriptionObserver(void Function(String? id) listener) =>
+      _sdk.removeSubscriptionObserver(listener);
 }

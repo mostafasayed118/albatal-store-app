@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
@@ -11,8 +12,10 @@ GoRouter createAppRouter(
   AuthCubit authCubit, {
   String initialLocation = Routes.splash,
   AuthRefreshNotifier? refreshListenable,
+  GlobalKey<NavigatorState>? navigatorKey,
 }) =>
     GoRouter(
+      navigatorKey: navigatorKey,
       initialLocation: initialLocation,
       observers: [NavigationObserver()],
       refreshListenable:

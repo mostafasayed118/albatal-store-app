@@ -34,6 +34,7 @@ import 'features/storefront/presentation/cubit/reorder_cubit.dart';
 import 'features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'generated/l10n/app_localizations.dart';
 import 'shared/components/app_lock_gate.dart';
+import 'shared/components/push_verification_listener.dart';
 import 'shared/routing/app_router.dart';
 import 'shared/routing/app_routes.dart';
 import 'shared/routing/auth_refresh_notifier.dart';
@@ -71,6 +72,7 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final RecentSearchesCubit _recentSearchesCubit;
   late final RecentlyViewedCubit _recentlyViewedCubit;
   late final GoRouter _router;
+  late final GlobalKey<NavigatorState> _navigatorKey;
   StreamSubscription<AuthState>? _authSub;
   StreamSubscription<Uri>? _deepLinkSub;
 
@@ -91,8 +93,10 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       orderSnapshots: getIt<OrderSnapshotPort>(),
     )..checkSession();
     _authRefreshNotifier = AuthRefreshNotifier(_authCubit.stream);
+    _navigatorKey = GlobalKey<NavigatorState>();
     _router = createAppRouter(
       _authCubit,
+      navigatorKey: _navigatorKey,
       refreshListenable: _authRefreshNotifier,
     );
     // Mirror the customer's membership tier into the cart estimate math
@@ -287,7 +291,10 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                                   adminCubit: context.read<AdminCubit>(),
                                   exitApp: widget.exitApp,
                                   child: child!)
-                              : child!),
+                              : PushVerificationListener(
+                                  navigatorKey: _navigatorKey,
+                                  child: child!,
+                                )),
                     ))));
   }
 }

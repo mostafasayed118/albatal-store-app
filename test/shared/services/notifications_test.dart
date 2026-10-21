@@ -56,6 +56,25 @@ class _FakePushSdk implements PushSdk {
   Future<void> logout() async {
     calls.add('logout');
   }
+
+  @override
+  Future<bool> requestPermission() async {
+    calls.add('requestPermission');
+    return true;
+  }
+
+  @override
+  String? get subscriptionId => 'sub-1';
+
+  @override
+  void addSubscriptionObserver(void Function(String? id) listener) {
+    calls.add('addObserver');
+  }
+
+  @override
+  void removeSubscriptionObserver(void Function(String? id) listener) {
+    calls.add('removeObserver');
+  }
 }
 
 void main() {
@@ -157,6 +176,21 @@ void main() {
       await service.logout();
 
       expect(sdk.calls, ['initialize:app-1', 'login:user-1', 'logout']);
+    });
+
+    test('permission and subscription observer forward to the SDK', () async {
+      final sdk = _FakePushSdk();
+      final service = OneSignalPushService(sdk: sdk, appId: 'app-1');
+      void listener(String? id) {}
+
+      await service.requestPermission();
+      await service.addSubscriptionObserver(listener);
+      service.removeSubscriptionObserver(listener);
+
+      expect(sdk.calls, contains('requestPermission'));
+      expect(sdk.calls, contains('addObserver'));
+      expect(sdk.calls, contains('removeObserver'));
+      expect(service.subscriptionId, 'sub-1');
     });
   });
 }
