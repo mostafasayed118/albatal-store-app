@@ -63,6 +63,9 @@ final class _PushVerificationListenerState
     if (!mounted || _shown) return;
     if (id == null || id.isEmpty || id.startsWith('local-')) return;
     _shown = true;
+    // The SDK can report the id outside a frame, so ask for one before
+    // deferring the dialog to the end of it.
+    WidgetsBinding.instance.ensureVisualUpdate();
     WidgetsBinding.instance.addPostFrameCallback((_) => _showDialog());
   }
 
