@@ -44,6 +44,20 @@ class EnvConfig {
   static const String webBaseUrl = String.fromEnvironment('WEB_BASE_URL',
       defaultValue: 'https://albatal.app');
 
+  /// Redirect target for password-recovery emails. Web builds land on the
+  /// `/reset-password` page (the fragment carries the recovery tokens);
+  /// native builds use the custom-scheme fallback parsed by the deep-link
+  /// parser.
+  static String get passwordRecoveryRedirect {
+    final base = Uri.tryParse(webBaseUrl);
+    if (kIsWeb && base != null) {
+      return base
+          .replace(path: '/reset-password', query: null, fragment: null)
+          .toString();
+    }
+    return 'albatal://reset-password';
+  }
+
   /// OneSignal app id (feature-batch §12). Empty = push disabled; the
   /// PushService scaffold no-ops so builds without push config work.
   static const String onesignalAppId =

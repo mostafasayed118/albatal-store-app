@@ -12,6 +12,8 @@ import 'package:al_batal_elite/features/settings/domain/account_deletion_port.da
 import 'package:al_batal_elite/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:al_batal_elite/features/settings/presentation/pages/settings_page.dart';
 import 'package:al_batal_elite/features/support/data/local_support_repository.dart';
+import 'package:al_batal_elite/features/support/domain/entities/support_channel.dart';
+import 'package:al_batal_elite/features/support/domain/repositories/support_repository.dart';
 import 'package:al_batal_elite/features/support/presentation/pages/support_pages.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -169,9 +171,68 @@ void main() {
       expect(find.byType(SupportPage), findsOneWidget);
     });
   });
+
+  group('Support legal navigation', () {
+    testWidgets('each legal tile pushes its policy route', (tester) async {
+      final router = GoRouter(
+        initialLocation: '/support',
+        routes: [
+          GoRoute(
+            path: '/support',
+            builder: (_, __) =>
+                const SupportPage(supportRepository: _NoChannels()),
+          ),
+          GoRoute(
+              path: '/privacy-policy',
+              builder: (_, __) => const Text('privacy')),
+          GoRoute(path: '/terms', builder: (_, __) => const Text('terms')),
+          GoRoute(
+              path: '/shipping-policy',
+              builder: (_, __) => const Text('shipping')),
+          GoRoute(
+              path: '/returns-policy',
+              builder: (_, __) => const Text('returns')),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ));
+      await tester.pumpAndSettle();
+
+      const cases = [
+        ('Privacy Policy', 'privacy', '/privacy-policy'),
+        ('Terms of Service', 'terms', '/terms'),
+        ('Shipping Policy', 'shipping', '/shipping-policy'),
+        ('Returns & Exchange Policy', 'returns', '/returns-policy'),
+      ];
+      for (final (title, marker, path) in cases) {
+        await tester.ensureVisible(find.text(title));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(title));
+        await tester.pumpAndSettle();
+
+        expect(find.text(marker), findsOneWidget);
+        expect(router.routerDelegate.state.matchedLocation, path);
+
+        router.pop();
+        await tester.pumpAndSettle();
+      }
+    });
+  });
 }
 
 late SettingsCubit _settingsCubit;
+
+final class _NoChannels implements SupportRepository {
+  const _NoChannels();
+
+  @override
+  List<SupportChannel> getChannels() => const [];
+}
 
 final class _StubAuthRepository implements AuthRepository {
   final authChanges = StreamController<Authenticated?>.broadcast();

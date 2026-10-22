@@ -216,7 +216,8 @@ abstract final class RoutePages {
   static Widget adminReviews() =>
       AdminReviewsPage(repository: getIt<AdminReviewsPort>());
 
-  static Widget maintenance() => const MaintenancePage();
+  static Widget maintenance(GoRouterState state) =>
+      MaintenancePage(isUpdate: state.uri.queryParameters['update'] == '1');
 
   static Widget adminCustomers() =>
       AdminCustomersPage(repository: getIt<AdminCustomersPort>());

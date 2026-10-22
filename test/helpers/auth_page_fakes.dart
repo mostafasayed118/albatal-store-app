@@ -49,6 +49,10 @@ class AuthPageFakeAuthRepository implements AuthRepository {
   Result<void> updateResult;
   Result<Authenticated> signInResult = const Success(Authenticated('user-1'));
 
+  /// Session returned by [checkSession] — set to start a page test from
+  /// an already-authenticated state (e.g. a password-recovery link).
+  Authenticated? sessionUser;
+
   Completer<Result<AuthOutcome>>? pendingSignUp;
   Completer<Result<void>>? pendingReset;
   Completer<Result<void>>? pendingUpdate;
@@ -60,7 +64,7 @@ class AuthPageFakeAuthRepository implements AuthRepository {
   final List<AuthPageSignInCall> signInCalls = <AuthPageSignInCall>[];
 
   @override
-  Future<Result<Authenticated?>> checkSession() async => const Success(null);
+  Future<Result<Authenticated?>> checkSession() async => Success(sessionUser);
 
   @override
   Future<Result<AuthOutcome>> signUp({

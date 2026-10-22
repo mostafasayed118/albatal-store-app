@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
@@ -12,6 +14,14 @@ class MaintenancePage extends StatelessWidget {
 
   /// True when shown for a forced update rather than maintenance.
   final bool isUpdate;
+
+  /// Play Store listing for the Android app (the only store id that exists).
+  static final Uri _playStoreUri = Uri.parse(
+      'https://play.google.com/store/apps/details?id=com.albatal.elite');
+
+  void _openStore() {
+    launchUrl(_playStoreUri, mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +54,15 @@ class MaintenancePage extends StatelessWidget {
                 style: TextStyle(color: scheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
+              if (isUpdate &&
+                  defaultTargetPlatform == TargetPlatform.android) ...[
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _openStore,
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(l.update),
+                ),
+              ],
             ],
           ),
         ),

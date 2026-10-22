@@ -6,6 +6,7 @@ import 'package:al_batal_elite/features/settings/presentation/cubit/settings_cub
 import 'package:al_batal_elite/features/settings/presentation/pages/maintenance_page.dart';
 import 'package:al_batal_elite/features/settings/presentation/pages/settings_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +67,24 @@ void main() {
 
       expect(find.text('Update available'), findsOneWidget);
       expect(find.byIcon(Icons.system_update_outlined), findsOneWidget);
+    });
+
+    testWidgets('the store button shows only for a forced update on Android',
+        (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      try {
+        await tester.pumpWidget(_app(const MaintenancePage(isUpdate: true)));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Update'), findsOneWidget);
+      } finally {
+        // The framework asserts foundation debug vars are unset before
+        // tearDown callbacks run, so reset inside the test body.
+        debugDefaultTargetPlatformOverride = null;
+      }
+
+      await tester.pumpWidget(_app(const MaintenancePage()));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Update'), findsNothing);
     });
   });
 

@@ -22,6 +22,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _confirmCtrl = TextEditingController();
   bool _obscure = true;
 
+  /// The recovery link signs the user in before this page opens, so an
+  /// authenticated state alone is not a submitted password. The listener
+  /// only acknowledges/leaves once this page actually submitted.
+  bool _submitted = false;
+
   @override
   void dispose() {
     _passwordCtrl.dispose();
@@ -36,10 +41,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       appBar: AppBar(title: Text(l.resetPassword)),
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
-          if (state.isAuthenticated) {
+          if (_submitted && state.isAuthenticated) {
             showConfirmation(context, l.passwordUpdated);
             context.go(Routes.home);
           } else if (state.status == AuthStatus.failure) {
+            _submitted = false;
             // Code-first copy — shared since the 2026-09-21 dedupe.
             showAuthFailure(context, state);
           }
@@ -108,6 +114,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      _submitted = true;
       context.read<AuthCubit>().updatePassword(_passwordCtrl.text);
     }
   }

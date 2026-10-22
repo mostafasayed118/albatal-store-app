@@ -49,6 +49,7 @@ abstract final class Routes {
   // Read-only sales dashboard (#12).
   static const adminSales = '/admin/sales';
   static const maintenance = '/maintenance';
+  static const updateRequired = '/maintenance?update=1';
 
   // ─── Router-declaration patterns (literal `:id` placeholders). Only
   // the router's `path:` arguments reference these — real destinations are
