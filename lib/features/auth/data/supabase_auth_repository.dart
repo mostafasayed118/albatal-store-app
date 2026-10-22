@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/error/app_error.dart';
 import '../../../core/error/failure_codes.dart';
 import '../../../core/error/result.dart';
+import '../../../shared/services/env_config.dart';
 
 import '../domain/entities/auth_outcome.dart';
 import '../domain/repositories/auth_repository.dart';
@@ -83,7 +84,8 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<Result<void>> resetPassword(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      await _client.auth.resetPasswordForEmail(email,
+          redirectTo: EnvConfig.passwordRecoveryRedirect);
       return const Success(null);
     } on AuthException catch (e) {
       final mapped = _mapAuthError(e.message);

@@ -249,16 +249,21 @@ void main() {
 
   group('resetPassword', () {
     test('returns Success when the provider accepts the email', () async {
-      when(() => auth.resetPasswordForEmail('a@b.com'))
-          .thenAnswer((_) async {});
+      when(() => auth.resetPasswordForEmail('a@b.com',
+          redirectTo: any(named: 'redirectTo'))).thenAnswer((_) async {});
 
       final result = await repository.resetPassword('a@b.com');
 
       expect(result, isA<Success<void>>());
+      final redirect = verify(() => auth.resetPasswordForEmail('a@b.com',
+              redirectTo: captureAny(named: 'redirectTo'))).captured.single
+          as String;
+      expect(redirect, isNotEmpty);
     });
 
     test('maps provider auth errors', () async {
-      when(() => auth.resetPasswordForEmail('a@b.com'))
+      when(() => auth.resetPasswordForEmail('a@b.com',
+              redirectTo: any(named: 'redirectTo')))
           .thenThrow(const AuthException('Email not confirmed'));
 
       final result = await repository.resetPassword('a@b.com');
@@ -269,8 +274,8 @@ void main() {
     });
 
     test('maps unexpected throws to the generic failure', () async {
-      when(() => auth.resetPasswordForEmail('a@b.com'))
-          .thenThrow(Exception('boom'));
+      when(() => auth.resetPasswordForEmail('a@b.com',
+          redirectTo: any(named: 'redirectTo'))).thenThrow(Exception('boom'));
 
       final result = await repository.resetPassword('a@b.com');
 

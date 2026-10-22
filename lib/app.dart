@@ -186,6 +186,8 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       _router.push(Routes.product(link.productId));
     } else if (link is CatalogDeepLink) {
       _router.push(Routes.catalogWithQuery(link.query));
+    } else if (link is ResetPasswordDeepLink) {
+      _router.push(Routes.resetPassword);
     }
   }
 

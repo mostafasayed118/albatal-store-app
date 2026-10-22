@@ -90,7 +90,8 @@ final _routes = <RouteBase>[
   GoRoute(
       path: Routes.adminReviews, builder: (_, __) => RoutePages.adminReviews()),
   GoRoute(
-      path: Routes.maintenance, builder: (_, __) => RoutePages.maintenance()),
+      path: Routes.maintenance,
+      builder: (_, state) => RoutePages.maintenance(state)),
   GoRoute(
       path: Routes.adminCustomers,
       builder: (_, __) => RoutePages.adminCustomers()),

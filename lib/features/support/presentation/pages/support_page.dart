@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
+import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/support_channel.dart';
 import '../../domain/repositories/support_repository.dart';
 
@@ -104,6 +106,42 @@ class SupportPage extends StatelessWidget {
               onTap: () {
                 showConfirmation(context, l.comingSoon);
               },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(l.privacyPolicy),
+              trailing: Icon(context.directionalTrailingIcon),
+              onTap: () => context.push(Routes.privacyPolicy),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: Text(l.termsOfService),
+              trailing: Icon(context.directionalTrailingIcon),
+              onTap: () => context.push(Routes.terms),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.local_shipping_outlined),
+              title: Text(l.shippingPolicy),
+              trailing: Icon(context.directionalTrailingIcon),
+              onTap: () => context.push(Routes.shippingPolicy),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_return_outlined),
+              title: Text(l.returnsPolicy),
+              trailing: Icon(context.directionalTrailingIcon),
+              onTap: () => context.push(Routes.returnsPolicy),
             ),
           ),
         ],

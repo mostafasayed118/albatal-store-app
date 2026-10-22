@@ -58,6 +58,21 @@ void main() {
       );
     });
 
+    test('parses password-recovery links (custom scheme and web)', () {
+      expect(
+        parseDeepLink(Uri.parse('albatal://reset-password'), webBase: _base()),
+        const ResetPasswordDeepLink(),
+      );
+      expect(
+        parseDeepLink(
+          Uri.parse('https://albatal.app/reset-password'
+              '#access_token=x&type=recovery'),
+          webBase: _base(),
+        ),
+        const ResetPasswordDeepLink(),
+      );
+    });
+
     test('rejects foreign hosts, unknown paths and empty ids', () {
       expect(
         parseDeepLink(
@@ -79,6 +94,13 @@ void main() {
       expect(
         parseDeepLink(Uri.parse('ftp://albatal.app/product/fabric-42'),
             webBase: _base()),
+        isNull,
+      );
+      expect(
+        parseDeepLink(
+          Uri.parse('https://evil.example/reset-password'),
+          webBase: _base(),
+        ),
         isNull,
       );
     });

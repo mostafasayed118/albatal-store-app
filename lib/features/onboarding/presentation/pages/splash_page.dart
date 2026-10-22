@@ -80,7 +80,7 @@ class _SplashPageState extends State<SplashPage>
       }
       if (await config.updateRequired()) {
         if (!mounted) return;
-        context.go(Routes.maintenance);
+        context.go(Routes.updateRequired);
         return;
       }
     }

@@ -51,6 +51,8 @@ final class _HangingFetcher implements RemoteConfigFetcher {
 String _path(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.path;
 
+Uri _uri(GoRouter router) => router.routerDelegate.currentConfiguration.uri;
+
 void main() {
   Future<GoRouter> pumpSplash(
     WidgetTester tester, {
@@ -126,6 +128,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(_path(router), '/maintenance');
+    expect(_uri(router).queryParameters['update'], '1');
   });
 
   testWidgets('a slow config fetch times out and falls back to defaults',

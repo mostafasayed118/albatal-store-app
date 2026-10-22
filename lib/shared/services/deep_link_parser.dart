@@ -28,12 +28,22 @@ final class CatalogDeepLink extends AppDeepLink {
   List<Object?> get props => [query];
 }
 
+/// Opens the password-recovery page. The recovery session/tokens are
+/// already on the URI (Supabase appends them as a fragment) and are
+/// consumed by the auth SDK before this link is routed.
+final class ResetPasswordDeepLink extends AppDeepLink {
+  const ResetPasswordDeepLink();
+}
+
 /// Pure deep-link parser — no platform channels, fully unit-testable.
 ///
 /// Accepted shapes:
 /// - `https://<webBase.host>/product/<id>` (share/universal links)
 /// - `https://<webBase.host>/catalog?q=<query>`
-/// - `<scheme>://product/<id>` and `<scheme>://catalog?q=<query>`
+/// - `https://<webBase.host>/reset-password` (recovery tokens ride the
+///   fragment and are consumed by the auth SDK)
+/// - `<scheme>://product/<id>`, `<scheme>://catalog?q=<query>` and
+///   `<scheme>://reset-password`
 ///   (custom-scheme fallbacks, e.g. `albatal://product/fabric-42`)
 ///
 /// Everything else (foreign hosts, unknown paths, empty ids) returns
@@ -72,6 +82,9 @@ AppDeepLink? parseDeepLink(
   if (segs.length == 1 && segs.first == 'catalog') {
     final q = uri.queryParameters['q'];
     return CatalogDeepLink(query: (q == null || q.isEmpty) ? null : q);
+  }
+  if (segs.length == 1 && segs.first == 'reset-password') {
+    return const ResetPasswordDeepLink();
   }
   return null;
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:al_batal_elite/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
@@ -149,6 +150,38 @@ void main() {
 
       await tester.pumpWidget(_app(router));
       await tester.pumpAndSettle();
+      await _enterPasswords(tester);
+      await _tapUpdate(tester);
+
+      expect(auth.updateCalls, ['newpass123']);
+      expect(find.text('HOME_SCREEN'), findsOneWidget);
+      expect(find.text('Password updated successfully'), findsOneWidget);
+    });
+
+    testWidgets(
+        'an already-authenticated recovery session keeps the form '
+        'until the user submits', (tester) async {
+      final auth = AuthPageFakeAuthRepository()
+        ..sessionUser = const Authenticated('recovery-user');
+      final cubit = _cubit(auth);
+      addTearDown(cubit.close);
+      final router = _router(cubit);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(_app(router));
+      // The initial state still renders the in-flight spinner, so settle
+      // only after the session check moves the cubit to a terminal state.
+      await tester.pump();
+
+      // The recovery link completes sign-in while the page is open: the
+      // form must stay put (no success copy, no bounce home).
+      await cubit.checkSession();
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Password'), findsOneWidget);
+      expect(find.text('Password updated successfully'), findsNothing);
+      expect(find.text('HOME_SCREEN'), findsNothing);
+
       await _enterPasswords(tester);
       await _tapUpdate(tester);
 
