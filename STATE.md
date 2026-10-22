@@ -1,17 +1,18 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-22 (coverage wave committed; P0 recovery/legal/update fixes verified on branch)
+Last run: 2026-10-22 (coverage wave + P0 repairs merged and pushed; CI 7/7 green at 8fe3f46)
 
-## New — 2026-10-22 (coverage wave + P0 UX repairs)
+## New — 2026-10-22 (coverage wave + P0 UX repairs — LANDED)
 
-- Coverage wave landed on master as `6afc470` (155 new test files): full `flutter test --no-pub` = **2,047/2,047**, line coverage **99.0%** (12,931/13,056; CI floor 70%). `dart format` touched only the new files (67), zero tracked-file drift. `chore(opencode)` `4b7f864` registers the OneSignal remote MCP server. Both commits are LOCAL (not pushed).
+- Coverage wave landed on master as `6afc470` (155 new test files): full `flutter test --no-pub` = **2,047/2,047**, line coverage **99.0%** (12,931/13,056; CI floor 70%). `dart format` touched only the new files (67), zero tracked-file drift. `chore(opencode)` `4b7f864` registers the OneSignal remote MCP server.
 - Baseline re-measured first: `HEAD` = `fd933ac`, `origin/master` in sync, tree had only the untracked test wave + `opencode.json`; `flutter analyze --no-pub` clean.
-- P0 repairs implemented in worktree `.trees/fix-p0-links` (branch `fix/p0-links`, commit `29dfea8`, **NOT merged, NOT pushed**) and verified APPROVE by an independent verifier:
+- P0 repairs merged `--no-ff` as `8fe3f46` (branch `fix/p0-links`, commit `29dfea8`) after an independent verifier returned APPROVE with zero must-fix:
   - password recovery: `resetPasswordForEmail` sends `redirectTo` (`EnvConfig.passwordRecoveryRedirect`: web `https://albatal.app/reset-password`, native `albatal://reset-password`); parser + `app.dart` route the inbound link to `/reset-password`; the page waits for an actual submit before treating the recovery session as success.
   - legal pages: Support now links Privacy / Terms / Shipping / Returns (previously registered but unreachable).
   - forced update: `/maintenance?update=1` renders the update copy (was maintenance copy) + Android-only Play Store button.
-  - Branch gates: analyze clean, format 0 changed (18 files), full **2,051/2,051** (+4 tests). No pubspec/generated/CI changes.
-- Owner gates still open: merge `fix/p0-links`; push the local commits; allow-list both recovery redirect URLs in Supabase Auth; supply an iOS App Store id for the update button.
+- Gates on the merged tip before push: `dart format --output=none --set-exit-if-changed lib test` 0 changed (755 files), analyze clean, full **2,051/2,051**, coverage **99.0%** (12,970/13,100), Deno **108 passed**, migration artifact 79/79 markers present. `git diff --check` flags only the known CRLF noise on `STATE.md` (no CI step runs it).
+- Push window: `git push origin 8fe3f46:master` → `fd933ac..8fe3f46`; `git ls-remote` == HEAD; unpushed 0; tree clean. CI run `39771598712` = **7/7 success** (Flutter Tests, Format & Analyze, Secret Scan, Edge Functions, Deployment Readiness, Android Release Build, Setup & Cache) at `8fe3f46`.
+- Owner steps still open: allow-list `https://albatal.app/reset-password` and `albatal://reset-password` in Supabase Auth redirect URLs; supply an iOS App Store id for the update button.
 - Remaining from the 2026-10-22 full-project sweep (ranked): OneSignal REST key + Resend keys; InstaPay admin approval has no client caller; release artifact/version/Play upload; 6 stale prod + 4 stale staging Edge functions; flavor implementation still worktree-only; prod Paymob/RLS/backup proofs; docs (ACCEPTANCE/release*) still stale.
 
 ## New — 2026-10-21 (OneSignal client integration: App ID wired, device-tested)
