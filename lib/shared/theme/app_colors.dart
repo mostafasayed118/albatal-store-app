@@ -27,7 +27,6 @@ abstract final class AppColors {
 
   // Semantic — status colors.
   static const error = Color(0xFFBA1A1A);
-  static const success = Color(0xFF064E3B); // brand emerald = positive
   static const warning = Color(0xFF7C2D12); // env banner umber
 
   // Dark mode (hand-tuned, never an inversion of light).
@@ -37,7 +36,6 @@ abstract final class AppColors {
   static const darkOnPrimary = Color(0xFF002117);
   static const darkPrimaryContainer = Color(0xFF14503C);
   static const darkSecondary = Color(0xFFFFB77D);
-  static const darkOnSecondary = Color(0xFF2F1500);
   static const darkSecondaryContainer = Color(0xFF5C2E00);
   static const darkTertiary = Color(0xFFFFC59D);
   static const darkSurfaceContainerLow = Color(0xFF161D2A);

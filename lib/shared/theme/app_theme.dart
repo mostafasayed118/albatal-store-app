@@ -6,22 +6,6 @@ import 'app_colors.dart';
 /// Stitch-exact tokens (phase 0): light scaffold #f9f9f9, primary #003527, see DESIGN.md.
 /// All color values live in [AppColors]; this class only assembles ThemeData.
 abstract final class AppTheme {
-  @Deprecated('Use AppColors.primaryContainer')
-  static const emerald =
-      AppColors.primaryContainer; // alias -> primaryContainer
-  @Deprecated('Use AppColors.gold')
-  static const gold = AppColors.gold; // legacy accent alias -> secondary
-  static const charcoal = AppColors.darkBackground;
-  static const slate = AppColors.darkSurface;
-  static const terracotta = AppColors.error;
-
-  // Stitch-exact light tokens (stitch_get_project designMd)
-  static const primaryStitch = AppColors.primary;
-  static const surfaceStitch = AppColors.background;
-  static const surfaceContainerLow = AppColors.surfaceContainerLow;
-  static const surfaceContainerStitch = AppColors.surfaceContainer;
-  static const surfaceContainerHigh = AppColors.surfaceContainerHigh;
-
   static const cardRadius = BorderRadius.all(Radius.circular(16));
   static const controlRadius = BorderRadius.all(Radius.circular(8));
 
