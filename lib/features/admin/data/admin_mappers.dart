@@ -3,10 +3,8 @@ import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/services/logger.dart';
 import '../domain/entities/admin_catalog.dart';
 import '../domain/entities/admin_order.dart';
-import '../domain/entities/admin_sales.dart';
 import '../domain/entities/admin_variant.dart';
 import '../domain/entities/low_stock_variant.dart';
-import 'admin_sales_mappers.dart';
 
 /// Maps raw Supabase row/RPC payloads into typed admin domain entities.
 ///
@@ -227,17 +225,6 @@ class AdminMappers {
       })
       .map(categoryFromRow)
       .toList();
-
-  /// Aggregates a windowed `orders` read into an [AdminSalesOverview].
-  ///
-  /// Forwards to [AdminSalesMappers.salesOverviewFromRows] (same contract,
-  /// same tests) — see that method for the aggregation rules.
-  static AdminSalesOverview salesOverviewFromRows(
-    List<dynamic> rows, {
-    required int days,
-    required DateTime now,
-  }) =>
-      AdminSalesMappers.salesOverviewFromRows(rows, days: days, now: now);
 
   /// Customer display name: joined `profiles.full_name`, falling back to
   /// a denormalized `customer_name` column; mistyped values are ignored.

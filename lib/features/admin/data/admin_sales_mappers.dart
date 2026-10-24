@@ -4,8 +4,8 @@ import '../domain/entities/admin_sales.dart';
 
 /// Sales-dashboard aggregation over raw Supabase rows.
 ///
-/// Extracted from [AdminMappers]; that facade still forwards
-/// [salesOverviewFromRows] so the mapper import surface is unchanged.
+/// Extracted from the admin mapper facade so the aggregation stays a pure,
+/// independently testable unit.
 class AdminSalesMappers {
   AdminSalesMappers._();
 

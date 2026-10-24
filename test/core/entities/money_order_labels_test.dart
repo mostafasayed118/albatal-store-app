@@ -14,11 +14,6 @@ void main() {
       expect(const Money(129000).label(), '1290');
       expect(const Money(99875).label(), '998.75');
     });
-
-    test('wholeEgpLabelFromMinor delegates to label', () {
-      expect(Money.wholeEgpLabelFromMinor(129000), '1290');
-      expect(Money.wholeEgpLabelFromMinor(99875), '998.75');
-    });
   });
 
   group('Order copyWith', () {

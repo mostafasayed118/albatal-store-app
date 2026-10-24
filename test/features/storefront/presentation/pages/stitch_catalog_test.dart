@@ -204,7 +204,7 @@ void main() {
 
   group('Task 4 — Catalog Stitch reskin', () {
     testWidgets(
-        'CatalogPage shows StitchSearchBar + 2-col .68 grid via productGridDelegate + StitchProductGridCard',
+        'CatalogPage shows StitchSearchBar + 2-col .68 grid via productGridDelegateForWidth + StitchProductGridCard',
         (tester) async {
       tester.view.physicalSize = const Size(1000, 3000);
       tester.view.devicePixelRatio = 1.0;

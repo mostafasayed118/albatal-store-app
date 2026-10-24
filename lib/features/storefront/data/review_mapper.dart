@@ -25,10 +25,6 @@ ProductReview? reviewFromRow(Map<String, dynamic> row) {
   );
 }
 
-/// Maps an admin moderation row (pending queue).
-ProductReview? adminReviewToReview(Map<String, dynamic> row) =>
-    reviewFromRow(row);
-
 /// Stable machine codes for submit outcomes.
 const kReviewBuyRequired = 'review_buy_required';
 const kReviewInvalid = 'review_invalid';

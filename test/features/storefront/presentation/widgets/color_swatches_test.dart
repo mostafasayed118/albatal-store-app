@@ -1,6 +1,5 @@
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/presentation/catalog_constants.dart';
-import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
 import 'package:al_batal_elite/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -102,15 +101,6 @@ void main() {
       expect(CatalogConstants.swatchFor('Emerald'), const Color(0xFF0B7A4D));
       expect(CatalogConstants.swatchFor('  emerald '),
           CatalogConstants.swatchFor('EMERALD'));
-    });
-
-    test('deprecated aliases delegate identically', () {
-      // ignore: deprecated_member_use_from_same_package
-      expect(categoryAccent('Wool'), CatalogConstants.accentFor('Wool'));
-      // ignore: deprecated_member_use_from_same_package
-      expect(visibleCategoryChips([]), CatalogConstants.chipsFor([]));
-      // ignore: deprecated_member_use_from_same_package
-      expect(visibleCategoryChips(['All', 'Wool', 'Silk']), ['Wool', 'Silk']);
     });
 
     test('deterministic tint is stable and case-insensitive', () {

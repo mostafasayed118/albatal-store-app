@@ -464,8 +464,8 @@ void main() {
       expect(sale!.discountPct, 12);
     });
 
-    test('adminReviewToReview delegates to the row mapper', () {
-      final review = adminReviewToReview({
+    test('reviewFromRow maps a valid row', () {
+      final review = reviewFromRow({
         'id': 'r1',
         'product_id': 'p1',
         'rating': 4,

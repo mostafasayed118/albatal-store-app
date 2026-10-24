@@ -83,10 +83,3 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 }
-
-@Deprecated('Use CatalogConstants.accentFor instead.')
-Color categoryAccent(String category) => CatalogConstants.accentFor(category);
-
-@Deprecated('Use CatalogConstants.chipsFor instead.')
-List<String> visibleCategoryChips(List<String> categories) =>
-    CatalogConstants.chipsFor(categories);
