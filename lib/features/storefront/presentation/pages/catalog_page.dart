@@ -22,7 +22,8 @@ import '../widgets/filter_sheet.dart';
 import '../widgets/search_suggestions_bar.dart';
 import 'home_page.dart' show homeBuildWhen;
 
-/// Full catalog page with Stitch pill search + 2-col .68 grid via [productGridDelegate].
+/// Full catalog page with Stitch pill search + 2-col .68 grid via
+/// [productGridDelegateForWidth].
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key, this.initialQuery});
   final String? initialQuery;

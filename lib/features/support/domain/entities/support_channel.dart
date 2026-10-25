@@ -19,4 +19,4 @@ final class SupportChannel {
   final String? description;
 }
 
-enum SupportChannelKind { whatsapp, email, faq, externalLink }
+enum SupportChannelKind { whatsapp, email, faq }

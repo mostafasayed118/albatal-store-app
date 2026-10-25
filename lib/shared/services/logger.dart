@@ -14,7 +14,6 @@ enum LogCategory {
   cubit,
   network,
   payment,
-  analytics,
   error,
 }
 
@@ -97,14 +96,6 @@ class Log {
   static void cubit(String cubitName, String message,
       {LogLevel level = LogLevel.debug}) {
     _log(level, LogCategory.cubit, '[$cubitName] $message');
-  }
-
-  static void api(String method, String url, {int? statusCode, dynamic body}) {
-    final statusStr = statusCode != null ? ' → $statusCode' : '';
-    _log(LogLevel.info, LogCategory.network, '$method $url$statusStr');
-    if (body != null && kDebugMode) {
-      _log(LogLevel.debug, LogCategory.network, '  Body: $body');
-    }
   }
 
   static void payment(String message, {LogLevel level = LogLevel.info}) {

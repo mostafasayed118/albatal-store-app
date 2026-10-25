@@ -7,17 +7,14 @@ import '../../features/admin/presentation/cubit/admin_cubit.dart';
 /// Scenarios report [SmokeCheck]s instead of printing free-form text so
 /// the harness can render a uniform, greppable PASS/FAIL summary.
 class SmokeCheck {
-  const SmokeCheck(this.name, {required this.ok, this.detail = ''});
+  const SmokeCheck(this.name, {required this.ok});
 
   /// Short snake_case identifier, stable across runs.
   final String name;
 
-  /// Whether the expectation held. Data-dependent conditions (row counts,
-  /// specific products) belong in [detail], not here — checks should pass
-  /// on any environment unless a contract is genuinely broken.
+  /// Whether the expectation held. Checks should pass on any environment
+  /// unless a contract is genuinely broken.
   final bool ok;
-
-  final String detail;
 }
 
 /// Everything a scenario may touch, captured before the first async gap so

@@ -72,9 +72,6 @@ class EnvConfig {
     return kDebugMode ? 'development' : 'production';
   }
 
-  /// Whether we're in development mode.
-  static bool get isDevelopment => kDebugMode;
-
   /// Validate that all required client env vars are present.
   ///
   /// Returns a list of missing variable names. An empty list means the

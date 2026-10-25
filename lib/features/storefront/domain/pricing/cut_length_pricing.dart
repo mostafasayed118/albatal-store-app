@@ -18,13 +18,6 @@ const bool serverMeteredCheckoutEnabled = true;
 /// All money math stays in [Money] minor units — no `double` arithmetic
 /// ever multiplies prices.
 
-/// Hard upper bound for a single cut-length line (meters). The details
-/// cubit clamps to this; keep in sync with the server-side cap.
-const double kCutLengthMaxMeters = 50.0;
-
-/// Metering grid: cut lengths snap to steps of this size.
-const double kCutLengthStepMeters = 0.5;
-
 /// Wholesale discount ladder for cut-length orders. The FIRST matching
 /// (highest) tier whose threshold the ordered meters satisfy wins.
 /// Ordered descending by threshold.
@@ -72,9 +65,6 @@ Money meteredLineTotalWithTier(
       basePerMeter.minorUnits * (100 - discountPercent) * meterTenths;
   return Money((numerator * quantity / 1000).round());
 }
-
-Money meteredLineTotal(Money perMeter, double meters, {int quantity = 1}) =>
-    Money((perMeter.minorUnits * meters).round() * quantity);
 
 /// Cut-length/sample pricing for a cart line.
 ///

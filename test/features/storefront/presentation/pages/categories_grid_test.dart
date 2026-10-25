@@ -4,6 +4,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/domain/entities/flash_sale.dart';
 import 'package:al_batal_elite/features/storefront/domain/repositories/catalog_repository.dart';
+import 'package:al_batal_elite/features/storefront/presentation/catalog_constants.dart';
 import 'package:al_batal_elite/features/storefront/presentation/cubit/catalog_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/categories_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/fabric_weave_painter.dart';
@@ -80,14 +81,15 @@ Widget _harness() {
 }
 
 void main() {
-  group('categoryAccent', () {
+  group('CatalogConstants.accentFor', () {
     test('curated families return their brand tint', () {
-      expect(categoryAccent('Velvet'), const Color(0xFF6E1423));
-      expect(categoryAccent('Wool'), const Color(0xFF4A5058));
+      expect(CatalogConstants.accentFor('Velvet'), const Color(0xFF6E1423));
+      expect(CatalogConstants.accentFor('Wool'), const Color(0xFF4A5058));
     });
 
     test('unknown families get a deterministic tint', () {
-      expect(categoryAccent('Lurex'), categoryAccent('Lurex'));
+      expect(CatalogConstants.accentFor('Lurex'),
+          CatalogConstants.accentFor('Lurex'));
     });
   });
 

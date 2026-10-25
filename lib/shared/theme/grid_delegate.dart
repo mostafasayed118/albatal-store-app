@@ -18,11 +18,3 @@ SliverGridDelegate productGridDelegateForWidth(double width) {
     mainAxisSpacing: 12,
   );
 }
-
-/// Backwards-compatible phone default for existing callers and tests.
-const productGridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-  crossAxisCount: 2,
-  childAspectRatio: .68,
-  crossAxisSpacing: 12,
-  mainAxisSpacing: 12,
-);

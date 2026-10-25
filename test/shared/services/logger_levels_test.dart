@@ -53,20 +53,17 @@ void main() {
     expect(lines[3], contains('[ERROR]'));
   });
 
-  test('auth, nav, cubit, api and payment helpers tag their category', () {
+  test('auth, nav, cubit and payment helpers tag their category', () {
     Log.auth('signed in');
     Log.nav('go to /cart');
     Log.cubit('CartCubit', 'loaded', level: LogLevel.info);
-    Log.api('GET', '/rest/v1/products', statusCode: 200, body: '{ok}');
     Log.payment('charge initiated');
 
     expect(lines[0], contains('[AUTH]'));
     expect(lines[1], contains('[NAVIGATION]'));
     expect(lines[2], contains('[CUBIT]'));
     expect(lines[2], contains('[CartCubit] loaded'));
-    expect(lines[3], contains('GET /rest/v1/products → 200'));
-    expect(lines.last, contains('[PAYMENT]'));
-    expect(lines.any((l) => l.contains('Body: {ok}')), isTrue);
+    expect(lines[3], contains('[PAYMENT]'));
   });
 
   test('includeTimestamp and includeCategory can be disabled', () {

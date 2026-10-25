@@ -1,4 +1,3 @@
-import 'package:al_batal_elite/features/admin/data/admin_mappers.dart';
 import 'package:al_batal_elite/features/admin/data/admin_sales_mappers.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,9 +21,9 @@ void main() {
         if (items != null) 'order_items': items,
       };
 
-  group('AdminMappers.salesOverviewFromRows', () {
+  group('AdminSalesMappers.salesOverviewFromRows', () {
     test('zero-fills exactly one revenue point per day of the window', () {
-      final overview = AdminMappers.salesOverviewFromRows(
+      final overview = AdminSalesMappers.salesOverviewFromRows(
         [orderRow(placedAt: '2026-09-10T12:00:00Z', total: 50000)],
         days: 14,
         now: now,
@@ -44,7 +43,7 @@ void main() {
 
     test('excludes cancelled and refunded orders from revenue and best sellers',
         () {
-      final overview = AdminMappers.salesOverviewFromRows(
+      final overview = AdminSalesMappers.salesOverviewFromRows(
         [
           orderRow(
               placedAt: '2026-09-12T12:00:00Z',
@@ -85,7 +84,7 @@ void main() {
     });
 
     test('skips malformed rows and malformed line items defensively', () {
-      final overview = AdminMappers.salesOverviewFromRows(
+      final overview = AdminSalesMappers.salesOverviewFromRows(
         [
           <String, dynamic>{}, // no placed_at — skipped entirely
           'not-a-map', // wrong row type — skipped
@@ -108,7 +107,7 @@ void main() {
     });
 
     test('caps best sellers at five and orders by units sold', () {
-      final overview = AdminMappers.salesOverviewFromRows(
+      final overview = AdminSalesMappers.salesOverviewFromRows(
         [
           for (var p = 0; p < 7; p++)
             orderRow(placedAt: '2026-09-12T12:00:00Z', total: 1000, items: [

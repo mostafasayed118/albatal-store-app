@@ -46,12 +46,14 @@ void main() {
 
   group('metered line total', () {
     test('price x meters in minor units on the 0.5 m grid', () {
-      expect(meteredLineTotal(const Money(12000), 2.5), const Money(30000));
-      expect(meteredLineTotal(const Money(12000), 0.5), const Money(6000));
+      expect(meteredLineTotalWithTier(const Money(12000), 2.5, 0),
+          const Money(30000));
+      expect(meteredLineTotalWithTier(const Money(12000), 0.5, 0),
+          const Money(6000));
     });
 
     test('quantity multiplies the metered cut', () {
-      expect(meteredLineTotal(const Money(12000), 2, quantity: 3),
+      expect(meteredLineTotalWithTier(const Money(12000), 2, 0, quantity: 3),
           const Money(72000));
     });
 
@@ -73,7 +75,7 @@ void main() {
       // 39950 minor/m (399.50 EGP/m) x 2.5 m = 99875, i.e. 998.75 EGP.
       // Truncating this to whole pounds would display less than the
       // line_total the checkout payload submits for the same line.
-      final total = meteredLineTotal(const Money(39950), 2.5);
+      final total = meteredLineTotalWithTier(const Money(39950), 2.5, 0);
       expect(total, const Money(99875));
       expect(total.format(), '998.75 EGP');
     });

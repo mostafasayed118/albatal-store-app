@@ -153,10 +153,8 @@ void main() {
     // remaining non-secret members still work. (EnvConfig is now
     // build-time configured via --dart-define-from-file; the
     // non-secret members below do not depend on injected values.)
-    test('EnvConfig retains non-secret members (environment/isDevelopment)',
-        () {
+    test('EnvConfig retains non-secret members (environment)', () {
       expect(EnvConfig.environment, isA<String>());
-      expect(EnvConfig.isDevelopment, isA<bool>());
     });
 
     // ─── Test 15d: PaymentCubit does not expose handleCallback

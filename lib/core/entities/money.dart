@@ -61,7 +61,8 @@ final class Money extends Equatable {
   /// but fractional piasters are KEPT rather than truncated:
   /// `Money(99875).format()` → `"998.75 EGP"`. This matters because
   /// cut-length metered lines routinely land on a fractional major unit
-  /// ([meteredLineTotal] rounds to whole minor units, not whole pounds),
+  /// ([meteredLineTotalWithTier] rounds to whole minor units, not whole
+  /// pounds),
   /// so truncating would show the customer a total that disagrees with
   /// the amount recorded on the order.
   String format({String symbol = 'EGP'}) {
@@ -88,8 +89,8 @@ final class Money extends Equatable {
   ///
   /// NOTE: this `double` entry exists for non-money quantities (e.g. meter
   /// cut lengths in `pricing_tier_table.dart`). Money callers must prefer
-  /// [wholeEgpLabelFromMinor] so a `double` can never round-trip back into
-  /// the minor-unit discipline this file enforces.
+  /// [label] so a `double` can never round-trip back into the minor-unit
+  /// discipline this file enforces.
   static String wholeEgpLabel(double majorUnits) {
     final s = majorUnits.toStringAsFixed(2);
     return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
@@ -103,10 +104,6 @@ final class Money extends Equatable {
     if (minor == 0) return '${minorUnits ~/ 100}';
     return '${minorUnits ~/ 100}.${minor.toString().padLeft(2, '0')}';
   }
-
-  /// Static twin of [label] for call sites holding raw minor units.
-  static String wholeEgpLabelFromMinor(int minorUnits) =>
-      Money(minorUnits).label();
 
   // ─── Arithmetic ────────────────────────────────────────────
 

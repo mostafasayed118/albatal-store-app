@@ -168,7 +168,8 @@ void main() {
     expect(find.byType(StitchFlashSaleCard), findsOneWidget);
     expect(find.text('-15%'), findsNWidgets(2)); // header badge + card badge
     expect(find.byType(StitchProductGridCard), findsNWidgets(4));
-    // Perf: Home uses lazy SliverGrid (no shrinkWrap) via productGridDelegate.
+    // Perf: Home uses lazy SliverGrid (no shrinkWrap) via
+    // productGridDelegateForWidth.
     expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.byType(GridView), findsNothing);
     // Live countdown from server flash sale (T1) — ticks flow on the

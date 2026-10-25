@@ -30,16 +30,10 @@ Map<String, SmokeScenario> adminReadScenarios() => {
         final s = ctx.adminCubit.state;
         return [
           SmokeCheck('dashboard_status_ready',
-              ok: s.status == AdminStatus.ready,
-              detail: 'status=${s.status.name}'),
-          SmokeCheck('dashboard_no_error',
-              ok: s.errorMessage == null,
-              detail: 'error=${s.errorMessage ?? 'none'}'),
+              ok: s.status == AdminStatus.ready),
+          SmokeCheck('dashboard_no_error', ok: s.errorMessage == null),
           SmokeCheck('low_stock_mapper_keeps_rows',
-              ok: s.lowStockProducts.isNotEmpty,
-              detail: 'rows=${s.lowStockProducts.length} — the 043 contract: '
-                  'id-less rows are silently dropped, so an empty list on a '
-                  'catalog that ships means the RPC/mapper contract broke'),
+              ok: s.lowStockProducts.isNotEmpty),
         ];
       },
       'admin_routes_live': (ctx) async {
@@ -60,11 +54,7 @@ Map<String, SmokeScenario> adminReadScenarios() => {
           ctx.router.go(path); // void — no await.
           await ctx.pump();
           final location = ctx.router.routeInformationProvider.value.uri.path;
-          checks.add(SmokeCheck(
-            'route_live_$path',
-            ok: location == path,
-            detail: 'landed=$location',
-          ));
+          checks.add(SmokeCheck('route_live_$path', ok: location == path));
         }
         return checks;
       },
