@@ -257,6 +257,44 @@ void main() {
     expect(find.text('Payment failed. You can retry.'), findsOneWidget);
   });
 
+  testWidgets(
+      'backing out of the hosted checkout re-arms the attempt instead of '
+      'dead-ending', (tester) async {
+    await pump(tester);
+    cubit.selectMethod(PaymentMethod.paymobCard);
+
+    cubit.emit(const PaymentState(
+      status: PaymentStatus.awaitingVerification,
+      selectedMethod: PaymentMethod.paymobCard,
+      orderId: 'ord-server-1',
+      amount: Money.egp(100),
+      checkoutUrl:
+          'https://accept.paymob.com/api/acceptance/iframes/1?payment_token=abc',
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(PaymobCheckoutPage), findsOneWidget);
+
+    // The user closes the WebView without a terminal payment result.
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PaymobCheckoutPage), findsNothing);
+    expect(cubit.state.status, PaymentStatus.selectingMethod);
+    // Attempt context survives, so the retry is immediate.
+    expect(cubit.state.orderId, 'ord-server-1');
+    expect(cubit.state.amount, const Money.egp(100));
+
+    // The pay button is live again (not a dead end): tapping runs
+    // initiation instead of being silently ignored by the cubit guard.
+    await tester.ensureVisible(find.text('Pay Now'));
+    await tester.pumpAndSettle();
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNotNull);
+    await tester.tap(find.text('Pay Now'));
+    await tester.pumpAndSettle();
+    expect(service.initiateCalls, 1);
+  });
+
   testWidgets('processing state shows a spinner and disables the pay button',
       (tester) async {
     await pump(tester);

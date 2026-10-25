@@ -44,6 +44,22 @@ class _FailingFilterBuilder extends Fake
       this;
 
   @override
+  PostgrestTransformBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) =>
+      this;
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) =>
+      this;
+
+  @override
   PostgrestTransformBuilder<Map<String, dynamic>?> maybeSingle() =>
       throw StateError('offline');
 }

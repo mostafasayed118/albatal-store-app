@@ -56,7 +56,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('CheckoutCubit — idempotency key persistence (24h TTL)', () {
-    test('persists key to SharedPreferences after createPendingOrder',
+    test('a failed createPendingOrder keeps the key persisted (crash recovery)',
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -156,6 +156,52 @@ void main() {
 
       await cubit.close();
     });
+
+    test(
+        'successful placement clears the persisted key while state keeps it '
+        'for in-session retries', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _SuccessCheckoutRepo();
+      final cubit = _persistentCubit(repo, prefs);
+      final items = [
+        CartItem(product: products.first, color: 'Emerald', length: '2m'),
+      ];
+
+      await cubit.createPendingOrder(cartItems: items);
+
+      expect(cubit.state.status, CheckoutStatus.placing);
+      expect(repo.keys.single, isNotNull);
+      // In-session key survives so retrying THIS attempt reuses the order.
+      expect(cubit.state.idempotencyKey, repo.keys.single);
+      // Persisted copy is gone: a new checkout within the pending window
+      // must not resurrect this order through the RPC's user+key lookup.
+      expect(prefs.getString('checkout_idempotency_key'), isNull);
+      expect(prefs.getInt('checkout_idempotency_key_ts'), isNull);
+
+      await cubit.close();
+    });
+
+    test('failed placement retains the persisted key for crash recovery',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final cubit = _persistentCubit(_StubCheckoutRepo(), prefs);
+      final items = [
+        CartItem(product: products.first, color: 'Emerald', length: '2m'),
+      ];
+
+      await cubit.createPendingOrder(cartItems: items);
+
+      expect(cubit.state.status, CheckoutStatus.error);
+      expect(prefs.getString('checkout_idempotency_key'), isNotNull);
+      expect(
+        prefs.getString('checkout_idempotency_key'),
+        cubit.state.idempotencyKey,
+      );
+
+      await cubit.close();
+    });
   });
 
   group('dead-order recovery (restored key hits cancelled order)', () {
@@ -181,7 +227,9 @@ void main() {
       expect(cubit.state.status, CheckoutStatus.placing);
       expect(cubit.state.pendingOrderId, 'ord-fresh');
       expect(cubit.state.idempotencyKey, repo.keys.last);
-      expect(prefs.getString('checkout_idempotency_key'), repo.keys.last);
+      // Live pending order reached: the persisted attempt is cleared even
+      // though the cubit keeps the key for in-session retries.
+      expect(prefs.getString('checkout_idempotency_key'), isNull);
 
       await cubit.close();
     });
@@ -206,6 +254,30 @@ void main() {
       await cubit.close();
     });
   });
+}
+
+/// Returns a live pending order for every attempt.
+class _SuccessCheckoutRepo implements CheckoutRepository {
+  final List<String?> keys = [];
+
+  @override
+  Future<Result<PendingOrder>> placeOrder({
+    required List<CartItem> items,
+    required PaymentMethod paymentMethod,
+    required Address? address,
+    String? couponCode,
+    String? idempotencyKey,
+  }) async {
+    keys.add(idempotencyKey);
+    return Success(PendingOrder(
+      orderId: 'ord-live',
+      subtotal: const Money.egp(100),
+      shipping: Money.zero,
+      total: const Money.egp(100),
+      expiresAt: DateTime.now().add(const Duration(minutes: 15)),
+      status: OrderStatus.pending,
+    ));
+  }
 }
 
 /// Returns a cancelled order for the stale key, then a live pending

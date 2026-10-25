@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -59,6 +61,39 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
   bool _successNavigated = false;
   bool _instructionsOpened = false;
 
+  /// Opens the hosted checkout and re-arms the attempt if the user comes
+  /// back without a terminal server result. Without this, the state stays
+  /// [PaymentStatus.awaitingVerification] forever while the Pay button is
+  /// enabled but [PaymentCubit.processPayment] silently returns — a dead
+  /// end. Terminal results are left alone (the listener owns those).
+  Future<void> _openCheckout(
+    BuildContext routeContext,
+    PaymentCubit cubit,
+    String checkoutUrl,
+  ) async {
+    await routeContext.push(Routes.paymobCheckout, extra: checkoutUrl);
+    if (!mounted) return;
+    _checkoutOpened = false;
+    _instructionsOpened = false;
+    cubit.rearmAbandonedAttempt();
+  }
+
+  /// Same contract as [_openCheckout] for the InstaPay instructions route.
+  Future<void> _openInstructions(
+    BuildContext routeContext,
+    PaymentCubit cubit,
+    String orderId,
+  ) async {
+    await routeContext.push(Routes.instapayInstructions, extra: {
+      'cubit': cubit,
+      'orderId': orderId,
+    });
+    if (!mounted) return;
+    _checkoutOpened = false;
+    _instructionsOpened = false;
+    cubit.rearmAbandonedAttempt();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -99,7 +134,8 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
             return;
           }
           _checkoutOpened = true;
-          context.push(Routes.paymobCheckout, extra: checkoutUrl);
+          unawaited(_openCheckout(
+              context, context.read<PaymentCubit>(), checkoutUrl));
         } else if (state.status == PaymentStatus.awaitingProof &&
             !_instructionsOpened) {
           // InstaPay (041): hand the SAME cubit to the instructions
@@ -109,10 +145,8 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           // orderId rides along additively for the page's rehydration
           // path (route paths unchanged).
           _instructionsOpened = true;
-          context.push(Routes.instapayInstructions, extra: {
-            'cubit': context.read<PaymentCubit>(),
-            'orderId': orderId,
-          });
+          unawaited(_openInstructions(
+              context, context.read<PaymentCubit>(), orderId));
         } else if (state.status == PaymentStatus.success &&
             !_successNavigated) {
           final successOrderId = state.orderId.trim();

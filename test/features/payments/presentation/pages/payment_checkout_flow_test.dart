@@ -160,6 +160,67 @@ void main() {
       await timedCubit.close();
     }, timeout: const Timeout(Duration(seconds: 5)));
 
+    test('rearmAbandonedAttempt resets an abandoned wait and allows retry',
+        () async {
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
+      cubit.selectMethod(PaymentMethod.paymobCard);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.awaitingVerification);
+
+      cubit.rearmAbandonedAttempt();
+
+      // Idle again, but the attempt context survives so retry works.
+      expect(cubit.state.status, PaymentStatus.selectingMethod);
+      expect(cubit.state.amount, const Money.egp(100));
+      expect(cubit.state.orderId, 'ord-1');
+      expect(cubit.state.selectedMethod, PaymentMethod.paymobCard);
+      expect(cubit.state.checkoutUrl, isNull);
+
+      // processPayment is no longer blocked by the awaiting guard.
+      await cubit.processPayment(customerEmail: 'a@b.c');
+      expect(cubit.state.status, PaymentStatus.awaitingVerification);
+      expect(service.initiateCallCount, 2);
+    });
+
+    test('rearmAbandonedAttempt also resets an abandoned InstaPay proof wait',
+        () async {
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
+      cubit.selectMethod(PaymentMethod.instapay);
+      cubit.emit(const PaymentState(
+        status: PaymentStatus.awaitingProof,
+        selectedMethod: PaymentMethod.instapay,
+        orderId: 'ord-1',
+        amount: Money.egp(100),
+        instructions: InstapayInstructions(
+          paymentId: 'pay-1',
+          instapayAddress: 'instapay@merchant',
+          amount: Money(129000),
+        ),
+      ));
+
+      cubit.rearmAbandonedAttempt();
+
+      expect(cubit.state.status, PaymentStatus.selectingMethod);
+      expect(cubit.state.instructions, isNull);
+      expect(cubit.state.selectedMethod, PaymentMethod.instapay);
+    });
+
+    test('rearmAbandonedAttempt never clears a terminal result', () async {
+      cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
+      cubit.selectMethod(PaymentMethod.paymobCard);
+      await cubit.processPayment(customerEmail: 'a@b.c');
+
+      service.emitServerResult(
+          const PaymentSuccess(transactionId: 'txn-real', amount: Money.zero));
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.status, PaymentStatus.success);
+
+      cubit.rearmAbandonedAttempt();
+
+      expect(cubit.state.status, PaymentStatus.success);
+      expect(cubit.state.transactionId, 'txn-real');
+    });
+
     test('cancel emits cancelled and cancels the watch', () async {
       cubit.initPayment(amount: const Money.egp(100), orderId: 'ord-1');
       cubit.selectMethod(PaymentMethod.paymobCard);

@@ -119,9 +119,12 @@ void main() {
       expect(outcome.isSuccess, isTrue);
       expect(outcome.pending!.orderId, 'server-ord-001');
       expect(outcome.idempotencyKey, isNotEmpty);
-      // Persisted for crash-restart recovery.
-      expect(store.key, outcome.idempotencyKey);
-      expect(store.timestampMs, isNotNull);
+      // A live pending order ends the persisted copy: the outcome still
+      // carries the key for in-session retries, but a new checkout must
+      // not resurrect this order within the 15-minute pending window.
+      expect(store.key, isNull);
+      expect(store.timestampMs, isNull);
+      expect(store.clearCount, 1);
       expect(repo.callCount, 1);
       expect(repo.calls.single.idempotencyKey, outcome.idempotencyKey);
       final address = repo.calls.single.address;
@@ -233,7 +236,8 @@ void main() {
       expect(firstKey, isNotNull);
       expect(secondKey, isNotNull);
       expect(secondKey, isNot(firstKey));
-      expect(store.key, secondKey);
+      // The successful retry ends the persisted attempt as well.
+      expect(store.key, isNull);
       expect(outcome.pending!.orderId, 'fresh-ord');
       expect(outcome.idempotencyKey, secondKey);
     });
