@@ -134,6 +134,21 @@ class _StubProfileRepository implements ProfileRepository {
       const Success(null);
 }
 
+/// Profile read that stays pending until the test completes [completer],
+/// so a sign-out can be interleaved with an in-flight load.
+class _SlowProfileRepository implements ProfileRepository {
+  _SlowProfileRepository({this.profile});
+  final Profile? profile;
+  final completer = Completer<Result<Profile?>>();
+
+  @override
+  Future<Result<Profile?>> readProfile(String userId) => completer.future;
+
+  @override
+  Future<Result<void>> upsertProfile(Profile profile) async =>
+      const Success(null);
+}
+
 void main() {
   group('AuthCubit', () {
     late _StubProfileRepository profileRepo;
@@ -477,6 +492,39 @@ void main() {
 
       expect(cubit.state.status, AuthStatus.authenticated);
       expect(cubit.state.profile?.fullName, 'Ahmed');
+      await cubit.close();
+    });
+
+    test('sign-out during an in-flight profile read cannot resurrect auth',
+        () async {
+      // Regression: the signedOut branch emitted unauthenticated, then the
+      // still-pending profile read emitted authenticated for the old user.
+      final controller = StreamController<Authenticated?>();
+      addTearDown(controller.close);
+      final slowProfiles = _SlowProfileRepository(profile: sampleProfile);
+      final cubit = AuthCubit(
+        authRepository: _StubAuthRepository(
+          authStateChanges: () => controller.stream,
+        ),
+        profileRepository: slowProfiles,
+      );
+
+      // The session event starts a profile read that stays in flight.
+      controller.add(const Authenticated('user-1'));
+      await pumpEventQueue();
+      expect(cubit.state.status, isNot(AuthStatus.authenticated));
+
+      // The user signs out before the read completes.
+      await cubit.signOut();
+      expect(cubit.state.status, AuthStatus.unauthenticated);
+
+      // The stale read completes afterwards and must not authenticate.
+      slowProfiles.completer.complete(Success<Profile?>(sampleProfile));
+      await pumpEventQueue();
+
+      expect(cubit.state.status, AuthStatus.unauthenticated);
+      expect(cubit.state.profile, isNull);
+      expect(cubit.state.userId, isNull);
       await cubit.close();
     });
 

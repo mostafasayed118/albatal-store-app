@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/product.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
@@ -33,6 +35,23 @@ final class _WishlistRepo implements WishlistRepository {
   Future<Result<void>> writeWishlist(Set<String> ids) async => failWrites
       ? const Failure(AppError('secure store unavailable'))
       : const Success(null);
+}
+
+/// Wishlist read that stays pending until the test completes it, so the
+/// page can be observed while a manual refresh is in flight.
+final class _DeferredWishlistRepo implements WishlistRepository {
+  final reads = <Completer<Result<Set<String>>>>[];
+
+  @override
+  Future<Result<Set<String>>> readWishlist() {
+    final completer = Completer<Result<Set<String>>>();
+    reads.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<Result<void>> writeWishlist(Set<String> ids) async =>
+      const Success(null);
 }
 
 final class _EmptyCatalog
@@ -204,6 +223,41 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Categories stub'), findsOneWidget);
+  });
+
+  testWidgets('a refresh in flight shows loading, not the empty state',
+      (tester) async {
+    // Regression: loading had no UI branch, so a force refresh with an
+    // empty resolved list read as "nothing saved yet" until the read
+    // completed.
+    final repo = _DeferredWishlistRepo();
+    final wishlist = WishlistCubit(repo);
+    addTearDown(wishlist.close);
+    final catalog = CatalogCubit(_EmptyCatalog());
+    await catalog.load();
+
+    final refresh = wishlist.restore(force: true);
+    expect(wishlist.state.status, WishlistStatus.loading);
+
+    await tester.pumpWidget(
+      _app(
+        _router(wishlist: wishlist, catalog: catalog),
+        wishlist: wishlist,
+        catalog: catalog,
+      ),
+    );
+    // A real spinner animates forever — never pumpAndSettle here.
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Your wishlist is empty'), findsNothing);
+
+    repo.reads.single.complete(const Success(<String>{}));
+    await refresh;
+    await tester.pumpAndSettle();
+
+    expect(wishlist.state.status, WishlistStatus.ready);
+    expect(find.text('Your wishlist is empty'), findsOneWidget);
   });
 
   testWidgets('a persist failure keeps the grid and surfaces a snackbar',

@@ -168,9 +168,13 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
   void search(String query) {
     _query = query.trim();
     _generation++;
+    // The bookmark belongs to the previous result set. Leaving it in place
+    // let a "Load more" during the debounce fetch the new query from the old
+    // cursor and append those rows onto the list being replaced.
+    _cursor = null;
     _searchDebounceTimer?.cancel();
-    if (state.isLoadingMore) {
-      emit(state.copyWith(isLoadingMore: false));
+    if (state.isLoadingMore || state.hasMore) {
+      emit(state.copyWith(isLoadingMore: false, hasMore: false));
     }
     _searchDebounceTimer = Timer(
       searchDebounce,
@@ -220,6 +224,10 @@ class AdminCustomersCubit extends Cubit<AdminCustomersState> {
 
   Future<void> _loadFirstPage({required bool withSpinner}) async {
     final generation = ++_generation;
+    // A first page always starts the walk from the top, so a cursor left over
+    // from an earlier result set can never leak into this read (or survive a
+    // failed one and anchor the next "load more").
+    _cursor = null;
     if (withSpinner) {
       emit(state.copyWith(
         status: AdminCustomersStatus.loading,

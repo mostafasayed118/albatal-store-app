@@ -63,6 +63,9 @@ class FakeSupabaseClient extends Fake implements SupabaseClient {
   String? lastSelectColumns;
   String? lastEqColumn;
   dynamic lastEqValue;
+  String? lastOrderColumn;
+  bool? lastOrderAscending;
+  int? lastLimit;
   bool maybeSingleCalled = false;
 
   FakeSupabaseClient({required this.fakeChannel, this.fallbackRow});
@@ -109,6 +112,27 @@ class _FakeFilterBuilder extends Fake
   PostgrestFilterBuilder<PostgrestList> eq(String column, dynamic value) {
     _client.lastEqColumn = column;
     _client.lastEqValue = value;
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) {
+    _client.lastOrderColumn = column;
+    _client.lastOrderAscending = ascending;
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) {
+    _client.lastLimit = count;
     return this;
   }
 
@@ -197,6 +221,9 @@ void main() {
         expect(client.lastSelectColumns, 'status, transaction_id');
         expect(client.lastEqColumn, 'order_id');
         expect(client.lastEqValue, 'order-123');
+        expect(client.lastOrderColumn, 'created_at');
+        expect(client.lastOrderAscending, isFalse);
+        expect(client.lastLimit, 1);
         expect(client.maybeSingleCalled, isTrue);
 
         expect(results, hasLength(1));

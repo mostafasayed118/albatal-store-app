@@ -147,6 +147,27 @@ class PaymentCubit extends Cubit<PaymentState> {
     emit(const PaymentState());
   }
 
+  /// Re-arm an in-flight wait that the user abandoned by leaving the
+  /// hosted checkout / InstaPay instructions route without a terminal
+  /// result.
+  ///
+  /// Unlike [reset], this keeps the amount/order/method so the page can
+  /// retry immediately (the pay button stays usable). Terminal states
+  /// are never touched: a result that already arrived must not be erased
+  /// by a late route pop.
+  void rearmAbandonedAttempt() {
+    if (state.status != PaymentStatus.awaitingVerification &&
+        state.status != PaymentStatus.awaitingProof) {
+      return;
+    }
+    unawaited(_stopWatching());
+    emit(state.copyWith(
+      status: PaymentStatus.selectingMethod,
+      clearCheckoutUrl: true,
+      clearInstructions: true,
+    ));
+  }
+
   /// Subscribe to server-side payment status updates via Realtime.
   ///
   /// The repository ([PaymentService.watchPaymentStatus]) owns the

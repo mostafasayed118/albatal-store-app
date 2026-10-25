@@ -51,6 +51,11 @@ class AdminReviewsCubit extends Cubit<AdminReviewsState> {
 
   final AdminReviewsPort _repository;
 
+  /// Review ids with a moderation write in flight. Re-entry for the same row
+  /// is dropped: a double tap used to send duplicate approve/reject writes,
+  /// and a late failure could error the queue after the row was removed.
+  final Set<String> _pendingModerations = {};
+
   Future<void> load() async {
     emit(state.copyWith(status: AdminReviewsStatus.loading));
     final result = await _repository.fetchPendingReviews();
@@ -68,19 +73,24 @@ class AdminReviewsCubit extends Cubit<AdminReviewsState> {
 
   /// Approve/reject a row; on success it leaves the pending queue.
   Future<void> moderate(String id, {required bool approve}) async {
-    final result = await _repository.setReviewStatus(
-        id, approve ? 'approved' : 'rejected');
-    if (isClosed) return;
-    switch (result) {
-      case Success():
-        emit(state.copyWith(
-            pending: state.pending.where((r) => r.id != id).toList()));
-      case Failure(:final error):
-        emit(state.copyWith(
-          status: AdminReviewsStatus.error,
-          errorMessage: error.message,
-          errorCode: error.code,
-        ));
+    if (!_pendingModerations.add(id)) return;
+    try {
+      final result = await _repository.setReviewStatus(
+          id, approve ? 'approved' : 'rejected');
+      if (isClosed) return;
+      switch (result) {
+        case Success():
+          emit(state.copyWith(
+              pending: state.pending.where((r) => r.id != id).toList()));
+        case Failure(:final error):
+          emit(state.copyWith(
+            status: AdminReviewsStatus.error,
+            errorMessage: error.message,
+            errorCode: error.code,
+          ));
+      }
+    } finally {
+      _pendingModerations.remove(id);
     }
   }
 }

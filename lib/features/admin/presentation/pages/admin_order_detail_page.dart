@@ -178,7 +178,6 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
     final trackingCtrl = newDialogController();
-    final courierCtrl = newDialogController();
     final trackingError = _newDialogError();
     await showDialog<void>(
       context: context,
@@ -188,12 +187,6 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: courierCtrl,
-                decoration:
-                    InputDecoration(labelText: context.l10n.courierName),
-              ),
-              const SizedBox(height: 12),
               ValueListenableBuilder<String?>(
                 valueListenable: trackingError,
                 builder: (context, error, _) => TextField(

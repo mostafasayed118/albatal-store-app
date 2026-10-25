@@ -94,6 +94,9 @@ class _PollRow {
   String? lastSelect;
   String? lastEqColumn;
   Object? lastEqValue;
+  String? lastOrderColumn;
+  bool? lastOrderAscending;
+  int? lastLimit;
 }
 
 class _FakeSupabaseClient extends Fake implements SupabaseClient {
@@ -149,6 +152,27 @@ class _FakeFilterBuilder extends Fake
   PostgrestFilterBuilder<PostgrestList> eq(String column, dynamic value) {
     pollRow.lastEqColumn = column;
     pollRow.lastEqValue = value;
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = false,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) {
+    pollRow.lastOrderColumn = column;
+    pollRow.lastOrderAscending = ascending;
+    return this;
+  }
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) {
+    pollRow.lastLimit = count;
     return this;
   }
 
@@ -251,6 +275,12 @@ void main() {
           expect(pollRow.lastSelect, 'status, transaction_id');
           expect(pollRow.lastEqColumn, 'order_id');
           expect(pollRow.lastEqValue, 'ord-1');
+          // order_id is not unique: the poll must narrow to the newest
+          // row deterministically instead of letting maybeSingle() throw
+          // on multiple payment rows for the same order.
+          expect(pollRow.lastOrderColumn, 'created_at');
+          expect(pollRow.lastOrderAscending, isFalse);
+          expect(pollRow.lastLimit, 1);
           expect(cubit.state.status, PaymentStatus.awaitingProof);
 
           // t=90s: the admin approved meanwhile (server flips the row to

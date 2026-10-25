@@ -74,26 +74,84 @@ final class _OnboardingPageState extends State<OnboardingPage> {
       listener: (_, __) => context.go(Routes.home),
       child: Scaffold(
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final steps = _steps(context);
-              final imageHeight =
-                  (constraints.maxHeight * .55).clamp(240.0, 520.0).toDouble();
-              return PageView.builder(
-                controller: _pageController,
-                itemCount: steps.length,
-                onPageChanged: (page) => setState(() => _currentPage = page),
-                itemBuilder: (_, index) => OnboardingStepView(
-                  step: steps[index],
-                  imageHeight: imageHeight,
-                  currentPage: _currentPage,
-                  onNext: () => _next(steps),
-                  onSkip: _complete,
+          child: BlocBuilder<OnboardingCubit, OnboardingState>(
+            buildWhen: (previous, current) => previous.status != current.status,
+            builder: (context, state) => Column(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final steps = _steps(context);
+                      final imageHeight = (constraints.maxHeight * .55)
+                          .clamp(240.0, 520.0)
+                          .toDouble();
+                      return PageView.builder(
+                        controller: _pageController,
+                        itemCount: steps.length,
+                        onPageChanged: (page) =>
+                            setState(() => _currentPage = page),
+                        itemBuilder: (_, index) => OnboardingStepView(
+                          step: steps[index],
+                          imageHeight: imageHeight,
+                          currentPage: _currentPage,
+                          onNext: () => _next(steps),
+                          onSkip: _complete,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
+                // A failed completion used to be silent: the page only
+                // reacted to `destination == home`, so the user stayed on
+                // the last slide with no feedback. Surface it with the
+                // existing localized copy and a retry.
+                if (state.status == OnboardingStatus.failure)
+                  _CompletionFailureBanner(
+                    message: context.l10n.errorTitle,
+                    retryLabel: context.l10n.retry,
+                    onRetry: _complete,
+                  ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact inline banner shown when persisting onboarding completion fails.
+final class _CompletionFailureBanner extends StatelessWidget {
+  const _CompletionFailureBanner({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 18, color: scheme.error),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: scheme.error),
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: Text(retryLabel)),
+        ],
       ),
     );
   }

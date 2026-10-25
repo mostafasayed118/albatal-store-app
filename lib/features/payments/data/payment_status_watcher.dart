@@ -124,10 +124,16 @@ final class PaymentStatusWatcher {
         }
         pollInFlight = true;
         try {
+          // `order_id` is not globally unique (a failed attempt plus an
+          // active retry leaves two rows), so a bare maybeSingle() throws
+          // on multi-row results and the poll never resolves. Pick the
+          // newest row deterministically instead.
           final row = await _client
               .from('payments')
               .select('status, transaction_id')
               .eq('order_id', orderId)
+              .order('created_at', ascending: false)
+              .limit(1)
               .maybeSingle();
           if (completer.isCompleted || controller.isClosed || hasEmitted) {
             return;

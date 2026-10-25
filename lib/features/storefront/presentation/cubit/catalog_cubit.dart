@@ -49,6 +49,12 @@ final class CatalogCubit extends Cubit<CatalogState> {
   late final FlashSaleTicker _flashTicker;
   Timer? _queryDebounce;
 
+  /// Monotonic token for [load]. A response is applied only while its
+  /// generation is still the latest, so two overlapping loads can never
+  /// land in reverse order and a stale slow response cannot clobber a
+  /// fresher one.
+  int _loadGeneration = 0;
+
   /// Countdown ticks (audit P3): 1Hz remaining values on a dedicated
   /// broadcast stream instead of `CatalogState` — ticks never change
   /// state equality, so no catalog listener ever rebuilds from them.
@@ -68,6 +74,7 @@ final class CatalogCubit extends Cubit<CatalogState> {
   Timer? _flashPollTimer;
 
   Future<void> load() async {
+    final generation = ++_loadGeneration;
     // Offline truth is sampled once per load (Task #8): an offline load
     // that succeeds comes from the persistent cache; an offline failure
     // is "cold cache while offline", not a real server error.
@@ -83,7 +90,9 @@ final class CatalogCubit extends Cubit<CatalogState> {
       _repository.fetchProducts().then((r) => productResult = r),
       _repository.fetchCategories().then((r) => categoryResult = r),
     ]);
-    if (isClosed) return;
+    // Only the newest load may apply. A superseded load resolving late
+    // (out-of-order network) must not overwrite fresher state.
+    if (isClosed || generation != _loadGeneration) return;
     productResult.when(
       success: (products) {
         final cats = categoryResult.when(

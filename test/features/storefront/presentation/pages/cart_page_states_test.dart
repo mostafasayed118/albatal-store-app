@@ -25,6 +25,8 @@ final class _CartRepo implements CartRepository {
 
   List<CartItem> items;
   bool failRead;
+  bool failWrite = false;
+  int writes = 0;
 
   @override
   Future<Result<List<CartItem>>> readCart(ProductLookup productForId) async =>
@@ -34,6 +36,8 @@ final class _CartRepo implements CartRepository {
 
   @override
   Future<Result<void>> writeCart(List<CartItem> items) async {
+    writes++;
+    if (failWrite) return const Failure(AppError('cart store unavailable'));
     this.items = List.of(items);
     return const Success(null);
   }
@@ -84,6 +88,68 @@ void main() {
     expect(cart.state.status, CartStatus.ready);
     expect(find.text('Your cart is waiting for something exquisite.'),
         findsOneWidget);
+  });
+
+  testWidgets('retrying a persist error keeps the live cart items',
+      (tester) async {
+    // The persisted cart is stale/empty while the live cart holds the
+    // user's selection; its write failed, so status is error but items
+    // stay on screen. Retry must never overwrite them with the stale
+    // persisted cart.
+    final repo = _CartRepo();
+    final cart = CartCubit(repo);
+    addTearDown(cart.close);
+    await cart.restore();
+
+    await tester.pumpWidget(_app(_router(cart), cart));
+    await tester.pumpAndSettle();
+    expect(find.text('Start shopping'), findsOneWidget);
+
+    repo.failWrite = true;
+    cart.add(_product);
+    await tester.pumpAndSettle();
+    expect(cart.state.status, CartStatus.error);
+    expect(cart.state.items, hasLength(1));
+    expect(find.text('Something went wrong'), findsOneWidget);
+
+    repo.failWrite = false;
+    final writesBeforeRetry = repo.writes;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+
+    expect(cart.state.items, hasLength(1));
+    expect(cart.state.status, CartStatus.ready);
+    expect(find.text('Royal Emerald Silk'), findsOneWidget);
+    // The retry must re-attempt the failed WRITE (not just re-read), so the
+    // live cart is durable after the UI reports ready.
+    expect(repo.writes, writesBeforeRetry + 1);
+    expect(repo.items, hasLength(1));
+  });
+
+  testWidgets('a failed persist retry keeps the cart in error with its items',
+      (tester) async {
+    final repo = _CartRepo();
+    final cart = CartCubit(repo);
+    addTearDown(cart.close);
+    await cart.restore();
+
+    await tester.pumpWidget(_app(_router(cart), cart));
+    await tester.pumpAndSettle();
+
+    repo.failWrite = true;
+    cart.add(_product);
+    await tester.pumpAndSettle();
+    expect(cart.state.status, CartStatus.error);
+
+    final writesBeforeRetry = repo.writes;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+
+    // Still failing: the UI must not claim ready, and the live items stay.
+    expect(repo.writes, writesBeforeRetry + 1);
+    expect(cart.state.status, CartStatus.error);
+    expect(cart.state.items, hasLength(1));
+    expect(find.text('Something went wrong'), findsOneWidget);
   });
 
   testWidgets('the empty cart CTA routes back to the catalog', (tester) async {

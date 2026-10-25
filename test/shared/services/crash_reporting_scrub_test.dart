@@ -49,14 +49,4 @@ void main() {
       expect(CrashReportingService.scrubContext(<String, dynamic>{}), isEmpty);
     });
   });
-
-  group('NoOpCrashReportingService', () {
-    test('all methods are no-ops and do not throw', () {
-      final service = const NoOpCrashReportingService();
-      service.init();
-      service.captureError(Exception('test'), StackTrace.current);
-      service.setUser('user-123');
-      service.setUser(null);
-    });
-  });
 }

@@ -86,6 +86,13 @@ class PlaceCheckoutOrderUseCase {
     switch (first) {
       case Success<PendingOrder>(:final value):
         if (value.status == OrderStatus.pending) {
+          // The attempt reached a live pending order: the persisted copy
+          // has done its job. Clearing it is what stops a NEW checkout
+          // (new cubit / app restart within the 15-minute pending window)
+          // from resurrecting this order through the RPC's user+key
+          // lookup. The cubit keeps the key in state, so a retry of THIS
+          // attempt still reuses it.
+          await _idempotencyStore.clear();
           return PlaceCheckoutOrderOutcome.success(
               pending: value, idempotencyKey: key);
         }
@@ -101,14 +108,15 @@ class PlaceCheckoutOrderUseCase {
           couponCode: couponCode,
           idempotencyKey: fresh,
         );
-        return switch (second) {
-          Success<PendingOrder>(:final value) =>
-            PlaceCheckoutOrderOutcome.success(
-                pending: value, idempotencyKey: fresh),
-          Failure<PendingOrder>(:final error) =>
-            PlaceCheckoutOrderOutcome.failure(
-                error: error, idempotencyKey: fresh),
-        };
+        switch (second) {
+          case Success<PendingOrder>(:final value):
+            await _idempotencyStore.clear();
+            return PlaceCheckoutOrderOutcome.success(
+                pending: value, idempotencyKey: fresh);
+          case Failure<PendingOrder>(:final error):
+            return PlaceCheckoutOrderOutcome.failure(
+                error: error, idempotencyKey: fresh);
+        }
       case Failure<PendingOrder>(:final error):
         // No retry on a hard failure, but the key stays persisted AND is
         // returned so the user can retry the same attempt with it.

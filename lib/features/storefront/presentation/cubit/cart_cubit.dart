@@ -143,6 +143,29 @@ final class CartCubit extends Cubit<CartState> {
     }
   }
 
+  /// Re-attempts the failed persistence write for the LIVE items.
+  ///
+  /// The error-state retry used to re-read the persisted cart, which left
+  /// the user's current items unpersisted while showing a ready cart. This
+  /// retries exactly what is on screen and only reports ready on success.
+  Future<void> retryPersist() async {
+    if (state.items.isEmpty) {
+      await restore();
+      return;
+    }
+    emit(state.copyWith(status: CartStatus.loading));
+    final result = await _repository.writeCart(state.items);
+    if (isClosed) return;
+    switch (result) {
+      case Success():
+        emit(state.copyWith(status: CartStatus.ready));
+      case Failure(:final error):
+        Log.w('Cart persist retry failed',
+            category: LogCategory.cubit, error: error);
+        emit(state.copyWith(status: CartStatus.error));
+    }
+  }
+
   /// Re-price cart lines with the viewer's negotiated list prices (078).
   /// Reads [state.items] AFTER the fetch so an add/remove during the
   /// round-trip is included, not clobbered; emits only when something

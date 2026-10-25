@@ -53,12 +53,16 @@ const _product = Product(
 );
 
 final class _ThrowingPrefs extends Fake implements SharedPreferences {
+  final writes = <String, String>{};
+
   @override
   String? getString(String key) => throw Exception('disk unavailable');
 
   @override
-  Future<bool> setString(String key, String value) async =>
-      throw Exception('disk unavailable');
+  Future<bool> setString(String key, String value) async {
+    writes[key] = value;
+    throw Exception('disk unavailable');
+  }
 }
 
 final class _StubPrefs extends Fake implements SharedPreferences {
@@ -316,8 +320,17 @@ void main() {
   });
 
   group('Catalog persistent cache', () {
-    test('a throwing prefs write degrades to a logged no-op', () async {
-      await persistCatalogCache(_ThrowingPrefs(), const [_product]);
+    test('a throwing prefs write records the attempt but stays unreadable',
+        () async {
+      final prefs = _ThrowingPrefs();
+
+      await persistCatalogCache(prefs, const [_product]);
+
+      expect(prefs.writes.keys, [catalogPersistentCacheKey]);
+      final persisted = jsonDecode(prefs.writes.values.single) as List;
+      expect(persisted, hasLength(1));
+      expect((persisted.single as Map)['id'], 'p1');
+      expect(await restoreCatalogCache(prefs), isNull);
     });
 
     test('large payloads decode through the isolate path', () async {

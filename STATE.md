@@ -1,8 +1,8 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-24 (dead-code removal branch ready — verifier APPROVE, gates green; not merged/pushed)
+Last run: 2026-10-24 (verified-state fixes + dead-code removal merged locally; gates re-verified; not pushed)
 
-## New — 2026-10-24 (dead-code removal — branch `chore/dead-code-removal`, NOT pushed)
+## New — 2026-10-24 (dead-code removal — MERGED locally)
 
 - Owner ask: explore the whole codebase and remove all dead code. Worktree `.trees/dead-code-removal` (base `14c4d3a`); main checkout untouched except this record. No push/merge.
 - Recon: 4 parallel read-only subagents (file reachability, symbol references, assets/l10n/deps, indirect-dispatch keep list) + a second-opinion scan. Deterministic import-graph BFS: **384/384 lib files reachable**, 0 dead files, 0 unused dependencies, 0 dead widgets/routes, 0 commented-out code blocks, 0 dead test helpers.
@@ -12,7 +12,22 @@ Last run: 2026-10-24 (dead-code removal branch ready — verifier APPROVE, gates
 - Reported but deliberately kept (production-dead yet capability/seam/owner-gated): profile-write chain (`AuthCubit.updateProfile` → `upsertProfile`), avatar-upload chain (`StorageService.uploadAvatar`), checkout/catalog/admin test hooks, `AnalyticsService.productView/addToCart` (no emitters — analytics gap), `EnvConfig.validate` (never called — wiring gap), `SupabaseConfig.isAuthenticated`, `AdminOrdersPort` (registered, no consumer), `CartItem.lineTotal`, `AdminProduct.statusLabel`, `Money.subtractClamped`, row-based sales mapper, 42 unused l10n keys, 9 test-only SVGs.
 - Gates: baseline `flutter analyze` clean + **2,051/2,051**; final `dart format --output=none --set-exit-if-changed lib test` 0 changed (754 files), analyze clean, full **2,041/2,041** (2,051 − 11 tests of deleted code + 1 migrated wholesale regression), focused suites 27/27 and 120/120, post-prose-edit subset 8/8.
 - Independent verifier (`verifier` subagent): **APPROVE**, zero blocking findings (all 28 deleted symbols at 0 refs; enum switches/string serialization checked; scope clean).
-- Not merged/pushed. Next: owner review of `chore/dead-code-removal` → merge.
+- Merged locally; not pushed.
+
+## New — 2026-10-24 (verified-state fix wave — MERGED locally)
+
+- Owner ask: "fix all in best way" after a read-only audit of all 21 cubits. Worktree `.trees/fix-verified-state` from `14c4d3a`. No push.
+- 5 parallel scoped agents (checkout/payments, auth/cart, admin, storefront states, test hygiene) + independent verifier: **APPROVE**, zero blocking findings.
+- Fixed (18 lib files + tests):
+  - checkout: persisted idempotency key cleared on a live pending success (in-session key kept) — a new checkout can no longer resurrect an abandoned cart; failure still keeps the key for crash recovery.
+  - payments: abandoned hosted-checkout/InstaPay wait re-armed on route return (no dead-end Pay button); fallback poll reads the newest payment row (`created_at desc, limit 1`) so multiple rows no longer break `.maybeSingle()`.
+  - auth: generation token drops a profile read that completes after sign-out; sign-in/sign-up bump the token; no emit after close on those paths.
+  - cart: error retry re-attempts the failed write for the live items (`retryPersist`) instead of force-re-reading the stale cart; live items stay durable.
+  - state coverage: wishlist loading view; catalog load generation; reviews product token + visible error/retry; onboarding double-submit guard + failure banner; address picker failure row (only when the book is empty).
+  - admin: order/detail request tokens (no stale overwrite); a confirmed status transition keeps `selectedOrder` valid instead of false "not found"; customers search resets its cursor; per-row moderation guard; dead courier field removed.
+- Tests: smoke harness now asserts `exitCode == 0` with authenticated-admin fakes (`SUMMARY 2/2`), so a failed scenario fails the test; placeholder `expect(true,isTrue)`, the catch-all secure-store test, and three no-assert tests fixed or removed; 26 tests added net.
+- Gates (final, exact): `dart format --output=none --set-exit-if-changed lib test` 0 changed (758 files); `flutter analyze --no-pub` No issues; full `flutter test --coverage --no-pub` **2077/2077**; coverage **98.96%** (13,074/13,212), 0 zero-covered files. `git diff`: 39 files, +1,271/−139 (18 lib, 21 tests; 3 new test files). `git diff --check` clean.
+- Deferred (owner-gated/structural): `order_items` admin SELECT policy (migration); InstaPay admin review UI (needs a list RPC + migration); OAuth return leg + dashboard allowlist; legal page copy; `AdminCubit` app-scoping refactor; live-backend E2E (no `integration_test/`).
 
 ## New — 2026-10-22 (coverage wave + P0 UX repairs — LANDED)
 

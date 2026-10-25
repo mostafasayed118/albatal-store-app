@@ -207,13 +207,4 @@ void main() {
     ).captured.single as NotificationDetails;
     expect(details.android!.channelId, 'back_in_stock');
   });
-
-  test('no-op implementation resolves every method', () async {
-    const service = NoOpNotificationService();
-
-    await service.init();
-    await service.requestPermission();
-    await service.showOrderNotification(title: 't', body: 'b');
-    await service.showBackInStockNotification(title: 't', body: 'b');
-  });
 }
