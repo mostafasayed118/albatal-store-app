@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/storefront/data/review_mapper.dart';
@@ -76,6 +78,49 @@ void main() {
 
       await cubit.load('p1');
       expect(cubit.state.status, ReviewsStatus.unavailable);
+      await cubit.close();
+    });
+
+    test('ignores a response for a product the cubit has moved past', () async {
+      final repo = _MockReviewsRepo();
+      final stale = Completer<Result<List<ProductReview>>>();
+      final fresh = Completer<Result<List<ProductReview>>>();
+      when(() => repo.fetchForProduct('p1')).thenAnswer((_) => stale.future);
+      when(() => repo.fetchForProduct('p2')).thenAnswer((_) => fresh.future);
+      final cubit = ReviewsCubit(repository: repo);
+
+      final firstLoad = cubit.load('p1');
+      final secondLoad = cubit.load('p2');
+
+      fresh.complete(
+        Success([
+          reviewFromRow({..._row(), 'product_id': 'p2'})!
+        ]),
+      );
+      await secondLoad;
+      expect(cubit.state.reviews.single.productId, 'p2');
+
+      // The stale p1 response resolves last — it belongs to the product the
+      // section no longer shows and must be dropped.
+      stale.complete(Success([reviewFromRow(_row())!]));
+      await firstLoad;
+
+      expect(cubit.state.reviews.single.productId, 'p2');
+      await cubit.close();
+    });
+
+    test('reload refetches the last requested product', () async {
+      final repo = _MockReviewsRepo();
+      final review = reviewFromRow(_row())!;
+      when(() => repo.fetchForProduct('p1'))
+          .thenAnswer((_) async => Success([review]));
+      final cubit = ReviewsCubit(repository: repo);
+
+      await cubit.load('p1');
+      await cubit.reload();
+
+      verify(() => repo.fetchForProduct('p1')).called(2);
+      expect(cubit.state.status, ReviewsStatus.ready);
       await cubit.close();
     });
 

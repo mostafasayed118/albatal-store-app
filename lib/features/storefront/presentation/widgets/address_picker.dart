@@ -29,6 +29,32 @@ class AddressPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AddressesCubit, AddressesState>(
       builder: (context, state) {
+        // A failed read with an empty book used to be indistinguishable
+        // from "no addresses": surface it with a retry instead of the
+        // empty card. With saved addresses present, keep the list visible.
+        if (state.status == AddressesStatus.failure &&
+            state.addresses.isEmpty) {
+          return Padding(
+            padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, size: 18, color: scheme.error),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.errorTitle,
+                    style: TextStyle(color: scheme.error),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      context.read<AddressesCubit>().load(force: true),
+                  child: Text(l.retry),
+                ),
+              ],
+            ),
+          );
+        }
         if (state.addresses.isEmpty) {
           return EmptyAddressCard(onAddNew: onAddNew, l: l, scheme: scheme);
         }

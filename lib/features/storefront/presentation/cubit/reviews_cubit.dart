@@ -65,7 +65,10 @@ class ReviewsCubit extends Cubit<ReviewsState> {
     }
     emit(state.copyWith(status: ReviewsStatus.loading));
     final result = await repo.fetchForProduct(productId);
-    if (isClosed) return;
+    // The section may have been rebound to another product while this
+    // request was in flight; a late response for the old product must not
+    // overwrite the current product's reviews.
+    if (isClosed || _productId != productId) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(status: ReviewsStatus.ready, reviews: value));
@@ -80,6 +83,10 @@ class ReviewsCubit extends Cubit<ReviewsState> {
         ));
     }
   }
+
+  /// Refetches the reviews for the product most recently passed to [load]
+  /// (drives the inline error retry).
+  Future<void> reload() => load(_productId);
 
   Future<void> submit({
     required int rating,

@@ -77,6 +77,43 @@ final class _CloseAwareCatalogRepository
   Future<Result<List<FlashSale>>> getActiveFlashSales() => flashSales.future;
 }
 
+/// Repository whose product/category reads resolve on demand, one completer
+/// per call, so overlapping loads can be completed out of order.
+final class _OutOfOrderCatalogRepository
+    with FetchRelatedFromProducts
+    implements CatalogRepository {
+  final productLoads = <Completer<Result<List<Product>>>>[];
+  final categoryLoads = <Completer<Result<List<String>>>>[];
+
+  @override
+  Future<Result<List<Product>>> fetchProducts() {
+    final completer = Completer<Result<List<Product>>>();
+    productLoads.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<Result<List<String>>> fetchCategories() {
+    final completer = Completer<Result<List<String>>>();
+    categoryLoads.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<Result<Product>> fetchProductById(String id) async =>
+      const Failure(AppError('unused'));
+
+  @override
+  Product? findProductById(String id) => null;
+
+  @override
+  List<String> get defaultCategories => const [];
+
+  @override
+  Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
+      const Success<List<FlashSale>>([]);
+}
+
 /// Stub repository that always fails.
 final class FailingCatalogRepository
     with FetchRelatedFromProducts
@@ -152,6 +189,33 @@ void main() {
         CatalogState(status: CatalogStatus.error),
       ],
     );
+
+    test('applies only the latest of two overlapping loads', () async {
+      final repo = _OutOfOrderCatalogRepository();
+      final cubit = CatalogCubit(repo);
+      addTearDown(cubit.close);
+
+      final first = cubit.load();
+      final second = cubit.load();
+      expect(repo.productLoads, hasLength(2));
+
+      // The newer load resolves first.
+      repo.categoryLoads[1].complete(const Success(['All']));
+      repo.productLoads[1].complete(Success([products.first]));
+      await second;
+
+      expect(cubit.state.status, CatalogStatus.ready);
+      expect(cubit.state.allProducts, [products.first]);
+      expect(cubit.state.categories, const ['All']);
+
+      // The stale first load resolves afterwards and must not clobber it.
+      repo.categoryLoads[0].complete(const Success(['Stale']));
+      repo.productLoads[0].complete(const Success(products));
+      await first;
+
+      expect(cubit.state.allProducts, [products.first]);
+      expect(cubit.state.categories, const ['All']);
+    });
 
     test('a product load that resolves after close does not emit', () async {
       final products = Completer<Result<List<Product>>>();

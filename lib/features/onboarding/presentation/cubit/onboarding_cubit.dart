@@ -31,12 +31,16 @@ final class OnboardingCubit extends Cubit<OnboardingState> {
   }
 
   Future<void> complete() async {
+    // Re-entry guard: surviving taps on Skip/Get Started while the write
+    // is in flight must not duplicate the persist.
+    if (isClosed || state.status == OnboardingStatus.completing) return;
     emit(state.copyWith(
       status: OnboardingStatus.completing,
       clearError: true,
     ));
 
     final result = await _repository.complete();
+    if (isClosed) return;
     result.when(
       success: (_) => emit(state.copyWith(
         status: OnboardingStatus.ready,

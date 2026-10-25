@@ -20,9 +20,30 @@ final class ReviewsView extends StatelessWidget {
     return BlocBuilder<ReviewsCubit, ReviewsState>(
       builder: (context, state) {
         if (state.status == ReviewsStatus.unavailable ||
-            state.status == ReviewsStatus.initial ||
-            state.status == ReviewsStatus.error) {
+            state.status == ReviewsStatus.initial) {
           return const SizedBox.shrink();
+        }
+        if (state.status == ReviewsStatus.error) {
+          // A failed fetch must not vanish silently: show compact error copy
+          // with a retry that refetches the same product.
+          return Padding(
+            padding: const EdgeInsetsDirectional.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline,
+                    size: 18, color: Theme.of(context).colorScheme.error),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(l.errorTitle,
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ),
+                TextButton(
+                  onPressed: () => context.read<ReviewsCubit>().reload(),
+                  child: Text(l.retry),
+                ),
+              ],
+            ),
+          );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
