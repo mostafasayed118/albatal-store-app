@@ -63,7 +63,8 @@ WITH required(name, signature) AS (
     ('admin_upsert_variant', 'uuid,text,text,integer,numeric'),
     ('admin_set_product_images', 'uuid,text[]'),
     ('submit_product_review', 'uuid,integer,text,text'),
-    ('review_instapay_proof', 'uuid,boolean,text')
+    ('review_instapay_proof', 'uuid,boolean,text'),
+    ('admin_list_instapay_proofs', '')
 )
 SELECT
   name || '(' || signature || ')' AS rpc,
@@ -100,7 +101,8 @@ WITH required(name, signature, allowed_role) AS (
     ('admin_upsert_variant', 'uuid,text,text,integer,numeric', 'authenticated'),
     ('admin_set_product_images', 'uuid,text[]', 'authenticated'),
     ('submit_product_review', 'uuid,integer,text,text', 'authenticated'),
-    ('review_instapay_proof', 'uuid,boolean,text', 'authenticated')
+    ('review_instapay_proof', 'uuid,boolean,text', 'authenticated'),
+    ('admin_list_instapay_proofs', '', 'authenticated')
 )
 SELECT
   name || '(' || signature || ')' AS rpc,
