@@ -304,6 +304,22 @@ try {
   }
   log({ step: "admin_elevated", userId: A.userId, created_profile: !existedBefore });
 
+  // ── 082: the admin queue must list this pending proof ───────
+  //     (the in-app review page reads exactly this RPC)
+  const queue = await rpc("admin_list_instapay_proofs", {}, A.jwt);
+  const queueRows = Array.isArray(queue.body) ? queue.body : [];
+  const queued = queueRows.find((p) => p.proof_id === proofId);
+  rec({
+    step: "admin_list_pending_proofs",
+    http: queue.status,
+    rows: queueRows.length,
+    proof_found: Boolean(queued),
+    order_matches: queued?.order_id === orderId,
+    total_matches: queued?.order_total === 69000,
+    PASS: queue.status === 200 && Boolean(queued) &&
+      queued?.order_id === orderId && queued?.order_total === 69000,
+  });
+
   const rev = await callFn(
     "instapay-review",
     { proof_id: proofId, approve: true, note: "E2E staged approval" },
@@ -328,6 +344,16 @@ try {
     step: "admin_restored",
     profile_exists: after.rowCount > 0,
     is_admin_now: after.rows[0]?.is_admin ?? null,
+  });
+
+  // 082 must fail closed: the same caller now gets an empty queue.
+  const queueAfter = await rpc("admin_list_instapay_proofs", {}, A.jwt);
+  const afterRows = Array.isArray(queueAfter.body) ? queueAfter.body : [];
+  rec({
+    step: "admin_list_fail_closed",
+    http: queueAfter.status,
+    rows: afterRows.length,
+    PASS: queueAfter.status === 200 && afterRows.length === 0,
   });
 
   // ── Step 6: the Realtime watch must observe the flip ────────

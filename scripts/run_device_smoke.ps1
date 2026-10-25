@@ -144,50 +144,32 @@ $serial = ([string]$DeviceId).Trim()
 $deviceName = ''
 
 if ([string]::IsNullOrWhiteSpace($serial)) {
-    $flutterDevicesJson = ''
+    $adbStates = @()
     try {
-        $flutterDevicesJson = (& flutter devices --machine 2>$null | Out-String)
+        $adbStates = @(& $adbExe devices 2>&1 | Select-Object -Skip 1 | Where-Object { $_.Trim() -ne '' })
     }
     catch {
-        $flutterDevicesJson = ''
-    }
-
-    $androidDevices = @()
-    if (-not [string]::IsNullOrWhiteSpace($flutterDevicesJson)) {
-        try {
-            $parsedDevices = @($flutterDevicesJson | ConvertFrom-Json)
-            $androidDevices = @($parsedDevices | Where-Object {
-                $_.targetPlatform -like 'android-*' -and
-                -not [string]::IsNullOrWhiteSpace([string]$_.id)
-            })
-        }
-        catch {
-            $androidDevices = @()
-        }
-    }
-
-    if ($androidDevices.Count -eq 0) {
         $adbStates = @()
-        try {
-            $adbStates = @(& $adbExe devices 2>&1 | Select-Object -Skip 1 | Where-Object { $_.Trim() -ne '' })
-        }
-        catch {
-            $adbStates = @()
-        }
-        $unauthorized = @($adbStates | Where-Object { $_ -match '\bunauthorized\b' })
-        if ($unauthorized.Count -gt 0) {
-            Fail "An Android device is attached but not authorized. Unlock the phone and approve the 'Allow USB debugging' prompt, then re-run. (adb devices: $($unauthorized -join '; '))"
-        }
-        Fail "No supported Android device found. Connect a phone with USB debugging enabled (unlocked and authorized) or start an emulator, then re-run. flutter devices must list it as (mobile). This runner is Android-only because it installs with adb."
+    }
+    $unauthorized = @($adbStates | Where-Object { $_ -match '\bunauthorized\b' })
+    if ($unauthorized.Count -gt 0) {
+        Fail "An Android device is attached but not authorized. Unlock the phone and approve the 'Allow USB debugging' prompt, then re-run. (adb devices: $($unauthorized -join '; '))"
     }
 
-    if ($androidDevices.Count -gt 1) {
-        $ids = @($androidDevices | ForEach-Object { [string]$_.id })
+    # adb is the source of truth for serials: on some Flutter versions
+    # `flutter devices --machine` merges multiple devices into one object,
+    # which produced a bogus concatenated serial.
+    $adbDevices = @($adbStates | Where-Object { $_ -match '^\S+\s+device$' })
+    if ($adbDevices.Count -eq 0) {
+        Fail "No supported Android device found. Connect a phone with USB debugging enabled (unlocked and authorized) or start an emulator, then re-run. This runner is Android-only because it installs with adb."
+    }
+    if ($adbDevices.Count -gt 1) {
+        $ids = @($adbDevices | ForEach-Object { ($_ -split '\s+')[0] })
         Fail "Multiple Android devices are attached: $($ids -join ', '). Re-run with -DeviceId <serial>."
     }
 
-    $serial = [string]$androidDevices[0].id
-    $deviceName = [string]$androidDevices[0].name
+    $serial = ($adbDevices[0] -split '\s+')[0]
+    $deviceName = (& $adbExe -s $serial shell getprop ro.product.model 2>$null | Out-String).Trim()
 }
 
 $adbDeviceLine = @(& $adbExe devices 2>&1 | Where-Object { $_ -match ('^' + [regex]::Escape($serial) + '\s+') }) | Select-Object -First 1
