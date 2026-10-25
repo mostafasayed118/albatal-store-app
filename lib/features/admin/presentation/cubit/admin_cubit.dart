@@ -110,6 +110,15 @@ class AdminCubit extends Cubit<AdminState> {
 
   final AdminRepository _adminRepository;
 
+  /// Request token for [loadOrders]. A response is applied only while it is
+  /// still the newest queue read, so a slow filter cannot overwrite the queue
+  /// the admin switched to in the meantime.
+  int _ordersRequestId = 0;
+
+  /// Request token for [loadOrderDetails]. Opening order B and then order A
+  /// must never let B's slower response replace A's detail.
+  int _detailsRequestId = 0;
+
   /// Check if current user is admin.
   Future<void> checkAdmin() async {
     final isAdmin = await _adminRepository.isCurrentUserAdmin();
@@ -125,13 +134,14 @@ class AdminCubit extends Cubit<AdminState> {
 
   /// Load orders with optional status filter.
   Future<void> loadOrders({AdminOrderStatus? status}) async {
+    final requestId = ++_ordersRequestId;
     emit(state.copyWith(
       status: AdminStatus.loading,
       statusFilter: status,
       clearStatusFilter: status == null,
     ));
     final result = await _adminRepository.getAllOrders(status: status);
-    if (isClosed) return;
+    if (isClosed || requestId != _ordersRequestId) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(status: AdminStatus.ready, orders: value));
@@ -146,9 +156,10 @@ class AdminCubit extends Cubit<AdminState> {
 
   /// Load order details.
   Future<void> loadOrderDetails(String orderId) async {
+    final requestId = ++_detailsRequestId;
     emit(state.copyWith(status: AdminStatus.loading));
     final result = await _adminRepository.getOrderDetails(orderId);
-    if (isClosed) return;
+    if (isClosed || requestId != _detailsRequestId) return;
     switch (result) {
       case Success(:final value):
         if (value == null) {
@@ -189,14 +200,19 @@ class AdminCubit extends Cubit<AdminState> {
         // Reload orders after status update so the queue reflects it.
         await loadOrders(status: state.statusFilter);
         if (isClosed) return;
-        // Refresh the open detail from the reloaded queue: without this,
-        // the status card kept showing the pre-transition status until
-        // the admin left and re-entered the page.
-        if (state.selectedOrder?.id == orderId) {
-          final updated = state.orders.where((o) => o.id == orderId).toList();
+        // The write is confirmed, so the open detail must stay valid even
+        // when the new status no longer matches the active filter. Apply
+        // the transition to the loaded detail instead of clearing it:
+        // clearing rendered "order not found" right after a successful
+        // update. Replacing it with the queue row would also drop the line
+        // items the detail query fetched (queue rows carry none).
+        final selected = state.selectedOrder;
+        if (selected != null && selected.id == orderId) {
           emit(state.copyWith(
-            selectedOrder: updated.isNotEmpty ? updated.first : null,
-            clearSelectedOrder: updated.isEmpty,
+            selectedOrder: selected.copyWith(
+              status: status,
+              trackingNumber: trackingNumber,
+            ),
           ));
         }
       case Failure(:final error):
@@ -270,7 +286,12 @@ class AdminCubit extends Cubit<AdminState> {
   }
 
   /// Clear selected order.
-  void clearSelectedOrder() => emit(state.copyWith(clearSelectedOrder: true));
+  void clearSelectedOrder() {
+    // A detail read still in flight must not resurrect the page that was
+    // just dismissed.
+    _detailsRequestId++;
+    emit(state.copyWith(clearSelectedOrder: true));
+  }
 
   /// Clear error.
   void clearError() {

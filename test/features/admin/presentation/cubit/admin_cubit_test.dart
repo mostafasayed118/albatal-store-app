@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/failure_codes.dart';
@@ -27,6 +29,12 @@ AdminOrder _orderForCustomer(String id, String profileId) => AdminOrder(
       customerId: profileId,
       customerTier: 'standard',
     );
+
+class _SeededAdminCubit extends AdminCubit {
+  _SeededAdminCubit(super.repository);
+
+  void seed(AdminState state) => emit(state);
+}
 
 void main() {
   late _MockAdminRepository repo;
@@ -101,6 +109,60 @@ void main() {
                 'filteredOrders', ['o2']),
       ],
     );
+
+    test('a superseded filter response cannot overwrite the active queue',
+        () async {
+      final paid = Completer<Result<List<AdminOrder>>>();
+      final shipped = Completer<Result<List<AdminOrder>>>();
+      when(() => repo.getAllOrders(status: AdminOrderStatus.paid))
+          .thenAnswer((_) => paid.future);
+      when(() => repo.getAllOrders(status: AdminOrderStatus.shipped))
+          .thenAnswer((_) => shipped.future);
+      final cubit = AdminCubit(repo);
+      addTearDown(cubit.close);
+
+      // The admin taps Paid and then Shipped before Paid resolves.
+      final first = cubit.loadOrders(status: AdminOrderStatus.paid);
+      final second = cubit.loadOrders(status: AdminOrderStatus.shipped);
+
+      shipped.complete(Success([_order('s1', AdminOrderStatus.shipped)]));
+      await second;
+      expect(cubit.state.statusFilter, AdminOrderStatus.shipped);
+      expect(cubit.state.orders.single.id, 's1');
+
+      paid.complete(Success([_order('p1', AdminOrderStatus.paid)]));
+      await first;
+
+      expect(cubit.state.orders.single.id, 's1',
+          reason: 'the paid response belongs to a filter the admin left');
+      expect(cubit.state.statusFilter, AdminOrderStatus.shipped);
+      expect(cubit.state.status, AdminStatus.ready);
+    });
+
+    test('a superseded filter failure cannot error the active queue', () async {
+      final paid = Completer<Result<List<AdminOrder>>>();
+      final shipped = Completer<Result<List<AdminOrder>>>();
+      when(() => repo.getAllOrders(status: AdminOrderStatus.paid))
+          .thenAnswer((_) => paid.future);
+      when(() => repo.getAllOrders(status: AdminOrderStatus.shipped))
+          .thenAnswer((_) => shipped.future);
+      final cubit = AdminCubit(repo);
+      addTearDown(cubit.close);
+
+      final first = cubit.loadOrders(status: AdminOrderStatus.paid);
+      final second = cubit.loadOrders(status: AdminOrderStatus.shipped);
+
+      shipped.complete(Success([_order('s1', AdminOrderStatus.shipped)]));
+      await second;
+
+      paid.complete(const Failure(AppError('stale filter failed')));
+      await first;
+
+      expect(cubit.state.status, AdminStatus.ready,
+          reason: 'the failure belongs to a superseded request');
+      expect(cubit.state.errorMessage, isNull);
+      expect(cubit.state.orders.single.id, 's1');
+    });
   });
 
   group('AdminCubit.checkAdmin', () {
@@ -171,6 +233,55 @@ void main() {
                 (s) => s.errorMessage, 'errorMessage', 'Failed to load order'),
       ],
     );
+
+    test('a superseded detail response cannot replace the newer order',
+        () async {
+      final orderB = Completer<Result<AdminOrder?>>();
+      final orderA = Completer<Result<AdminOrder?>>();
+      when(() => repo.getOrderDetails('b')).thenAnswer((_) => orderB.future);
+      when(() => repo.getOrderDetails('a')).thenAnswer((_) => orderA.future);
+      final cubit = AdminCubit(repo);
+      addTearDown(cubit.close);
+
+      // Opening order B and then order A before B resolves.
+      final first = cubit.loadOrderDetails('b');
+      final second = cubit.loadOrderDetails('a');
+
+      orderA.complete(Success(_order('a', AdminOrderStatus.paid)));
+      await second;
+      expect(cubit.state.selectedOrder?.id, 'a');
+
+      orderB.complete(Success(_order('b', AdminOrderStatus.paid)));
+      await first;
+
+      expect(cubit.state.selectedOrder?.id, 'a',
+          reason: 'order B was replaced by order A before B resolved');
+      expect(cubit.state.status, AdminStatus.ready);
+    });
+
+    test('a superseded detail not-found cannot error the newer order',
+        () async {
+      final orderB = Completer<Result<AdminOrder?>>();
+      final orderA = Completer<Result<AdminOrder?>>();
+      when(() => repo.getOrderDetails('b')).thenAnswer((_) => orderB.future);
+      when(() => repo.getOrderDetails('a')).thenAnswer((_) => orderA.future);
+      final cubit = AdminCubit(repo);
+      addTearDown(cubit.close);
+
+      final first = cubit.loadOrderDetails('b');
+      final second = cubit.loadOrderDetails('a');
+
+      orderA.complete(Success(_order('a', AdminOrderStatus.paid)));
+      await second;
+
+      orderB.complete(const Success(null));
+      await first;
+
+      expect(cubit.state.selectedOrder?.id, 'a');
+      expect(cubit.state.status, AdminStatus.ready,
+          reason: 'B not existing must not fail the order A screen');
+      expect(cubit.state.errorMessage, isNull);
+    });
   });
 
   group('AdminCubit.updateOrderStatus', () {
@@ -236,15 +347,15 @@ void main() {
     );
 
     blocTest<AdminCubit, AdminState>(
-      'clears selectedOrder when the transitioned order left the queue',
+      'keeps the detail valid when the transitioned order left the queue',
       build: () {
         when(() => repo.updateOrderStatus(
               'o1',
               AdminOrderStatus.cancelled,
               trackingNumber: null,
             )).thenAnswer((_) async => const Success(null));
-        // A filtered queue (or changed status outside the filter) that no
-        // longer contains the order must not leave a stale detail behind.
+        // A filtered queue (or changed status outside the filter) no longer
+        // contains the order — the detail must not read as "order not found".
         when(() => repo.getAllOrders(status: any(named: 'status')))
             .thenAnswer((_) async => const Success([]));
         return AdminCubit(repo);
@@ -262,9 +373,66 @@ void main() {
             .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1'),
         isA<AdminState>()
             .having((s) => s.status, 'status', AdminStatus.ready)
-            .having((s) => s.selectedOrder, 'selectedOrder', isNull),
+            .having((s) => s.selectedOrder?.id, 'selectedOrder.id', 'o1')
+            .having((s) => s.selectedOrder?.status, 'selectedOrder.status',
+                AdminOrderStatus.cancelled),
       ],
     );
+
+    test(
+        'a confirmed transition out of the active filter keeps the detail open',
+        () async {
+      when(() => repo.updateOrderStatus(
+            'o1',
+            AdminOrderStatus.cancelled,
+            trackingNumber: null,
+          )).thenAnswer((_) async => const Success(null));
+      when(() => repo.getAllOrders(status: AdminOrderStatus.paid))
+          .thenAnswer((_) async => const Success([]));
+      final cubit = _SeededAdminCubit(repo)
+        ..seed(AdminState(
+          status: AdminStatus.ready,
+          orders: [_order('o1', AdminOrderStatus.paid)],
+          selectedOrder: _order('o1', AdminOrderStatus.paid),
+          statusFilter: AdminOrderStatus.paid,
+        ));
+      addTearDown(cubit.close);
+
+      await cubit.updateOrderStatus('o1', AdminOrderStatus.cancelled);
+
+      expect(cubit.state.statusFilter, AdminOrderStatus.paid);
+      expect(cubit.state.orders, isEmpty,
+          reason: 'the order left the active queue');
+      expect(cubit.state.selectedOrder?.id, 'o1',
+          reason: 'a successful update must not render "order not found"');
+      expect(cubit.state.selectedOrder?.status, AdminOrderStatus.cancelled);
+    });
+
+    test('a confirmed shipment records the tracking number on the open detail',
+        () async {
+      when(() => repo.updateOrderStatus(
+            'o1',
+            AdminOrderStatus.shipped,
+            trackingNumber: 'EG-9',
+          )).thenAnswer((_) async => const Success(null));
+      when(() => repo.getAllOrders(status: any(named: 'status')))
+          .thenAnswer((_) async => const Success([]));
+      final cubit = _SeededAdminCubit(repo)
+        ..seed(AdminState(
+          status: AdminStatus.ready,
+          selectedOrder: _order('o1', AdminOrderStatus.processing),
+        ));
+      addTearDown(cubit.close);
+
+      await cubit.updateOrderStatus(
+        'o1',
+        AdminOrderStatus.shipped,
+        trackingNumber: 'EG-9',
+      );
+
+      expect(cubit.state.selectedOrder?.status, AdminOrderStatus.shipped);
+      expect(cubit.state.selectedOrder?.trackingNumber, 'EG-9');
+    });
 
     blocTest<AdminCubit, AdminState>(
       'leaves selectedOrder untouched when a different order changed',

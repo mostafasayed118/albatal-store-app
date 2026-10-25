@@ -387,6 +387,44 @@ void main() {
       await more;
     });
 
+    test('changing the query discards the previous page bookmark', () async {
+      when(() => repo.fetchCustomers(query: null, limit: 2)).thenAnswer(
+        (_) async => Success<_Page>((
+          customers: [_sara, _omar],
+          total: 5,
+          nextCursor: _bookmark('profile-8'),
+        )),
+      );
+      final cubit = AdminCustomersCubit(
+        repository: repo,
+        pageSize: 2,
+        searchDebounce: const Duration(days: 1),
+      );
+      addTearDown(cubit.close);
+      await cubit.load();
+      expect(cubit.state.hasMore, isTrue);
+
+      cubit.search('nour');
+
+      expect(cubit.state.hasMore, isFalse,
+          reason: 'pagination belongs to the previous query until the new '
+              'first page lands');
+      // A "Load more" during the debounce must not query the new search from
+      // the old bookmark, nor append a page onto the list being replaced.
+      await cubit.loadMore();
+
+      verifyNever(() => repo.fetchCustomers(
+            query: 'nour',
+            cursor: _bookmark('profile-8'),
+            limit: 2,
+          ));
+      verifyNever(() => repo.fetchCustomers(
+            query: 'nour',
+            cursor: any(named: 'cursor'),
+            limit: 2,
+          ));
+    });
+
     test('an in-flight page cannot append onto a newer search', () async {
       when(() => repo.fetchCustomers(query: null, limit: 2))
           .thenAnswer((_) async => Success<_Page>((
