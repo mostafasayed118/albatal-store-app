@@ -1,6 +1,21 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-22 (coverage wave + P0 repairs merged and pushed; CI 7/7 green at 8fe3f46)
+Last run: 2026-10-24 (verified-state fix wave — worktree `fix/verified-state`, gates green; NOT committed)
+
+## New — 2026-10-24 (verified-state fix wave — NOT committed)
+
+- Owner ask: "fix all in best way" after a read-only audit of all 21 cubits. Worktree `.trees/fix-verified-state` from `14c4d3a`; main checkout untouched. No commit/push.
+- 5 parallel scoped agents (checkout/payments, auth/cart, admin, storefront states, test hygiene) + independent verifier: **APPROVE**, zero blocking findings.
+- Fixed (18 lib files + tests):
+  - checkout: persisted idempotency key cleared on a live pending success (in-session key kept) — a new checkout can no longer resurrect an abandoned cart; failure still keeps the key for crash recovery.
+  - payments: abandoned hosted-checkout/InstaPay wait re-armed on route return (no dead-end Pay button); fallback poll reads the newest payment row (`created_at desc, limit 1`) so multiple rows no longer break `.maybeSingle()`.
+  - auth: generation token drops a profile read that completes after sign-out; sign-in/sign-up bump the token; no emit after close on those paths.
+  - cart: error retry re-attempts the failed write for the live items (`retryPersist`) instead of force-re-reading the stale cart; live items stay durable.
+  - state coverage: wishlist loading view; catalog load generation; reviews product token + visible error/retry; onboarding double-submit guard + failure banner; address picker failure row (only when the book is empty).
+  - admin: order/detail request tokens (no stale overwrite); a confirmed status transition keeps `selectedOrder` valid instead of false "not found"; customers search resets its cursor; per-row moderation guard; dead courier field removed.
+- Tests: smoke harness now asserts `exitCode == 0` with authenticated-admin fakes (`SUMMARY 2/2`), so a failed scenario fails the test; placeholder `expect(true,isTrue)`, the catch-all secure-store test, and three no-assert tests fixed or removed; 26 tests added net.
+- Gates (final, exact): `dart format --output=none --set-exit-if-changed lib test` 0 changed (758 files); `flutter analyze --no-pub` No issues; full `flutter test --coverage --no-pub` **2077/2077**; coverage **98.96%** (13,074/13,212), 0 zero-covered files. `git diff`: 39 files, +1,271/−139 (18 lib, 21 tests; 3 new test files). `git diff --check` clean.
+- Deferred (owner-gated/structural): `order_items` admin SELECT policy (migration); InstaPay admin review UI (needs a list RPC + migration); OAuth return leg + dashboard allowlist; legal page copy; `AdminCubit` app-scoping refactor; live-backend E2E (no `integration_test/`).
 
 ## New — 2026-10-22 (coverage wave + P0 UX repairs — LANDED)
 
