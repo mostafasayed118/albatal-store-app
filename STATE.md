@@ -1,6 +1,18 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-22 (coverage wave + P0 repairs merged and pushed; CI 7/7 green at 8fe3f46)
+Last run: 2026-10-24 (dead-code removal branch ready — verifier APPROVE, gates green; not merged/pushed)
+
+## New — 2026-10-24 (dead-code removal — branch `chore/dead-code-removal`, NOT pushed)
+
+- Owner ask: explore the whole codebase and remove all dead code. Worktree `.trees/dead-code-removal` (base `14c4d3a`); main checkout untouched except this record. No push/merge.
+- Recon: 4 parallel read-only subagents (file reachability, symbol references, assets/l10n/deps, indirect-dispatch keep list) + a second-opinion scan. Deterministic import-graph BFS: **384/384 lib files reachable**, 0 dead files, 0 unused dependencies, 0 dead widgets/routes, 0 commented-out code blocks, 0 dead test helpers.
+- Removed in 2 commits (**+60/−280**, 31 file entries; `aff9e1b`, `93591f7`):
+  - unreferenced: `kCutLengthMaxMeters`, `kCutLengthStepMeters`, `AppColors.success`, `AppColors.darkOnSecondary`, 10 `AppTheme` alias tokens, `productGridDelegate`, write-only `SmokeCheck.detail`, `SupportChannelKind.externalLink`, `LogCategory.analytics`.
+  - superseded/deprecated duplicates: `categoryAccent`, `visibleCategoryChips`, `adminReviewToReview`, `productShareMessage`, `meteredLineTotal`, `Profile.fromRow`/`toProfileRow` (duplicates of `ProfileCodec`), `AdminMappers.salesOverviewFromRows` (facade shim), `Money.wholeEgpLabelFromMinor`, `Log.api`, `EnvConfig.isDevelopment`; deleted `test/core/entities/profile_test.dart` after migrating its coverage (incl. wholesale tier) into `profile_codec_test.dart`.
+- Reported but deliberately kept (production-dead yet capability/seam/owner-gated): profile-write chain (`AuthCubit.updateProfile` → `upsertProfile`), avatar-upload chain (`StorageService.uploadAvatar`), checkout/catalog/admin test hooks, `AnalyticsService.productView/addToCart` (no emitters — analytics gap), `EnvConfig.validate` (never called — wiring gap), `SupabaseConfig.isAuthenticated`, `AdminOrdersPort` (registered, no consumer), `CartItem.lineTotal`, `AdminProduct.statusLabel`, `Money.subtractClamped`, row-based sales mapper, 42 unused l10n keys, 9 test-only SVGs.
+- Gates: baseline `flutter analyze` clean + **2,051/2,051**; final `dart format --output=none --set-exit-if-changed lib test` 0 changed (754 files), analyze clean, full **2,041/2,041** (2,051 − 11 tests of deleted code + 1 migrated wholesale regression), focused suites 27/27 and 120/120, post-prose-edit subset 8/8.
+- Independent verifier (`verifier` subagent): **APPROVE**, zero blocking findings (all 28 deleted symbols at 0 refs; enum switches/string serialization checked; scope clean).
+- Not merged/pushed. Next: owner review of `chore/dead-code-removal` → merge.
 
 ## New — 2026-10-22 (coverage wave + P0 UX repairs — LANDED)
 
