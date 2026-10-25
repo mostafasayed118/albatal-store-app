@@ -7,6 +7,7 @@ import 'package:al_batal_elite/core/error/app_error.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/addresses/domain/repositories/address_repository.dart';
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
@@ -27,6 +28,7 @@ import 'package:al_batal_elite/features/storefront/domain/repositories/wishlist_
 import 'package:al_batal_elite/shared/services/connectivity_gate.dart';
 import 'package:al_batal_elite/shared/services/deep_link_service.dart';
 import 'package:al_batal_elite/shared/services/service_locator.dart';
+import 'package:al_batal_elite/shared/services/share_service.dart';
 import 'package:al_batal_elite/shared/smoke/smoke_harness.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -62,7 +64,8 @@ final class _Auth implements AuthRepository {
   Stream<Authenticated?> get authStateChanges => const Stream.empty();
 
   @override
-  Future<Result<Authenticated?>> checkSession() async => const Success(null);
+  Future<Result<Authenticated?>> checkSession() async =>
+      const Success(Authenticated('user-1'));
 
   @override
   Future<Result<AuthOutcome>> signUp(
@@ -94,7 +97,7 @@ final class _Auth implements AuthRepository {
 final class _Profile implements ProfileRepository {
   @override
   Future<Result<Profile?>> readProfile(String userId) async =>
-      Success(Profile(id: userId, isAdmin: false));
+      Success(Profile(id: userId, isAdmin: true));
 
   @override
   Future<Result<void>> upsertProfile(Profile profile) async =>
@@ -160,7 +163,30 @@ final class _DeepLinks implements DeepLinkService {
   Stream<Uri> incoming() => const Stream<Uri>.empty();
 }
 
+final class _Share implements ShareService {
+  @override
+  Future<void> shareText(String message) async {}
+
+  @override
+  Future<void> shareFile({
+    required String fileName,
+    required String content,
+    required String mimeType,
+  }) async {}
+}
+
 final class _Admin extends Fake implements AdminRepository {
+  @override
+  Future<bool> isCurrentUserAdmin() async => true;
+
+  @override
+  Future<Result<List<AdminProduct>>> getAllProducts() async =>
+      const Success([]);
+
+  @override
+  Future<Result<List<AdminCategory>>> getAllCategories() async =>
+      const Success([]);
+
   @override
   Future<Result<List<AdminOrder>>> getAllOrders(
           {AdminOrderStatus? status, int limit = 50}) async =>
@@ -202,6 +228,7 @@ void main() {
       ..registerSingleton<SettingsRepository>(_Settings())
       ..registerSingleton<DeepLinkService>(_DeepLinks())
       ..registerSingleton<ConnectivityGate>(ConnectivityGate())
+      ..registerSingleton<ShareService>(_Share())
       ..registerSingleton<AdminRepository>(_Admin());
 
     addTearDown(() async {
@@ -220,13 +247,14 @@ void main() {
     final appContext = tester.element(find.byType(MaterialApp));
     expect(BlocProvider.of<AddressesCubit>(appContext), isNotNull);
 
-    // Let the harness's real-timer scenario timeline finish, then unmount.
-    for (var i = 0; i < 16; i++) {
-      await tester.pump(const Duration(seconds: 3));
+    // Advance the fake clock until the harness's exit hook fires; bounded so
+    // a hung scenario still fails the expect below instead of looping.
+    for (var i = 0; i < 60 && exitCode == -1; i++) {
+      await tester.pump(const Duration(seconds: 1));
     }
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
 
-    expect(exitCode, anyOf(0, 1));
+    expect(exitCode, 0, reason: 'every smoke scenario must pass');
   });
 }

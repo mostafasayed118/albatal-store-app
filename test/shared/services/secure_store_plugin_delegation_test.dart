@@ -1,29 +1,51 @@
 import 'package:al_batal_elite/shared/services/secure_store.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
-/// Covers the three `FlutterSecureStore` delegation methods. The plugin
-/// itself is absent in the VM, so the calls complete either normally or
-/// with a missing-plugin exception — either way the delegation lines run.
+class _MockSecureStorage extends Mock implements FlutterSecureStorage {}
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  test('read/write/delete forward the key, payload and options', () async {
+    final storage = _MockSecureStorage();
+    when(() => storage.read(
+          key: 'session',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).thenAnswer((_) async => 'secret-value');
+    when(() => storage.write(
+          key: 'session',
+          value: 'secret-value',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).thenAnswer((_) async {});
+    when(() => storage.delete(
+          key: 'session',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).thenAnswer((_) async {});
 
-  Future<void> settle(Future<Object?> future) async {
-    try {
-      await future;
-    } catch (_) {
-      // The platform plugin is unavailable in the VM; the contract under
-      // test is the pass-through of options, not the platform result.
-    }
-  }
+    final store = FlutterSecureStore(storage: storage);
 
-  test('read/write/delete forward to the platform store', () async {
-    final store = FlutterSecureStore();
+    expect(await store.read('session'), 'secret-value');
+    await store.write('session', 'secret-value');
+    await store.delete('session');
 
-    await settle(store.read('session'));
-    await settle(store.write('session', 'value'));
-    await settle(store.delete('session'));
-
-    expect(FlutterSecureStore.iosOptions, isNotNull);
-    expect(FlutterSecureStore.androidOptions, isNotNull);
+    verify(() => storage.read(
+          key: 'session',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).called(1);
+    verify(() => storage.write(
+          key: 'session',
+          value: 'secret-value',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).called(1);
+    verify(() => storage.delete(
+          key: 'session',
+          iOptions: FlutterSecureStore.iosOptions,
+          aOptions: FlutterSecureStore.androidOptions,
+        )).called(1);
   });
 }

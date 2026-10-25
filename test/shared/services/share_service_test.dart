@@ -15,11 +15,16 @@ void main() {
   const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
 
   late Directory tempDir;
+  late List<MethodCall> shareCalls;
 
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('share_service_test');
+    shareCalls = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(shareChannel, (call) async => 'ok');
+        .setMockMethodCallHandler(shareChannel, (call) async {
+      shareCalls.add(call);
+      return 'ok';
+    });
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pathProviderChannel, (call) async {
       return tempDir.path;
@@ -36,13 +41,14 @@ void main() {
     }
   });
 
-  test('shareText opens the share sheet', () async {
+  test('shareText opens the share sheet with the message', () async {
     const service = SharePlusShareService();
 
     await service.shareText('hello');
 
-    // Reaching here without a throw proves the channel call completed.
-    expect(true, isTrue);
+    final call = shareCalls.single;
+    expect(call.method, 'share');
+    expect(call.arguments, {'text': 'hello'});
   });
 
   test('shareText swallows a failing share sheet', () async {
