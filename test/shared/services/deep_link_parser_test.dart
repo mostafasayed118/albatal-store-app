@@ -93,6 +93,23 @@ void main() {
       expect(web.uri.fragment, 'state=xyz');
     });
 
+    test('keeps an OAuth error callback for graceful handling', () {
+      final link = parseDeepLink(
+        Uri.parse(
+          'albatal://login-callback/?error=server_error'
+          '&error_code=unexpected_failure'
+          '&error_description=Unable+to+exchange+external+code',
+        ),
+        webBase: _base(),
+      );
+      expect(link, isA<OAuthCallbackDeepLink>());
+      expect(
+        (link as OAuthCallbackDeepLink).uri.queryParameters['error'],
+        'server_error',
+      );
+      expect(link.uri.queryParameters['error_code'], 'unexpected_failure');
+    });
+
     test('rejects foreign-host and deeper-path oauth callbacks', () {
       expect(
         parseDeepLink(

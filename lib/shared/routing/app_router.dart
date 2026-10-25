@@ -1,10 +1,11 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/presentation/cubit/admin_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../extensions/build_context_x.dart';
 import '../services/navigation_observer.dart';
 import '../services/service_locator.dart';
 import 'app_routes.dart';
@@ -29,6 +30,21 @@ GoRouter createAppRouter(
         isAdmin: authCubit.state.profile?.isAdmin == true,
         path: state.uri.path,
       ),
+      // Localized fallback instead of GoRouter's debug error screen. In
+      // particular, an inbound custom-scheme URL must never render the raw
+      // exception (and its overflow) to a customer.
+      errorBuilder: (context, state) {
+        final l = context.l10n;
+        return Scaffold(
+          appBar: AppBar(title: Text(l.errorTitle)),
+          body: Center(
+            child: TextButton(
+              onPressed: () => context.go(Routes.home),
+              child: Text(l.retry),
+            ),
+          ),
+        );
+      },
       routes: _routes,
     );
 

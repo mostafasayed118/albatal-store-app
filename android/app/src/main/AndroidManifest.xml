@@ -35,6 +35,12 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- app_links is the single deep-link handler. Flutter's built-in
+                 deep linking would otherwise deliver albatal:// callback URLs
+                 to GoRouter as a raw route (OAuth callback 404). -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
