@@ -16,6 +16,10 @@ import 'package:go_router/go_router.dart';
 /// the declared `mocktail` dev dep is intentionally unused to stay consistent.
 class _StubAuthRepository implements AuthRepository {
   @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
+  @override
   Future<Result<Authenticated?>> checkSession() async => const Success(null);
 
   @override

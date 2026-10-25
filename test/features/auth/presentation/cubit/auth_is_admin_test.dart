@@ -11,6 +11,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Stub auth repo that returns a fixed session.
 class _StubAuthRepo implements AuthRepository {
   @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
+  @override
   Future<Result<Authenticated?>> checkSession() async =>
       const Success(Authenticated('user-1'));
 

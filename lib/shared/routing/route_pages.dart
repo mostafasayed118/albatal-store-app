@@ -6,6 +6,7 @@ import '../../features/addresses/presentation/pages/addresses_page.dart';
 import '../../features/admin/domain/repositories/admin_catalog_port.dart';
 import '../../features/admin/domain/repositories/admin_coupons_port.dart';
 import '../../features/admin/domain/repositories/admin_customers_port.dart';
+import '../../features/admin/domain/repositories/admin_instapay_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_reviews_port.dart';
 import '../../features/admin/domain/repositories/admin_sales_port.dart';
@@ -16,6 +17,7 @@ import '../../features/admin/presentation/pages/admin_coupons_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_image_manager_page.dart';
+import '../../features/admin/presentation/pages/admin_instapay_reviews_page.dart';
 import '../../features/admin/presentation/pages/admin_inventory_page.dart';
 import '../../features/admin/presentation/pages/admin_order_detail_page.dart';
 import '../../features/admin/presentation/pages/admin_orders_page.dart';
@@ -206,6 +208,12 @@ abstract final class RoutePages {
   /// test-only fallback.
   static Widget adminOrders() =>
       AdminOrdersPage(shareService: getIt<ShareService>());
+
+  /// InstaPay proof review (082): the port also mints the proof preview
+  /// URLs, so the page needs it even when a test injects its own cubit.
+  static Widget adminInstapay() => AdminInstapayReviewsPage(
+        repository: getIt<AdminInstapayPort>(),
+      );
 
   /// Composition root (audit P1): the only place that resolves
   /// dependencies; the page's own `getIt` lookup is now only a

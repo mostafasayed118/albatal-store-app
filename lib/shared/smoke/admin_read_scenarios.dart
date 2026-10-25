@@ -48,6 +48,7 @@ Map<String, SmokeScenario> adminReadScenarios() => {
           Routes.adminProducts,
           Routes.adminProductNew,
           Routes.adminCategories,
+          Routes.adminInstapay,
         ];
         final checks = <SmokeCheck>[];
         for (final path in paths) {

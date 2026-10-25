@@ -4,6 +4,9 @@ import '../../../../core/error/result.dart';
 
 import '../entities/auth_outcome.dart';
 
+/// Stable failure code for a rejected OAuth browser callback.
+const kOAuthCallbackFailed = 'oauth_callback_failed';
+
 /// Abstraction for auth operations.
 ///
 /// The data layer (SupabaseAuthRepository) implements this and is
@@ -31,6 +34,13 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
   });
+
+  /// Complete the OAuth browser round-trip with the callback [uri].
+  ///
+  /// The URI carries a single-use auth code, so implementers must never
+  /// log it. Returns `Success(null)` once the session is stored; failures
+  /// carry [kOAuthCallbackFailed].
+  Future<Result<void>> completeOAuthCallback(Uri uri);
 
   /// Send a password reset email.
   Future<Result<void>> resetPassword(String email);

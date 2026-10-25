@@ -82,6 +82,28 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async {
+    // The URI is deliberately not logged: it carries the single-use auth
+    // code. The exception (if any) is kept only as the cause.
+    try {
+      await _client.auth.getSessionFromUrl(uri);
+      return const Success(null);
+    } on AuthException catch (e) {
+      // supabase_flutter's own URI detector may have exchanged the code
+      // before this handler runs. A live session means the callback
+      // succeeded; surfacing the duplicate-exchange error would only add
+      // noise (the login already completed).
+      if (_client.auth.currentSession != null) return const Success(null);
+      return Failure(AppError('OAuth callback failed',
+          cause: e, code: kOAuthCallbackFailed));
+    } catch (e) {
+      if (_client.auth.currentSession != null) return const Success(null);
+      return Failure(AppError('OAuth callback failed',
+          cause: e, code: kOAuthCallbackFailed));
+    }
+  }
+
+  @override
   Future<Result<void>> resetPassword(String email) async {
     try {
       await _client.auth.resetPasswordForEmail(email,

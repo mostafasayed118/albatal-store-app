@@ -43,6 +43,7 @@ import 'shared/services/connectivity_gate.dart';
 import 'shared/services/deep_link_parser.dart';
 import 'shared/services/deep_link_service.dart';
 import 'shared/services/env_config.dart';
+import 'shared/services/logger.dart';
 import 'shared/services/notification_service.dart';
 import 'shared/services/push_service.dart';
 import 'shared/services/service_locator.dart';
@@ -188,7 +189,23 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       _router.push(Routes.catalogWithQuery(link.query));
     } else if (link is ResetPasswordDeepLink) {
       _router.push(Routes.resetPassword);
+    } else if (link is OAuthCallbackDeepLink) {
+      unawaited(_completeOAuthCallback(link.uri));
     }
+  }
+
+  /// Hands the OAuth callback URI to the auth SDK, then refreshes the
+  /// cubit. The URI carries a single-use auth code, so only a generic
+  /// failure message is ever logged.
+  Future<void> _completeOAuthCallback(Uri uri) async {
+    final result = await getIt<AuthRepository>().completeOAuthCallback(uri);
+    if (!mounted || _authCubit.isClosed) return;
+    result.when(
+      success: (_) {},
+      failure: (_) =>
+          Log.w('oauth callback failed', category: LogCategory.auth),
+    );
+    await _authCubit.checkSession();
   }
 
   @override
@@ -270,7 +287,9 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                   create: (_) =>
                       AddressesCubit(getIt<AddressRepository>())..load()),
               BlocProvider.value(value: _authCubit),
-              BlocProvider(create: (_) => AdminCubit(getIt<AdminRepository>())),
+              if (widget.exitApp != null)
+                BlocProvider(
+                    create: (_) => AdminCubit(getIt<AdminRepository>())),
             ],
             child: BlocBuilder<SettingsCubit, SettingsState>(
                 buildWhen: (a, b) =>

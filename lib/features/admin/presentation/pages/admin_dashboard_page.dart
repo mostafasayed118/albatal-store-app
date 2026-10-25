@@ -93,6 +93,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               subtitle: l.viewAllOrders,
               onTap: () => context.push(Routes.adminOrders),
             ),
+            // InstaPay proof review (082): customers could submit transfer
+            // proofs, but no admin surface could list, approve or reject the
+            // pending ones — the payment stayed pending forever.
+            AdminActionTile(
+              icon: Icons.account_balance_outlined,
+              title: l.adminInstapayTitle,
+              subtitle: l.adminInstapaySubtitle,
+              onTap: () => context.push(Routes.adminInstapay),
+            ),
             AdminActionTile(
               icon: Icons.inventory_2_outlined,
               title: l.inventory,

@@ -1,8 +1,12 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/domain/repositories/admin_repository.dart';
+import '../../features/admin/presentation/cubit/admin_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../services/navigation_observer.dart';
+import '../services/service_locator.dart';
 import 'app_routes.dart';
 import 'auth_redirect.dart';
 import 'auth_refresh_notifier.dart';
@@ -84,59 +88,76 @@ final _routes = <RouteBase>[
     // carried additively for the page's rehydration path.
     builder: (_, s) => RoutePages.instapayInstructions(s),
   ),
-  GoRoute(path: Routes.admin, builder: (_, __) => RoutePages.adminDashboard()),
-  GoRoute(
-      path: Routes.adminOrders, builder: (_, __) => RoutePages.adminOrders()),
-  GoRoute(
-      path: Routes.adminReviews, builder: (_, __) => RoutePages.adminReviews()),
   GoRoute(
       path: Routes.maintenance,
       builder: (_, state) => RoutePages.maintenance(state)),
-  GoRoute(
-      path: Routes.adminCustomers,
-      builder: (_, __) => RoutePages.adminCustomers()),
-  GoRoute(
-      path: Routes.adminCoupons, builder: (_, __) => RoutePages.adminCoupons()),
-  GoRoute(
-      path: Routes.adminWholesalePrices,
-      builder: (_, __) => RoutePages.adminWholesalePrices()),
-  GoRoute(
-    path: Routes.adminOrderDetail, // literal pattern (see Routes.productDetail)
-    builder: (_, s) => RoutePages.adminOrderDetail(s),
-  ),
-  GoRoute(
-    path: Routes.adminInventory,
-    builder: (_, __) => RoutePages.adminInventory(),
-  ),
-  GoRoute(
-      path: Routes.adminCatalog, builder: (_, __) => RoutePages.adminCatalog()),
-  GoRoute(path: Routes.adminSales, builder: (_, __) => RoutePages.adminSales()),
-  // Catalog management destinations (migration-era hub tiles pointed at
-  // these paths, but the routes themselves were never registered — every
-  // tile dead-ended on "Page Not Found").
-  GoRoute(
-    path: Routes.adminProducts,
-    builder: (_, __) => RoutePages.adminProducts(),
-  ),
-  GoRoute(
-    path: Routes.adminProductNew,
-    builder: (_, __) => RoutePages.adminProductNew(),
-  ),
-  GoRoute(
-    path: Routes.adminProductEdit,
-    builder: (_, s) => RoutePages.adminProductEdit(s),
-  ),
-  GoRoute(
-    path: Routes.adminCategories,
-    builder: (_, __) => RoutePages.adminCategories(),
-  ),
-  GoRoute(
-    path: Routes.adminImages,
-    builder: (_, s) => RoutePages.adminImages(s),
-  ),
-  GoRoute(
-    path: Routes.adminVariantEdit, // literal pattern
-    builder: (_, s) => RoutePages.adminVariantEdit(s),
+  ShellRoute(
+    builder: (_, __, child) => BlocProvider(
+      create: (_) => AdminCubit(getIt<AdminRepository>()),
+      child: child,
+    ),
+    routes: [
+      GoRoute(
+          path: Routes.admin, builder: (_, __) => RoutePages.adminDashboard()),
+      GoRoute(
+          path: Routes.adminOrders,
+          builder: (_, __) => RoutePages.adminOrders()),
+      GoRoute(
+          path: Routes.adminInstapay,
+          builder: (_, __) => RoutePages.adminInstapay()),
+      GoRoute(
+          path: Routes.adminReviews,
+          builder: (_, __) => RoutePages.adminReviews()),
+      GoRoute(
+          path: Routes.adminCustomers,
+          builder: (_, __) => RoutePages.adminCustomers()),
+      GoRoute(
+          path: Routes.adminCoupons,
+          builder: (_, __) => RoutePages.adminCoupons()),
+      GoRoute(
+          path: Routes.adminWholesalePrices,
+          builder: (_, __) => RoutePages.adminWholesalePrices()),
+      GoRoute(
+        path: Routes.adminOrderDetail, // literal pattern (see productDetail)
+        builder: (_, s) => RoutePages.adminOrderDetail(s),
+      ),
+      GoRoute(
+        path: Routes.adminInventory,
+        builder: (_, __) => RoutePages.adminInventory(),
+      ),
+      GoRoute(
+          path: Routes.adminCatalog,
+          builder: (_, __) => RoutePages.adminCatalog()),
+      GoRoute(
+          path: Routes.adminSales, builder: (_, __) => RoutePages.adminSales()),
+      // Catalog management destinations (migration-era hub tiles pointed at
+      // these paths, but the routes themselves were never registered — every
+      // tile dead-ended on "Page Not Found").
+      GoRoute(
+        path: Routes.adminProducts,
+        builder: (_, __) => RoutePages.adminProducts(),
+      ),
+      GoRoute(
+        path: Routes.adminProductNew,
+        builder: (_, __) => RoutePages.adminProductNew(),
+      ),
+      GoRoute(
+        path: Routes.adminProductEdit,
+        builder: (_, s) => RoutePages.adminProductEdit(s),
+      ),
+      GoRoute(
+        path: Routes.adminCategories,
+        builder: (_, __) => RoutePages.adminCategories(),
+      ),
+      GoRoute(
+        path: Routes.adminImages,
+        builder: (_, s) => RoutePages.adminImages(s),
+      ),
+      GoRoute(
+        path: Routes.adminVariantEdit, // literal pattern
+        builder: (_, s) => RoutePages.adminVariantEdit(s),
+      ),
+    ],
   ),
   GoRoute(path: Routes.support, builder: (_, __) => RoutePages.support()),
   GoRoute(

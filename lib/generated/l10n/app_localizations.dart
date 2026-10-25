@@ -2441,7 +2441,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyPolicyContent.
   ///
   /// In en, this message translates to:
-  /// **'Privacy Policy content will be added here.'**
+  /// **'Al Batal Elite collects the information needed to run your account and fulfil your orders.\n\nWhat we collect: your name, phone number and email address; the delivery addresses you save; your orders and their status; and the payment method you choose. Card details are entered on Paymob\'s secure checkout and are never stored by us.\n\nWhy we use it: to create and secure your account, process and deliver orders, provide support, send order notifications, and meet our accounting and legal obligations.\n\nWho we share it with: Supabase (database, authentication and file storage hosting), Paymob and InstaPay (payment processing and transfer verification), OneSignal (push notifications) and Resend (transactional email). We do not sell your personal data.\n\nHow long we keep it: account and address data are kept while your account is active. Order records are kept for accounting and legal requirements after an order closes. You may ask us to delete your account at any time.\n\nYour rights: you can view and correct your profile and addresses, and delete your account from Settings. To request a copy of your data or ask a question, contact us from the Support page.'**
   String get privacyPolicyContent;
 
   /// No description provided for @termsOfService.
@@ -2453,7 +2453,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsOfServiceContent.
   ///
   /// In en, this message translates to:
-  /// **'Terms of Service content will be added here.'**
+  /// **'By creating an account or placing an order with Al Batal Elite you agree to these terms.\n\nYour account: you are responsible for the accuracy of the details you provide and for keeping your login credentials secure. You must be old enough to enter a binding contract under Egyptian law.\n\nProducts and prices: fabrics are subject to availability. Colours may vary slightly between screens and the actual fabric. Prices are shown in Egyptian pounds and may change before you place an order; the price confirmed at checkout applies to that order.\n\nOrders: an order is an offer to buy and is accepted when we confirm it. We may decline or cancel an order if the product is unavailable, the price was clearly wrong, or we suspect fraud.\n\nPayment: we accept payment by card through Paymob, InstaPay transfer with proof review, and cash on delivery where offered. InstaPay orders stay pending until the transfer proof is reviewed.\n\nCancellation: you may request cancellation before the order is shipped. After shipping, the returns policy applies.\n\nAcceptable use: do not misuse the app, attempt unauthorised access, or place fraudulent orders.\n\nLiability: to the extent permitted by law, our liability is limited to the value of the order concerned. Nothing in these terms limits rights you have under Egyptian consumer protection law.\n\nGoverning law: these terms are governed by the laws of the Arab Republic of Egypt.'**
   String get termsOfServiceContent;
 
   /// No description provided for @shippingPolicy.
@@ -2465,7 +2465,7 @@ abstract class AppLocalizations {
   /// No description provided for @shippingPolicyContent.
   ///
   /// In en, this message translates to:
-  /// **'Shipping Policy content will be added here.'**
+  /// **'Delivery areas: we deliver across Egypt through our courier partners. The zones and fees available for your address are shown at checkout before you pay.\n\nFees and estimates: your delivery fee and estimated delivery dates are calculated at checkout based on your address and order. The exact fee is confirmed in the order summary, and we do not add hidden charges after checkout.\n\nProcessing time: in-stock orders are prepared within 1-3 business days. Cut-to-length fabric may need an extra day. Delivery estimates start from dispatch, not from the moment you place the order.\n\nFailed delivery: if the courier cannot reach you after reasonable attempts, the order may be returned to us. We will contact you to arrange redelivery, and an additional delivery fee may apply.\n\nAddress accuracy: please provide a complete address with a landmark and a reachable phone number. Delays or failed deliveries caused by incorrect details are your responsibility.\n\nQuestions: contact us from the Support page.'**
   String get shippingPolicyContent;
 
   /// No description provided for @returnsPolicy.
@@ -2477,8 +2477,14 @@ abstract class AppLocalizations {
   /// No description provided for @returnsPolicyContent.
   ///
   /// In en, this message translates to:
-  /// **'Returns & Exchange Policy content will be added here.'**
+  /// **'We want you to be happy with your fabric. If something is not right, contact us from the Support page.\n\n14-day window: you may request a return or exchange within 14 days of receiving your order. The item must be unused, uncut and in its original condition and packaging.\n\nExclusions: cut-to-length fabric and custom or made-to-measure items cannot be returned or exchanged, because they are prepared specifically for you. Sale items are final sale unless faulty.\n\nDamaged or wrong item: if your order arrived damaged, defective or different from what you ordered, contact us within 14 days with photos. We will arrange a replacement or a full refund, including any delivery fee you paid.\n\nHow to request: open the Support page and send us your order number and the reason for the return. We will confirm whether the item qualifies and how to hand it back to the courier.\n\nRefunds: approved refunds are issued to the original payment method. Card refunds may take up to 14 business days to appear; InstaPay and cash-on-delivery refunds are arranged with you through Support.'**
   String get returnsPolicyContent;
+
+  /// No description provided for @legalLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: 24 October 2026'**
+  String get legalLastUpdated;
 
   /// No description provided for @customerSupport.
   ///
@@ -3379,6 +3385,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 u} other{{count} u}}'**
   String adminUnitsShort(int count);
+
+  /// No description provided for @adminInstapayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'InstaPay payments'**
+  String get adminInstapayTitle;
+
+  /// No description provided for @adminInstapaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review submitted transfer proofs, then approve or reject them.'**
+  String get adminInstapaySubtitle;
+
+  /// No description provided for @adminInstapayEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No InstaPay payments waiting for review'**
+  String get adminInstapayEmpty;
+
+  /// No description provided for @adminInstapayApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get adminInstapayApprove;
+
+  /// No description provided for @adminInstapayReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get adminInstapayReject;
+
+  /// No description provided for @adminInstapayReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer reference'**
+  String get adminInstapayReference;
+
+  /// No description provided for @adminInstapayOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get adminInstapayOrder;
+
+  /// No description provided for @adminInstapayCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get adminInstapayCustomer;
+
+  /// No description provided for @adminInstapaySubmittedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get adminInstapaySubmittedAt;
+
+  /// No description provided for @adminInstapayNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewer note (optional)'**
+  String get adminInstapayNote;
+
+  /// No description provided for @adminInstapayConfirmApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve this payment and mark the order as paid?'**
+  String get adminInstapayConfirmApprove;
+
+  /// No description provided for @adminInstapayConfirmReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject this payment proof? The customer will be asked to submit it again.'**
+  String get adminInstapayConfirmReject;
+
+  /// No description provided for @adminInstapayApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment approved'**
+  String get adminInstapayApproved;
+
+  /// No description provided for @adminInstapayRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment proof rejected'**
+  String get adminInstapayRejected;
+
+  /// No description provided for @adminInstapayProofMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This payment has no transfer proof attached.'**
+  String get adminInstapayProofMissing;
+
+  /// No description provided for @adminInstapayLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load InstaPay payments'**
+  String get adminInstapayLoadFailed;
+
+  /// No description provided for @adminInstapayReviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the review. Please try again.'**
+  String get adminInstapayReviewFailed;
 
   /// No description provided for @unknown.
   ///

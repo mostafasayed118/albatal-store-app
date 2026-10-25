@@ -1,4 +1,5 @@
 import 'package:al_batal_elite/core/error/result.dart';
+import 'package:al_batal_elite/shared/services/env_config.dart';
 import 'package:al_batal_elite/shared/services/oauth_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,6 +61,20 @@ void main() {
     expect(google, isA<Success<String>>());
     expect((google as Success<String>).value, 'ok');
     expect(apple, isA<Success<String>>());
+  });
+
+  test('passes the configured redirect to the provider url', () async {
+    final service = SupabaseOAuthService(client: client);
+
+    await service.signIn(OAuthProvider.google);
+
+    verify(() => auth.getOAuthSignInUrl(
+          provider: any(named: 'provider'),
+          redirectTo: EnvConfig.oauthRedirect,
+          scopes: any(named: 'scopes'),
+          queryParams: any(named: 'queryParams'),
+        )).called(1);
+    expect(EnvConfig.oauthRedirect, 'albatal://login-callback');
   });
 
   test('returns the cancelled code when the browser does not open', () async {

@@ -9,7 +9,9 @@ import 'package:al_batal_elite/features/addresses/domain/repositories/address_re
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/instapay_proof.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_instapay_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
@@ -60,6 +62,10 @@ final class _Catalog extends Fake implements CatalogRepository {
 }
 
 final class _Auth implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   @override
   Stream<Authenticated?> get authStateChanges => const Stream.empty();
 
@@ -206,6 +212,24 @@ final class _Admin extends Fake implements AdminRepository {
       ]);
 }
 
+final class _Instapay extends Fake implements AdminInstapayPort {
+  @override
+  Future<Result<List<InstapayProof>>> listPendingProofs() async =>
+      const Success([]);
+
+  @override
+  Future<Result<void>> reviewProof(
+    String proofId, {
+    required bool approve,
+    String? note,
+  }) async =>
+      const Success(null);
+
+  @override
+  Future<Result<String>> signedProofUrl(String storagePath) async =>
+      const Success('https://example.test/proof.jpg');
+}
+
 void main() {
   testWidgets(
       'a non-null exit hook mounts the smoke harness and builds the '
@@ -229,7 +253,8 @@ void main() {
       ..registerSingleton<DeepLinkService>(_DeepLinks())
       ..registerSingleton<ConnectivityGate>(ConnectivityGate())
       ..registerSingleton<ShareService>(_Share())
-      ..registerSingleton<AdminRepository>(_Admin());
+      ..registerSingleton<AdminRepository>(_Admin())
+      ..registerSingleton<AdminInstapayPort>(_Instapay());
 
     addTearDown(() async {
       await getIt.reset();

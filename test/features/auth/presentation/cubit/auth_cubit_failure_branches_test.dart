@@ -8,6 +8,10 @@ import 'package:al_batal_elite/features/auth/presentation/cubit/auth_cubit.dart'
 import 'package:flutter_test/flutter_test.dart';
 
 final class _AuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   Result<Authenticated?> session = const Success(null);
   Result<void> signOutResult = const Success(null);
 

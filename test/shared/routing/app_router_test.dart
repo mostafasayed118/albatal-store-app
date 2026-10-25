@@ -13,13 +13,17 @@ import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_sales.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_wholesale_price_entry.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/instapay_proof.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/low_stock_variant.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_coupons_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_customers_port.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_instapay_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_reviews_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_sales_port.dart';
 import 'package:al_batal_elite/features/admin/presentation/cubit/admin_cubit.dart';
+import 'package:al_batal_elite/features/admin/presentation/pages/admin_dashboard_page.dart';
+import 'package:al_batal_elite/features/admin/presentation/pages/admin_orders_page.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/repositories/profile_repository.dart';
@@ -149,6 +153,9 @@ void main() {
       '/admin/customers',
       '/admin/sales',
       '/admin/coupons',
+      // InstaPay proof review queue (082): added with the route itself so
+      // the walk above keeps covering every registered admin destination.
+      '/admin/instapay',
     ];
     for (final path in adminPaths) {
       harness.router.go(path);
@@ -163,6 +170,44 @@ void main() {
           reason: 'admin route "$path" rendered GoRouter\'s Page Not Found '
               'page — the path is not registered');
     }
+  });
+
+  testWidgets('admin cubit is scoped to the admin shell and disposed on exit',
+      (tester) async {
+    final harness = await _pumpRouter(tester, initialLocation: '/sign-in');
+
+    harness.profile.isAdmin = true;
+    harness.authRepository.authChanges.add(const Authenticated('user-1'));
+    await _settle(tester);
+
+    harness.router.go('/admin');
+    await _settle(tester);
+    final first = BlocProvider.of<AdminCubit>(
+      tester.element(find.byType(AdminDashboardPage)),
+    );
+
+    // Admin screens share the one subtree cubit while the admin shell is up.
+    harness.router.go('/admin/orders');
+    await _settle(tester);
+    final shared = BlocProvider.of<AdminCubit>(
+      tester.element(find.byType(AdminOrdersPage)),
+    );
+    expect(identical(first, shared), isTrue);
+
+    // Leaving admin must dispose the subtree cubit: no order/filter state
+    // may cross visits.
+    harness.router.go('/home');
+    await _settle(tester);
+    await tester.pump();
+    expect(first.isClosed, isTrue);
+
+    // Re-entering builds a fresh instance.
+    harness.router.go('/admin');
+    await _settle(tester);
+    final reentered = BlocProvider.of<AdminCubit>(
+      tester.element(find.byType(AdminDashboardPage)),
+    );
+    expect(identical(first, reentered), isFalse);
   });
 
   test('auth refresh notifier stops listening after disposal', () async {
@@ -276,6 +321,9 @@ Future<_RouterHarness> _pumpRouter(
     if (getIt.isRegistered<AdminSalesPort>()) {
       getIt.unregister<AdminSalesPort>();
     }
+    if (getIt.isRegistered<AdminInstapayPort>()) {
+      getIt.unregister<AdminInstapayPort>();
+    }
     if (getIt.isRegistered<StorageService>()) {
       getIt.unregister<StorageService>();
     }
@@ -309,6 +357,10 @@ Future<_RouterHarness> _pumpRouter(
     getIt.unregister<AdminSalesPort>();
   }
   getIt.registerSingleton<AdminSalesPort>(adminRepo);
+  if (getIt.isRegistered<AdminInstapayPort>()) {
+    getIt.unregister<AdminInstapayPort>();
+  }
+  getIt.registerSingleton<AdminInstapayPort>(const _RouteProbeInstapayPort());
   // The /admin/images/:id builder resolves storage at the composition
   // root now (audit P1 constructor injection) — the route probe needs it
   // registered even though its assertions never touch images.
@@ -336,7 +388,6 @@ Future<_RouterHarness> _pumpRouter(
       BlocProvider(create: (_) => CatalogCubit(const _StubCatalogRepository())),
       BlocProvider(create: (_) => WishlistCubit(persistence)),
       BlocProvider(create: (_) => CartCubit(persistence)),
-      BlocProvider(create: (_) => AdminCubit(adminRepo)),
     ],
     child: MaterialApp.router(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -399,6 +450,10 @@ final class _NoOpShareService implements ShareService {
 }
 
 final class _StubAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   final authChanges = StreamController<Authenticated?>.broadcast();
 
   @override
@@ -486,6 +541,29 @@ final class _StubCatalogRepository
   @override
   Future<Result<List<FlashSale>>> getActiveFlashSales() async =>
       const Success<List<FlashSale>>([]);
+}
+
+/// Empty InstaPay queue for the route probe: the review page only needs the
+/// port to resolve and answer its initial load. Deliberately separate from
+/// [_RouteProbeAdminRepository] — the facade does not implement this port.
+final class _RouteProbeInstapayPort implements AdminInstapayPort {
+  const _RouteProbeInstapayPort();
+
+  @override
+  Future<Result<List<InstapayProof>>> listPendingProofs() async =>
+      const Success(<InstapayProof>[]);
+
+  @override
+  Future<Result<void>> reviewProof(
+    String proofId, {
+    required bool approve,
+    String? note,
+  }) async =>
+      const Success(null);
+
+  @override
+  Future<Result<String>> signedProofUrl(String storagePath) async =>
+      const Success('https://probe/signed');
 }
 
 /// Empty admin repository for the route probe: the admin pages built by

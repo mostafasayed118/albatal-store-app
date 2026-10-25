@@ -18,6 +18,10 @@ import '../helpers/stub_auth_repositories.dart';
 /// Auth double whose account deletion fails, so the adapter's failure
 /// pass-through (not just its success path) is exercised.
 final class _FailingDeleteAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   final deletedEmails = <String>[];
 
   @override

@@ -8,7 +8,9 @@ import 'package:al_batal_elite/features/addresses/domain/repositories/address_re
 import 'package:al_batal_elite/features/addresses/presentation/cubit/addresses_cubit.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_catalog.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_wholesale_price_entry.dart';
+import 'package:al_batal_elite/features/admin/domain/entities/instapay_proof.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_catalog_port.dart';
+import 'package:al_batal_elite/features/admin/domain/repositories/admin_instapay_port.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_repository.dart';
 import 'package:al_batal_elite/features/admin/domain/repositories/admin_wholesale_prices_port.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
@@ -157,6 +159,12 @@ final class _AdminRepo extends Fake implements AdminRepository {
       const Success([]);
 }
 
+final class _InstapayPort extends Fake implements AdminInstapayPort {
+  @override
+  Future<Result<List<InstapayProof>>> listPendingProofs() async =>
+      const Success([]);
+}
+
 final class _Storage extends StorageService {
   _Storage() : super(client: null);
 }
@@ -194,6 +202,10 @@ final class _RemoteFetcher implements RemoteConfigFetcher {
 }
 
 final class _AuthRepo implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   @override
   Stream<Authenticated?> get authStateChanges => const Stream.empty();
 
@@ -288,6 +300,7 @@ void main() {
       ..registerSingleton<AdminWholesalePricesPort>(_WholesalePort())
       ..registerSingleton<AdminCatalogPort>(_AdminCatalogPort())
       ..registerSingleton<AdminRepository>(_AdminRepo())
+      ..registerSingleton<AdminInstapayPort>(_InstapayPort())
       ..registerSingleton<StorageService>(_Storage())
       ..registerSingleton<SupportRepository>(const _Support());
 
@@ -376,6 +389,7 @@ void main() {
         'orderId': 'ORD-1',
       },
       '/maintenance': null,
+      '/admin/instapay': null,
       '/admin/wholesale-prices': null,
       '/admin/images/p-1': null,
       '/support': null,

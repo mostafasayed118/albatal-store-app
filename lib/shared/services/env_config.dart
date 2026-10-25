@@ -58,6 +58,19 @@ class EnvConfig {
     return 'albatal://reset-password';
   }
 
+  /// Redirect target for the OAuth browser round-trip. Web builds land on
+  /// the `/login-callback` page; native builds use the custom-scheme
+  /// fallback parsed by the deep-link parser.
+  static String get oauthRedirect {
+    final base = Uri.tryParse(webBaseUrl);
+    if (kIsWeb && base != null) {
+      return base
+          .replace(path: '/login-callback', query: null, fragment: null)
+          .toString();
+    }
+    return 'albatal://login-callback';
+  }
+
   /// OneSignal app id (feature-batch §12). Empty = push disabled; the
   /// PushService scaffold no-ops so builds without push config work.
   static const String onesignalAppId =

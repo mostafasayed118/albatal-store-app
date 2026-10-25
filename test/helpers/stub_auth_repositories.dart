@@ -9,6 +9,10 @@ import 'package:al_batal_elite/features/auth/domain/repositories/profile_reposit
 /// watch AuthCubit (home greeting shows the profile name).
 class StubAuthRepository implements AuthRepository {
   @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
+  @override
   Future<Result<Authenticated?>> checkSession() async => const Success(null);
 
   @override

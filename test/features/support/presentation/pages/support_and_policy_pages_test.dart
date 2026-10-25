@@ -6,6 +6,8 @@ import 'package:al_batal_elite/features/support/presentation/pages/shipping_poli
 import 'package:al_batal_elite/features/support/presentation/pages/support_page.dart';
 import 'package:al_batal_elite/features/support/presentation/pages/terms_of_service_page.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_ar.dart';
+import 'package:al_batal_elite/generated/l10n/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,9 +35,10 @@ const _tampered = [
   ),
 ];
 
-Widget _app(Widget home) => MaterialApp(
+Widget _app(Widget home, {Locale? locale}) => MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale,
       home: home,
     );
 
@@ -62,6 +65,50 @@ void main() {
       await tester.pumpWidget(_app(page));
       await tester.pumpAndSettle();
       expect(find.byType(ListView), findsOneWidget);
+    }
+  });
+
+  testWidgets('policy pages show the last-updated line above real English copy',
+      (tester) async {
+    final l = AppLocalizationsEn();
+    final pages = <(Widget, String)>[
+      (const PrivacyPolicyPage(), l.privacyPolicyContent),
+      (const TermsOfServicePage(), l.termsOfServiceContent),
+      (const ShippingPolicyPage(), l.shippingPolicyContent),
+      (const ReturnsPolicyPage(), l.returnsPolicyContent),
+    ];
+
+    for (final (page, content) in pages) {
+      await tester.pumpWidget(_app(page));
+      await tester.pumpAndSettle();
+
+      final updated = find.text(l.legalLastUpdated);
+      final body = find.text(content);
+      expect(updated, findsOneWidget);
+      expect(body, findsOneWidget);
+      expect(find.textContaining('will be added'), findsNothing);
+      expect(
+          tester.getTopLeft(updated).dy, lessThan(tester.getTopLeft(body).dy));
+    }
+  });
+
+  testWidgets('policy pages render the Arabic copy and last-updated line',
+      (tester) async {
+    final l = AppLocalizationsAr();
+    final pages = <(Widget, String)>[
+      (const PrivacyPolicyPage(), l.privacyPolicyContent),
+      (const TermsOfServicePage(), l.termsOfServiceContent),
+      (const ShippingPolicyPage(), l.shippingPolicyContent),
+      (const ReturnsPolicyPage(), l.returnsPolicyContent),
+    ];
+
+    for (final (page, content) in pages) {
+      await tester.pumpWidget(_app(page, locale: const Locale('ar')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l.legalLastUpdated), findsOneWidget);
+      expect(find.text(content), findsOneWidget);
+      expect(find.textContaining('will be added'), findsNothing);
     }
   });
 

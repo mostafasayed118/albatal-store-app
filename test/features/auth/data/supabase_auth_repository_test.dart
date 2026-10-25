@@ -2,6 +2,7 @@ import 'package:al_batal_elite/core/error/failure_codes.dart';
 import 'package:al_batal_elite/core/error/result.dart';
 import 'package:al_batal_elite/features/auth/data/supabase_auth_repository.dart';
 import 'package:al_batal_elite/features/auth/domain/entities/auth_outcome.dart';
+import 'package:al_batal_elite/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,6 +34,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(<String, dynamic>{});
     registerFallbackValue(UserAttributes(password: 'fallback'));
+    registerFallbackValue(Uri.parse('albatal://login-callback'));
   });
 
   setUp(() {
@@ -244,6 +246,46 @@ void main() {
       final error =
           result.when(success: (_) => fail('unexpected'), failure: (e) => e);
       expect(error.code, kFailureUnexpected);
+    });
+  });
+
+  group('completeOAuthCallback', () {
+    final callback = Uri.parse('albatal://login-callback?code=abc');
+
+    test('exchanges the callback url for a session', () async {
+      when(() => auth.getSessionFromUrl(callback)).thenAnswer(
+        (_) async =>
+            AuthSessionUrlResponse(session: _session(), redirectType: null),
+      );
+
+      final result = await repository.completeOAuthCallback(callback);
+
+      expect(result, isA<Success<void>>());
+      verify(() => auth.getSessionFromUrl(callback)).called(1);
+    });
+
+    test('maps a rejected callback to the stable failure code', () async {
+      when(() => auth.getSessionFromUrl(callback))
+          .thenThrow(const AuthException('invalid flow state'));
+
+      final result = await repository.completeOAuthCallback(callback);
+
+      final error =
+          result.when(success: (_) => fail('unexpected'), failure: (e) => e);
+      expect(error.code, kOAuthCallbackFailed);
+    });
+
+    test('treats an already-exchanged callback as success (SDK won the race)',
+        () async {
+      // supabase_flutter's URI detector can consume the single-use code
+      // before our handler runs; a live session means login succeeded.
+      when(() => auth.getSessionFromUrl(callback))
+          .thenThrow(const AuthException('auth code already used'));
+      when(() => auth.currentSession).thenReturn(_session());
+
+      final result = await repository.completeOAuthCallback(callback);
+
+      expect(result, isA<Success<void>>());
     });
   });
 

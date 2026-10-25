@@ -39,6 +39,9 @@ abstract final class Routes {
   static const adminProducts = '/admin/products';
   static const adminCategories = '/admin/categories';
   static const adminOrders = '/admin/orders';
+  // InstaPay proof review queue (migration 082): without this surface a
+  // submitted transfer proof could never be approved or rejected.
+  static const adminInstapay = '/admin/instapay';
   static const adminInventory = '/admin/inventory';
   // Promo codes (§8): create and activate the coupons checkout redeems.
   static const adminCoupons = '/admin/coupons';

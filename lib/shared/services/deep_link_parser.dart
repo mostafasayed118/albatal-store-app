@@ -35,6 +35,17 @@ final class ResetPasswordDeepLink extends AppDeepLink {
   const ResetPasswordDeepLink();
 }
 
+/// OAuth browser round-trip callback. The full URI is preserved because
+/// the auth SDK exchanges the single-use `code` it carries.
+final class OAuthCallbackDeepLink extends AppDeepLink {
+  const OAuthCallbackDeepLink(this.uri);
+
+  final Uri uri;
+
+  @override
+  List<Object?> get props => [uri.toString()];
+}
+
 /// Pure deep-link parser — no platform channels, fully unit-testable.
 ///
 /// Accepted shapes:
@@ -42,6 +53,8 @@ final class ResetPasswordDeepLink extends AppDeepLink {
 /// - `https://<webBase.host>/catalog?q=<query>`
 /// - `https://<webBase.host>/reset-password` (recovery tokens ride the
 ///   fragment and are consumed by the auth SDK)
+/// - `https://<webBase.host>/login-callback` and
+///   `<scheme>://login-callback` (OAuth round-trip, query/fragment kept)
 /// - `<scheme>://product/<id>`, `<scheme>://catalog?q=<query>` and
 ///   `<scheme>://reset-password`
 ///   (custom-scheme fallbacks, e.g. `albatal://product/fabric-42`)
@@ -85,6 +98,9 @@ AppDeepLink? parseDeepLink(
   }
   if (segs.length == 1 && segs.first == 'reset-password') {
     return const ResetPasswordDeepLink();
+  }
+  if (segs.length == 1 && segs.first == 'login-callback') {
+    return OAuthCallbackDeepLink(uri);
   }
   return null;
 }

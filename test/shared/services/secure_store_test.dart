@@ -20,6 +20,10 @@ import '../../helpers/memory_secure_store.dart';
 
 class _StubAuthRepository implements AuthRepository {
   @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
+  @override
   Future<Result<Authenticated?>> checkSession() async => const Success(null);
 
   @override

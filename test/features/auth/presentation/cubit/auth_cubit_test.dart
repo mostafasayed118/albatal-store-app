@@ -23,6 +23,10 @@ import '../../../../helpers/memory_secure_store.dart';
 /// (catalog_cubit_test.dart, settings_cubit_test.dart). The declared
 /// `mocktail` dev dep is intentionally unused to stay consistent.
 class _StubAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   _StubAuthRepository({
     Future<Result<Authenticated?>> Function()? checkSession,
     Future<Result<AuthOutcome>> Function({

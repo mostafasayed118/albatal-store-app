@@ -16,6 +16,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/stub_auth_repositories.dart';
 
 final class _AuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   final deletedEmails = <String>[];
 
   @override

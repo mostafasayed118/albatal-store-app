@@ -38,6 +38,10 @@ typedef AuthPageSignInCall = ({String email, String password});
 /// rebuilding the harness. A non-null `pending*` completer holds the call
 /// open, which is how the loading-state tests observe `authenticating`.
 class AuthPageFakeAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   AuthPageFakeAuthRepository({
     this.signUpResult = const Success(ConfirmationRequired()),
     this.resetResult = const Success(null),

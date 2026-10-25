@@ -235,6 +235,10 @@ final class _NoChannels implements SupportRepository {
 }
 
 final class _StubAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   final authChanges = StreamController<Authenticated?>.broadcast();
 
   /// When set, [checkSession] resolves with this session — the

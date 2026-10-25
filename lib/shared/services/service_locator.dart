@@ -4,10 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/addresses/data/local_address_repository.dart';
 import '../../features/addresses/domain/repositories/address_repository.dart';
+import '../../features/admin/data/admin_instapay_store.dart';
 import '../../features/admin/data/supabase_admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_catalog_port.dart';
 import '../../features/admin/domain/repositories/admin_coupons_port.dart';
 import '../../features/admin/domain/repositories/admin_customers_port.dart';
+import '../../features/admin/domain/repositories/admin_instapay_port.dart';
 import '../../features/admin/domain/repositories/admin_orders_port.dart';
 import '../../features/admin/domain/repositories/admin_repository.dart';
 import '../../features/admin/domain/repositories/admin_reviews_port.dart';
@@ -120,6 +122,11 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AdminCatalogPort>(() => getIt<AdminRepository>())
     ..registerLazySingleton<AdminWholesalePricesPort>(
         () => getIt<AdminRepository>())
+    // InstaPay proof review (082 + `instapay-review`) is a separate store:
+    // the queue joins tables the facade's narrow ports never touch, and the
+    // write goes through an edge function instead of PostgREST.
+    ..registerLazySingleton<AdminInstapayPort>(
+        () => SupabaseAdminInstapay(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<AuthRepository>(
         () => SupabaseAuthRepository(client: getIt<SupabaseClient>()))
     ..registerLazySingleton<ProfileRepository>(

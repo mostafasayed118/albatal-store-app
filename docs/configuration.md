@@ -88,6 +88,56 @@ flutter build ipa --release \
   --dart-define-from-file=config/env.production.local.json
 ```
 
+## On-device E2E smoke (real backend, read-only)
+
+This repo has no `integration_test/` suite: adding one requires a
+`pubspec.yaml` change and is owner-gated. The supported real-backend E2E
+path is the debug smoke harness built from `lib/main_smoke.dart`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run_device_smoke.ps1
+```
+
+Prerequisites: an authorized Android device (or emulator), `adb`, a
+gitignored `config/env.staging.local.json` with a real `SUPABASE_URL` and
+`SUPABASE_ANON_KEY`, and an admin session already saved on the device.
+The runner exits 0 only on a full `SUMMARY n/n scenarios passed` with no
+`FAIL` line. It is **read-only** (admin dashboard data and admin routes);
+checkout/payment write-path E2E still needs disposable test accounts and
+orders and is not automated. Full procedure:
+[`docs/device-smoke-runbook.md`](device-smoke-runbook.md).
+
+## Supabase Auth redirect allowlist (owner-gated)
+
+OAuth sign-in and password recovery both return to the app through a
+Supabase redirect. The **Supabase dashboard is owner-gated** — the app
+team cannot add these values, so the owner must do it once per project
+(staging and production).
+
+1. Open the Supabase dashboard for the project, then
+   **Authentication → URL Configuration**.
+2. Add these to **Redirect URLs** (both must be listed exactly):
+
+   | Flow    | Platform        | URL                             |
+   |---------|-----------------|---------------------------------|
+   | OAuth   | Android / iOS   | `albatal://login-callback`      |
+
+   Web OAuth is **not enabled**: the web build has no `/login-callback`
+   route yet, so do not add the web redirect URL until that route ships.
+   The native (Android/iOS) flow is the supported path.
+
+3. Keep the existing password-recovery entries alongside them
+   (`https://albatal.app/reset-password`, `albatal://reset-password`).
+4. Save. A URL that is missing from this list makes Supabase reject the
+   redirect, so the browser round-trip ends on an error page instead of
+   returning to the app.
+
+The client values themselves come from `EnvConfig.oauthRedirect`
+(`lib/shared/services/env_config.dart`), which mirrors
+`passwordRecoveryRedirect`: web builds use the `/login-callback` page,
+native builds use the `albatal://` scheme. If `WEB_BASE_URL` changes,
+update the dashboard allowlist to match.
+
 ## Verification checklist
 
 Run these after every release build to confirm no secrets leaked into

@@ -89,6 +89,10 @@ void main() {
 }
 
 final class _StubAuthRepository implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   /// When set, [checkSession] resolves with this session — the
   /// deterministic way to reach an authenticated profile.
   Authenticated? sessionUser;

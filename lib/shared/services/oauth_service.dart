@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../../core/error/app_error.dart';
 import '../../core/error/result.dart';
+import 'env_config.dart';
 import 'logger.dart';
 
 /// OAuth provider selector (feature-batch §15).
@@ -38,7 +39,10 @@ class SupabaseOAuthService implements OAuthService {
       OAuthProvider.apple => supabase.OAuthProvider.apple,
     };
     try {
-      final res = await _client.auth.signInWithOAuth(native);
+      final res = await _client.auth.signInWithOAuth(
+        native,
+        redirectTo: EnvConfig.oauthRedirect,
+      );
       if (!res) {
         // Code-not-message (audit): the page classifies on `code`.
         return const Failure(AppError(kOAuthCancelled, code: kOAuthCancelled));

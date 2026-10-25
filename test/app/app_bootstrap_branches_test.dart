@@ -60,6 +60,10 @@ final class _Catalog extends Fake implements CatalogRepository {
 }
 
 final class _Auth implements AuthRepository {
+  @override
+  Future<Result<void>> completeOAuthCallback(Uri uri) async =>
+      const Success(null);
+
   final controller = StreamController<Authenticated?>.broadcast();
 
   @override

@@ -354,6 +354,108 @@ void main() {
       'No sales in this window'
     ),
     ('adminUnitsShort', en.adminUnitsShort(4), ar.adminUnitsShort(4), '4 u'),
+    (
+      'adminInstapayTitle',
+      en.adminInstapayTitle,
+      ar.adminInstapayTitle,
+      'InstaPay payments'
+    ),
+    (
+      'adminInstapaySubtitle',
+      en.adminInstapaySubtitle,
+      ar.adminInstapaySubtitle,
+      'Review submitted transfer proofs, then approve or reject them.'
+    ),
+    (
+      'adminInstapayEmpty',
+      en.adminInstapayEmpty,
+      ar.adminInstapayEmpty,
+      'No InstaPay payments waiting for review'
+    ),
+    (
+      'adminInstapayApprove',
+      en.adminInstapayApprove,
+      ar.adminInstapayApprove,
+      'Approve'
+    ),
+    (
+      'adminInstapayReject',
+      en.adminInstapayReject,
+      ar.adminInstapayReject,
+      'Reject'
+    ),
+    (
+      'adminInstapayReference',
+      en.adminInstapayReference,
+      ar.adminInstapayReference,
+      'Transfer reference'
+    ),
+    (
+      'adminInstapayOrder',
+      en.adminInstapayOrder,
+      ar.adminInstapayOrder,
+      'Order'
+    ),
+    (
+      'adminInstapayCustomer',
+      en.adminInstapayCustomer,
+      ar.adminInstapayCustomer,
+      'Customer'
+    ),
+    (
+      'adminInstapaySubmittedAt',
+      en.adminInstapaySubmittedAt,
+      ar.adminInstapaySubmittedAt,
+      'Submitted'
+    ),
+    (
+      'adminInstapayNote',
+      en.adminInstapayNote,
+      ar.adminInstapayNote,
+      'Reviewer note (optional)'
+    ),
+    (
+      'adminInstapayConfirmApprove',
+      en.adminInstapayConfirmApprove,
+      ar.adminInstapayConfirmApprove,
+      'Approve this payment and mark the order as paid?'
+    ),
+    (
+      'adminInstapayConfirmReject',
+      en.adminInstapayConfirmReject,
+      ar.adminInstapayConfirmReject,
+      'Reject this payment proof? The customer will be asked to submit it again.'
+    ),
+    (
+      'adminInstapayApproved',
+      en.adminInstapayApproved,
+      ar.adminInstapayApproved,
+      'Payment approved'
+    ),
+    (
+      'adminInstapayRejected',
+      en.adminInstapayRejected,
+      ar.adminInstapayRejected,
+      'Payment proof rejected'
+    ),
+    (
+      'adminInstapayProofMissing',
+      en.adminInstapayProofMissing,
+      ar.adminInstapayProofMissing,
+      'This payment has no transfer proof attached.'
+    ),
+    (
+      'adminInstapayLoadFailed',
+      en.adminInstapayLoadFailed,
+      ar.adminInstapayLoadFailed,
+      'Could not load InstaPay payments'
+    ),
+    (
+      'adminInstapayReviewFailed',
+      en.adminInstapayReviewFailed,
+      ar.adminInstapayReviewFailed,
+      'Could not save the review. Please try again.'
+    ),
     ('unknown', en.unknown, ar.unknown, 'Unknown'),
     ('pending', en.pending, ar.pending, 'Pending'),
     ('refunded', en.refunded, ar.refunded, 'Refunded'),

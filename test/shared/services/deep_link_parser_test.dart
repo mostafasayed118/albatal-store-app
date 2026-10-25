@@ -73,6 +73,43 @@ void main() {
       );
     });
 
+    test('parses oauth callbacks and preserves the full URI', () {
+      final custom = parseDeepLink(
+        Uri.parse('albatal://login-callback?code=abc&state=xyz'),
+        webBase: _base(),
+      );
+      expect(custom, isA<OAuthCallbackDeepLink>());
+      expect(
+        (custom as OAuthCallbackDeepLink).uri.toString(),
+        'albatal://login-callback?code=abc&state=xyz',
+      );
+
+      final web = parseDeepLink(
+        Uri.parse('https://albatal.app/login-callback?code=abc#state=xyz'),
+        webBase: _base(),
+      );
+      expect(web, isA<OAuthCallbackDeepLink>());
+      expect((web as OAuthCallbackDeepLink).uri.queryParameters['code'], 'abc');
+      expect(web.uri.fragment, 'state=xyz');
+    });
+
+    test('rejects foreign-host and deeper-path oauth callbacks', () {
+      expect(
+        parseDeepLink(
+          Uri.parse('https://evil.example/login-callback?code=abc'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+      expect(
+        parseDeepLink(
+          Uri.parse('albatal://login-callback/extra?code=abc'),
+          webBase: _base(),
+        ),
+        isNull,
+      );
+    });
+
     test('rejects foreign hosts, unknown paths and empty ids', () {
       expect(
         parseDeepLink(

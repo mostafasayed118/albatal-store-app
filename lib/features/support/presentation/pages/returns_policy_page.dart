@@ -14,6 +14,13 @@ class ReturnsPolicyPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsetsDirectional.all(16),
         children: [
+          Text(
+            l.legalLastUpdated,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 12),
           Text(l.returnsPolicyContent,
               style: Theme.of(context).textTheme.bodyLarge),
         ],
