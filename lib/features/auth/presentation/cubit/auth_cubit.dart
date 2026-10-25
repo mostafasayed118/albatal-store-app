@@ -43,18 +43,29 @@ class AuthCubit extends Cubit<AuthState> {
   final OrderSnapshotPort? _orderSnapshots;
   StreamSubscription<Authenticated?>? _authSubscription;
 
+  /// Monotonic token for the current auth lifecycle. Bumped on every auth
+  /// event and on explicit sign-out / account deletion; async work captures
+  /// it and drops its emit when a newer transition superseded it. Without
+  /// this, a profile read that completes after the user signed out emitted
+  /// `authenticated` for the old user (live-found 2026-10-24).
+  int _authGeneration = 0;
+
   /// Check for an existing session on app launch.
   Future<void> checkSession() async {
+    final generation = _authGeneration;
     emit(state.copyWith(status: AuthStatus.checkingSession));
     final result = await _authRepository.checkSession();
+    if (isClosed) return;
     switch (result) {
       case Success(:final value):
         if (value != null) {
-          await _loadProfile(value.userId);
+          await _loadProfile(value.userId, generation);
         } else {
+          if (generation != _authGeneration) return;
           emit(state.copyWith(status: AuthStatus.unauthenticated));
         }
       case Failure(:final error):
+        if (generation != _authGeneration) return;
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
@@ -69,13 +80,16 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
     String? fullName,
   }) async {
+    // Invalidate any profile read still in flight for a previous account:
+    // a new sign-up must never be overwritten by an older authenticated emit.
+    final generation = ++_authGeneration;
     emit(state.copyWith(status: AuthStatus.authenticating));
     final result = await _authRepository.signUp(
       email: email,
       password: password,
       fullName: fullName,
     );
-    await _applyAuthResult(result);
+    await _applyAuthResult(result, generation);
   }
 
   /// Sign in with email and password.
@@ -83,12 +97,14 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
   }) async {
+    // Invalidate any profile read still in flight for a previous account.
+    final generation = ++_authGeneration;
     emit(state.copyWith(status: AuthStatus.authenticating));
     final result = await _authRepository.signIn(
       email: email,
       password: password,
     );
-    await _applyAuthResult(result);
+    await _applyAuthResult(result, generation);
   }
 
   /// Send password reset email.
@@ -109,8 +125,10 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Update password (called from reset-password screen).
   Future<void> updatePassword(String newPassword) async {
+    final generation = _authGeneration;
     emit(state.copyWith(status: AuthStatus.authenticating));
     final result = await _authRepository.updatePassword(newPassword);
+    if (isClosed || generation != _authGeneration) return;
     switch (result) {
       case Success():
         emit(state.copyWith(status: AuthStatus.authenticated));
@@ -126,11 +144,14 @@ class AuthCubit extends Cubit<AuthState> {
   /// Update profile fields.
   Future<void> updateProfile({String? fullName, String? phone}) async {
     if (state.profile == null) return;
+    final generation = _authGeneration;
     final updated = state.profile!.copyWith(
       fullName: fullName,
       phone: phone,
     );
     final result = await _profileRepository.upsertProfile(updated);
+    // A sign-out during the write clears the profile; never restore it.
+    if (isClosed || generation != _authGeneration) return;
     switch (result) {
       case Success():
         emit(state.copyWith(profile: updated, errorMessage: null));
@@ -150,13 +171,16 @@ class AuthCubit extends Cubit<AuthState> {
   /// user) but is logged; snapshot-clear failures are retried once via
   /// [AuthSnapshotWipe.clearLocalSnapshots] so no address/order PII survives.
   Future<void> signOut() async {
+    final generation = ++_authGeneration;
     final result = await _authRepository.signOut();
     if (result case Failure(:final error)) {
       Log.w('Sign-out server failure: ${error.message}',
           category: LogCategory.auth);
     }
     await clearLocalSnapshots();
-    if (isClosed) return;
+    // A later auth event (or a new sign-in) supersedes this emit; the
+    // signedOut stream listener owns the state transition in that case.
+    if (isClosed || generation != _authGeneration) return;
     emit(state.copyWith(
       status: AuthStatus.unauthenticated,
       clearProfile: true,
@@ -174,8 +198,12 @@ class AuthCubit extends Cubit<AuthState> {
     switch (result) {
       case Success():
         // The server-side user is gone — clear the local session too.
+        final generation = ++_authGeneration;
         await _authRepository.signOut();
         await clearLocalSnapshots();
+        if (isClosed || generation != _authGeneration) {
+          return const Success(null);
+        }
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,
@@ -200,8 +228,9 @@ class AuthCubit extends Cubit<AuthState> {
   void _listenToAuthChanges() {
     _authSubscription =
         _authRepository.authStateChanges.listen((outcome) async {
+      final generation = ++_authGeneration;
       if (outcome != null) {
-        await _loadProfile(outcome.userId);
+        await _loadProfile(outcome.userId, generation);
       } else {
         // signedOut — clear local state. This event also covers
         // SERVER-driven sign-outs (refresh-token failure/revocation), so
@@ -211,7 +240,7 @@ class AuthCubit extends Cubit<AuthState> {
         // user also tapped sign out is harmless — the clears are
         // idempotent and never abort on failure.
         await clearLocalSnapshots();
-        if (isClosed) return;
+        if (isClosed || generation != _authGeneration) return;
         emit(state.copyWith(
           status: AuthStatus.unauthenticated,
           clearProfile: true,
@@ -220,17 +249,22 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  Future<void> _applyAuthResult(Result<AuthOutcome> result) async {
+  Future<void> _applyAuthResult(
+    Result<AuthOutcome> result,
+    int generation,
+  ) async {
     switch (result) {
       case Success(:final value):
         switch (value) {
           case Authenticated(:final userId):
-            await _loadProfile(userId);
+            await _loadProfile(userId, generation);
           case ConfirmationRequired():
             // Account created, email confirmation pending — not signed in.
+            if (isClosed || generation != _authGeneration) return;
             emit(state.copyWith(status: AuthStatus.unauthenticated));
         }
       case Failure(:final error):
+        if (isClosed || generation != _authGeneration) return;
         emit(state.copyWith(
           status: AuthStatus.failure,
           errorMessage: error.message,
@@ -239,8 +273,13 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> _loadProfile(String userId) async {
+  /// Reads the profile and authenticates. [generation] is the auth token
+  /// captured when the initiating operation started; a mismatch after the
+  /// await means a newer auth event (e.g. sign-out) superseded this read,
+  /// so the stale result is dropped instead of resurrecting the session.
+  Future<void> _loadProfile(String userId, int generation) async {
     final result = await _profileRepository.readProfile(userId);
+    if (isClosed || generation != _authGeneration) return;
     switch (result) {
       case Success(:final value):
         emit(state.copyWith(

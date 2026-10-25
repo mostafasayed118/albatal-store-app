@@ -34,7 +34,10 @@ class CartPage extends StatelessWidget {
           if (s.status == CartStatus.error) {
             return FeedbackView(
               type: FeedbackViewType.error,
-              onAction: () => context.read<CartCubit>().restore(force: true),
+              // Never force a re-read (it would overwrite live items with
+              // the stale persisted cart). Retry the failed WRITE for the
+              // items currently on screen so the cart survives a restart.
+              onAction: () => context.read<CartCubit>().retryPersist(),
             );
           }
           if (s.items.isEmpty) {

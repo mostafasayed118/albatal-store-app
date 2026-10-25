@@ -120,6 +120,11 @@ class _WishlistPageState extends State<WishlistPage> {
                       context.read<WishlistCubit>().restore(force: true),
                 );
               }
+              // A refresh in flight with nothing resolved yet must not read
+              // as "nothing saved yet" (live-found 2026-10-24).
+              if (ws.status == WishlistStatus.loading && ws.products.isEmpty) {
+                return const FeedbackView(type: FeedbackViewType.loading);
+              }
               if (ws.products.isEmpty) {
                 return FeedbackView(
                   type: FeedbackViewType.empty,
