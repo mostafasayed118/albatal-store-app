@@ -1,6 +1,22 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-24 (owner-gated closure wave — merged locally; gates green; not pushed)
+Last run: 2026-10-24 (live 081/082 window + device E2E — applied staging & prod; local commits not pushed)
+
+## New — 2026-10-24 (live 081/082 window + real-device E2E — APPLIED)
+
+- Owner order: apply 081/082 to staging then production, run the proof scripts, verify `instapay-review`, add the auth redirect, and run the device smoke (phone connected).
+- Pre-state (both projects): `order_items` had only own + insert-denied; `admin_list_instapay_proofs` absent. JSON snapshots saved (no full `pg_dump`: Docker daemon unavailable).
+- Applied with `supabase db push --include-all --yes` (dry-run listed only 081/082): staging `zvpjng...`, then production `alxwvy...`. Both now at **082**.
+- Live verification both: `order_items_select_admin` = SELECT / `authenticated` with `auth.uid()` + `is_admin`; `admin_list_instapay_proofs` = SECURITY DEFINER, `search_path=public, pg_temp`, anon=false / authenticated=true. Proof scripts: **PASS 081 / PASS 082** on both.
+- `instapay-review` edge function: **ACTIVE** on both (staging v4, prod v3, `verify_jwt=true`).
+- Auth config both: `uri_allow_list` was **empty**; set to `albatal://login-callback,albatal://reset-password,https://albatal.app/reset-password`. `site_url` remains `http://localhost:3000` (`mailer_autoconfirm=true`, so signup confirmation is unused); Google/Apple providers remain **disabled** (owner credentials).
+- Staging InstaPay E2E (`scripts/_pkgL/_e2e_instapay.mjs`, extended with 082 checks): **8/8 PASS** — signup → order → initiate → proof → admin queue row → approve → paid/success + Realtime tx match; non-admin queue returns 0 rows; order/payment/proof cleaned; disposable users deleted.
+  - Local TLS note: the staging pooler cert is not trusted by Node here; the run used a temp copy with `rejectUnauthorized:false` (not committed).
+- Real-device smoke (Infinix X6882, Android 14): **2/2 PASS** against staging after signing in with a disposable admin; the admin + the two E2E users were deleted, app data cleared. Debug SharedPreferences were reset during the app-lock bypass; the secure session was cleared afterwards.
+  - Root cause of the first failure: `config/env.staging.local.json` held the legacy anon key, but staging disabled legacy keys. Rewritten with the `sb_publishable_...` key (gitignored).
+  - Runner bug fixed: `flutter devices --machine` merged all devices into one bogus serial; selection now uses `adb devices` + `getprop`.
+- Legal: `docs/legal-review-packet.md` added — the shipped policy copy is a **DRAFT** for owner/counsel review.
+- Follow-up commits are local only; **NO PUSH**.
 
 ## New — 2026-10-24 (owner-gated closure — MERGED locally)
 
