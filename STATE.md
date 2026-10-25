@@ -1,6 +1,19 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-24 (verified-state fixes + dead-code removal merged locally; gates re-verified; not pushed)
+Last run: 2026-10-24 (owner-gated closure wave — merged locally; gates green; not pushed)
+
+## New — 2026-10-24 (owner-gated closure — MERGED locally)
+
+- Owner ask: close the six deferred items after the verified-state wave. Worktree `.trees/owner-gated-closure` from `c793bc9`; no push.
+- Backend (NOT applied): `081_admin_order_items_read.sql` adds an admin SELECT policy on `order_items` (queue item counts were 0); `082_admin_list_instapay_proofs.sql` adds a SECURITY DEFINER list RPC for pending proofs. Static proof scripts 081/082; combined artifact regenerated (81 files, 505 KB, markers 001–082; pre-existing 023 gap). `verify_staging_deployment.sql` now checks the new RPC.
+- InstaPay admin review: entity/port/Supabase store/cubit/page + `/admin/instapay` route + dashboard tile; approve/reject via the existing `instapay-review` function, signed thumbnails; per-row guard + stale-load token. **Requires 082 applied before it lists anything.**
+- OAuth: `redirectTo` on `signInWithOAuth`, `albatal://login-callback` parsed and exchanged via `getSessionFromUrl`, duplicate SDK exchange tolerated. Native supported; web callback route intentionally not shipped (web not a release target) — dashboard allowlist for native only.
+- Legal: real EN/AR copy for privacy/terms/shipping/returns + `legalLastUpdated`; no placeholders; 620 keys/locale. Copy is a **draft for owner/legal review**.
+- Admin scoping: all 17 `/admin*` routes live under one `ShellRoute`-owned `AdminCubit`, disposed on exit; production has no app-scoped instance. Smoke debug build keeps a conditional provider.
+- E2E: `scripts/run_device_smoke.ps1` builds/installs the debug `main_smoke` target against a real env file, captures `[SMOKE]` from logcat, exits nonzero on failure. Runbook updated. No device connected, so not executed.
+- Gates (final): `dart format --set-exit-if-changed lib test` 0 changed (768 files); `flutter analyze --no-pub` No issues; full `flutter test --coverage --no-pub` **2,121/2,121**; coverage **98.71%** (13,433/13,609), 0 zero-covered.
+- Owner steps: apply 081+082 staging→prod (proof scripts); deploy `instapay-review` if not live; add `albatal://login-callback` to Supabase redirect allowlist; legal counsel review; connect a phone + create `config/env.staging.local.json` and run the smoke script.
+- Residual: web OAuth has no landing route; 082 not applied → InstaPay queue shows a localized load error until then; queue capped at 100; legal copy is draft.
 
 ## New — 2026-10-24 (dead-code removal — MERGED locally)
 
