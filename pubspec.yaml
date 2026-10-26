@@ -65,6 +65,10 @@ flutter:
   uses-material-design: true
   generate: true
   assets:
+    - assets/brand/logo_lockup_on_dark.png
+    - assets/brand/logo_lockup_on_light.png
+    - assets/brand/logo_mark_on_dark.png
+    - assets/brand/logo_mark_on_light.png
     - assets/images/
     - assets/images/onboarding/
   fonts:
