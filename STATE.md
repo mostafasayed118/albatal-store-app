@@ -1,6 +1,15 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-26 (build-phase I/O removal — committed & pushed)
+Last run: 2026-10-26 (Google OAuth live on staging — device sign-in verified)
+
+## New — 2026-10-26 (Google OAuth — LIVE on staging)
+
+- First failures were configuration, not code: Supabase auth logs showed `oauth2: "invalid_client" "The provided client secret is invalid"` (15:02/15:19/15:52 UTC). The value pasted was not a Google client secret (real ones start `GOCSPX-`).
+- After replacing it with the real client secret, the device (Infinix X6882) signed in with Google as **Mustafa Sayed**; `auth.users` new id `13b79751…`, `provider=google`, `auth.identities` google=1; the app shows the authenticated profile + **Admin Dashboard**.
+- Separate app bug fixed and committed (`3f7057e`): Flutter's built-in deep linking delivered `albatal://login-callback` to GoRouter (Page Not Found + overflow). Added `flutter_deeplinking_enabled=false` + a localized GoRouter error page; `app_links` is now the single handler.
+- Known benign noise: the SDK and the manual `getSessionFromUrl` can both exchange the PKCE code; the loser logs `404 flow_state_not_found`. Login succeeds and there is no user-facing error. Do not disable `detectSessionInUri` (password recovery relies on it).
+- Google provider is enabled on staging + production with the same client ID. Production device sign-in was not run. Apple remains disabled pending a paid Apple Developer account.
+- Auth allowlist (both): `albatal://login-callback`, `albatal://reset-password`, `https://albatal.app/reset-password`.
 
 ## New — 2026-10-26 (build-phase I/O removal — LANDED)
 
