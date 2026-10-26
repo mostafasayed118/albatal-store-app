@@ -13,7 +13,7 @@ Last run: 2026-10-27 (brand logo integration — icons, splash, in-app, invoice)
 - Verifier: round 1 REJECT (rule bypass, bundled masters, invoice offset cast) -> fixed -> round 2 **APPROVE**.
 - Follow-up (owner-requested, same day): invoice logo load now degrades to a logo-less PDF (try/catch + log); Home AppBar height grows with text scale and the greeting/brand ellipsize at 2.0, pinned by a 2.0 widget test.
 - Residual: onboarding uses `onDark` over scrimmed fabric art; release build/signing not run locally.
-- Owner GO: commit + push in this window.
+- Push landed: remote `master` = `1351a8d` (ls-remote), unpushed 0, tree clean. CI `40414887929` on that SHA: **success** (Format & Analyze, Flutter Tests, Edge Function Tests, Secret Scan, Deployment Readiness, Android Release Build).
 
 ## New — 2026-10-26 (Google OAuth — LIVE on staging)
 
