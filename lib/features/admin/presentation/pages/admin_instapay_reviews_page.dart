@@ -430,6 +430,8 @@ class _ProofThumbnailState extends State<_ProofThumbnail> {
     _url = repo.signedProofUrl(widget.proof.storagePath);
   }
 
+  void _retry() => setState(_mintUrl);
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -455,9 +457,18 @@ class _ProofThumbnailState extends State<_ProofThumbnail> {
             final result = snapshot.data;
             final url = result is Success<String> ? result.value : null;
             if (url == null) {
-              return _Placeholder(
-                icon: Icons.broken_image_outlined,
-                tooltip: l.adminInstapayProofMissing,
+              return Semantics(
+                button: true,
+                label: l.retry,
+                child: Tooltip(
+                  message: l.retry,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _retry,
+                    child:
+                        const _Placeholder(icon: Icons.broken_image_outlined),
+                  ),
+                ),
               );
             }
             return Image.network(

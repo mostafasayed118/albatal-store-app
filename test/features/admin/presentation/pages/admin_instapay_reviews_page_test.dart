@@ -96,6 +96,25 @@ void main() {
     verify(() => port.signedProofUrl('proofs/p1.jpg')).called(1);
   });
 
+  testWidgets('a failed signed URL can be retried from the thumbnail',
+      (tester) async {
+    when(() => port.listPendingProofs()).thenAnswer(
+        (_) async => Success([_proof('p1', storagePath: 'proofs/p1.jpg')]));
+    when(() => port.signedProofUrl('proofs/p1.jpg'))
+        .thenAnswer((_) async => const Failure<String>(AppError('boom')));
+    final cubit = AdminInstapayCubit(repository: port);
+
+    await tester.pumpWidget(_harness(cubit, port));
+    await _settle(tester);
+
+    expect(find.byTooltip('Retry'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.broken_image_outlined));
+    await tester.pump();
+
+    verify(() => port.signedProofUrl('proofs/p1.jpg')).called(2);
+  });
+
   testWidgets('a proof without a file shows the missing-proof placeholder',
       (tester) async {
     when(() => port.listPendingProofs())
