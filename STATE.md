@@ -1,6 +1,17 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-24 (live 081/082 window + device E2E — applied staging & prod; local commits not pushed)
+Last run: 2026-10-26 (build-phase I/O removal — committed & pushed)
+
+## New — 2026-10-26 (build-phase I/O removal — LANDED)
+
+- Owner ask: explore the project and find every API call made from a widget `build()`, then fix all. Read-only sweep covered 389 `lib/` Dart files and 175 `build()` bodies; zero direct Supabase/HTTP calls were found in build — every network read was reached through a cubit created or cascaded during build.
+- Worktree `.trees/build-phase-io` (base `3f7057e`). No pubspec/CI/supabase changes.
+- Fixed: `lib/app.dart` — `CartCubit.restore()` was evaluated in `build` on every rebuild (moved to `initState`); `Settings`/`Catalog`/`Orders`/`Addresses` cubits were lazy-created with `..load()` in `build` (created in `initState`, provided via `BlocProvider.value`, closed in `dispose`). `OrdersCubit` no longer restores at app scope, removing a duplicate network read on first orders open (the page's `initState` owns the per-open refresh).
+- Fixed: `details_page.dart` + `reviews_section.dart` — page/section-scoped cubits now load in `initState` and are provided via `.value` (previously `BlocProvider.create` fired `loadProduct`/`load` during build).
+- Fixed: six admin pages — cubit ownership moved to `initState` with `_ownsCubit` guarding `close()`; injected test cubits are still loaded but never closed. `admin_instapay_reviews_page.dart` `_ProofThumbnail` no longer calls `signedProofUrl` (Supabase Storage) from `build`; the URL is minted in `initState` and on proof id/path change.
+- Gates: `dart format --output=none --set-exit-if-changed .` 0 changed (768 files); `flutter analyze --no-pub` No issues; full `flutter test --no-pub --coverage` **2,122/2,122**; coverage **98.68%** (13,518/13,699); `git diff --check` clean.
+- Independent verifier: **APPROVE** (no blockers). Minors: stale comment in `admin_instapay_reviews_page_test.dart:43-46`; `OnboardingCubit`/`AdminCubit` still constructed in build (no I/O, out of scope).
+- Pre-existing, not a regression: the full log prints `[SMOKE] FAIL admin_dashboard_data`; reproduced byte-identically on the clean base commit (intentional failure-path test).
 
 ## New — 2026-10-24 (live 081/082 window + real-device E2E — APPLIED)
 
