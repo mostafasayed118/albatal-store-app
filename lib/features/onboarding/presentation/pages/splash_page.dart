@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_image.dart';
+import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
@@ -141,20 +142,9 @@ class _SplashPageState extends State<SplashPage>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          width: 240,
+                        const BrandLogo.lockup(
                           height: 240,
-                          child: AppImage(
-                            source: 'assets/images/onboarding/logo.svg',
-                            fit: BoxFit.contain,
-                            colorFilter: const ColorFilter.mode(
-                                AppColors.white, BlendMode.srcIn),
-                            placeholder: Icon(
-                              Icons.auto_awesome,
-                              size: 112,
-                              color: colorScheme.secondary,
-                            ),
-                          ),
+                          tone: BrandLogoTone.onDark,
                         ),
                         const SizedBox(height: 24),
                         Container(

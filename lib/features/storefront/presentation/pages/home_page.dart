@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/components/stitch/stitch_category_chips.dart';
@@ -67,9 +68,24 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    // Two title lines must stay readable at large system text scales: grow
+    // the bar instead of clipping the greeting or the brand name.
+    final textScaler = MediaQuery.textScalerOf(context);
+    final scaledTitleHeight =
+        textScaler.scale(12) * 1.4 + textScaler.scale(16) * 1.5 + 12;
+    final toolbarHeight =
+        scaledTitleHeight < kToolbarHeight ? kToolbarHeight : scaledTitleHeight;
     return Scaffold(
       appBar: AppBar(
-        title: HomeGreetingTitle(clock: widget.clock),
+        toolbarHeight: toolbarHeight,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const BrandLogo.mark(height: 34),
+            const SizedBox(width: 10),
+            Flexible(child: HomeGreetingTitle(clock: widget.clock)),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: l.openSettings,

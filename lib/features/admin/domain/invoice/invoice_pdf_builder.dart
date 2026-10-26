@@ -35,17 +35,19 @@ final class InvoicePdfBuilder {
   /// the main isolate with [Isolate.run]. [AdminOrder] is an immutable
   /// DTO graph (strings, ints, enums, DateTime) — sendable as-is; no
   /// widgets, controllers, or platform objects cross the boundary.
-  Future<Uint8List> build(AdminOrder order) async {
+  Future<Uint8List> build(AdminOrder order, {Uint8List? logoPng}) async {
     if (order.items.isEmpty) {
       throw ArgumentError('invoice requires at least one line item');
     }
-    return Isolate.run(() => buildDocument(order));
+    return Isolate.run(() => buildDocument(order, logoPng: logoPng));
   }
 
   /// Pure document construction — runs entirely on the background
   /// isolate. Static so the [Isolate.run] closure captures only the
-  /// [order] payload, never `this`.
-  static Future<Uint8List> buildDocument(AdminOrder order) async {
+  /// payload, never `this`.
+  static Future<Uint8List> buildDocument(AdminOrder order,
+      {Uint8List? logoPng}) async {
+    final logo = logoPng == null ? null : pw.MemoryImage(logoPng);
     final doc = pw.Document();
     doc.addPage(
       pw.Page(
@@ -54,7 +56,7 @@ final class InvoicePdfBuilder {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            _header(order),
+            _header(order, logo),
             pw.SizedBox(height: 24),
             _meta(order),
             pw.SizedBox(height: 16),
@@ -68,19 +70,28 @@ final class InvoicePdfBuilder {
     return doc.save();
   }
 
-  static pw.Widget _header(AdminOrder order) => pw.Row(
+  static pw.Widget _header(AdminOrder order, pw.MemoryImage? logo) => pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          pw.Row(
+            mainAxisSize: pw.MainAxisSize.min,
             children: [
-              pw.Text('Al Batal Elite',
-                  style: const pw.TextStyle(
-                      fontSize: 24,
-                      color: _emerald,
-                      fontWeight: pw.FontWeight.bold)),
-              pw.Text('Premium Fabrics',
-                  style: const pw.TextStyle(fontSize: 10, color: _gold)),
+              if (logo != null) ...[
+                pw.Image(logo, height: 52, width: 52),
+                pw.SizedBox(width: 12),
+              ],
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('Al Batal Elite',
+                      style: const pw.TextStyle(
+                          fontSize: 24,
+                          color: _emerald,
+                          fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Premium Fabrics',
+                      style: const pw.TextStyle(fontSize: 10, color: _gold)),
+                ],
+              ),
             ],
           ),
           pw.Text('INVOICE',

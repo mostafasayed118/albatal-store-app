@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
 
@@ -6,6 +9,7 @@ import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
+import '../../../../shared/services/logger.dart';
 import '../../domain/entities/admin_order.dart';
 import '../../domain/invoice/invoice_pdf_builder.dart';
 import '../cubit/admin_cubit.dart';
@@ -62,6 +66,18 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
     context.read<AdminCubit>().loadOrderDetails(widget.orderId);
   }
 
+  /// Loads the invoice logo, degrading to a logo-less PDF when the asset
+  /// cannot be read (invoices must never fail because of branding).
+  Future<Uint8List?> _invoiceLogoBytes() async {
+    try {
+      final logo = await rootBundle.load('assets/brand/logo_mark_on_light.png');
+      return logo.buffer.asUint8List(logo.offsetInBytes, logo.lengthInBytes);
+    } catch (error) {
+      Log.w('invoice logo unavailable; building without it.', error: error);
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -86,7 +102,11 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
               return IconButton(
                 tooltip: l10n.invoiceSave,
                 onPressed: () async {
-                  final bytes = await const InvoicePdfBuilder().build(order);
+                  final logoBytes = await _invoiceLogoBytes();
+                  final bytes = await const InvoicePdfBuilder().build(
+                    order,
+                    logoPng: logoBytes,
+                  );
                   await Printing.sharePdf(
                       bytes: bytes, filename: 'invoice-${order.id}.pdf');
                 },

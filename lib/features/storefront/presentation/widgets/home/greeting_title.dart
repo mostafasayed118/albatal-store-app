@@ -33,6 +33,8 @@ final class HomeGreetingTitle extends StatelessWidget {
         children: [
           Text(
             homeGreeting(l, firstName, (clock ?? DateTime.now)()),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context)
                 .textTheme
                 .labelLarge
@@ -40,6 +42,8 @@ final class HomeGreetingTitle extends StatelessWidget {
           ),
           Text(
             l.brandName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context)
                 .textTheme
                 .titleMedium

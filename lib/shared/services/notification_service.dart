@@ -78,7 +78,7 @@ final class LocalNotificationService implements NotificationService {
   bool _initialized = false;
 
   static const _androidInit =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@drawable/ic_stat_onesignal_default');
 
   static Future<void> _requestPermission() async {
     await Permission.notification.request();

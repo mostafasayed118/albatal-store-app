@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/components/app_image.dart';
+import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
 import 'onboarding_step.dart';
@@ -58,24 +59,13 @@ final class OnboardingStepView extends StatelessWidget {
                   ),
                 ),
               ),
-              Align(
+              const Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.only(top: 16),
-                  child: AppImage(
-                    source: 'assets/images/onboarding/logo.svg',
-                    fit: BoxFit.contain,
-                    colorFilter: isDark
-                        ? const ColorFilter.mode(
-                            AppColors.white, BlendMode.srcIn)
-                        : null,
-                    placeholder: Text(
-                      'AL BATAL ELITE',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.white,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
+                  padding: EdgeInsetsDirectional.only(top: 16),
+                  child: BrandLogo.lockup(
+                    height: 44,
+                    tone: BrandLogoTone.onDark,
                   ),
                 ),
               ),

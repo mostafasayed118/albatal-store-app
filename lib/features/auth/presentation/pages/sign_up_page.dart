@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/email_validator.dart';
+import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -100,89 +101,95 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Form(
             key: _formKey,
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: ListView(
-              children: [
-                const SizedBox(height: 32),
-                Text(l.createAccount,
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 32),
-                TextFormField(
-                  controller: _nameCtrl,
-                  decoration: InputDecoration(labelText: l.fullName),
-                  textInputAction: TextInputAction.next,
-                  validator: (v) => (v == null || v.trim().length < 2)
-                      ? l.nameRequired
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailCtrl,
-                  decoration: InputDecoration(labelText: l.email),
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      emailValidator(v, invalidMessage: l.invalidEmail),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordCtrl,
-                  decoration: InputDecoration(
-                    labelText: l.password,
-                    // State the full rule up front so the user never has
-                    // to learn it from a validation error. Uses the
-                    // existing localized too-short copy; the letter+digit
-                    // fallback stays English until the next l10n
-                    // regen (lib-only scope — no .arb edits in this slice).
-                    helperText: l.passwordTooShort,
-                    suffixIcon: IconButton(
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                      icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  const Center(child: BrandLogo.lockup(height: 80)),
+                  const SizedBox(height: 16),
+                  Text(l.createAccount,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 32),
+                  TextFormField(
+                    controller: _nameCtrl,
+                    decoration: InputDecoration(labelText: l.fullName),
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => (v == null || v.trim().length < 2)
+                        ? l.nameRequired
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    decoration: InputDecoration(labelText: l.email),
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) =>
+                        emailValidator(v, invalidMessage: l.invalidEmail),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    decoration: InputDecoration(
+                      labelText: l.password,
+                      // State the full rule up front so the user never has
+                      // to learn it from a validation error. Uses the
+                      // existing localized too-short copy; the letter+digit
+                      // fallback stays English until the next l10n
+                      // regen (lib-only scope — no .arb edits in this slice).
+                      helperText: l.passwordTooShort,
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                            _obscure ? Icons.visibility_off : Icons.visibility),
+                      ),
+                    ),
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => signUpPasswordValidator(
+                      v,
+                      tooShortMessage: l.passwordTooShort,
                     ),
                   ),
-                  obscureText: _obscure,
-                  textInputAction: TextInputAction.next,
-                  validator: (v) => signUpPasswordValidator(
-                    v,
-                    tooShortMessage: l.passwordTooShort,
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmCtrl,
+                    decoration: InputDecoration(labelText: l.confirmPassword),
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    validator: (v) =>
+                        v != _passwordCtrl.text ? l.passwordsDoNotMatch : null,
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _confirmCtrl,
-                  decoration: InputDecoration(labelText: l.confirmPassword),
-                  obscureText: _obscure,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
-                  validator: (v) =>
-                      v != _passwordCtrl.text ? l.passwordsDoNotMatch : null,
-                ),
-                const SizedBox(height: 32),
-                BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.isLoading ? null : _submit,
-                      child: state.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(l.signUp),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(l.alreadyHaveAccount),
-                    TextButton(
-                      onPressed: () => context.push(Routes.signIn),
-                      child: Text(l.signIn),
-                    ),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 32),
+                  BlocBuilder<AuthCubit, AuthState>(
+                    builder: (context, state) {
+                      return FilledButton(
+                        onPressed: state.isLoading ? null : _submit,
+                        child: state.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : Text(l.signUp),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(l.alreadyHaveAccount),
+                      TextButton(
+                        onPressed: () => context.push(Routes.signIn),
+                        child: Text(l.signIn),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

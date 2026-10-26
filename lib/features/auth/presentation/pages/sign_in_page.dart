@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
+import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -80,6 +81,8 @@ class _SignInPageState extends State<SignInPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 32),
+                const Center(child: BrandLogo.lockup(height: 88)),
+                const SizedBox(height: 16),
                 Text(l.welcomeBack,
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
