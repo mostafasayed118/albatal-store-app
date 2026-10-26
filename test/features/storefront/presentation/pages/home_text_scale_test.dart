@@ -94,8 +94,8 @@ class _StubRepo with FetchRelatedFromProducts implements CatalogRepository {
 
 /// Same provider set as the home page harness (stitch_home_page_test.dart),
 /// but the page subtree sits under a [MediaQuery] pinning the system text
-/// scale, so every text laid out inside Home sees 1.4×.
-Widget _harness() {
+/// scale, so every text laid out inside Home sees [scale].
+Widget _harness({double scale = 1.4}) {
   final store = MemoryStorefrontPersistence();
   return MaterialApp(
     // The APP theme, not the Material default: `loadAppFonts` only takes
@@ -121,9 +121,9 @@ Widget _harness() {
             create: (_) =>
                 RecentlyViewedCubit(store: MemoryRecentlyViewedStore())),
       ],
-      child: const MediaQuery(
-        data: MediaQueryData(textScaler: TextScaler.linear(1.4)),
-        child: HomePage(),
+      child: MediaQuery(
+        data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+        child: const HomePage(),
       ),
     ),
   );
@@ -193,5 +193,22 @@ void main() {
         }
       }
     }
+  });
+
+  testWidgets(
+      'Home app bar grows so greeting and brand stay readable at 2.0 scale',
+      (tester) async {
+    await loadAppFonts();
+    tester.view.physicalSize = const Size(360, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_harness(scale: 2.0));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(tester.takeException(), isNull);
+    expect(
+        tester.getSize(find.byType(AppBar)).height, greaterThanOrEqualTo(93));
+    expect(find.text(AppLocalizationsEn().brandName), findsOneWidget);
   });
 }

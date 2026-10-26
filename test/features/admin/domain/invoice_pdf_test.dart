@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:al_batal_elite/core/entities/money.dart';
 import 'package:al_batal_elite/features/admin/domain/entities/admin_order.dart';
 import 'package:al_batal_elite/features/admin/domain/invoice/invoice_pdf_builder.dart';
@@ -51,6 +53,22 @@ void main() {
         _item('Linen', 1, 80000),
       ]));
       expect(large.length, greaterThan(small.length));
+    });
+
+    test('embeds the brand logo when bytes are provided', () async {
+      final logo = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk'
+        'YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      );
+      final withoutLogo = await builder.build(_order(items: [
+        _item('Silk', 1, 120000),
+      ]));
+      final withLogo = await builder.build(
+        _order(items: [_item('Silk', 1, 120000)]),
+        logoPng: logo,
+      );
+      expect(withLogo, isNotEmpty);
+      expect(withLogo.length, greaterThan(withoutLogo.length));
     });
 
     test('builds via the async isolate API (background-isolate path)',

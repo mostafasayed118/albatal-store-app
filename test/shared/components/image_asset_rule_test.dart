@@ -40,6 +40,29 @@ void main() {
     expect(nonSvgFiles, isEmpty,
         reason: 'Unexpected non-SVG runtime asset: $nonSvgFiles');
   });
+
+  test('assets/brand contains only the approved brand PNGs', () {
+    final root = Directory('assets/brand');
+    expect(root.existsSync(), isTrue);
+
+    final files = root.listSync(recursive: true).whereType<File>().toList();
+    final nonPng = files
+        .where((file) => _extension(file.path).toLowerCase() != '.png')
+        .map((file) => file.path)
+        .toList();
+    expect(nonPng, isEmpty,
+        reason: 'assets/brand holds PNG brand assets only: $nonPng');
+
+    final names = files.map((file) => file.uri.pathSegments.last).toSet();
+    expect(names, {
+      'logo.png',
+      'logo_transparent.png',
+      'logo_lockup_on_dark.png',
+      'logo_lockup_on_light.png',
+      'logo_mark_on_dark.png',
+      'logo_mark_on_light.png',
+    });
+  });
 }
 
 String _extension(String path) {
