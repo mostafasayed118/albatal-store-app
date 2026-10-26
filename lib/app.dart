@@ -68,6 +68,10 @@ final class _AlBatalAppState extends State<AlBatalApp> {
   late final AuthCubit _authCubit;
   late final CartCubit _cartCubit;
   late final WishlistCubit _wishlistCubit;
+  late final SettingsCubit _settingsCubit;
+  late final CatalogCubit _catalogCubit;
+  late final OrdersCubit _ordersCubit;
+  late final AddressesCubit _addressesCubit;
   late final AuthRefreshNotifier _authRefreshNotifier;
   late final ReorderCubit _reorderCubit;
   late final RecentSearchesCubit _recentSearchesCubit;
@@ -86,7 +90,40 @@ final class _AlBatalAppState extends State<AlBatalApp> {
       // B2B (078): negotiated prices ride on live fetches; the cart
       // re-attaches them for wholesale sessions (restore + tier mirror).
       wholesalePrices: getIt<WholesalePriceSource>(),
-    );
+    )..restore();
+    _settingsCubit = SettingsCubit(
+      getIt<SettingsRepository>(),
+      // Composition-root probe: settings tests pump the
+      // shell without the notification store registered.
+      notificationPrefs: getIt.isRegistered<NotificationPrefsStore>()
+          ? getIt<NotificationPrefsStore>()
+          : null,
+      // Permission is requested from the user-initiated
+      // toggle, never at launch (OneSignal guidance).
+      notifications: getIt.isRegistered<NotificationService>()
+          ? getIt<NotificationService>()
+          : null,
+      // §15: the app-lock toggle lives in Settings and flows
+      // through this cubit (the page never touches DI), so the
+      // opt-in that arms [AppLockGate] is finally reachable.
+      biometrics: getIt.isRegistered<BiometricService>()
+          ? getIt<BiometricService>()
+          : null,
+      appLockStore: getIt.isRegistered<AppLockPrefsStore>()
+          ? getIt<AppLockPrefsStore>()
+          : null,
+    )..load();
+    // Task #8: pass the connectivity gate so offline loads are
+    // tagged (cached restore / offline notice) instead of
+    // surfacing as errors.
+    _catalogCubit = CatalogCubit(getIt<CatalogRepository>(),
+        gate: getIt<ConnectivityGate>())
+      ..load();
+    // The orders page owns the per-open refresh (orders_page.dart
+    // initState); this app-scoped instance must stay I/O-free so the
+    // first page open does not race a duplicate restore.
+    _ordersCubit = OrdersCubit(getIt<OrdersRepository>());
+    _addressesCubit = AddressesCubit(getIt<AddressRepository>())..load();
     _authCubit = AuthCubit(
       authRepository: getIt<AuthRepository>(),
       profileRepository: getIt<ProfileRepository>(),
@@ -217,6 +254,10 @@ final class _AlBatalAppState extends State<AlBatalApp> {
     _reorderCubit.close();
     _recentSearchesCubit.close();
     _recentlyViewedCubit.close();
+    _settingsCubit.close();
+    _catalogCubit.close();
+    _ordersCubit.close();
+    _addressesCubit.close();
     _authCubit.close();
     super.dispose();
   }
@@ -244,48 +285,15 @@ final class _AlBatalAppState extends State<AlBatalApp> {
                   create: (_) => OnboardingCubit(
                         getIt<OnboardingRepository>(),
                       )),
-              BlocProvider(
-                  create: (_) => SettingsCubit(
-                        getIt<SettingsRepository>(),
-                        // Composition-root probe: settings tests pump the
-                        // shell without the notification store registered.
-                        notificationPrefs:
-                            getIt.isRegistered<NotificationPrefsStore>()
-                                ? getIt<NotificationPrefsStore>()
-                                : null,
-                        // Permission is requested from the user-initiated
-                        // toggle, never at launch (OneSignal guidance).
-                        notifications: getIt.isRegistered<NotificationService>()
-                            ? getIt<NotificationService>()
-                            : null,
-                        // §15: the app-lock toggle lives in Settings and flows
-                        // through this cubit (the page never touches DI), so the
-                        // opt-in that arms [AppLockGate] is finally reachable.
-                        biometrics: getIt.isRegistered<BiometricService>()
-                            ? getIt<BiometricService>()
-                            : null,
-                        appLockStore: getIt.isRegistered<AppLockPrefsStore>()
-                            ? getIt<AppLockPrefsStore>()
-                            : null,
-                      )..load()),
-              BlocProvider(
-                  // Task #8: pass the connectivity gate so offline loads are
-                  // tagged (cached restore / offline notice) instead of
-                  // surfacing as errors.
-                  create: (_) => CatalogCubit(getIt<CatalogRepository>(),
-                      gate: getIt<ConnectivityGate>())
-                    ..load()),
-              BlocProvider.value(value: _cartCubit..restore()),
+              BlocProvider.value(value: _settingsCubit),
+              BlocProvider.value(value: _catalogCubit),
+              BlocProvider.value(value: _cartCubit),
               BlocProvider.value(value: _wishlistCubit),
-              BlocProvider(
-                  create: (_) =>
-                      OrdersCubit(getIt<OrdersRepository>())..restore()),
+              BlocProvider.value(value: _ordersCubit),
               BlocProvider.value(value: _reorderCubit),
               BlocProvider.value(value: _recentSearchesCubit),
               BlocProvider.value(value: _recentlyViewedCubit),
-              BlocProvider(
-                  create: (_) =>
-                      AddressesCubit(getIt<AddressRepository>())..load()),
+              BlocProvider.value(value: _addressesCubit),
               BlocProvider.value(value: _authCubit),
               if (widget.exitApp != null)
                 BlocProvider(

@@ -43,7 +43,7 @@ import '../widgets/wishlist_toggle_icon.dart';
 /// pass fakes directly. The optional [gate] (Task #8) lets the cubit
 /// tag offline loads so a network-miss while offline shows the
 /// friendly notice instead of a hard error.
-class DetailsPage extends StatelessWidget {
+class DetailsPage extends StatefulWidget {
   const DetailsPage({
     super.key,
     required this.id,
@@ -102,12 +102,44 @@ class DetailsPage extends StatelessWidget {
   /// pump the page pre-DI (fail-soft).
   final RecentlyViewedStore? recentlyViewed;
 
+  @override
+  State<DetailsPage> createState() => _DetailsPageState();
+}
+
+class _DetailsPageState extends State<DetailsPage> {
+  late final ProductDetailsCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    // #3: record the view into the app-scoped store injected at the
+    // composition root; null in widget tests that pump pre-DI.
+    //
+    // B2B (078): the tier is read once per load — it is admin-managed
+    // and never changes mid-page, so no subscription is needed.
+    _cubit = ProductDetailsCubit(
+      widget._catalogRepository,
+      gate: widget._gate,
+      recentlyViewed: widget.recentlyViewed,
+      wholesalePrices: widget.wholesalePrices,
+    )..loadProduct(
+        widget.id,
+        viewerTier: DetailsPage._viewerTierOf(context),
+      );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_cubit.close());
+    super.dispose();
+  }
+
   /// #13: WhatsApp-first share — localized prefill (name + price + deep
   /// link) handed to the wa.me universal link. A launch that no external
   /// app takes must still acknowledge the tap: the shared floating-error
   /// helper (never a raw snackbar), mirroring the Support page pattern.
   Future<void> _shareOnWhatsApp(BuildContext context, Product p) async {
-    final launched = await whatsappShareService.share(context.l10n
+    final launched = await widget.whatsappShareService.share(context.l10n
         .whatsappShareProductMessage(
             p.name, moneyText(context.l10n, p.price), productUrl(p.id)));
     if (!launched && context.mounted) {
@@ -120,18 +152,8 @@ class DetailsPage extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
 
-    return BlocProvider(
-      // #3: record the view into the app-scoped store injected at the
-      // composition root; null in widget tests that pump pre-DI.
-      create: (context) => ProductDetailsCubit(
-        _catalogRepository,
-        gate: _gate,
-        recentlyViewed: recentlyViewed,
-        wholesalePrices: wholesalePrices,
-      )
-        // B2B (078): the tier is read once per load — it is admin-managed
-        // and never changes mid-page, so no subscription is needed.
-        ..loadProduct(id, viewerTier: _viewerTierOf(context)),
+    return BlocProvider.value(
+      value: _cubit,
       // Outer builder covers status/product/related only: color/length/
       // quantity ticks rebuild the selector + CTA below, never the
       // gallery or the related strip.
@@ -172,12 +194,14 @@ class DetailsPage extends StatelessWidget {
                   ? OfflineCatalogView(
                       onRetry: () => context
                           .read<ProductDetailsCubit>()
-                          .loadProduct(id, viewerTier: _viewerTierOf(context)))
+                          .loadProduct(widget.id,
+                              viewerTier: DetailsPage._viewerTierOf(context)))
                   : FeedbackView(
                       type: FeedbackViewType.error,
                       onAction: () => context
                           .read<ProductDetailsCubit>()
-                          .loadProduct(id, viewerTier: _viewerTierOf(context)),
+                          .loadProduct(widget.id,
+                              viewerTier: DetailsPage._viewerTierOf(context)),
                     ),
             );
           }
@@ -202,7 +226,7 @@ class DetailsPage extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: l.shareProduct,
-                  onPressed: () => unawaited(shareService.shareText(
+                  onPressed: () => unawaited(widget.shareService.shareText(
                       l.shareProductMessage(p.name, productUrl(p.id)))),
                   icon: const Icon(Icons.share_outlined),
                 ),
@@ -227,8 +251,8 @@ class DetailsPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 ReviewsSection(
                   productId: p.id,
-                  repository: reviewsRepository,
-                  imageCompressor: imageCompressor,
+                  repository: widget.reviewsRepository,
+                  imageCompressor: widget.imageCompressor,
                 ),
                 const SizedBox(height: 20),
                 // Selection-only rebuild: variant/quantity ticks must not

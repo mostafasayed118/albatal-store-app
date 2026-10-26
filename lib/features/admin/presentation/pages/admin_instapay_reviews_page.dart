@@ -28,7 +28,7 @@ import '../widgets/dialog_controllers.dart';
 /// widget tests inject a [cubit] and/or a fake port. A cubit-only injection
 /// still renders the queue — only proof thumbnails degrade to the missing
 /// placeholder without a port.
-class AdminInstapayReviewsPage extends StatelessWidget {
+class AdminInstapayReviewsPage extends StatefulWidget {
   const AdminInstapayReviewsPage({
     super.key,
     this.cubit,
@@ -40,11 +40,34 @@ class AdminInstapayReviewsPage extends StatelessWidget {
   final AdminInstapayPort? repository;
 
   @override
+  State<AdminInstapayReviewsPage> createState() =>
+      _AdminInstapayReviewsPageState();
+}
+
+class _AdminInstapayReviewsPageState extends State<AdminInstapayReviewsPage> {
+  late final AdminInstapayCubit _cubit;
+  bool _ownsCubit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final injected = widget.cubit;
+    _cubit = injected ?? AdminInstapayCubit(repository: widget.repository!);
+    _ownsCubit = injected == null;
+    _cubit.load();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsCubit) _cubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider<AdminInstapayCubit>(
-      create: (_) =>
-          (cubit ?? AdminInstapayCubit(repository: repository!))..load(),
-      child: _AdminInstapayView(repository: repository),
+    return BlocProvider<AdminInstapayCubit>.value(
+      value: _cubit,
+      child: _AdminInstapayView(repository: widget.repository),
     );
   }
 }
@@ -379,35 +402,52 @@ class _ProofThumbnailState extends State<_ProofThumbnail> {
   Future<Result<String>>? _url;
 
   @override
+  void initState() {
+    super.initState();
+    _mintUrl();
+  }
+
+  @override
   void didUpdateWidget(covariant _ProofThumbnail oldWidget) {
     super.didUpdateWidget(oldWidget);
     // A row keeps its proof id while the queue refreshes, but a re-submitted
     // proof changes the path; mint a new URL rather than show a stale image.
     if (oldWidget.proof.proofId != widget.proof.proofId ||
         oldWidget.proof.storagePath != widget.proof.storagePath) {
-      _url = null;
+      _mintUrl();
     }
+  }
+
+  /// Mints the signed URL once per proof/path, never from [build] — the
+  /// repository call hits Supabase Storage and must stay out of the build
+  /// phase.
+  void _mintUrl() {
+    final repo = widget.repository;
+    if (!widget.proof.hasProofFile || repo == null) {
+      _url = null;
+      return;
+    }
+    _url = repo.signedProofUrl(widget.proof.storagePath);
   }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final repository = widget.repository;
-    if (!widget.proof.hasProofFile || repository == null) {
+    final url = _url;
+    if (url == null) {
       return _Placeholder(
         icon: Icons.receipt_long_outlined,
         tooltip: l.adminInstapayProofMissing,
         semanticLabel: l.adminInstapayProofMissing,
       );
     }
-    final future = _url ??= repository.signedProofUrl(widget.proof.storagePath);
     return SizedBox(
       height: 72,
       width: 72,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: FutureBuilder<Result<String>>(
-          future: future,
+          future: url,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const _Placeholder(loading: true);

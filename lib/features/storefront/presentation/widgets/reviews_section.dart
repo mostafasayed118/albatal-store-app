@@ -16,7 +16,7 @@ import 'reviews/reviews_view.dart';
 ///
 /// Bodies live in `reviews/` (one widget per file): [ReviewsView],
 /// [ReviewTile], [ReviewTileBody], [ReviewsInlineList], [ReviewSubmitSheet].
-class ReviewsSection extends StatelessWidget {
+class ReviewsSection extends StatefulWidget {
   const ReviewsSection(
       {super.key,
       required this.productId,
@@ -35,10 +35,30 @@ class ReviewsSection extends StatelessWidget {
   final ImageCompressor? imageCompressor;
 
   @override
+  State<ReviewsSection> createState() => _ReviewsSectionState();
+}
+
+class _ReviewsSectionState extends State<ReviewsSection> {
+  late final ReviewsCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = ReviewsCubit(repository: widget.repository)
+      ..load(widget.productId);
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider<ReviewsCubit>(
-      create: (_) => ReviewsCubit(repository: repository)..load(productId),
-      child: ReviewsView(imageCompressor: imageCompressor),
+    return BlocProvider<ReviewsCubit>.value(
+      value: _cubit,
+      child: ReviewsView(imageCompressor: widget.imageCompressor),
     );
   }
 }

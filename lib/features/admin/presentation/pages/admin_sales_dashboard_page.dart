@@ -29,12 +29,29 @@ class AdminSalesDashboardPage extends StatefulWidget {
 }
 
 class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
+  late final AdminSalesDashboardCubit _cubit;
+  bool _ownsCubit = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final injected = widget.cubit;
+    _cubit =
+        injected ?? AdminSalesDashboardCubit(repository: widget.repository!);
+    _ownsCubit = injected == null;
+    _cubit.load();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsCubit) _cubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AdminSalesDashboardCubit>(
-      create: (_) => (widget.cubit ??
-          AdminSalesDashboardCubit(repository: widget.repository!))
-        ..load(),
+    return BlocProvider<AdminSalesDashboardCubit>.value(
+      value: _cubit,
       // The router always injects [repository] (or a [cubit] in tests) —
       // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminSalesDashboardCubit, AdminSalesDashboardState>(

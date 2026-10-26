@@ -32,12 +32,25 @@ class AdminCustomersPage extends StatefulWidget {
 }
 
 class _AdminCustomersPageState extends State<AdminCustomersPage> {
+  late final AdminCustomersCubit _cubit;
+  bool _ownsCubit = false;
+
   // Page-owned so it disposes with the route; the search text flows
   // into the cubit via [AdminCustomersCubit.filter].
   final _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final injected = widget.cubit;
+    _cubit = injected ?? AdminCustomersCubit(repository: widget.repository!);
+    _ownsCubit = injected == null;
+    _cubit.load();
+  }
+
+  @override
   void dispose() {
+    if (_ownsCubit) _cubit.close();
     _searchController.dispose();
     super.dispose();
   }
@@ -53,19 +66,16 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
   /// Opens the shared tier picker for [customer] and persists a real change.
   ///
-  /// [cubit] is passed in rather than read here on purpose. This page *creates*
-  /// its [BlocProvider] inside [build], so the provider is a descendant of
-  /// this State's context and `context.read` from here would throw. Every
-  /// post-await use below is this State's own context, guarded by [mounted],
-  /// so the async gap never touches a row context that may be gone.
+  /// The page owns its cubit in [initState], so this State talks to [_cubit]
+  /// directly instead of resolving the provider through `context.read` (the
+  /// [BlocProvider] built below this State is not an ancestor of this
+  /// context). Every post-await use below is still guarded by [mounted], so
+  /// the async gap never touches a row context that may be gone.
   ///
   /// Nothing is acknowledged on the strength of the tap: the snackbar is
   /// chosen from what the cubit *actually* holds after the write — the row's
   /// new tier, or the failure it reported instead.
-  Future<void> _changeTier(
-    AdminCustomersCubit cubit,
-    AdminCustomer customer,
-  ) async {
+  Future<void> _changeTier(AdminCustomer customer) async {
     final selection = await showMembershipTierDialog(
       context,
       currentTier: customer.tier,
@@ -73,21 +83,21 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     // Null means cancelled or unchanged — never write, never ack.
     if (selection == null || !mounted) return;
     hapticWarning();
-    await cubit.setMembershipTier(customer.id, selection);
+    await _cubit.setMembershipTier(customer.id, selection);
     if (!mounted) return;
-    final error = cubit.state.tierError;
+    final error = _cubit.state.tierError;
     if (error != null) {
       showFloatingError(
         context,
         failureText(context.l10n,
-            code: cubit.state.tierErrorCode,
+            code: _cubit.state.tierErrorCode,
             message: error,
             fallback: context.l10n.errorTitle),
       );
-      cubit.clearTierError();
+      _cubit.clearTierError();
       return;
     }
-    if (_tierOf(cubit, customer.id) == selection) {
+    if (_tierOf(customer.id) == selection) {
       showConfirmation(context, context.l10n.membershipTierUpdated);
     }
   }
@@ -95,8 +105,8 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   /// The directory's current tier for [id], or null when no such row is
   /// loaded — which is what stops an unacknowledged write from claiming
   /// success.
-  String? _tierOf(AdminCustomersCubit cubit, String id) {
-    for (final c in cubit.state.customers) {
+  String? _tierOf(String id) {
+    for (final c in _cubit.state.customers) {
       if (c.id == id) return c.tier;
     }
     return null;
@@ -106,10 +116,8 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   Widget build(BuildContext context) {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    return BlocProvider<AdminCustomersCubit>(
-      create: (_) =>
-          (widget.cubit ?? AdminCustomersCubit(repository: widget.repository!))
-            ..load(),
+    return BlocProvider<AdminCustomersCubit>.value(
+      value: _cubit,
       // The router always injects [repository] (or a [cubit] in tests) —
       // the view never service-locates (audit DIP: no getIt in views).
       child: BlocBuilder<AdminCustomersCubit, AdminCustomersState>(
@@ -239,12 +247,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                                   _tierLabel(c.tier),
                                 ].join(' • ')),
                                 trailing: TextButton(
-                                  // Resolved from the row's context — the only
-                                  // context under the provider this page
-                                  // creates — then handed straight to the
-                                  // async writer.
-                                  onPressed: () => _changeTier(
-                                      context.read<AdminCustomersCubit>(), c),
+                                  onPressed: () => _changeTier(c),
                                   child: Text(l.change),
                                 ),
                               ),
