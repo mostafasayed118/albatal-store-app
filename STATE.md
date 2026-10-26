@@ -1,6 +1,19 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-26 (Google OAuth live on staging — device sign-in verified)
+Last run: 2026-10-27 (brand logo integration — icons, splash, in-app, invoice)
+
+## New — 2026-10-27 (brand logo integration — LANDED locally, NO PUSH)
+
+- Owner asked to adopt `assets/images/logo.png` everywhere. Recon found every launcher/splash icon was still the Flutter template; only two in-app references used a different legacy SVG; the invoice PDF was text-only.
+- Master moved to `assets/brand/logo.png` (1254x1254, black background). Derived: transparent master, lockup/mark in on-dark (white+gold) and on-light (emerald+gold) tones. `BrandLogo` resolves tone from theme brightness; splash/onboarding force `onDark`.
+- Wired: splash 240dp, onboarding header 44dp, home AppBar mark 34dp, sign-in 88dp, sign-up 80dp, invoice PDF header (52dp mark; bytes cross `Isolate.run`), local notification icon `@drawable/ic_stat_onesignal_default`.
+- Platform: Android legacy + adaptive icon (`mipmap-anydpi-v26` + foreground layers), Android 12 splash (`values-v31`/`values-night-v31`, black), iOS AppIcon set (opaque 24bpp) + LaunchImage 240/480/720 on black, web favicon/PWA/maskable + manifest name/colors, Windows ICO, macOS rounded icon set.
+- Asset contract: `assets/brand/` is the documented single raster runtime exception; only the 4 runtime files are declared (masters stay unbundled); guard test pins the folder; `assets/images` stays SVG-only.
+- Gates: `flutter analyze --no-pub` No issues; full `flutter test --coverage` **2129/2129** (line coverage **98.64%**); `deno test` **108/108**; `flutter build apk --debug` built; APK contains exactly 4 brand PNGs + icon/splash/notification resources; `pubspec.lock` unchanged.
+- Verifier: round 1 REJECT (rule bypass, bundled masters, invoice offset cast) -> fixed -> round 2 **APPROVE**.
+- Follow-up (owner-requested, same day): invoice logo load now degrades to a logo-less PDF (try/catch + log); Home AppBar height grows with text scale and the greeting/brand ellipsize at 2.0, pinned by a 2.0 widget test.
+- Residual: onboarding uses `onDark` over scrimmed fabric art; release build/signing not run locally.
+- Owner GO: commit + push in this window.
 
 ## New — 2026-10-26 (Google OAuth — LIVE on staging)
 

@@ -11,6 +11,15 @@ Al Batal Elite uses SVG for every app-owned runtime image asset.
   the app's SVG/local fallback or a Material texture icon.
 - Do not add PNG, JPEG, GIF, WebP, BMP, or AVIF files under `assets/images/`.
 
+## Brand logo exception
+
+- The raster brand logo lives under `assets/brand/` and is rendered only through
+  `BrandLogo` (`Image.asset`). It is the single approved local runtime raster
+  exception; the rule above still governs every other runtime image.
+- Only the four tone/variant files declared in `pubspec.yaml` are bundled. The
+  master and intermediate files in `assets/brand/` are design sources and are
+  never declared as assets.
+
 ## Exceptions
 
 - Android, iOS, macOS, and web launcher assets retain platform-required raster
@@ -22,6 +31,8 @@ Al Batal Elite uses SVG for every app-owned runtime image asset.
 
 ## Validation
 
-The asset test in `test/image_asset_rule_test.dart` fails when a raster file is
-added under `assets/images/`. The `AppImage` assertion also rejects local
-runtime paths that do not end in `.svg` during debug/test execution.
+The asset test in `test/shared/components/image_asset_rule_test.dart` fails when
+a raster file is added under `assets/images/` or when `assets/brand/` holds
+anything outside the approved brand PNG set. The `AppImage` assertion also
+rejects local runtime paths that do not end in `.svg` during debug/test
+execution; `BrandLogo` is the only local raster renderer.
