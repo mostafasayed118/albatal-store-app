@@ -15,6 +15,15 @@ Last run: 2026-11-06 (audit fix-all wave 1 — lib fix landed in worktree, rest 
   - ImageTransformation — documented `403 FeatureNotEnabled` tenant limit (`storage_service.dart:178-185`); fix is Pro plan, not code.
 - Residual: commit `4f0b93a` lives in worktree only; merge/push need owner approval. No `supabase/` edited, no `pubspec.yaml` touched, no BLoC/GoRouter signature changes.
 
+## New — 2026-11-06 (audit fix-all wave 2 — catalog truncation signal, WORKTREE ONLY)
+
+- Owner "كمل" (twice) after wave 1. Same worktree/branch; new commit `a6907f2` on top of `4f0b93a`.
+- **Root cause found (real bug, not cosmetic):** `CatalogCubit` held `final CatalogRepository _repository` and read `isTruncated: _repository.lastPageTruncated`. Dart resolves extension members statically, so that call bound to `extension CatalogTruncation => false` — the concrete `SupabaseCatalogRepository.lastPageTruncated` field was **never read**, making `CatalogState.isTruncated` permanently false in production. The ceiling was measured, logged, and then discarded; the UI had no banner either. Frozen tests missed it because they assert on the concrete repo type only.
+- **Fix (additive, zero fake breakage):** new domain port `CatalogTruncationAware` (`catalog_repository.dart:101-105`) implemented by the Supabase repo; cubit type-tests the port instead of calling the extension name. New presentational `CatalogTruncationNotice` (caller owns l10n, `ValueKey('catalogTruncationNotice')`), rendered in `catalog_page.dart:163-166` only when `state.isTruncated`. l10n `catalogTruncatedNotice` en+ar + `flutter gen-l10n` (generated files regenerated, byte-stable under a verifier re-run).
+- **Why not full server-side pagination:** seed catalog is **9 products** (`016_seed_product_catalog.sql:30-108`), live ≈12 vs `kCatalogPageSize = 100`. Building pagination now is speculative; `products(name)` already has a trigram index (`055:11-12`), so a server search needs no SQL when it is actually needed. Documented rather than built.
+- **Gates:** `flutter analyze --no-pub` **No issues**; full `flutter test --no-pub` **2132/2132** (2129 + 3 new); storefront folder **810/810**; `dart format --output=none --set-exit-if-changed lib test` **0 changed (772 files)**; `git diff --check` clean. Independent verifier: **APPROVE** (root cause confirmed at `HEAD~1`, non-vacuity proven, no `supabase/`/pubspec/router changes).
+- Residual: no `supabase/` migration written — `handle_new_user` already pinned by 079 with `SET search_path = ''` (applied live staging+prod 2026-10-20, `STATE.md:124`), so a new one would duplicate and weaken it.
+
 ## New — 2026-10-27 (brand logo integration — LANDED locally, NO PUSH)
 
 - Owner asked to adopt `assets/images/logo.png` everywhere. Recon found every launcher/splash icon was still the Flutter template; only two in-app references used a different legacy SVG; the invoice PDF was text-only.
