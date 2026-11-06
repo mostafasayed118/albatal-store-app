@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/ci.yml)
 [![Android Release](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml/badge.svg)](https://github.com/mostafasayed118/albatal-store-app/actions/workflows/android-release.yml)
-![Tests](https://img.shields.io/badge/tests-1%2C249%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-74.9%25-yellowgreen)
+![Tests](https://img.shields.io/badge/tests-2%2C129%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-98.6%25-brightgreen)
 
 A premium fabric-commerce Flutter application with a tactile, textile-inspired design language. Built on a [`DESIGN.md`](https://stitch.withgoogle.com/docs/design-md/overview/) system — the convention from [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) — so AI coding agents and human collaborators share a single source of truth for how every screen should look and feel.
 

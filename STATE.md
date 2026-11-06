@@ -1,6 +1,19 @@
 # Loop State — Al Batal Elite
 
-Last run: 2026-10-27 (brand logo integration — icons, splash, in-app, invoice)
+Last run: 2026-11-06 (audit fix-all wave 1 — lib fix landed in worktree, rest deferred with reasons)
+
+## New — 2026-11-06 (audit fix-all wave 1 — WORKTREE ONLY, NO PUSH, NO MIGRATION)
+
+- Owner "fix all" for the corrected 8.2/10 audit (Security 8.5, not 7.0) + "Include supabase" review for drafts (no apply/push). Worktree `.trees/audit-fix-20261106`, branch `fix/audit-remediation-20261106`, commit `4f0b93a` (base `529ef94`). Main `master` untouched except this record; untracked `docs/superpowers/plans/2026-10-27-performance-bug-remediation.md` left unstaged.
+- **Landed (1 commit, lib/ only):** `lib/features/admin/presentation/pages/admin_instapay_reviews_page.dart` — raw `Image.network` thumbnail now `AppImage` (HTTPS-only guard, `CachedNetworkImage` disk+memory cache, 72×72, 144 decode cap). `FutureBuilder`/`signedProofUrl` mint-retry semantics untouched; only a network-error placeholder relaxes from broken-icon to texture fallback. Single-file diff (+8/−8).
+- **Gates (worktree tip `4f0b93a`, no generated churn):** `flutter analyze --no-pub` **No issues**; full `flutter test --no-pub` **2129/2129** (matches `STATE.md` frozen count; `[SMOKE] FAIL admin_dashboard_data` is the pre-existing intentional failure-path test, also on base); `dart format --output=none --set-exit-if-changed lib test` **0 changed (770 files)**; generated-plugin churn reverted (`git checkout --` x7). Independent verifier (`verifier` subagent): **APPROVE**, zero blockers (single-file diff, retry path intact, deferred items untouched).
+- **False/stale findings — verified, no fix needed:** secrets files untracked (`.gitignore` + `git ls-files` shows only `.env.example`); legacy `SECURITY DEFINER` — only `handle_new_user()` unpinned and `079` already re-creates it with `SET search_path = ''`; addresses already in `SecureStore` (`local_address_repository.dart:68,96,107`); `payments` direct INSERT closed in repo (`028:20-21` drops both; live DB not probed).
+- **Blocked/deferred (with reasons, not silently skipped):**
+  - `handle_new_user` migration — would dupe `079` and weaken `''` to `public, pg_temp`; owner ruling needed, skipped per smallest-diff + do-not-modify-migrations-without-review.
+  - Catalog server search + 100-row ceiling — needs SQL RPC + refresh of `scripts/run_all_migrations.sql` + frozen-contract/client wiring; one-fix-per-run + no BLoC-signature change without approval → own wave with supabase review + apply/proof steps.
+  - Storefront god-feature / `app.dart` shell / 557→split and App Links (`albatal://` → HTTPS) — structural/platform waves needing UX + Android/iOS assetlinks/AASA decisions; deep-link parser itself already has host/path allowlist (`deep_link_parser.dart:64-105`) and is covered by 13 tests asserting custom-scheme behavior.
+  - ImageTransformation — documented `403 FeatureNotEnabled` tenant limit (`storage_service.dart:178-185`); fix is Pro plan, not code.
+- Residual: commit `4f0b93a` lives in worktree only; merge/push need owner approval. No `supabase/` edited, no `pubspec.yaml` touched, no BLoC/GoRouter signature changes.
 
 ## New — 2026-10-27 (brand logo integration — LANDED locally, NO PUSH)
 
