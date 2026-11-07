@@ -86,6 +86,9 @@ class HeroSlideCard extends StatelessWidget {
               PositionedDirectional(
                 bottom: 16,
                 start: 20,
+                // `end` bounds the content column so long titles ellipsize
+                // inside the card instead of clipping past its edge.
+                end: 20,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

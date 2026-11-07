@@ -28,26 +28,46 @@ class WishlistTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Decode budget (audit P4): ~180px tile — 360px ≈ 2x
-              // covers high-dpr phones without the 720px card default.
-              ProductImagePlaceholder(
-                  imageColor: product.imageColor,
-                  imageAsset: product.imageAsset,
-                  cacheExtent: 360),
+              // Square media fills the leftover height (single flex child):
+              // the text block cannot squeeze it to nothing, and no Spacer
+              // competes with it for the free space.
+              Expanded(
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: ProductImagePlaceholder(
+                        imageColor: product.imageColor,
+                        imageAsset: product.imageAsset,
+                        cacheExtent: 360,
+                        constraints: const BoxConstraints.expand()),
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Text(product.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleSmall),
               const SizedBox(height: 4),
-              PriceText(product.price),
-              const Spacer(),
+              // At 2.0x the formatted amount is wider than the cell; scale
+              // it down instead of letting the row overflow the tile.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: PriceText(product.price),
+              ),
               // Task #5: out-of-stock wishlist items offer the
               // back-in-stock alert toggle in place of move-to-cart.
               if (product.inStock)
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      // Narrow cell: the default 24dp side padding leaves the
+                      // label one unbreakable word too little room at 2.0x.
+                      padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 8, vertical: 8),
+                    ),
                     onPressed: () {
                       context.read<CartCubit>().add(product);
                       context.read<WishlistCubit>().toggle(product.id);
@@ -55,8 +75,13 @@ class WishlistTile extends StatelessWidget {
                           .showSnackBar(SnackBar(content: Text(l.movedToCart)));
                     },
                     icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                    label: Text(l.moveToCart,
-                        style: const TextStyle(fontSize: 12)),
+                    label: Text(
+                      l.moveToCart,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ),
                 )
               else

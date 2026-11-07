@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/widgets/skeleton_loaders.dart';
 import '../cubit/orders_cubit.dart';
@@ -54,15 +55,17 @@ class _OrdersPageState extends State<OrdersPage> {
             if (state.status == OrdersStatus.loading) {
               return Scaffold(
                 appBar: AppBar(title: Text(l.myOrders)),
-                body: const OrdersSkeleton(),
+                body: const ResponsiveShell(child: OrdersSkeleton()),
               );
             }
             if (state.status == OrdersStatus.error) {
               return Scaffold(
                 appBar: AppBar(title: Text(l.myOrders)),
-                body: FeedbackView(
-                  type: FeedbackViewType.error,
-                  onAction: context.read<OrdersCubit>().restore,
+                body: ResponsiveShell(
+                  child: FeedbackView(
+                    type: FeedbackViewType.error,
+                    onAction: context.read<OrdersCubit>().restore,
+                  ),
                 ),
               );
             }
@@ -77,24 +80,26 @@ class _OrdersPageState extends State<OrdersPage> {
                   ],
                 ),
               ),
-              body: TabBarView(
-                children: [
-                  OrderList(
-                      orders: state.active,
-                      emptyMessage: l.noActiveOrders,
-                      isCompleted: false,
-                      scheme: scheme),
-                  OrderList(
-                      orders: state.completed,
-                      emptyMessage: l.noCompletedOrders,
-                      isCompleted: true,
-                      scheme: scheme),
-                  OrderList(
-                      orders: state.cancelled,
-                      emptyMessage: l.noCancelledOrders,
-                      isCompleted: true,
-                      scheme: scheme),
-                ],
+              body: ResponsiveShell(
+                child: TabBarView(
+                  children: [
+                    OrderList(
+                        orders: state.active,
+                        emptyMessage: l.noActiveOrders,
+                        isCompleted: false,
+                        scheme: scheme),
+                    OrderList(
+                        orders: state.completed,
+                        emptyMessage: l.noCompletedOrders,
+                        isCompleted: true,
+                        scheme: scheme),
+                    OrderList(
+                        orders: state.cancelled,
+                        emptyMessage: l.noCancelledOrders,
+                        isCompleted: true,
+                        scheme: scheme),
+                  ],
+                ),
               ),
             );
           },

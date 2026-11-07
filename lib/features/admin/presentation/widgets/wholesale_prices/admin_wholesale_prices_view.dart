@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../shared/components/adaptive_sheet.dart';
 import '../../../../../shared/components/app_card.dart';
 import '../../../../../shared/components/feedback_view.dart';
+import '../../../../../shared/components/responsive_scaffold.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
 import '../../../domain/entities/admin_wholesale_price_entry.dart';
 import '../../cubit/admin_wholesale_prices_cubit.dart';
@@ -19,7 +22,7 @@ final class AdminWholesalePricesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l.adminWholesalePrices)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showPriceSheet(context),
@@ -97,13 +100,7 @@ final class AdminWholesalePricesView extends StatelessWidget {
         context: context,
         isScrollControlled: true,
         builder: (sheetContext) => StatefulBuilder(
-          builder: (sheetContext, setSheetState) => Padding(
-            padding: EdgeInsetsDirectional.only(
-              start: 16,
-              end: 16,
-              top: 16,
-              bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
-            ),
+          builder: (sheetContext, setSheetState) => AdaptiveSheet(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -118,6 +115,7 @@ final class AdminWholesalePricesView extends StatelessWidget {
                 else
                   DropdownButtonFormField<String>(
                     initialValue: selectedProductId,
+                    isExpanded: true,
                     items: [
                       for (final product in sheetContext
                           .read<AdminWholesalePricesCubit>()

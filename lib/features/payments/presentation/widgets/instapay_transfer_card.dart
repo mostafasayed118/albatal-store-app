@@ -63,13 +63,20 @@ class InstapayTransferCard extends StatelessWidget {
         // Server-authoritative amount.
         Row(
           children: [
-            Text(l.instapayAmountLabel,
-                style: Theme.of(context).textTheme.bodyMedium),
-            const Spacer(),
-            Text(
-              amountText,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold, color: scheme.primary),
+            Expanded(
+              child: Text(l.instapayAmountLabel,
+                  style: Theme.of(context).textTheme.bodyMedium),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                amountText,
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold, color: scheme.primary),
+              ),
             ),
           ],
         ),

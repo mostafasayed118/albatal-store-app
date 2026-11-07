@@ -11,6 +11,13 @@ class RelatedCard extends StatelessWidget {
   final Product product;
   final VoidCallback onTap;
 
+  /// Card height at the current text scale; the horizontal strip sizes
+  /// itself from this so a taller card is never clipped by a fixed box.
+  static double heightFor(BuildContext context) =>
+      (140 + 60 * MediaQuery.textScalerOf(context).scale(1))
+          .clamp(200.0, 280.0)
+          .toDouble();
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -19,7 +26,7 @@ class RelatedCard extends StatelessWidget {
       label: product.name,
       child: SizedBox(
         width: 140,
-        height: 200,
+        height: heightFor(context),
         child: Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/entities/admin_catalog.dart';
 import '../../domain/repositories/admin_repository.dart';
@@ -63,7 +64,7 @@ class _AdminCategoriesPageState extends State<AdminCategoriesPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l10n.categories)),
       body: _loading
           ? const FeedbackView(type: FeedbackViewType.loading)

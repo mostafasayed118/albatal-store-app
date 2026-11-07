@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../shared/components/scrollable_center.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/theme/app_colors.dart';
 
@@ -28,43 +29,40 @@ class MaintenancePage extends StatelessWidget {
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsetsDirectional.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isUpdate ? Icons.system_update_outlined : Icons.engineering,
-                size: 64,
-                color: AppColors.primary,
+      body: ScrollableCenter(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isUpdate ? Icons.system_update_outlined : Icons.engineering,
+              size: 64,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isUpdate ? l.updateRequiredTitle : l.maintenanceTitle,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isUpdate ? l.updateRequiredBody : l.maintenanceBody,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            if (isUpdate &&
+                defaultTargetPlatform == TargetPlatform.android) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _openStore,
+                icon: const Icon(Icons.open_in_new),
+                label: Text(l.update),
               ),
-              const SizedBox(height: 16),
-              Text(
-                isUpdate ? l.updateRequiredTitle : l.maintenanceTitle,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                isUpdate ? l.updateRequiredBody : l.maintenanceBody,
-                style: TextStyle(color: scheme.onSurfaceVariant),
-                textAlign: TextAlign.center,
-              ),
-              if (isUpdate &&
-                  defaultTargetPlatform == TargetPlatform.android) ...[
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: _openStore,
-                  icon: const Icon(Icons.open_in_new),
-                  label: Text(l.update),
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );

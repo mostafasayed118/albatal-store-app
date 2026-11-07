@@ -138,9 +138,13 @@ class _StitchHeroCarouselState extends State<StitchHeroCarousel> {
   @override
   Widget build(BuildContext context) {
     if (widget.slides.isEmpty) return const SizedBox.shrink();
+    // The hero carries three text lines plus a CTA; grow with the user's
+    // font size so 2.0x does not clip the content inside a fixed 180dp box.
+    final scale =
+        MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.4).toDouble();
     return RepaintBoundary(
       child: SizedBox(
-        height: widget.height,
+        height: widget.height * scale,
         child: Stack(
           children: [
             PageView.builder(

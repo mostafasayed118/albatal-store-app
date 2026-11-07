@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../domain/entities/admin_order.dart';
@@ -41,7 +43,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l.adminDashboard)),
       body: BlocBuilder<AdminCubit, AdminState>(
         builder: (context, state) {
@@ -61,82 +63,102 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 ..checkAdmin(),
             );
           }
-          // Lazy build (audit): same children as before, inflated on demand.
-          final children = <Widget>[
-            AdminStatCard(
-              title: l.totalOrders,
-              value: '${state.orders.length}',
-              icon: Icons.receipt_long,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-            AdminStatCard(
-              title: l.pendingOrders,
-              value:
-                  '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
-              icon: Icons.pending_actions,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-            const SizedBox(height: 12),
-            AdminStatCard(
-              title: l.lowStock,
-              value: '${state.lowStockProducts.length}',
-              icon: Icons.warning_amber,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 24),
-            Text(l.quickActions, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            AdminActionTile(
-              icon: Icons.receipt_long,
-              title: l.orderQueue,
-              subtitle: l.viewAllOrders,
-              onTap: () => context.push(Routes.adminOrders),
-            ),
-            // InstaPay proof review (082): customers could submit transfer
-            // proofs, but no admin surface could list, approve or reject the
-            // pending ones — the payment stayed pending forever.
-            AdminActionTile(
-              icon: Icons.account_balance_outlined,
-              title: l.adminInstapayTitle,
-              subtitle: l.adminInstapaySubtitle,
-              onTap: () => context.push(Routes.adminInstapay),
-            ),
-            AdminActionTile(
-              icon: Icons.inventory_2_outlined,
-              title: l.inventory,
-              subtitle: l.manageStock,
-              onTap: () => context.push(Routes.adminInventory),
-            ),
-            AdminActionTile(
-              icon: Icons.shopping_bag_outlined,
-              title: l.catalog,
-              subtitle: l.manageProducts,
-              onTap: () => context.push(Routes.adminCatalog),
-            ),
-            // Promo codes (§8): the page, cubit and repository methods
-            // shipped with no destination, so a coupon could be redeemed
-            // at checkout but never created. Both labels already exist in
-            // EN + AR, so no ARB change was needed.
-            AdminActionTile(
-              icon: Icons.local_offer_outlined,
-              title: l.adminCoupons,
-              subtitle: l.adminAddCoupon,
-              onTap: () => context.push(Routes.adminCoupons),
-            ),
-            // 078 B2B: negotiated wholesale prices need a management
-            // surface — without this tile the RPCs are unreachable.
-            AdminActionTile(
-              icon: Icons.sell_outlined,
-              title: l.adminWholesalePrices,
-              subtitle: l.adminAddWholesalePrice,
-              onTap: () => context.push(Routes.adminWholesalePrices),
-            ),
-          ];
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: children.length,
-            itemBuilder: (_, i) => children[i],
+          // Responsive stat row: three across on desktop, two on tablet,
+          // stacked on phones. Quick actions stay a single readable column.
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final columns = width >= 1000 ? 3 : (width >= 700 ? 2 : 1);
+              final statWidth = (width - 32 - (columns - 1) * 12) / columns;
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      SizedBox(
+                        width: statWidth,
+                        child: AdminStatCard(
+                          title: l.totalOrders,
+                          value: '${state.orders.length}',
+                          icon: Icons.receipt_long,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      SizedBox(
+                        width: statWidth,
+                        child: AdminStatCard(
+                          title: l.pendingOrders,
+                          value:
+                              '${state.orders.where((o) => o.status == AdminOrderStatus.placed).length}',
+                          icon: Icons.pending_actions,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      SizedBox(
+                        width: statWidth,
+                        child: AdminStatCard(
+                          title: l.lowStock,
+                          value: '${state.lowStockProducts.length}',
+                          icon: Icons.warning_amber,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(l.quickActions,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  AdminActionTile(
+                    icon: Icons.receipt_long,
+                    title: l.orderQueue,
+                    subtitle: l.viewAllOrders,
+                    onTap: () => context.push(Routes.adminOrders),
+                  ),
+                  // InstaPay proof review (082): customers could submit
+                  // transfer proofs, but no admin surface could list,
+                  // approve or reject the pending ones — the payment
+                  // stayed pending forever.
+                  AdminActionTile(
+                    icon: Icons.account_balance_outlined,
+                    title: l.adminInstapayTitle,
+                    subtitle: l.adminInstapaySubtitle,
+                    onTap: () => context.push(Routes.adminInstapay),
+                  ),
+                  AdminActionTile(
+                    icon: Icons.inventory_2_outlined,
+                    title: l.inventory,
+                    subtitle: l.manageStock,
+                    onTap: () => context.push(Routes.adminInventory),
+                  ),
+                  AdminActionTile(
+                    icon: Icons.shopping_bag_outlined,
+                    title: l.catalog,
+                    subtitle: l.manageProducts,
+                    onTap: () => context.push(Routes.adminCatalog),
+                  ),
+                  // Promo codes (§8): the page, cubit and repository methods
+                  // shipped with no destination, so a coupon could be
+                  // redeemed at checkout but never created.
+                  AdminActionTile(
+                    icon: Icons.local_offer_outlined,
+                    title: l.adminCoupons,
+                    subtitle: l.adminAddCoupon,
+                    onTap: () => context.push(Routes.adminCoupons),
+                  ),
+                  // 078 B2B: negotiated wholesale prices need a management
+                  // surface — without this tile the RPCs are unreachable.
+                  AdminActionTile(
+                    icon: Icons.sell_outlined,
+                    title: l.adminWholesalePrices,
+                    subtitle: l.adminAddWholesalePrice,
+                    onTap: () => context.push(Routes.adminWholesalePrices),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

@@ -109,6 +109,7 @@ class AdminProductEditForm extends StatelessWidget {
                 // Values are category UUIDs (the RPC contract); the
                 // display label is the human-readable name.
                 initialValue: selectedCategoryId,
+                isExpanded: true,
                 decoration: InputDecoration(labelText: context.l10n.category),
                 items: categories
                     .map((c) =>

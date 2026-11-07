@@ -28,7 +28,11 @@ final class StepIndicator extends StatelessWidget {
                 child: Text('${stepEntry.key + 1}'),
               ),
               const SizedBox(height: 4),
-              Text(stepEntry.value, style: const TextStyle(fontSize: 12)),
+              Text(stepEntry.value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12)),
             ],
           ),
         );

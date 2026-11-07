@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../../shared/components/adaptive_sheet.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
 import '../../../../../shared/services/image_compressor.dart';
 import '../../cubit/reviews_cubit.dart';
@@ -76,13 +77,7 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Padding(
-      padding: EdgeInsetsDirectional.only(
-        start: 16,
-        end: 16,
-        top: 16,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
-      ),
+    return AdaptiveSheet(
       child: BlocConsumer<ReviewsCubit, ReviewsState>(
         listener: (context, state) {
           if (state.submitting || state.submitMessage == null) return;
@@ -130,7 +125,11 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
               decoration: InputDecoration(hintText: l.reviewPlaceholder),
             ),
             const SizedBox(height: 8),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 TextButton.icon(
                   onPressed: _processingPhoto ? null : _pickPhoto,
@@ -139,7 +138,6 @@ final class ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
                       ? l.reviewAddPhoto
                       : l.reviewPhotoAdded),
                 ),
-                const Spacer(),
                 FilledButton(
                   onPressed: state.submitting
                       ? null

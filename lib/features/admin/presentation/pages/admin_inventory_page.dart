@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/low_stock_variant.dart';
@@ -55,7 +57,7 @@ class _AdminInventoryPageState extends State<AdminInventoryPage>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l10n.inventory)),
       body: BlocListener<AdminCubit, AdminState>(
         listener: (context, state) {

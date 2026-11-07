@@ -82,9 +82,15 @@ final class _OnboardingPageState extends State<OnboardingPage> {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final steps = _steps(context);
-                      final imageHeight = (constraints.maxHeight * .55)
-                          .clamp(240.0, 520.0)
-                          .toDouble();
+                      // Landscape phones have very little height; a 240dp
+                      // floor left the copy almost no room. Shrink the hero
+                      // and let the scrollable body below take over.
+                      final isLandscape =
+                          constraints.maxWidth > constraints.maxHeight;
+                      final imageHeight =
+                          (constraints.maxHeight * (isLandscape ? .45 : .55))
+                              .clamp(isLandscape ? 110.0 : 200.0, 520.0)
+                              .toDouble();
                       return PageView.builder(
                         controller: _pageController,
                         itemCount: steps.length,

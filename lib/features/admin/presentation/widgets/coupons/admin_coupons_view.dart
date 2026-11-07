@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../core/entities/money.dart';
+import '../../../../../shared/components/adaptive_sheet.dart';
 import '../../../../../shared/components/app_card.dart';
 import '../../../../../shared/components/feedback_view.dart';
+import '../../../../../shared/components/responsive_scaffold.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
 import '../../cubit/admin_coupons_cubit.dart';
 import '../admin_error_feedback.dart';
@@ -16,7 +19,7 @@ final class AdminCouponsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l.adminCoupons)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateSheet(context),
@@ -75,13 +78,7 @@ final class AdminCouponsView extends StatelessWidget {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        builder: (sheetContext) => Padding(
-          padding: EdgeInsetsDirectional.only(
-            start: 16,
-            end: 16,
-            top: 16,
-            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
-          ),
+        builder: (sheetContext) => AdaptiveSheet(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

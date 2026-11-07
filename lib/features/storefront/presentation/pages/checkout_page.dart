@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/components/responsive_shell.dart';
+import '../../../../shared/components/safe_bottom_bar.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
@@ -26,7 +28,7 @@ import '../widgets/order_review.dart';
 /// Tokens: ListView EdgeInsetsDirectional.all(16), Shipping Address Card
 /// surface / outlineVariant 1dp / cardRadius 16 clipAntiAlias,
 /// Server-confirmed totals Card surface/outlineVariant 16 titleSmall 8dp rows,
-/// bottomNavigationBar Container height 72 EdgeInsetsDirectional.all(16) surface
+/// bottomNavigationBar SafeBottomBar EdgeInsetsDirectional.all(16) surface
 /// with FilledButton secondary #904D00 controlRadius 8 labelLarge.
 ///
 /// The idempotency key is managed by [CheckoutCubit] — generated once per
@@ -111,67 +113,103 @@ class CheckoutPage extends StatelessWidget {
         final needsPhone = s.selectedAddress?.hasPhone == false;
         return Scaffold(
           appBar: AppBar(title: Text(l10n.checkout)),
-          body: ListView(
-            padding: const EdgeInsetsDirectional.all(16),
-            children: [
-              StepIndicator(
-                steps: [l10n.shippingAddress, l10n.payment, l10n.reviewOrder],
-                currentStep: s.hasAddress ? 1 : 0,
-                scheme: scheme,
-              ),
-              const SizedBox(height: 24),
-              // Stitch Shipping Address card: surface + outlineVariant 1dp radius 16 clipAntiAlias.
-              CheckoutShippingAddressCard(
-                l10n: l10n,
-                scheme: scheme,
-                selectedAddress: s.selectedAddress,
-                hasError: addressError,
-                needsPhone: needsPhone,
-              ),
-              const SizedBox(height: 24),
-              if (s.hasAddress) ...[
-                Text(l10n.reviewOrder,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                OrderReview(address: s.selectedAddress!, l: l10n),
-                const SizedBox(height: 16),
-              ],
-              BlocBuilder<CartCubit, CartState>(
-                  builder: (_, cart) => CartSummary(cart)),
-              // Local math is an estimate: the server computes the final
-              // total (live-found 2026-09-04: review showed 1365 while
-              // the server charged 1290).
-              Padding(
-                padding: const EdgeInsetsDirectional.only(top: 8),
-                child: Text(l10n.estimatedTotalsNote,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant)),
-              ),
-              // §8: coupon attach/remove before order creation — the
-              // discount itself is computed server-side only.
-              if (!s.hasPendingOrder) ...[
-                const SizedBox(height: 16),
-                CheckoutCouponCard(l10n: l10n),
-              ],
-              // Show server-returned totals once the order is created — Stitch summary card.
-              if (s.hasPendingOrder) ...[
-                const SizedBox(height: 16),
-                CheckoutServerTotalsCard(
-                  l10n: l10n,
-                  scheme: scheme,
-                  subtotal: s.serverSubtotal,
-                  shipping: s.serverShipping,
-                  total: s.serverTotal,
-                ),
-              ],
-            ],
+          body: ResponsiveShell(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final left = <Widget>[
+                  StepIndicator(
+                    steps: [
+                      l10n.shippingAddress,
+                      l10n.payment,
+                      l10n.reviewOrder
+                    ],
+                    currentStep: s.hasAddress ? 1 : 0,
+                    scheme: scheme,
+                  ),
+                  const SizedBox(height: 24),
+                  // Stitch Shipping Address card: surface + outlineVariant 1dp radius 16 clipAntiAlias.
+                  CheckoutShippingAddressCard(
+                    l10n: l10n,
+                    scheme: scheme,
+                    selectedAddress: s.selectedAddress,
+                    hasError: addressError,
+                    needsPhone: needsPhone,
+                  ),
+                  const SizedBox(height: 24),
+                  if (s.hasAddress) ...[
+                    Text(l10n.reviewOrder,
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    OrderReview(address: s.selectedAddress!, l: l10n),
+                    const SizedBox(height: 16),
+                  ],
+                ];
+                final right = <Widget>[
+                  BlocBuilder<CartCubit, CartState>(
+                      builder: (_, cart) => CartSummary(cart)),
+                  // Local math is an estimate: the server computes the final
+                  // total (live-found 2026-09-04: review showed 1365 while
+                  // the server charged 1290).
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(top: 8),
+                    child: Text(l10n.estimatedTotalsNote,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant)),
+                  ),
+                  // §8: coupon attach/remove before order creation — the
+                  // discount itself is computed server-side only.
+                  if (!s.hasPendingOrder) ...[
+                    const SizedBox(height: 16),
+                    CheckoutCouponCard(l10n: l10n),
+                  ],
+                  // Show server-returned totals once the order is created — Stitch summary card.
+                  if (s.hasPendingOrder) ...[
+                    const SizedBox(height: 16),
+                    CheckoutServerTotalsCard(
+                      l10n: l10n,
+                      scheme: scheme,
+                      subtotal: s.serverSubtotal,
+                      shipping: s.serverShipping,
+                      total: s.serverTotal,
+                    ),
+                  ],
+                ];
+                if (constraints.maxWidth < 900) {
+                  return ListView(
+                    padding: const EdgeInsetsDirectional.all(16),
+                    children: [...left, ...right],
+                  );
+                }
+                // Tablet/desktop: address/review on the left, order summary
+                // on the right, each independently scrollable.
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: ListView(
+                        padding: const EdgeInsetsDirectional.all(16),
+                        children: left,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 5,
+                      child: ListView(
+                        padding:
+                            const EdgeInsetsDirectional.fromSTEB(0, 16, 16, 16),
+                        children: right,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-          bottomNavigationBar: Container(
-            padding: const EdgeInsetsDirectional.all(16),
-            decoration: BoxDecoration(color: scheme.surface),
+          bottomNavigationBar: SafeBottomBar(
+            color: scheme.surface,
             child: FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: scheme.secondary,

@@ -107,7 +107,7 @@ class VariantSelector extends StatelessWidget {
                         meters: double.tryParse(state.length) ?? 0),
                     const SizedBox(height: 8),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerEnd,
                       child: TextButton.icon(
                         icon: const Icon(Icons.person_outline, size: 16),
                         label: Text(l.fitFinder),
@@ -130,7 +130,7 @@ class VariantSelector extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Align(
-                      alignment: Alignment.centerRight,
+                      alignment: AlignmentDirectional.centerEnd,
                       child: TextButton.icon(
                         icon: const Icon(Icons.person_outline, size: 16),
                         label: Text(l.fitFinder),

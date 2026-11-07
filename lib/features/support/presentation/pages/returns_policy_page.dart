@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 
 /// Returns & Exchange Policy page.
@@ -11,19 +12,21 @@ class ReturnsPolicyPage extends StatelessWidget {
     final l = context.l10n;
     return Scaffold(
       appBar: AppBar(title: Text(l.returnsPolicy)),
-      body: ListView(
-        padding: const EdgeInsetsDirectional.all(16),
-        children: [
-          Text(
-            l.legalLastUpdated,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(l.returnsPolicyContent,
-              style: Theme.of(context).textTheme.bodyLarge),
-        ],
+      body: ResponsiveShell(
+        child: ListView(
+          padding: const EdgeInsetsDirectional.all(16),
+          children: [
+            Text(
+              l.legalLastUpdated,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(l.returnsPolicyContent,
+                style: Theme.of(context).textTheme.bodyLarge),
+          ],
+        ),
       ),
     );
   }

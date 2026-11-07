@@ -1,12 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
 
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/services/logger.dart';
@@ -86,7 +88,7 @@ class _AdminOrderDetailPageState extends State<AdminOrderDetailPage>
     final shortId = widget.orderId.length <= 8
         ? widget.orderId
         : widget.orderId.substring(0, 8);
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(
         title: Text('${l10n.order} #$shortId...'),
         actions: [

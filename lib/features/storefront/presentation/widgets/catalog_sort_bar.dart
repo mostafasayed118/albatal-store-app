@@ -18,21 +18,35 @@ class CatalogSortBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Text(l.fabricsFound(state.visible.length),
+          Expanded(
+            flex: 3,
+            child: Text(
+              l.fabricsFound(state.visible.length),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const Spacer(),
-          PopupMenuButton<CatalogSort>(
-            tooltip: l.sortProducts,
-            initialValue: state.filters.sort,
-            onSelected: catalog.selectSort,
-            itemBuilder: (_) => CatalogSort.values
-                .map((s) => PopupMenuItem(
-                    value: s, child: Text(catalogSortLabel(l, s))))
-                .toList(),
-            child: Chip(
-              avatar: const Icon(Icons.sort, size: 18),
-              label: Text(catalogSortLabel(l, state.filters.sort)),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 2,
+            child: PopupMenuButton<CatalogSort>(
+              tooltip: l.sortProducts,
+              initialValue: state.filters.sort,
+              onSelected: catalog.selectSort,
+              itemBuilder: (_) => CatalogSort.values
+                  .map((s) => PopupMenuItem(
+                      value: s, child: Text(catalogSortLabel(l, s))))
+                  .toList(),
+              child: Chip(
+                avatar: const Icon(Icons.sort, size: 18),
+                label: Text(
+                  catalogSortLabel(l, state.filters.sort),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
           ),
         ],

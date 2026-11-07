@@ -70,16 +70,18 @@ class SearchSuggestionsBar extends StatelessWidget {
                 ),
             ],
           ),
-          SizedBox(
-            height: 36,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: terms.length,
-              itemBuilder: (context, i) => ActionChip(
-                label: Text(terms[i]),
-                onPressed: () => onPick(terms[i]),
-              ),
-              separatorBuilder: (context, i) => const SizedBox(width: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var i = 0; i < terms.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 8),
+                  ActionChip(
+                    label: Text(terms[i]),
+                    onPressed: () => onPick(terms[i]),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

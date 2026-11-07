@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/components/app_button.dart';
+import '../../../../shared/components/scrollable_center.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/notification_service.dart';
@@ -41,28 +42,25 @@ final class _OrderSuccessPageState extends State<OrderSuccessPage> {
     final id = widget.orderId.trim();
     if (id.isEmpty) {
       return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.error_outline, size: 60, color: scheme.error),
-                const SizedBox(height: 16),
-                Text(
-                  // Localized (was a hardcoded English string) and says
-                  // what to do next: check the order history.
-                  l.orderReferenceMissing,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: l.trackMyOrder,
-                  onPressed: () => context.go(Routes.orders),
-                ),
-              ],
-            ),
+        body: ScrollableCenter(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 60, color: scheme.error),
+              const SizedBox(height: 16),
+              Text(
+                // Localized (was a hardcoded English string) and says
+                // what to do next: check the order history.
+                l.orderReferenceMissing,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: l.trackMyOrder,
+                onPressed: () => context.go(Routes.orders),
+              ),
+            ],
           ),
         ),
       );

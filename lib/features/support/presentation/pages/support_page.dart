@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/extensions/iterable_x.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -43,108 +44,114 @@ class SupportPage extends StatelessWidget {
     final email = byKind(SupportChannelKind.email);
     return Scaffold(
       appBar: AppBar(title: Text(l.customerSupport)),
-      body: ListView(
-        padding: const EdgeInsetsDirectional.all(16),
-        children: [
-          if (whatsapp?.value != null)
+      body: ResponsiveShell(
+        child: ListView(
+          padding: const EdgeInsetsDirectional.all(16),
+          children: [
+            if (whatsapp?.value != null)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.chat),
+                  title: Text(l.whatsappSupport),
+                  subtitle: Text(l.whatsappSupportDescription),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () async {
+                    final uri = Uri.tryParse(whatsapp!.value!.trim());
+                    if (uri != null &&
+                        isAllowedSupportLink(uri) &&
+                        await canLaunchUrl(uri)) {
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
+                    } else {
+                      // Rejected targets and launch failures alike must
+                      // acknowledge the tap even when no external app takes it.
+                      if (context.mounted) {
+                        showFloatingError(
+                            context, context.l10n.couldNotOpenLink);
+                      }
+                    }
+                  },
+                ),
+              ),
+            if (whatsapp?.value != null) const SizedBox(height: 12),
+            if (email?.value != null)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.email),
+                  title: Text(l.emailSupport),
+                  // The address itself is the subtitle: single source of
+                  // truth (repository), no l10n mirror to drift.
+                  subtitle: Text(email!.value!),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () async {
+                    final uri = Uri.tryParse('mailto:${email.value!.trim()}');
+                    if (uri != null &&
+                        isAllowedSupportLink(uri) &&
+                        await canLaunchUrl(uri)) {
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
+                    } else {
+                      // The channel that was tapped must acknowledge the
+                      // attempt even when no mail app can take it.
+                      if (context.mounted) {
+                        showFloatingError(
+                            context, context.l10n.couldNotOpenLink);
+                      }
+                    }
+                  },
+                ),
+              ),
+            if (email?.value != null) const SizedBox(height: 12),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.chat),
-                title: Text(l.whatsappSupport),
-                subtitle: Text(l.whatsappSupportDescription),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () async {
-                  final uri = Uri.tryParse(whatsapp!.value!.trim());
-                  if (uri != null &&
-                      isAllowedSupportLink(uri) &&
-                      await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    // Rejected targets and launch failures alike must
-                    // acknowledge the tap even when no external app takes it.
-                    if (context.mounted) {
-                      showFloatingError(context, context.l10n.couldNotOpenLink);
-                    }
-                  }
+                leading: const Icon(Icons.help_outline),
+                title: Text(l.faq),
+                subtitle: Text(l.faqDescription),
+                // Drill-in chevron points in the reading direction (flips in RTL).
+                trailing: Icon(context.directionalTrailingIcon),
+                onTap: () {
+                  showConfirmation(context, l.comingSoon);
                 },
               ),
             ),
-          if (whatsapp?.value != null) const SizedBox(height: 12),
-          if (email?.value != null)
+            const SizedBox(height: 12),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.email),
-                title: Text(l.emailSupport),
-                // The address itself is the subtitle: single source of
-                // truth (repository), no l10n mirror to drift.
-                subtitle: Text(email!.value!),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () async {
-                  final uri = Uri.tryParse('mailto:${email.value!.trim()}');
-                  if (uri != null &&
-                      isAllowedSupportLink(uri) &&
-                      await canLaunchUrl(uri)) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } else {
-                    // The channel that was tapped must acknowledge the
-                    // attempt even when no mail app can take it.
-                    if (context.mounted) {
-                      showFloatingError(context, context.l10n.couldNotOpenLink);
-                    }
-                  }
-                },
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: Text(l.privacyPolicy),
+                trailing: Icon(context.directionalTrailingIcon),
+                onTap: () => context.push(Routes.privacyPolicy),
               ),
             ),
-          if (email?.value != null) const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.help_outline),
-              title: Text(l.faq),
-              subtitle: Text(l.faqDescription),
-              // Drill-in chevron points in the reading direction (flips in RTL).
-              trailing: Icon(context.directionalTrailingIcon),
-              onTap: () {
-                showConfirmation(context, l.comingSoon);
-              },
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.description_outlined),
+                title: Text(l.termsOfService),
+                trailing: Icon(context.directionalTrailingIcon),
+                onTap: () => context.push(Routes.terms),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(l.privacyPolicy),
-              trailing: Icon(context.directionalTrailingIcon),
-              onTap: () => context.push(Routes.privacyPolicy),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.local_shipping_outlined),
+                title: Text(l.shippingPolicy),
+                trailing: Icon(context.directionalTrailingIcon),
+                onTap: () => context.push(Routes.shippingPolicy),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: Text(l.termsOfService),
-              trailing: Icon(context.directionalTrailingIcon),
-              onTap: () => context.push(Routes.terms),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.assignment_return_outlined),
+                title: Text(l.returnsPolicy),
+                trailing: Icon(context.directionalTrailingIcon),
+                onTap: () => context.push(Routes.returnsPolicy),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.local_shipping_outlined),
-              title: Text(l.shippingPolicy),
-              trailing: Icon(context.directionalTrailingIcon),
-              onTap: () => context.push(Routes.shippingPolicy),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.assignment_return_outlined),
-              title: Text(l.returnsPolicy),
-              trailing: Icon(context.directionalTrailingIcon),
-              onTap: () => context.push(Routes.returnsPolicy),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

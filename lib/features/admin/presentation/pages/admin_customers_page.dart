@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/entities/profile.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_customer.dart';
@@ -131,13 +133,13 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
             previous.hasMore != current.hasMore,
         builder: (context, state) {
           if (state.status == AdminCustomersStatus.loading) {
-            return Scaffold(
+            return ResponsiveScaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
               body: const FeedbackView(type: FeedbackViewType.loading),
             );
           }
           if (state.status == AdminCustomersStatus.error) {
-            return Scaffold(
+            return ResponsiveScaffold(
               appBar: AppBar(title: Text(l.adminCustomers)),
               body: AdminErrorFeedback(
                 errorCode: state.errorCode,
@@ -146,7 +148,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               ),
             );
           }
-          return Scaffold(
+          return ResponsiveScaffold(
             appBar: AppBar(title: Text(l.adminCustomers)),
             body: Column(
               children: [

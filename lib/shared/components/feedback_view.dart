@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../extensions/build_context_x.dart';
 import 'app_button.dart';
+import 'scrollable_center.dart';
 
 enum FeedbackViewType { loading, empty, error }
 
@@ -71,9 +72,7 @@ final class FeedbackView extends StatelessWidget {
           action: actionLabel ?? l10n.retry
         ),
     };
-    final view = Center(
-        child: Padding(
-      padding: const EdgeInsets.all(32),
+    final view = ScrollableCenter(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         SizedBox(
           height: iconSize,
@@ -102,7 +101,7 @@ final class FeedbackView extends StatelessWidget {
           )
         ],
       ]),
-    ));
+    );
     // Loading announces itself to screen readers; static content does not
     // need a live region.
     if (type == FeedbackViewType.loading) {

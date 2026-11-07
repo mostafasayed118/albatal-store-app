@@ -9,6 +9,7 @@ import '../../../../core/entities/product.dart';
 import '../../../../core/entities/profile.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/routing/app_routes.dart';
@@ -232,91 +233,129 @@ class _DetailsPageState extends State<DetailsPage> {
                 ),
               ],
             ),
-            body: ListView(
-              padding: const EdgeInsetsDirectional.all(16),
-              children: [
-                // Stitch gallery card (spec §4): media clipped to the 16dp
-                // card radius so page-view edges never escape the card.
-                ClipRRect(
-                  borderRadius: AppTheme.cardRadius,
-                  child: ImageGallery(product: p),
-                ),
-                const SizedBox(height: 20),
-                NameAndPrice(product: p),
-                if (p.reviewCount > 0) ...[
-                  const SizedBox(height: 8),
-                  RatingStars(product: p),
-                ],
-                // §9: approved customer reviews + submit affordance.
-                const SizedBox(height: 8),
-                ReviewsSection(
-                  productId: p.id,
-                  repository: widget.reviewsRepository,
-                  imageCompressor: widget.imageCompressor,
-                ),
-                const SizedBox(height: 20),
-                // Selection-only rebuild: variant/quantity ticks must not
-                // replay the gallery or related builders above.
-                BlocBuilder<ProductDetailsCubit, DetailsState>(
-                  buildWhen: (previous, current) =>
-                      previous.product != current.product ||
-                      previous.color != current.color ||
-                      previous.length != current.length ||
-                      previous.quantity != current.quantity,
-                  builder: (context, vs) =>
-                      VariantSelector(product: p, state: vs),
-                ),
-                // Task #5: when the selected variant is out of stock, offer
-                // the back-in-stock alert toggle (product-level opt-in).
-                BlocBuilder<ProductDetailsCubit, DetailsState>(
-                  buildWhen: (previous, current) =>
-                      previous.product != current.product ||
-                      previous.stock != current.stock,
-                  builder: (context, vs) => vs.product != null && vs.stock <= 0
-                      ? Padding(
-                          padding: const EdgeInsetsDirectional.only(top: 8),
-                          child: BackInStockToggle(product: p),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                const SizedBox(height: 20),
-                DeliveryInfo(l: l, scheme: scheme),
-                if (p.description != null) ...[
-                  const SizedBox(height: 20),
-                  Text(l.description,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 6),
-                  Text(p.description!),
-                ],
-                ProductDetailsSection(product: p, l: l),
-                const SizedBox(height: 20),
-                OutlinedButton.icon(
-                  onPressed: () => showSizeGuide(context),
-                  icon: const Icon(Icons.straighten, size: 18),
-                  label: Text(l.sizeGuide),
-                ),
-                const SizedBox(height: 12),
-                if (s.relatedProducts.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Text(l.relatedProducts,
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 200,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: s.relatedProducts.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (_, i) => RelatedCard(
-                        product: s.relatedProducts[i],
-                        onTap: () => context
-                            .push(Routes.product(s.relatedProducts[i].id)),
-                      ),
+            body: ResponsiveShell(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Stitch gallery card (spec §4): media clipped to the 16dp
+                  // card radius so page-view edges never escape the card.
+                  final gallery = ClipRRect(
+                    borderRadius: AppTheme.cardRadius,
+                    child: ImageGallery(product: p),
+                  );
+                  final info = <Widget>[
+                    NameAndPrice(product: p),
+                    if (p.reviewCount > 0) ...[
+                      const SizedBox(height: 8),
+                      RatingStars(product: p),
+                    ],
+                    // §9: approved customer reviews + submit affordance.
+                    const SizedBox(height: 8),
+                    ReviewsSection(
+                      productId: p.id,
+                      repository: widget.reviewsRepository,
+                      imageCompressor: widget.imageCompressor,
                     ),
-                  ),
-                ],
-                const SizedBox(height: 80),
-              ],
+                    const SizedBox(height: 20),
+                    // Selection-only rebuild: variant/quantity ticks must not
+                    // replay the gallery or related builders above.
+                    BlocBuilder<ProductDetailsCubit, DetailsState>(
+                      buildWhen: (previous, current) =>
+                          previous.product != current.product ||
+                          previous.color != current.color ||
+                          previous.length != current.length ||
+                          previous.quantity != current.quantity,
+                      builder: (context, vs) =>
+                          VariantSelector(product: p, state: vs),
+                    ),
+                    // Task #5: when the selected variant is out of stock,
+                    // offer the back-in-stock alert toggle.
+                    BlocBuilder<ProductDetailsCubit, DetailsState>(
+                      buildWhen: (previous, current) =>
+                          previous.product != current.product ||
+                          previous.stock != current.stock,
+                      builder: (context, vs) => vs.product != null &&
+                              vs.stock <= 0
+                          ? Padding(
+                              padding: const EdgeInsetsDirectional.only(top: 8),
+                              child: BackInStockToggle(product: p),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 20),
+                    DeliveryInfo(l: l, scheme: scheme),
+                    if (p.description != null) ...[
+                      const SizedBox(height: 20),
+                      Text(l.description,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 6),
+                      Text(p.description!),
+                    ],
+                    ProductDetailsSection(product: p, l: l),
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: () => showSizeGuide(context),
+                      icon: const Icon(Icons.straighten, size: 18),
+                      label: Text(l.sizeGuide),
+                    ),
+                    const SizedBox(height: 12),
+                    if (s.relatedProducts.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Text(l.relatedProducts,
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: RelatedCard.heightFor(context),
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: s.relatedProducts.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (_, i) => RelatedCard(
+                            product: s.relatedProducts[i],
+                            onTap: () => context
+                                .push(Routes.product(s.relatedProducts[i].id)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ];
+
+                  if (constraints.maxWidth < 900) {
+                    return ListView(
+                      padding: const EdgeInsetsDirectional.all(16),
+                      children: [
+                        gallery,
+                        const SizedBox(height: 20),
+                        ...info,
+                        const SizedBox(height: 80),
+                      ],
+                    );
+                  }
+                  // Tablet/desktop: media column stays put while the info
+                  // column scrolls; a single 1200px-wide column wasted the
+                  // extra width and pushed the CTA far below the fold.
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: ListView(
+                          padding: const EdgeInsetsDirectional.all(16),
+                          children: [gallery],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 6,
+                        child: ListView(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                              0, 16, 16, 16),
+                          children: [...info, const SizedBox(height: 80)],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
             bottomNavigationBar: BlocBuilder<ProductDetailsCubit, DetailsState>(
               buildWhen: (previous, current) =>

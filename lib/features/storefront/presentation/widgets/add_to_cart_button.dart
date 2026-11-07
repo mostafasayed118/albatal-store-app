@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../generated/l10n/app_localizations.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/safe_bottom_bar.dart';
 import '../../../../shared/l10n/money_copy.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../domain/pricing/cut_length_pricing.dart';
@@ -50,9 +51,8 @@ class AddToCartButton extends StatelessWidget {
     // construction (CartCubit.addSample no-ops on re-tap), priced
     // server-side at the fixed sample price — never from this label.
     final showSample = serverSampleCheckoutEnabled && state.inStock;
-    return Container(
-      padding: const EdgeInsetsDirectional.all(16),
-      decoration: BoxDecoration(color: scheme.surface),
+    return SafeBottomBar(
+      color: scheme.surface,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

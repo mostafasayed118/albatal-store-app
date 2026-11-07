@@ -97,113 +97,130 @@ class _CatalogPageState extends State<CatalogPage> {
           final guard = catalogStatusGuard(state, catalog);
           if (guard != null) return guard;
           return ResponsiveShell(
-            child: Column(
-              children: [
-                BlocBuilder<RecentSearchesCubit, RecentSearchesState>(
-                  builder: (context, recents) {
-                    final q = state.filters.query;
-                    if (q.isEmpty) {
-                      if (recents.queries.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      return SearchSuggestionsBar(
-                        label: l.recentSearches,
-                        terms: recents.queries,
-                        onPick: (term) {
-                          _searchController.text = term;
-                          catalog.updateQuery(term);
-                          context.read<RecentSearchesCubit>().record(term);
-                        },
-                        onClear: () =>
-                            context.read<RecentSearchesCubit>().clear(),
-                      );
-                    }
-                    return SearchSuggestionsBar(
-                      label: l.searchSuggestions,
-                      terms: suggestProductNames(state.allProducts, q),
-                      onPick: (term) {
-                        _searchController.text = term;
-                        catalog.updateQuery(term);
-                        context.read<RecentSearchesCubit>().record(term);
+            child: LayoutBuilder(
+              builder: (context, constraints) => CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child:
+                        BlocBuilder<RecentSearchesCubit, RecentSearchesState>(
+                      builder: (context, recents) {
+                        final q = state.filters.query;
+                        if (q.isEmpty) {
+                          if (recents.queries.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return SearchSuggestionsBar(
+                            label: l.recentSearches,
+                            terms: recents.queries,
+                            onPick: (term) {
+                              _searchController.text = term;
+                              catalog.updateQuery(term);
+                              context.read<RecentSearchesCubit>().record(term);
+                            },
+                            onClear: () =>
+                                context.read<RecentSearchesCubit>().clear(),
+                          );
+                        }
+                        return SearchSuggestionsBar(
+                          label: l.searchSuggestions,
+                          terms: suggestProductNames(state.allProducts, q),
+                          onPick: (term) {
+                            _searchController.text = term;
+                            catalog.updateQuery(term);
+                            context.read<RecentSearchesCubit>().record(term);
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
-                StitchSearchBar(
-                  controller: _searchController,
-                  hintText: l.searchFabrics,
-                  onChanged: catalog.updateQuery,
-                  onSubmitted: (q) {
-                    catalog.updateQuery(q);
-                    context.read<RecentSearchesCubit>().record(q);
-                  },
-                ),
-                if (state.hasActiveFilters)
-                  ActiveFiltersBar(
-                    state: state,
-                    onClearAll: () {
-                      _searchController.clear();
-                      catalog.clearFilters();
-                    },
-                  ),
-                // Stitch circular chips (secondary filter row) — mirrors Home but
-                // wired to the same CatalogCubit so chip taps filter the visible grid.
-                if (state.categories.isNotEmpty)
-                  Padding(
-                    padding:
-                        const EdgeInsetsDirectional.only(top: 4, bottom: 4),
-                    child: StitchCategoryChips(
-                      selected: state.filters.category,
-                      categories: state.categories,
-                      onSelect: catalog.select,
                     ),
                   ),
-                CatalogSortBar(state: state),
-                Expanded(
-                  child: state.visible.isEmpty
-                      ? CatalogEmptyState(
+                  SliverToBoxAdapter(
+                    child: StitchSearchBar(
+                      controller: _searchController,
+                      hintText: l.searchFabrics,
+                      onChanged: catalog.updateQuery,
+                      onSubmitted: (q) {
+                        catalog.updateQuery(q);
+                        context.read<RecentSearchesCubit>().record(q);
+                      },
+                    ),
+                  ),
+                  if (state.hasActiveFilters)
+                    SliverToBoxAdapter(
+                      child: ActiveFiltersBar(
+                        state: state,
+                        onClearAll: () {
+                          _searchController.clear();
+                          catalog.clearFilters();
+                        },
+                      ),
+                    ),
+                  // Stitch circular chips (secondary filter row) — mirrors Home but
+                  // wired to the same CatalogCubit so chip taps filter the visible grid.
+                  if (state.categories.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding:
+                            const EdgeInsetsDirectional.only(top: 4, bottom: 4),
+                        child: StitchCategoryChips(
+                          selected: state.filters.category,
+                          categories: state.categories,
+                          onSelect: catalog.select,
+                        ),
+                      ),
+                    ),
+                  SliverToBoxAdapter(child: CatalogSortBar(state: state)),
+                  if (state.visible.isEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsetsDirectional.all(16),
+                      sliver: SliverToBoxAdapter(
+                        child: CatalogEmptyState(
                           onClear: () {
                             _searchController.clear();
                             catalog.clearFilters();
                           },
-                        )
-                      : LayoutBuilder(
-                          builder: (context, constraints) => GridView.builder(
-                            padding: const EdgeInsetsDirectional.all(16),
-                            itemCount: state.visible.length,
-                            // Single breakpoint source (grid_delegate.dart):
-                            // 2-col phones, 3-col ≥700, 4-col ≥1000.
-                            gridDelegate: productGridDelegateForWidth(
-                              constraints.maxWidth,
-                            ),
-                            itemBuilder: (_, i) {
-                              final product = state.visible[i];
-                              // Per-item wishlist isolation (audit P3): the
-                              // heart selector rebuilds one card, not the grid.
-                              return BlocSelector<WishlistCubit, WishlistState,
-                                  bool>(
-                                selector: (wishlist) =>
-                                    wishlist.ids.contains(product.id),
-                                builder: (context, isWishlisted) =>
-                                    StitchProductGridCard(
-                                  product: product,
-                                  onTap: () {
-                                    final router = GoRouter.maybeOf(context);
-                                    if (router != null) {
-                                      context.push(Routes.product(product.id));
-                                    }
-                                  },
-                                  onWishlist: () => context
-                                      .read<WishlistCubit>()
-                                      .toggle(product.id),
-                                  isWishlisted: isWishlisted,
-                                ),
-                              );
-                            },
-                          ),
                         ),
-                ),
-              ],
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsetsDirectional.all(16),
+                      sliver: SliverGrid(
+                        // Single breakpoint source (grid_delegate.dart):
+                        // 2-col phones, 3-col ≥700, 4-col ≥1000.
+                        gridDelegate: productGridDelegateForWidth(
+                          constraints.maxWidth,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            final product = state.visible[i];
+                            // Per-item wishlist isolation (audit P3): the
+                            // heart selector rebuilds one card, not the grid.
+                            return BlocSelector<WishlistCubit, WishlistState,
+                                bool>(
+                              selector: (wishlist) =>
+                                  wishlist.ids.contains(product.id),
+                              builder: (context, isWishlisted) =>
+                                  StitchProductGridCard(
+                                product: product,
+                                onTap: () {
+                                  final router = GoRouter.maybeOf(context);
+                                  if (router != null) {
+                                    context.push(Routes.product(product.id));
+                                  }
+                                },
+                                onWishlist: () => context
+                                    .read<WishlistCubit>()
+                                    .toggle(product.id),
+                                isWishlisted: isWishlisted,
+                              ),
+                            );
+                          },
+                          childCount: state.visible.length,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           );
         },

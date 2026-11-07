@@ -215,13 +215,17 @@ void main() {
       expect(find.byType(StitchSearchBar), findsOneWidget);
       // Grid should use the width-aware shared delegate (not ProductTile).
       expect(find.byType(StitchProductGridCard), findsNWidgets(4));
-      final grid = tester.widget<GridView>(find.byType(GridView));
+      // The header stack is now slivers (CustomScrollView) so landscape
+      // phones can scroll it; the grid contract is unchanged.
+      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate =
           grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
       expect(delegate.crossAxisCount, 4);
       expect(delegate.childAspectRatio, .68);
-      // EdgeInsetsDirectional padding on grid.
-      expect(grid.padding, isA<EdgeInsetsDirectional>());
+      // EdgeInsetsDirectional padding on the grid's sliver padding.
+      final gridPadding =
+          tester.widget<SliverPadding>(find.byType(SliverPadding).first);
+      expect(gridPadding.padding, isA<EdgeInsetsDirectional>());
 
       // StitchSearchBar uses rounded-full (999) and surfaceContainerLow handling via theme.
       // Verify the outer Container has pill border radius 999.
@@ -235,6 +239,46 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets(
+        'landscape phone scrolls the header stack instead of crushing the grid',
+        (tester) async {
+      // 640x360: the old Column + Expanded(GridView) left almost no height
+      // for the grid once search, chips and sort were laid out.
+      tester.view.physicalSize = const Size(640, 360);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_catalogHarness());
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(StitchSearchBar), findsOneWidget);
+      expect(find.byType(CustomScrollView), findsOneWidget);
+
+      // The whole header stack moves up under the sliver view; the old
+      // fixed Column kept it pinned above an Expanded grid.
+      final headerY = tester.getTopLeft(find.byType(StitchSearchBar)).dy;
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -120));
+      await tester.pump();
+      final headerAfter = find.byType(StitchSearchBar);
+      expect(
+        headerAfter.evaluate().isEmpty ||
+            tester.getTopLeft(headerAfter).dy < headerY,
+        isTrue,
+        reason: 'the header stack must scroll with the sliver view',
+      );
+
+      // The grid is reachable by scrolling the single vertical sliver view.
+      var scrolls = 0;
+      while (find.byType(StitchProductGridCard).evaluate().isEmpty &&
+          scrolls < 20) {
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, -150));
+        await tester.pump();
+        scrolls++;
+      }
+      expect(find.byType(StitchProductGridCard), findsWidgets);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets(

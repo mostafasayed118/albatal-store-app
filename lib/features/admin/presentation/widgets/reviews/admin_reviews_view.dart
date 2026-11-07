@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../shared/components/app_card.dart';
 import '../../../../../shared/components/feedback_view.dart';
+import '../../../../../shared/components/responsive_scaffold.dart';
 import '../../../../../shared/extensions/build_context_x.dart';
 import '../../cubit/admin_reviews_cubit.dart';
 import '../admin_error_feedback.dart';
@@ -15,7 +16,7 @@ final class AdminReviewsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l.reviewModeration)),
       body: BlocBuilder<AdminReviewsCubit, AdminReviewsState>(
         builder: (context, state) {

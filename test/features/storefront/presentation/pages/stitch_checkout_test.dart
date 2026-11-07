@@ -17,7 +17,10 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/orders_cub
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/checkout_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/order_success_page.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/cart_summary.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/checkout/shipping_address_card.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
+import 'package:al_batal_elite/shared/components/safe_bottom_bar.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -205,11 +208,14 @@ void main() {
       await tester.pumpWidget(_checkoutWithAddressHarness());
       await tester.pump();
 
-      // ListView padding must be EdgeInsetsDirectional.
-      final listView = tester.widget<ListView>(find.byType(ListView));
+      // ListView padding must be EdgeInsetsDirectional. At this width the
+      // tablet layout renders two columns; both must be directional.
+      final listView = tester.widget<ListView>(find.byType(ListView).first);
       expect(listView.padding, isA<EdgeInsetsDirectional>(),
           reason: 'Checkout ListView must use EdgeInsetsDirectional for RTL');
       expect(listView.padding, const EdgeInsetsDirectional.all(16));
+      expect(tester.widget<ListView>(find.byType(ListView).last).padding,
+          isA<EdgeInsetsDirectional>());
 
       // Shipping Address Card: Card with surface + outlineVariant 1dp radius 16 clipAntiAlias wrapping the address picker.
       // Find the first Card that contains the shipping address title and AddressPicker descendants.
@@ -274,27 +280,19 @@ void main() {
       await tester.pumpWidget(_checkoutWithAddressHarness());
       await tester.pump();
 
-      // Auto-height bar (fits the 50px DESIGN CTA): no fixed-height
-      // Container constrains the bottom bar anymore.
+      // Auto-height bar (fits the 50px DESIGN CTA) that clears the system
+      // navigation bar; the legacy fixed 72px Container is gone.
       expect(
         find.byWidgetPredicate(
             (w) => w is Container && w.constraints?.maxHeight == 72),
         findsNothing,
         reason: 'Bottom bar must not pin the legacy fixed 72px height',
       );
-      // Padding should be EdgeInsetsDirectional.all(16).
-      final containerWithPadding = tester.widget<Container>(
-        find.byWidgetPredicate((w) =>
-            w is Container && w.padding == const EdgeInsetsDirectional.all(16)),
-      );
-      expect(containerWithPadding.padding, isA<EdgeInsetsDirectional>());
-      expect(containerWithPadding.padding, const EdgeInsetsDirectional.all(16));
-
-      // Background should be surface.
-      final boxDeco = containerWithPadding.decoration as BoxDecoration?;
+      final bar = tester.widget<SafeBottomBar>(find.byType(SafeBottomBar));
+      expect(bar.padding, const EdgeInsetsDirectional.all(16));
       final scaffoldCtx = tester.element(find.byType(Scaffold));
       final scheme = Theme.of(scaffoldCtx).colorScheme;
-      expect(boxDeco?.color, scheme.surface);
+      expect(bar.color, scheme.surface);
 
       // FilledButton inside should be secondary #904D00 and controlRadius 8.
       final button =
@@ -309,13 +307,33 @@ void main() {
 
       // Guard: onPressed disabled when no address? In this harness we have address, so should be enabled initially (before creating).
       // Now test guard after clearing address.
-      final ctx = tester.element(find.byType(ListView));
+      final ctx = tester.element(find.byType(ListView).first);
       ctx.read<CheckoutCubit>().clearAddress();
       await tester.pump();
       final buttonAfterClear =
           tester.widget<FilledButton>(find.byType(FilledButton).last);
       expect(buttonAfterClear.onPressed, isNull,
           reason: 'CTA should be disabled without address (hasAddress guard)');
+    });
+
+    testWidgets('tablet layout puts address left and order summary right',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_checkoutWithAddressHarness());
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ListView), findsAtLeastNWidgets(2));
+
+      final leftX =
+          tester.getTopLeft(find.byType(CheckoutShippingAddressCard)).dx;
+      final rightX = tester.getTopLeft(find.byType(CartSummary)).dx;
+      expect(leftX, lessThan(rightX));
+      // The 1200px cap centers the pair instead of stretching edge-to-edge.
+      expect(leftX, greaterThan(40));
+      expect(leftX, lessThan(100));
     });
 
     testWidgets('PaymentMethodPage CTA uses secondary #904D00 if present',

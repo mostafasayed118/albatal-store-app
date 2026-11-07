@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/result.dart';
 import '../../../../shared/components/app_card.dart';
 import '../../../../shared/components/feedback.dart';
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../../../shared/l10n/money_copy.dart';
@@ -94,7 +96,7 @@ class _AdminInstapayViewState extends State<_AdminInstapayView>
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l.adminInstapayTitle)),
       body: BlocListener<AdminInstapayCubit, AdminInstapayState>(
         listenWhen: (previous, current) =>
@@ -211,6 +213,7 @@ class _AdminInstapayViewState extends State<_AdminInstapayView>
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(context.l10n.adminInstapayReject),
         content: Column(
           mainAxisSize: MainAxisSize.min,

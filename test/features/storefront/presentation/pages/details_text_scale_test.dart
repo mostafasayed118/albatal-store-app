@@ -5,6 +5,8 @@ import 'package:al_batal_elite/features/storefront/presentation/cubit/product_de
 import 'package:al_batal_elite/features/storefront/presentation/cubit/wishlist_cubit.dart';
 import 'package:al_batal_elite/features/storefront/presentation/pages/details_page.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/add_to_cart_button.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/image_gallery.dart';
+import 'package:al_batal_elite/features/storefront/presentation/widgets/name_and_price.dart';
 import 'package:al_batal_elite/features/storefront/presentation/widgets/related_card.dart';
 import 'package:al_batal_elite/generated/l10n/app_localizations.dart';
 import 'package:al_batal_elite/shared/theme/app_theme.dart';
@@ -202,6 +204,33 @@ void main() {
     )));
 
     _expectFitsInFull(tester, 'Add to Cart - 8,988.75 EGP');
+  });
+
+  testWidgets('Details page uses two side-by-side columns on tablet',
+      (tester) async {
+    await loadAppFonts();
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_harness('silk-01'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(tester.takeException(), isNull);
+
+    // Two columns, each with its own scroll view.
+    expect(find.byType(ListView), findsAtLeastNWidgets(2));
+    // Gallery sits in the left column, name/price in the right one.
+    final galleryX = tester.getTopLeft(find.byType(ImageGallery)).dx;
+    final nameX = tester
+        .getTopLeft(find.descendant(
+          of: find.byType(NameAndPrice),
+          matching: find.text('Royal Emerald Silk'),
+        ))
+        .dx;
+    expect(galleryX, lessThan(nameX));
+    // The 1200px cap centers the content instead of stretching edge-to-edge.
+    expect(galleryX, greaterThan(40));
+    expect(galleryX, lessThan(100));
   });
 }
 

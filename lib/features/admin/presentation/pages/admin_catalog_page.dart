@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/error/app_error.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/logger.dart';
@@ -43,7 +45,7 @@ class AdminCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(title: Text(l10n.catalogManagement)),
       body: ListView(
         padding: const EdgeInsets.all(16),

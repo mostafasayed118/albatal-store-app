@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/money_copy.dart';
@@ -193,7 +195,7 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
   Widget build(BuildContext context) {
     final cubit = _effectiveCubit;
     if (cubit == null) {
-      return Scaffold(
+      return ResponsiveScaffold(
         appBar: AppBar(),
         body: Center(child: Text(context.l10n.instapaySessionMissing)),
       );
@@ -226,13 +228,13 @@ class _InstapayInstructionsPageState extends State<InstapayInstructionsPage> {
           final instructions = state.instructions;
 
           if (instructions == null) {
-            return Scaffold(
+            return ResponsiveScaffold(
               appBar: AppBar(title: Text(l.instapayInstructionsTitle)),
               body: InstapayErrorBody(errorMessage: state.errorMessage),
             );
           }
 
-          return Scaffold(
+          return ResponsiveScaffold(
             appBar: AppBar(title: Text(l.instapayInstructionsTitle)),
             body: ListView(
               padding: const EdgeInsetsDirectional.all(16),

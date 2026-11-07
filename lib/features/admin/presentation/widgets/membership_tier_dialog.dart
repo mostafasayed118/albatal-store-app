@@ -29,6 +29,7 @@ Future<String?> showMembershipTierDialog(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
+        scrollable: true,
         title: Text(l.changeMembershipTier),
         content: RadioGroup<String>(
           groupValue: selection,

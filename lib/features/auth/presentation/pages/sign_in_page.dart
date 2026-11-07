@@ -7,6 +7,7 @@ import '../../../../core/error/result.dart';
 import '../../../../core/utils/email_validator.dart';
 import '../../../../shared/components/brand_logo.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/responsive_shell.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/routing/app_routes.dart';
 import '../../../../shared/services/oauth_service.dart';
@@ -61,135 +62,136 @@ class _SignInPageState extends State<SignInPage> {
     final redirectTarget = _redirectTarget(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.signIn)),
-      body: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state.isAuthenticated) {
-            hapticSuccess();
-            context.go(redirectTarget);
-          } else if (state.status == AuthStatus.failure) {
-            // Code-first copy (audit 2026-09-19, sweep part 32) — one
-            // shared implementation since the 2026-09-21 dedupe.
-            showAuthFailure(context, state);
-          }
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsetsDirectional.all(24),
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 32),
-                const Center(child: BrandLogo.lockup(height: 88)),
-                const SizedBox(height: 16),
-                Text(l.welcomeBack,
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 8),
-                Text(l.signInSubtitle,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: scheme.onSurfaceVariant)),
-                const SizedBox(height: 32),
-                TextFormField(
-                  controller: _emailCtrl,
-                  decoration: InputDecoration(labelText: l.email),
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      emailValidator(v, invalidMessage: l.invalidEmail),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordCtrl,
-                  decoration: InputDecoration(
-                    labelText: l.password,
-                    suffixIcon: IconButton(
-                      tooltip: l.password,
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                      icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility),
+      body: ResponsiveShell(
+        maxWidth: 560,
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state.isAuthenticated) {
+              hapticSuccess();
+              context.go(redirectTarget);
+            } else if (state.status == AuthStatus.failure) {
+              // Code-first copy (audit 2026-09-19, sweep part 32) — one
+              // shared implementation since the 2026-09-21 dedupe.
+              showAuthFailure(context, state);
+            }
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsetsDirectional.all(24),
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  const Center(child: BrandLogo.lockup(height: 88)),
+                  const SizedBox(height: 16),
+                  Text(l.welcomeBack,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 8),
+                  Text(l.signInSubtitle,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: scheme.onSurfaceVariant)),
+                  const SizedBox(height: 32),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    decoration: InputDecoration(labelText: l.email),
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) =>
+                        emailValidator(v, invalidMessage: l.invalidEmail),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    decoration: InputDecoration(
+                      labelText: l.password,
+                      suffixIcon: IconButton(
+                        tooltip: l.password,
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                            _obscure ? Icons.visibility_off : Icons.visibility),
+                      ),
+                    ),
+                    obscureText: _obscure,
+                    autofillHints: const [AutofillHints.password],
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    // Unified 8-char rule: the sign-up constant is the
+                    // source (imported above), not a page-local literal.
+                    validator: (v) => passwordValidator(v,
+                        tooShortMessage: l.passwordTooShort),
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      onPressed: () => context.push(Routes.forgotPassword),
+                      child: Text(l.forgotPassword),
                     ),
                   ),
-                  obscureText: _obscure,
-                  autofillHints: const [AutofillHints.password],
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
-                  // Unified 8-char rule: the sign-up constant is the
-                  // source (imported above), not a page-local literal.
-                  validator: (v) =>
-                      passwordValidator(v, tooShortMessage: l.passwordTooShort),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => context.push(Routes.forgotPassword),
-                    child: Text(l.forgotPassword),
+                  const SizedBox(height: 24),
+                  BlocBuilder<AuthCubit, AuthState>(
+                    builder: (context, state) {
+                      return FilledButton(
+                        onPressed: state.isLoading ? null : _submit,
+                        child: state.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : Text(l.signIn),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 24),
-                BlocBuilder<AuthCubit, AuthState>(
-                  builder: (context, state) {
-                    return FilledButton(
-                      onPressed: state.isLoading ? null : _submit,
-                      child: state.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(l.signIn),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                // §15: social sign-in. Providers must be enabled in the
-                // Supabase dashboard; failures map to a friendly message
-                // instead of dead buttons.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
+                  const SizedBox(height: 12),
+                  // §15: social sign-in. Providers must be enabled in the
+                  // Supabase dashboard; failures map to a friendly message
+                  // instead of dead buttons.
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
                         onPressed: () => _signInWith(OAuthProvider.google),
                         icon: const Icon(Icons.g_mobiledata, size: 28),
                         label: Text(l.signInWithGoogle),
                       ),
-                    ),
-                    if (Theme.of(context).platform == TargetPlatform.iOS) ...[
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
+                      if (Theme.of(context).platform == TargetPlatform.iOS)
+                        OutlinedButton.icon(
                           onPressed: () => _signInWith(OAuthProvider.apple),
                           icon: const Icon(Icons.apple),
                           label: Text(l.signInWithApple),
                         ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(l.dontHaveAccount),
+                      TextButton(
+                        onPressed: () => context.push(Routes.signUp),
+                        child: Text(l.signUp),
                       ),
                     ],
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(l.dontHaveAccount),
-                    TextButton(
-                      onPressed: () => context.push(Routes.signUp),
-                      child: Text(l.signUp),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                OutlinedButton(
-                  onPressed: () => context.go(Routes.home),
-                  child: Text(l.continueAsGuest),
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton(
+                    onPressed: () => context.go(Routes.home),
+                    child: Text(l.continueAsGuest),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

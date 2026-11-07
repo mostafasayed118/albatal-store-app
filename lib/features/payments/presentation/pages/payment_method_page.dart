@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/components/step_indicator.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/money_copy.dart';
@@ -195,7 +197,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
       },
       builder: (context, state) {
         if (orderId.isEmpty || customerEmail.isEmpty) {
-          return Scaffold(
+          return ResponsiveScaffold(
             appBar: AppBar(title: Text(l.selectPaymentMethod)),
             body: Center(
               child: Text(orderId.isEmpty
@@ -204,7 +206,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
             ),
           );
         }
-        return Scaffold(
+        return ResponsiveScaffold(
           appBar: AppBar(title: Text(l.selectPaymentMethod)),
           body: ListView(
             padding: const EdgeInsetsDirectional.all(16),

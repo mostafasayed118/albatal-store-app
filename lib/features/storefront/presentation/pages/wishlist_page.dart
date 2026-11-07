@@ -142,10 +142,15 @@ class _WishlistPageState extends State<WishlistPage> {
                 builder: (context, constraints) => GridView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: ws.products.length,
-                  // Same width-aware delegate as Home/Catalog: 2 cols on
-                  // phone, 3 at ≥700, 4 at ≥1000.
-                  gridDelegate:
-                      productGridDelegateForWidth(constraints.maxWidth),
+                  // Taller cells than the shared product grid: this tile
+                  // carries a square image, a text block and a CTA. Scale the
+                  // cell with the user's font size so the image keeps its slot
+                  // instead of being squeezed to nothing.
+                  gridDelegate: productGridDelegateForWidth(
+                    constraints.maxWidth,
+                    textScale: MediaQuery.textScalerOf(context).scale(1),
+                    baseAspectRatio: .58,
+                  ),
                   itemBuilder: (_, i) => WishlistTile(product: ws.products[i]),
                 ),
               );

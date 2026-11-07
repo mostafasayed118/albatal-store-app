@@ -74,7 +74,11 @@ class _ImageGalleryState extends State<ImageGallery> {
     return Column(
       children: [
         SizedBox(
-          height: 300,
+          // Fixed 300dp consumed a landscape phone and letterboxed on
+          // tablets; cap it against the window height instead.
+          height: (MediaQuery.sizeOf(context).height * .45)
+              .clamp(160.0, 300.0)
+              .toDouble(),
           child: PageView.builder(
             itemCount: _allImages.length,
             onPageChanged: (i) => setState(() => _current = i),

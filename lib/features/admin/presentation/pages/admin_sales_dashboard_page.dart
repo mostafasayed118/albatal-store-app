@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/components/feedback_view.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../domain/repositories/admin_sales_port.dart';
 import '../cubit/admin_sales_dashboard_cubit.dart';
@@ -64,7 +66,7 @@ class _AdminSalesDashboardPageState extends State<AdminSalesDashboardPage> {
             previous.lowStock != current.lowStock ||
             previous.errorMessage != current.errorMessage,
         builder: (context, state) {
-          return Scaffold(
+          return ResponsiveScaffold(
             appBar: AppBar(
               title: Text(context.l10n.salesDashboard),
               actions: [

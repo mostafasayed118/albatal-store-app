@@ -23,89 +23,104 @@ class AdminImageGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1,
-      ),
-      itemCount: paths.length,
-      itemBuilder: (ctx, i) {
-        final path = paths[i];
-        // Ask for the budget the tile decodes at (see the AppImage below):
-        // this page was the last surface still pulling the full upload
-        // (audit P0-4). Falls back to the stored path when the client is
-        // not available.
-        String url;
-        try {
-          url = storage.getProductImageUrlForWidth(
-            path,
-            StorageService.gridImageWidth,
-          );
-        } catch (e) {
-          // Logged: the tile silently falls back to the full upload
-          // otherwise (Batch 2 polish).
-          Log.w('admin grid render URL failed; using stored path.', error: e);
-          url = path;
-        }
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Bounded at BOTH ends: the url above requests a 420 render
-              // and this decodes at 420, so a grid cell never touches the
-              // full-resolution bitmap (audit 2026-09-13 perf, P0-4).
-              AppImage(
-                source: url,
-                fit: BoxFit.cover,
-                cacheWidth: 420,
-                cacheHeight: 420,
-                placeholder: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.image, size: 40),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding:
-                          const EdgeInsetsDirectional.symmetric(horizontal: 8),
-                      child: Text(
-                        path.split('/').last,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AdminImageIconBtn(
-                      icon: Icons.arrow_upward,
-                      onTap: i == 0 ? null : () => onMove(i, i - 1),
-                    ),
-                    AdminImageIconBtn(
-                      icon: Icons.arrow_downward,
-                      onTap:
-                          i == paths.length - 1 ? null : () => onMove(i, i + 1),
-                    ),
-                    AdminImageIconBtn(
-                      icon: Icons.delete,
-                      onTap: () => onDelete(i),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Fixed 2 columns produced ~500px tiles on tablet/desktop.
+        final width = constraints.maxWidth;
+        final crossAxisCount = width >= 1200
+            ? 5
+            : width >= 900
+                ? 4
+                : width >= 600
+                    ? 3
+                    : 2;
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1,
           ),
+          itemCount: paths.length,
+          itemBuilder: (ctx, i) {
+            final path = paths[i];
+            // Ask for the budget the tile decodes at (see the AppImage below):
+            // this page was the last surface still pulling the full upload
+            // (audit P0-4). Falls back to the stored path when the client is
+            // not available.
+            String url;
+            try {
+              url = storage.getProductImageUrlForWidth(
+                path,
+                StorageService.gridImageWidth,
+              );
+            } catch (e) {
+              // Logged: the tile silently falls back to the full upload
+              // otherwise (Batch 2 polish).
+              Log.w('admin grid render URL failed; using stored path.',
+                  error: e);
+              url = path;
+            }
+            return Card(
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Bounded at BOTH ends: the url above requests a 420 render
+                  // and this decodes at 420, so a grid cell never touches the
+                  // full-resolution bitmap (audit 2026-09-13 perf, P0-4).
+                  AppImage(
+                    source: url,
+                    fit: BoxFit.cover,
+                    cacheWidth: 420,
+                    cacheHeight: 420,
+                    placeholder: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.image, size: 40),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsetsDirectional.symmetric(
+                              horizontal: 8),
+                          child: Text(
+                            path.split('/').last,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AdminImageIconBtn(
+                          icon: Icons.arrow_upward,
+                          onTap: i == 0 ? null : () => onMove(i, i - 1),
+                        ),
+                        AdminImageIconBtn(
+                          icon: Icons.arrow_downward,
+                          onTap: i == paths.length - 1
+                              ? null
+                              : () => onMove(i, i + 1),
+                        ),
+                        AdminImageIconBtn(
+                          icon: Icons.delete,
+                          onTap: () => onDelete(i),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );

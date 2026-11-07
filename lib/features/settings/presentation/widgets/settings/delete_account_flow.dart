@@ -50,6 +50,7 @@ Future<void> confirmDeleteAccount(
             });
             return StatefulBuilder(
               builder: (context, setState) => AlertDialog(
+                scrollable: true,
                 title: Text(l10n.deleteAccountTitle),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,

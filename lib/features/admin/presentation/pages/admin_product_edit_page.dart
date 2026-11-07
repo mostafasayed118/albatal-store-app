@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/entities/money.dart';
 import '../../../../core/utils/safe_parse.dart';
 import '../../../../shared/components/feedback.dart';
+import '../../../../shared/components/responsive_scaffold.dart';
 import '../../../../shared/extensions/build_context_x.dart';
 import '../../../../shared/l10n/failure_copy.dart';
 import '../../domain/entities/admin_catalog.dart';
@@ -231,7 +233,7 @@ class _AdminProductEditPageState extends State<AdminProductEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: AppBar(
         // The form was previously titled "Products" in both modes —
         // indistinguishable from the list page in the back stack.
